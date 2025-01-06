@@ -2,7 +2,7 @@ SRC          = src
 BIN          = bin
 
 CC           = g++
-CFLAG        = -m64 -march=x86-64 -Wall -std=c++17
+CFLAG        = -m64 -march=x86-64 -Wall -ffast-math -std=c++17
 LDFLAG       = -lRE -I$(SRC) -L$(BIN) -lGL
 
 RE           = $(BIN)/libRE.a

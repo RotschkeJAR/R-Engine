@@ -1,3 +1,9 @@
 bin/
+
+# Windows-specific
 Game (MinGW; Console).exe
 Game (MinGW; Windows).exe
+
+# Linux-specific
+Makefile
+Game

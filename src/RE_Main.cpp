@@ -20,7 +20,8 @@ namespace RE {
 #ifdef RE_OS_WINDOWS
 		window = new Window_Win64();
 #elif defined RE_OS_LINUX
-
+		RE_WARNING("Linux window handling is not supported yet. Engine stops running");
+		return;
 #else
 		RE_ERROR("Window couldn't be created, because the OS is unknown");
 		return;

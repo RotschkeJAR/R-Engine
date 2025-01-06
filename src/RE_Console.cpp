@@ -57,7 +57,7 @@ namespace RE {
 		if (treatWarningAsError)
 			error(file, func, line, detail, false);
 		else {
-			printColored("WARNING", TerminalColor::Yellow, false, false);
+			printColored("WARNING", TerminalColor::Bright_Yellow, false, false);
 			printErrMsg(file, func, line, detail);
 		}
 	}

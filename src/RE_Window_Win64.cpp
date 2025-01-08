@@ -3,7 +3,7 @@
 namespace RE {
 
 #ifdef RE_OS_WINDOWS
-#define WINDOW_CLASS_NAME L"RE_WindowClass"
+# define WINDOW_CLASS_NAME L"RE_WindowClass"
 	Window_Win64* win64 = nullptr;
 
 	LRESULT CALLBACK windowProcess(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
@@ -21,41 +21,53 @@ namespace RE {
 				case WM_DESTROY: /* destroy window */
 					PostQuitMessage(0);
 					return 0;
-				case WM_KEYDOWN: { /* key pressed */
-					REulong bitmask = genBitmaskRange(16, 25);
-					wprintf(L"Entered key: %i\n", lParam & bitmask);
-					} return 0;
-				case WM_SYSKEYDOWN: {
-					REulong bitmask = genBitmaskRange(16, 25);
-					wprintf(L"Entered system key: %x\n", lParam & bitmask);
-					} return 0;
-				case WM_KEYUP: { /* key released */
-					REulong bitmask = genBitmaskRange(16, 25);
-					wprintf(L"Released key: %i\n", lParam & bitmask);
-					} return 0;
+				case WM_KEYDOWN: /* key pressed */
+				case WM_SYSKEYDOWN:
+				case WM_KEYUP: /* key released */
 				case WM_SYSKEYUP: {
-					REulong bitmask = genBitmaskRange(16, 25);
-					wprintf(L"Released system key: %x\n", lParam & bitmask);
+					WORD vkCode = LOWORD(wParam);
+					WORD keyFlags = HIWORD(lParam);
+					WORD scanCode = LOBYTE(keyFlags);
+					BOOL extendedKey = (keyFlags & KF_EXTENDED) == KF_EXTENDED;
+					if (extendedKey)
+						scanCode = MAKEWORD(scanCode, 0xE0);
+					BOOL keyReleased = (keyFlags & KF_UP) == KF_UP;
+					switch (vkCode) {
+						case VK_SHIFT:
+						case VK_CONTROL:
+						case VK_MENU:
+							vkCode = LOWORD(MapVirtualKeyW(scanCode, MAPVK_VSC_TO_VK_EX));
+							break;
+						default:
+							break;
+					}
+					win64->inputMgr.keyInput(winKeyFromVirtual(vkCode), scanCode, !static_cast<bool>(keyReleased));
 					} return 0;
 				case WM_CHAR:
 					win64->inputMgr.charInput(static_cast<wchar_t>(wParam));
 					return 0;
 				case WM_LBUTTONDOWN: /* left mouse button pressed */
+					win64->inputMgr.buttonInput(RE_LBUTTON, true);
 					SetCapture(hWnd);
 					return 0;
 				case WM_LBUTTONUP: /* left mouse button released */
+					win64->inputMgr.buttonInput(RE_LBUTTON, false);
 					ReleaseCapture();
 					return 0;
 				case WM_RBUTTONDOWN: /* right mouse button pressed */
+					win64->inputMgr.buttonInput(RE_RBUTTON, true);
 					SetCapture(hWnd);
 					return 0;
 				case WM_RBUTTONUP: /* right mouse button released */
+					win64->inputMgr.buttonInput(RE_RBUTTON, false);
 					ReleaseCapture();
 					return 0;
 				case WM_MBUTTONDOWN: /* middle mouse button pressed */
+					win64->inputMgr.buttonInput(RE_MBUTTON, true);
 					SetCapture(hWnd);
 					return 0;
 				case WM_MBUTTONUP: /* middle mouse button released */
+					win64->inputMgr.buttonInput(RE_MBUTTON, false);
 					ReleaseCapture();
 					return 0;
 				case WM_MOUSEMOVE: { /* mouse moved */
@@ -158,7 +170,7 @@ namespace RE {
 		wglDeleteContext(hRenderContext);
 		ReleaseDC(hWindow, hDevice);
 		DestroyWindow(hWindow);
-		UnregisterClass(WINDOW_CLASS_NAME, hInstance);
+		UnregisterClassW(WINDOW_CLASS_NAME, hInstance);
 		win64 = nullptr;
 	}
 
@@ -177,11 +189,11 @@ namespace RE {
 	}
 
 	void Window_Win64::fullscreen() {
-		HMONITOR hMonitor = MonitorFromWindow(hWindow, MONITOR_DEFAULTTOPRIMARY);
+		//HMONITOR hMonitor = MonitorFromWindow(hWindow, MONITOR_DEFAULTTOPRIMARY);
 	}
 	
 	void Window_Win64::windowedFullscreen() {
-		HMONITOR hMonitor = MonitorFromWindow(hWindow, MONITOR_DEFAULTTOPRIMARY);
+		//HMONITOR hMonitor = MonitorFromWindow(hWindow, MONITOR_DEFAULTTOPRIMARY);
 	}
 	
 	void Window_Win64::window() {

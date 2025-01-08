@@ -1,4 +1,5 @@
 #include "RE_Input.hpp"
+#include "RE_Ext Header.hpp"
 
 namespace RE {
 
@@ -14,8 +15,9 @@ namespace RE {
 			inputMgr = nullptr;
 	}
 
-	void InputMgr::keyInput(REushort scancode, bool pressed) {
-		
+	void InputMgr::keyInput(Key key, REushort scancode, bool pressed) {
+		if (pressed)
+			println(key);
 	}
 
 	void InputMgr::charInput(wchar_t character) {
@@ -32,6 +34,26 @@ namespace RE {
 
 	void InputMgr::scrollInput(float y) {
 		
+	}
+
+	REushort scancodeFromKey(Key key) {
+#ifdef RE_OS_WINDOWS
+		return MapVirtualKeyW(winVirtualFromKey(key), MAPVK_VK_TO_VSC_EX);
+#elif defined RE_OS_LINUX
+		return 0;
+#else
+		return 0;
+#endif /* RE_OS_WINDOWS, RE_OS_LINUX */
+	}
+
+	Key keyFromScancode(REushort scancode) {
+#ifdef RE_OS_WINDOWS
+		return winKeyFromVirtual(MapVirtualKeyW(scancode, MAPVK_VSC_TO_VK_EX));
+#elif defined RE_OS_LINUX
+		return Key::Space;
+#else
+		return Key::Space;
+#endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 	}
 
 }

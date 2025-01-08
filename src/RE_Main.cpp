@@ -23,6 +23,7 @@ namespace RE {
 		RE_WARNING("Linux window handling is not supported yet. Engine stops running");
 		return;
 #else
+# warning The OS is unknown, so the engine will terminate immediatly upon execution
 		RE_ERROR("Window couldn't be created, because the OS is unknown");
 		return;
 #endif

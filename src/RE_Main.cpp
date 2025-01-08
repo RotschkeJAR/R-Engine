@@ -1,5 +1,6 @@
 #include "RE_Ext Header.hpp"
 #include "RE_Window_Win64.hpp"
+#include "RE_Window_X11.hpp"
 
 #include <chrono>
 #include <thread>
@@ -20,8 +21,7 @@ namespace RE {
 #ifdef RE_OS_WINDOWS
 		window = new Window_Win64();
 #elif defined RE_OS_LINUX
-		RE_WARNING("Linux window handling is not supported yet. Engine stops running");
-		return;
+		window = new Window_X11();
 #else
 # warning The OS is unknown, so the engine will terminate immediatly upon execution
 		RE_ERROR("Window couldn't be created, because the OS is unknown");
@@ -36,7 +36,7 @@ namespace RE {
 		while (running) {
 			window->processLoop();
 			glClear(GL_COLOR_BUFFER_BIT);
-			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+			glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
 			window->show(true);
 			running = !window->shouldClose() && !errorOccured;
 		}

@@ -3,7 +3,7 @@ BIN          = bin
 
 CC           = g++
 CFLAG        = -m64 -march=x86-64 -Wall -ffast-math -std=c++17
-LDFLAG       = -lRE -I$(SRC) -L$(BIN) -lGL
+LDFLAG       = -lRE -I$(SRC) -L$(BIN) -lGL -lX11
 
 RE           = $(BIN)/libRE.a
 OUT          = Game

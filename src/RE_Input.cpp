@@ -5,7 +5,7 @@ namespace RE {
 
 	InputMgr* inputMgr = nullptr;
 
-	InputMgr::InputMgr() {
+	InputMgr::InputMgr() : buttons(0), lastButtons(0) {
 		if (!inputMgr)
 			inputMgr = this;
 	}
@@ -25,7 +25,12 @@ namespace RE {
 	}
 
 	void InputMgr::buttonInput(REubyte buttoncode, bool pressed) {
-		
+		REubyte buttonMask = static_cast<REubyte>(genBitmask(buttoncode));
+		if (!pressed) {
+			buttonMask = ~buttonMask;
+			buttons = buttons & buttonMask;
+		} else
+			buttons = buttons | buttonMask;
 	}
 
 	void InputMgr::cursorInput(REushort x, REushort y) {
@@ -34,6 +39,10 @@ namespace RE {
 
 	void InputMgr::scrollInput(float y) {
 		
+	}
+
+	void InputMgr::updateInput() {
+		lastButtons = buttons;
 	}
 
 	REushort scancodeFromKey(Key key) {

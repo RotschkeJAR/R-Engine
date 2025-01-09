@@ -3,6 +3,7 @@
 
 namespace RE {
 	
+	extern bool running;
 	extern bool errorOccured;
 
 }

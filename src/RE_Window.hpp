@@ -18,18 +18,19 @@ namespace RE {
 			bool closeFlag;
 			bool valid;
 
+			virtual void processLoop() = 0;
 			virtual void showInternal() = 0;
 			virtual void updateTitleInternal() = 0;
 
 		public:
 			Window();
 			virtual ~Window();
-			virtual void processLoop() = 0;
 			virtual void fullscreen() = 0;
 			virtual void windowedFullscreen() = 0;
 			virtual void window() = 0;
 			void show(bool showWindow);
 			void setTitle(const char* newTitle);
+			void update();
 			bool shouldClose();
 			bool isValid();
 	};

@@ -29,6 +29,11 @@ namespace RE {
 		updateTitleInternal();
 	}
 
+	void Window::update() {
+		inputMgr.updateInput();
+		processLoop();
+	}
+
 	bool Window::shouldClose() {
 		return closeFlag;
 	}

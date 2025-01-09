@@ -1,4 +1,5 @@
 #include "RE_Window_Win64.hpp"
+#include "RE_Main.hpp"
 
 namespace RE {
 
@@ -9,6 +10,8 @@ namespace RE {
 	LRESULT CALLBACK windowProcess(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 		if (!win64)
 			RE_FATAL_ERROR("Window process function has been called when no window is active");
+		else if (win64->hWindow != hWnd && running)
+			RE_FATAL_ERROR("Window process function has been called by another window");
 		else {
 			switch (uMsg) {
 				case WM_SIZE: /* resized */
@@ -86,7 +89,7 @@ namespace RE {
 					break;
 			}
 		}
-		return DefWindowProc(hWnd, uMsg, wParam, lParam);
+		return DefWindowProcW(hWnd, uMsg, wParam, lParam);
 	}
 
 	std::wstring convertU8toW(const char* input) {

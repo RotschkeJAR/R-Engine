@@ -28,6 +28,15 @@ namespace RE {
 
 #define STRIP_QUOTE(T) T
 
+	inline std::ostream& operator <<(std::ostream& stream, REubyte& var) {
+		stream << static_cast<unsigned>(var);
+		return stream;
+	}
+	inline std::ostream& operator <<(std::ostream& stream, REushort& var) {
+		stream << static_cast<unsigned>(var);
+		return stream;
+	}
+
 	enum TerminalColor {
 		Black,
 		Red,
@@ -167,6 +176,18 @@ namespace RE {
 		Numpad_Period
 	};
 
+	template <typename... T>
+	void print(T... content) {
+		(std::cout << ... << content);
+	}
+	template <typename... T>
+	void println(T... content) {
+		(std::cout << ... << content);
+		std::cout << '\n';
+	}
+	void printColored(const char* content, TerminalColor color, bool backgroundColored, bool bold);
+	void printlnColored(const char* content, TerminalColor color, bool backgroundColored, bool bold);
+
 	template <typename T>
 	T nth_root(T n, T value) {
 		return std::pow(value, static_cast<T>(1.0) / n);
@@ -191,9 +212,9 @@ namespace RE {
 	template <typename T>
 	std::string bitmaskToString(T bitmask) {
 		std::string result("");
-		REubyte bits = sizeof(T) * 8;
-		for (REubyte bit = 0; bit < bits; bit++)
-			result += ((bitmask << bit) >> (bits - 1)) != 0 ? "1" : "0";
+		REulong bits = sizeof(T) * 8L;
+		for (REulong bit = 0L; bit < bits; bit++)
+			result += (((static_cast<REulong>(bitmask) << bit) >> (bits - 1L)) == 1L) ? "1" : "0";
 		return result;
 	}
 
@@ -210,18 +231,6 @@ namespace RE {
 		(wss << ... << args);
 		return wss.str();
 	}
-
-	template <typename... T>
-	void print(T... content) {
-		(std::cout << ... << content);
-	}
-	template <typename... T>
-	void println(T... content) {
-		(std::cout << ... << content);
-		std::cout << '\n';
-	}
-	void printColored(const char* content, TerminalColor color, bool backgroundColored, bool bold);
-	void printlnColored(const char* content, TerminalColor color, bool backgroundColored, bool bold);
 	
 	void error(const char* file, const char* func, REuint line, const char* detail, bool terminate);
 	void warning(const char* file, const char* func, REuint line, const char* detail);

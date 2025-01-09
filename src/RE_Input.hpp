@@ -14,8 +14,9 @@ namespace RE {
 	
 	class InputMgr {
 		private:
-			bool keys[RE_TOTAL_KEYS], lastKeys[RE_TOTAL_KEYS];
-			bool buttons[RE_TOTAL_BUTTONS], lastButtons[RE_TOTAL_BUTTONS];
+#define _KEY_ARRAY_LENGTH RE_TOTAL_KEYS / 8 + ((RE_TOTAL_KEYS % 8 != 0) ? 1 : 0)
+			REubyte keys[_KEY_ARRAY_LENGTH], lastKeys[_KEY_ARRAY_LENGTH];
+			REubyte buttons, lastButtons;
 
 		public:
 			InputMgr();
@@ -25,6 +26,7 @@ namespace RE {
 			void buttonInput(REubyte buttoncode, bool pressed);
 			void cursorInput(REushort x, REushort y);
 			void scrollInput(float y);
+			void updateInput();
 	};
 
 #ifdef RE_OS_WINDOWS

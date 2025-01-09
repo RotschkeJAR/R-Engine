@@ -16,7 +16,8 @@ namespace RE {
 			HGLRC hRenderContext;
 
 		protected:
-			void showInternal(bool showWindow);
+			void showInternal();
+			void updateTitleInternal();
 
 		public:
 			Window_Win64();

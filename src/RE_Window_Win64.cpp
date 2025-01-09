@@ -88,6 +88,18 @@ namespace RE {
 		}
 		return DefWindowProc(hWnd, uMsg, wParam, lParam);
 	}
+
+	std::wstring convertU8toW(const char* input) {
+		if (!input)
+			return L"";
+		REint sizeNeeded = MultiByteToWideChar(CP_UTF8, 0, input, -1, nullptr, 0);
+		if (sizeNeeded <= 0)
+			return L"";
+		std::wstring result(sizeNeeded, 0);
+		MultiByteToWideChar(CP_UTF8, 0, input, -1, &result[0], sizeNeeded);
+		result.resize(sizeNeeded - 1);
+		return result;
+	}
 	
 	Window_Win64::Window_Win64() : hInstance(GetModuleHandle(nullptr)), hWindow(nullptr), msg({ }), hCursor(LoadCursor(nullptr, IDC_ARROW)), hDevice(nullptr), hRenderContext(nullptr) {
 		win64 = this;
@@ -95,6 +107,7 @@ namespace RE {
 			RE_ERROR("Failed getting the HINSTANCE for window creation");
 			return;
 		}
+		const std::wstring wTitleStr = convertU8toW(title);
 		WNDCLASSEXW wc = {};
 		wc.cbSize = sizeof(WNDCLASSEXW);
 		wc.lpfnWndProc = windowProcess;
@@ -106,7 +119,7 @@ namespace RE {
 		}
 		hWindow = CreateWindowExW(0,
 			WINDOW_CLASS_NAME,
-			title,
+			wTitleStr.c_str(),
 			WS_THICKFRAME | WS_MAXIMIZEBOX | WS_MINIMIZEBOX | WS_CAPTION | WS_SYSMENU,
 			10, 10, 200, 200,
 			nullptr,
@@ -174,8 +187,12 @@ namespace RE {
 		win64 = nullptr;
 	}
 
-	void Window_Win64::showInternal(bool showWindow) {
-		ShowWindow(hWindow, showWindow ? TRUE : FALSE);
+	void Window_Win64::showInternal() {
+		ShowWindow(hWindow, windowVisible ? TRUE : FALSE);
+	}
+
+	void Window_Win64::updateTitleInternal() {
+		SetWindowTextW(hWindow, convertU8toW(title).c_str());
 	}
 
 	void Window_Win64::processLoop() {

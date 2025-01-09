@@ -12,8 +12,12 @@
 # include <windows.h>
 #elif defined RE_OS_LINUX
 # include <X11/Xlib.h>
+# include <X11/Xatom.h>
 # include <GL/glx.h>
-#endif
+ typedef Display XDisplay;
+ typedef Window XWindow;
+ typedef Atom XAtom;
+#endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 
 namespace RE {
 	

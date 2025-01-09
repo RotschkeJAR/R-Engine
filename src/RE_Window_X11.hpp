@@ -8,10 +8,15 @@ namespace RE {
 #ifdef RE_OS_LINUX
 	class Window_X11 : public Window {
 		private:
-			Display* const xDisplay;
+			XDisplay* const xDisplay;
+			XWindow xWindow;
+			XAtom xaClose;
+			XAtom xaUTF8, xaWinName;
+			GLXContext glxContext;
 
 		protected:
-			void showInternal(bool showWindow);
+			void showInternal();
+			void updateTitleInternal();
 
 		public:
 			Window_X11();

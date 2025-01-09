@@ -4,7 +4,7 @@ namespace RE {
 	
 	Window* Window::winRef = nullptr;
 
-	Window::Window() : title(L"Untitled Game Window"), closeFlag(false), valid(false) {
+	Window::Window() : title(u8"UTF-8 Title: Привет мир! こんにちは世界 🌍"), closeFlag(false), valid(false) {
 		if (winRef) {
 			RE_ERROR("A window already exists. New window has been discarded");
 			return;
@@ -21,7 +21,12 @@ namespace RE {
 		if (windowVisible == showWindow)
 			return;
 		windowVisible = showWindow;
-		showInternal(showWindow);
+		showInternal();
+	}
+
+	void Window::setTitle(const char* newTitle) {
+		title = newTitle;
+		updateTitleInternal();
 	}
 
 	bool Window::shouldClose() {

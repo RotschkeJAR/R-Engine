@@ -41,8 +41,8 @@ namespace RE {
 			running = !window->shouldClose() && !errorOccured;
 		}
 		window->show(false);
-		delete window;
 		renderLogic.join();
+		delete window;
 	}
 
 }

@@ -12,13 +12,14 @@ namespace RE {
 
 		protected:
 			InputMgr inputMgr;
-			const wchar_t* title;
+			const char* title;
 			Vector<REushort, 2> size;
 			bool windowVisible;
 			bool closeFlag;
 			bool valid;
 
-			virtual void showInternal(bool showWindow) = 0;
+			virtual void showInternal() = 0;
+			virtual void updateTitleInternal() = 0;
 
 		public:
 			Window();
@@ -28,6 +29,7 @@ namespace RE {
 			virtual void windowedFullscreen() = 0;
 			virtual void window() = 0;
 			void show(bool showWindow);
+			void setTitle(const char* newTitle);
 			bool shouldClose();
 			bool isValid();
 	};

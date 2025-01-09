@@ -4,6 +4,7 @@
 
 namespace RE {
 
+#ifdef RE_OS_LINUX
 	Window_X11::Window_X11() : xDisplay(XOpenDisplay(nullptr)), xWindow(0), xaClose(0), xaUTF8(0), xaWinName(0), glxContext(nullptr) {
 		if (!xDisplay) {
 			RE_ERROR("Unable to connect to X11 server");
@@ -93,5 +94,6 @@ namespace RE {
 	void Window_X11::window() {
 
 	}
+#endif /* RE_OS_LINUX */
 
 }

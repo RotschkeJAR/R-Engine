@@ -28,9 +28,9 @@ namespace RE {
 		REubyte buttonMask = static_cast<REubyte>(genBitmask(buttoncode));
 		if (!pressed) {
 			buttonMask = ~buttonMask;
-			buttons = buttons & buttonMask;
+			buttons &= buttonMask;
 		} else
-			buttons = buttons | buttonMask;
+			buttons |= buttonMask;
 	}
 
 	void InputMgr::cursorInput(REushort x, REushort y) {
@@ -42,6 +42,7 @@ namespace RE {
 	}
 
 	void InputMgr::updateInput() {
+		println(bitmaskToString(lastButtons, true), " | ", bitmaskToString(buttons, true));
 		lastButtons = buttons;
 	}
 

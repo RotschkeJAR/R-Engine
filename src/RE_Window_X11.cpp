@@ -20,9 +20,8 @@ namespace RE {
 		}
 		XSetWindowAttributes winAttrib;
 		winAttrib.colormap = XCreateColormap(xDisplay, root, visualInfo->visual, AllocNone);
-		winAttrib.event_mask = ExposureMask | KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask;
+		winAttrib.event_mask = ExposureMask | KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ResizeRedirectMask;
 		xWindow = XCreateWindow(xDisplay, root, 0, 0, 800, 600, 0, visualInfo->depth, InputOutput, visualInfo->visual, CWColormap | CWEventMask, &winAttrib);
-		XStoreName(xDisplay, xWindow, "Untitled game window (ASCII)");
 		glxContext = glXCreateContext(xDisplay, visualInfo, nullptr, GL_TRUE);
 		if (!glxContext) {
 			RE_ERROR("No GLX context has been created");
@@ -72,9 +71,35 @@ namespace RE {
 					break;
 				case KeyRelease:
 					break;
-				case ButtonPress:
-					break;
-				case ButtonRelease:
+				case ButtonPress: {
+					XButtonPressedEvent buttonPress = static_cast<XButtonPressedEvent>(event.xbutton);
+					switch (buttonPress.button) {
+						case Button1:
+							inputMgr.buttonInput(RE_LBUTTON, true);
+							break;
+						case Button2:
+							inputMgr.buttonInput(RE_MBUTTON, true);
+							break;
+						case Button3:
+							inputMgr.buttonInput(RE_RBUTTON, true);
+							break;
+					}
+					} break;
+				case ButtonRelease: {
+					XButtonReleasedEvent buttonPress = static_cast<XButtonReleasedEvent>(event.xbutton);
+					switch (buttonPress.button) {
+						case Button1:
+							inputMgr.buttonInput(RE_LBUTTON, false);
+							break;
+						case Button2:
+							inputMgr.buttonInput(RE_MBUTTON, false);
+							break;
+						case Button3:
+							inputMgr.buttonInput(RE_RBUTTON, false);
+							break;
+					}
+					} break;
+				case MotionNotify:
 					break;
 				default:
 					break;

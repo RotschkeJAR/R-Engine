@@ -35,7 +35,7 @@ namespace RE {
 		std::thread renderLogic(renderThread);
 		while (running) {
 			window->update();
-			glClear(GL_COLOR_BUFFER_BIT);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
 			window->show(true);
 			running = !window->shouldClose() && !errorOccured;

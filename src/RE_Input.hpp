@@ -6,7 +6,6 @@
 namespace RE {
 
 #define RE_TOTAL_KEYS 0
-#define RE_TOTAL_BUTTONS 0
 
 #define RE_LBUTTON 0
 #define RE_RBUTTON 1
@@ -17,6 +16,7 @@ namespace RE {
 #define _KEY_ARRAY_LENGTH RE_TOTAL_KEYS / 8 + ((RE_TOTAL_KEYS % 8 != 0) ? 1 : 0)
 			REubyte keys[_KEY_ARRAY_LENGTH], lastKeys[_KEY_ARRAY_LENGTH];
 			REubyte buttons, lastButtons;
+#undef _KEY_ARRAY_LENGTH
 
 		public:
 			InputMgr();

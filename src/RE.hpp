@@ -28,14 +28,7 @@ namespace RE {
 
 #define STRIP_QUOTE(T) T
 
-	inline std::ostream& operator <<(std::ostream& stream, REubyte& var) {
-		stream << static_cast<unsigned>(var);
-		return stream;
-	}
-	inline std::ostream& operator <<(std::ostream& stream, REushort& var) {
-		stream << static_cast<unsigned>(var);
-		return stream;
-	}
+#define PRINT_UNSIGNED(T) static_cast<unsigned>(T)
 
 	enum TerminalColor {
 		Black,
@@ -178,43 +171,54 @@ namespace RE {
 
 	template <typename... T>
 	void print(T... content) {
-		(std::cout << ... << content);
+		([&]() {
+			if constexpr (std::is_same_v<T, REubyte>)
+				std::cout << static_cast<unsigned>(content);
+			else if constexpr (std::is_same_v<T, REbyte>)
+				std::cout << static_cast<signed>(content);
+			else
+				std::cout << content;
+		} (), ...);
 	}
 	template <typename... T>
 	void println(T... content) {
-		(std::cout << ... << content);
-		std::cout << '\n';
+		print(content..., "\n");
 	}
 	void printColored(const char* content, TerminalColor color, bool backgroundColored, bool bold);
 	void printlnColored(const char* content, TerminalColor color, bool backgroundColored, bool bold);
 
 	template <typename T>
-	T nth_root(T n, T value) {
+	constexpr T nth_root(T n, T value) {
 		return std::pow(value, static_cast<T>(1.0) / n);
 	}
 
 	template <typename... T>
-	REulong genBitmask(T... bits) {
+	constexpr REulong genBitmask(T... bits) {
 		return (... | (1L << static_cast<REulong>(bits)));
 	}
 
-	constexpr REulong genBitmaskRange(REubyte begin, REubyte end) {
+	constexpr REulong genBitmaskRange(REulong begin, REulong end) {
 		if (begin > end)
 			std::swap(begin, end);
 		else if (begin == end)
 			return (1L << static_cast<REulong>(begin));
 		REulong result = 0L;
-		for (REubyte i = begin; i < end; i++)
-			result |= 1L << static_cast<REulong>(i);
+		for (REulong i = begin; i < end; i++)
+			result |= 1L << i;
 		return result;
 	}
 
 	template <typename T>
-	std::string bitmaskToString(T bitmask) {
+	constexpr std::string bitmaskToString(T bitmask, bool withSpace) {
 		std::string result("");
-		REulong bits = sizeof(T) * 8L;
-		for (REulong bit = 0L; bit < bits; bit++)
-			result += (((static_cast<REulong>(bitmask) << bit) >> (bits - 1L)) == 1L) ? "1" : "0";
+		T bits = sizeof(T) * static_cast<T>(8);
+		T rightShift = sizeof(T) * static_cast<T>(8) - static_cast<T>(1);
+		for (T bit = static_cast<T>(0); bit < bits; bit++) {
+			if (withSpace && bit % static_cast<T>(8) == static_cast<T>(0) && bit)
+				result += " ";
+			T shiftedNumber = bitmask << bit;
+			result += ((shiftedNumber >> rightShift) == static_cast<T>(1)) ? "1" : "0";
+		}
 		return result;
 	}
 

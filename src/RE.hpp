@@ -49,7 +49,7 @@ namespace RE {
 		Bright_White
 	};
 
-	enum Key {
+	enum Keyboard {
 		Space,
 		A,
 		B,
@@ -169,6 +169,12 @@ namespace RE {
 		Numpad_Period
 	};
 
+	enum MouseButton {
+		Left,
+		Right,
+		Middle
+	};
+
 	template <typename... T>
 	void print(T... content) {
 		([&]() {
@@ -223,17 +229,10 @@ namespace RE {
 	}
 
 	template <typename... T>
-	std::string appendStringsA(T... args) {
+	std::string appendStrings(T... strings) {
 		std::stringstream ss("");
-		(ss << ... << args);
-		return ss.str();
-	}
-
-	template <typename... T>
-	std::wstring appendStringsW(T... args) {
-		std::wstringstream wss(L"");
-		(wss << ... << args);
-		return wss.str();
+		(ss << ... << strings);
+		return std::string(ss.str());
 	}
 	
 	void error(const char* file, const char* func, REuint line, const char* detail, bool terminate);
@@ -250,7 +249,7 @@ namespace RE {
 			T coords[dimensions];
 
 			Vector() {
-				std::fill(std::begin(coords), std::begin(coords) + dimensions, 0);
+				fill(static_cast<T>(0.0));
 			}
 			~Vector() {}
 
@@ -272,13 +271,17 @@ namespace RE {
 				return nth_root<T>(static_cast<T>(dimensions), sum());
 			}
 
-			constexpr REuint getDimension() {
+			void fill(T value) {
+				std::fill(std::begin(coords), std::begin(coords) + dimensions, value);
+			}
+
+			constexpr REuint getDimensions() {
 				return dimensions;
 			}
 
 			T& operator[](REuint index) {
 				if (index >= dimensions) {
-					FATAL_ERROR(appendStringsA("Index ", index, " is out of bounds: [0, ", dimensions, "]").c_str());
+					FATAL_ERROR(appendStrings("Index ", index, " is out of bounds: [0, ", dimensions, "]").c_str());
 					return coords[0];
 				}
 				return coords[index];

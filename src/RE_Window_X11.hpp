@@ -13,6 +13,8 @@ namespace RE {
 			XAtom xaClose;
 			XAtom xaUTF8, xaWinName;
 			GLXContext glxContext;
+			XInputMethod xInputMethod;
+			XInputContext xInputContext;
 
 		protected:
 			void showInternal();

@@ -15,7 +15,7 @@ namespace RE {
 			inputMgr = nullptr;
 	}
 
-	void InputMgr::keyInput(Key key, REushort scancode, bool pressed) {
+	void InputMgr::keyInput(Keyboard key, REushort scancode, bool pressed) {
 		if (pressed)
 			println(key);
 	}
@@ -38,15 +38,15 @@ namespace RE {
 	}
 
 	void InputMgr::scrollInput(float y) {
-		
+		scroll += y;
 	}
 
 	void InputMgr::updateInput() {
-		println(bitmaskToString(lastButtons, true), " | ", bitmaskToString(buttons, true));
 		lastButtons = buttons;
+		scroll = 0.0f;
 	}
 
-	REushort scancodeFromKey(Key key) {
+	REushort scancodeFromKey(Keyboard key) {
 #ifdef RE_OS_WINDOWS
 		return MapVirtualKeyW(winVirtualFromKey(key), MAPVK_VK_TO_VSC_EX);
 #elif defined RE_OS_LINUX
@@ -56,13 +56,13 @@ namespace RE {
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 	}
 
-	Key keyFromScancode(REushort scancode) {
+	Keyboard keyFromScancode(REushort scancode) {
 #ifdef RE_OS_WINDOWS
 		return winKeyFromVirtual(MapVirtualKeyW(scancode, MAPVK_VSC_TO_VK_EX));
 #elif defined RE_OS_LINUX
-		return Key::Space;
+		return Keyboard::Space;
 #else
-		return Key::Space;
+		return Keyboard::Space;
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 	}
 

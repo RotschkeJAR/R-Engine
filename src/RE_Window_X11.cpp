@@ -10,7 +10,8 @@ namespace RE {
 			RE_ERROR("Unable to connect to X11 server");
 			return;
 		}
-		REint glxAttribs[] = {GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None};
+		XAutoRepeatOn(xDisplay);
+		REint glxAttribs[] = {GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, XNone};
 		REint defaultScreen = DefaultScreen(xDisplay);
 		XWindow root = RootWindow(xDisplay, defaultScreen);
 		XVisualInfo* visualInfo = glXChooseVisual(xDisplay, defaultScreen, glxAttribs);
@@ -22,29 +23,48 @@ namespace RE {
 		winAttrib.colormap = XCreateColormap(xDisplay, root, visualInfo->visual, AllocNone);
 		winAttrib.event_mask = ExposureMask | KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ResizeRedirectMask;
 		xWindow = XCreateWindow(xDisplay, root, 0, 0, 800, 600, 0, visualInfo->depth, InputOutput, visualInfo->visual, CWColormap | CWEventMask, &winAttrib);
+		xaClose = XInternAtom(xDisplay, "WM_DELETE_WINDOW", False);
+		XSetWMProtocols(xDisplay, xWindow, &xaClose, 1);
+		XSetLocaleModifiers("");
+		xaUTF8 = XInternAtom(xDisplay, "UTF8_STRING", False);
+		xaWinName = XInternAtom(xDisplay, "_NET_WM_NAME", False);
+		xInputMethod = XOpenIM(xDisplay, nullptr, nullptr, nullptr);
+		if (!xInputMethod) {
+			RE_ERROR("Failed creating X11 input method");
+			return;
+		}
+		xInputContext = XCreateIC(xInputMethod, XNInputStyle, XIMPreeditNothing | XIMStatusNothing, XNClientWindow, xWindow, nullptr);
+		if (!xInputContext) {
+			RE_ERROR("Failed creating X11 input context");
+			return;
+		}
+		updateTitleInternal();
 		glxContext = glXCreateContext(xDisplay, visualInfo, nullptr, GL_TRUE);
 		if (!glxContext) {
 			RE_ERROR("No GLX context has been created");
 			return;
 		}
-		xaClose = XInternAtom(xDisplay, "WM_DELETE_WINDOW", False);
-		XSetWMProtocols(xDisplay, xWindow, &xaClose, 1);
-		xaUTF8 = XInternAtom(xDisplay, "UTF8_STRING", False);
-		xaWinName = XInternAtom(xDisplay, "_NET_WM_NAME", False);
-		updateTitleInternal();
 		glXMakeCurrent(xDisplay, xWindow, glxContext);
 		valid = true;
 	}
 
 	Window_X11::~Window_X11() {
-		if (xDisplay) {
-			glXMakeCurrent(xDisplay, None, nullptr);
-			if (glxContext)
-				glXDestroyContext(xDisplay, glxContext);
-			if (xWindow)
-				XDestroyWindow(xDisplay, xWindow);
-			XCloseDisplay(xDisplay);
+		if (!xDisplay)
+			return;
+		if (xWindow) {
+			XDestroyWindow(xDisplay, xWindow);
+			if (xInputContext) {
+				XDestroyIC(xInputContext);
+				if (xInputMethod) {
+					XCloseIM(xInputMethod);
+					if (glxContext) {
+						glXMakeCurrent(xDisplay, XNone, nullptr);
+						glXDestroyContext(xDisplay, glxContext);
+					}
+				}
+			}
 		}
+		XCloseDisplay(xDisplay);
 	}
 
 	void Window_X11::showInternal() {
@@ -63,43 +83,53 @@ namespace RE {
 			XEvent event;
 			XNextEvent(xDisplay, &event);
 			switch (event.type) {
-				case ClientMessage:
+				case XClientMessage:
 					if (static_cast<XAtom>(event.xclient.data.l[0]) == xaClose)
 						closeFlag = true;
 					break;
-				case KeyPress:
-					break;
-				case KeyRelease:
-					break;
-				case ButtonPress: {
-					XButtonPressedEvent buttonPress = static_cast<XButtonPressedEvent>(event.xbutton);
-					switch (buttonPress.button) {
-						case Button1:
-							inputMgr.buttonInput(RE_LBUTTON, true);
+				case XKeyPress:
+				case XKeyRelease: {
+					XKeyEvent keyEvent = event.xkey;
+					bool keyPressed = !static_cast<bool>(keyEvent.type - 2);
+					if (!keyPressed)
+						break;
+					XKeyCode scancode = keyEvent.keycode;
+					char string[5];
+					std::fill(std::begin(string), std::end(string), '\0');
+					XKeySym meaning;
+					XStatus status;
+					REubyte len = Xutf8LookupString(xInputContext, &keyEvent, string, sizeof(string) - 1, &meaning, &status);
+					if (len) {
+						string[len] = '\0';
+						println("Key pressed (", len, "; ", bitmaskToString<REubyte>(static_cast<REubyte>(string[0]), false), ", ", bitmaskToString<REubyte>(static_cast<REubyte>(string[1]), false), ", ", bitmaskToString<REubyte>(static_cast<REubyte>(string[2]), false), ", ", bitmaskToString<REubyte>(static_cast<REubyte>(string[3]), false), ", ", bitmaskToString<REubyte>(static_cast<REubyte>(string[4]), false), "): ", string);
+					} else
+						println("Key pressed (symbolic): ", XKeysymToString(meaning));
+					} break;
+				case XButtonPress:
+				case XButtonRelease: {
+					XButtonEvent buttonEvent = event.xbutton;
+					bool buttonPressed = !static_cast<bool>(buttonEvent.type - 4);
+					switch (buttonEvent.button) {
+						case Button1: /* left click */
+							inputMgr.buttonInput(RE_LBUTTON, buttonPressed);
 							break;
-						case Button2:
-							inputMgr.buttonInput(RE_MBUTTON, true);
+						case Button2: /* middle click */
+							inputMgr.buttonInput(RE_MBUTTON, buttonPressed);
 							break;
-						case Button3:
-							inputMgr.buttonInput(RE_RBUTTON, true);
+						case Button3: /* right click */
+							inputMgr.buttonInput(RE_RBUTTON, buttonPressed);
+							break;
+						case Button4: /* up scroll */
+							inputMgr.scrollInput(0.5f);
+							break;
+						case Button5: /* down scroll */
+							inputMgr.scrollInput(0.5f);
+							break;
+						default:
 							break;
 					}
 					} break;
-				case ButtonRelease: {
-					XButtonReleasedEvent buttonPress = static_cast<XButtonReleasedEvent>(event.xbutton);
-					switch (buttonPress.button) {
-						case Button1:
-							inputMgr.buttonInput(RE_LBUTTON, false);
-							break;
-						case Button2:
-							inputMgr.buttonInput(RE_MBUTTON, false);
-							break;
-						case Button3:
-							inputMgr.buttonInput(RE_RBUTTON, false);
-							break;
-					}
-					} break;
-				case MotionNotify:
+				case XMotionNotify: /* mouse moved */
 					break;
 				default:
 					break;

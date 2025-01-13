@@ -18,13 +18,15 @@ namespace RE {
 	}
 
 	void Window::show(bool showWindow) {
-		if (windowVisible == showWindow)
+		if (windowVisible == showWindow || !valid)
 			return;
 		windowVisible = showWindow;
 		showInternal();
 	}
 
 	void Window::setTitle(const char* newTitle) {
+		if (title == newTitle || !valid)
+			return;
 		title = newTitle;
 		updateTitleInternal();
 	}

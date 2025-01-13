@@ -13,10 +13,25 @@
 #elif defined RE_OS_LINUX
 # include <X11/Xlib.h>
 # include <X11/Xatom.h>
+# include <X11/Xlocale.h>
+# include <X11/keysym.h>
 # include <GL/glx.h>
  typedef Display XDisplay;
  typedef Window XWindow;
  typedef Atom XAtom;
+ typedef XIM XInputMethod;
+ typedef XIC XInputContext;
+ typedef KeyCode XKeyCode;
+ typedef KeySym XKeySym;
+ typedef Status XStatus;
+# define XKeyPress KeyPress
+# define XKeyRelease KeyRelease
+# define XButtonPress ButtonPress
+# define XButtonRelease ButtonRelease
+# define XMotionNotify MotionNotify
+# define XClientMessage ClientMessage
+# define XNone None
+# define XNoSymbol NoSymbol
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 
 namespace RE {

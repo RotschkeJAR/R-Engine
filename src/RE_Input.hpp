@@ -7,21 +7,22 @@ namespace RE {
 
 #define RE_TOTAL_KEYS 0
 
-#define RE_LBUTTON 0
-#define RE_RBUTTON 1
-#define RE_MBUTTON 2
+#define RE_LBUTTON static_cast<REuint>(MouseButton::Left)
+#define RE_RBUTTON static_cast<REuint>(MouseButton::Right)
+#define RE_MBUTTON static_cast<REuint>(MouseButton::Middle)
 	
 	class InputMgr {
 		private:
 #define _KEY_ARRAY_LENGTH RE_TOTAL_KEYS / 8 + ((RE_TOTAL_KEYS % 8 != 0) ? 1 : 0)
-			REubyte keys[_KEY_ARRAY_LENGTH], lastKeys[_KEY_ARRAY_LENGTH];
+			REubyte keys[_KEY_ARRAY_LENGTH], lastKeyboards[_KEY_ARRAY_LENGTH];
 			REubyte buttons, lastButtons;
 #undef _KEY_ARRAY_LENGTH
+			float scroll;
 
 		public:
 			InputMgr();
 			~InputMgr();
-			void keyInput(Key key, REushort scancode, bool pressed);
+			void keyInput(Keyboard key, REushort scancode, bool pressed);
 			void charInput(wchar_t character);
 			void buttonInput(REubyte buttoncode, bool pressed);
 			void cursorInput(REushort x, REushort y);
@@ -34,222 +35,221 @@ namespace RE {
 # define VK_Z 0x5A
 # define VK_0 0x30
 # define VK_9 0x39
-	constexpr REushort winVirtualFromKey(Key key) {
+	constexpr REushort winVirtualFromKey(Keyboard key) {
 		switch (key) {
-			case Key::Space:
+			case Keyboard::Space:
 				return VK_SPACE;
-			case Key::Backspace:
+			case Keyboard::Backspace:
 				return VK_BACK;
-			case Key::Tab:
+			case Keyboard::Tab:
 				return VK_TAB;
-			case Key::Enter:
+			case Keyboard::Enter:
 				return VK_RETURN;
-			case Key::Pause:
+			case Keyboard::Pause:
 				return VK_PAUSE;
-			case Key::Caps_Lock:
+			case Keyboard::Caps_Lock:
 				return VK_CAPITAL;
-			case Key::Escape:
+			case Keyboard::Escape:
 				return VK_ESCAPE;
-			case Key::Page_Up:
+			case Keyboard::Page_Up:
 				return VK_PRIOR;
-			case Key::Page_Down:
+			case Keyboard::Page_Down:
 				return VK_NEXT;
-			case Key::End:
+			case Keyboard::End:
 				return VK_END;
-			case Key::Home:
+			case Keyboard::Home:
 				return VK_HOME;
-			case Key::Arrow_Left:
+			case Keyboard::Arrow_Left:
 				return VK_LEFT;
-			case Key::Arrow_Right:
+			case Keyboard::Arrow_Right:
 				return VK_RIGHT;
-			case Key::Arrow_Up:
+			case Keyboard::Arrow_Up:
 				return VK_UP;
-			case Key::Arrow_Down:
+			case Keyboard::Arrow_Down:
 				return VK_DOWN;
-			case Key::Print_Screen:
+			case Keyboard::Print_Screen:
 				return VK_SNAPSHOT;
-			case Key::Insert:
+			case Keyboard::Insert:
 				return VK_INSERT;
-			case Key::Delete:
+			case Keyboard::Delete:
 				return VK_DELETE;
-			case Key::Left_Menu:
+			case Keyboard::Left_Menu:
 				return VK_LMENU;
-			case Key::Right_Menu:
+			case Keyboard::Right_Menu:
 				return VK_RMENU;
-			case Key::Numpad_Multiply:
+			case Keyboard::Numpad_Multiply:
 				return VK_MULTIPLY;
-			case Key::Numpad_Add:
+			case Keyboard::Numpad_Add:
 				return VK_ADD;
-			case Key::Numpad_Subtract:
+			case Keyboard::Numpad_Subtract:
 				return VK_SUBTRACT;
-			case Key::Numpad_Divide:
+			case Keyboard::Numpad_Divide:
 				return VK_DIVIDE;
-			case Key::Numpad_Lock:
+			case Keyboard::Numpad_Lock:
 				return VK_NUMLOCK;
-			case Key::Scroll_Lock:
+			case Keyboard::Scroll_Lock:
 				return VK_SCROLL;
-			case Key::Right_Shift:
+			case Keyboard::Right_Shift:
 				return VK_RSHIFT;
-			case Key::Left_Shift:
+			case Keyboard::Left_Shift:
 				return VK_LSHIFT;
-			case Key::Right_Ctrl:
+			case Keyboard::Right_Ctrl:
 				return VK_RCONTROL;
-			case Key::Left_Ctrl:
+			case Keyboard::Left_Ctrl:
 				return VK_LCONTROL;
-			case Key::Right_Alt:
+			case Keyboard::Right_Alt:
 				return VK_RMENU;
-			case Key::Left_Alt:
+			case Keyboard::Left_Alt:
 				return VK_LMENU;
-			case Key::Semicolon:
+			case Keyboard::Semicolon:
 				return VK_OEM_1;
-			case Key::Slash:
+			case Keyboard::Slash:
 				return VK_OEM_2;
-			case Key::Left_Bracket:
+			case Keyboard::Left_Bracket:
 				return VK_OEM_4;
-			case Key::Right_Bracket:
+			case Keyboard::Right_Bracket:
 				return VK_OEM_6;
-			case Key::Backslash:
+			case Keyboard::Backslash:
 				return VK_OEM_5;
-			case Key::Apostrophe:
+			case Keyboard::Apostrophe:
 				return VK_OEM_7;
-			case Key::Accent:
+			case Keyboard::Accent:
 				return VK_OEM_3;
-			case Key::Comma:
+			case Keyboard::Comma:
 				return VK_OEM_COMMA;
-			case Key::Period:
+			case Keyboard::Period:
 				return VK_OEM_PERIOD;
-			case Key::Hashtag:
+			case Keyboard::Hashtag:
 				return 0;
-			case Key::Equals:
+			case Keyboard::Equals:
 				return VK_OEM_PLUS;
-			case Key::Minus:
+			case Keyboard::Minus:
 				return VK_OEM_MINUS;
-			case Key::Numpad_Enter:
+			case Keyboard::Numpad_Enter:
 				return VK_RETURN;
-			case Key::Numpad_Period:
+			case Keyboard::Numpad_Period:
 				return VK_DECIMAL;
 			default:
 				REushort keyId = static_cast<REushort>(key);
-				if (keyId >= static_cast<REushort>(Key::A) && keyId <= static_cast<REushort>(Key::Z))
-					return VK_A + (keyId - static_cast<REushort>(Key::A));
-				if (keyId >= static_cast<REushort>(Key::Top_0) && keyId <= static_cast<REushort>(Key::Top_9))
-					return VK_0 + (keyId - static_cast<REushort>(Key::Top_0));
-				if (keyId >= static_cast<REushort>(Key::F1) && keyId <= static_cast<REushort>(Key::F25))
-					return VK_F1 + (keyId - static_cast<REushort>(Key::F1));
-				if (keyId >= static_cast<REushort>(Key::Numpad_0) && keyId <= static_cast<REushort>(Key::Numpad_9))
-					return VK_NUMPAD0 + (keyId - static_cast<REushort>(Key::Numpad_0));
+				if (keyId >= static_cast<REushort>(Keyboard::A) && keyId <= static_cast<REushort>(Keyboard::Z))
+					return VK_A + (keyId - static_cast<REushort>(Keyboard::A));
+				if (keyId >= static_cast<REushort>(Keyboard::Top_0) && keyId <= static_cast<REushort>(Keyboard::Top_9))
+					return VK_0 + (keyId - static_cast<REushort>(Keyboard::Top_0));
+				if (keyId >= static_cast<REushort>(Keyboard::F1) && keyId <= static_cast<REushort>(Keyboard::F25))
+					return VK_F1 + (keyId - static_cast<REushort>(Keyboard::F1));
+				if (keyId >= static_cast<REushort>(Keyboard::Numpad_0) && keyId <= static_cast<REushort>(Keyboard::Numpad_9))
+					return VK_NUMPAD0 + (keyId - static_cast<REushort>(Keyboard::Numpad_0));
 				break;
 		}
 		return 0;
 	}
 
-	constexpr Key winKeyFromVirtual(REushort vkCode) {
+	/* doesn't return Keyboard::Hashtag */
+	constexpr Keyboard winKeyFromVirtual(REushort vkCode) {
 		switch (vkCode) {
 			case VK_SPACE:
-				return Key::Space;
+				return Keyboard::Space;
 			case VK_RETURN:
-				return Key::Enter;
+				return Keyboard::Enter;
 			case VK_BACK:
-				return Key::Backspace;
+				return Keyboard::Backspace;
 			case VK_TAB:
-				return Key::Tab;
+				return Keyboard::Tab;
 			case VK_PAUSE:
-				return Key::Pause;
+				return Keyboard::Pause;
 			case VK_HOME:
-				return Key::Home;
+				return Keyboard::Home;
 			case VK_DELETE:
-				return Key::Delete;
+				return Keyboard::Delete;
 			case VK_INSERT:
-				return Key::Insert;
+				return Keyboard::Insert;
 			case VK_CAPITAL:
-				return Key::Caps_Lock;
+				return Keyboard::Caps_Lock;
 			case VK_ESCAPE:
-				return Key::Escape;
+				return Keyboard::Escape;
 			case VK_PRIOR:
-				return Key::Page_Up;
+				return Keyboard::Page_Up;
 			case VK_NEXT:
-				return Key::Page_Down;
+				return Keyboard::Page_Down;
 			case VK_END:
-				return Key::End;
+				return Keyboard::End;
 			case VK_LEFT:
-				return Key::Arrow_Left;
+				return Keyboard::Arrow_Left;
 			case VK_RIGHT:
-				return Key::Arrow_Right;
+				return Keyboard::Arrow_Right;
 			case VK_UP:
-				return Key::Arrow_Up;
+				return Keyboard::Arrow_Up;
 			case VK_DOWN:
-				return Key::Arrow_Down;
+				return Keyboard::Arrow_Down;
 			case VK_SNAPSHOT:
-				return Key::Print_Screen;
+				return Keyboard::Print_Screen;
 			case VK_MULTIPLY:
-				return Key::Numpad_Multiply;
+				return Keyboard::Numpad_Multiply;
 			case VK_ADD:
-				return Key::Numpad_Add;
+				return Keyboard::Numpad_Add;
 			case VK_SUBTRACT:
-				return Key::Numpad_Subtract;
+				return Keyboard::Numpad_Subtract;
 			case VK_DIVIDE:
-				return Key::Numpad_Divide;
+				return Keyboard::Numpad_Divide;
 			case VK_NUMLOCK:
-				return Key::Numpad_Lock;
+				return Keyboard::Numpad_Lock;
 			case VK_SCROLL:
-				return Key::Scroll_Lock;
+				return Keyboard::Scroll_Lock;
 			case VK_LSHIFT:
-				return Key::Left_Shift;
+				return Keyboard::Left_Shift;
 			case VK_RSHIFT:
-				return Key::Right_Shift;
+				return Keyboard::Right_Shift;
 			case VK_LCONTROL:
-				return Key::Left_Ctrl;
+				return Keyboard::Left_Ctrl;
 			case VK_RCONTROL:
-				return Key::Right_Ctrl;
+				return Keyboard::Right_Ctrl;
 			case VK_LMENU:
-				return Key::Left_Alt;
+				return Keyboard::Left_Alt;
 			case VK_RMENU:
-				return Key::Right_Alt;
+				return Keyboard::Right_Alt;
 			case VK_OEM_1:
-				return Key::Semicolon;
+				return Keyboard::Semicolon;
 			case VK_OEM_2:
-				return Key::Slash;
+				return Keyboard::Slash;
 			case VK_OEM_3:
-				return Key::Accent;
+				return Keyboard::Accent;
 			case VK_OEM_4:
-				return Key::Left_Bracket;
+				return Keyboard::Left_Bracket;
 			case VK_OEM_5:
-				return Key::Backslash;
+				return Keyboard::Backslash;
 			case VK_OEM_6:
-				return Key::Right_Bracket;
+				return Keyboard::Right_Bracket;
 			case VK_OEM_7:
-				return Key::Apostrophe;
+				return Keyboard::Apostrophe;
 			case VK_OEM_COMMA:
-				return Key::Comma;
+				return Keyboard::Comma;
 			case VK_OEM_PERIOD:
-				return Key::Period;
-			case 0:
-				return Key::Hashtag;
+				return Keyboard::Period;
 			case VK_OEM_PLUS:
-				return Key::Equals;
+				return Keyboard::Equals;
 			case VK_OEM_MINUS:
-				return Key::Minus;
+				return Keyboard::Minus;
 			case VK_SEPARATOR:
 			case VK_DECIMAL:
-				return Key::Numpad_Period;
+				return Keyboard::Numpad_Period;
 			default:
 				if (vkCode >= VK_A && vkCode <= VK_Z)
-					return static_cast<Key>(vkCode - VK_A + static_cast<REushort>(Key::A));
+					return static_cast<Keyboard>(vkCode - VK_A + static_cast<REushort>(Keyboard::A));
 				if (vkCode >= VK_0 && vkCode <= VK_9)
-					return static_cast<Key>(vkCode - VK_0 + static_cast<REushort>(Key::Top_0));
+					return static_cast<Keyboard>(vkCode - VK_0 + static_cast<REushort>(Keyboard::Top_0));
 				if (vkCode >= VK_F1 && vkCode <= VK_F24)
-					return static_cast<Key>(vkCode - VK_F1 + static_cast<REushort>(Key::F1));
+					return static_cast<Keyboard>(vkCode - VK_F1 + static_cast<REushort>(Keyboard::F1));
 				if (vkCode >= VK_NUMPAD0 && vkCode <= VK_NUMPAD9)
-					return static_cast<Key>(vkCode - VK_NUMPAD0 + static_cast<REushort>(Key::Numpad_0));
+					return static_cast<Keyboard>(vkCode - VK_NUMPAD0 + static_cast<REushort>(Keyboard::Numpad_0));
 				break;
 		}
-		return Key::Space;
+		return Keyboard::Space;
 	}
 #elif defined RE_OS_LINUX
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 
-	REushort scancodeFromKey(Key key);
-	Key keyFromScancode(REushort scancode);
+	REushort scancodeFromKey(Keyboard key);
+	Keyboard keyFromScancode(REushort scancode);
 
 }
 

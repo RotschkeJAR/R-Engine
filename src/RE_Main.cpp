@@ -18,6 +18,7 @@ namespace RE {
 	}
 	
 	void execute() {
+		std::setlocale(LC_ALL, "");
 #ifdef RE_OS_WINDOWS
 		window = new Window_Win64();
 #elif defined RE_OS_LINUX

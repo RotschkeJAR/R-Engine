@@ -5,7 +5,7 @@
 
 namespace RE {
 
-#define RE_TOTAL_KEYS 0
+#define RE_TOTAL_KEYS static_cast<REushort>(Keyboard::Numpad_Period)
 
 #define RE_LBUTTON static_cast<REuint>(MouseButton::Left)
 #define RE_RBUTTON static_cast<REuint>(MouseButton::Right)
@@ -14,10 +14,10 @@ namespace RE {
 	class InputMgr {
 		private:
 #define _KEY_ARRAY_LENGTH RE_TOTAL_KEYS / 8 + ((RE_TOTAL_KEYS % 8 != 0) ? 1 : 0)
-			REubyte keys[_KEY_ARRAY_LENGTH], lastKeyboards[_KEY_ARRAY_LENGTH];
-			REubyte buttons, lastButtons;
+			REubyte keys[_KEY_ARRAY_LENGTH], lastKeys[_KEY_ARRAY_LENGTH];
 #undef _KEY_ARRAY_LENGTH
-			float scroll;
+			REubyte buttons, lastButtons;
+			REbyte scroll;
 
 		public:
 			InputMgr();
@@ -26,8 +26,14 @@ namespace RE {
 			void charInput(wchar_t character);
 			void buttonInput(REubyte buttoncode, bool pressed);
 			void cursorInput(REushort x, REushort y);
-			void scrollInput(float y);
+			void scrollInput(REbyte y);
 			void updateInput();
+
+			bool isKeyDown(Keyboard key);
+			bool wasKeyDown(Keyboard key);
+			REubyte getScroll();
+			bool isButtonDown(MouseButton button);
+			bool wasButtonDown(MouseButton button);
 	};
 
 #ifdef RE_OS_WINDOWS
@@ -250,6 +256,19 @@ namespace RE {
 
 	REushort scancodeFromKey(Keyboard key);
 	Keyboard keyFromScancode(REushort scancode);
+
+	bool isKeyDown(Keyboard key);
+	bool isKeyPressed(Keyboard key);
+	bool isKeyReleased(Keyboard key);
+
+	bool isButtonDown(MouseButton button);
+	bool isButtonPressed(MouseButton button);
+	bool isButtonReleased(MouseButton button);
+
+	bool isScrolling();
+	bool isScrollingUpward();
+	bool isScrollingDownward();
+	REbyte scrollDirection();
 
 }
 

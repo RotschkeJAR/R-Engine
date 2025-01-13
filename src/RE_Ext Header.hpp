@@ -5,6 +5,7 @@
 #include "RE_Console.hpp"
 
 #include <GL/gl.h>
+#include <algorithm>
 
 #ifdef RE_OS_WINDOWS
 # define UNICODE

@@ -11,6 +11,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <cstring>
 #include <string>
 #include <cmath>
 #include <cstdint>
@@ -27,8 +28,6 @@ typedef uint64_t REulong;
 namespace RE {
 
 #define STRIP_QUOTE(T) T
-
-#define PRINT_UNSIGNED(T) static_cast<unsigned>(T)
 
 	enum TerminalColor {
 		Black,
@@ -193,6 +192,9 @@ namespace RE {
 	void printColored(const char* content, TerminalColor color, bool backgroundColored, bool bold);
 	void printlnColored(const char* content, TerminalColor color, bool backgroundColored, bool bold);
 
+	std::string convertToUTF8(const wchar_t* wstring);
+	std::wstring convertToWide(const char* string);
+
 	template <typename T>
 	constexpr T nth_root(T n, T value) {
 		return std::pow(value, static_cast<T>(1.0) / n);
@@ -207,10 +209,10 @@ namespace RE {
 		if (begin > end)
 			std::swap(begin, end);
 		else if (begin == end)
-			return (1L << static_cast<REulong>(begin));
+			return genBitmask(begin);
 		REulong result = 0L;
 		for (REulong i = begin; i < end; i++)
-			result |= 1L << i;
+			result |= genBitmask(i);
 		return result;
 	}
 
@@ -272,7 +274,7 @@ namespace RE {
 			}
 
 			void fill(T value) {
-				std::fill(std::begin(coords), std::begin(coords) + dimensions, value);
+				std::fill(std::begin(coords), std::end(coords), value);
 			}
 
 			constexpr REuint getDimensions() {
@@ -289,6 +291,17 @@ namespace RE {
 	};
 
 	void execute();
+
+	bool isKeyDown(Keyboard key);
+	bool isKeyPressed(Keyboard key);
+	bool isKeyReleased(Keyboard key);
+	bool isButtonDown(MouseButton button);
+	bool isButtonPressed(MouseButton button);
+	bool isButtonReleased(MouseButton button);
+	bool isScrolling();
+	bool isScrollingUpward();
+	bool isScrollingDownward();
+	REbyte scrollDirection();
 
 }
 

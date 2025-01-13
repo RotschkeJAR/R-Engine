@@ -2,6 +2,8 @@
 #include "RE_Window_Win64.hpp"
 #include "RE_Window_X11.hpp"
 
+#include "RE_Input.hpp"
+
 #include <chrono>
 #include <thread>
 

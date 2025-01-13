@@ -84,24 +84,13 @@ namespace RE {
 					}
 					break;
 				case WM_MOUSEWHEEL: /* mouse wheel used/scrolled */
+					win64->inputMgr.scrollInput(static_cast<REubyte>(GET_WHEEL_DELTA_WPARAM(wParam)));
 					return 0;
 				default:
 					break;
 			}
 		}
 		return DefWindowProcW(hWnd, uMsg, wParam, lParam);
-	}
-
-	std::wstring convertU8toW(const char* input) {
-		if (!input)
-			return L"";
-		REint sizeNeeded = MultiByteToWideChar(CP_UTF8, 0, input, -1, nullptr, 0);
-		if (sizeNeeded <= 0)
-			return L"";
-		std::wstring result(sizeNeeded, 0);
-		MultiByteToWideChar(CP_UTF8, 0, input, -1, &result[0], sizeNeeded);
-		result.resize(sizeNeeded - 1);
-		return result;
 	}
 	
 	Window_Win64::Window_Win64() : hInstance(GetModuleHandle(nullptr)), hWindow(nullptr), msg({ }), hCursor(LoadCursor(nullptr, IDC_ARROW)), hDevice(nullptr), hRenderContext(nullptr) {
@@ -110,7 +99,7 @@ namespace RE {
 			RE_ERROR("Failed getting the HINSTANCE for window creation");
 			return;
 		}
-		const std::wstring wTitleStr = convertU8toW(title);
+		const std::wstring wTitleStr = convertToWide(title);
 		WNDCLASSEXW wc = {};
 		wc.cbSize = sizeof(WNDCLASSEXW);
 		wc.lpfnWndProc = windowProcess;
@@ -195,7 +184,7 @@ namespace RE {
 	}
 
 	void Window_Win64::updateTitleInternal() {
-		SetWindowTextW(hWindow, convertU8toW(title).c_str());
+		SetWindowTextW(hWindow, convertToWide(title).c_str());
 	}
 
 	void Window_Win64::processLoop() {

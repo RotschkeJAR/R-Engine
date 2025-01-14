@@ -100,12 +100,10 @@ namespace RE {
 		Minus, /* - */
 		Right_Ctrl,
 		Left_Ctrl,
-		Right_Alt, /* ALT-Gr */
+		Right_Alt, /* AltGr */
 		Left_Alt,
 		Right_Shift,
 		Left_Shift,
-		Right_Menu,
-		Left_Menu,
 		Tab,
 		Enter,
 		Escape,

@@ -91,19 +91,16 @@ namespace RE {
 				case XKeyRelease: {
 					XKeyEvent keyEvent = event.xkey;
 					bool keyPressed = !static_cast<bool>(keyEvent.type - 2);
-					if (!keyPressed)
-						break;
 					XKeyCode scancode = keyEvent.keycode;
 					char string[5];
 					std::fill(std::begin(string), std::end(string), '\0');
-					XKeySym meaning;
-					XStatus status;
-					REubyte len = Xutf8LookupString(xInputContext, &keyEvent, string, sizeof(string) - 1, &meaning, &status);
-					if (len) {
+					XKeySym meaning = XLookupKeysym(&keyEvent, 0);
+					REubyte len = Xutf8LookupString(xInputContext, &keyEvent, string, sizeof(string) - 1, &meaning, nullptr);
+					if (keyPressed && len) {
 						string[len] = '\0';
-						println("Key pressed (", len, "; ", bitmaskToString<REubyte>(static_cast<REubyte>(string[0]), false), ", ", bitmaskToString<REubyte>(static_cast<REubyte>(string[1]), false), ", ", bitmaskToString<REubyte>(static_cast<REubyte>(string[2]), false), ", ", bitmaskToString<REubyte>(static_cast<REubyte>(string[3]), false), ", ", bitmaskToString<REubyte>(static_cast<REubyte>(string[4]), false), "): ", string);
-					} else
-						println("Key pressed (symbolic): ", XKeysymToString(meaning));
+						inputMgr.charInput(string);
+					}
+					inputMgr.keyInput(x11KeyFromVirtual(meaning), static_cast<REshort>(scancode), keyPressed);
 					} break;
 				case XButtonPress:
 				case XButtonRelease: {

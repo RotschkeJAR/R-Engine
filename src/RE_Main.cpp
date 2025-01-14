@@ -38,6 +38,8 @@ namespace RE {
 		std::thread renderLogic(renderThread);
 		while (running) {
 			window->update();
+			/* if (isKeyPressed(Keyboard::Space))
+				println("SPACE"); */
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
 			window->show(true);

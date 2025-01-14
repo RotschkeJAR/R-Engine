@@ -47,7 +47,7 @@ namespace RE {
 					win64->inputMgr.keyInput(winKeyFromVirtual(vkCode), scanCode, !static_cast<bool>(keyReleased));
 					} return 0;
 				case WM_CHAR:
-					win64->inputMgr.charInput(static_cast<wchar_t>(wParam));
+					win64->inputMgr.charInput(convertToUTF8(static_cast<wchar_t>(wParam)));
 					return 0;
 				case WM_LBUTTONDOWN: /* left mouse button pressed */
 					win64->inputMgr.buttonInput(RE_LBUTTON, true);

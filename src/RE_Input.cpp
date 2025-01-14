@@ -15,18 +15,19 @@ namespace RE {
 			inputMgr = nullptr;
 	}
 
-	void InputMgr::keyInput(Keyboard key, REushort scancode, bool pressed) {
+	void InputMgr::keyInput(Keyboard key, REint scancode, bool pressed) {
 		REushort keyIndex = static_cast<REushort>(key);
-		REushort keyBitmask = static_cast<REushort>(1) << (keyIndex - (keyIndex / 8));
+		REushort keyBitmask = static_cast<REushort>(1) << (keyIndex - ((keyIndex / 8) * 8));
 		keyIndex /= 8;
+		println(keyIndex, ": ", bitmaskToString(keyBitmask, false));
 		if (pressed)
 			keys[keyIndex] |= keyBitmask;
 		else
 			keys[keyIndex] &= ~keyBitmask;
 	}
 
-	void InputMgr::charInput(wchar_t character) {
-		wprintf(L"Entered character: %c\n", character);
+	void InputMgr::charInput(const char* character) {
+		//println("Entered character: ", character);
 	}
 
 	void InputMgr::buttonInput(REubyte buttoncode, bool pressed) {
@@ -54,6 +55,7 @@ namespace RE {
 
 	bool InputMgr::isKeyDown(Keyboard key) {
 		REushort keyIndex = static_cast<REushort>(key);
+		//println(keyIndex, ": ", bitmaskToString(keys[keyIndex / 8], false), " | ", bitmaskToString(genBitmask(keyIndex % 8), false));
 		return (keys[keyIndex / 8] & genBitmask(keyIndex % 8)) != 0;
 	}
 	
@@ -74,7 +76,7 @@ namespace RE {
 		return lastButtons & genBitmask(static_cast<REubyte>(button));
 	}
 
-	REushort scancodeFromKey(Keyboard key) {
+	REint scancodeFromKey(Keyboard key) {
 #ifdef RE_OS_WINDOWS
 		return MapVirtualKeyW(winVirtualFromKey(key), MAPVK_VK_TO_VSC_EX);
 #elif defined RE_OS_LINUX

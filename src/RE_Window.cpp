@@ -44,4 +44,11 @@ namespace RE {
 		return valid;
 	}
 
+	Vector<REushort, 2> Window::getSize() {
+		Vector<REushort, 2> copySize;
+		for (REuint i = 0; i < copySize.getDimensions(); i++)
+			copySize[i] = size[i];
+		return copySize;
+	}
+
 }

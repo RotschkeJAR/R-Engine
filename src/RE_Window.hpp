@@ -33,6 +33,7 @@ namespace RE {
 			void update();
 			bool shouldClose();
 			bool isValid();
+			Vector<REushort, 2> getSize();
 	};
 
 }

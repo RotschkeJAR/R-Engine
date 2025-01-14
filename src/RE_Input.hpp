@@ -18,6 +18,11 @@ namespace RE {
 #undef _KEY_ARRAY_LENGTH
 			REubyte buttons, lastButtons;
 			REbyte scroll;
+			Vector<REint, 2> cursorPos, lastCursorPos;
+			Vector<REushort, 2> winSize;
+#ifdef RE_OS_LINUX
+			XDisplay* xDisplay;
+#endif /* RE_OS_LINUX */
 
 		public:
 			InputMgr();
@@ -25,15 +30,26 @@ namespace RE {
 			void keyInput(Keyboard key, REint scancode, bool pressed);
 			void charInput(const char* character);
 			void buttonInput(REubyte buttoncode, bool pressed);
-			void cursorInput(REushort x, REushort y);
+			void cursorInput(REint x, REint y);
 			void scrollInput(REbyte y);
 			void updateInput();
+			void updateWinSize(Vector<REushort, 2> updatedSize);
+#ifdef RE_OS_LINUX
+			void setXDisplay(xDisplay* newDisplay);
+#endif /* RE_OS_LINUX */
 
-			bool isKeyDown(Keyboard key);
-			bool wasKeyDown(Keyboard key);
-			REubyte getScroll();
-			bool isButtonDown(MouseButton button);
-			bool wasButtonDown(MouseButton button);
+			bool isKeyDown(Keyboard key) const;
+			bool wasKeyDown(Keyboard key) const;
+			REubyte getScroll() const;
+			bool isButtonDown(MouseButton button) const;
+			bool wasButtonDown(MouseButton button) const;
+			REint getCursorX() const;
+			REint getCursorY() const;
+			REint getCursorLastX() const;
+			REint getCursorLastY() const;
+
+			friend Vector<float, 2> normalCursorPos();
+			friend Vector<float, 2> normalCursorDeltaPos();
 	};
 
 #ifdef RE_OS_WINDOWS
@@ -79,10 +95,6 @@ namespace RE {
 				return VK_INSERT;
 			case Keyboard::Delete:
 				return VK_DELETE;
-			case Keyboard::Left_Menu:
-				return VK_LMENU;
-			case Keyboard::Right_Menu:
-				return VK_RMENU;
 			case Keyboard::Numpad_Multiply:
 				return VK_MULTIPLY;
 			case Keyboard::Numpad_Add:
@@ -137,19 +149,19 @@ namespace RE {
 				return VK_DECIMAL;
 			default:
 				REushort keyId = static_cast<REushort>(key);
-				if (keyId >= static_cast<REint>(Keyboard::A) && keyId <= static_cast<REint>(Keyboard::Z))
-					return VK_A + (keyId - static_cast<REint>(Keyboard::A));
-				if (keyId >= static_cast<REint>(Keyboard::Top_0) && keyId <= static_cast<REint>(Keyboard::Top_9))
-					return VK_0 + (keyId - static_cast<REint>(Keyboard::Top_0));
-				if (keyId >= static_cast<REint>(Keyboard::F1) && keyId <= static_cast<REint>(Keyboard::F25))
-					return VK_F1 + (keyId - static_cast<REint>(Keyboard::F1));
-				if (keyId >= static_cast<REint>(Keyboard::Numpad_0) && keyId <= static_cast<REint>(Keyboard::Numpad_9))
-					return VK_NUMPAD0 + (keyId - static_cast<REint>(Keyboard::Numpad_0));
+				if (keyId >= static_cast<REushort>(Keyboard::A) && keyId <= static_cast<REushort>(Keyboard::Z))
+					return VK_A + (keyId - static_cast<REushort>(Keyboard::A));
+				if (keyId >= static_cast<REushort>(Keyboard::Top_0) && keyId <= static_cast<REushort>(Keyboard::Top_9))
+					return VK_0 + (keyId - static_cast<REushort>(Keyboard::Top_0));
+				if (keyId >= static_cast<REushort>(Keyboard::F1) && keyId <= static_cast<REushort>(Keyboard::F25))
+					return VK_F1 + (keyId - static_cast<REushort>(Keyboard::F1));
+				if (keyId >= static_cast<REushort>(Keyboard::Numpad_0) && keyId <= static_cast<REushort>(Keyboard::Numpad_9))
+					return VK_NUMPAD0 + (keyId - static_cast<REushort>(Keyboard::Numpad_0));
 				return 0;
 		}
 	}
 
-	/* doesn't return Keyboard::Hashtag */REint
+	/* doesn't return Keyboard::Hashtag */
 	constexpr Keyboard winKeyFromVirtual(REint vkCode) {
 		switch (vkCode) {
 			case VK_SPACE:
@@ -342,15 +354,15 @@ namespace RE {
 			case Keyboard::Numpad_Period:
 				return XK_KP_Decimal;
 			default:
-				REushort keyId = static_cast<REint>(key);
-				if (keyId >= XK_A && keyId <= XK_Z)
-					return XK_A + (keyId - static_cast<REint>(Keyboard::A));
-				if (keyId >= XK_0 && keyId <= XK_9)
-					return XK_0 + (keyId - static_cast<REint>(Keyboard::Top_0));
-				if (keyId >= XK_F1 && keyId <= XK_F25)
-					return XK_F1 + (keyId - static_cast<REint>(Keyboard::F1));
-				if (keyId >= XK_KP_0 && keyId <= XK_KP_9)
-					return XK_KP_0 + (keyId - static_cast<REint>(Keyboard::Numpad_0));
+				REushort keyId = static_cast<REushort>(key);
+				if (keyId >= static_cast<REushort>(Keyboard::A) && keyId <= static_cast<REushort>(Keyboard::Z))
+					return XK_a + (keyId - static_cast<REushort>(Keyboard::A));
+				if (keyId >= static_cast<REushort>(Keyboard::Top_0) && keyId <= static_cast<REushort>(Keyboard::Top_9))
+					return XK_0 + (keyId - static_cast<REushort>(Keyboard::Top_0));
+				if (keyId >= static_cast<REushort>(Keyboard::F1) && keyId <= static_cast<REushort>(Keyboard::F25))
+					return XK_F1 + (keyId - static_cast<REushort>(Keyboard::F1));
+				if (keyId >= static_cast<REushort>(Keyboard::Numpad_0) && keyId <= static_cast<REushort>(Keyboard::Numpad_9))
+					return XK_KP_0 + (keyId - static_cast<REushort>(Keyboard::Numpad_0));
 				return 0;
 		}
 	}
@@ -447,6 +459,8 @@ namespace RE {
 			case XK_KP_Decimal:
 				return Keyboard::Numpad_Period;
 			default:
+				if (vkCode >= XK_a && vkCode <= XK_z)
+					return static_cast<Keyboard>(vkCode - XK_a + static_cast<REint>(Keyboard::A));
 				if (vkCode >= XK_A && vkCode <= XK_Z)
 					return static_cast<Keyboard>(vkCode - XK_A + static_cast<REint>(Keyboard::A));
 				if (vkCode >= XK_0 && vkCode <= XK_9)
@@ -476,6 +490,19 @@ namespace RE {
 	bool isScrollingUpward();
 	bool isScrollingDownward();
 	REbyte scrollDirection();
+
+	Vector<REint, 2> cursorPos();
+	REint cursorPosX();
+	REint cursorPosY();
+	Vector<REint, 2> cursorDeltaPos();
+	REint cursorDeltaPosX();
+	REint cursorDeltaPosY();
+	Vector<float, 2> normalCursorPos();
+	float normalCursorPosX();
+	float normalCursorPosY();
+	Vector<float, 2> normalCursorDeltaPos();
+	float normalCursorDeltaPosX();
+	float normalCursorDeltaPosY();
 
 }
 

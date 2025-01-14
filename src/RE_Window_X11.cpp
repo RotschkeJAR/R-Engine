@@ -39,6 +39,7 @@ namespace RE {
 			return;
 		}
 		updateTitleInternal();
+		inputMgr.setXDisplay(xDisplay);
 		glxContext = glXCreateContext(xDisplay, visualInfo, nullptr, GL_TRUE);
 		if (!glxContext) {
 			RE_ERROR("No GLX context has been created");

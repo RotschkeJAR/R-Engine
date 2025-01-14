@@ -6,7 +6,7 @@
 #elif defined __linux__
 # define RE_OS_LINUX
 #else
-# error The targeted OS is unknown to R-Engine
+# warning The targeted OS is unknown to R-Engine
 #endif
 
 #include <iostream>
@@ -249,25 +249,35 @@ namespace RE {
 			T coords[dimensions];
 
 			Vector() {
+				static_assert(dimensions != 0, "A vector has zero dimensions");
 				fill(static_cast<T>(0.0));
+			}
+			template <typename... V>
+			Vector(V... values) {
+				static_assert(dimensions != 0, "A vector has zero dimensions");
+				REuint index = 0;
+				([&]() {
+					coords[index] = static_cast<T>(values);
+					index++;
+				} (), ...);
 			}
 			~Vector() {}
 
-			T sum() {
+			T sum() const {
 				T sum = static_cast<T>(0.0);
 				for (T coord : coords)
 					sum += coord;
 				return sum;
 			}
 
-			T area() {
+			T area() const {
 				T result = static_cast<T>(1.0);
 				for (T coord : coords)
 					result *= coord;
 				return result;
 			}
 
-			T length() {
+			T length() const {
 				return nth_root<T>(static_cast<T>(dimensions), sum());
 			}
 
@@ -275,7 +285,7 @@ namespace RE {
 				std::fill(std::begin(coords), std::end(coords), value);
 			}
 
-			constexpr REuint getDimensions() {
+			constexpr REuint getDimensions() const {
 				return dimensions;
 			}
 
@@ -286,10 +296,31 @@ namespace RE {
 				}
 				return coords[index];
 			}
+
+			T operator[](REuint index) const {
+				if (index >= dimensions) {
+					FATAL_ERROR(appendStrings("Index ", index, " is out of bounds: [0, ", dimensions, "]").c_str());
+					return coords[0];
+				}
+				return coords[index];
+			}
+
+			friend std::ostream& operator<<(std::ostream& stream, const Vector& vector) {
+				stream << "(";
+				for (REuint i = 0; i < vector.getDimensions(); i++) {
+					if (i != 0)
+						stream << ", ";
+					stream << vector.coords[i];
+				}
+				stream << ")";
+				return stream;
+			}
 	};
 
 	void execute();
 
+	REint scancodeFromKey(Keyboard key);
+	Keyboard keyFromScancode(REint scancode);
 	bool isKeyDown(Keyboard key);
 	bool isKeyPressed(Keyboard key);
 	bool isKeyReleased(Keyboard key);
@@ -300,6 +331,18 @@ namespace RE {
 	bool isScrollingUpward();
 	bool isScrollingDownward();
 	REbyte scrollDirection();
+	Vector<REint, 2> cursorPos();
+	REint cursorPosX();
+	REint cursorPosY();
+	Vector<REint, 2> cursorDeltaPos();
+	REint cursorDeltaPosX();
+	REint cursorDeltaPosY();
+	Vector<float, 2> normalCursorPos();
+	float normalCursorPosX();
+	float normalCursorPosY();
+	Vector<float, 2> normalCursorDeltaPos();
+	float normalCursorDeltaPosX();
+	float normalCursorDeltaPosY();
 
 }
 

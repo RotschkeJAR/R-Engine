@@ -8,7 +8,6 @@ namespace RE {
 #ifdef RE_OS_LINUX
 	class Window_X11 : public Window {
 		private:
-			XDisplay* const xDisplay;
 			XWindow xWindow;
 			XAtom xaClose;
 			XAtom xaUTF8, xaWinName;
@@ -21,6 +20,8 @@ namespace RE {
 			void updateTitleInternal();
 
 		public:
+			XDisplay* const xDisplay;
+			
 			Window_X11();
 			~Window_X11();
 			void processLoop();

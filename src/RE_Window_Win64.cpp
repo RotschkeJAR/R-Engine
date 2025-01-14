@@ -17,6 +17,7 @@ namespace RE {
 				case WM_SIZE: /* resized */
 					win64->size[0] = LOWORD(lParam);
 					win64->size[1] = HIWORD(lParam);
+					win64->inputMgr.updateWinSize(win64->size);
 					return 0;
 				case WM_CLOSE: /* close */
 					win64->closeFlag = true;
@@ -46,9 +47,10 @@ namespace RE {
 					}
 					win64->inputMgr.keyInput(winKeyFromVirtual(vkCode), scanCode, !static_cast<bool>(keyReleased));
 					} return 0;
-				case WM_CHAR:
-					win64->inputMgr.charInput(convertToUTF8(static_cast<wchar_t>(wParam)));
-					return 0;
+				case WM_CHAR: {
+					wchar_t character[2] = {static_cast<wchar_t>(wParam), L'\0'};
+					win64->inputMgr.charInput(convertToUTF8(character).c_str());
+					} return 0;
 				case WM_LBUTTONDOWN: /* left mouse button pressed */
 					win64->inputMgr.buttonInput(RE_LBUTTON, true);
 					SetCapture(hWnd);
@@ -76,6 +78,7 @@ namespace RE {
 				case WM_MOUSEMOVE: { /* mouse moved */
 					signed int xPos = GET_X_LPARAM(lParam);
 					signed int yPos = GET_Y_LPARAM(lParam);
+					win64->inputMgr.cursorInput(xPos, yPos);
 					} return 0;
 				case WM_SETCURSOR:
 					if (LOWORD(lParam) == HTCLIENT) {

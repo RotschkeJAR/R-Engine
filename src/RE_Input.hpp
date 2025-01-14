@@ -35,7 +35,7 @@ namespace RE {
 			void updateInput();
 			void updateWinSize(Vector<REushort, 2> updatedSize);
 #ifdef RE_OS_LINUX
-			void setXDisplay(xDisplay* newDisplay);
+			void setXDisplay(XDisplay* newDisplay);
 #endif /* RE_OS_LINUX */
 
 			bool isKeyDown(Keyboard key) const;
@@ -48,6 +48,8 @@ namespace RE {
 			REint getCursorLastX() const;
 			REint getCursorLastY() const;
 
+			friend REint scancodeFromKey(Keyboard key);
+			friend Keyboard keyFromScancode(REint scancode);
 			friend Vector<float, 2> normalCursorPos();
 			friend Vector<float, 2> normalCursorDeltaPos();
 	};
@@ -137,8 +139,6 @@ namespace RE {
 				return VK_OEM_COMMA;
 			case Keyboard::Period:
 				return VK_OEM_PERIOD;
-			case Keyboard::Hashtag:
-				return 0;
 			case Keyboard::Equals:
 				return VK_OEM_PLUS;
 			case Keyboard::Minus:
@@ -147,6 +147,8 @@ namespace RE {
 				return VK_RETURN;
 			case Keyboard::Numpad_Period:
 				return VK_DECIMAL;
+			case Keyboard::Menu:
+				return VK_APPS;
 			default:
 				REushort keyId = static_cast<REushort>(key);
 				if (keyId >= static_cast<REushort>(Keyboard::A) && keyId <= static_cast<REushort>(Keyboard::Z))
@@ -161,7 +163,6 @@ namespace RE {
 		}
 	}
 
-	/* doesn't return Keyboard::Hashtag */
 	constexpr Keyboard winKeyFromVirtual(REint vkCode) {
 		switch (vkCode) {
 			case VK_SPACE:
@@ -249,17 +250,18 @@ namespace RE {
 			case VK_SEPARATOR:
 			case VK_DECIMAL:
 				return Keyboard::Numpad_Period;
+			case VK_APPS:
+				return Keyboard::Menu;
 			default:
 				if (vkCode >= VK_A && vkCode <= VK_Z)
 					return static_cast<Keyboard>(vkCode - VK_A + static_cast<REint>(Keyboard::A));
 				if (vkCode >= VK_0 && vkCode <= VK_9)
 					return static_cast<Keyboard>(vkCode - VK_0 + static_cast<REint>(Keyboard::Top_0));
-				if (vkCode >= VK_F1 && vkCode <= VK_F24)
+				if (vkCode >= VK_F1 && vkCode <= VK_F25)
 					return static_cast<Keyboard>(vkCode - VK_F1 + static_cast<REint>(Keyboard::F1));
 				if (vkCode >= VK_NUMPAD0 && vkCode <= VK_NUMPAD9)
 					return static_cast<Keyboard>(vkCode - VK_NUMPAD0 + static_cast<REint>(Keyboard::Numpad_0));
-				RE_WARNING("An unknown Windows virtual key code has been passed");
-				return Keyboard::Space;
+				return Keyboard::Unknown;
 		}
 	}
 #elif defined RE_OS_LINUX
@@ -281,8 +283,6 @@ namespace RE {
 				return XK_apostrophe;
 			case Keyboard::Accent:
 				return XK_grave;
-			case Keyboard::Hashtag:
-				return XK_numbersign;
 			case Keyboard::Left_Bracket:
 				return XK_bracketleft;
 			case Keyboard::Right_Bracket:
@@ -353,6 +353,8 @@ namespace RE {
 				return XK_KP_Enter;
 			case Keyboard::Numpad_Period:
 				return XK_KP_Decimal;
+			case Keyboard::Menu:
+				return XK_Menu;
 			default:
 				REushort keyId = static_cast<REushort>(key);
 				if (keyId >= static_cast<REushort>(Keyboard::A) && keyId <= static_cast<REushort>(Keyboard::Z))
@@ -419,28 +421,31 @@ namespace RE {
 				return Keyboard::Caps_Lock;
 			case XK_Alt_L:
 				return Keyboard::Left_Alt;
+			case XK_ISO_Level3_Shift:
 			case XK_Alt_R:
 				return Keyboard::Right_Alt;
 			case XK_slash:
 				return Keyboard::Slash;
 			case XK_backslash:
 				return Keyboard::Backslash;
+			case XK_less:
 			case XK_comma:
 				return Keyboard::Comma;
+			case XK_greater:
 			case XK_period:
 				return Keyboard::Period;
 			case XK_semicolon:
 				return Keyboard::Semicolon;
+			case XK_dead_acute:
 			case XK_apostrophe:
 				return Keyboard::Apostrophe;
 			case XK_grave:
 				return Keyboard::Accent;
-			case XK_numbersign:
-				return Keyboard::Hashtag;
 			case XK_bracketleft:
 				return Keyboard::Left_Bracket;
 			case XK_bracketright:
 				return Keyboard::Right_Bracket;
+			case XK_plus:
 			case XK_equal:
 				return Keyboard::Equals;
 			case XK_minus:
@@ -455,9 +460,36 @@ namespace RE {
 				return Keyboard::Numpad_Divide;
 			case XK_KP_Enter:
 				return Keyboard::Numpad_Enter;
+			case XK_KP_Delete:
 			case XK_KP_Separator:
 			case XK_KP_Decimal:
 				return Keyboard::Numpad_Period;
+			case XK_KP_Insert:
+				return Keyboard::Numpad_0;
+			case XK_KP_End:
+				return Keyboard::Numpad_1;
+			case XK_KP_Page_Down:
+				return Keyboard::Numpad_3;
+			case XK_KP_Down:
+				return Keyboard::Numpad_2;
+			case XK_KP_Left:
+				return Keyboard::Numpad_4;
+			case XK_KP_Begin:
+				return Keyboard::Numpad_5;
+			case XK_KP_Right:
+				return Keyboard::Numpad_6;
+			case XK_KP_Home:
+				return Keyboard::Numpad_7;
+			case XK_KP_Up:
+				return Keyboard::Numpad_8;
+			case XK_KP_Page_Up:
+				return Keyboard::Numpad_9;
+			case XK_numbersign:
+				return Keyboard::Top_3;
+			case XK_dead_circumflex:
+				return Keyboard::Top_6;
+			case XK_Menu:
+				return Keyboard::Menu;
 			default:
 				if (vkCode >= XK_a && vkCode <= XK_z)
 					return static_cast<Keyboard>(vkCode - XK_a + static_cast<REint>(Keyboard::A));
@@ -468,9 +500,8 @@ namespace RE {
 				if (vkCode >= XK_F1 && vkCode <= XK_F25)
 					return static_cast<Keyboard>(vkCode - XK_F1 + static_cast<REint>(Keyboard::F1));
 				if (vkCode >= XK_KP_0 && vkCode <= XK_KP_9)
-					return static_cast<Keyboard>(vkCode - XK_KP_9 + static_cast<REint>(Keyboard::Numpad_0));
-				RE_WARNING("An unknown X11 virtual key code has been passed");
-				return Keyboard::Space;
+					return static_cast<Keyboard>(vkCode - XK_KP_0 + static_cast<REint>(Keyboard::Numpad_0));
+				return Keyboard::Unknown;
 		}
 	}
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */

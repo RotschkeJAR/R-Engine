@@ -49,6 +49,7 @@ namespace RE {
 	};
 
 	enum Keyboard {
+		Unknown,
 		Space,
 		A,
 		B,
@@ -93,7 +94,6 @@ namespace RE {
 		Semicolon, /* ; */
 		Apostrophe, /* ' */
 		Accent, /* ` */
-		Hashtag, /* # */
 		Left_Bracket, /* [ */
 		Right_Bracket, /* ] */
 		Equals, /* = */
@@ -104,6 +104,7 @@ namespace RE {
 		Left_Alt,
 		Right_Shift,
 		Left_Shift,
+		Menu,
 		Tab,
 		Enter,
 		Escape,

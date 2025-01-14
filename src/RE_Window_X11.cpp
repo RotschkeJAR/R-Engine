@@ -5,7 +5,7 @@
 namespace RE {
 
 #ifdef RE_OS_LINUX
-	Window_X11::Window_X11() : xDisplay(XOpenDisplay(nullptr)), xWindow(0), xaClose(0), xaUTF8(0), xaWinName(0), glxContext(nullptr) {
+	Window_X11::Window_X11() : xWindow(0), xaClose(0), xaUTF8(0), xaWinName(0), glxContext(nullptr), xDisplay(XOpenDisplay(nullptr)) {
 		if (!xDisplay) {
 			RE_ERROR("Unable to connect to X11 server");
 			return;
@@ -95,13 +95,13 @@ namespace RE {
 					XKeyCode scancode = keyEvent.keycode;
 					char string[5];
 					std::fill(std::begin(string), std::end(string), '\0');
-					XKeySym meaning = XLookupKeysym(&keyEvent, 0);
-					REubyte len = Xutf8LookupString(xInputContext, &keyEvent, string, sizeof(string) - 1, &meaning, nullptr);
+					XKeySym keySym = XLookupKeysym(&keyEvent, 0);
+					REubyte len = Xutf8LookupString(xInputContext, &keyEvent, string, sizeof(string) - 1, &keySym, nullptr);
 					if (keyPressed && len) {
 						string[len] = '\0';
 						inputMgr.charInput(string);
 					}
-					inputMgr.keyInput(x11KeyFromVirtual(meaning), static_cast<REshort>(scancode), keyPressed);
+					inputMgr.keyInput(keyFromScancode(scancode), static_cast<REshort>(scancode), keyPressed);
 					} break;
 				case XButtonPress:
 				case XButtonRelease: {

@@ -6,9 +6,11 @@ namespace RE {
 
 	InputMgr* inputMgr = nullptr;
 
-	InputMgr::InputMgr() : buttons(0), lastButtons(0) {
+	InputMgr::InputMgr() : buttons(0), lastButtons(0), scroll(0) {
 		if (!inputMgr)
 			inputMgr = this;
+		std::fill(std::begin(keys), std::end(keys), 0);
+		std::fill(std::begin(lastKeys), std::end(lastKeys), 0);
 	}
 
 	InputMgr::~InputMgr() {
@@ -17,6 +19,10 @@ namespace RE {
 	}
 
 	void InputMgr::keyInput(Keyboard key, REint scancode, bool pressed) {
+		if (key == Keyboard::Unknown && pressed) {
+			RE_WARNING(appendStrings("An unknown key (scancode: ", scancode, ") has been pressed"));
+			return;
+		}
 		REushort keyIndex = static_cast<REushort>(key);
 		REushort keyBitmask = static_cast<REushort>(1) << (keyIndex - ((keyIndex / 8) * 8));
 		keyIndex /= 8;
@@ -32,11 +38,10 @@ namespace RE {
 
 	void InputMgr::buttonInput(REubyte buttoncode, bool pressed) {
 		REubyte buttonMask = static_cast<REubyte>(genBitmask(buttoncode));
-		if (!pressed) {
-			buttonMask = ~buttonMask;
-			buttons &= buttonMask;
-		} else
+		if (pressed)
 			buttons |= buttonMask;
+		else
+			buttons &= ~buttonMask;
 	}
 
 	void InputMgr::cursorInput(REint x, REint y) {
@@ -62,7 +67,7 @@ namespace RE {
 	}
 
 #ifdef RE_OS_LINUX
-	void InputMgr::setXDisplay(xDisplay* newDisplay) {
+	void InputMgr::setXDisplay(XDisplay* newDisplay) {
 		xDisplay = newDisplay;
 	}
 #endif /* RE_OS_LINUX */
@@ -109,7 +114,7 @@ namespace RE {
 #ifdef RE_OS_WINDOWS
 		return MapVirtualKeyW(winVirtualFromKey(key), MAPVK_VK_TO_VSC_EX);
 #elif defined RE_OS_LINUX
-		return XKeysymToKeycode(xDisplay, x11VirtualFromKey(key));
+		return XKeysymToKeycode(inputMgr->xDisplay, x11VirtualFromKey(key));
 #else
 		return 0;
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
@@ -119,7 +124,7 @@ namespace RE {
 #ifdef RE_OS_WINDOWS
 		return winKeyFromVirtual(MapVirtualKeyW(scancode, MAPVK_VSC_TO_VK_EX));
 #elif defined RE_OS_LINUX
-		return x11KeyFromVirtual(XKeycodeToKeysym(xDisplay, scancode, 0));
+		return x11KeyFromVirtual(XkbKeycodeToKeysym(inputMgr->xDisplay, scancode, 0, 0));
 #else
 		return Keyboard::Space;
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */

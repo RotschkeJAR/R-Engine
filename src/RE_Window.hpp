@@ -7,9 +7,6 @@
 namespace RE {
 	
 	class Window {
-		private:
-			static Window* winRef;
-
 		protected:
 			InputMgr inputMgr;
 			const char* title;
@@ -35,6 +32,8 @@ namespace RE {
 			bool isValid();
 			Vector<REushort, 2> getSize();
 	};
+
+	extern Window* winRef;
 
 }
 

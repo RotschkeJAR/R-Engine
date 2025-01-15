@@ -20,9 +20,6 @@ namespace RE {
 			REbyte scroll;
 			Vector<REint, 2> cursorPos, lastCursorPos;
 			Vector<REushort, 2> winSize;
-#ifdef RE_OS_LINUX
-			XDisplay* xDisplay;
-#endif /* RE_OS_LINUX */
 
 		public:
 			InputMgr();
@@ -34,9 +31,6 @@ namespace RE {
 			void scrollInput(REbyte y);
 			void updateInput();
 			void updateWinSize(Vector<REushort, 2> updatedSize);
-#ifdef RE_OS_LINUX
-			void setXDisplay(XDisplay* newDisplay);
-#endif /* RE_OS_LINUX */
 
 			bool isKeyDown(Keyboard key) const;
 			bool wasKeyDown(Keyboard key) const;
@@ -48,8 +42,8 @@ namespace RE {
 			REint getCursorLastX() const;
 			REint getCursorLastY() const;
 
-			friend REubyte scancodeFromKey(Keyboard key);
-			friend Keyboard keyFromScancode(REubyte scancode);
+			friend REushort scancodeFromKey(Keyboard key);
+			friend Keyboard keyFromScancode(REushort scancode);
 			friend Vector<float, 2> normalCursorPos();
 			friend Vector<float, 2> normalCursorDeltaPos();
 	};
@@ -149,6 +143,8 @@ namespace RE {
 				return VK_DECIMAL;
 			case Keyboard::Menu:
 				return VK_APPS;
+			case Keyboard::World_1:
+				return VK_OEM_102;
 			default:
 				REulong keyId = static_cast<REulong>(key);
 				if (keyId >= static_cast<REulong>(Keyboard::A) && keyId <= static_cast<REulong>(Keyboard::Z))
@@ -239,6 +235,8 @@ namespace RE {
 				return Keyboard::Right_Bracket;
 			case VK_OEM_7:
 				return Keyboard::Apostrophe;
+			case VK_OEM_102:
+				return Keyboard::World_1;
 			case VK_OEM_COMMA:
 				return Keyboard::Comma;
 			case VK_OEM_PERIOD:
@@ -355,6 +353,8 @@ namespace RE {
 				return XK_KP_Decimal;
 			case Keyboard::Menu:
 				return XK_Menu;
+			case Keyboard::World_1:
+				return XK_less;
 			default:
 				REulong keyId = static_cast<REulong>(key);
 				if (keyId >= static_cast<REulong>(Keyboard::A) && keyId <= static_cast<REulong>(Keyboard::Z))
@@ -429,9 +429,10 @@ namespace RE {
 			case XK_backslash:
 				return Keyboard::Backslash;
 			case XK_less:
+			case XK_greater:
+				return Keyboard::World_1;
 			case XK_comma:
 				return Keyboard::Comma;
-			case XK_greater:
 			case XK_period:
 				return Keyboard::Period;
 			case XK_semicolon:
@@ -490,6 +491,12 @@ namespace RE {
 				return Keyboard::Top_6;
 			case XK_Menu:
 				return Keyboard::Menu;
+			case XK_adiaeresis:
+				return Keyboard::A;
+			case XK_odiaeresis:
+				return Keyboard::O;
+			case XK_udiaeresis:
+				return Keyboard::U;
 			default:
 				if (vkCode >= XK_a && vkCode <= XK_z)
 					return static_cast<Keyboard>(vkCode - XK_a + static_cast<REint>(Keyboard::A));
@@ -506,8 +513,8 @@ namespace RE {
 	}
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 
-	REubyte scancodeFromKey(Keyboard key);
-	Keyboard keyFromScancode(REubyte scancode);
+	REushort scancodeFromKey(Keyboard key);
+	Keyboard keyFromScancode(REushort scancode);
 
 	bool isKeyDown(Keyboard key);
 	bool isKeyPressed(Keyboard key);

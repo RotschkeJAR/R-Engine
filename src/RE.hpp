@@ -164,7 +164,12 @@ namespace RE {
 		Numpad_Multiply,
 		Numpad_Divide,
 		Numpad_Enter,
-		Numpad_Period
+		Numpad_Period,
+		/**
+		 * Represents a key, that does not exist on US-keyboards:
+		 * - UK, DE: less than, (shift) greater than, (AltGr) vertical bar/pipe
+		 */
+		World_1
 	};
 
 	enum MouseButton {
@@ -173,18 +178,18 @@ namespace RE {
 		Middle
 	};
 
-	template <typename... T>
+	template <class... T>
 	void print(T... content) {
 		([&]() {
 			if constexpr (std::is_same_v<T, REubyte>)
-				std::cout << static_cast<unsigned>(content);
+				std::cout << static_cast<REushort>(content);
 			else if constexpr (std::is_same_v<T, REbyte>)
-				std::cout << static_cast<signed>(content);
+				std::cout << static_cast<REshort>(content);
 			else
 				std::cout << content;
 		} (), ...);
 	}
-	template <typename... T>
+	template <class... T>
 	void println(T... content) {
 		print(content..., "\n");
 	}
@@ -229,7 +234,7 @@ namespace RE {
 		return result;
 	}
 
-	template <typename... T>
+	template <class... T>
 	std::string appendStrings(T... strings) {
 		std::stringstream ss("");
 		(ss << ... << strings);
@@ -320,8 +325,8 @@ namespace RE {
 
 	void execute();
 
-	REubyte scancodeFromKey(Keyboard key);
-	Keyboard keyFromScancode(REubyte scancode);
+	REushort scancodeFromKey(Keyboard key);
+	Keyboard keyFromScancode(REushort scancode);
 	bool isKeyDown(Keyboard key);
 	bool isKeyPressed(Keyboard key);
 	bool isKeyReleased(Keyboard key);

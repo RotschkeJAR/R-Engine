@@ -2,7 +2,7 @@
 
 namespace RE {
 	
-	Window* Window::winRef = nullptr;
+	Window* winRef = nullptr;
 
 	Window::Window() : title(u8"Untitled game window"), closeFlag(false), valid(false) {
 		if (winRef) {

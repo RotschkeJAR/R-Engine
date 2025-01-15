@@ -72,12 +72,6 @@ namespace RE {
 			winSize[i] = updatedSize[i];
 	}
 
-#ifdef RE_OS_LINUX
-	void InputMgr::setXDisplay(XDisplay* newDisplay) {
-		xDisplay = newDisplay;
-	}
-#endif /* RE_OS_LINUX */
-
 	bool InputMgr::isKeyDown(Keyboard key) const {
 		REushort keyIndex = static_cast<REushort>(key);
 		return (keys[keyIndex / 8] & genBitmask(keyIndex % 8)) != 0;
@@ -116,23 +110,25 @@ namespace RE {
 		return lastCursorPos[1];
 	}
 
-	REubyte scancodeFromKey(Keyboard key) {
+	REushort scancodeFromKey(Keyboard key) {
 #ifdef RE_OS_WINDOWS
 		return MapVirtualKeyW(winVirtualFromKey(key), MAPVK_VK_TO_VSC_EX);
 #elif defined RE_OS_LINUX
-		return XKeysymToKeycode(inputMgr->xDisplay, x11VirtualFromKey(key));
+		return XKeysymToKeycode(static_cast<Window_X11*>(winRef)->xDisplay, x11VirtualFromKey(key));
 #else
+		RE_WARNING("Scancodes of a key cannot be determined, because the current OS is unknown");
 		return 0;
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 	}
 
-	Keyboard keyFromScancode(REubyte scancode) {
+	Keyboard keyFromScancode(REushort scancode) {
 #ifdef RE_OS_WINDOWS
 		return winKeyFromVirtual(MapVirtualKeyW(scancode, MAPVK_VSC_TO_VK_EX));
 #elif defined RE_OS_LINUX
-		return x11KeyFromVirtual(XkbKeycodeToKeysym(inputMgr->xDisplay, scancode, 0, 0));
+		return x11KeyFromVirtual(XkbKeycodeToKeysym(static_cast<Window_X11*>(winRef)->xDisplay, scancode, 0, 0));
 #else
-		return Keyboard::Space;
+		RE_WARNING("Scancodes cannot be used to determine the key, because the current OS is unknown");
+		return Keyboard::Unknown;
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 	}
 

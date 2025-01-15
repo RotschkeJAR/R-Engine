@@ -10,7 +10,6 @@ namespace RE {
 			RE_ERROR("Unable to connect to X11 server");
 			return;
 		}
-		XAutoRepeatOn(xDisplay);
 		REint glxAttribs[] = {GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, XNone};
 		REint defaultScreen = DefaultScreen(xDisplay);
 		XWindow root = RootWindow(xDisplay, defaultScreen);
@@ -39,7 +38,6 @@ namespace RE {
 			return;
 		}
 		updateTitleInternal();
-		inputMgr.setXDisplay(xDisplay);
 		glxContext = glXCreateContext(xDisplay, visualInfo, nullptr, GL_TRUE);
 		if (!glxContext) {
 			RE_ERROR("No GLX context has been created");
@@ -127,8 +125,10 @@ namespace RE {
 							break;
 					}
 					} break;
-				case XMotionNotify: /* mouse moved */
-					break;
+				case XMotionNotify: { /* mouse moved */
+					XMotionEvent motionEvent = event.xmotion;
+					inputMgr.cursorInput(motionEvent.x, motionEvent.y);
+					} break;
 				default:
 					break;
 			}

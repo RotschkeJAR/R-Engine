@@ -18,9 +18,15 @@ namespace RE {
 			inputMgr = nullptr;
 	}
 
-	void InputMgr::keyInput(Keyboard key, REint scancode, bool pressed) {
+	void InputMgr::keyInput(REulong vkCode, REushort scancode, bool pressed) {
+		Keyboard key = Keyboard::Unknown;
+#ifdef RE_OS_WINDOWS
+		key = winKeyFromVirtual(vkCode);
+#elif defined RE_OS_LINUX
+		key = x11KeyFromVirtual(vkCode);
+#endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 		if (key == Keyboard::Unknown && pressed) {
-			RE_WARNING(appendStrings("An unknown key (scancode: ", scancode, ") has been pressed"));
+			RE_WARNING(appendStrings("An unknown key (scancode: ", scancode, ", virtual key code: ", vkCode, ") has been pressed"));
 			return;
 		}
 		REushort keyIndex = static_cast<REushort>(key);
@@ -110,7 +116,7 @@ namespace RE {
 		return lastCursorPos[1];
 	}
 
-	REint scancodeFromKey(Keyboard key) {
+	REubyte scancodeFromKey(Keyboard key) {
 #ifdef RE_OS_WINDOWS
 		return MapVirtualKeyW(winVirtualFromKey(key), MAPVK_VK_TO_VSC_EX);
 #elif defined RE_OS_LINUX
@@ -120,7 +126,7 @@ namespace RE {
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 	}
 
-	Keyboard keyFromScancode(REint scancode) {
+	Keyboard keyFromScancode(REubyte scancode) {
 #ifdef RE_OS_WINDOWS
 		return winKeyFromVirtual(MapVirtualKeyW(scancode, MAPVK_VSC_TO_VK_EX));
 #elif defined RE_OS_LINUX

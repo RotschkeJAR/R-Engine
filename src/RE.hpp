@@ -320,8 +320,8 @@ namespace RE {
 
 	void execute();
 
-	REint scancodeFromKey(Keyboard key);
-	Keyboard keyFromScancode(REint scancode);
+	REubyte scancodeFromKey(Keyboard key);
+	Keyboard keyFromScancode(REubyte scancode);
 	bool isKeyDown(Keyboard key);
 	bool isKeyPressed(Keyboard key);
 	bool isKeyReleased(Keyboard key);

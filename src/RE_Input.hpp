@@ -27,7 +27,7 @@ namespace RE {
 		public:
 			InputMgr();
 			~InputMgr();
-			void keyInput(Keyboard key, REint scancode, bool pressed);
+			void keyInput(REulong key, REushort scancode, bool pressed);
 			void charInput(const char* character);
 			void buttonInput(REubyte buttoncode, bool pressed);
 			void cursorInput(REint x, REint y);
@@ -48,8 +48,8 @@ namespace RE {
 			REint getCursorLastX() const;
 			REint getCursorLastY() const;
 
-			friend REint scancodeFromKey(Keyboard key);
-			friend Keyboard keyFromScancode(REint scancode);
+			friend REubyte scancodeFromKey(Keyboard key);
+			friend Keyboard keyFromScancode(REubyte scancode);
 			friend Vector<float, 2> normalCursorPos();
 			friend Vector<float, 2> normalCursorDeltaPos();
 	};
@@ -59,7 +59,7 @@ namespace RE {
 # define VK_Z 0x5A
 # define VK_0 0x30
 # define VK_9 0x39
-	constexpr REint winVirtualFromKey(Keyboard key) {
+	constexpr REulong winVirtualFromKey(Keyboard key) {
 		switch (key) {
 			case Keyboard::Space:
 				return VK_SPACE;
@@ -150,20 +150,20 @@ namespace RE {
 			case Keyboard::Menu:
 				return VK_APPS;
 			default:
-				REushort keyId = static_cast<REushort>(key);
-				if (keyId >= static_cast<REushort>(Keyboard::A) && keyId <= static_cast<REushort>(Keyboard::Z))
-					return VK_A + (keyId - static_cast<REushort>(Keyboard::A));
-				if (keyId >= static_cast<REushort>(Keyboard::Top_0) && keyId <= static_cast<REushort>(Keyboard::Top_9))
-					return VK_0 + (keyId - static_cast<REushort>(Keyboard::Top_0));
-				if (keyId >= static_cast<REushort>(Keyboard::F1) && keyId <= static_cast<REushort>(Keyboard::F25))
-					return VK_F1 + (keyId - static_cast<REushort>(Keyboard::F1));
-				if (keyId >= static_cast<REushort>(Keyboard::Numpad_0) && keyId <= static_cast<REushort>(Keyboard::Numpad_9))
-					return VK_NUMPAD0 + (keyId - static_cast<REushort>(Keyboard::Numpad_0));
+				REulong keyId = static_cast<REulong>(key);
+				if (keyId >= static_cast<REulong>(Keyboard::A) && keyId <= static_cast<REulong>(Keyboard::Z))
+					return VK_A + (keyId - static_cast<REulong>(Keyboard::A));
+				if (keyId >= static_cast<REulong>(Keyboard::Top_0) && keyId <= static_cast<REulong>(Keyboard::Top_9))
+					return VK_0 + (keyId - static_cast<REulong>(Keyboard::Top_0));
+				if (keyId >= static_cast<REulong>(Keyboard::F1) && keyId <= static_cast<REulong>(Keyboard::F25))
+					return VK_F1 + (keyId - static_cast<REulong>(Keyboard::F1));
+				if (keyId >= static_cast<REulong>(Keyboard::Numpad_0) && keyId <= static_cast<REulong>(Keyboard::Numpad_9))
+					return VK_NUMPAD0 + (keyId - static_cast<REulong>(Keyboard::Numpad_0));
 				return 0;
 		}
 	}
 
-	constexpr Keyboard winKeyFromVirtual(REint vkCode) {
+	constexpr Keyboard winKeyFromVirtual(REulong vkCode) {
 		switch (vkCode) {
 			case VK_SPACE:
 				return Keyboard::Space;
@@ -254,18 +254,18 @@ namespace RE {
 				return Keyboard::Menu;
 			default:
 				if (vkCode >= VK_A && vkCode <= VK_Z)
-					return static_cast<Keyboard>(vkCode - VK_A + static_cast<REint>(Keyboard::A));
+					return static_cast<Keyboard>(vkCode - VK_A + static_cast<REulong>(Keyboard::A));
 				if (vkCode >= VK_0 && vkCode <= VK_9)
-					return static_cast<Keyboard>(vkCode - VK_0 + static_cast<REint>(Keyboard::Top_0));
+					return static_cast<Keyboard>(vkCode - VK_0 + static_cast<REulong>(Keyboard::Top_0));
 				if (vkCode >= VK_F1 && vkCode <= VK_F24)
-					return static_cast<Keyboard>(vkCode - VK_F1 + static_cast<REint>(Keyboard::F1));
+					return static_cast<Keyboard>(vkCode - VK_F1 + static_cast<REulong>(Keyboard::F1));
 				if (vkCode >= VK_NUMPAD0 && vkCode <= VK_NUMPAD9)
-					return static_cast<Keyboard>(vkCode - VK_NUMPAD0 + static_cast<REint>(Keyboard::Numpad_0));
+					return static_cast<Keyboard>(vkCode - VK_NUMPAD0 + static_cast<REulong>(Keyboard::Numpad_0));
 				return Keyboard::Unknown;
 		}
 	}
 #elif defined RE_OS_LINUX
-	constexpr REint x11VirtualFromKey(Keyboard key) {
+	constexpr REulong x11VirtualFromKey(Keyboard key) {
 		switch (key) {
 			case Keyboard::Space:
 				return XK_space;
@@ -356,20 +356,20 @@ namespace RE {
 			case Keyboard::Menu:
 				return XK_Menu;
 			default:
-				REushort keyId = static_cast<REushort>(key);
-				if (keyId >= static_cast<REushort>(Keyboard::A) && keyId <= static_cast<REushort>(Keyboard::Z))
-					return XK_a + (keyId - static_cast<REushort>(Keyboard::A));
-				if (keyId >= static_cast<REushort>(Keyboard::Top_0) && keyId <= static_cast<REushort>(Keyboard::Top_9))
-					return XK_0 + (keyId - static_cast<REushort>(Keyboard::Top_0));
-				if (keyId >= static_cast<REushort>(Keyboard::F1) && keyId <= static_cast<REushort>(Keyboard::F25))
-					return XK_F1 + (keyId - static_cast<REushort>(Keyboard::F1));
-				if (keyId >= static_cast<REushort>(Keyboard::Numpad_0) && keyId <= static_cast<REushort>(Keyboard::Numpad_9))
-					return XK_KP_0 + (keyId - static_cast<REushort>(Keyboard::Numpad_0));
+				REulong keyId = static_cast<REulong>(key);
+				if (keyId >= static_cast<REulong>(Keyboard::A) && keyId <= static_cast<REulong>(Keyboard::Z))
+					return XK_a + (keyId - static_cast<REulong>(Keyboard::A));
+				if (keyId >= static_cast<REulong>(Keyboard::Top_0) && keyId <= static_cast<REulong>(Keyboard::Top_9))
+					return XK_0 + (keyId - static_cast<REulong>(Keyboard::Top_0));
+				if (keyId >= static_cast<REulong>(Keyboard::F1) && keyId <= static_cast<REulong>(Keyboard::F25))
+					return XK_F1 + (keyId - static_cast<REulong>(Keyboard::F1));
+				if (keyId >= static_cast<REulong>(Keyboard::Numpad_0) && keyId <= static_cast<REulong>(Keyboard::Numpad_9))
+					return XK_KP_0 + (keyId - static_cast<REulong>(Keyboard::Numpad_0));
 				return 0;
 		}
 	}
 
-	constexpr Keyboard x11KeyFromVirtual(REint vkCode) {
+	constexpr Keyboard x11KeyFromVirtual(REulong vkCode) {
 		switch (vkCode) {
 			case XK_space:
 				return Keyboard::Space;
@@ -506,8 +506,8 @@ namespace RE {
 	}
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 
-	REint scancodeFromKey(Keyboard key);
-	Keyboard keyFromScancode(REint scancode);
+	REubyte scancodeFromKey(Keyboard key);
+	Keyboard keyFromScancode(REubyte scancode);
 
 	bool isKeyDown(Keyboard key);
 	bool isKeyPressed(Keyboard key);
@@ -537,4 +537,4 @@ namespace RE {
 
 }
 
-#endif
+#endif /* __RE_INPUT_H__ */

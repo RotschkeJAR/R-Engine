@@ -101,7 +101,7 @@ namespace RE {
 						string[len] = '\0';
 						inputMgr.charInput(string);
 					}
-					inputMgr.keyInput(keyFromScancode(scancode), static_cast<REshort>(scancode), keyPressed);
+					inputMgr.keyInput(keySym, static_cast<REushort>(scancode), keyPressed);
 					} break;
 				case XButtonPress:
 				case XButtonRelease: {

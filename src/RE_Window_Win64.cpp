@@ -45,7 +45,7 @@ namespace RE {
 						default:
 							break;
 					}
-					win64->inputMgr.keyInput(winKeyFromVirtual(vkCode), scanCode, !static_cast<bool>(keyReleased));
+					win64->inputMgr.keyInput(vkCode, static_cast<REushort>(scanCode), !static_cast<bool>(keyReleased));
 					} return 0;
 				case WM_CHAR: {
 					wchar_t character[2] = {static_cast<wchar_t>(wParam), L'\0'};
@@ -76,8 +76,8 @@ namespace RE {
 					ReleaseCapture();
 					return 0;
 				case WM_MOUSEMOVE: { /* mouse moved */
-					signed int xPos = GET_X_LPARAM(lParam);
-					signed int yPos = GET_Y_LPARAM(lParam);
+					REint xPos = GET_X_LPARAM(lParam);
+					REint yPos = GET_Y_LPARAM(lParam);
 					win64->inputMgr.cursorInput(xPos, yPos);
 					} return 0;
 				case WM_SETCURSOR:

@@ -257,7 +257,7 @@ namespace RE {
 					return static_cast<Keyboard>(vkCode - VK_A + static_cast<REint>(Keyboard::A));
 				if (vkCode >= VK_0 && vkCode <= VK_9)
 					return static_cast<Keyboard>(vkCode - VK_0 + static_cast<REint>(Keyboard::Top_0));
-				if (vkCode >= VK_F1 && vkCode <= VK_F25)
+				if (vkCode >= VK_F1 && vkCode <= VK_F24)
 					return static_cast<Keyboard>(vkCode - VK_F1 + static_cast<REint>(Keyboard::F1));
 				if (vkCode >= VK_NUMPAD0 && vkCode <= VK_NUMPAD9)
 					return static_cast<Keyboard>(vkCode - VK_NUMPAD0 + static_cast<REint>(Keyboard::Numpad_0));

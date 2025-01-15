@@ -11,6 +11,7 @@
 # define UNICODE
 # define WIN32_LEAN_AND_MEAN /* speeds compilation up */
 # include <windows.h>
+# include <windowsx.h>
 #elif defined RE_OS_LINUX
 # include <X11/Xlib.h>
 # include <X11/Xatom.h>

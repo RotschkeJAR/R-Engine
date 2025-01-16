@@ -25,9 +25,6 @@ namespace RE {
 			Window_X11();
 			~Window_X11();
 			void processLoop();
-			void fullscreen();
-			void windowedFullscreen();
-			void window();
 	};
 #endif /* RE_OS_LINUX */
 

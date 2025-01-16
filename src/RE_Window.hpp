@@ -22,9 +22,6 @@ namespace RE {
 		public:
 			Window();
 			virtual ~Window();
-			virtual void fullscreen() = 0;
-			virtual void windowedFullscreen() = 0;
-			virtual void window() = 0;
 			void show(bool showWindow);
 			void setTitle(const char* newTitle);
 			void update();

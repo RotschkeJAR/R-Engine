@@ -96,7 +96,7 @@ namespace RE {
 		return DefWindowProcW(hWnd, uMsg, wParam, lParam);
 	}
 	
-	Window_Win64::Window_Win64() : hInstance(GetModuleHandle(nullptr)), hWindow(nullptr), msg({ }), hCursor(LoadCursor(nullptr, IDC_ARROW)), hDevice(nullptr), hRenderContext(nullptr) {
+	Window_Win64::Window_Win64() : hInstance(GetModuleHandle(nullptr)), hWindow(nullptr), msg({ }), hCursor(LoadCursor(nullptr, IDC_ARROW)) {
 		win64 = this;
 		if (!hInstance) {
 			RE_ERROR("Failed getting the HINSTANCE for window creation");
@@ -125,58 +125,12 @@ namespace RE {
 			RE_ERROR("Failed creating window");
 			return;
 		}
-		hDevice = GetDC(hWindow);
-		PIXELFORMATDESCRIPTOR pfd = {};
-		pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
-		pfd.nVersion = 1;
-		pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
-		pfd.iPixelType = PFD_TYPE_RGBA;
-		pfd.cColorBits = 32;
-		pfd.cRedBits = 8;
-		pfd.cRedShift = 0;
-		pfd.cGreenBits = 8;
-		pfd.cGreenShift = 0;
-		pfd.cBlueBits = 8;
-		pfd.cBlueShift = 0;
-		pfd.cAlphaBits = 8;
-		pfd.cAlphaShift = 0;
-		pfd.cAccumBits = 0;
-		pfd.cAccumRedBits = 0;
-		pfd.cAccumGreenBits = 0;
-		pfd.cAccumBlueBits = 0;
-		pfd.cAccumAlphaBits = 0;
-		pfd.cDepthBits = 24;
-		pfd.cStencilBits = 0;
-		pfd.cAuxBuffers = 0;
-		pfd.iLayerType = PFD_MAIN_PLANE;
-		pfd.bReserved = 0;
-		pfd.dwLayerMask = 0;
-		pfd.dwVisibleMask = 0;
-		pfd.dwDamageMask = 0;
-		signed int pixelFormat = ChoosePixelFormat(hDevice, &pfd);
-		if (!pixelFormat) {
-			RE_ERROR("Failed creating a pixel format for OpenGL");
-			return;
-		}
-		if (!SetPixelFormat(hDevice, pixelFormat, &pfd)) {
-			RE_ERROR("Failed setting the pixel format to current");
-			return;
-		}
-		hRenderContext = wglCreateContext(hDevice);
-		if (!hRenderContext) {
-			RE_ERROR("Failed creating render context");
-			return;
-		}
-		wglMakeCurrent(hDevice, hRenderContext);
 		valid = true;
 	}
 	
 	Window_Win64::~Window_Win64() {
 		if (win64 != this)
 			return;
-		wglMakeCurrent(nullptr, nullptr);
-		wglDeleteContext(hRenderContext);
-		ReleaseDC(hWindow, hDevice);
 		DestroyWindow(hWindow);
 		UnregisterClassW(WINDOW_CLASS_NAME, hInstance);
 		win64 = nullptr;
@@ -197,19 +151,6 @@ namespace RE {
 			TranslateMessage(&msg);
 			DispatchMessageW(&msg); /* calls window procedure */
 		}
-		SwapBuffers(hDevice);
-	}
-
-	void Window_Win64::fullscreen() {
-		//HMONITOR hMonitor = MonitorFromWindow(hWindow, MONITOR_DEFAULTTOPRIMARY);
-	}
-	
-	void Window_Win64::windowedFullscreen() {
-		//HMONITOR hMonitor = MonitorFromWindow(hWindow, MONITOR_DEFAULTTOPRIMARY);
-	}
-	
-	void Window_Win64::window() {
-
 	}
 #endif /* RE_OS_WINDOWS */
 

@@ -5,28 +5,38 @@
 namespace RE {
 
 #ifdef RE_OS_LINUX
-	Window_X11::Window_X11() : xWindow(0), xaClose(0), xaUTF8(0), xaWinName(0), glxContext(nullptr), xDisplay(XOpenDisplay(nullptr)) {
+	Window_X11::Window_X11() : xWindow(0), xaClose(0), xaUTF8(0), xaWinName(0), xDisplay(XOpenDisplay(nullptr)) {
 		if (!xDisplay) {
 			RE_ERROR("Unable to connect to X11 server");
 			return;
 		}
-		REint glxAttribs[] = {GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, XNone};
 		REint defaultScreen = DefaultScreen(xDisplay);
 		XWindow root = RootWindow(xDisplay, defaultScreen);
-		XVisualInfo* visualInfo = glXChooseVisual(xDisplay, defaultScreen, glxAttribs);
-		if (!visualInfo) {
-			RE_ERROR("No valid visual info struct has been created");
+
+		REint visualsCount = 0;
+		XVisualInfo visualTemplate = {};
+		visualTemplate.screen = defaultScreen;
+		visualTemplate.class = TrueColor;
+		XVisualInfo* availableVisualInfos = XGetVisualInfo(xDisplay, VisualScreenMask | VisualClassMask, &visualTemplate, &visualsCount);
+		if (!visualsCount) {
+			RE_ERROR("No visual information available for X11 window creation");
 			return;
 		}
+		XVisualInfo visualInfo = availableVisualInfos[0];
+		XFree(availableVisualInfos);
+
 		XSetWindowAttributes winAttrib;
-		winAttrib.colormap = XCreateColormap(xDisplay, root, visualInfo->visual, AllocNone);
+		winAttrib.colormap = XCreateColormap(xDisplay, root, visualInfo.visual, AllocNone);
+		winAttrib.border_pixel = 0;
 		winAttrib.event_mask = ExposureMask | KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ResizeRedirectMask;
-		xWindow = XCreateWindow(xDisplay, root, 0, 0, 800, 600, 0, visualInfo->depth, InputOutput, visualInfo->visual, CWColormap | CWEventMask, &winAttrib);
+		xWindow = XCreateWindow(xDisplay, root, 0, 0, 800, 600, 0, visualInfo.depth, InputOutput, visualInfo.visual, CWColormap | CWEventMask, &winAttrib);
+
 		xaClose = XInternAtom(xDisplay, "WM_DELETE_WINDOW", False);
 		XSetWMProtocols(xDisplay, xWindow, &xaClose, 1);
 		XSetLocaleModifiers("");
 		xaUTF8 = XInternAtom(xDisplay, "UTF8_STRING", False);
 		xaWinName = XInternAtom(xDisplay, "_NET_WM_NAME", False);
+
 		xInputMethod = XOpenIM(xDisplay, nullptr, nullptr, nullptr);
 		if (!xInputMethod) {
 			RE_ERROR("Failed creating X11 input method");
@@ -38,12 +48,6 @@ namespace RE {
 			return;
 		}
 		updateTitleInternal();
-		glxContext = glXCreateContext(xDisplay, visualInfo, nullptr, GL_TRUE);
-		if (!glxContext) {
-			RE_ERROR("No GLX context has been created");
-			return;
-		}
-		glXMakeCurrent(xDisplay, xWindow, glxContext);
 		valid = true;
 	}
 
@@ -54,13 +58,8 @@ namespace RE {
 			XDestroyWindow(xDisplay, xWindow);
 			if (xInputContext) {
 				XDestroyIC(xInputContext);
-				if (xInputMethod) {
+				if (xInputMethod)
 					XCloseIM(xInputMethod);
-					if (glxContext) {
-						glXMakeCurrent(xDisplay, XNone, nullptr);
-						glXDestroyContext(xDisplay, glxContext);
-					}
-				}
 			}
 		}
 		XCloseDisplay(xDisplay);
@@ -133,19 +132,6 @@ namespace RE {
 					break;
 			}
 		}
-		glXSwapBuffers(xDisplay, xWindow);
-	}
-
-	void Window_X11::fullscreen() {
-
-	}
-
-	void Window_X11::windowedFullscreen() {
-
-	}
-
-	void Window_X11::window() {
-
 	}
 #endif /* RE_OS_LINUX */
 

@@ -4,7 +4,6 @@
 #include "RE.hpp"
 #include "RE_Console.hpp"
 
-#include <GL/gl.h>
 #include <algorithm>
 
 #ifdef RE_OS_WINDOWS
@@ -27,6 +26,7 @@
  typedef KeyCode XKeyCode;
  typedef KeySym XKeySym;
  typedef Status XStatus;
+ typedef Colormap XColormap;
 # define XKeyPress KeyPress
 # define XKeyRelease KeyRelease
 # define XButtonPress ButtonPress

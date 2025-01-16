@@ -12,8 +12,6 @@ namespace RE {
 			HWND hWindow;
 			MSG msg;
 			HCURSOR hCursor;
-			HDC hDevice;
-			HGLRC hRenderContext;
 
 		protected:
 			void showInternal();
@@ -23,9 +21,6 @@ namespace RE {
 			Window_Win64();
 			~Window_Win64();
 			void processLoop();
-			void fullscreen();
-			void windowedFullscreen();
-			void window();
 
 		friend LRESULT CALLBACK windowProcess(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	};

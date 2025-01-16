@@ -6,7 +6,7 @@ namespace RE {
 
 	Window::Window() : title(u8"Untitled game window"), closeFlag(false), valid(false) {
 		if (winRef) {
-			RE_ERROR("A window already exists. New window has been discarded");
+			RE_FATAL_ERROR("A window already exists. New window has been discarded");
 			return;
 		}
 		winRef = this;

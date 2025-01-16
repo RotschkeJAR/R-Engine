@@ -7,7 +7,7 @@ namespace RE {
 #ifdef RE_OS_LINUX
 	Window_X11::Window_X11() : xWindow(0), xaClose(0), xaUTF8(0), xaWinName(0), xDisplay(XOpenDisplay(nullptr)) {
 		if (!xDisplay) {
-			RE_ERROR("Unable to connect to X11 server");
+			RE_FATAL_ERROR("Unable to connect to X11 server");
 			return;
 		}
 		REint defaultScreen = DefaultScreen(xDisplay);
@@ -19,7 +19,7 @@ namespace RE {
 		visualTemplate.c_class = TrueColor;
 		XVisualInfo* availableVisualInfos = XGetVisualInfo(xDisplay, VisualScreenMask | VisualClassMask, &visualTemplate, &visualsCount);
 		if (!visualsCount) {
-			RE_ERROR("No visual information available for X11 window creation");
+			RE_FATAL_ERROR("No visual information available for X11 window creation");
 			return;
 		}
 		XVisualInfo visualInfo = availableVisualInfos[0];
@@ -39,12 +39,12 @@ namespace RE {
 
 		xInputMethod = XOpenIM(xDisplay, nullptr, nullptr, nullptr);
 		if (!xInputMethod) {
-			RE_ERROR("Failed creating X11 input method");
+			RE_FATAL_ERROR("Failed creating X11 input method");
 			return;
 		}
 		xInputContext = XCreateIC(xInputMethod, XNInputStyle, XIMPreeditNothing | XIMStatusNothing, XNClientWindow, xWindow, nullptr);
 		if (!xInputContext) {
-			RE_ERROR("Failed creating X11 input context");
+			RE_FATAL_ERROR("Failed creating X11 input context");
 			return;
 		}
 		updateTitleInternal();

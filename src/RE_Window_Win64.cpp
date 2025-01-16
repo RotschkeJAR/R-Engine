@@ -99,7 +99,7 @@ namespace RE {
 	Window_Win64::Window_Win64() : hInstance(GetModuleHandle(nullptr)), hWindow(nullptr), msg({ }), hCursor(LoadCursor(nullptr, IDC_ARROW)) {
 		win64 = this;
 		if (!hInstance) {
-			RE_ERROR("Failed getting the HINSTANCE for window creation");
+			RE_FATAL_ERROR("Failed getting the HINSTANCE for window creation");
 			return;
 		}
 		const std::wstring wTitleStr = convertToWide(title);
@@ -109,7 +109,7 @@ namespace RE {
 		wc.hInstance = hInstance;
 		wc.lpszClassName = WINDOW_CLASS_NAME;
 		if (!RegisterClassExW(&wc)) {
-			RE_ERROR("Failed registering class for window creation");
+			RE_FATAL_ERROR("Failed registering class for window creation");
 			return;
 		}
 		hWindow = CreateWindowExW(0,
@@ -122,7 +122,7 @@ namespace RE {
 			hInstance,
 			nullptr);
 		if (!hWindow) {
-			RE_ERROR("Failed creating window");
+			RE_FATAL_ERROR("Failed creating window");
 			return;
 		}
 		valid = true;

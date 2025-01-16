@@ -17,7 +17,6 @@
 # include <X11/Xlocale.h>
 # include <X11/keysym.h>
 # include <X11/XKBlib.h>
-# include <GL/glx.h>
  typedef Display XDisplay;
  typedef Window XWindow;
  typedef Atom XAtom;

@@ -1,8 +1,7 @@
 #include "RE_Ext Header.hpp"
 #include "RE_Window_Win64.hpp"
 #include "RE_Window_X11.hpp"
-
-#include "RE_Input.hpp"
+#include "RE_Renderer.hpp"
 
 #include <chrono>
 #include <thread>
@@ -13,7 +12,13 @@ namespace RE {
 	bool running = false;
 	Window* window = nullptr;
 
-	void renderThread() {
+	void waitForTrue(bool& value) {
+		REubyte distraction;
+		while (!value)
+			distraction ++;
+	}
+
+	void gameThread() {
 		while (running) {
 			std::this_thread::sleep_for(std::chrono::seconds(1));
 		}
@@ -34,17 +39,17 @@ namespace RE {
 			delete window;
 			return;
 		}
+		Renderer renderer;
 		running = true;
-		std::thread renderLogic(renderThread);
+		std::thread gameLogicThread(gameThread);
 		while (running) {
 			window->update();
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-			glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+			renderer.render();
 			window->show(true);
 			running = !window->shouldClose() && !errorOccured;
 		}
 		window->show(false);
-		renderLogic.join();
+		gameLogicThread.join();
 		delete window;
 	}
 

@@ -16,7 +16,7 @@ namespace RE {
 		REint visualsCount = 0;
 		XVisualInfo visualTemplate = {};
 		visualTemplate.screen = defaultScreen;
-		visualTemplate.class = TrueColor;
+		visualTemplate.c_class = TrueColor;
 		XVisualInfo* availableVisualInfos = XGetVisualInfo(xDisplay, VisualScreenMask | VisualClassMask, &visualTemplate, &visualsCount);
 		if (!visualsCount) {
 			RE_ERROR("No visual information available for X11 window creation");

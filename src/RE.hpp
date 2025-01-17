@@ -221,6 +221,21 @@ namespace RE {
 	}
 
 	template <typename T>
+	constexpr bool isBitTrue(T value, T bit) {
+		return (value & genBitmask<T>(bit)) != 0;
+	}
+
+	template <typename T>
+	constexpr T setBit(T& value, T bit, bool newState) {
+		T targetBit = genBitmask<T>(bit);
+		if (newState)
+			value |= targetBit;
+		else
+			value &= ~targetBit;
+		return value;
+	}
+
+	template <typename T>
 	constexpr std::string bitmaskToString(T bitmask, bool withSpace) {
 		std::string result("");
 		T bits = sizeof(T) * static_cast<T>(8);

@@ -1,5 +1,6 @@
 #include "RE_Window_Win64.hpp"
 #include "RE_Main.hpp"
+#include "RE_Vulkan_Win64.hpp"
 
 namespace RE {
 
@@ -96,7 +97,7 @@ namespace RE {
 		return DefWindowProcW(hWnd, uMsg, wParam, lParam);
 	}
 	
-	Window_Win64::Window_Win64() : hInstance(GetModuleHandle(nullptr)), hWindow(nullptr), msg({ }), hCursor(LoadCursor(nullptr, IDC_ARROW)) {
+	Window_Win64::Window_Win64() : hInstance(GetModuleHandle(nullptr)), hWindow(nullptr), msg{}, hCursor(LoadCursor(nullptr, IDC_ARROW)) {
 		win64 = this;
 		if (!hInstance) {
 			RE_FATAL_ERROR("Failed getting the HINSTANCE for window creation");
@@ -125,6 +126,9 @@ namespace RE {
 			RE_FATAL_ERROR("Failed creating window");
 			return;
 		}
+		vkRenderPipeline = new Vulkan_Win64(hInstance, hWindow);
+		if (!vkRenderPipeline->isValid())
+			return;
 		valid = true;
 	}
 	

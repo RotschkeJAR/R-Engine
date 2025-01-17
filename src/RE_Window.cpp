@@ -4,7 +4,7 @@ namespace RE {
 	
 	Window* winRef = nullptr;
 
-	Window::Window() : title(u8"Untitled game window"), closeFlag(false), valid(false) {
+	Window::Window() : vkRenderPipeline(nullptr), title(u8"Untitled game window"), closeFlag(false), valid(false) {
 		if (winRef) {
 			RE_FATAL_ERROR("A window already exists. New window has been discarded");
 			return;
@@ -13,8 +13,11 @@ namespace RE {
 	}
 
 	Window::~Window() {
-		if (winRef == this)
+		if (winRef == this) {
 			winRef = nullptr;
+			if (vkRenderPipeline)
+				delete vkRenderPipeline;
+		}
 	}
 
 	void Window::show(bool showWindow) {

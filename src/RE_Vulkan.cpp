@@ -139,29 +139,9 @@ namespace RE {
 	PFN_vkCmdNextSubpass vkCmdNextSubpass = nullptr;
 	PFN_vkCmdEndRenderPass vkCmdEndRenderPass = nullptr;
 	PFN_vkCmdExecuteCommands vkCmdExecuteCommands = nullptr;
+	PFN_vkDestroySurfaceKHR vkDestroySurfaceKHR = nullptr;
 
 	Vulkan* Vulkan::instance = nullptr;
-
-#define _VK_INST 0
-#define _VK_FUNC 1
-
-	void* Vulkan::loadFunc(const char* funcName) {
-		void* func = nullptr;
-		if (isBitTrue<REubyte>(validation, 0))
-			func = reinterpret_cast<void*>(vkGetInstanceProcAddr(vkInstance, funcName));
-		else
-			func = loadFuncInternal(funcName);
-		if (!func)
-			RE_FATAL_ERROR(appendStrings("Failed loading the Vulkan function \"", funcName, "\""));
-		return func;
-	}
-	
-	Vulkan::Vulkan() : validation(0), vkInstance{} {
-		if (instance)
-			RE_FATAL_ERROR("Another instance of the Vulkan-class has been initialized");
-		else
-			instance = this;
-	}
 
 	Vulkan::~Vulkan() {
 		if (instance != this)
@@ -304,45 +284,11 @@ namespace RE {
 		vkCmdNextSubpass = nullptr;
 		vkCmdEndRenderPass = nullptr;
 		vkCmdExecuteCommands = nullptr;
-	}
-
-	bool Vulkan::createVulkanInstance() {
-		if (isBitTrue<REubyte>(validation, _VK_INST))
-			return true;
-		vkCreateInstance = reinterpret_cast<PFN_vkCreateInstance>(loadFuncInternal("vkCreateInstance"));
-		vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(loadFuncInternal("vkGetInstanceProcAddr"));
-		VkApplicationInfo appInfo = {};
-		appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-		appInfo.pApplicationName = "Hello Vulkan";
-		appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-		appInfo.pEngineName = "R-Engine";
-		appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-		appInfo.apiVersion = VK_API_VERSION_1_0;
-		VkInstanceCreateInfo createInstInfo = {};
-		createInstInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-		createInstInfo.pApplicationInfo = &appInfo;
-		createInstInfo.enabledLayerCount = 0;
-		createInstInfo.ppEnabledLayerNames = nullptr;
-		createInstInfo.enabledExtensionCount = 0;
-		const char* extensionsVk[1] = {u8"\0"};
-		createInstInfo.ppEnabledExtensionNames = reinterpret_cast<const char**>(&extensionsVk);
-		if (vkCreateInstance(&createInstInfo, nullptr, &vkInstance) != VK_SUCCESS) {
-			RE_FATAL_ERROR("Failed creating a Vulkan instance");
-			return false;
-		}
-		setBit<REubyte>(validation, _VK_INST, true);
-		return true;
-	}
-
-	void Vulkan::destroyVulkanInstance() {
-		if (!isBitTrue<REubyte>(validation, _VK_INST))
-			return;
-		vkDestroyInstance(vkInstance, nullptr);
-		setBit<REubyte>(validation, _VK_INST, false);
+		vkDestroySurfaceKHR = nullptr;
 	}
 
 	bool Vulkan::loadAllFunc() {
-		if (!createVulkanInstance())
+		if (!isBitTrue<REubyte>(validation, _VK_INST))
 			return false;
 		vkDestroyInstance = reinterpret_cast<PFN_vkDestroyInstance>(loadFunc("vkDestroyInstance"));
 		if (!vkDestroyInstance)
@@ -367,6 +313,9 @@ namespace RE {
 			return false;
 		vkGetPhysicalDeviceMemoryProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceMemoryProperties>(loadFunc("vkGetPhysicalDeviceMemoryProperties"));
 		if (!vkGetPhysicalDeviceMemoryProperties)
+			return false;
+		vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(loadFunc("vkGetInstanceProcAddr"));
+		if (!vkGetInstanceProcAddr)
 			return false;
 		vkGetDeviceProcAddr = reinterpret_cast<PFN_vkGetDeviceProcAddr>(loadFunc("vkGetDeviceProcAddr"));
 		if (!vkGetDeviceProcAddr)
@@ -749,12 +698,103 @@ namespace RE {
 		vkCmdExecuteCommands = reinterpret_cast<PFN_vkCmdExecuteCommands>(loadFunc("vkCmdExecuteCommands"));
 		if (!vkCmdExecuteCommands)
 			return false;
+		vkDestroySurfaceKHR = reinterpret_cast<PFN_vkDestroySurfaceKHR>(loadFunc("vkDestroySurfaceKHR"));
+		if (!vkDestroySurfaceKHR)
+			return false;
 		setBit<REubyte>(validation, _VK_FUNC, true);
 		return true;
 	}
+	
+	Vulkan::Vulkan() : validation(0), vkInstance{} {
+		if (instance)
+			RE_FATAL_ERROR("Another instance of the Vulkan-class has been initialized");
+		else
+			instance = this;
+	}
+
+	void* Vulkan::loadFunc(const char* funcName) {
+		void* func = nullptr;
+		if (isBitTrue<REubyte>(validation, 0))
+			func = reinterpret_cast<void*>(vkGetInstanceProcAddr(vkInstance, funcName));
+		else
+			func = loadFuncInternal(funcName);
+		if (!func)
+			RE_FATAL_ERROR(appendStrings("Failed loading the Vulkan function \"", funcName, "\""));
+		return func;
+	}
+
+	bool Vulkan::createVulkanInstance(const char** nameExt, REuint numberExt) {
+		if (isBitTrue<REubyte>(validation, _VK_INST))
+			return true;
+		vkCreateInstance = reinterpret_cast<PFN_vkCreateInstance>(loadFunc("vkCreateInstance"));
+		vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(loadFunc("vkGetInstanceProcAddr"));
+		if (!vkCreateInstance || !vkGetInstanceProcAddr)
+			return false;
+		VkApplicationInfo appInfo = { VK_STRUCTURE_TYPE_APPLICATION_INFO };
+		appInfo.pApplicationName = getAppName();
+		appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+		appInfo.pEngineName = "R-Engine";
+		appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+		appInfo.apiVersion = VK_API_VERSION_1_0;
+		VkInstanceCreateInfo createInstInfo = { VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
+		createInstInfo.pApplicationInfo = &appInfo;
+		createInstInfo.enabledLayerCount = 0;
+		createInstInfo.ppEnabledLayerNames = nullptr;
+		createInstInfo.enabledExtensionCount = numberExt;
+		createInstInfo.ppEnabledExtensionNames = nameExt;
+		if (vkCreateInstance(&createInstInfo, nullptr, &vkInstance) != VK_SUCCESS) {
+			RE_FATAL_ERROR("Failed creating a Vulkan instance");
+			return false;
+		}
+		setBit<REubyte>(validation, _VK_INST, true);
+		if (!loadAllFunc())
+			return false;
+		return true;
+	}
+
+	void Vulkan::destroyVulkanInstance() {
+		if (!isBitTrue<REubyte>(validation, _VK_INST))
+			return;
+		vkDestroyInstance(vkInstance, nullptr);
+		setBit<REubyte>(validation, _VK_INST, false);
+	}
+
+	bool Vulkan::initVulkan(const char** nameExt, REuint numberExt) {
+		if (!createVulkanInstance(nameExt, numberExt))
+			return false;
+		if (!loadAllFunc())
+			return false;
+		if (!createSurface())
+			return false;
+		REuint extCount = 0;
+		vkEnumerateInstanceExtensionProperties(nullptr, &extCount, nullptr);
+		println(extCount, " extensions supported");
+		VkExtensionProperties pp[extCount];
+		vkEnumerateInstanceExtensionProperties(nullptr, &extCount, pp);
+		for (REuint i = 0; i < extCount; i++)
+			println("\t", pp[i].extensionName, " : ", pp[i].specVersion);
+
+		REuint layerCount = 0;
+		vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+		println(layerCount, " layers supported");
+		VkLayerProperties layerProp[layerCount];
+		vkEnumerateInstanceLayerProperties(&layerCount, layerProp);
+		for (REuint i = 0; i < layerCount; i++)
+			println("\t", layerProp[i].layerName, " (", layerProp[i].specVersion, ", ", layerProp[i].implementationVersion, "): ", layerProp[i].description);
+		return true;
+	}
+
+	void Vulkan::destroyVulkan() {
+		if (isBitTrue<REubyte>(validation, _VK_INST)) {
+			if (isBitTrue<REubyte>(validation, _VK_SURF)) {
+				vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+			}
+			vkDestroyInstance(vkInstance, nullptr);
+		}
+	}
 
 	bool Vulkan::isValid() {
-		return (validation & genBitmaskRange(0, 1)) != 0;
+		return areBitsTrueRange<REubyte>(validation, 0, _VK_LAST);
 	}
 
 }

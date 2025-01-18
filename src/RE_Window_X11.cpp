@@ -1,4 +1,5 @@
 #include "RE_Window_X11.hpp"
+#include "RE_Vulkan_X11.hpp"
 
 #include <cstring>
 
@@ -48,6 +49,9 @@ namespace RE {
 			return;
 		}
 		updateTitleInternal();
+		vkRenderPipeline = new Vulkan_X11(xDisplay, xWindow);
+		if (!vkRenderPipeline->isValid())
+			return;
 		valid = true;
 	}
 
@@ -58,8 +62,11 @@ namespace RE {
 			XDestroyWindow(xDisplay, xWindow);
 			if (xInputContext) {
 				XDestroyIC(xInputContext);
-				if (xInputMethod)
+				if (xInputMethod) {
 					XCloseIM(xInputMethod);
+					if (vkRenderPipeline)
+						delete vkRenderPipeline;
+				}
 			}
 		}
 		XCloseDisplay(xDisplay);

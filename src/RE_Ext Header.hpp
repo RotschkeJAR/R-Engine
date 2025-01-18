@@ -3,8 +3,10 @@
 
 #include "RE.hpp"
 #include "RE_Console.hpp"
+#include "RE_Vulkan.hpp"
 
 #include <algorithm>
+#include <fstream>
 
 #ifdef RE_OS_WINDOWS
 # define UNICODE
@@ -13,10 +15,12 @@
 # include <windowsx.h>
 #elif defined RE_OS_LINUX
 # include <X11/Xlib.h>
+# include <X11/Xutil.h>
 # include <X11/Xatom.h>
 # include <X11/Xlocale.h>
 # include <X11/keysym.h>
 # include <X11/XKBlib.h>
+# include <dlfcn.h>
  typedef Display XDisplay;
  typedef Window XWindow;
  typedef Atom XAtom;

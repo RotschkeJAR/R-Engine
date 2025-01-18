@@ -13,18 +13,27 @@
 
 namespace RE {
 
+#define _VK_INST 0
+#define _VK_FUNC 1
+#define _VK_SURF 2
+#define _VK_LAST _VK_SURF
+
 	class Vulkan {
 		private:
-			REubyte validation;
-			VkInstance vkInstance;
-
-			void* loadFunc(const char* funcName);
+			bool loadAllFunc();
+			bool createVulkanInstance(const char** nameExt, REuint numberExt);
+			void destroyVulkanInstance();
 
 		protected:
+			REubyte validation;
+			VkInstance vkInstance;
+			VkSurfaceKHR vkSurface;
+
 			virtual void* loadFuncInternal(const char* funcName) = 0;
-			bool createVulkanInstance();
-			void destroyVulkanInstance();
-			bool loadAllFunc();
+			virtual bool createSurface() = 0;
+			void* loadFunc(const char* funcName);
+			bool initVulkan(const char** nameExt, REuint numberExt);
+			void destroyVulkan();
 
 		public:
 			static Vulkan* instance;

@@ -13,11 +13,8 @@ namespace RE {
 	}
 
 	Window::~Window() {
-		if (winRef == this) {
+		if (winRef == this)
 			winRef = nullptr;
-			if (vkRenderPipeline)
-				delete vkRenderPipeline;
-		}
 	}
 
 	void Window::show(bool showWindow) {

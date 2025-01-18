@@ -11,7 +11,6 @@ namespace RE {
 			XWindow xWindow;
 			XAtom xaClose;
 			XAtom xaUTF8, xaWinName;
-			GLXContext glxContext;
 			XInputMethod xInputMethod;
 			XInputContext xInputContext;
 

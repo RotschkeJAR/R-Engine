@@ -135,6 +135,8 @@ namespace RE {
 	Window_Win64::~Window_Win64() {
 		if (win64 != this)
 			return;
+		if (vkRenderPipeline)
+			delete vkRenderPipeline;
 		DestroyWindow(hWindow);
 		UnregisterClassW(WINDOW_CLASS_NAME, hInstance);
 		win64 = nullptr;

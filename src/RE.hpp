@@ -198,6 +198,7 @@ namespace RE {
 
 	std::string convertToUTF8(const wchar_t* wstring);
 	std::wstring convertToWide(const char* string);
+	const char* getAppName();
 
 	template <typename T>
 	constexpr T nth_root(T n, T value) {
@@ -223,6 +224,18 @@ namespace RE {
 	template <typename T>
 	constexpr bool isBitTrue(T value, T bit) {
 		return (value & genBitmask<T>(bit)) != 0;
+	}
+
+	template <typename T>
+	constexpr bool areBitsTrueRange(T value, T begin, T end) {
+		if (begin > end)
+			std::swap(begin, end);
+		else if (begin == end)
+			return isBitTrue<T>(value, begin);
+		for (T i = begin; i < end; i++)
+			if (!isBitTrue<T>(value, i))
+				return false;
+		return true;
 	}
 
 	template <typename T>

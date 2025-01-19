@@ -16,7 +16,8 @@ namespace RE {
 #define _VK_INST 0
 #define _VK_FUNC 1
 #define _VK_SURF 2
-#define _VK_LAST _VK_SURF
+#define _VK_DEVI 3
+#define _VK_LAST _VK_DEVI
 
 	class Vulkan {
 		private:
@@ -26,8 +27,6 @@ namespace RE {
 
 		protected:
 			REubyte validation;
-			VkInstance vkInstance;
-			VkSurfaceKHR vkSurface;
 
 			virtual void* loadFuncInternal(const char* funcName) = 0;
 			virtual bool createSurface() = 0;
@@ -42,6 +41,17 @@ namespace RE {
 			virtual ~Vulkan();
 			bool isValid();
 	};
+
+	struct VulkanQueue {
+		VkQueue vkQueue;
+		REuint familyIndex;
+	};
+
+	extern VkInstance vkInstance;
+	extern VkSurfaceKHR vkSurface;
+	extern VkPhysicalDevice vkPhysicalDevice;
+	extern VkDevice vkDevice;
+	extern VulkanQueue graphicsQueue;
 
 	extern PFN_vkCreateInstance vkCreateInstance;
 	extern PFN_vkDestroyInstance vkDestroyInstance;
@@ -180,6 +190,8 @@ namespace RE {
 	extern PFN_vkCmdNextSubpass vkCmdNextSubpass;
 	extern PFN_vkCmdEndRenderPass vkCmdEndRenderPass;
 	extern PFN_vkCmdExecuteCommands vkCmdExecuteCommands;
+	extern PFN_vkDestroySurfaceKHR vkDestroySurfaceKHR;
+	extern PFN_vkGetPhysicalDeviceSurfaceSupportKHR vkGetPhysicalDeviceSurfaceSupportKHR;
 
 }
 

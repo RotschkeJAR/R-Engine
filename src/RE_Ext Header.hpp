@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <fstream>
+#include <optional>
 
 #ifdef RE_OS_WINDOWS
 # define UNICODE

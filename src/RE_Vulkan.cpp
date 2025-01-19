@@ -140,6 +140,13 @@ namespace RE {
 	PFN_vkCmdEndRenderPass vkCmdEndRenderPass = nullptr;
 	PFN_vkCmdExecuteCommands vkCmdExecuteCommands = nullptr;
 	PFN_vkDestroySurfaceKHR vkDestroySurfaceKHR = nullptr;
+	PFN_vkGetPhysicalDeviceSurfaceSupportKHR vkGetPhysicalDeviceSurfaceSupportKHR = nullptr;
+
+	VkInstance vkInstance = {};
+	VkSurfaceKHR vkSurface = {};
+	VkPhysicalDevice vkPhysicalDevice = {};
+	VkDevice vkDevice = {};
+	VulkanQueue graphicsQueue = {};
 
 	Vulkan* Vulkan::instance = nullptr;
 
@@ -285,11 +292,12 @@ namespace RE {
 		vkCmdEndRenderPass = nullptr;
 		vkCmdExecuteCommands = nullptr;
 		vkDestroySurfaceKHR = nullptr;
+		vkGetPhysicalDeviceSurfaceSupportKHR = nullptr;
 	}
 
 	bool Vulkan::loadAllFunc() {
-		if (!isBitTrue<REubyte>(validation, _VK_INST))
-			return false;
+		if (isBitTrue<REubyte>(validation, _VK_FUNC))
+			return true;
 		vkDestroyInstance = reinterpret_cast<PFN_vkDestroyInstance>(loadFunc("vkDestroyInstance"));
 		if (!vkDestroyInstance)
 			return false;
@@ -701,11 +709,14 @@ namespace RE {
 		vkDestroySurfaceKHR = reinterpret_cast<PFN_vkDestroySurfaceKHR>(loadFunc("vkDestroySurfaceKHR"));
 		if (!vkDestroySurfaceKHR)
 			return false;
+		vkGetPhysicalDeviceSurfaceSupportKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceSupportKHR>(loadFunc("vkGetPhysicalDeviceSurfaceSupportKHR"));
+		if (!vkGetPhysicalDeviceSurfaceSupportKHR)
+			return false;
 		setBit<REubyte>(validation, _VK_FUNC, true);
 		return true;
 	}
 	
-	Vulkan::Vulkan() : validation(0), vkInstance{} {
+	Vulkan::Vulkan() : validation(0) {
 		if (instance)
 			RE_FATAL_ERROR("Another instance of the Vulkan-class has been initialized");
 		else
@@ -747,8 +758,6 @@ namespace RE {
 			return false;
 		}
 		setBit<REubyte>(validation, _VK_INST, true);
-		if (!loadAllFunc())
-			return false;
 		return true;
 	}
 
@@ -759,6 +768,41 @@ namespace RE {
 		setBit<REubyte>(validation, _VK_INST, false);
 	}
 
+	struct DeviceQueues {
+		std::optional<REuint> graphicsQueueIndex;
+		std::optional<REuint> presentQueueIndex;
+
+		bool isComplete() {
+			return graphicsQueueIndex.has_value() && presentQueueIndex.has_value();
+		}
+	};
+
+	DeviceQueues isSuitablePhysicalDevice(VkPhysicalDevice physicalDevice) {
+		DeviceQueues result;
+
+		VkPhysicalDeviceProperties properties;
+		vkGetPhysicalDeviceProperties(physicalDevice, &properties);
+
+		VkPhysicalDeviceFeatures features;
+		vkGetPhysicalDeviceFeatures(physicalDevice, &features);
+
+		REuint queueFamilyCount = 0;
+		vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
+		VkQueueFamilyProperties queueFamilyProperties[queueFamilyCount];
+		vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilyProperties);
+
+		for (REuint i = 0; i < queueFamilyCount; i++) {
+			if (queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
+				result.graphicsQueueIndex = i;
+			VkBool32 presentSupport = false;
+			println("Func: ", vkGetPhysicalDeviceSurfaceSupportKHR);
+			vkGetPhysicalDeviceSurfaceSupportKHR(vkPhysicalDevice, i, vkSurface, &presentSupport); // function pointer invalid
+			if (presentSupport)
+				result.presentQueueIndex = i;
+		}
+		return result;
+	}
+
 	bool Vulkan::initVulkan(const char** nameExt, REuint numberExt) {
 		if (!createVulkanInstance(nameExt, numberExt))
 			return false;
@@ -766,27 +810,69 @@ namespace RE {
 			return false;
 		if (!createSurface())
 			return false;
-		REuint extCount = 0;
-		vkEnumerateInstanceExtensionProperties(nullptr, &extCount, nullptr);
-		println(extCount, " extensions supported");
-		VkExtensionProperties pp[extCount];
-		vkEnumerateInstanceExtensionProperties(nullptr, &extCount, pp);
-		for (REuint i = 0; i < extCount; i++)
-			println("\t", pp[i].extensionName, " : ", pp[i].specVersion);
 
-		REuint layerCount = 0;
-		vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
-		println(layerCount, " layers supported");
-		VkLayerProperties layerProp[layerCount];
-		vkEnumerateInstanceLayerProperties(&layerCount, layerProp);
-		for (REuint i = 0; i < layerCount; i++)
-			println("\t", layerProp[i].layerName, " (", layerProp[i].specVersion, ", ", layerProp[i].implementationVersion, "): ", layerProp[i].description);
+		REuint physicalDevicesCount = 0;
+		vkEnumeratePhysicalDevices(vkInstance, &physicalDevicesCount, nullptr);
+		if (!physicalDevicesCount) {
+			RE_FATAL_ERROR("No installed GPU supports Vulkan");
+			return false;
+		}
+		VkPhysicalDevice physicalDevices[physicalDevicesCount];
+		vkEnumeratePhysicalDevices(vkInstance, &physicalDevicesCount, physicalDevices);
+		DeviceQueues deviceProps[physicalDevicesCount];
+		REuint foundDeviceIndex = -1;
+		for (REuint i = 0; i < physicalDevicesCount; i++) {
+			deviceProps[i] = isSuitablePhysicalDevice(physicalDevices[i]);
+			println("1");
+			if (deviceProps[i].isComplete()) {
+				println("2");
+				foundDeviceIndex = i;
+				vkPhysicalDevice = physicalDevices[i];
+				break;
+			}
+			println("3");
+		}
+		if (foundDeviceIndex < 0) {
+			RE_FATAL_ERROR("No GPU supporting Vulkan is suitable for R-Engine's rendering system");
+			return false;
+		}
+
+		println("test");
+		REuint queueFamilyCount = 0;
+		vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice, &queueFamilyCount, nullptr);
+		VkQueueFamilyProperties queueFamilyProperties[queueFamilyCount];
+		vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice, &queueFamilyCount, queueFamilyProperties);
+		for (REuint i = 0; i < queueFamilyCount; i++)
+			if (queueFamilyProperties[i].queueCount > 0 && queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+				graphicsQueue.familyIndex = i;
+				break;
+			}
+		VkDeviceCreateInfo deviceCreateInfo = { VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
+		VkDeviceQueueCreateInfo queueCreateInfo = { VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO };
+		queueCreateInfo.queueFamilyIndex = graphicsQueue.familyIndex;
+		queueCreateInfo.queueCount = 1;
+		float priority[1] = {1.0f};
+		queueCreateInfo.pQueuePriorities = priority;
+		deviceCreateInfo.pQueueCreateInfos = &queueCreateInfo;
+		deviceCreateInfo.queueCreateInfoCount = 1;
+		VkPhysicalDeviceFeatures enableFeatures = {};
+		deviceCreateInfo.pEnabledFeatures = &enableFeatures;
+		if (vkCreateDevice(vkPhysicalDevice, &deviceCreateInfo, nullptr, &vkDevice) != VK_SUCCESS) {
+			RE_FATAL_ERROR("Failed creating logical vulkan device");
+			return false;
+		}
+		vkGetDeviceQueue(vkDevice, graphicsQueue.familyIndex, 0, &graphicsQueue.vkQueue);
+		setBit<REubyte>(validation, _VK_DEVI, true);
+
 		return true;
 	}
 
 	void Vulkan::destroyVulkan() {
 		if (isBitTrue<REubyte>(validation, _VK_INST)) {
 			if (isBitTrue<REubyte>(validation, _VK_SURF)) {
+				if (isBitTrue<REubyte>(validation, _VK_DEVI)) {
+					vkDestroyDevice(vkDevice, nullptr);
+				}
 				vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
 			}
 			vkDestroyInstance(vkInstance, nullptr);

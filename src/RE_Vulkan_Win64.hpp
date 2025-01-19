@@ -14,6 +14,7 @@ namespace RE {
 
 		protected:
 			void* loadFuncInternal(const char* funcName);
+			bool createSurface();
 
 		public:
 			Vulkan_Win64() = delete;

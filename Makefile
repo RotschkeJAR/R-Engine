@@ -36,4 +36,5 @@ update_git:
 	@git push
 
 fetch_git:
-	@git pull
+	@git fetch --all
+	@git reset --hard origin/main

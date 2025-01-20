@@ -808,6 +808,8 @@ namespace RE {
 	}
 
 	bool Vulkan::selectPhysicalDevice() {
+		if (isBitTrue<REubyte>(validation, _VK_SURF))
+			return false;
 		REuint physicalDevicesCount = 0;
 		vkEnumeratePhysicalDevices(vkInstance, &physicalDevicesCount, nullptr);
 		if (!physicalDevicesCount) {
@@ -834,6 +836,8 @@ namespace RE {
 	}
 
 	bool Vulkan::createLogicalDevice() {
+		if (isBitTrue<REubyte>(validation, _VK_PHDV))
+			return false;
 		REuint queueFamilyCount = 0;
 		vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice, &queueFamilyCount, nullptr);
 		VkQueueFamilyProperties queueFamilyProperties[queueFamilyCount];
@@ -902,7 +906,7 @@ namespace RE {
 	void Vulkan::destroyVulkan() {
 		if (isBitTrue<REubyte>(validation, _VK_INST)) {
 			if (isBitTrue<REubyte>(validation, _VK_SURF)) {
-				if (isBitTrue<REubyte>(validation, _VK_DEVI)) {
+				if (isBitTrue<REubyte>(validation, _VK_LGDV)) {
 					vkDestroyDevice(vkDevice, nullptr);
 				}
 				vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);

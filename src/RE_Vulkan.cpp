@@ -147,6 +147,7 @@ namespace RE {
 	VkPhysicalDevice vkPhysicalDevice = {};
 	VkDevice vkDevice = {};
 	VulkanQueue graphicsQueue = {};
+	VulkanQueue presentQueue = {};
 
 	Vulkan* Vulkan::instance = nullptr;
 
@@ -761,23 +762,17 @@ namespace RE {
 		return true;
 	}
 
-	void Vulkan::destroyVulkanInstance() {
-		if (!isBitTrue<REubyte>(validation, _VK_INST))
-			return;
-		vkDestroyInstance(vkInstance, nullptr);
-		setBit<REubyte>(validation, _VK_INST, false);
-	}
-
 	struct DeviceQueues {
 		std::optional<REuint> graphicsQueueIndex;
 		std::optional<REuint> presentQueueIndex;
+		bool supportsSwapchain = false;
 
 		bool isComplete() {
 			return graphicsQueueIndex.has_value() && presentQueueIndex.has_value();
 		}
 	};
 
-	DeviceQueues isSuitablePhysicalDevice(VkPhysicalDevice physicalDevice) {
+	bool isSuitablePhysicalDevice(VkPhysicalDevice physicalDevice, DeviceQueues& saveDevice) {
 		DeviceQueues result;
 
 		VkPhysicalDeviceProperties properties;
@@ -785,6 +780,16 @@ namespace RE {
 
 		VkPhysicalDeviceFeatures features;
 		vkGetPhysicalDeviceFeatures(physicalDevice, &features);
+
+		REuint extensionCount = 0;
+		vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
+		VkExtensionProperties extensions[extensionCount];
+		vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, extensions);
+		std::string requiredExtension("VK_KHR_swapchain");
+		for (REuint i = 0; i < extensionCount; i++) {
+			if (!requiredExtension.compare(extensions[i].extensionName))
+				result.supportsSwapchain = true;
+		}
 
 		REuint queueFamilyCount = 0;
 		vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
@@ -794,23 +799,15 @@ namespace RE {
 		for (REuint i = 0; i < queueFamilyCount; i++) {
 			if (queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
 				result.graphicsQueueIndex = i;
-			VkBool32 presentSupport = false;
-			println("Func: ", vkGetPhysicalDeviceSurfaceSupportKHR);
-			vkGetPhysicalDeviceSurfaceSupportKHR(vkPhysicalDevice, i, vkSurface, &presentSupport); // function pointer invalid
+			VkBool32 presentSupport = VK_FALSE;
+			vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, vkSurface, &presentSupport);
 			if (presentSupport)
 				result.presentQueueIndex = i;
 		}
-		return result;
+		return result.isComplete() && result.supportsSwapchain;
 	}
 
-	bool Vulkan::initVulkan(const char** nameExt, REuint numberExt) {
-		if (!createVulkanInstance(nameExt, numberExt))
-			return false;
-		if (!loadAllFunc())
-			return false;
-		if (!createSurface())
-			return false;
-
+	bool Vulkan::selectPhysicalDevice() {
 		REuint physicalDevicesCount = 0;
 		vkEnumeratePhysicalDevices(vkInstance, &physicalDevicesCount, nullptr);
 		if (!physicalDevicesCount) {
@@ -822,47 +819,82 @@ namespace RE {
 		DeviceQueues deviceProps[physicalDevicesCount];
 		REuint foundDeviceIndex = -1;
 		for (REuint i = 0; i < physicalDevicesCount; i++) {
-			deviceProps[i] = isSuitablePhysicalDevice(physicalDevices[i]);
-			println("1");
-			if (deviceProps[i].isComplete()) {
-				println("2");
+			if (isSuitablePhysicalDevice(physicalDevices[i], deviceProps[i])) {
 				foundDeviceIndex = i;
 				vkPhysicalDevice = physicalDevices[i];
 				break;
 			}
-			println("3");
 		}
 		if (foundDeviceIndex < 0) {
 			RE_FATAL_ERROR("No GPU supporting Vulkan is suitable for R-Engine's rendering system");
 			return false;
 		}
+		setBit<REubyte>(validation, _VK_PHDV, true);
+		return true;
+	}
 
-		println("test");
+	bool Vulkan::createLogicalDevice() {
 		REuint queueFamilyCount = 0;
 		vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice, &queueFamilyCount, nullptr);
 		VkQueueFamilyProperties queueFamilyProperties[queueFamilyCount];
 		vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice, &queueFamilyCount, queueFamilyProperties);
-		for (REuint i = 0; i < queueFamilyCount; i++)
-			if (queueFamilyProperties[i].queueCount > 0 && queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-				graphicsQueue.familyIndex = i;
+		for (REuint i = 0; i < queueFamilyCount; i++) {
+			if (queueFamilyProperties[i].queueCount == 0)
 				break;
+			if (queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
+				graphicsQueue.familyIndex = i;
+			VkBool32 presentSupport = VK_FALSE;
+			vkGetPhysicalDeviceSurfaceSupportKHR(vkPhysicalDevice, i, vkSurface, &presentSupport);
+			if (presentSupport == VK_TRUE)
+				presentQueue.familyIndex = i;
+		}
+		float priority = 1.0f;
+		VkDeviceQueueCreateInfo queueCreateInfos[2];
+		for (REuint i = 0; i < (sizeof(queueCreateInfos) / sizeof(VkDeviceQueueCreateInfo)); i++) {
+			REuint index = 0;
+			switch (i) {
+				case 0:
+					index = graphicsQueue.familyIndex;
+					break;
+				case 1:
+					index = presentQueue.familyIndex;
+					break;
 			}
+			queueCreateInfos[i].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+			queueCreateInfos[i].queueFamilyIndex = index;
+			queueCreateInfos[i].queueCount = 1;
+			queueCreateInfos[i].pQueuePriorities = &priority;
+		}
 		VkDeviceCreateInfo deviceCreateInfo = { VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
-		VkDeviceQueueCreateInfo queueCreateInfo = { VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO };
-		queueCreateInfo.queueFamilyIndex = graphicsQueue.familyIndex;
-		queueCreateInfo.queueCount = 1;
-		float priority[1] = {1.0f};
-		queueCreateInfo.pQueuePriorities = priority;
-		deviceCreateInfo.pQueueCreateInfos = &queueCreateInfo;
-		deviceCreateInfo.queueCreateInfoCount = 1;
+		deviceCreateInfo.pQueueCreateInfos = queueCreateInfos;
+		deviceCreateInfo.queueCreateInfoCount = 2;
 		VkPhysicalDeviceFeatures enableFeatures = {};
 		deviceCreateInfo.pEnabledFeatures = &enableFeatures;
+		deviceCreateInfo.enabledExtensionCount = 1;
+		const char* deviceExtensions[] = {"VK_KHR_swapchain"};
+		deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions;
 		if (vkCreateDevice(vkPhysicalDevice, &deviceCreateInfo, nullptr, &vkDevice) != VK_SUCCESS) {
 			RE_FATAL_ERROR("Failed creating logical vulkan device");
 			return false;
 		}
 		vkGetDeviceQueue(vkDevice, graphicsQueue.familyIndex, 0, &graphicsQueue.vkQueue);
-		setBit<REubyte>(validation, _VK_DEVI, true);
+		vkGetDeviceQueue(vkDevice, presentQueue.familyIndex, 0, &presentQueue.vkQueue);
+		setBit<REubyte>(validation, _VK_LGDV, true);
+		return true;
+	}
+
+	bool Vulkan::initVulkan(const char** nameExt, REuint numberExt) {
+		if (!createVulkanInstance(nameExt, numberExt))
+			return false;
+		if (!loadAllFunc())
+			return false;
+		if (!createSurface())
+			return false;
+		setBit<REubyte>(validation, _VK_SURF, true);
+		if (!selectPhysicalDevice())
+			return false;
+		if (!createLogicalDevice())
+			return false;
 
 		return true;
 	}

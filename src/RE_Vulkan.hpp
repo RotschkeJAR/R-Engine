@@ -16,13 +16,16 @@ namespace RE {
 #define _VK_INST 0
 #define _VK_FUNC 1
 #define _VK_SURF 2
-#define _VK_DEVI 3
-#define _VK_LAST _VK_DEVI
+#define _VK_PHDV 3
+#define _VK_LGDV 3
+#define _VK_LAST _VK_LGDV
 
 	class Vulkan {
 		private:
 			bool loadAllFunc();
 			bool createVulkanInstance(const char** nameExt, REuint numberExt);
+			bool selectPhysicalDevice();
+			bool createLogicalDevice();
 			void destroyVulkanInstance();
 
 		protected:
@@ -52,6 +55,7 @@ namespace RE {
 	extern VkPhysicalDevice vkPhysicalDevice;
 	extern VkDevice vkDevice;
 	extern VulkanQueue graphicsQueue;
+	extern VulkanQueue presentQueue;
 
 	extern PFN_vkCreateInstance vkCreateInstance;
 	extern PFN_vkDestroyInstance vkDestroyInstance;

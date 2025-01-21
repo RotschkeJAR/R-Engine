@@ -18,7 +18,7 @@ namespace RE {
 
 		public:
 			Vulkan_X11() = delete;
-			Vulkan_X11(XDisplay* xDisplay, XWindow xWindow);
+			Vulkan_X11(XDisplay* xDisplay, XWindow xWindow, Vector<REushort, 2>& winSize);
 			~Vulkan_X11();
 	};
 #endif /* RE_OS_LINUX */

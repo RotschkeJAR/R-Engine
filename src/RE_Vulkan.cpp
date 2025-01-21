@@ -141,13 +141,24 @@ namespace RE {
 	PFN_vkCmdExecuteCommands vkCmdExecuteCommands = nullptr;
 	PFN_vkDestroySurfaceKHR vkDestroySurfaceKHR = nullptr;
 	PFN_vkGetPhysicalDeviceSurfaceSupportKHR vkGetPhysicalDeviceSurfaceSupportKHR = nullptr;
+	PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR vkGetPhysicalDeviceSurfaceCapabilitiesKHR = nullptr;
+	PFN_vkGetPhysicalDeviceSurfaceFormatsKHR vkGetPhysicalDeviceSurfaceFormatsKHR = nullptr;
+	PFN_vkGetPhysicalDeviceSurfacePresentModesKHR vkGetPhysicalDeviceSurfacePresentModesKHR = nullptr;
+	PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT = nullptr;
+	PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT = nullptr;
+	PFN_vkCreateSwapchainKHR vkCreateSwapchainKHR = nullptr;
+	PFN_vkDestroySwapchainKHR vkDestroySwapchainKHR = nullptr;
+	PFN_vkGetSwapchainImagesKHR vkGetSwapchainImagesKHR = nullptr;
 
 	VkInstance vkInstance = {};
+	VkDebugUtilsMessengerEXT vkDebugMessenger = {};
 	VkSurfaceKHR vkSurface = {};
 	VkPhysicalDevice vkPhysicalDevice = {};
 	VkDevice vkDevice = {};
 	VulkanQueue graphicsQueue = {};
 	VulkanQueue presentQueue = {};
+	VkSwapchainKHR vkSwapchain = {};
+	std::vector<VkImageView> vkSwapChainImageViews;
 
 	Vulkan* Vulkan::instance = nullptr;
 
@@ -294,424 +305,468 @@ namespace RE {
 		vkCmdExecuteCommands = nullptr;
 		vkDestroySurfaceKHR = nullptr;
 		vkGetPhysicalDeviceSurfaceSupportKHR = nullptr;
+		vkGetPhysicalDeviceSurfaceCapabilitiesKHR = nullptr;
+		vkGetPhysicalDeviceSurfaceFormatsKHR = nullptr;
+		vkGetPhysicalDeviceSurfacePresentModesKHR = nullptr;
+		vkCreateDebugUtilsMessengerEXT = nullptr;
+		vkDestroyDebugUtilsMessengerEXT = nullptr;
+		vkCreateSwapchainKHR = nullptr;
+		vkDestroySwapchainKHR = nullptr;
+		vkGetSwapchainImagesKHR = nullptr;
+
+		vkInstance = VK_NULL_HANDLE;
+		vkSurface = VK_NULL_HANDLE;
+		vkPhysicalDevice = VK_NULL_HANDLE;
+		vkDevice = VK_NULL_HANDLE;
+		vkSwapchain = VK_NULL_HANDLE;
+		graphicsQueue = {};
+		presentQueue = {};
+		vkSwapChainImageViews.clear();
 	}
 
 	bool Vulkan::loadAllFunc() {
 		if (isBitTrue<REubyte>(validation, _VK_FUNC))
 			return true;
+		bool functionLoadFailure = false;
 		vkDestroyInstance = reinterpret_cast<PFN_vkDestroyInstance>(loadFunc("vkDestroyInstance"));
 		if (!vkDestroyInstance)
-			return false;
+			functionLoadFailure = true;
 		vkEnumeratePhysicalDevices = reinterpret_cast<PFN_vkEnumeratePhysicalDevices>(loadFunc("vkEnumeratePhysicalDevices"));
 		if (!vkEnumeratePhysicalDevices)
-			return false;
+			functionLoadFailure = true;
 		vkGetPhysicalDeviceFeatures = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures>(loadFunc("vkGetPhysicalDeviceFeatures"));
 		if (!vkGetPhysicalDeviceFeatures)
-			return false;
+			functionLoadFailure = true;
 		vkGetPhysicalDeviceFormatProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceFormatProperties>(loadFunc("vkGetPhysicalDeviceFormatProperties"));
 		if (!vkGetPhysicalDeviceFormatProperties)
-			return false;
+			functionLoadFailure = true;
 		vkGetPhysicalDeviceImageFormatProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceImageFormatProperties>(loadFunc("vkGetPhysicalDeviceImageFormatProperties"));
 		if (!vkGetPhysicalDeviceImageFormatProperties)
-			return false;
+			functionLoadFailure = true;
 		vkGetPhysicalDeviceProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties>(loadFunc("vkGetPhysicalDeviceProperties"));
 		if (!vkGetPhysicalDeviceProperties)
-			return false;
+			functionLoadFailure = true;
 		vkGetPhysicalDeviceQueueFamilyProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceQueueFamilyProperties>(loadFunc("vkGetPhysicalDeviceQueueFamilyProperties"));
 		if (!vkGetPhysicalDeviceQueueFamilyProperties)
-			return false;
+			functionLoadFailure = true;
 		vkGetPhysicalDeviceMemoryProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceMemoryProperties>(loadFunc("vkGetPhysicalDeviceMemoryProperties"));
 		if (!vkGetPhysicalDeviceMemoryProperties)
-			return false;
+			functionLoadFailure = true;
 		vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(loadFunc("vkGetInstanceProcAddr"));
 		if (!vkGetInstanceProcAddr)
-			return false;
+			functionLoadFailure = true;
 		vkGetDeviceProcAddr = reinterpret_cast<PFN_vkGetDeviceProcAddr>(loadFunc("vkGetDeviceProcAddr"));
 		if (!vkGetDeviceProcAddr)
-			return false;
+			functionLoadFailure = true;
 		vkCreateDevice = reinterpret_cast<PFN_vkCreateDevice>(loadFunc("vkCreateDevice"));
 		if (!vkCreateDevice)
-			return false;
+			functionLoadFailure = true;
 		vkDestroyDevice = reinterpret_cast<PFN_vkDestroyDevice>(loadFunc("vkDestroyDevice"));
 		if (!vkDestroyDevice)
-			return false;
+			functionLoadFailure = true;
 		vkEnumerateInstanceExtensionProperties = reinterpret_cast<PFN_vkEnumerateInstanceExtensionProperties>(loadFunc("vkEnumerateInstanceExtensionProperties"));
 		if (!vkEnumerateInstanceExtensionProperties)
-			return false;
+			functionLoadFailure = true;
 		vkEnumerateDeviceExtensionProperties = reinterpret_cast<PFN_vkEnumerateDeviceExtensionProperties>(loadFunc("vkEnumerateDeviceExtensionProperties"));
 		if (!vkEnumerateDeviceExtensionProperties)
-			return false;
+			functionLoadFailure = true;
 		vkEnumerateInstanceLayerProperties = reinterpret_cast<PFN_vkEnumerateInstanceLayerProperties>(loadFunc("vkEnumerateInstanceLayerProperties"));
 		if (!vkEnumerateInstanceLayerProperties)
-			return false;
+			functionLoadFailure = true;
 		vkEnumerateDeviceLayerProperties = reinterpret_cast<PFN_vkEnumerateDeviceLayerProperties>(loadFunc("vkEnumerateDeviceLayerProperties"));
 		if (!vkEnumerateDeviceLayerProperties)
-			return false;
+			functionLoadFailure = true;
 		vkGetDeviceQueue = reinterpret_cast<PFN_vkGetDeviceQueue>(loadFunc("vkGetDeviceQueue"));
 		if (!vkGetDeviceQueue)
-			return false;
+			functionLoadFailure = true;
 		vkQueueSubmit = reinterpret_cast<PFN_vkQueueSubmit>(loadFunc("vkQueueSubmit"));
 		if (!vkQueueSubmit)
-			return false;
+			functionLoadFailure = true;
 		vkQueueWaitIdle = reinterpret_cast<PFN_vkQueueWaitIdle>(loadFunc("vkQueueWaitIdle"));
 		if (!vkQueueWaitIdle)
-			return false;
+			functionLoadFailure = true;
 		vkDeviceWaitIdle = reinterpret_cast<PFN_vkDeviceWaitIdle>(loadFunc("vkDeviceWaitIdle"));
 		if (!vkDeviceWaitIdle)
-			return false;
+			functionLoadFailure = true;
 		vkAllocateMemory = reinterpret_cast<PFN_vkAllocateMemory>(loadFunc("vkAllocateMemory"));
 		if (!vkAllocateMemory)
-			return false;
+			functionLoadFailure = true;
 		vkFreeMemory = reinterpret_cast<PFN_vkFreeMemory>(loadFunc("vkFreeMemory"));
 		if (!vkFreeMemory)
-			return false;
+			functionLoadFailure = true;
 		vkMapMemory = reinterpret_cast<PFN_vkMapMemory>(loadFunc("vkMapMemory"));
 		if (!vkMapMemory)
-			return false;
+			functionLoadFailure = true;
 		vkUnmapMemory = reinterpret_cast<PFN_vkUnmapMemory>(loadFunc("vkUnmapMemory"));
 		if (!vkUnmapMemory)
-			return false;
+			functionLoadFailure = true;
 		vkFlushMappedMemoryRanges = reinterpret_cast<PFN_vkFlushMappedMemoryRanges>(loadFunc("vkFlushMappedMemoryRanges"));
 		if (!vkFlushMappedMemoryRanges)
-			return false;
+			functionLoadFailure = true;
 		vkInvalidateMappedMemoryRanges = reinterpret_cast<PFN_vkInvalidateMappedMemoryRanges>(loadFunc("vkInvalidateMappedMemoryRanges"));
 		if (!vkInvalidateMappedMemoryRanges)
-			return false;
+			functionLoadFailure = true;
 		vkGetDeviceMemoryCommitment = reinterpret_cast<PFN_vkGetDeviceMemoryCommitment>(loadFunc("vkGetDeviceMemoryCommitment"));
 		if (!vkGetDeviceMemoryCommitment)
-			return false;
+			functionLoadFailure = true;
 		vkBindBufferMemory = reinterpret_cast<PFN_vkBindBufferMemory>(loadFunc("vkBindBufferMemory"));
 		if (!vkBindBufferMemory)
-			return false;
+			functionLoadFailure = true;
 		vkBindImageMemory = reinterpret_cast<PFN_vkBindImageMemory>(loadFunc("vkBindImageMemory"));
 		if (!vkBindImageMemory)
-			return false;
+			functionLoadFailure = true;
 		vkGetBufferMemoryRequirements = reinterpret_cast<PFN_vkGetBufferMemoryRequirements>(loadFunc("vkGetBufferMemoryRequirements"));
 		if (!vkGetBufferMemoryRequirements)
-			return false;
+			functionLoadFailure = true;
 		vkGetImageMemoryRequirements = reinterpret_cast<PFN_vkGetImageMemoryRequirements>(loadFunc("vkGetImageMemoryRequirements"));
 		if (!vkGetImageMemoryRequirements)
-			return false;
+			functionLoadFailure = true;
 		vkGetImageSparseMemoryRequirements = reinterpret_cast<PFN_vkGetImageSparseMemoryRequirements>(loadFunc("vkGetImageSparseMemoryRequirements"));
 		if (!vkGetImageSparseMemoryRequirements)
-			return false;
+			functionLoadFailure = true;
 		vkGetPhysicalDeviceSparseImageFormatProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceSparseImageFormatProperties>(loadFunc("vkGetPhysicalDeviceSparseImageFormatProperties"));
 		if (!vkGetPhysicalDeviceSparseImageFormatProperties)
-			return false;
+			functionLoadFailure = true;
 		vkQueueBindSparse = reinterpret_cast<PFN_vkQueueBindSparse>(loadFunc("vkQueueBindSparse"));
 		if (!vkQueueBindSparse)
-			return false;
+			functionLoadFailure = true;
 		vkCreateFence = reinterpret_cast<PFN_vkCreateFence>(loadFunc("vkCreateFence"));
 		if (!vkCreateFence)
-			return false;
+			functionLoadFailure = true;
 		vkDestroyFence = reinterpret_cast<PFN_vkDestroyFence>(loadFunc("vkDestroyFence"));
 		if (!vkDestroyFence)
-			return false;
+			functionLoadFailure = true;
 		vkResetFences = reinterpret_cast<PFN_vkResetFences>(loadFunc("vkResetFences"));
 		if (!vkResetFences)
-			return false;
+			functionLoadFailure = true;
 		vkGetFenceStatus = reinterpret_cast<PFN_vkGetFenceStatus>(loadFunc("vkGetFenceStatus"));
 		if (!vkGetFenceStatus)
-			return false;
+			functionLoadFailure = true;
 		vkWaitForFences = reinterpret_cast<PFN_vkWaitForFences>(loadFunc("vkWaitForFences"));
 		if (!vkWaitForFences)
-			return false;
+			functionLoadFailure = true;
 		vkCreateSemaphore = reinterpret_cast<PFN_vkCreateSemaphore>(loadFunc("vkCreateSemaphore"));
 		if (!vkCreateSemaphore)
-			return false;
+			functionLoadFailure = true;
 		vkDestroySemaphore = reinterpret_cast<PFN_vkDestroySemaphore>(loadFunc("vkDestroySemaphore"));
 		if (!vkDestroySemaphore)
-			return false;
+			functionLoadFailure = true;
 		vkCreateEvent = reinterpret_cast<PFN_vkCreateEvent>(loadFunc("vkCreateEvent"));
 		if (!vkCreateEvent)
-			return false;
+			functionLoadFailure = true;
 		vkDestroyEvent = reinterpret_cast<PFN_vkDestroyEvent>(loadFunc("vkDestroyEvent"));
 		if (!vkDestroyEvent)
-			return false;
+			functionLoadFailure = true;
 		vkGetEventStatus = reinterpret_cast<PFN_vkGetEventStatus>(loadFunc("vkGetEventStatus"));
 		if (!vkGetEventStatus)
-			return false;
+			functionLoadFailure = true;
 		vkSetEvent = reinterpret_cast<PFN_vkSetEvent>(loadFunc("vkSetEvent"));
 		if (!vkSetEvent)
-			return false;
+			functionLoadFailure = true;
 		vkResetEvent = reinterpret_cast<PFN_vkResetEvent>(loadFunc("vkResetEvent"));
 		if (!vkResetEvent)
-			return false;
+			functionLoadFailure = true;
 		vkCreateQueryPool = reinterpret_cast<PFN_vkCreateQueryPool>(loadFunc("vkCreateQueryPool"));
 		if (!vkCreateQueryPool)
-			return false;
+			functionLoadFailure = true;
 		vkDestroyQueryPool = reinterpret_cast<PFN_vkDestroyQueryPool>(loadFunc("vkDestroyQueryPool"));
 		if (!vkDestroyQueryPool)
-			return false;
+			functionLoadFailure = true;
 		vkGetQueryPoolResults = reinterpret_cast<PFN_vkGetQueryPoolResults>(loadFunc("vkGetQueryPoolResults"));
 		if (!vkGetQueryPoolResults)
-			return false;
+			functionLoadFailure = true;
 		vkCreateBuffer = reinterpret_cast<PFN_vkCreateBuffer>(loadFunc("vkCreateBuffer"));
 		if (!vkCreateBuffer)
-			return false;
+			functionLoadFailure = true;
 		vkDestroyBuffer = reinterpret_cast<PFN_vkDestroyBuffer>(loadFunc("vkDestroyBuffer"));
 		if (!vkDestroyBuffer)
-			return false;
+			functionLoadFailure = true;
 		vkCreateBufferView = reinterpret_cast<PFN_vkCreateBufferView>(loadFunc("vkCreateBufferView"));
 		if (!vkCreateBufferView)
-			return false;
+			functionLoadFailure = true;
 		vkDestroyBufferView = reinterpret_cast<PFN_vkDestroyBufferView>(loadFunc("vkDestroyBufferView"));
 		if (!vkDestroyBufferView)
-			return false;
+			functionLoadFailure = true;
 		vkCreateImage = reinterpret_cast<PFN_vkCreateImage>(loadFunc("vkCreateImage"));
 		if (!vkCreateImage)
-			return false;
+			functionLoadFailure = true;
 		vkDestroyImage = reinterpret_cast<PFN_vkDestroyImage>(loadFunc("vkDestroyImage"));
 		if (!vkDestroyImage)
-			return false;
+			functionLoadFailure = true;
 		vkGetImageSubresourceLayout = reinterpret_cast<PFN_vkGetImageSubresourceLayout>(loadFunc("vkGetImageSubresourceLayout"));
 		if (!vkGetImageSubresourceLayout)
-			return false;
+			functionLoadFailure = true;
 		vkCreateImageView = reinterpret_cast<PFN_vkCreateImageView>(loadFunc("vkCreateImageView"));
 		if (!vkCreateImageView)
-			return false;
+			functionLoadFailure = true;
 		vkDestroyImageView = reinterpret_cast<PFN_vkDestroyImageView>(loadFunc("vkDestroyImageView"));
 		if (!vkDestroyImageView)
-			return false;
+			functionLoadFailure = true;
 		vkCreateShaderModule = reinterpret_cast<PFN_vkCreateShaderModule>(loadFunc("vkCreateShaderModule"));
 		if (!vkCreateShaderModule)
-			return false;
+			functionLoadFailure = true;
 		vkDestroyShaderModule = reinterpret_cast<PFN_vkDestroyShaderModule>(loadFunc("vkDestroyShaderModule"));
 		if (!vkDestroyShaderModule)
-			return false;
+			functionLoadFailure = true;
 		vkCreatePipelineCache = reinterpret_cast<PFN_vkCreatePipelineCache>(loadFunc("vkCreatePipelineCache"));
 		if (!vkCreatePipelineCache)
-			return false;
+			functionLoadFailure = true;
 		vkDestroyPipelineCache = reinterpret_cast<PFN_vkDestroyPipelineCache>(loadFunc("vkDestroyPipelineCache"));
 		if (!vkDestroyPipelineCache)
-			return false;
+			functionLoadFailure = true;
 		vkGetPipelineCacheData = reinterpret_cast<PFN_vkGetPipelineCacheData>(loadFunc("vkGetPipelineCacheData"));
 		if (!vkGetPipelineCacheData)
-			return false;
+			functionLoadFailure = true;
 		vkMergePipelineCaches = reinterpret_cast<PFN_vkMergePipelineCaches>(loadFunc("vkMergePipelineCaches"));
 		if (!vkMergePipelineCaches)
-			return false;
+			functionLoadFailure = true;
 		vkCreateGraphicsPipelines = reinterpret_cast<PFN_vkCreateGraphicsPipelines>(loadFunc("vkCreateGraphicsPipelines"));
 		if (!vkCreateGraphicsPipelines)
-			return false;
+			functionLoadFailure = true;
 		vkCreateComputePipelines = reinterpret_cast<PFN_vkCreateComputePipelines>(loadFunc("vkCreateComputePipelines"));
 		if (!vkCreateComputePipelines)
-			return false;
+			functionLoadFailure = true;
 		vkDestroyPipeline = reinterpret_cast<PFN_vkDestroyPipeline>(loadFunc("vkDestroyPipeline"));
 		if (!vkDestroyPipeline)
-			return false;
+			functionLoadFailure = true;
 		vkCreatePipelineLayout = reinterpret_cast<PFN_vkCreatePipelineLayout>(loadFunc("vkCreatePipelineLayout"));
 		if (!vkCreatePipelineLayout)
-			return false;
+			functionLoadFailure = true;
 		vkDestroyPipelineLayout = reinterpret_cast<PFN_vkDestroyPipelineLayout>(loadFunc("vkDestroyPipelineLayout"));
 		if (!vkDestroyPipelineLayout)
-			return false;
+			functionLoadFailure = true;
 		vkCreateSampler = reinterpret_cast<PFN_vkCreateSampler>(loadFunc("vkCreateSampler"));
 		if (!vkCreateSampler)
-			return false;
+			functionLoadFailure = true;
 		vkDestroySampler = reinterpret_cast<PFN_vkDestroySampler>(loadFunc("vkDestroySampler"));
 		if (!vkDestroySampler)
-			return false;
+			functionLoadFailure = true;
 		vkCreateDescriptorSetLayout = reinterpret_cast<PFN_vkCreateDescriptorSetLayout>(loadFunc("vkCreateDescriptorSetLayout"));
 		if (!vkCreateDescriptorSetLayout)
-			return false;
+			functionLoadFailure = true;
 		vkDestroyDescriptorSetLayout = reinterpret_cast<PFN_vkDestroyDescriptorSetLayout>(loadFunc("vkDestroyDescriptorSetLayout"));
 		if (!vkDestroyDescriptorSetLayout)
-			return false;
+			functionLoadFailure = true;
 		vkCreateDescriptorPool = reinterpret_cast<PFN_vkCreateDescriptorPool>(loadFunc("vkCreateDescriptorPool"));
 		if (!vkCreateDescriptorPool)
-			return false;
+			functionLoadFailure = true;
 		vkDestroyDescriptorPool = reinterpret_cast<PFN_vkDestroyDescriptorPool>(loadFunc("vkDestroyDescriptorPool"));
 		if (!vkDestroyDescriptorPool)
-			return false;
+			functionLoadFailure = true;
 		vkResetDescriptorPool = reinterpret_cast<PFN_vkResetDescriptorPool>(loadFunc("vkResetDescriptorPool"));
 		if (!vkResetDescriptorPool)
-			return false;
+			functionLoadFailure = true;
 		vkAllocateDescriptorSets = reinterpret_cast<PFN_vkAllocateDescriptorSets>(loadFunc("vkAllocateDescriptorSets"));
 		if (!vkAllocateDescriptorSets)
-			return false;
+			functionLoadFailure = true;
 		vkFreeDescriptorSets = reinterpret_cast<PFN_vkFreeDescriptorSets>(loadFunc("vkFreeDescriptorSets"));
 		if (!vkFreeDescriptorSets)
-			return false;
+			functionLoadFailure = true;
 		vkUpdateDescriptorSets = reinterpret_cast<PFN_vkUpdateDescriptorSets>(loadFunc("vkUpdateDescriptorSets"));
 		if (!vkUpdateDescriptorSets)
-			return false;
+			functionLoadFailure = true;
 		vkCreateFramebuffer = reinterpret_cast<PFN_vkCreateFramebuffer>(loadFunc("vkCreateFramebuffer"));
 		if (!vkCreateFramebuffer)
-			return false;
+			functionLoadFailure = true;
 		vkDestroyFramebuffer = reinterpret_cast<PFN_vkDestroyFramebuffer>(loadFunc("vkDestroyFramebuffer"));
 		if (!vkDestroyFramebuffer)
-			return false;
+			functionLoadFailure = true;
 		vkCreateRenderPass = reinterpret_cast<PFN_vkCreateRenderPass>(loadFunc("vkCreateRenderPass"));
 		if (!vkCreateRenderPass)
-			return false;
+			functionLoadFailure = true;
 		vkDestroyRenderPass = reinterpret_cast<PFN_vkDestroyRenderPass>(loadFunc("vkDestroyRenderPass"));
 		if (!vkDestroyRenderPass)
-			return false;
+			functionLoadFailure = true;
 		vkGetRenderAreaGranularity = reinterpret_cast<PFN_vkGetRenderAreaGranularity>(loadFunc("vkGetRenderAreaGranularity"));
 		if (!vkGetRenderAreaGranularity)
-			return false;
+			functionLoadFailure = true;
 		vkCreateCommandPool = reinterpret_cast<PFN_vkCreateCommandPool>(loadFunc("vkCreateCommandPool"));
 		if (!vkCreateCommandPool)
-			return false;
+			functionLoadFailure = true;
 		vkDestroyCommandPool = reinterpret_cast<PFN_vkDestroyCommandPool>(loadFunc("vkDestroyCommandPool"));
 		if (!vkDestroyCommandPool)
-			return false;
+			functionLoadFailure = true;
 		vkResetCommandPool = reinterpret_cast<PFN_vkResetCommandPool>(loadFunc("vkResetCommandPool"));
 		if (!vkResetCommandPool)
-			return false;
+			functionLoadFailure = true;
 		vkAllocateCommandBuffers = reinterpret_cast<PFN_vkAllocateCommandBuffers>(loadFunc("vkAllocateCommandBuffers"));
 		if (!vkAllocateCommandBuffers)
-			return false;
+			functionLoadFailure = true;
 		vkFreeCommandBuffers = reinterpret_cast<PFN_vkFreeCommandBuffers>(loadFunc("vkFreeCommandBuffers"));
 		if (!vkFreeCommandBuffers)
-			return false;
+			functionLoadFailure = true;
 		vkBeginCommandBuffer = reinterpret_cast<PFN_vkBeginCommandBuffer>(loadFunc("vkBeginCommandBuffer"));
 		if (!vkBeginCommandBuffer)
-			return false;
+			functionLoadFailure = true;
 		vkEndCommandBuffer = reinterpret_cast<PFN_vkEndCommandBuffer>(loadFunc("vkEndCommandBuffer"));
 		if (!vkEndCommandBuffer)
-			return false;
+			functionLoadFailure = true;
 		vkResetCommandBuffer = reinterpret_cast<PFN_vkResetCommandBuffer>(loadFunc("vkResetCommandBuffer"));
 		if (!vkResetCommandBuffer)
-			return false;
+			functionLoadFailure = true;
 		vkCmdBindPipeline = reinterpret_cast<PFN_vkCmdBindPipeline>(loadFunc("vkCmdBindPipeline"));
 		if (!vkCmdBindPipeline)
-			return false;
+			functionLoadFailure = true;
 		vkCmdSetViewport = reinterpret_cast<PFN_vkCmdSetViewport>(loadFunc("vkCmdSetViewport"));
 		if (!vkCmdSetViewport)
-			return false;
+			functionLoadFailure = true;
 		vkCmdSetScissor = reinterpret_cast<PFN_vkCmdSetScissor>(loadFunc("vkCmdSetScissor"));
 		if (!vkCmdSetScissor)
-			return false;
+			functionLoadFailure = true;
 		vkCmdSetLineWidth = reinterpret_cast<PFN_vkCmdSetLineWidth>(loadFunc("vkCmdSetLineWidth"));
 		if (!vkCmdSetLineWidth)
-			return false;
+			functionLoadFailure = true;
 		vkCmdSetDepthBias = reinterpret_cast<PFN_vkCmdSetDepthBias>(loadFunc("vkCmdSetDepthBias"));
 		if (!vkCmdSetDepthBias)
-			return false;
+			functionLoadFailure = true;
 		vkCmdSetBlendConstants = reinterpret_cast<PFN_vkCmdSetBlendConstants>(loadFunc("vkCmdSetBlendConstants"));
 		if (!vkCmdSetBlendConstants)
-			return false;
+			functionLoadFailure = true;
 		vkCmdSetDepthBounds = reinterpret_cast<PFN_vkCmdSetDepthBounds>(loadFunc("vkCmdSetDepthBounds"));
 		if (!vkCmdSetDepthBounds)
-			return false;
+			functionLoadFailure = true;
 		vkCmdSetStencilCompareMask = reinterpret_cast<PFN_vkCmdSetStencilCompareMask>(loadFunc("vkCmdSetStencilCompareMask"));
 		if (!vkCmdSetStencilCompareMask)
-			return false;
+			functionLoadFailure = true;
 		vkCmdSetStencilWriteMask = reinterpret_cast<PFN_vkCmdSetStencilWriteMask>(loadFunc("vkCmdSetStencilWriteMask"));
 		if (!vkCmdSetStencilWriteMask)
-			return false;
+			functionLoadFailure = true;
 		vkCmdSetStencilReference = reinterpret_cast<PFN_vkCmdSetStencilReference>(loadFunc("vkCmdSetStencilReference"));
 		if (!vkCmdSetStencilReference)
-			return false;
+			functionLoadFailure = true;
 		vkCmdBindDescriptorSets = reinterpret_cast<PFN_vkCmdBindDescriptorSets>(loadFunc("vkCmdBindDescriptorSets"));
 		if (!vkCmdBindDescriptorSets)
-			return false;
+			functionLoadFailure = true;
 		vkCmdBindIndexBuffer = reinterpret_cast<PFN_vkCmdBindIndexBuffer>(loadFunc("vkCmdBindIndexBuffer"));
 		if (!vkCmdBindIndexBuffer)
-			return false;
+			functionLoadFailure = true;
 		vkCmdBindVertexBuffers = reinterpret_cast<PFN_vkCmdBindVertexBuffers>(loadFunc("vkCmdBindVertexBuffers"));
 		if (!vkCmdBindVertexBuffers)
-			return false;
+			functionLoadFailure = true;
 		vkCmdDraw = reinterpret_cast<PFN_vkCmdDraw>(loadFunc("vkCmdDraw"));
 		if (!vkCmdDraw)
-			return false;
+			functionLoadFailure = true;
 		vkCmdDrawIndexed = reinterpret_cast<PFN_vkCmdDrawIndexed>(loadFunc("vkCmdDrawIndexed"));
 		if (!vkCmdDrawIndexed)
-			return false;
+			functionLoadFailure = true;
 		vkCmdDrawIndirect = reinterpret_cast<PFN_vkCmdDrawIndirect>(loadFunc("vkCmdDrawIndirect"));
 		if (!vkCmdDrawIndirect)
-			return false;
+			functionLoadFailure = true;
 		vkCmdDrawIndexedIndirect = reinterpret_cast<PFN_vkCmdDrawIndexedIndirect>(loadFunc("vkCmdDrawIndexedIndirect"));
 		if (!vkCmdDrawIndexedIndirect)
-			return false;
+			functionLoadFailure = true;
 		vkCmdDispatch = reinterpret_cast<PFN_vkCmdDispatch>(loadFunc("vkCmdDispatch"));
 		if (!vkCmdDispatch)
-			return false;
+			functionLoadFailure = true;
 		vkCmdDispatchIndirect = reinterpret_cast<PFN_vkCmdDispatchIndirect>(loadFunc("vkCmdDispatchIndirect"));
 		if (!vkCmdDispatchIndirect)
-			return false;
+			functionLoadFailure = true;
 		vkCmdCopyBuffer = reinterpret_cast<PFN_vkCmdCopyBuffer>(loadFunc("vkCmdCopyBuffer"));
 		if (!vkCmdCopyBuffer)
-			return false;
+			functionLoadFailure = true;
 		vkCmdCopyImage = reinterpret_cast<PFN_vkCmdCopyImage>(loadFunc("vkCmdCopyImage"));
 		if (!vkCmdCopyImage)
-			return false;
+			functionLoadFailure = true;
 		vkCmdBlitImage = reinterpret_cast<PFN_vkCmdBlitImage>(loadFunc("vkCmdBlitImage"));
 		if (!vkCmdBlitImage)
-			return false;
+			functionLoadFailure = true;
 		vkCmdCopyBufferToImage = reinterpret_cast<PFN_vkCmdCopyBufferToImage>(loadFunc("vkCmdCopyBufferToImage"));
 		if (!vkCmdCopyBufferToImage)
-			return false;
+			functionLoadFailure = true;
 		vkCmdCopyImageToBuffer = reinterpret_cast<PFN_vkCmdCopyImageToBuffer>(loadFunc("vkCmdCopyImageToBuffer"));
 		if (!vkCmdCopyImageToBuffer)
-			return false;
+			functionLoadFailure = true;
 		vkCmdUpdateBuffer = reinterpret_cast<PFN_vkCmdUpdateBuffer>(loadFunc("vkCmdUpdateBuffer"));
 		if (!vkCmdUpdateBuffer)
-			return false;
+			functionLoadFailure = true;
 		vkCmdFillBuffer = reinterpret_cast<PFN_vkCmdFillBuffer>(loadFunc("vkCmdFillBuffer"));
 		if (!vkCmdFillBuffer)
-			return false;
+			functionLoadFailure = true;
 		vkCmdClearColorImage = reinterpret_cast<PFN_vkCmdClearColorImage>(loadFunc("vkCmdClearColorImage"));
 		if (!vkCmdClearColorImage)
-			return false;
+			functionLoadFailure = true;
 		vkCmdClearDepthStencilImage = reinterpret_cast<PFN_vkCmdClearDepthStencilImage>(loadFunc("vkCmdClearDepthStencilImage"));
 		if (!vkCmdClearDepthStencilImage)
-			return false;
+			functionLoadFailure = true;
 		vkCmdClearAttachments = reinterpret_cast<PFN_vkCmdClearAttachments>(loadFunc("vkCmdClearAttachments"));
 		if (!vkCmdClearAttachments)
-			return false;
+			functionLoadFailure = true;
 		vkCmdResolveImage = reinterpret_cast<PFN_vkCmdResolveImage>(loadFunc("vkCmdResolveImage"));
 		if (!vkCmdResolveImage)
-			return false;
+			functionLoadFailure = true;
 		vkCmdSetEvent = reinterpret_cast<PFN_vkCmdSetEvent>(loadFunc("vkCmdSetEvent"));
 		if (!vkCmdSetEvent)
-			return false;
+			functionLoadFailure = true;
 		vkCmdResetEvent = reinterpret_cast<PFN_vkCmdResetEvent>(loadFunc("vkCmdResetEvent"));
 		if (!vkCmdResetEvent)
-			return false;
+			functionLoadFailure = true;
 		vkCmdWaitEvents = reinterpret_cast<PFN_vkCmdWaitEvents>(loadFunc("vkCmdWaitEvents"));
 		if (!vkCmdWaitEvents)
-			return false;
+			functionLoadFailure = true;
 		vkCmdPipelineBarrier = reinterpret_cast<PFN_vkCmdPipelineBarrier>(loadFunc("vkCmdPipelineBarrier"));
 		if (!vkCmdPipelineBarrier)
-			return false;
+			functionLoadFailure = true;
 		vkCmdBeginQuery = reinterpret_cast<PFN_vkCmdBeginQuery>(loadFunc("vkCmdBeginQuery"));
 		if (!vkCmdBeginQuery)
-			return false;
+			functionLoadFailure = true;
 		vkCmdEndQuery = reinterpret_cast<PFN_vkCmdEndQuery>(loadFunc("vkCmdEndQuery"));
 		if (!vkCmdEndQuery)
-			return false;
+			functionLoadFailure = true;
 		vkCmdResetQueryPool = reinterpret_cast<PFN_vkCmdResetQueryPool>(loadFunc("vkCmdResetQueryPool"));
 		if (!vkCmdResetQueryPool)
-			return false;
+			functionLoadFailure = true;
 		vkCmdWriteTimestamp = reinterpret_cast<PFN_vkCmdWriteTimestamp>(loadFunc("vkCmdWriteTimestamp"));
 		if (!vkCmdWriteTimestamp)
-			return false;
+			functionLoadFailure = true;
 		vkCmdCopyQueryPoolResults = reinterpret_cast<PFN_vkCmdCopyQueryPoolResults>(loadFunc("vkCmdCopyQueryPoolResults"));
 		if (!vkCmdCopyQueryPoolResults)
-			return false;
+			functionLoadFailure = true;
 		vkCmdPushConstants = reinterpret_cast<PFN_vkCmdPushConstants>(loadFunc("vkCmdPushConstants"));
 		if (!vkCmdPushConstants)
-			return false;
+			functionLoadFailure = true;
 		vkCmdBeginRenderPass = reinterpret_cast<PFN_vkCmdBeginRenderPass>(loadFunc("vkCmdBeginRenderPass"));
 		if (!vkCmdBeginRenderPass)
-			return false;
+			functionLoadFailure = true;
 		vkCmdNextSubpass = reinterpret_cast<PFN_vkCmdNextSubpass>(loadFunc("vkCmdNextSubpass"));
 		if (!vkCmdNextSubpass)
-			return false;
+			functionLoadFailure = true;
 		vkCmdEndRenderPass = reinterpret_cast<PFN_vkCmdEndRenderPass>(loadFunc("vkCmdEndRenderPass"));
 		if (!vkCmdEndRenderPass)
-			return false;
+			functionLoadFailure = true;
 		vkCmdExecuteCommands = reinterpret_cast<PFN_vkCmdExecuteCommands>(loadFunc("vkCmdExecuteCommands"));
 		if (!vkCmdExecuteCommands)
-			return false;
+			functionLoadFailure = true;
 		vkDestroySurfaceKHR = reinterpret_cast<PFN_vkDestroySurfaceKHR>(loadFunc("vkDestroySurfaceKHR"));
 		if (!vkDestroySurfaceKHR)
-			return false;
+			functionLoadFailure = true;
 		vkGetPhysicalDeviceSurfaceSupportKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceSupportKHR>(loadFunc("vkGetPhysicalDeviceSurfaceSupportKHR"));
 		if (!vkGetPhysicalDeviceSurfaceSupportKHR)
+			functionLoadFailure = true;
+		vkGetPhysicalDeviceSurfaceCapabilitiesKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR>(loadFunc("vkGetPhysicalDeviceSurfaceCapabilitiesKHR"));
+		if (!vkGetPhysicalDeviceSurfaceCapabilitiesKHR)
+			functionLoadFailure = true;
+		vkGetPhysicalDeviceSurfaceFormatsKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceFormatsKHR>(loadFunc("vkGetPhysicalDeviceSurfaceFormatsKHR"));
+		if (!vkGetPhysicalDeviceSurfaceFormatsKHR)
+			functionLoadFailure = true;
+		vkGetPhysicalDeviceSurfacePresentModesKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfacePresentModesKHR>(loadFunc("vkGetPhysicalDeviceSurfacePresentModesKHR"));
+		if (!vkGetPhysicalDeviceSurfacePresentModesKHR)
+			functionLoadFailure = true;
+		vkCreateDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(loadFunc("vkCreateDebugUtilsMessengerEXT"));
+		if (!vkCreateDebugUtilsMessengerEXT)
+			functionLoadFailure = true;
+		vkDestroyDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(loadFunc("vkDestroyDebugUtilsMessengerEXT"));
+		if (!vkDestroyDebugUtilsMessengerEXT)
+			functionLoadFailure = true;
+		vkCreateSwapchainKHR = reinterpret_cast<PFN_vkCreateSwapchainKHR>(loadFunc("vkCreateSwapchainKHR"));
+		if (!vkCreateSwapchainKHR)
+			functionLoadFailure = true;
+		vkDestroySwapchainKHR = reinterpret_cast<PFN_vkDestroySwapchainKHR>(loadFunc("vkDestroySwapchainKHR"));
+		if (!vkDestroySwapchainKHR)
+			functionLoadFailure = true;
+		vkGetSwapchainImagesKHR = reinterpret_cast<PFN_vkGetSwapchainImagesKHR>(loadFunc("vkGetSwapchainImagesKHR"));
+		if (!vkGetSwapchainImagesKHR)
+			functionLoadFailure = true;
+		if (functionLoadFailure)
 			return false;
 		setBit<REubyte>(validation, _VK_FUNC, true);
 		return true;
@@ -735,7 +790,7 @@ namespace RE {
 		return func;
 	}
 
-	bool Vulkan::createVulkanInstance(const char** nameExt, REuint numberExt) {
+	bool Vulkan::createVulkanInstance(std::vector<const char*>& nameExt) {
 		if (isBitTrue<REubyte>(validation, _VK_INST))
 			return true;
 		vkCreateInstance = reinterpret_cast<PFN_vkCreateInstance>(loadFunc("vkCreateInstance"));
@@ -750,30 +805,84 @@ namespace RE {
 		appInfo.apiVersion = VK_API_VERSION_1_0;
 		VkInstanceCreateInfo createInstInfo = { VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
 		createInstInfo.pApplicationInfo = &appInfo;
-		createInstInfo.enabledLayerCount = 0;
-		createInstInfo.ppEnabledLayerNames = nullptr;
-		createInstInfo.enabledExtensionCount = numberExt;
-		createInstInfo.ppEnabledExtensionNames = nameExt;
+		createInstInfo.enabledLayerCount = 1;
+		const char** validationLayerName = new const char*[1] {"VK_LAYER_KHRONOS_validation"};
+		createInstInfo.ppEnabledLayerNames = validationLayerName;
+		nameExt.push_back("VK_EXT_debug_utils");
+		createInstInfo.enabledExtensionCount = nameExt.size();
+		createInstInfo.ppEnabledExtensionNames = nameExt.data();
 		if (vkCreateInstance(&createInstInfo, nullptr, &vkInstance) != VK_SUCCESS) {
 			RE_FATAL_ERROR("Failed creating a Vulkan instance");
 			return false;
 		}
+		delete[] validationLayerName;
 		setBit<REubyte>(validation, _VK_INST, true);
 		return true;
 	}
 
-	struct DeviceQueues {
+	VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT msgSeverity, VkDebugUtilsMessageTypeFlagsEXT msgType, const VkDebugUtilsMessengerCallbackDataEXT* data, void* userData) {
+		if (msgSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+			RE_ERROR("Vulkan validation layer triggered an error (may result a crash)");
+		else
+			RE_WARNING("Vulkan validation layer triggered warning");
+		println(data->pMessage);
+		return VK_FALSE;
+	}
+
+	bool Vulkan::setupValidationLayers() {
+		if (!isBitTrue<REubyte>(validation, _VK_INST))
+			return false;
+		if (isBitTrue<REubyte>(validation, _VK_VALI))
+			return true;
+		VkDebugUtilsMessengerCreateInfoEXT debugMsgCreate = { VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT };
+		debugMsgCreate.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+		debugMsgCreate.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
+		debugMsgCreate.pfnUserCallback = debugCallback;
+		debugMsgCreate.pUserData = nullptr;
+		if (vkCreateDebugUtilsMessengerEXT(vkInstance, &debugMsgCreate, nullptr, &vkDebugMessenger) != VK_SUCCESS) {
+			RE_FATAL_ERROR("Failed setting validation layers in Vulkan up");
+			return false;
+		}
+		setBit<REubyte>(validation, _VK_VALI, true);
+		return true;
+	}
+
+	struct SwapChainSupportDetails {
+		VkSurfaceCapabilitiesKHR surfaceCapabilities;
+		std::vector<VkSurfaceFormatKHR> surfaceFormats;
+		std::vector<VkPresentModeKHR> presentModes;
+	};
+
+	SwapChainSupportDetails getSwapChainDetails(VkPhysicalDevice physicalDevice) {
+		SwapChainSupportDetails details;
+		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, vkSurface, &details.surfaceCapabilities);
+		REuint formatCount = 0;
+		vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, vkSurface, &formatCount, nullptr);
+		if (formatCount > 0) {
+			details.surfaceFormats.resize(formatCount);
+			vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, vkSurface, &formatCount, details.surfaceFormats.data());
+		}
+		REuint presentModeCount = 0;
+		vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, vkSurface, &presentModeCount, nullptr);
+		if (presentModeCount > 0) {
+			details.presentModes.resize(presentModeCount);
+			vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, vkSurface, &presentModeCount, nullptr);
+		}
+		return details;
+	}
+
+	struct DeviceCapacities {
 		std::optional<REuint> graphicsQueueIndex;
 		std::optional<REuint> presentQueueIndex;
-		bool supportsSwapchain = false;
+		SwapChainSupportDetails swapChainDetails;
 
 		bool isComplete() {
 			return graphicsQueueIndex.has_value() && presentQueueIndex.has_value();
 		}
 	};
 
-	bool isSuitablePhysicalDevice(VkPhysicalDevice physicalDevice, DeviceQueues& saveDevice) {
-		DeviceQueues result;
+	bool isSuitablePhysicalDevice(VkPhysicalDevice physicalDevice, DeviceCapacities& saveDevice) {
+		DeviceCapacities device;
 
 		VkPhysicalDeviceProperties properties;
 		vkGetPhysicalDeviceProperties(physicalDevice, &properties);
@@ -781,35 +890,46 @@ namespace RE {
 		VkPhysicalDeviceFeatures features;
 		vkGetPhysicalDeviceFeatures(physicalDevice, &features);
 
+		REuint queueFamilyCount = 0;
+		vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
+		VkQueueFamilyProperties queueFamilyProperties[queueFamilyCount];
+		vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilyProperties);
+		for (REuint i = 0; i < queueFamilyCount; i++) {
+			if (queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
+				device.graphicsQueueIndex = i;
+			VkBool32 presentSupport = VK_FALSE;
+			vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, vkSurface, &presentSupport);
+			if (presentSupport)
+				device.presentQueueIndex = i;
+		}
+		if (!device.isComplete())
+			return false;
+
 		REuint extensionCount = 0;
 		vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
 		VkExtensionProperties extensions[extensionCount];
 		vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, extensions);
 		std::string requiredExtension("VK_KHR_swapchain");
+		bool swapchainSupport = false;
 		for (REuint i = 0; i < extensionCount; i++) {
-			if (!requiredExtension.compare(extensions[i].extensionName))
-				result.supportsSwapchain = true;
+			if (!requiredExtension.compare(extensions[i].extensionName)) {
+				swapchainSupport = true;
+				break;
+			}
 		}
-
-		REuint queueFamilyCount = 0;
-		vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
-		VkQueueFamilyProperties queueFamilyProperties[queueFamilyCount];
-		vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilyProperties);
-
-		for (REuint i = 0; i < queueFamilyCount; i++) {
-			if (queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
-				result.graphicsQueueIndex = i;
-			VkBool32 presentSupport = VK_FALSE;
-			vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, vkSurface, &presentSupport);
-			if (presentSupport)
-				result.presentQueueIndex = i;
-		}
-		return result.isComplete() && result.supportsSwapchain;
+		if (!swapchainSupport)
+			return false;
+		device.swapChainDetails = getSwapChainDetails(physicalDevice);
+		if (device.swapChainDetails.surfaceFormats.empty() || device.swapChainDetails.presentModes.empty())
+			return false;
+		return true;
 	}
 
 	bool Vulkan::selectPhysicalDevice() {
-		if (isBitTrue<REubyte>(validation, _VK_SURF))
+		if (!isBitTrue<REubyte>(validation, _VK_SURF))
 			return false;
+		if (isBitTrue<REubyte>(validation, _VK_PHDV))
+			return true;
 		REuint physicalDevicesCount = 0;
 		vkEnumeratePhysicalDevices(vkInstance, &physicalDevicesCount, nullptr);
 		if (!physicalDevicesCount) {
@@ -818,7 +938,7 @@ namespace RE {
 		}
 		VkPhysicalDevice physicalDevices[physicalDevicesCount];
 		vkEnumeratePhysicalDevices(vkInstance, &physicalDevicesCount, physicalDevices);
-		DeviceQueues deviceProps[physicalDevicesCount];
+		DeviceCapacities deviceProps[physicalDevicesCount];
 		REuint foundDeviceIndex = -1;
 		for (REuint i = 0; i < physicalDevicesCount; i++) {
 			if (isSuitablePhysicalDevice(physicalDevices[i], deviceProps[i])) {
@@ -836,8 +956,10 @@ namespace RE {
 	}
 
 	bool Vulkan::createLogicalDevice() {
-		if (isBitTrue<REubyte>(validation, _VK_PHDV))
+		if (!isBitTrue<REubyte>(validation, _VK_PHDV))
 			return false;
+		if (isBitTrue<REubyte>(validation, _VK_LGDV))
+			return true;
 		REuint queueFamilyCount = 0;
 		vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice, &queueFamilyCount, nullptr);
 		VkQueueFamilyProperties queueFamilyProperties[queueFamilyCount];
@@ -853,7 +975,7 @@ namespace RE {
 				presentQueue.familyIndex = i;
 		}
 		float priority = 1.0f;
-		VkDeviceQueueCreateInfo queueCreateInfos[2];
+		VkDeviceQueueCreateInfo queueCreateInfos[2] = {{}, {}};
 		for (REuint i = 0; i < (sizeof(queueCreateInfos) / sizeof(VkDeviceQueueCreateInfo)); i++) {
 			REuint index = 0;
 			switch (i) {
@@ -887,10 +1009,103 @@ namespace RE {
 		return true;
 	}
 
-	bool Vulkan::initVulkan(const char** nameExt, REuint numberExt) {
-		if (!createVulkanInstance(nameExt, numberExt))
+	bool Vulkan::createSwapChain(Vector<REushort, 2>& winSize) {
+		if (!isBitTrue<REubyte>(validation, _VK_LGDV))
+			return false;
+		if (isBitTrue<REubyte>(validation, _VK_SWAP))
+			return true;
+		SwapChainSupportDetails swapChainDetails = getSwapChainDetails(vkPhysicalDevice);
+
+		VkPresentModeKHR selectedPresentMode = VK_PRESENT_MODE_FIFO_KHR;
+		for (VkPresentModeKHR mode : swapChainDetails.presentModes)
+			if (mode == VK_PRESENT_MODE_MAILBOX_KHR) {
+				selectedPresentMode = mode;
+				break;
+			}
+
+		VkSurfaceFormatKHR selectedSurfaceFormat = swapChainDetails.surfaceFormats[0];
+		for (VkSurfaceFormatKHR availableFormat : swapChainDetails.surfaceFormats)
+			if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+				selectedSurfaceFormat = availableFormat;
+				break;
+			}
+
+		VkExtent2D swapSize = {0, 0};
+		if (swapChainDetails.surfaceCapabilities.currentExtent.width != std::numeric_limits<REuint>::max() && swapChainDetails.surfaceCapabilities.currentExtent.height != std::numeric_limits<REuint>::max())
+			swapSize = swapChainDetails.surfaceCapabilities.currentExtent;
+		else {
+			swapSize = {static_cast<REuint>(winSize[0]), static_cast<REuint>(winSize[1])};
+			swapSize.width = std::clamp(swapSize.width, swapChainDetails.surfaceCapabilities.minImageExtent.width, swapChainDetails.surfaceCapabilities.maxImageExtent.width);
+			swapSize.height = std::clamp(swapSize.height, swapChainDetails.surfaceCapabilities.minImageExtent.height, swapChainDetails.surfaceCapabilities.maxImageExtent.height);
+		}
+
+		REuint imageCount = swapChainDetails.surfaceCapabilities.minImageCount + 1;
+		if (swapChainDetails.surfaceCapabilities.maxImageCount > 0 && imageCount > swapChainDetails.surfaceCapabilities.maxImageCount)
+			imageCount = swapChainDetails.surfaceCapabilities.maxImageCount;
+		VkSwapchainCreateInfoKHR swapchainCreate = { VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR };
+		swapchainCreate.surface = vkSurface;
+		swapchainCreate.minImageCount = imageCount;
+		swapchainCreate.imageFormat = selectedSurfaceFormat.format;
+		swapchainCreate.imageColorSpace = selectedSurfaceFormat.colorSpace;
+		swapchainCreate.imageExtent = swapSize;
+		swapchainCreate.imageArrayLayers = 1;
+		swapchainCreate.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+		REuint queueFamilyIndices[2] = {graphicsQueue.familyIndex, presentQueue.familyIndex};
+		if (graphicsQueue.familyIndex != presentQueue.familyIndex) {
+			swapchainCreate.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+			swapchainCreate.queueFamilyIndexCount = 2;
+			swapchainCreate.pQueueFamilyIndices = queueFamilyIndices;
+		} else {
+			swapchainCreate.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+			swapchainCreate.queueFamilyIndexCount = 0;
+			swapchainCreate.pQueueFamilyIndices = nullptr;
+		}
+		swapchainCreate.preTransform = swapChainDetails.surfaceCapabilities.currentTransform;
+		swapchainCreate.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+		swapchainCreate.presentMode = selectedPresentMode;
+		swapchainCreate.clipped = VK_TRUE;
+		swapchainCreate.oldSwapchain = VK_NULL_HANDLE;
+		if (vkCreateSwapchainKHR(vkDevice, &swapchainCreate, nullptr, &vkSwapchain) != VK_SUCCESS) {
+			RE_FATAL_ERROR("Failed creating a swapchain in Vulkan");
+			return false;
+		}
+		setBit<REubyte>(validation, _VK_SWAP, true);
+
+		std::vector<VkImage> swapChainImages;
+		REuint swapChainImgCount = 0;
+		vkGetSwapchainImagesKHR(vkDevice, vkSwapchain, &swapChainImgCount, nullptr);
+		swapChainImages.resize(swapChainImgCount);
+		vkGetSwapchainImagesKHR(vkDevice, vkSwapchain, &swapChainImgCount, swapChainImages.data());
+		vkSwapChainImageViews.resize(swapChainImages.size());
+		for (REuint i = 0; i < swapChainImgCount; i++) {
+			VkImageViewCreateInfo imgViewCreate = { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
+			imgViewCreate.image = swapChainImages[i];
+			imgViewCreate.viewType = VK_IMAGE_VIEW_TYPE_2D;
+			imgViewCreate.format = selectedSurfaceFormat.format;
+			imgViewCreate.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+			imgViewCreate.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+			imgViewCreate.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+			imgViewCreate.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+			imgViewCreate.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			imgViewCreate.subresourceRange.baseMipLevel = 0;
+			imgViewCreate.subresourceRange.levelCount = 1;
+			imgViewCreate.subresourceRange.baseArrayLayer = 0;
+			imgViewCreate.subresourceRange.layerCount = 1;
+			if (vkCreateImageView(vkDevice, &imgViewCreate, nullptr, &vkSwapChainImageViews[i]) != VK_SUCCESS) {
+				RE_FATAL_ERROR("Failed creating a swapchain image view");
+				return false;
+			}
+		}
+		setBit<REubyte>(validation, _VK_SIMG, true);
+		return true;
+	}
+
+	bool Vulkan::initVulkan(std::vector<const char*>& nameExt, Vector<REushort, 2>& winSize) {
+		if (!createVulkanInstance(nameExt))
 			return false;
 		if (!loadAllFunc())
+			return false;
+		if (!setupValidationLayers())
 			return false;
 		if (!createSurface())
 			return false;
@@ -899,17 +1114,28 @@ namespace RE {
 			return false;
 		if (!createLogicalDevice())
 			return false;
-
+		if (!createSwapChain(winSize))
+			return false;
 		return true;
 	}
 
 	void Vulkan::destroyVulkan() {
 		if (isBitTrue<REubyte>(validation, _VK_INST)) {
-			if (isBitTrue<REubyte>(validation, _VK_SURF)) {
-				if (isBitTrue<REubyte>(validation, _VK_LGDV)) {
-					vkDestroyDevice(vkDevice, nullptr);
+			if (isBitTrue<REubyte>(validation, _VK_VALI)) {
+				if (isBitTrue<REubyte>(validation, _VK_SURF)) {
+					if (isBitTrue<REubyte>(validation, _VK_LGDV)) {
+						if (isBitTrue<REubyte>(validation, _VK_SWAP)) {
+							if (isBitTrue<REubyte>(validation, _VK_SIMG)) {
+								for (VkImageView img : vkSwapChainImageViews)
+									vkDestroyImageView(vkDevice, img, nullptr);
+							}
+							vkDestroySwapchainKHR(vkDevice, vkSwapchain, nullptr);
+						}
+						vkDestroyDevice(vkDevice, nullptr);
+					}
+					vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
 				}
-				vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+				vkDestroyDebugUtilsMessengerEXT(vkInstance, vkDebugMessenger, nullptr);
 			}
 			vkDestroyInstance(vkInstance, nullptr);
 		}

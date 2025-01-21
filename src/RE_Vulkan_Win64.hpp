@@ -18,7 +18,7 @@ namespace RE {
 
 		public:
 			Vulkan_Win64() = delete;
-			Vulkan_Win64(HINSTANCE hInstance, HWND hWindow);
+			Vulkan_Win64(HINSTANCE hInstance, HWND hWindow, Vector<REushort, 2>& winSize);
 			~Vulkan_Win64();
 	};
 #endif

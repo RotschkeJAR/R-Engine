@@ -126,7 +126,7 @@ namespace RE {
 			RE_FATAL_ERROR("Failed creating window");
 			return;
 		}
-		vkRenderPipeline = new Vulkan_Win64(hInstance, hWindow);
+		vkRenderPipeline = new Vulkan_Win64(hInstance, hWindow, size);
 		if (!vkRenderPipeline->isValid())
 			return;
 		valid = true;

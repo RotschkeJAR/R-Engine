@@ -22,14 +22,14 @@ namespace RE {
 		return true;
 	}
 
-	Vulkan_X11::Vulkan_X11(XDisplay* xDisplay, XWindow xWindow) : xDisplay(xDisplay), xWindow(xWindow), vulkanLib(dlopen("libvulkan.so", RTLD_NOW | RTLD_LOCAL)) {
+	Vulkan_X11::Vulkan_X11(XDisplay* xDisplay, XWindow xWindow, Vector<REushort, 2>& winSize) : xDisplay(xDisplay), xWindow(xWindow), vulkanLib(dlopen("libvulkan.so", RTLD_NOW | RTLD_LOCAL)) {
 		if (!vulkanLib) {
 			RE_FATAL_ERROR("Failed loading the Vulkan so-library");
 			return;
 		}
 		constexpr REuint numExtensions = 2;
 		const char** extensions = new const char*[numExtensions] {"VK_KHR_surface", "VK_KHR_xlib_surface"};
-		initVulkan(extensions, numExtensions);
+		initVulkan(extensions, numExtensions, winSize);
 		delete[] extensions;
 	}
 

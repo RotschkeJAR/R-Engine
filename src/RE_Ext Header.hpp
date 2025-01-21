@@ -1,13 +1,13 @@
 #ifndef __RE_EXT_H__
 #define __RE_EXT_H__
 
-#include "RE.hpp"
-#include "RE_Console.hpp"
-#include "RE_Vulkan.hpp"
-
 #include <algorithm>
 #include <fstream>
 #include <optional>
+#include <vector>
+
+#include "RE.hpp"
+#include "RE_Console.hpp"
 
 #ifdef RE_OS_WINDOWS
 # define UNICODE

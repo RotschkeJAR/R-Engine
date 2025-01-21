@@ -18,19 +18,17 @@ namespace RE {
 			RE_FATAL_ERROR("Failed creating Vulkan surface linked to the Win32 window");
 			return false;
 		}
-		setBit<REubyte>(validation, _VK_SURF, true);
 		return true;
 	}
 	
-	Vulkan_Win64::Vulkan_Win64(HINSTANCE hInstance, HWND hWindow) : hInstance(hInstance), hWindow(hWindow), hVulkan(LoadLibraryW(L"vulkan-1.dll")) {
+	Vulkan_Win64::Vulkan_Win64(HINSTANCE hInstance, HWND hWindow, Vector<REushort, 2>& winSize) : hInstance(hInstance), hWindow(hWindow), hVulkan(LoadLibraryW(L"vulkan-1.dll")) {
 		if (!hVulkan) {
 			RE_FATAL_ERROR("Failed loading the Vulkan dll-library");
 			return;
 		}
-		constexpr REuint numExtensions = 2;
-		const char** extensions = new const char*[numExtensions] {"VK_KHR_surface", "VK_KHR_win32_surface"};
-		initVulkan(extensions, numExtensions);
-		delete[] extensions;
+		std::vector<const char*> extensions({"VK_KHR_surface", "VK_KHR_win32_surface"});
+		if (!initVulkan(extensions, winSize))
+			RE_ERROR("Failed initializing Vulkan");
 	}
 
 	Vulkan_Win64::~Vulkan_Win64() {

@@ -49,7 +49,7 @@ namespace RE {
 			return;
 		}
 		updateTitleInternal();
-		vkRenderPipeline = new Vulkan_X11(xDisplay, xWindow);
+		vkRenderPipeline = new Vulkan_X11(xDisplay, xWindow, size);
 		if (!vkRenderPipeline->isValid())
 			return;
 		valid = true;

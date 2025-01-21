@@ -15,17 +15,22 @@ namespace RE {
 
 #define _VK_INST 0
 #define _VK_FUNC 1
-#define _VK_SURF 2
-#define _VK_PHDV 3
-#define _VK_LGDV 3
-#define _VK_LAST _VK_LGDV
+#define _VK_VALI 2
+#define _VK_SURF 3
+#define _VK_PHDV 4
+#define _VK_LGDV 5
+#define _VK_SWAP 6
+#define _VK_SIMG 7
+#define _VK_LAST _VK_SIMG
 
 	class Vulkan {
 		private:
 			bool loadAllFunc();
-			bool createVulkanInstance(const char** nameExt, REuint numberExt);
+			bool createVulkanInstance(std::vector<const char*>& nameExt);
+			bool setupValidationLayers();
 			bool selectPhysicalDevice();
 			bool createLogicalDevice();
+			bool createSwapChain(Vector<REushort, 2>& winSize);
 			void destroyVulkanInstance();
 
 		protected:
@@ -34,7 +39,7 @@ namespace RE {
 			virtual void* loadFuncInternal(const char* funcName) = 0;
 			virtual bool createSurface() = 0;
 			void* loadFunc(const char* funcName);
-			bool initVulkan(const char** nameExt, REuint numberExt);
+			bool initVulkan(std::vector<const char*>& nameExt, Vector<REushort, 2>& winSize);
 			void destroyVulkan();
 
 		public:
@@ -56,6 +61,8 @@ namespace RE {
 	extern VkDevice vkDevice;
 	extern VulkanQueue graphicsQueue;
 	extern VulkanQueue presentQueue;
+	extern VkSwapchainKHR vkSwapchain;
+	extern std::vector<VkImageView> vkSwapChainImageViews;
 
 	extern PFN_vkCreateInstance vkCreateInstance;
 	extern PFN_vkDestroyInstance vkDestroyInstance;
@@ -196,6 +203,9 @@ namespace RE {
 	extern PFN_vkCmdExecuteCommands vkCmdExecuteCommands;
 	extern PFN_vkDestroySurfaceKHR vkDestroySurfaceKHR;
 	extern PFN_vkGetPhysicalDeviceSurfaceSupportKHR vkGetPhysicalDeviceSurfaceSupportKHR;
+	extern PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR vkGetPhysicalDeviceSurfaceCapabilitiesKHR;
+	extern PFN_vkGetPhysicalDeviceSurfaceFormatsKHR vkGetPhysicalDeviceSurfaceFormatsKHR;
+	extern PFN_vkGetPhysicalDeviceSurfacePresentModesKHR vkGetPhysicalDeviceSurfacePresentModesKHR;
 
 }
 

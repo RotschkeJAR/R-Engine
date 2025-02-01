@@ -3,14 +3,13 @@
 
 #include "RE_Ext Header.hpp"
 #include "RE_Input.hpp"
-#include "RE_Vulkan.hpp"
+#include "vulkan/RE_Vulkan.hpp"
 
 namespace RE {
 	
 	class Window {
 		protected:
 			InputMgr inputMgr;
-			Vulkan* vkRenderPipeline;
 			const char* title;
 			Vector<REushort, 2> size;
 			bool windowVisible;

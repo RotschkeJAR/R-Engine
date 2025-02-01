@@ -1,6 +1,5 @@
 #include "RE_Window_Win64.hpp"
 #include "RE_Main.hpp"
-#include "RE_Vulkan_Win64.hpp"
 
 namespace RE {
 
@@ -126,17 +125,12 @@ namespace RE {
 			RE_FATAL_ERROR("Failed creating window");
 			return;
 		}
-		vkRenderPipeline = new Vulkan_Win64(hInstance, hWindow, size);
-		if (!vkRenderPipeline->isValid())
-			return;
 		valid = true;
 	}
 	
 	Window_Win64::~Window_Win64() {
 		if (win64 != this)
 			return;
-		if (vkRenderPipeline)
-			delete vkRenderPipeline;
 		DestroyWindow(hWindow);
 		UnregisterClassW(WINDOW_CLASS_NAME, hInstance);
 		win64 = nullptr;

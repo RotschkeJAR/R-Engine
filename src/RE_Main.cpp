@@ -2,7 +2,6 @@
 #include "RE_Window_Win64.hpp"
 #include "RE_Window_X11.hpp"
 #include "RE_Renderer.hpp"
-#include "RE_Vulkan.hpp"
 
 #include <chrono>
 #include <thread>
@@ -32,14 +31,17 @@ namespace RE {
 #elif defined RE_OS_LINUX
 		window = new Window_X11();
 #else
-# warning The OS is unknown, so the engine will terminate immediatly upon execution
-		RE_ERROR("Window couldn't be created, because the OS is unknown");
+# warning The targeted OS is unknown, so the engine will terminate immediatly upon execution
+		RE_FATAL_ERROR("The OS is unknown. The engine can't initialize");
 		return;
 #endif
 		if (!window->isValid()) {
 			delete window;
 			return;
 		}
+		Vulkan vulkan;
+		if (!vulkan.isValid())
+			return;
 		Renderer renderer;
 		running = true;
 		std::thread gameLogicThread(gameThread);

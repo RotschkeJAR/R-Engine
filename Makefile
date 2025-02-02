@@ -1,9 +1,10 @@
 SRC          = src
+VK           = $(SRC)/vulkan
 BIN          = bin
 
 CC           = g++
 CFLAG        = -m64 -march=x86-64 -Wall -ffast-math -std=c++17
-LDFLAG       = -lRE -I$(SRC) -L$(BIN) -lGL -lX11
+LDFLAG       = -lRE -I$(SRC) -I/usr/ -L$(BIN) -lX11
 
 RE           = $(BIN)/libRE.a
 OUT          = Game
@@ -17,12 +18,12 @@ all:
 $(OUT): $(RE) *.cpp
 	@$(CC) $(CFLAG) -o "$(OUT)" *.cpp $(LDFLAG)
 
-$(RE): $(SRC)/*
+$(RE): $(SRC)/* $(VK)/*
 	-@rm -f *.o $(BIN)/*.o
 	@if [ "$(wildcard $(BIN)/*.gch)" != "" ]; then \
 		mv $(BIN)/*.gch $(SRC); \
 	fi
-	@$(CC) $(CFLAG) -c $(SRC)/*.cpp -I$(SRC) || (rm -f *.o; exit 1)
+	@$(CC) $(CFLAG) -c $(SRC)/*.cpp $(VK)/*.cpp -I$(SRC) || (rm -f *.o; exit 1)
 	@mv *.o $(BIN)
 	@if [ "$(wildcard $(SRC)/*.gch)" != "" ]; then \
 		mv $(SRC)/*.gch $(BIN); \

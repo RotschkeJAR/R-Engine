@@ -5,7 +5,7 @@ namespace RE {
 	VulkanCore* VulkanCore::instance = nullptr;
 
 	void* VulkanCore::loadFuncInstance(VkInstance instance, const char* funcName) {
-		void* funcPtr = pfn_vkGetInstanceProcAddr(instance, funcName);
+		void* funcPtr = reinterpret_cast<void*>(pfn_vkGetInstanceProcAddr(instance, funcName));
 		if (!funcPtr)
 			RE_ERROR(appendStrings("Failed loading the Vulkan function \"", funcName, "\""));
 		return funcPtr;
@@ -16,7 +16,7 @@ namespace RE {
 	}
 
 	bool VulkanCore::loadVulkan_1_0() {
-		pfn_vkCreateInstance = reinterpret_cast<PFN_vkCreateInstance>(loadFunc("vkCreateInstance"));
+		pfn_vkCreateInstance = reinterpret_cast<PFN_vkCreateInstance>(loadFuncInstance(nullptr, "vkCreateInstance"));
 		if (!pfn_vkCreateInstance)
 			return false;
 		pfn_vkDestroyInstance = reinterpret_cast<PFN_vkDestroyInstance>(loadFunc("vkDestroyInstance"));
@@ -55,13 +55,13 @@ namespace RE {
 		pfn_vkDestroyDevice = reinterpret_cast<PFN_vkDestroyDevice>(loadFunc("vkDestroyDevice"));
 		if (!pfn_vkDestroyDevice)
 			return false;
-		pfn_vkEnumerateInstanceExtensionProperties = reinterpret_cast<PFN_vkEnumerateInstanceExtensionProperties>(loadFunc("vkEnumerateInstanceExtensionProperties"));
+		pfn_vkEnumerateInstanceExtensionProperties = reinterpret_cast<PFN_vkEnumerateInstanceExtensionProperties>(loadFuncInstance(nullptr, "vkEnumerateInstanceExtensionProperties"));
 		if (!pfn_vkEnumerateInstanceExtensionProperties)
 			return false;
 		pfn_vkEnumerateDeviceExtensionProperties = reinterpret_cast<PFN_vkEnumerateDeviceExtensionProperties>(loadFunc("vkEnumerateDeviceExtensionProperties"));
 		if (!pfn_vkEnumerateDeviceExtensionProperties)
 			return false;
-		pfn_vkEnumerateInstanceLayerProperties = reinterpret_cast<PFN_vkEnumerateInstanceLayerProperties>(loadFunc("vkEnumerateInstanceLayerProperties"));
+		pfn_vkEnumerateInstanceLayerProperties = reinterpret_cast<PFN_vkEnumerateInstanceLayerProperties>(loadFuncInstance(nullptr, "vkEnumerateInstanceLayerProperties"));
 		if (!pfn_vkEnumerateInstanceLayerProperties)
 			return false;
 		pfn_vkEnumerateDeviceLayerProperties = reinterpret_cast<PFN_vkEnumerateDeviceLayerProperties>(loadFunc("vkEnumerateDeviceLayerProperties"));
@@ -431,7 +431,7 @@ namespace RE {
 	}
 
 	bool VulkanCore::loadVulkan_1_1() {
-		pfn_vkEnumerateInstanceVersion = reinterpret_cast<PFN_vkEnumerateInstanceVersion>(loadFunc("vkEnumerateInstanceVersion"));
+		pfn_vkEnumerateInstanceVersion = reinterpret_cast<PFN_vkEnumerateInstanceVersion>(loadFuncInstance(nullptr, "vkEnumerateInstanceVersion"));
 		if (!pfn_vkEnumerateInstanceVersion)
 			return false;
 		pfn_vkBindBufferMemory2 = reinterpret_cast<PFN_vkBindBufferMemory2>(loadFunc("vkBindBufferMemory2"));
@@ -676,7 +676,7 @@ namespace RE {
 		return true;
 	}
 
-	bool VulkanCore::loadVulkan_1_4() {
+	/* bool VulkanCore::loadVulkan_1_4() {
 		pfn_vkCmdSetLineStipple = reinterpret_cast<PFN_vkCmdSetLineStipple>(loadFunc("vkCmdSetLineStipple"));
 		if (!pfn_vkCmdSetLineStipple)
 			return false;
@@ -735,64 +735,66 @@ namespace RE {
 		if (!pfn_vkTransitionImageLayout)
 			return false;
 		return true;
-	}
+	} */
 
 	bool VulkanCore::createInstance(std::vector<std::string>& extensionsToLoad, bool enableDebug) {
-		pfn_vkCreateInstance = reinterpret_cast<PFN_vkCreateInstance>(loadFuncInstance(VK_NULL_HANDLE, "vkCreateInstance"));
-		if (!pfn_vkCreateInstance)
-			return false;
-		VkApplicationInfo dummyAppInfo = { VK_STRUCTURE_TYPE_APPLICATION_INFO };
-		dummyAppInfo.pApplicationName = "Dummy Instance";
-		dummyAppInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-		dummyAppInfo.pEngineName = "R-Engine";
-		dummyAppInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-		dummyAppInfo.apiVersion = VK_API_VERSION_1_4;
-		VkInstanceCreateInfo dummyCreateInfo = { VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
-		dummyCreateInfo.appInfo = &dummyAppInfo;
-		dummyCreateInfo.enabledExtensionCount = 0;
-		dummyCreateInfo.ppEnabledExtensionNames = nullptr;
-		dummyCreateInfo.enabledLayerCount = 0;
-		VkInstance dummyInstance;
-		if (pfn_vkCreateInstance(&dummyCreateInfo, nullptr, dummyInstance) != VK_SUCCESS) {
-			RE_FATAL_ERROR("Failed creating Vulkan dummy instance");
+		pfn_vkCreateInstance = reinterpret_cast<PFN_vkCreateInstance>(loadFunc("vkCreateInstance"));
+		if (!pfn_vkCreateInstance) {
+			RE_NOTE("Attempted to load the function mentioned before for creating a Vulkan instance");
 			return false;
 		}
-		pfn_vkGetInstanceProcAddr = loadFuncInstance(dummyInstance, "vkGetInstanceProcAddr");
-		if (!pfn_vkGetInstanceProcAddr)
+		pfn_vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(loadFunc("vkGetInstanceProcAddr"));
+		if (!pfn_vkGetInstanceProcAddr) {
+			RE_NOTE("Attempted to load the function mentioned before for creating a Vulkan instance");
 			return false;
-		pfn_vkCreateInstance = loadFuncInstance(dummyInstance, "vkCreateInstance");
-		if (!pfn_vkCreateInstance)
+		}
+		pfn_vkEnumerateInstanceExtensionProperties = reinterpret_cast<PFN_vkEnumerateInstanceExtensionProperties>(loadFunc("vkEnumerateInstanceExtensionProperties"));
+		if (!pfn_vkEnumerateInstanceExtensionProperties) {
+			RE_NOTE("Attempted to load the function mentioned before for creating a Vulkan instance");
 			return false;
-
+		}
+		REuint instanceExtensionsCount = 0;
+		pfn_vkEnumerateInstanceExtensionProperties(nullptr, &instanceExtensionsCount, nullptr);
+		std::vector<VkExtensionProperties> availableExtensions(instanceExtensionsCount);
+		pfn_vkEnumerateInstanceExtensionProperties(nullptr, &instanceExtensionsCount, availableExtensions.data());
 		VkApplicationInfo appInfo = { VK_STRUCTURE_TYPE_APPLICATION_INFO };
 		std::string appName = getAppName();
 		appInfo.pApplicationName = appName.c_str();
 		appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 		appInfo.pEngineName = "R-Engine";
 		appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-		appInfo.apiVersion = VK_API_VERSION_1_4;
+		appInfo.apiVersion = VK_API_VERSION_1_3;
 		VkInstanceCreateInfo createInfo = { VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
-		createInfo.appInfo = &appInfo;
+		createInfo.pApplicationInfo = &appInfo;
 		std::vector<const char*> copy_extensionsToLoad(extensionsToLoad.size() + static_cast<REuint>(enableDebug));
-		for (std::string str : extensionsToLoad)
-			copy_extensionsToLoad.push_back(str.c_str());
 		if (enableDebug)
 			copy_extensionsToLoad.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+		for (std::string str : extensionsToLoad) {
+			bool extensionExists = false;
+			for (VkExtensionProperties extensionProperties : availableExtensions) {
+				std::string extensionName(extensionProperties.extensionName);
+				if (extensionName.compare(str) == 0) {
+					extensionExists = true;
+					break;
+				}
+			}
+			if (!extensionExists) {
+				RE_FATAL_ERROR(appendStrings("The requested Vulkan instance extension \"", str, "\" is not supported"));
+				continue;
+			}
+			copy_extensionsToLoad.push_back(str.c_str());
+		}
 		createInfo.enabledExtensionCount = copy_extensionsToLoad.size();
 		createInfo.ppEnabledExtensionNames = copy_extensionsToLoad.data();
 		createInfo.enabledLayerCount = 0;
-		if (pfn_vkCreateInstance(&createInfo, nullptr, internalInstance) != VK_SUCCESS) {
+		if (!checkVulkanResult(pfn_vkCreateInstance(&createInfo, nullptr, &internalInstance))) {
 			RE_FATAL_ERROR("Failed creating Vulkan instance");
 			return false;
 		}
-		pfn_vkDestroyInstance = loadFuncInstance(dummyInstance, "vkDestroyInstance");
-		if (!pfn_vkDestroyInstance)
-			return false;
-		pfn_vkDestroyInstance(dummyInstance, nullptr);
 		return true;
 	}
 	
-	VulkanCore::VulkanCore(std::vector<std::string>& extensionsToLoad, bool enableDebug) : internalInstance(VK_NULL_HANDLE), valid(false) {
+	VulkanCore::VulkanCore(std::vector<std::string>& extensionsToLoad, bool enableDebug) : valid(false), internalInstance(nullptr) {
 		if (VulkanCore::instance) {
 			RE_ERROR("A new object of the VulkanCore class has been constructed. Only one can exist at a time");
 			return;
@@ -804,35 +806,48 @@ namespace RE {
 			RE_FATAL_ERROR("Failed loading Vulkan library");
 			return;
 		}
-		pfn_vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(GetProcAddress("vkGetInstanceProcAddr"));
+		pfn_vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(GetProcAddress(hVulkan, "vkGetInstanceProcAddr"));
 #elif defined RE_OS_LINUX
 		libVulkan = dlopen("libvulkan.so", RTLD_NOW | RTLD_LOCAL);
 		if (!libVulkan) {
 			RE_FATAL_ERROR("Failed loading Vulkan library");
 			return;
 		}
-		pfn_vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(dlsym("vkGetInstanceProcAddr"));
+		pfn_vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(dlsym(libVulkan, "vkGetInstanceProcAddr"));
 #endif
 		if (!pfn_vkGetInstanceProcAddr) {
-			RE_FATAL_ERROR("Failed loading the Vulkan function \"vkGetInstanceProcAddr\"");
+			RE_FATAL_ERROR("Failed loading the Vulkan function \"vkGetInstanceProcAddr\" with OS-API function");
 			return;
 		}
-		println("vulkan core 1");
+		pfn_vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(pfn_vkGetInstanceProcAddr(nullptr, "vkGetInstanceProcAddr"));
+		if (!pfn_vkGetInstanceProcAddr) {
+			RE_FATAL_ERROR("Failed loading the Vulkan function \"vkGetInstanceProcAddr\" with vkGetInstanceProcAddr");
+			return;
+		}
 		if (!createInstance(extensionsToLoad, enableDebug)) {
 			RE_ERROR("Failed creating a Vulkan instance");
 			return;
 		}
-		println("vulkan core 2");
-		if (!loadVulkan_1_0())
+		if (!loadVulkan_1_0()) {
+			RE_ERROR("Failed loading Vulkan 1.0 functions");
 			return;
-		if (!loadVulkan_1_1())
+		}
+		if (!loadVulkan_1_1()) {
+			RE_ERROR("Failed loading Vulkan 1.1 functions");
 			return;
-		if (!loadVulkan_1_2())
+		}
+		if (!loadVulkan_1_2()) {
+			RE_ERROR("Failed loading Vulkan 1.2 functions");
 			return;
-		if (!loadVulkan_1_3())
+		}
+		if (!loadVulkan_1_3()) {
+			RE_ERROR("Failed loading Vulkan 1.3 functions");
 			return;
-		if (!loadVulkan_1_4())
+		}
+		/* if (!loadVulkan_1_4()) {
+			RE_ERROR("Failed loading Vulkan 1.4 functions");
 			return;
+		} */
 		valid = true;
 	}
 
@@ -851,6 +866,86 @@ namespace RE {
 
 	bool VulkanCore::isValid() {
 		return valid;
+	}
+
+	bool VulkanCore::checkVulkanResult(VkResult result) {
+		const char* errorString = nullptr;
+		switch (result) {
+			case VK_SUCCESS:
+				return true;
+			case VK_NOT_READY:
+				errorString = "not ready";
+				break;
+			case VK_TIMEOUT:
+				errorString = "timeout";
+				break;
+			case VK_EVENT_SET:
+				errorString = "event set";
+				break;
+			case VK_EVENT_RESET:
+				errorString = "event reset";
+				break;
+			case VK_INCOMPLETE:
+				errorString = "incomplete";
+				break;
+			case VK_ERROR_OUT_OF_HOST_MEMORY:
+				errorString = "out of host memory";
+				break;
+			case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+				errorString = "out of device memory";
+				break;
+			case VK_ERROR_INITIALIZATION_FAILED:
+				errorString = "initialization failed";
+				break;
+			case VK_ERROR_DEVICE_LOST:
+				errorString = "device lost";
+				break;
+			case VK_ERROR_MEMORY_MAP_FAILED:
+				errorString = "memory map failed";
+				break;
+			case VK_ERROR_LAYER_NOT_PRESENT:
+				errorString = "layer not present";
+				break;
+			case VK_ERROR_EXTENSION_NOT_PRESENT:
+				errorString = "extension not present";
+				break;
+			case VK_ERROR_FEATURE_NOT_PRESENT:
+				errorString = "feature not present";
+				break;
+			case VK_ERROR_INCOMPATIBLE_DRIVER:
+				errorString = "incompatible driver";
+				break;
+			case VK_ERROR_TOO_MANY_OBJECTS:
+				errorString = "too many objects";
+				break;
+			case VK_ERROR_FORMAT_NOT_SUPPORTED:
+				errorString = "format not supported";
+				break;
+			case VK_ERROR_FRAGMENTED_POOL:
+				errorString = "fragment pool";
+				break;
+			case VK_ERROR_OUT_OF_POOL_MEMORY:
+				errorString = "out of pool memory";
+				break;
+			case VK_ERROR_INVALID_EXTERNAL_HANDLE:
+				errorString = "invalid external handle";
+				break;
+			case VK_ERROR_FRAGMENTATION:
+				errorString = "fragmentation";
+				break;
+			case VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS:
+				errorString = "invalid obaque capture address";
+				break;
+			case VK_PIPELINE_COMPILE_REQUIRED:
+				errorString = "pipeline compilation required";
+				break;
+			case VK_ERROR_UNKNOWN:
+			default:
+				errorString = "unknown error";
+				break;
+		}
+		RE_ERROR(appendStrings("The recently called Vulkan function threw an error: ", errorString));
+		return false;
 	}
 
 }

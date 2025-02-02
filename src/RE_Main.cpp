@@ -2,6 +2,7 @@
 #include "RE_Window_Win64.hpp"
 #include "RE_Window_X11.hpp"
 #include "RE_Renderer.hpp"
+#include "vulkan/RE_Vulkan.hpp"
 
 #include <chrono>
 #include <thread>

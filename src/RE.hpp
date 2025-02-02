@@ -195,6 +195,8 @@ namespace RE {
 	}
 	void printColored(const char* content, TerminalColor color, bool backgroundColored, bool bold);
 	void printlnColored(const char* content, TerminalColor color, bool backgroundColored, bool bold);
+#define PRINT(MSG) print(appendStrings(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE(MSG)))
+#define PRINT_LN(MSG) print(appendStrings(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE(MSG), "\n"))
 
 	std::string convertToUTF8(const wchar_t* wstring);
 	std::wstring convertToWide(const char* string);

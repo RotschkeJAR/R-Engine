@@ -4,21 +4,10 @@ namespace RE {
 
 	VulkanCore* VulkanCore::instance = nullptr;
 
-	void* VulkanCore::loadFuncInstance(VkInstance instance, const char* funcName) {
-		void* funcPtr = reinterpret_cast<void*>(pfn_vkGetInstanceProcAddr(instance, funcName));
-		if (!funcPtr)
-			RE_ERROR(appendStrings("Failed loading the Vulkan function \"", funcName, "\""));
-		return funcPtr;
-	}
-
-	void* VulkanCore::loadFunc(const char* funcName) {
-		return loadFuncInstance(internalInstance, funcName);
-	}
-
 	bool VulkanCore::loadVulkan_1_0() {
-		pfn_vkCreateInstance = reinterpret_cast<PFN_vkCreateInstance>(loadFuncInstance(nullptr, "vkCreateInstance"));
+		/* pfn_vkCreateInstance = reinterpret_cast<PFN_vkCreateInstance>(loadFuncInstance(nullptr, "vkCreateInstance"));
 		if (!pfn_vkCreateInstance)
-			return false;
+			return false; */
 		pfn_vkDestroyInstance = reinterpret_cast<PFN_vkDestroyInstance>(loadFunc("vkDestroyInstance"));
 		if (!pfn_vkDestroyInstance)
 			return false;
@@ -55,9 +44,9 @@ namespace RE {
 		pfn_vkDestroyDevice = reinterpret_cast<PFN_vkDestroyDevice>(loadFunc("vkDestroyDevice"));
 		if (!pfn_vkDestroyDevice)
 			return false;
-		pfn_vkEnumerateInstanceExtensionProperties = reinterpret_cast<PFN_vkEnumerateInstanceExtensionProperties>(loadFuncInstance(nullptr, "vkEnumerateInstanceExtensionProperties"));
+		/* pfn_vkEnumerateInstanceExtensionProperties = reinterpret_cast<PFN_vkEnumerateInstanceExtensionProperties>(loadFuncInstance(nullptr, "vkEnumerateInstanceExtensionProperties"));
 		if (!pfn_vkEnumerateInstanceExtensionProperties)
-			return false;
+			return false; */
 		pfn_vkEnumerateDeviceExtensionProperties = reinterpret_cast<PFN_vkEnumerateDeviceExtensionProperties>(loadFunc("vkEnumerateDeviceExtensionProperties"));
 		if (!pfn_vkEnumerateDeviceExtensionProperties)
 			return false;
@@ -737,20 +726,26 @@ namespace RE {
 		return true;
 	} */
 
+	void* VulkanCore::loadFuncInstance(VkInstance instance, const char* funcName) {
+		void* funcPtr = reinterpret_cast<void*>(pfn_vkGetInstanceProcAddr(instance, funcName));
+		if (!funcPtr)
+			RE_ERROR(appendStrings("Failed loading the Vulkan function \"", funcName, "\""));
+		return funcPtr;
+	}
+
+	void* VulkanCore::loadFunc(const char* funcName) {
+		return loadFuncInstance(internalInstance, funcName);
+	}
+
 	bool VulkanCore::createInstance(std::vector<std::string>& extensionsToLoad, bool enableDebug) {
-		pfn_vkCreateInstance = reinterpret_cast<PFN_vkCreateInstance>(loadFunc("vkCreateInstance"));
+		pfn_vkCreateInstance = reinterpret_cast<PFN_vkCreateInstance>(loadFuncInstance(nullptr, "vkCreateInstance"));
 		if (!pfn_vkCreateInstance) {
-			RE_NOTE("Attempted to load the function mentioned before for creating a Vulkan instance");
+			RE_NOTE("Attempted to load the Vulkan function mentioned before for creating a Vulkan instance");
 			return false;
 		}
-		pfn_vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(loadFunc("vkGetInstanceProcAddr"));
-		if (!pfn_vkGetInstanceProcAddr) {
-			RE_NOTE("Attempted to load the function mentioned before for creating a Vulkan instance");
-			return false;
-		}
-		pfn_vkEnumerateInstanceExtensionProperties = reinterpret_cast<PFN_vkEnumerateInstanceExtensionProperties>(loadFunc("vkEnumerateInstanceExtensionProperties"));
+		pfn_vkEnumerateInstanceExtensionProperties = reinterpret_cast<PFN_vkEnumerateInstanceExtensionProperties>(loadFuncInstance(nullptr, "vkEnumerateInstanceExtensionProperties"));
 		if (!pfn_vkEnumerateInstanceExtensionProperties) {
-			RE_NOTE("Attempted to load the function mentioned before for creating a Vulkan instance");
+			RE_NOTE("Attempted to load the Vulkan function mentioned before for creating a Vulkan instance");
 			return false;
 		}
 		REuint instanceExtensionsCount = 0;
@@ -769,6 +764,7 @@ namespace RE {
 		std::vector<const char*> copy_extensionsToLoad(extensionsToLoad.size() + static_cast<REuint>(enableDebug));
 		if (enableDebug)
 			copy_extensionsToLoad.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+		bool extensionsMissing = false;
 		for (std::string str : extensionsToLoad) {
 			bool extensionExists = false;
 			for (VkExtensionProperties extensionProperties : availableExtensions) {
@@ -780,17 +776,23 @@ namespace RE {
 			}
 			if (!extensionExists) {
 				RE_FATAL_ERROR(appendStrings("The requested Vulkan instance extension \"", str, "\" is not supported"));
+				extensionsMissing = true;
 				continue;
 			}
 			copy_extensionsToLoad.push_back(str.c_str());
 		}
+		if (extensionsMissing)
+			return false;
 		createInfo.enabledExtensionCount = copy_extensionsToLoad.size();
 		createInfo.ppEnabledExtensionNames = copy_extensionsToLoad.data();
 		createInfo.enabledLayerCount = 0;
-		if (!checkVulkanResult(pfn_vkCreateInstance(&createInfo, nullptr, &internalInstance))) {
+		createInfo.ppEnabledLayerNames = nullptr;
+		PRINT_LN("Before error");
+		if (!checkVulkanResult(pfn_vkCreateInstance(&createInfo, nullptr, &internalInstance))) { // TODO: fix sudden crash on Windows
 			RE_FATAL_ERROR("Failed creating Vulkan instance");
 			return false;
 		}
+		PRINT_LN("After error");
 		return true;
 	}
 	
@@ -819,29 +821,24 @@ namespace RE {
 			RE_FATAL_ERROR("Failed loading the Vulkan function \"vkGetInstanceProcAddr\" with OS-API function");
 			return;
 		}
-		pfn_vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(pfn_vkGetInstanceProcAddr(nullptr, "vkGetInstanceProcAddr"));
-		if (!pfn_vkGetInstanceProcAddr) {
-			RE_FATAL_ERROR("Failed loading the Vulkan function \"vkGetInstanceProcAddr\" with vkGetInstanceProcAddr");
-			return;
-		}
 		if (!createInstance(extensionsToLoad, enableDebug)) {
-			RE_ERROR("Failed creating a Vulkan instance");
+			RE_FATAL_ERROR("Failed creating a Vulkan instance");
 			return;
 		}
 		if (!loadVulkan_1_0()) {
-			RE_ERROR("Failed loading Vulkan 1.0 functions");
+			RE_FATAL_ERROR("Failed loading Vulkan 1.0 functions");
 			return;
 		}
 		if (!loadVulkan_1_1()) {
-			RE_ERROR("Failed loading Vulkan 1.1 functions");
+			RE_FATAL_ERROR("Failed loading Vulkan 1.1 functions");
 			return;
 		}
 		if (!loadVulkan_1_2()) {
-			RE_ERROR("Failed loading Vulkan 1.2 functions");
+			RE_FATAL_ERROR("Failed loading Vulkan 1.2 functions");
 			return;
 		}
 		if (!loadVulkan_1_3()) {
-			RE_ERROR("Failed loading Vulkan 1.3 functions");
+			RE_FATAL_ERROR("Failed loading Vulkan 1.3 functions");
 			return;
 		}
 		/* if (!loadVulkan_1_4()) {

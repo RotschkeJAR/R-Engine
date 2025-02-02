@@ -10,9 +10,9 @@ namespace RE {
 #ifdef RE_OS_WINDOWS
 		vulkanInstanceExtensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
 #elif defined RE_OS_LINUX
-		//vulkanInstanceExtensions.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
+		vulkanInstanceExtensions.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
 #endif
-		core = new VulkanCore(vulkanInstanceExtensions, false);
+		core = new VulkanCore(vulkanInstanceExtensions, true);
 		if (!core->isValid()) {
 			delete core;
 			core = nullptr;

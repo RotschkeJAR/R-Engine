@@ -15,6 +15,7 @@ namespace RE {
 	class VulkanCore {
 		private:
 			bool valid;
+			bool validationLayersActive;
 #ifdef RE_OS_WINDOWS
 			HMODULE hVulkan;
 #elif defined RE_OS_LINUX
@@ -23,7 +24,7 @@ namespace RE {
 
 			void* loadFuncInstance(VkInstance instance, const char* funcName);
 			void* loadFunc(const char* funcName);
-			bool createInstance(std::vector<std::string>& extensionsToLoad, bool enableDebug);
+			bool createInstance(const char** extensionsToLoad, REuint vulkanInstanceExtensionCount);
 			bool loadVulkan_1_0();
 			bool loadVulkan_1_1();
 			bool loadVulkan_1_2();
@@ -279,7 +280,7 @@ namespace RE {
 			VkInstance internalInstance;
 
 			VulkanCore() = delete;
-			VulkanCore(std::vector<std::string>& extensionsToLoad, bool enableDebug);
+			VulkanCore(const char** extensionsToLoad, REuint vulkanInstanceExtensionCount);
 			~VulkanCore();
 			bool isValid();
 			bool checkVulkanResult(VkResult result);

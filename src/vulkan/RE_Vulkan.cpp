@@ -6,13 +6,9 @@ namespace RE {
 #define VK_LAST VK_INIT
 
 	Vulkan::Vulkan() : validation(0), core(nullptr) {
-		std::vector<std::string> vulkanInstanceExtensions;
-#ifdef RE_OS_WINDOWS
-		vulkanInstanceExtensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
-#elif defined RE_OS_LINUX
-		vulkanInstanceExtensions.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
-#endif
-		core = new VulkanCore(vulkanInstanceExtensions, true);
+		constexpr REuint vulkanInstanceExtensionCount = 1;
+		const char** vulkanInstanceExtensions = new const char*[vulkanInstanceExtensionCount] {VK_EXT_DEBUG_UTILS_EXTENSION_NAME};
+		core = new VulkanCore(vulkanInstanceExtensions, vulkanInstanceExtensionCount);
 		if (!core->isValid()) {
 			delete core;
 			core = nullptr;

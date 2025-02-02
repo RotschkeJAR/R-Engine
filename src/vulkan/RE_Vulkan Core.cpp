@@ -737,7 +737,7 @@ namespace RE {
 		return loadFuncInstance(internalInstance, funcName);
 	}
 
-	bool VulkanCore::createInstance(std::vector<std::string>& extensionsToLoad, bool enableDebug) {
+	bool VulkanCore::createInstance(const char** extensionsToLoad, REuint vulkanInstanceExtensionCount) {
 		pfn_vkCreateInstance = reinterpret_cast<PFN_vkCreateInstance>(loadFuncInstance(nullptr, "vkCreateInstance"));
 		if (!pfn_vkCreateInstance) {
 			RE_NOTE("Attempted to load the Vulkan function mentioned before for creating a Vulkan instance");
@@ -752,6 +752,9 @@ namespace RE {
 		pfn_vkEnumerateInstanceExtensionProperties(nullptr, &instanceExtensionsCount, nullptr);
 		std::vector<VkExtensionProperties> availableExtensions(instanceExtensionsCount);
 		pfn_vkEnumerateInstanceExtensionProperties(nullptr, &instanceExtensionsCount, availableExtensions.data());
+		println("Available Vulkan extensions:");
+		for (VkExtensionProperties extensionProperties : availableExtensions)
+			println(appendStrings("\t", extensionProperties.extensionName, ": ", extensionProperties.specVersion));
 		VkApplicationInfo appInfo = { VK_STRUCTURE_TYPE_APPLICATION_INFO };
 		std::string appName = getAppName();
 		appInfo.pApplicationName = appName.c_str();
@@ -761,30 +764,11 @@ namespace RE {
 		appInfo.apiVersion = VK_API_VERSION_1_3;
 		VkInstanceCreateInfo createInfo = { VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
 		createInfo.pApplicationInfo = &appInfo;
-		std::vector<const char*> copy_extensionsToLoad(extensionsToLoad.size() + static_cast<REuint>(enableDebug));
-		if (enableDebug)
-			copy_extensionsToLoad.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-		bool extensionsMissing = false;
-		for (std::string str : extensionsToLoad) {
-			bool extensionExists = false;
-			for (VkExtensionProperties extensionProperties : availableExtensions) {
-				std::string extensionName(extensionProperties.extensionName);
-				if (extensionName.compare(str) == 0) {
-					extensionExists = true;
-					break;
-				}
-			}
-			if (!extensionExists) {
-				RE_FATAL_ERROR(appendStrings("The requested Vulkan instance extension \"", str, "\" is not supported"));
-				extensionsMissing = true;
-				continue;
-			}
-			copy_extensionsToLoad.push_back(str.c_str());
-		}
-		if (extensionsMissing)
-			return false;
-		createInfo.enabledExtensionCount = copy_extensionsToLoad.size();
-		createInfo.ppEnabledExtensionNames = copy_extensionsToLoad.data();
+		createInfo.enabledExtensionCount = vulkanInstanceExtensionCount;
+		createInfo.ppEnabledExtensionNames = extensionsToLoad;
+		for (REuint index = 0; index < vulkanInstanceExtensionCount; index++)
+			if (strcmp(extensionsToLoad[index], VK_EXT_DEBUG_UTILS_EXTENSION_NAME) == 0)
+				validationLayersActive = true;
 		createInfo.enabledLayerCount = 0;
 		createInfo.ppEnabledLayerNames = nullptr;
 		PRINT_LN("Before error");
@@ -796,7 +780,7 @@ namespace RE {
 		return true;
 	}
 	
-	VulkanCore::VulkanCore(std::vector<std::string>& extensionsToLoad, bool enableDebug) : valid(false), internalInstance(nullptr) {
+	VulkanCore::VulkanCore(const char** extensionsToLoad, REuint vulkanInstanceExtensionCount) : valid(false), validationLayersActive(false), internalInstance(nullptr) {
 		if (VulkanCore::instance) {
 			RE_ERROR("A new object of the VulkanCore class has been constructed. Only one can exist at a time");
 			return;
@@ -821,7 +805,7 @@ namespace RE {
 			RE_FATAL_ERROR("Failed loading the Vulkan function \"vkGetInstanceProcAddr\" with OS-API function");
 			return;
 		}
-		if (!createInstance(extensionsToLoad, enableDebug)) {
+		if (!createInstance(extensionsToLoad, vulkanInstanceExtensionCount)) {
 			RE_FATAL_ERROR("Failed creating a Vulkan instance");
 			return;
 		}

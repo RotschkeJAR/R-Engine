@@ -1,13 +1,11 @@
-#include "RE_Vulkan Core.hpp"
+#include "RE_Vulkan.hpp"
 
 namespace RE {
 
-	VulkanCore* VulkanCore::instance = nullptr;
+	Vulkan* Vulkan::instance = nullptr;
 
-	bool VulkanCore::loadVulkan_1_0() {
-		/* pfn_vkCreateInstance = reinterpret_cast<PFN_vkCreateInstance>(loadFuncInstance(nullptr, "vkCreateInstance"));
-		if (!pfn_vkCreateInstance)
-			return false; */
+	bool Vulkan::loadVulkan_1_0() {
+		// Skipped initialization of "pfn_vkCreateInstance", because it's already loaded
 		pfn_vkDestroyInstance = reinterpret_cast<PFN_vkDestroyInstance>(loadFunc("vkDestroyInstance"));
 		if (!pfn_vkDestroyInstance)
 			return false;
@@ -44,15 +42,11 @@ namespace RE {
 		pfn_vkDestroyDevice = reinterpret_cast<PFN_vkDestroyDevice>(loadFunc("vkDestroyDevice"));
 		if (!pfn_vkDestroyDevice)
 			return false;
-		/* pfn_vkEnumerateInstanceExtensionProperties = reinterpret_cast<PFN_vkEnumerateInstanceExtensionProperties>(loadFuncInstance(nullptr, "vkEnumerateInstanceExtensionProperties"));
-		if (!pfn_vkEnumerateInstanceExtensionProperties)
-			return false; */
+		// Skipped initialization of "pfn_vkEnumerateInstanceExtensionProperties", because it's already loaded
 		pfn_vkEnumerateDeviceExtensionProperties = reinterpret_cast<PFN_vkEnumerateDeviceExtensionProperties>(loadFunc("vkEnumerateDeviceExtensionProperties"));
 		if (!pfn_vkEnumerateDeviceExtensionProperties)
 			return false;
-		pfn_vkEnumerateInstanceLayerProperties = reinterpret_cast<PFN_vkEnumerateInstanceLayerProperties>(loadFuncInstance(nullptr, "vkEnumerateInstanceLayerProperties"));
-		if (!pfn_vkEnumerateInstanceLayerProperties)
-			return false;
+		// Skipped initialization of "pfn_vkEnumerateInstanceLayerProperties", because it's already loaded
 		pfn_vkEnumerateDeviceLayerProperties = reinterpret_cast<PFN_vkEnumerateDeviceLayerProperties>(loadFunc("vkEnumerateDeviceLayerProperties"));
 		if (!pfn_vkEnumerateDeviceLayerProperties)
 			return false;
@@ -419,7 +413,7 @@ namespace RE {
 		return true;
 	}
 
-	bool VulkanCore::loadVulkan_1_1() {
+	bool Vulkan::loadVulkan_1_1() {
 		pfn_vkEnumerateInstanceVersion = reinterpret_cast<PFN_vkEnumerateInstanceVersion>(loadFuncInstance(nullptr, "vkEnumerateInstanceVersion"));
 		if (!pfn_vkEnumerateInstanceVersion)
 			return false;
@@ -507,7 +501,7 @@ namespace RE {
 		return true;
 	}
 
-	bool VulkanCore::loadVulkan_1_2() {
+	bool Vulkan::loadVulkan_1_2() {
 		pfn_vkCmdDrawIndirectCount = reinterpret_cast<PFN_vkCmdDrawIndirectCount>(loadFunc("vkCmdDrawIndirectCount"));
 		if (!pfn_vkCmdDrawIndirectCount)
 			return false;
@@ -550,7 +544,7 @@ namespace RE {
 		return true;
 	}
 
-	bool VulkanCore::loadVulkan_1_3() {
+	bool Vulkan::loadVulkan_1_3() {
 		pfn_vkGetPhysicalDeviceToolProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceToolProperties>(loadFunc("vkGetPhysicalDeviceToolProperties"));
 		if (!pfn_vkGetPhysicalDeviceToolProperties)
 			return false;
@@ -665,7 +659,7 @@ namespace RE {
 		return true;
 	}
 
-	/* bool VulkanCore::loadVulkan_1_4() {
+	/* bool Vulkan::loadVulkan_1_4() {
 		pfn_vkCmdSetLineStipple = reinterpret_cast<PFN_vkCmdSetLineStipple>(loadFunc("vkCmdSetLineStipple"));
 		if (!pfn_vkCmdSetLineStipple)
 			return false;
@@ -725,67 +719,247 @@ namespace RE {
 			return false;
 		return true;
 	} */
-
-	void* VulkanCore::loadFuncInstance(VkInstance instance, const char* funcName) {
-		void* funcPtr = reinterpret_cast<void*>(pfn_vkGetInstanceProcAddr(instance, funcName));
-		if (!funcPtr)
-			RE_ERROR(appendStrings("Failed loading the Vulkan function \"", funcName, "\""));
-		return funcPtr;
-	}
-
-	void* VulkanCore::loadFunc(const char* funcName) {
-		return loadFuncInstance(internalInstance, funcName);
-	}
-
-	bool VulkanCore::createInstance(const char** extensionsToLoad, REuint vulkanInstanceExtensionCount) {
-		pfn_vkCreateInstance = reinterpret_cast<PFN_vkCreateInstance>(loadFuncInstance(nullptr, "vkCreateInstance"));
-		if (!pfn_vkCreateInstance) {
-			RE_NOTE("Attempted to load the Vulkan function mentioned before for creating a Vulkan instance");
-			return false;
-		}
-		pfn_vkEnumerateInstanceExtensionProperties = reinterpret_cast<PFN_vkEnumerateInstanceExtensionProperties>(loadFuncInstance(nullptr, "vkEnumerateInstanceExtensionProperties"));
-		if (!pfn_vkEnumerateInstanceExtensionProperties) {
-			RE_NOTE("Attempted to load the Vulkan function mentioned before for creating a Vulkan instance");
-			return false;
-		}
-		REuint instanceExtensionsCount = 0;
-		pfn_vkEnumerateInstanceExtensionProperties(nullptr, &instanceExtensionsCount, nullptr);
-		std::vector<VkExtensionProperties> availableExtensions(instanceExtensionsCount);
-		pfn_vkEnumerateInstanceExtensionProperties(nullptr, &instanceExtensionsCount, availableExtensions.data());
-		println("Available Vulkan extensions:");
-		for (VkExtensionProperties extensionProperties : availableExtensions)
-			println(appendStrings("\t", extensionProperties.extensionName, ": ", extensionProperties.specVersion));
-		VkApplicationInfo appInfo = { VK_STRUCTURE_TYPE_APPLICATION_INFO };
-		std::string appName = getAppName();
-		appInfo.pApplicationName = appName.c_str();
-		appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-		appInfo.pEngineName = "R-Engine";
-		appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-		appInfo.apiVersion = VK_API_VERSION_1_3;
-		VkInstanceCreateInfo createInfo = { VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
-		createInfo.pApplicationInfo = &appInfo;
-		createInfo.enabledExtensionCount = vulkanInstanceExtensionCount;
-		createInfo.ppEnabledExtensionNames = extensionsToLoad;
-		for (REuint index = 0; index < vulkanInstanceExtensionCount; index++)
-			if (strcmp(extensionsToLoad[index], VK_EXT_DEBUG_UTILS_EXTENSION_NAME) == 0)
-				validationLayersActive = true;
-		createInfo.enabledLayerCount = 0;
-		createInfo.ppEnabledLayerNames = nullptr;
-		PRINT_LN("Before error");
-		if (!checkVulkanResult(pfn_vkCreateInstance(&createInfo, nullptr, &internalInstance))) { // TODO: fix sudden crash on Windows
-			RE_FATAL_ERROR("Failed creating Vulkan instance");
-			return false;
-		}
-		PRINT_LN("After error");
-		return true;
-	}
 	
-	VulkanCore::VulkanCore(const char** extensionsToLoad, REuint vulkanInstanceExtensionCount) : valid(false), validationLayersActive(false), internalInstance(nullptr) {
-		if (VulkanCore::instance) {
-			RE_ERROR("A new object of the VulkanCore class has been constructed. Only one can exist at a time");
+	Vulkan::Vulkan() : valid(false), debugMessenger(nullptr), internalInstance(nullptr) {
+		pfn_vkCreateInstance = nullptr;
+		pfn_vkDestroyInstance = nullptr;
+		pfn_vkEnumeratePhysicalDevices = nullptr;
+		pfn_vkGetPhysicalDeviceFeatures = nullptr;
+		pfn_vkGetPhysicalDeviceFormatProperties = nullptr;
+		pfn_vkGetPhysicalDeviceImageFormatProperties = nullptr;
+		pfn_vkGetPhysicalDeviceProperties = nullptr;
+		pfn_vkGetPhysicalDeviceQueueFamilyProperties = nullptr;
+		pfn_vkGetPhysicalDeviceMemoryProperties = nullptr;
+		pfn_vkGetInstanceProcAddr = nullptr;
+		pfn_vkGetDeviceProcAddr = nullptr;
+		pfn_vkCreateDevice = nullptr;
+		pfn_vkDestroyDevice = nullptr;
+		pfn_vkEnumerateInstanceExtensionProperties = nullptr;
+		pfn_vkEnumerateDeviceExtensionProperties = nullptr;
+		pfn_vkEnumerateInstanceLayerProperties = nullptr;
+		pfn_vkEnumerateDeviceLayerProperties = nullptr;
+		pfn_vkGetDeviceQueue = nullptr;
+		pfn_vkQueueSubmit = nullptr;
+		pfn_vkQueueWaitIdle = nullptr;
+		pfn_vkDeviceWaitIdle = nullptr;
+		pfn_vkAllocateMemory = nullptr;
+		pfn_vkFreeMemory = nullptr;
+		pfn_vkMapMemory = nullptr;
+		pfn_vkUnmapMemory = nullptr;
+		pfn_vkFlushMappedMemoryRanges = nullptr;
+		pfn_vkInvalidateMappedMemoryRanges = nullptr;
+		pfn_vkGetDeviceMemoryCommitment = nullptr;
+		pfn_vkBindBufferMemory = nullptr;
+		pfn_vkBindImageMemory = nullptr;
+		pfn_vkGetBufferMemoryRequirements = nullptr;
+		pfn_vkGetImageMemoryRequirements = nullptr;
+		pfn_vkGetImageSparseMemoryRequirements = nullptr;
+		pfn_vkGetPhysicalDeviceSparseImageFormatProperties = nullptr;
+		pfn_vkQueueBindSparse = nullptr;
+		pfn_vkCreateFence = nullptr;
+		pfn_vkDestroyFence = nullptr;
+		pfn_vkResetFences = nullptr;
+		pfn_vkGetFenceStatus = nullptr;
+		pfn_vkWaitForFences = nullptr;
+		pfn_vkCreateSemaphore = nullptr;
+		pfn_vkDestroySemaphore = nullptr;
+		pfn_vkCreateEvent = nullptr;
+		pfn_vkDestroyEvent = nullptr;
+		pfn_vkGetEventStatus = nullptr;
+		pfn_vkSetEvent = nullptr;
+		pfn_vkResetEvent = nullptr;
+		pfn_vkCreateQueryPool = nullptr;
+		pfn_vkDestroyQueryPool = nullptr;
+		pfn_vkGetQueryPoolResults = nullptr;
+		pfn_vkCreateBuffer = nullptr;
+		pfn_vkDestroyBuffer = nullptr;
+		pfn_vkCreateBufferView = nullptr;
+		pfn_vkDestroyBufferView = nullptr;
+		pfn_vkCreateImage = nullptr;
+		pfn_vkDestroyImage = nullptr;
+		pfn_vkGetImageSubresourceLayout = nullptr;
+		pfn_vkCreateImageView = nullptr;
+		pfn_vkDestroyImageView = nullptr;
+		pfn_vkCreateShaderModule = nullptr;
+		pfn_vkDestroyShaderModule = nullptr;
+		pfn_vkCreatePipelineCache = nullptr;
+		pfn_vkDestroyPipelineCache = nullptr;
+		pfn_vkGetPipelineCacheData = nullptr;
+		pfn_vkMergePipelineCaches = nullptr;
+		pfn_vkCreateGraphicsPipelines = nullptr;
+		pfn_vkCreateComputePipelines = nullptr;
+		pfn_vkDestroyPipeline = nullptr;
+		pfn_vkCreatePipelineLayout = nullptr;
+		pfn_vkDestroyPipelineLayout = nullptr;
+		pfn_vkCreateSampler = nullptr;
+		pfn_vkDestroySampler = nullptr;
+		pfn_vkCreateDescriptorSetLayout = nullptr;
+		pfn_vkDestroyDescriptorSetLayout = nullptr;
+		pfn_vkCreateDescriptorPool = nullptr;
+		pfn_vkDestroyDescriptorPool = nullptr;
+		pfn_vkResetDescriptorPool = nullptr;
+		pfn_vkAllocateDescriptorSets = nullptr;
+		pfn_vkFreeDescriptorSets = nullptr;
+		pfn_vkUpdateDescriptorSets = nullptr;
+		pfn_vkCreateFramebuffer = nullptr;
+		pfn_vkDestroyFramebuffer = nullptr;
+		pfn_vkCreateRenderPass = nullptr;
+		pfn_vkDestroyRenderPass = nullptr;
+		pfn_vkGetRenderAreaGranularity = nullptr;
+		pfn_vkCreateCommandPool = nullptr;
+		pfn_vkDestroyCommandPool = nullptr;
+		pfn_vkResetCommandPool = nullptr;
+		pfn_vkAllocateCommandBuffers = nullptr;
+		pfn_vkFreeCommandBuffers = nullptr;
+		pfn_vkBeginCommandBuffer = nullptr;
+		pfn_vkEndCommandBuffer = nullptr;
+		pfn_vkResetCommandBuffer = nullptr;
+		pfn_vkCmdBindPipeline = nullptr;
+		pfn_vkCmdSetViewport = nullptr;
+		pfn_vkCmdSetScissor = nullptr;
+		pfn_vkCmdSetLineWidth = nullptr;
+		pfn_vkCmdSetDepthBias = nullptr;
+		pfn_vkCmdSetBlendConstants = nullptr;
+		pfn_vkCmdSetDepthBounds = nullptr;
+		pfn_vkCmdSetStencilCompareMask = nullptr;
+		pfn_vkCmdSetStencilWriteMask = nullptr;
+		pfn_vkCmdSetStencilReference = nullptr;
+		pfn_vkCmdBindDescriptorSets = nullptr;
+		pfn_vkCmdBindIndexBuffer = nullptr;
+		pfn_vkCmdBindVertexBuffers = nullptr;
+		pfn_vkCmdDraw = nullptr;
+		pfn_vkCmdDrawIndexed = nullptr;
+		pfn_vkCmdDrawIndirect = nullptr;
+		pfn_vkCmdDrawIndexedIndirect = nullptr;
+		pfn_vkCmdDispatch = nullptr;
+		pfn_vkCmdDispatchIndirect = nullptr;
+		pfn_vkCmdCopyBuffer = nullptr;
+		pfn_vkCmdCopyImage = nullptr;
+		pfn_vkCmdBlitImage = nullptr;
+		pfn_vkCmdCopyBufferToImage = nullptr;
+		pfn_vkCmdCopyImageToBuffer = nullptr;
+		pfn_vkCmdUpdateBuffer = nullptr;
+		pfn_vkCmdFillBuffer = nullptr;
+		pfn_vkCmdClearColorImage = nullptr;
+		pfn_vkCmdClearDepthStencilImage = nullptr;
+		pfn_vkCmdClearAttachments = nullptr;
+		pfn_vkCmdResolveImage = nullptr;
+		pfn_vkCmdSetEvent = nullptr;
+		pfn_vkCmdResetEvent = nullptr;
+		pfn_vkCmdWaitEvents = nullptr;
+		pfn_vkCmdPipelineBarrier = nullptr;
+		pfn_vkCmdBeginQuery = nullptr;
+		pfn_vkCmdEndQuery = nullptr;
+		pfn_vkCmdResetQueryPool = nullptr;
+		pfn_vkCmdWriteTimestamp = nullptr;
+		pfn_vkCmdCopyQueryPoolResults = nullptr;
+		pfn_vkCmdPushConstants = nullptr;
+		pfn_vkCmdBeginRenderPass = nullptr;
+		pfn_vkCmdNextSubpass = nullptr;
+		pfn_vkCmdEndRenderPass = nullptr;
+		pfn_vkCmdExecuteCommands = nullptr;
+		pfn_vkEnumerateInstanceVersion = nullptr;
+		pfn_vkBindBufferMemory2 = nullptr;
+		pfn_vkBindImageMemory2 = nullptr;
+		pfn_vkGetDeviceGroupPeerMemoryFeatures = nullptr;
+		pfn_vkCmdSetDeviceMask = nullptr;
+		pfn_vkCmdDispatchBase = nullptr;
+		pfn_vkEnumeratePhysicalDeviceGroups = nullptr;
+		pfn_vkGetImageMemoryRequirements2 = nullptr;
+		pfn_vkGetBufferMemoryRequirements2 = nullptr;
+		pfn_vkGetImageSparseMemoryRequirements2 = nullptr;
+		pfn_vkGetPhysicalDeviceFeatures2 = nullptr;
+		pfn_vkGetPhysicalDeviceProperties2 = nullptr;
+		pfn_vkGetPhysicalDeviceFormatProperties2 = nullptr;
+		pfn_vkGetPhysicalDeviceImageFormatProperties2 = nullptr;
+		pfn_vkGetPhysicalDeviceQueueFamilyProperties2 = nullptr;
+		pfn_vkGetPhysicalDeviceMemoryProperties2 = nullptr;
+		pfn_vkGetPhysicalDeviceSparseImageFormatProperties2 = nullptr;
+		pfn_vkTrimCommandPool = nullptr;
+		pfn_vkGetDeviceQueue2 = nullptr;
+		pfn_vkCreateSamplerYcbcrConversion = nullptr;
+		pfn_vkDestroySamplerYcbcrConversion = nullptr;
+		pfn_vkCreateDescriptorUpdateTemplate = nullptr;
+		pfn_vkDestroyDescriptorUpdateTemplate = nullptr;
+		pfn_vkUpdateDescriptorSetWithTemplate = nullptr;
+		pfn_vkGetPhysicalDeviceExternalBufferProperties = nullptr;
+		pfn_vkGetPhysicalDeviceExternalFenceProperties = nullptr;
+		pfn_vkGetPhysicalDeviceExternalSemaphoreProperties = nullptr;
+		pfn_vkGetDescriptorSetLayoutSupport = nullptr;
+		pfn_vkCmdDrawIndirectCount = nullptr;
+		pfn_vkCmdDrawIndexedIndirectCount = nullptr;
+		pfn_vkCreateRenderPass2 = nullptr;
+		pfn_vkCmdBeginRenderPass2 = nullptr;
+		pfn_vkCmdNextSubpass2 = nullptr;
+		pfn_vkCmdEndRenderPass2 = nullptr;
+		pfn_vkResetQueryPool = nullptr;
+		pfn_vkGetSemaphoreCounterValue = nullptr;
+		pfn_vkWaitSemaphores = nullptr;
+		pfn_vkSignalSemaphore = nullptr;
+		pfn_vkGetBufferDeviceAddress = nullptr;
+		pfn_vkGetBufferOpaqueCaptureAddress = nullptr;
+		pfn_vkGetDeviceMemoryOpaqueCaptureAddress = nullptr;
+		pfn_vkGetPhysicalDeviceToolProperties = nullptr;
+		pfn_vkCreatePrivateDataSlot = nullptr;
+		pfn_vkDestroyPrivateDataSlot = nullptr;
+		pfn_vkSetPrivateData = nullptr;
+		pfn_vkGetPrivateData = nullptr;
+		pfn_vkCmdSetEvent2 = nullptr;
+		pfn_vkCmdResetEvent2 = nullptr;
+		pfn_vkCmdWaitEvents2 = nullptr;
+		pfn_vkCmdPipelineBarrier2 = nullptr;
+		pfn_vkCmdWriteTimestamp2 = nullptr;
+		pfn_vkQueueSubmit2 = nullptr;
+		pfn_vkCmdCopyBuffer2 = nullptr;
+		pfn_vkCmdCopyImage2 = nullptr;
+		pfn_vkCmdCopyBufferToImage2 = nullptr;
+		pfn_vkCmdCopyImageToBuffer2 = nullptr;
+		pfn_vkCmdBlitImage2 = nullptr;
+		pfn_vkCmdResolveImage2 = nullptr;
+		pfn_vkCmdBeginRendering = nullptr;
+		pfn_vkCmdEndRendering = nullptr;
+		pfn_vkCmdSetCullMode = nullptr;
+		pfn_vkCmdSetFrontFace = nullptr;
+		pfn_vkCmdSetPrimitiveTopology = nullptr;
+		pfn_vkCmdSetViewportWithCount = nullptr;
+		pfn_vkCmdSetScissorWithCount = nullptr;
+		pfn_vkCmdBindVertexBuffers2 = nullptr;
+		pfn_vkCmdSetDepthTestEnable = nullptr;
+		pfn_vkCmdSetDepthWriteEnable = nullptr;
+		pfn_vkCmdSetDepthCompareOp = nullptr;
+		pfn_vkCmdSetDepthBoundsTestEnable = nullptr;
+		pfn_vkCmdSetStencilTestEnable = nullptr;
+		pfn_vkCmdSetStencilOp = nullptr;
+		pfn_vkCmdSetRasterizerDiscardEnable = nullptr;
+		pfn_vkCmdSetDepthBiasEnable = nullptr;
+		pfn_vkCmdSetPrimitiveRestartEnable = nullptr;
+		pfn_vkGetDeviceBufferMemoryRequirements = nullptr;
+		pfn_vkGetDeviceImageMemoryRequirements = nullptr;
+		pfn_vkGetDeviceImageSparseMemoryRequirements = nullptr;
+		/* pfn_vkCmdSetLineStipple = nullptr;
+		pfn_vkMapMemory2 = nullptr;
+		pfn_vkUnmapMemory2 = nullptr;
+		pfn_vkCmdBindIndexBuffer2 = nullptr;
+		pfn_vkGetRenderingAreaGranularity = nullptr;
+		pfn_vkGetDeviceImageSubresourceLayout = nullptr;
+		pfn_vkGetImageSubresourceLayout2 = nullptr;
+		pfn_vkCmdPushDescriptorSet = nullptr;
+		pfn_vkCmdPushDescriptorSetWithTemplate = nullptr;
+		pfn_vkCmdSetRenderingAttachmentLocations = nullptr;
+		pfn_vkCmdSetRenderingInputAttachmentIndices = nullptr;
+		pfn_vkCmdBindDescriptorSets2 = nullptr;
+		pfn_vkCmdPushConstants2 = nullptr;
+		pfn_vkCmdPushDescriptorSet2 = nullptr;
+		pfn_vkCmdPushDescriptorSetWithTemplate2 = nullptr;
+		pfn_vkCopyMemoryToImage = nullptr;
+		pfn_vkCopyImageToMemory = nullptr;
+		pfn_vkCopyImageToImage = nullptr;
+		pfn_vkTransitionImageLayout = nullptr; */
+		if (Vulkan::instance) {
+			RE_ERROR("A new object of the Vulkan class has been constructed. Only one can exist at a time");
 			return;
 		}
-		VulkanCore::instance = this;
+		Vulkan::instance = this;
 #ifdef RE_OS_WINDOWS
 		hVulkan = LoadLibraryW(L"vulkan-1.dll");
 		if (!hVulkan) {
@@ -805,8 +979,12 @@ namespace RE {
 			RE_FATAL_ERROR("Failed loading the Vulkan function \"vkGetInstanceProcAddr\" with OS-API function");
 			return;
 		}
-		if (!createInstance(extensionsToLoad, vulkanInstanceExtensionCount)) {
+		if (!createInstance()) {
 			RE_FATAL_ERROR("Failed creating a Vulkan instance");
+			return;
+		}
+		if (!setupValidationLayers()) {
+			RE_FATAL_ERROR("Failed setting Vulkan validation layers up");
 			return;
 		}
 		if (!loadVulkan_1_0()) {
@@ -832,12 +1010,28 @@ namespace RE {
 		valid = true;
 	}
 
-	VulkanCore::~VulkanCore() {
-		if (VulkanCore::instance != this)
+	Vulkan::~Vulkan() {
+		if (Vulkan::instance != this)
 			return;
-		VulkanCore::instance = nullptr;
-		if (internalInstance != VK_NULL_HANDLE && pfn_vkDestroyInstance)
-			pfn_vkDestroyInstance(internalInstance, nullptr);
+		Vulkan::instance = nullptr;
+		if (internalInstance != VK_NULL_HANDLE) {
+			if (debugMessenger != VK_NULL_HANDLE) {
+				PFN_vkDestroyDebugUtilsMessengerEXT pfn_vkDestroyDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(loadFunc("vkDestroyDebugUtilsMessengerEXT"));
+				if (pfn_vkDestroyDebugUtilsMessengerEXT)
+					pfn_vkDestroyDebugUtilsMessengerEXT(internalInstance, debugMessenger, nullptr);
+				else
+					RE_ERROR("Failed loading the function for destroying the debug messenger used for Vulkan validation layers");
+			}
+			if (!pfn_vkDestroyInstance) {
+				RE_NOTE("Attempting to reload function for destroying Vulkan instances");
+				pfn_vkDestroyInstance = reinterpret_cast<PFN_vkDestroyInstance>(loadFunc("vkDestroyInstance"));
+				if (!pfn_vkDestroyInstance)
+					RE_ERROR("Failed reloading the function for destroying the Vulkan instance");
+				else
+					pfn_vkDestroyInstance(internalInstance, nullptr);
+			} else
+				pfn_vkDestroyInstance(internalInstance, nullptr);
+		}
 #ifdef RE_OS_WINDOWS
 		FreeLibrary(hVulkan);
 #elif defined RE_OS_LINUX
@@ -845,87 +1039,347 @@ namespace RE {
 #endif
 	}
 
-	bool VulkanCore::isValid() {
+	VKAPI_ATTR VkBool32 VKAPI_CALL Vulkan::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT severityFlagBits, VkDebugUtilsMessageTypeFlagsEXT msgTypeBits, const VkDebugUtilsMessengerCallbackDataEXT* callbackData, void* userData) {
+		if (severityFlagBits == VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+			RE_WARNING("Vulkan's validation layers were triggered");
+		else if (severityFlagBits == VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+			RE_ERROR("Vulkan's validation layers were triggered");
+		else
+			RE_NOTE("Vulkan's validation layers were triggered. The severity couldn't be determined");
+		println(callbackData->pMessage);
+		return VK_FALSE;
+	}
+
+	void* Vulkan::loadFuncInstance(VkInstance instance, const char* funcName) {
+		void* funcPtr = reinterpret_cast<void*>(pfn_vkGetInstanceProcAddr(instance, funcName));
+		if (!funcPtr)
+			RE_ERROR(appendStrings("Failed loading the Vulkan function \"", funcName, "\""));
+		return funcPtr;
+	}
+
+	void* Vulkan::loadFunc(const char* funcName) {
+		return loadFuncInstance(internalInstance, funcName);
+	}
+
+	bool Vulkan::createInstance() {
+		pfn_vkCreateInstance = reinterpret_cast<PFN_vkCreateInstance>(loadFuncInstance(nullptr, "vkCreateInstance"));
+		if (!pfn_vkCreateInstance) {
+			RE_NOTE("Attempted to load the Vulkan function mentioned before for creating a Vulkan instance");
+			return false;
+		}
+		pfn_vkEnumerateInstanceExtensionProperties = reinterpret_cast<PFN_vkEnumerateInstanceExtensionProperties>(loadFuncInstance(nullptr, "vkEnumerateInstanceExtensionProperties"));
+		if (!pfn_vkEnumerateInstanceExtensionProperties) {
+			RE_NOTE("Attempted to load the Vulkan function mentioned before for creating a Vulkan instance");
+			return false;
+		}
+		pfn_vkEnumerateInstanceLayerProperties = reinterpret_cast<PFN_vkEnumerateInstanceLayerProperties>(loadFuncInstance(nullptr, "vkEnumerateInstanceLayerProperties"));
+		if (!pfn_vkEnumerateInstanceLayerProperties) {
+			RE_NOTE("Attempted to load the Vulkan function mentioned before for creating a Vulkan instance");
+			return false;
+		}
+
+		constexpr REuint extensionsToLoadCount = 1;
+		const char** extensionsToLoad = new const char*[extensionsToLoadCount] {VK_EXT_DEBUG_UTILS_EXTENSION_NAME};
+		REuint availableExtensionsCount = 0;
+		pfn_vkEnumerateInstanceExtensionProperties(nullptr, &availableExtensionsCount, nullptr);
+		VkExtensionProperties* availableExtensions = new VkExtensionProperties[availableExtensionsCount];
+		pfn_vkEnumerateInstanceExtensionProperties(nullptr, &availableExtensionsCount, availableExtensions);
+		println("Available Vulkan instance extensions:");
+		for (REuint i = 0; i < availableExtensionsCount; i++)
+			println(appendStrings("\t", availableExtensions[i].extensionName, ": ", availableExtensions[i].specVersion));
+		bool extensionsMissing = false;
+		for (REuint extToLoadIndex = 0; extToLoadIndex < extensionsToLoadCount; extToLoadIndex++) {
+			bool found = false;
+			for (REuint availableExtsIndex = 0; availableExtsIndex < availableExtensionsCount; availableExtsIndex++)
+				if (strcmp(extensionsToLoad[extToLoadIndex], availableExtensions[availableExtsIndex].extensionName) == 0) {
+					found = true;
+					break;
+				}
+			if (!found) {
+				RE_FATAL_ERROR(appendStrings("The requested Vulkan instance extension \"", extensionsToLoad[extToLoadIndex], "\" does not exist on this computer"));
+				extensionsMissing = true;
+			}
+		}
+
+		constexpr REuint layersToLoadCount = 1;
+		const char** layersToLoad = new const char*[layersToLoadCount] {"VK_LAYER_KHRONOS_validation"};
+		REuint availableLayersCount = 0;
+		pfn_vkEnumerateInstanceLayerProperties(&availableLayersCount, nullptr);
+		VkLayerProperties* availableLayers = new VkLayerProperties[availableLayersCount];
+		pfn_vkEnumerateInstanceLayerProperties(&availableLayersCount, availableLayers);
+		println("Available Vulkan instance layers:");
+		for (REuint i = 0; i < availableLayersCount; i++)
+			println(appendStrings("\t", availableLayers[i].layerName, " (", availableLayers[i].specVersion, ".", availableLayers[i].implementationVersion, "): ", availableLayers[i].description));
+		bool layersMissing = false;
+		for (REuint layersToLoadIndex = 0; layersToLoadIndex < layersToLoadCount; layersToLoadIndex++) {
+			bool found = false;
+			for (REuint availableLayersIndex = 0; availableLayersIndex < availableLayersCount; availableLayersIndex++)
+				if (strcmp(layersToLoad[layersToLoadIndex], availableLayers[availableLayersIndex].layerName) == 0) {
+					found = true;
+					break;
+				}
+			if (!found) {
+				RE_FATAL_ERROR(appendStrings("The requested Vulkan instance layer \"", layersToLoad[layersToLoadIndex], "\" does not exist on this computer"));
+				layersMissing = true;
+			}
+		}
+
+		const bool instanceCreationAllowed = !extensionsMissing && !layersMissing;
+		bool instanceCreationSuccessful = false;
+		if (instanceCreationAllowed) {
+			VkApplicationInfo appInfo = { VK_STRUCTURE_TYPE_APPLICATION_INFO };
+			std::string appName = getAppName();
+			appInfo.pApplicationName = appName.c_str();
+			appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+			appInfo.pEngineName = "R-Engine";
+			appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+			appInfo.apiVersion = VK_API_VERSION_1_3;
+			VkInstanceCreateInfo createInfo = { VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
+			createInfo.pApplicationInfo = &appInfo;
+			createInfo.enabledExtensionCount = extensionsToLoadCount;
+			createInfo.ppEnabledExtensionNames = extensionsToLoad;
+			createInfo.enabledLayerCount = layersToLoadCount;
+			createInfo.ppEnabledLayerNames = layersToLoad;
+			VkResult successResult = pfn_vkCreateInstance(&createInfo, nullptr, &internalInstance);
+			if (!checkVulkanResult(successResult))
+				RE_FATAL_ERROR("Failed creating Vulkan instance");
+			instanceCreationSuccessful = successResult == VK_SUCCESS;
+		}
+		delete[] extensionsToLoad;
+		delete[] availableExtensions;
+		delete[] layersToLoad;
+		delete[] availableLayers;
+		return instanceCreationSuccessful && instanceCreationAllowed;
+	}
+
+	bool Vulkan::setupValidationLayers() {
+		PFN_vkCreateDebugUtilsMessengerEXT pfn_vkCreateDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(loadFunc("vkCreateDebugUtilsMessengerEXT"));
+		if (!pfn_vkCreateDebugUtilsMessengerEXT) {
+			RE_NOTE("Attempted to load the Vulkan function mentioned before for setting validation layers up");
+			return false;
+		}
+		VkDebugUtilsMessengerCreateInfoEXT createInfo = { VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT };
+		createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+		createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+		createInfo.pfnUserCallback = debugCallback;
+		createInfo.pUserData = nullptr;
+		if (!checkVulkanResult(pfn_vkCreateDebugUtilsMessengerEXT(internalInstance, &createInfo, nullptr, &debugMessenger))) {
+			RE_FATAL_ERROR("Failed creating Vulkan debug messenger for validation layers");
+			return false;
+		}
+		return true;
+	}
+
+	bool Vulkan::isValid() {
 		return valid;
 	}
 
-	bool VulkanCore::checkVulkanResult(VkResult result) {
-		const char* errorString = nullptr;
+	bool Vulkan::checkVulkanResult(VkResult result) {
+		const char* errorString = "unknown result";
+		const char* errorName = errorString;
 		switch (result) {
 			case VK_SUCCESS:
 				return true;
+
+			// Success codes, but treated as errors
 			case VK_NOT_READY:
-				errorString = "not ready";
+				errorName = "VK_NOT_READY";
+				errorString = "Not ready (a fence or query has not yet completed)";
 				break;
 			case VK_TIMEOUT:
-				errorString = "timeout";
+				errorName = "VK_TIMEOUT";
+				errorString = "Timeout (a wait operation has not completed in the specified time)";
 				break;
 			case VK_EVENT_SET:
-				errorString = "event set";
+				errorName = "VK_EVENT_SET";
+				errorString = "Event signaled";
 				break;
 			case VK_EVENT_RESET:
-				errorString = "event reset";
+				errorName = "VK_EVENT_RESET";
+				errorString = "Event unsignaled";
 				break;
 			case VK_INCOMPLETE:
-				errorString = "incomplete";
+				errorName = "VK_INCOMPLETE";
+				errorString = "Incomplete (a return array was too small for the result)";
 				break;
-			case VK_ERROR_OUT_OF_HOST_MEMORY:
-				errorString = "out of host memory";
+			case VK_SUBOPTIMAL_KHR:
+				errorName = "VK_SUBOPTIMAL_KHR";
+				errorString = "A swapchain no longer matches the surface properties exactly";
 				break;
-			case VK_ERROR_OUT_OF_DEVICE_MEMORY:
-				errorString = "out of device memory";
+			case VK_THREAD_IDLE_KHR:
+				errorName = "VK_THREAD_IDLE_KHR";
+				errorString = "A deferred operation is not complete, but there's currently no work for this thread";
 				break;
-			case VK_ERROR_INITIALIZATION_FAILED:
-				errorString = "initialization failed";
+			case VK_THREAD_DONE_KHR:
+				errorName = "VK_THREAD_DONE_KHR";
+				errorString = "A deferred operation is not complete, but there's no work remaining";
 				break;
-			case VK_ERROR_DEVICE_LOST:
-				errorString = "device lost";
+			case VK_OPERATION_DEFERRED_KHR:
+				errorName = "VK_OPERATION_DEFERRED_KHR";
+				errorString = "A deferred operation was requested and some of the work has been deferred";
 				break;
-			case VK_ERROR_MEMORY_MAP_FAILED:
-				errorString = "memory map failed";
-				break;
-			case VK_ERROR_LAYER_NOT_PRESENT:
-				errorString = "layer not present";
-				break;
-			case VK_ERROR_EXTENSION_NOT_PRESENT:
-				errorString = "extension not present";
-				break;
-			case VK_ERROR_FEATURE_NOT_PRESENT:
-				errorString = "feature not present";
-				break;
-			case VK_ERROR_INCOMPATIBLE_DRIVER:
-				errorString = "incompatible driver";
-				break;
-			case VK_ERROR_TOO_MANY_OBJECTS:
-				errorString = "too many objects";
-				break;
-			case VK_ERROR_FORMAT_NOT_SUPPORTED:
-				errorString = "format not supported";
-				break;
-			case VK_ERROR_FRAGMENTED_POOL:
-				errorString = "fragment pool";
-				break;
-			case VK_ERROR_OUT_OF_POOL_MEMORY:
-				errorString = "out of pool memory";
-				break;
-			case VK_ERROR_INVALID_EXTERNAL_HANDLE:
-				errorString = "invalid external handle";
-				break;
-			case VK_ERROR_FRAGMENTATION:
-				errorString = "fragmentation";
-				break;
-			case VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS:
-				errorString = "invalid obaque capture address";
+			case VK_OPERATION_NOT_DEFERRED_KHR:
+				errorName = "VK_OPERATION_NOT_DEFERRED_KHR";
+				errorString = "A deferred operation was requested and no operations were deferred";
 				break;
 			case VK_PIPELINE_COMPILE_REQUIRED:
-				errorString = "pipeline compilation required";
+				errorName = "VK_PIPELINE_COMPILE_REQUIRED";
+				errorString = "Pipeline compilation required, but not done by the application";
+				break;
+			/* case VK_PIPELINE_BINARY_MISSING_KHR:
+				errorName = "VK_PIPELINE_BINARY_MISSING_KHR";
+				errorString = "Attempted to create a pipeline binary by querying an internal cache, but the internal cache entry did not exist";
+				break;
+			case VK_INCOMPATIBLE_SHADER_BINARY_EXT:
+				errorName = "VK_INCOMPATIBLE_SHADER_BINARY_EXT";
+				errorString = "The binary shader code is incompatible with the device";
+				break; */
+
+			// Errors
+			case VK_ERROR_OUT_OF_HOST_MEMORY:
+				errorName = "VK_ERROR_OUT_OF_HOST_MEMORY";
+				errorString = "Out of host memory";
+				break;
+			case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+				errorName = "VK_ERROR_OUT_OF_DEVICE_MEMORY";
+				errorString = "Out of device memory";
+				break;
+			case VK_ERROR_INITIALIZATION_FAILED:
+				errorName = "VK_ERROR_INITIALIZATION_FAILED";
+				errorString = "Initialization failed";
+				break;
+			case VK_ERROR_DEVICE_LOST:
+				errorName = "VK_ERROR_DEVICE_LOST";
+				errorString = "Device lost";
+				break;
+			case VK_ERROR_MEMORY_MAP_FAILED:
+				errorName = "VK_ERROR_MEMORY_MAP_FAILED";
+				errorString = "Memory map failed";
+				break;
+			case VK_ERROR_LAYER_NOT_PRESENT:
+				errorName = "VK_ERROR_LAYER_NOT_PRESENT";
+				errorString = "Layer not present";
+				break;
+			case VK_ERROR_EXTENSION_NOT_PRESENT:
+				errorName = "VK_ERROR_EXTENSION_NOT_PRESENT";
+				errorString = "Extension not present";
+				break;
+			case VK_ERROR_FEATURE_NOT_PRESENT:
+				errorName = "VK_ERROR_FEATURE_NOT_PRESENT";
+				errorString = "Feature not present";
+				break;
+			case VK_ERROR_INCOMPATIBLE_DRIVER:
+				errorName = "VK_ERROR_INCOMPATIBLE_DRIVER";
+				errorString = "Incompatible driver";
+				break;
+			case VK_ERROR_TOO_MANY_OBJECTS:
+				errorName = "VK_ERROR_TOO_MANY_OBJECTS";
+				errorString = "Too many objects";
+				break;
+			case VK_ERROR_FORMAT_NOT_SUPPORTED:
+				errorName = "VK_ERROR_FORMAT_NOT_SUPPORTED";
+				errorString = "Format not supported";
+				break;
+			case VK_ERROR_FRAGMENTED_POOL:
+				errorName = "VK_ERROR_FRAGMENTED_POOL";
+				errorString = "Fragmented pool";
+				break;
+			case VK_ERROR_SURFACE_LOST_KHR:
+				errorName = "VK_ERROR_SURFACE_LOST_KHR";
+				errorString = "Surface has been lost and is no longer available";
+				break;
+			case VK_ERROR_NATIVE_WINDOW_IN_USE_KHR:
+				errorName = "VK_ERROR_NATIVE_WINDOW_IN_USE_KHR";
+				errorString = "The window is already in use by any API";
+				break;
+			case VK_ERROR_OUT_OF_DATE_KHR:
+				errorName = "VK_ERROR_OUT_OF_DATE_KHR";
+				errorString = "A surface has changed in a way that it's no longer compatible with the swapchain and further operations will fail";
+				break;
+			case VK_ERROR_INCOMPATIBLE_DISPLAY_KHR:
+				errorName = "VK_ERROR_INCOMPATIBLE_DISPLAY_KHR";
+				errorString = "The display used by a swapchain doesn't use the same presentable image layout or is incompatible";
+				break;
+			case VK_ERROR_INVALID_SHADER_NV:
+				errorName = "VK_ERROR_INVALID_SHADER_NV";
+				errorString = "One or more shaders failed to compile or link";
+				break;
+			case VK_ERROR_OUT_OF_POOL_MEMORY:
+				errorName = "VK_ERROR_OUT_OF_POOL_MEMORY";
+				errorString = "Out of pool memory";
+				break;
+			case VK_ERROR_INVALID_EXTERNAL_HANDLE:
+				errorName = "VK_ERROR_INVALID_EXTERNAL_HANDLE";
+				errorString = "Invalid external handle";
+				break;
+			case VK_ERROR_FRAGMENTATION:
+				errorName = "VK_ERROR_FRAGMENTATION";
+				errorString = "Fragmentation";
+				break;
+			case VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS:
+				errorName = "VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS";
+				errorString = "The memory address is not available";
+				break;
+			case VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT:
+				errorName = "VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT";
+				errorString = "Operation on swapchain created with VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT has failed, because the application didn't have exclusive fullscreen access (outside the application's control)";
+				break;
+			case VK_ERROR_VALIDATION_FAILED_EXT:
+				errorName = "VK_ERROR_VALIDATION_FAILED_EXT";
+				errorString = "Invalid usage detected";
+				break;
+			case VK_ERROR_COMPRESSION_EXHAUSTED_EXT:
+				errorName = "VK_ERROR_COMPRESSION_EXHAUSTED_EXT";
+				errorString = "Image creation failed for internal resources required for compression are exhausted";
+				break;
+			case VK_ERROR_IMAGE_USAGE_NOT_SUPPORTED_KHR:
+				errorName = "VK_ERROR_IMAGE_USAGE_NOT_SUPPORTED_KHR";
+				errorString = "Requested VkImageUsageFlags aren't supported";
+				break;
+			case VK_ERROR_VIDEO_PICTURE_LAYOUT_NOT_SUPPORTED_KHR:
+				errorName = "VK_ERROR_VIDEO_PICTURE_LAYOUT_NOT_SUPPORTED_KHR";
+				errorString = "Requested video picture layout not supported";
+				break;
+			case VK_ERROR_VIDEO_PROFILE_OPERATION_NOT_SUPPORTED_KHR:
+				errorName = "VK_ERROR_VIDEO_PROFILE_OPERATION_NOT_SUPPORTED_KHR";
+				errorString = "Video profile operation not supported";
+				break;
+			case VK_ERROR_VIDEO_PROFILE_FORMAT_NOT_SUPPORTED_KHR:
+				errorName = "VK_ERROR_VIDEO_PROFILE_FORMAT_NOT_SUPPORTED_KHR";
+				errorString = "Video profile format parameters not supported";
+				break;
+			case VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR:
+				errorName = "VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR";
+				errorString = "Video profile codec not supported";
+				break;
+			case VK_ERROR_VIDEO_STD_VERSION_NOT_SUPPORTED_KHR:
+				errorName = "VK_ERROR_VIDEO_STD_VERSION_NOT_SUPPORTED_KHR";
+				errorString = "Specified video STD header version is not supported";
+				break;
+			/* case VK_ERROR_INVALID_VIDEO_STD_PARAMETERS_KHR:
+				errorName = "VK_ERROR_INVALID_VIDEO_STD_PARAMETERS_KHR";
+				errorString = "Invalid video STD parameters";
+				break; */
+			case VK_ERROR_NOT_PERMITTED_KHR:
+				errorName = "VK_ERROR_NOT_PERMITTED_KHR";
+				errorString = "Action is not permitted to be executed due to the application's missing privileges";
+				break;
+			/* case VK_ERROR_NOT_ENOUGH_SPACE:
+				errorName = "VK_ERROR_NOT_ENOUGH_SPACE";
+				errorString = "Application didn't provide enough space to return the data";
+				break; */
+			case VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT:
+				errorName = "VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT";
+				errorString = "";
 				break;
 			case VK_ERROR_UNKNOWN:
-			default:
-				errorString = "unknown error";
+				errorName = "VK_ERROR_UNKNOWN";
+				errorString = "Unknown error";
+				break;
+			case VK_RESULT_MAX_ENUM:
 				break;
 		}
-		RE_ERROR(appendStrings("The recently called Vulkan function threw an error: ", errorString));
+		RE_ERROR(appendStrings("The recently called Vulkan function threw an error: (", errorName, ") ", errorString));
 		return false;
 	}
 

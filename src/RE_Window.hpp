@@ -3,7 +3,6 @@
 
 #include "RE_Ext Header.hpp"
 #include "RE_Input.hpp"
-#include "vulkan/RE_Vulkan.hpp"
 
 namespace RE {
 	

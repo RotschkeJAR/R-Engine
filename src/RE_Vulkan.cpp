@@ -720,7 +720,13 @@ namespace RE {
 		return true;
 	} */
 	
-	Vulkan::Vulkan() : valid(false), debugMessenger(nullptr), internalInstance(nullptr) {
+	Vulkan::Vulkan() : valid(false) {
+		debugMessenger = VK_NULL_HANDLE;
+		internalInstance = VK_NULL_HANDLE;
+		internalPhysicalDevice = VK_NULL_HANDLE;
+		internalPhysicalDeviceProperties = {};
+		internalPhysicalDeviceFeatures = {};
+
 		pfn_vkCreateInstance = nullptr;
 		pfn_vkDestroyInstance = nullptr;
 		pfn_vkEnumeratePhysicalDevices = nullptr;
@@ -1007,6 +1013,8 @@ namespace RE {
 			RE_ERROR("Failed loading Vulkan 1.4 functions");
 			return;
 		} */
+		if (!pickPhysicalDevice())
+			return;
 		valid = true;
 	}
 
@@ -1078,19 +1086,19 @@ namespace RE {
 			return false;
 		}
 
-		constexpr REuint extensionsToLoadCount = 1;
+		constexpr uint32_t extensionsToLoadCount = 1;
 		const char** extensionsToLoad = new const char*[extensionsToLoadCount] {VK_EXT_DEBUG_UTILS_EXTENSION_NAME};
-		REuint availableExtensionsCount = 0;
+		uint32_t availableExtensionsCount = 0;
 		pfn_vkEnumerateInstanceExtensionProperties(nullptr, &availableExtensionsCount, nullptr);
 		VkExtensionProperties* availableExtensions = new VkExtensionProperties[availableExtensionsCount];
 		pfn_vkEnumerateInstanceExtensionProperties(nullptr, &availableExtensionsCount, availableExtensions);
 		println("Available Vulkan instance extensions:");
-		for (REuint i = 0; i < availableExtensionsCount; i++)
+		for (uint32_t i = 0; i < availableExtensionsCount; i++)
 			println(appendStrings("\t", availableExtensions[i].extensionName, ": ", availableExtensions[i].specVersion));
 		bool extensionsMissing = false;
-		for (REuint extToLoadIndex = 0; extToLoadIndex < extensionsToLoadCount; extToLoadIndex++) {
+		for (uint32_t extToLoadIndex = 0; extToLoadIndex < extensionsToLoadCount; extToLoadIndex++) {
 			bool found = false;
-			for (REuint availableExtsIndex = 0; availableExtsIndex < availableExtensionsCount; availableExtsIndex++)
+			for (uint32_t availableExtsIndex = 0; availableExtsIndex < availableExtensionsCount; availableExtsIndex++)
 				if (strcmp(extensionsToLoad[extToLoadIndex], availableExtensions[availableExtsIndex].extensionName) == 0) {
 					found = true;
 					break;
@@ -1101,19 +1109,19 @@ namespace RE {
 			}
 		}
 
-		constexpr REuint layersToLoadCount = 1;
+		constexpr uint32_t layersToLoadCount = 1;
 		const char** layersToLoad = new const char*[layersToLoadCount] {"VK_LAYER_KHRONOS_validation"};
-		REuint availableLayersCount = 0;
+		uint32_t availableLayersCount = 0;
 		pfn_vkEnumerateInstanceLayerProperties(&availableLayersCount, nullptr);
 		VkLayerProperties* availableLayers = new VkLayerProperties[availableLayersCount];
 		pfn_vkEnumerateInstanceLayerProperties(&availableLayersCount, availableLayers);
 		println("Available Vulkan instance layers:");
-		for (REuint i = 0; i < availableLayersCount; i++)
+		for (uint32_t i = 0; i < availableLayersCount; i++)
 			println(appendStrings("\t", availableLayers[i].layerName, " (", availableLayers[i].specVersion, ".", availableLayers[i].implementationVersion, "): ", availableLayers[i].description));
 		bool layersMissing = false;
-		for (REuint layersToLoadIndex = 0; layersToLoadIndex < layersToLoadCount; layersToLoadIndex++) {
+		for (uint32_t layersToLoadIndex = 0; layersToLoadIndex < layersToLoadCount; layersToLoadIndex++) {
 			bool found = false;
-			for (REuint availableLayersIndex = 0; availableLayersIndex < availableLayersCount; availableLayersIndex++)
+			for (uint32_t availableLayersIndex = 0; availableLayersIndex < availableLayersCount; availableLayersIndex++)
 				if (strcmp(layersToLoad[layersToLoadIndex], availableLayers[availableLayersIndex].layerName) == 0) {
 					found = true;
 					break;
@@ -1167,6 +1175,100 @@ namespace RE {
 			RE_FATAL_ERROR("Failed creating Vulkan debug messenger for validation layers");
 			return false;
 		}
+		return true;
+	}
+
+	bool Vulkan::isPhysicalDeviceSuitable(VkPhysicalDevice device) {
+		uint32_t queueFamiliesCount = 0;
+		Vulkan::instance->pfn_vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamiliesCount, nullptr);
+		if (!queueFamiliesCount)
+			return false;
+		/* VkPhysicalDeviceProperties deviceProperties;
+		pfn_vkGetPhysicalDeviceProperties(device, &deviceProperties);
+		VkPhysicalDeviceFeatures deviceFeatures;
+		pfn_vkGetPhysicalDeviceFeatures(device, &deviceFeatures); */
+		VkQueueFamilyProperties* queueFamilies = new VkQueueFamilyProperties[queueFamiliesCount];
+		Vulkan::instance->pfn_vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamiliesCount, queueFamilies);
+		bool queuesSuitable = false;
+		for (uint32_t queueFamilyIndex = 0; queueFamilyIndex < queueFamiliesCount; queueFamilyIndex++)
+			if (queueFamilies[queueFamilyIndex].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+				queuesSuitable = true;
+				break;
+			}
+		delete[] queueFamilies;
+		return queuesSuitable;
+	}
+
+	bool Vulkan::pickPhysicalDevice() {
+		uint32_t physicalDeviceCount = 0;
+		pfn_vkEnumeratePhysicalDevices(internalInstance, &physicalDeviceCount, nullptr);
+		if (!physicalDeviceCount) {
+			RE_FATAL_ERROR("There aren't any physical devices with Vulkan support");
+			return false;
+		}
+		VkPhysicalDevice* physicalDevices = new VkPhysicalDevice[physicalDeviceCount];
+		pfn_vkEnumeratePhysicalDevices(internalInstance, &physicalDeviceCount, physicalDevices);
+		if (physicalDeviceCount == 1) {
+			if (!isPhysicalDeviceSuitable(physicalDevices[0])) {
+				RE_FATAL_ERROR("The computer has only one physical device supporting Vulkan, but is not suitable for rendering");
+				delete[] physicalDevices;
+				return false;
+			}
+			internalPhysicalDevice = physicalDevices[0];
+		} else {
+			REushort currentPhysicalDeviceScore = 0;
+			for (uint32_t physicalDeviceIndex = 0; physicalDeviceIndex < physicalDeviceCount; physicalDeviceIndex++) {
+				// Fetch data about GPU
+				VkPhysicalDevice physicalDevice = physicalDevices[physicalDeviceIndex];
+				VkPhysicalDeviceProperties physicalDeviceProperties;
+				pfn_vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
+				VkPhysicalDeviceFeatures physicalDeviceFeatures;
+				pfn_vkGetPhysicalDeviceFeatures(physicalDevice, &physicalDeviceFeatures);
+
+				// Inspecting, whether GPU is suitable
+				if (!isPhysicalDeviceSuitable(physicalDevice))
+					continue;
+
+				// Rating GPU
+				REushort physicalDeviceScore = 0;
+				switch (physicalDeviceProperties.deviceType) {
+					case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
+						physicalDeviceScore += 50;
+						break;
+					case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
+						physicalDeviceScore += 25;
+						break;
+					default:
+						break;
+				}
+
+				// Deciding, whether GPU is better and has to be chosen
+				if (physicalDeviceScore > currentPhysicalDeviceScore || internalPhysicalDevice == VK_NULL_HANDLE) {
+					internalPhysicalDevice = physicalDevice;
+					currentPhysicalDeviceScore = physicalDeviceScore;
+				}
+			}
+			if (internalPhysicalDevice == VK_NULL_HANDLE) {
+				RE_FATAL_ERROR("Failed finding a suitable device with Vulkan support");
+				delete[] physicalDevices;
+				return false;
+			}
+		}
+		delete[] physicalDevices;
+		pfn_vkGetPhysicalDeviceProperties(internalPhysicalDevice, &internalPhysicalDeviceProperties);
+		pfn_vkGetPhysicalDeviceFeatures(internalPhysicalDevice, &internalPhysicalDeviceFeatures);
+		uint32_t queueFamiliesCount = 0;
+		pfn_vkGetPhysicalDeviceQueueFamilyProperties(internalPhysicalDevice, &queueFamiliesCount, nullptr);
+		VkQueueFamilyProperties* queueFamilies = new VkQueueFamilyProperties[queueFamiliesCount];
+		pfn_vkGetPhysicalDeviceQueueFamilyProperties(internalPhysicalDevice, &queueFamiliesCount, queueFamilies);
+		for (uint32_t queueFamilyIndex = 0; queueFamilyIndex < queueFamiliesCount; queueFamilyIndex++) {
+			if (queueFamilies[queueFamilyIndex].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+				internalQueueIndices.graphicsFamily = queueFamilyIndex;
+				break;
+			}
+		}
+		println(appendStrings("Selected GPU for rendering: ", internalPhysicalDeviceProperties.deviceName));
+		delete[] queueFamilies;
 		return true;
 	}
 

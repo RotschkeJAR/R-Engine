@@ -13,6 +13,10 @@
 #define VK_LAYER_KHR_VALIDATION_NAME "VK_LAYER_KHRONOS_validation"
 
 namespace RE {
+
+	struct VulkanQueueIndices {
+		uint32_t graphicsFamily;
+	};
 	
 	class Vulkan {
 		private:
@@ -25,6 +29,7 @@ namespace RE {
 			VkDebugUtilsMessengerEXT debugMessenger;
 
 			static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT severityFlagBits, VkDebugUtilsMessageTypeFlagsEXT msgTypeBits, const VkDebugUtilsMessengerCallbackDataEXT* callbackData, void* userData);
+			static bool isPhysicalDeviceSuitable(VkPhysicalDevice device);
 			bool setupValidationLayers();
 			void* loadFuncInstance(VkInstance instance, const char* funcName);
 			void* loadFunc(const char* funcName);
@@ -34,6 +39,7 @@ namespace RE {
 			bool loadVulkan_1_2();
 			bool loadVulkan_1_3();
 			// bool loadVulkan_1_4();
+			bool pickPhysicalDevice();
 
 		public:
 			// Vulkan 1.0
@@ -282,6 +288,10 @@ namespace RE {
 
 			static Vulkan* instance;
 			VkInstance internalInstance;
+			VkPhysicalDevice internalPhysicalDevice;
+			VkPhysicalDeviceProperties internalPhysicalDeviceProperties;
+			VkPhysicalDeviceFeatures internalPhysicalDeviceFeatures;
+			VulkanQueueIndices internalQueueIndices;
 
 			Vulkan();
 			~Vulkan();
@@ -534,6 +544,10 @@ namespace RE {
 #define vkTransitionImageLayout(T) Vulkan::instance->pfn_vkTransitionImageLayout(T) */
 
 #define vkInstance Vulkan::instance->internalInstance
+#define vkPhysicalDevice Vulkan::instance->internalPhysicalDevice
+#define vkPhysicalDeviceProperties Vulkan::instance->internalPhysicalDeviceProperties
+#define vkPhysicalDeviceFeatures Vulkan::instance->internalPhysicalDeviceFeatures
+#define vkQueueIndices Vulkan::instance->internalQueueIndices
 
 }
 

@@ -33,7 +33,7 @@ $(RE): $(SRC)/*
 update_git:
 	@git add .
 	@git commit -m "$(commit_name)"
-	@git push
+	@git push -f
 
 fetch_git:
 	@git fetch --all

@@ -20,6 +20,8 @@ namespace RE {
 			virtual void updateTitleInternal() = 0;
 
 		public:
+			static Window* instance;
+
 			Window();
 			virtual ~Window();
 			void show(bool showWindow);
@@ -29,8 +31,6 @@ namespace RE {
 			bool isValid();
 			Vector<REushort, 2> getSize();
 	};
-
-	extern Window* winRef;
 
 }
 

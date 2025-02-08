@@ -22,6 +22,7 @@ namespace RE {
 			~Window_Win64();
 			void processLoop();
 
+		friend class Vulkan;
 		friend LRESULT CALLBACK windowProcess(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	};
 #endif /* RE_OS_WINDOWS */

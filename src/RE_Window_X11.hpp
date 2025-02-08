@@ -24,6 +24,8 @@ namespace RE {
 			Window_X11();
 			~Window_X11();
 			void processLoop();
+
+		friend class Vulkan;
 	};
 #endif /* RE_OS_LINUX */
 

@@ -2,19 +2,19 @@
 
 namespace RE {
 	
-	Window* winRef = nullptr;
+	Window* Window::instance = nullptr;
 
 	Window::Window() : title(u8"Untitled game window"), closeFlag(false), valid(false) {
-		if (winRef) {
+		if (instance) {
 			RE_FATAL_ERROR("A window already exists. New window has been discarded");
 			return;
 		}
-		winRef = this;
+		instance = this;
 	}
 
 	Window::~Window() {
-		if (winRef == this)
-			winRef = nullptr;
+		if (instance == this)
+			instance = nullptr;
 	}
 
 	void Window::show(bool showWindow) {

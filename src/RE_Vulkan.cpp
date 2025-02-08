@@ -1,4 +1,6 @@
 #include "RE_Vulkan.hpp"
+#include "RE_Window_Win64.hpp"
+#include "RE_Window_X11.hpp"
 
 namespace RE {
 
@@ -719,13 +721,58 @@ namespace RE {
 			return false;
 		return true;
 	} */
+
+	bool Vulkan::loadExtensionFuncs() {
+		pfn_vkDestroySurfaceKHR = reinterpret_cast<PFN_vkDestroySurfaceKHR>(loadFunc("vkDestroySurfaceKHR"));
+		if (!pfn_vkDestroySurfaceKHR)
+			return false;
+		pfn_vkGetPhysicalDeviceSurfaceSupportKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceSupportKHR>(loadFunc("vkGetPhysicalDeviceSurfaceSupportKHR"));
+		if (!pfn_vkGetPhysicalDeviceSurfaceSupportKHR)
+			return false;
+		pfn_vkGetPhysicalDeviceSurfaceCapabilitiesKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR>(loadFunc("vkGetPhysicalDeviceSurfaceCapabilitiesKHR"));
+		if (!pfn_vkGetPhysicalDeviceSurfaceCapabilitiesKHR)
+			return false;
+		pfn_vkGetPhysicalDeviceSurfaceFormatsKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceFormatsKHR>(loadFunc("vkGetPhysicalDeviceSurfaceFormatsKHR"));
+		if (!pfn_vkGetPhysicalDeviceSurfaceFormatsKHR)
+			return false;
+		pfn_vkGetPhysicalDeviceSurfacePresentModesKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfacePresentModesKHR>(loadFunc("vkGetPhysicalDeviceSurfacePresentModesKHR"));
+		if (!pfn_vkGetPhysicalDeviceSurfacePresentModesKHR)
+			return false;
+#ifdef RE_OS_WINDOWS
+		pfn_vkCreateWin32SurfaceKHR = reinterpret_cast<PFN_vkCreateWin32SurfaceKHR>(loadFunc("vkCreateWin32SurfaceKHR"));
+		if (!pfn_vkCreateWin32SurfaceKHR)
+			return false;
+		pfn_vkGetPhysicalDeviceWin32PresentationSupportKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceWin32PresentationSupportKHR>(loadFunc("vkGetPhysicalDeviceWin32PresentationSupportKHR"));
+		if (!pfn_vkGetPhysicalDeviceWin32PresentationSupportKHR)
+			return false;
+#elif defined RE_OS_LINUX
+		pfn_vkCreateXlibSurfaceKHR = reinterpret_cast<PFN_vkCreateXlibSurfaceKHR>(loadFunc("vkCreateXlibSurfaceKHR"));
+		if (!pfn_vkCreateXlibSurfaceKHR)
+			return false;
+		pfn_vkGetPhysicalDeviceXlibPresentationSupportKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceXlibPresentationSupportKHR>(loadFunc("vkGetPhysicalDeviceXlibPresentationSupportKHR"));
+		if (!pfn_vkGetPhysicalDeviceXlibPresentationSupportKHR)
+			return false;
+#endif /* RE_OS_WINDOWS, RE_OS_LINUX */
+		return true;
+	}
 	
 	Vulkan::Vulkan() : valid(false) {
+		if (Vulkan::instance) {
+			RE_ERROR("A new object of the Vulkan class has been constructed. Only one can exist at a time");
+			return;
+		}
+		Vulkan::instance = this;
+
 		debugMessenger = VK_NULL_HANDLE;
 		internalInstance = VK_NULL_HANDLE;
 		internalPhysicalDevice = VK_NULL_HANDLE;
 		internalPhysicalDeviceProperties = {};
 		internalPhysicalDeviceFeatures = {};
+		internalQueueIndices = {};
+		internalLogicalDevice = VK_NULL_HANDLE;
+		internalGraphicsQueue = VK_NULL_HANDLE;
+		internalPresentationQueue = VK_NULL_HANDLE;
+		internalSurface = VK_NULL_HANDLE;
 
 		pfn_vkCreateInstance = nullptr;
 		pfn_vkDestroyInstance = nullptr;
@@ -961,12 +1008,15 @@ namespace RE {
 		pfn_vkCopyImageToMemory = nullptr;
 		pfn_vkCopyImageToImage = nullptr;
 		pfn_vkTransitionImageLayout = nullptr; */
-		if (Vulkan::instance) {
-			RE_ERROR("A new object of the Vulkan class has been constructed. Only one can exist at a time");
-			return;
-		}
-		Vulkan::instance = this;
+		pfn_vkDestroySurfaceKHR = nullptr;
+		pfn_vkGetPhysicalDeviceSurfaceSupportKHR = nullptr;
+		pfn_vkGetPhysicalDeviceSurfaceCapabilitiesKHR = nullptr;
+		pfn_vkGetPhysicalDeviceSurfaceFormatsKHR = nullptr;
+		pfn_vkGetPhysicalDeviceSurfacePresentModesKHR = nullptr;
+
 #ifdef RE_OS_WINDOWS
+		pfn_vkCreateWin32SurfaceKHR = nullptr;
+		pfn_vkGetPhysicalDeviceWin32PresentationSupportKHR = nullptr;
 		hVulkan = LoadLibraryW(L"vulkan-1.dll");
 		if (!hVulkan) {
 			RE_FATAL_ERROR("Failed loading Vulkan library");
@@ -974,17 +1024,20 @@ namespace RE {
 		}
 		pfn_vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(GetProcAddress(hVulkan, "vkGetInstanceProcAddr"));
 #elif defined RE_OS_LINUX
+		pfn_vkCreateXlibSurfaceKHR = nullptr;
+		pfn_vkGetPhysicalDeviceXlibPresentationSupportKHR = nullptr;
 		libVulkan = dlopen("libvulkan.so", RTLD_NOW | RTLD_LOCAL);
 		if (!libVulkan) {
 			RE_FATAL_ERROR("Failed loading Vulkan library");
 			return;
 		}
 		pfn_vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(dlsym(libVulkan, "vkGetInstanceProcAddr"));
-#endif
+#endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 		if (!pfn_vkGetInstanceProcAddr) {
 			RE_FATAL_ERROR("Failed loading the Vulkan function \"vkGetInstanceProcAddr\" with OS-API function");
 			return;
 		}
+
 		if (!createInstance()) {
 			RE_FATAL_ERROR("Failed creating a Vulkan instance");
 			return;
@@ -1013,7 +1066,15 @@ namespace RE {
 			RE_ERROR("Failed loading Vulkan 1.4 functions");
 			return;
 		} */
+		if (!loadExtensionFuncs()) {
+			RE_FATAL_ERROR("Failed loading Vulkan extension functions");
+			return;
+		}
+		if (!createWindowSurface())
+			return;
 		if (!pickPhysicalDevice())
+			return;
+		if (!createLogicalDevice())
 			return;
 		valid = true;
 	}
@@ -1023,6 +1084,10 @@ namespace RE {
 			return;
 		Vulkan::instance = nullptr;
 		if (internalInstance != VK_NULL_HANDLE) {
+			if (internalSurface != VK_NULL_HANDLE)
+				pfn_vkDestroySurfaceKHR(internalInstance, internalSurface, nullptr);
+			if (internalLogicalDevice != VK_NULL_HANDLE)
+				pfn_vkDestroyDevice(internalLogicalDevice, nullptr);
 			if (debugMessenger != VK_NULL_HANDLE) {
 				PFN_vkDestroyDebugUtilsMessengerEXT pfn_vkDestroyDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(loadFunc("vkDestroyDebugUtilsMessengerEXT"));
 				if (pfn_vkDestroyDebugUtilsMessengerEXT)
@@ -1032,7 +1097,7 @@ namespace RE {
 			}
 			if (!pfn_vkDestroyInstance) {
 				RE_NOTE("Attempting to reload function for destroying Vulkan instances");
-				pfn_vkDestroyInstance = reinterpret_cast<PFN_vkDestroyInstance>(loadFunc("vkDestroyInstance"));
+				pfn_vkDestroyInstance = reinterpret_cast<PFN_vkDestroyInstance>(loadFuncInstance(VK_NULL_HANDLE, "vkDestroyInstance"));
 				if (!pfn_vkDestroyInstance)
 					RE_ERROR("Failed reloading the function for destroying the Vulkan instance");
 				else
@@ -1044,7 +1109,7 @@ namespace RE {
 		FreeLibrary(hVulkan);
 #elif defined RE_OS_LINUX
 		dlclose(libVulkan);
-#endif
+#endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 	}
 
 	VKAPI_ATTR VkBool32 VKAPI_CALL Vulkan::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT severityFlagBits, VkDebugUtilsMessageTypeFlagsEXT msgTypeBits, const VkDebugUtilsMessengerCallbackDataEXT* callbackData, void* userData) {
@@ -1086,8 +1151,13 @@ namespace RE {
 			return false;
 		}
 
-		constexpr uint32_t extensionsToLoadCount = 1;
-		const char** extensionsToLoad = new const char*[extensionsToLoadCount] {VK_EXT_DEBUG_UTILS_EXTENSION_NAME};
+		constexpr uint32_t extensionsToLoadCount = 3;
+		const char** extensionsToLoad = new const char*[extensionsToLoadCount] {VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_KHR_SURFACE_EXTENSION_NAME};
+#ifdef RE_OS_WINDOWS
+		extensionsToLoad[extensionsToLoadCount - 1] = VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
+#elif defined RE_OS_LINUX
+		extensionsToLoad[extensionsToLoadCount - 1] = VK_KHR_XLIB_SURFACE_EXTENSION_NAME;
+#endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 		uint32_t availableExtensionsCount = 0;
 		pfn_vkEnumerateInstanceExtensionProperties(nullptr, &availableExtensionsCount, nullptr);
 		VkExtensionProperties* availableExtensions = new VkExtensionProperties[availableExtensionsCount];
@@ -1180,7 +1250,7 @@ namespace RE {
 
 	bool Vulkan::isPhysicalDeviceSuitable(VkPhysicalDevice device) {
 		uint32_t queueFamiliesCount = 0;
-		Vulkan::instance->pfn_vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamiliesCount, nullptr);
+		vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamiliesCount, nullptr);
 		if (!queueFamiliesCount)
 			return false;
 		/* VkPhysicalDeviceProperties deviceProperties;
@@ -1188,15 +1258,19 @@ namespace RE {
 		VkPhysicalDeviceFeatures deviceFeatures;
 		pfn_vkGetPhysicalDeviceFeatures(device, &deviceFeatures); */
 		VkQueueFamilyProperties* queueFamilies = new VkQueueFamilyProperties[queueFamiliesCount];
-		Vulkan::instance->pfn_vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamiliesCount, queueFamilies);
-		bool queuesSuitable = false;
-		for (uint32_t queueFamilyIndex = 0; queueFamilyIndex < queueFamiliesCount; queueFamilyIndex++)
-			if (queueFamilies[queueFamilyIndex].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-				queuesSuitable = true;
-				break;
+		vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamiliesCount, queueFamilies);
+		bool graphicsSupport = false, presentSupport = false;
+		for (uint32_t queueFamilyIndex = 0; queueFamilyIndex < queueFamiliesCount; queueFamilyIndex++) {
+			if (!graphicsSupport && queueFamilies[queueFamilyIndex].queueFlags & VK_QUEUE_GRAPHICS_BIT)
+				graphicsSupport = true;
+			if (!presentSupport) {
+				VkBool32 presentQueueSupport = 0;
+				vkGetPhysicalDeviceSurfaceSupportKHR(device, queueFamilyIndex, Vulkan::instance->internalSurface, &presentQueueSupport);
+				presentSupport = static_cast<bool>(presentQueueSupport);
 			}
+		}
 		delete[] queueFamilies;
-		return queuesSuitable;
+		return graphicsSupport && presentSupport;
 	}
 
 	bool Vulkan::pickPhysicalDevice() {
@@ -1233,10 +1307,10 @@ namespace RE {
 				REushort physicalDeviceScore = 0;
 				switch (physicalDeviceProperties.deviceType) {
 					case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
-						physicalDeviceScore += 50;
+						physicalDeviceScore += 1000;
 						break;
 					case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
-						physicalDeviceScore += 25;
+						physicalDeviceScore += 500;
 						break;
 					default:
 						break;
@@ -1261,14 +1335,86 @@ namespace RE {
 		pfn_vkGetPhysicalDeviceQueueFamilyProperties(internalPhysicalDevice, &queueFamiliesCount, nullptr);
 		VkQueueFamilyProperties* queueFamilies = new VkQueueFamilyProperties[queueFamiliesCount];
 		pfn_vkGetPhysicalDeviceQueueFamilyProperties(internalPhysicalDevice, &queueFamiliesCount, queueFamilies);
+		std::optional<uint32_t> graphicsIndex, presentIndex;
 		for (uint32_t queueFamilyIndex = 0; queueFamilyIndex < queueFamiliesCount; queueFamilyIndex++) {
-			if (queueFamilies[queueFamilyIndex].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-				internalQueueIndices.graphicsFamily = queueFamilyIndex;
-				break;
+			if (!graphicsIndex.has_value() && (queueFamilies[queueFamilyIndex].queueFlags & VK_QUEUE_GRAPHICS_BIT))
+				graphicsIndex = queueFamilyIndex;
+			if (!presentIndex.has_value()) {
+				VkBool32 presentQueueSupport = 0;
+				pfn_vkGetPhysicalDeviceSurfaceSupportKHR(internalPhysicalDevice, queueFamilyIndex, internalSurface, &presentQueueSupport);
+				if (presentQueueSupport)
+					presentIndex = queueFamilyIndex;
 			}
 		}
+		if (!graphicsIndex.has_value() || !presentIndex.has_value()) {
+			RE_FATAL_ERROR("Failed retrieving all necessary indices for queues from physical Vulkan device");
+			return false;
+		}
+		internalQueueIndices.graphicsFamily = graphicsIndex.value();
+		internalQueueIndices.presentationFamily = presentIndex.value();
 		println(appendStrings("Selected GPU for rendering: ", internalPhysicalDeviceProperties.deviceName));
 		delete[] queueFamilies;
+		return true;
+	}
+
+	bool Vulkan::createLogicalDevice() {
+		constexpr uint32_t deviceQueueCreateInfosCount = 2;
+		VkDeviceQueueCreateInfo* deviceQueueCreateInfos = new VkDeviceQueueCreateInfo[deviceQueueCreateInfosCount];
+		const float queuePriority = 1.0f;
+		for (uint32_t deviceQueueCreateInfosIndex = 0; deviceQueueCreateInfosIndex < deviceQueueCreateInfosCount; deviceQueueCreateInfosIndex++) {
+			deviceQueueCreateInfos[deviceQueueCreateInfosIndex].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+			deviceQueueCreateInfos[deviceQueueCreateInfosIndex].pNext = nullptr;
+			deviceQueueCreateInfos[deviceQueueCreateInfosIndex].flags = 0;
+			switch (deviceQueueCreateInfosIndex) {
+				case 0:
+					deviceQueueCreateInfos[deviceQueueCreateInfosIndex].queueFamilyIndex = internalQueueIndices.graphicsFamily;
+					break;
+				case 1:
+					deviceQueueCreateInfos[deviceQueueCreateInfosIndex].queueFamilyIndex = internalQueueIndices.presentationFamily;
+					break;
+			}
+			deviceQueueCreateInfos[deviceQueueCreateInfosIndex].queueCount = 1;
+			deviceQueueCreateInfos[deviceQueueCreateInfosIndex].pQueuePriorities = &queuePriority;
+		}
+		VkPhysicalDeviceFeatures physicalDeviceFeatures = {};
+		VkDeviceCreateInfo logicalDeviceCreateInfo = { VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
+		logicalDeviceCreateInfo.pQueueCreateInfos = deviceQueueCreateInfos;
+		logicalDeviceCreateInfo.queueCreateInfoCount = deviceQueueCreateInfosCount;
+		logicalDeviceCreateInfo.pEnabledFeatures = &physicalDeviceFeatures;
+		logicalDeviceCreateInfo.enabledExtensionCount = 0;
+		constexpr uint32_t layersToLoadCount = 1;
+		const char** layersToLoad = new const char*[layersToLoadCount] {"VK_LAYER_KHRONOS_validation"};
+		logicalDeviceCreateInfo.ppEnabledLayerNames = layersToLoad;
+		logicalDeviceCreateInfo.enabledLayerCount = layersToLoadCount;
+		VkResult successResult = pfn_vkCreateDevice(internalPhysicalDevice, &logicalDeviceCreateInfo, nullptr, &internalLogicalDevice);
+		if (!checkVulkanResult(successResult))
+			RE_FATAL_ERROR("Failed creating a logical Vulkan device");
+		else {
+			pfn_vkGetDeviceQueue(internalLogicalDevice, internalQueueIndices.graphicsFamily, 0, &internalGraphicsQueue);
+			pfn_vkGetDeviceQueue(internalLogicalDevice, internalQueueIndices.presentationFamily, 0, &internalPresentationQueue);
+		}
+		delete[] deviceQueueCreateInfos;
+		return successResult == VK_SUCCESS;
+	}
+
+	bool Vulkan::createWindowSurface() {
+#ifdef RE_OS_WINDOWS
+		Window_Win64* windowWin64 = static_cast<Window_Win64*>(Window::instance);
+		VkWin32SurfaceCreateInfoKHR win64SurfaceCreateInfo = { VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR };
+		win64SurfaceCreateInfo.hinstance = windowWin64.hInstance;
+		win64SurfaceCreateInfo.hwnd = windowWin64.hWindow;
+		VkResult successResult = pfn_vkCreateWin32SurfaceKHR(internalInstance, &win64SurfaceCreateInfo, nullptr, &internalSurface);
+#elif defined RE_OS_LINUX
+		Window_X11* windowX11 = static_cast<Window_X11*>(Window::instance);
+		VkXlibSurfaceCreateInfoKHR x11SurfaceCreateInfo = { VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR };
+		x11SurfaceCreateInfo.dpy = windowX11->xDisplay;
+		x11SurfaceCreateInfo.window = windowX11->xWindow;
+		VkResult successResult = pfn_vkCreateXlibSurfaceKHR(internalInstance, &x11SurfaceCreateInfo, nullptr, &internalSurface);
+#endif /* RE_OS_WINDOWS, RE_OS_LINUX */
+		if (!checkVulkanResult(successResult)) {
+			RE_FATAL_ERROR("Failed creating a surface for the window");
+			return false;
+		}
 		return true;
 	}
 

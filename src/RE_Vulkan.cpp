@@ -1401,8 +1401,8 @@ namespace RE {
 #ifdef RE_OS_WINDOWS
 		Window_Win64* windowWin64 = static_cast<Window_Win64*>(Window::instance);
 		VkWin32SurfaceCreateInfoKHR win64SurfaceCreateInfo = { VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR };
-		win64SurfaceCreateInfo.hinstance = windowWin64.hInstance;
-		win64SurfaceCreateInfo.hwnd = windowWin64.hWindow;
+		win64SurfaceCreateInfo.hinstance = windowWin64->hInstance;
+		win64SurfaceCreateInfo.hwnd = windowWin64->hWindow;
 		VkResult successResult = pfn_vkCreateWin32SurfaceKHR(internalInstance, &win64SurfaceCreateInfo, nullptr, &internalSurface);
 #elif defined RE_OS_LINUX
 		Window_X11* windowX11 = static_cast<Window_X11*>(Window::instance);
@@ -1474,14 +1474,16 @@ namespace RE {
 				errorName = "VK_PIPELINE_COMPILE_REQUIRED";
 				errorString = "Pipeline compilation required, but not done by the application";
 				break;
-			/* case VK_PIPELINE_BINARY_MISSING_KHR:
+#ifdef RE_OS_WINDOWS
+			case VK_PIPELINE_BINARY_MISSING_KHR:
 				errorName = "VK_PIPELINE_BINARY_MISSING_KHR";
 				errorString = "Attempted to create a pipeline binary by querying an internal cache, but the internal cache entry did not exist";
 				break;
 			case VK_INCOMPATIBLE_SHADER_BINARY_EXT:
 				errorName = "VK_INCOMPATIBLE_SHADER_BINARY_EXT";
 				errorString = "The binary shader code is incompatible with the device";
-				break; */
+				break;
+#endif
 
 			// Errors
 			case VK_ERROR_OUT_OF_HOST_MEMORY:
@@ -1604,18 +1606,22 @@ namespace RE {
 				errorName = "VK_ERROR_VIDEO_STD_VERSION_NOT_SUPPORTED_KHR";
 				errorString = "Specified video STD header version is not supported";
 				break;
-			/* case VK_ERROR_INVALID_VIDEO_STD_PARAMETERS_KHR:
+#ifdef RE_OS_WINDOWS
+			case VK_ERROR_INVALID_VIDEO_STD_PARAMETERS_KHR:
 				errorName = "VK_ERROR_INVALID_VIDEO_STD_PARAMETERS_KHR";
 				errorString = "Invalid video STD parameters";
-				break; */
+				break;
+#endif
 			case VK_ERROR_NOT_PERMITTED_KHR:
 				errorName = "VK_ERROR_NOT_PERMITTED_KHR";
 				errorString = "Action is not permitted to be executed due to the application's missing privileges";
 				break;
-			/* case VK_ERROR_NOT_ENOUGH_SPACE:
-				errorName = "VK_ERROR_NOT_ENOUGH_SPACE";
+#ifdef RE_OS_WINDOWS
+			case VK_ERROR_NOT_ENOUGH_SPACE_KHR:
+				errorName = "VK_ERROR_NOT_ENOUGH_SPACE_KHR";
 				errorString = "Application didn't provide enough space to return the data";
-				break; */
+				break;
+#endif
 			case VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT:
 				errorName = "VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT";
 				errorString = "";

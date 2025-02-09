@@ -18,6 +18,7 @@ namespace RE {
 			virtual void processLoop() = 0;
 			virtual void showInternal() = 0;
 			virtual void updateTitleInternal() = 0;
+			void updateWindowSize(REushort newWidth, REushort newHeight);
 
 		public:
 			static Window* instance;

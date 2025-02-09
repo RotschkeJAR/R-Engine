@@ -738,6 +738,33 @@ namespace RE {
 		pfn_vkGetPhysicalDeviceSurfacePresentModesKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfacePresentModesKHR>(loadFunc("vkGetPhysicalDeviceSurfacePresentModesKHR"));
 		if (!pfn_vkGetPhysicalDeviceSurfacePresentModesKHR)
 			return false;
+		pfn_vkCreateSwapchainKHR = reinterpret_cast<PFN_vkCreateSwapchainKHR>(loadFunc("vkCreateSwapchainKHR"));
+		if (!pfn_vkCreateSwapchainKHR)
+			return false;
+		pfn_vkDestroySwapchainKHR = reinterpret_cast<PFN_vkDestroySwapchainKHR>(loadFunc("vkDestroySwapchainKHR"));
+		if (!pfn_vkDestroySwapchainKHR)
+			return false;
+		pfn_vkGetSwapchainImagesKHR = reinterpret_cast<PFN_vkGetSwapchainImagesKHR>(loadFunc("vkGetSwapchainImagesKHR"));
+		if (!pfn_vkGetSwapchainImagesKHR)
+			return false;
+		pfn_vkAcquireNextImageKHR = reinterpret_cast<PFN_vkAcquireNextImageKHR>(loadFunc("vkAcquireNextImageKHR"));
+		if (!pfn_vkAcquireNextImageKHR)
+			return false;
+		pfn_vkQueuePresentKHR = reinterpret_cast<PFN_vkQueuePresentKHR>(loadFunc("vkQueuePresentKHR"));
+		if (!pfn_vkQueuePresentKHR)
+			return false;
+		pfn_vkGetDeviceGroupPresentCapabilitiesKHR = reinterpret_cast<PFN_vkGetDeviceGroupPresentCapabilitiesKHR>(loadFunc("vkGetDeviceGroupPresentCapabilitiesKHR"));
+		if (!pfn_vkGetDeviceGroupPresentCapabilitiesKHR)
+			return false;
+		pfn_vkGetDeviceGroupSurfacePresentModesKHR = reinterpret_cast<PFN_vkGetDeviceGroupSurfacePresentModesKHR>(loadFunc("vkGetDeviceGroupSurfacePresentModesKHR"));
+		if (!pfn_vkGetDeviceGroupSurfacePresentModesKHR)
+			return false;
+		pfn_vkGetPhysicalDevicePresentRectanglesKHR = reinterpret_cast<PFN_vkGetPhysicalDevicePresentRectanglesKHR>(loadFunc("vkGetPhysicalDevicePresentRectanglesKHR"));
+		if (!pfn_vkGetPhysicalDevicePresentRectanglesKHR)
+			return false;
+		pfn_vkAcquireNextImage2KHR = reinterpret_cast<PFN_vkAcquireNextImage2KHR>(loadFunc("vkAcquireNextImage2KHR"));
+		if (!pfn_vkAcquireNextImage2KHR)
+			return false;
 #ifdef RE_OS_WINDOWS
 		pfn_vkCreateWin32SurfaceKHR = reinterpret_cast<PFN_vkCreateWin32SurfaceKHR>(loadFunc("vkCreateWin32SurfaceKHR"));
 		if (!pfn_vkCreateWin32SurfaceKHR)
@@ -773,6 +800,9 @@ namespace RE {
 		internalGraphicsQueue = VK_NULL_HANDLE;
 		internalPresentationQueue = VK_NULL_HANDLE;
 		internalSurface = VK_NULL_HANDLE;
+		internalSurfaceCapabilities = {};
+		internalSurfaceFormats = nullptr;
+		internalPresentModes = nullptr;
 
 		pfn_vkCreateInstance = nullptr;
 		pfn_vkDestroyInstance = nullptr;
@@ -1013,6 +1043,15 @@ namespace RE {
 		pfn_vkGetPhysicalDeviceSurfaceCapabilitiesKHR = nullptr;
 		pfn_vkGetPhysicalDeviceSurfaceFormatsKHR = nullptr;
 		pfn_vkGetPhysicalDeviceSurfacePresentModesKHR = nullptr;
+		pfn_vkCreateSwapchainKHR = nullptr;
+		pfn_vkDestroySwapchainKHR = nullptr;
+		pfn_vkGetSwapchainImagesKHR = nullptr;
+		pfn_vkAcquireNextImageKHR = nullptr;
+		pfn_vkQueuePresentKHR = nullptr;
+		pfn_vkGetDeviceGroupPresentCapabilitiesKHR = nullptr;
+		pfn_vkGetDeviceGroupSurfacePresentModesKHR = nullptr;
+		pfn_vkGetPhysicalDevicePresentRectanglesKHR = nullptr;
+		pfn_vkAcquireNextImage2KHR = nullptr;
 
 #ifdef RE_OS_WINDOWS
 		pfn_vkCreateWin32SurfaceKHR = nullptr;
@@ -1105,6 +1144,10 @@ namespace RE {
 			} else
 				pfn_vkDestroyInstance(internalInstance, nullptr);
 		}
+		if (internalSurfaceFormats)
+			delete[] internalSurfaceFormats;
+		if (internalPresentModes)
+			delete[] internalPresentModes;
 #ifdef RE_OS_WINDOWS
 		FreeLibrary(hVulkan);
 #elif defined RE_OS_LINUX
@@ -1164,7 +1207,7 @@ namespace RE {
 		pfn_vkEnumerateInstanceExtensionProperties(nullptr, &availableExtensionsCount, availableExtensions);
 		println("Available Vulkan instance extensions:");
 		for (uint32_t i = 0; i < availableExtensionsCount; i++)
-			println(appendStrings("\t", availableExtensions[i].extensionName, ": ", availableExtensions[i].specVersion));
+			println(appendStrings("\t", availableExtensions[i].extensionName, " (", VK_API_VERSION_MAJOR(availableExtensions[i].specVersion), ".", VK_API_VERSION_MINOR(availableExtensions[i].specVersion), ".", VK_API_VERSION_PATCH(availableExtensions[i].specVersion), ")"));
 		bool extensionsMissing = false;
 		for (uint32_t extToLoadIndex = 0; extToLoadIndex < extensionsToLoadCount; extToLoadIndex++) {
 			bool found = false;
@@ -1180,14 +1223,14 @@ namespace RE {
 		}
 
 		constexpr uint32_t layersToLoadCount = 1;
-		const char** layersToLoad = new const char*[layersToLoadCount] {"VK_LAYER_KHRONOS_validation"};
+		const char** layersToLoad = new const char*[layersToLoadCount] {VK_KHR_VALIDATION_LAYER_NAME};
 		uint32_t availableLayersCount = 0;
 		pfn_vkEnumerateInstanceLayerProperties(&availableLayersCount, nullptr);
 		VkLayerProperties* availableLayers = new VkLayerProperties[availableLayersCount];
 		pfn_vkEnumerateInstanceLayerProperties(&availableLayersCount, availableLayers);
 		println("Available Vulkan instance layers:");
 		for (uint32_t i = 0; i < availableLayersCount; i++)
-			println(appendStrings("\t", availableLayers[i].layerName, " (", availableLayers[i].specVersion, ".", availableLayers[i].implementationVersion, "): ", availableLayers[i].description));
+			println(appendStrings("\t", availableLayers[i].layerName, " (", VK_API_VERSION_MAJOR(availableLayers[i].specVersion), ".", VK_API_VERSION_MINOR(availableLayers[i].specVersion), ".",VK_API_VERSION_PATCH(availableLayers[i].specVersion), " - ", availableLayers[i].implementationVersion, "): ", availableLayers[i].description));
 		bool layersMissing = false;
 		for (uint32_t layersToLoadIndex = 0; layersToLoadIndex < layersToLoadCount; layersToLoadIndex++) {
 			bool found = false;
@@ -1208,9 +1251,9 @@ namespace RE {
 			VkApplicationInfo appInfo = { VK_STRUCTURE_TYPE_APPLICATION_INFO };
 			std::string appName = getAppName();
 			appInfo.pApplicationName = appName.c_str();
-			appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+			appInfo.applicationVersion = VK_MAKE_API_VERSION(0, 1, 0, 0);
 			appInfo.pEngineName = "R-Engine";
-			appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+			appInfo.engineVersion = VK_MAKE_API_VERSION(0, 1, 0, 0);
 			appInfo.apiVersion = VK_API_VERSION_1_3;
 			VkInstanceCreateInfo createInfo = { VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
 			createInfo.pApplicationInfo = &appInfo;
@@ -1269,7 +1312,7 @@ namespace RE {
 				graphicsSupport = true;
 			if (!presentSupport) {
 				VkBool32 presentQueueSupport = 0;
-				vkGetPhysicalDeviceSurfaceSupportKHR(device, queueFamilyIndex, Vulkan::instance->internalSurface, &presentQueueSupport);
+				vkGetPhysicalDeviceSurfaceSupportKHR(device, queueFamilyIndex, vkSurface, &presentQueueSupport);
 				presentSupport = static_cast<bool>(presentQueueSupport);
 			}
 		}
@@ -1281,6 +1324,13 @@ namespace RE {
 		bool swapchainSupport = false;
 		for (REubyte extensionsIndex = 0; extensionsIndex < extensionsCount; extensionsIndex++) {
 			if (strcmp(extensions[extensionsIndex].extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME) == 0) {
+				uint32_t count = 0;
+				vkGetPhysicalDeviceSurfaceFormatsKHR(device, vkSurface, &count, nullptr);
+				if (!count)
+					continue;
+				vkGetPhysicalDeviceSurfacePresentModesKHR(device, vkSurface, &count, nullptr);
+				if (!count)
+					continue;
 				swapchainSupport = true;
 				break;
 			}
@@ -1355,6 +1405,13 @@ namespace RE {
 		}
 		internalQueueIndices.graphicsFamily = graphicsIndex.value();
 		internalQueueIndices.presentationFamily = presentIndex.value();
+		pfn_vkGetPhysicalDeviceSurfaceCapabilitiesKHR(internalPhysicalDevice, internalSurface, &internalSurfaceCapabilities);
+		pfn_vkGetPhysicalDeviceSurfaceFormatsKHR(internalPhysicalDevice, internalSurface, &internalSurfaceFormatsCount, nullptr);
+		internalSurfaceFormats = new VkSurfaceFormatKHR[internalSurfaceFormatsCount];
+		pfn_vkGetPhysicalDeviceSurfaceFormatsKHR(internalPhysicalDevice, internalSurface, &internalSurfaceFormatsCount, internalSurfaceFormats);
+		pfn_vkGetPhysicalDeviceSurfacePresentModesKHR(internalPhysicalDevice, internalSurface, &internalPresentModesCount, nullptr);
+		internalPresentModes = new VkPresentModeKHR[internalPresentModesCount];
+		pfn_vkGetPhysicalDeviceSurfacePresentModesKHR(internalPhysicalDevice, internalSurface, &internalPresentModesCount, internalPresentModes);
 		println(appendStrings("Selected GPU for rendering: ", internalPhysicalDeviceProperties.deviceName));
 		delete[] queueFamilies;
 		return true;
@@ -1388,7 +1445,7 @@ namespace RE {
 		constexpr uint32_t extensionsToLoadCount = 1;
 		const char** extensionsToLoad = new const char*[extensionsToLoadCount] {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 		constexpr uint32_t layersToLoadCount = 1;
-		const char** layersToLoad = new const char*[layersToLoadCount] {"VK_LAYER_KHRONOS_validation"};
+		const char** layersToLoad = new const char*[layersToLoadCount] {VK_KHR_VALIDATION_LAYER_NAME};
 		VkPhysicalDeviceFeatures physicalDeviceFeatures = {};
 		VkDeviceCreateInfo logicalDeviceCreateInfo = { VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
 		logicalDeviceCreateInfo.pQueueCreateInfos = deviceQueueCreateInfos;
@@ -1435,6 +1492,14 @@ namespace RE {
 
 	bool Vulkan::isValid() {
 		return valid;
+	}
+
+	uint32_t Vulkan::getSurfaceFormatsCount() {
+		return internalSurfaceFormatsCount;
+	}
+
+	uint32_t Vulkan::getPresentModesCount() {
+		return internalPresentModesCount;
 	}
 
 	bool Vulkan::checkVulkanResult(VkResult result) {

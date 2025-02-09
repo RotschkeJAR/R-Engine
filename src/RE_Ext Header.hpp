@@ -37,6 +37,7 @@
 # define XButtonRelease ButtonRelease
 # define XMotionNotify MotionNotify
 # define XClientMessage ClientMessage
+# define XResizeRequest ResizeRequest
 # define XNone None
 # define XNoSymbol NoSymbol
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */

@@ -13,6 +13,7 @@ namespace RE {
 		REint defaultScreen = DefaultScreen(xDisplay);
 		XWindow root = RootWindow(xDisplay, defaultScreen);
 
+		XVisualInfo visualInfo;
 		REint visualsCount = 0;
 		XVisualInfo visualTemplate = {};
 		visualTemplate.screen = defaultScreen;
@@ -21,15 +22,16 @@ namespace RE {
 		if (!visualsCount) {
 			RE_FATAL_ERROR("No visual information available for X11 window creation");
 			return;
+		} else {
+			visualInfo = availableVisualInfos[0];
 		}
-		XVisualInfo visualInfo = availableVisualInfos[0];
 		XFree(availableVisualInfos);
 
 		XSetWindowAttributes winAttrib;
 		winAttrib.colormap = XCreateColormap(xDisplay, root, visualInfo.visual, AllocNone);
 		winAttrib.border_pixel = 0;
 		winAttrib.event_mask = ExposureMask | KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ResizeRedirectMask;
-		xWindow = XCreateWindow(xDisplay, root, 0, 0, 800, 600, 0, visualInfo.depth, InputOutput, visualInfo.visual, CWColormap | CWEventMask, &winAttrib);
+		xWindow = XCreateWindow(xDisplay, root, 0, 0, size[0], size[1], 0, visualInfo.depth, InputOutput, visualInfo.visual, CWColormap | CWEventMask, &winAttrib);
 
 		xaClose = XInternAtom(xDisplay, "WM_DELETE_WINDOW", False);
 		XSetWMProtocols(xDisplay, xWindow, &xaClose, 1);
@@ -128,6 +130,10 @@ namespace RE {
 				case XMotionNotify: { /* mouse moved */
 					XMotionEvent motionEvent = event.xmotion;
 					inputMgr.cursorInput(motionEvent.x, motionEvent.y);
+					} break;
+				case XResizeRequest: { /* window resized */
+					XResizeRequestEvent resizeEvent = event.xresizerequest;
+					updateWindowSize(static_cast<REushort>(resizeEvent.width), static_cast<REushort>(resizeEvent.height));
 					} break;
 				default:
 					break;

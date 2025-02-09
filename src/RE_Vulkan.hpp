@@ -27,6 +27,8 @@ namespace RE {
 #elif defined RE_OS_LINUX
 			void* libVulkan;
 #endif
+			uint32_t internalSurfaceFormatsCount;
+			uint32_t internalPresentModesCount;
 			VkDebugUtilsMessengerEXT debugMessenger;
 
 			static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT severityFlagBits, VkDebugUtilsMessageTypeFlagsEXT msgTypeBits, const VkDebugUtilsMessengerCallbackDataEXT* callbackData, void* userData);
@@ -297,6 +299,17 @@ namespace RE {
 			PFN_vkGetPhysicalDeviceSurfaceFormatsKHR pfn_vkGetPhysicalDeviceSurfaceFormatsKHR;
 			PFN_vkGetPhysicalDeviceSurfacePresentModesKHR pfn_vkGetPhysicalDeviceSurfacePresentModesKHR;
 
+			// Swapchain
+			PFN_vkCreateSwapchainKHR pfn_vkCreateSwapchainKHR;
+			PFN_vkDestroySwapchainKHR pfn_vkDestroySwapchainKHR;
+			PFN_vkGetSwapchainImagesKHR pfn_vkGetSwapchainImagesKHR;
+			PFN_vkAcquireNextImageKHR pfn_vkAcquireNextImageKHR;
+			PFN_vkQueuePresentKHR pfn_vkQueuePresentKHR;
+			PFN_vkGetDeviceGroupPresentCapabilitiesKHR pfn_vkGetDeviceGroupPresentCapabilitiesKHR;
+			PFN_vkGetDeviceGroupSurfacePresentModesKHR pfn_vkGetDeviceGroupSurfacePresentModesKHR;
+			PFN_vkGetPhysicalDevicePresentRectanglesKHR pfn_vkGetPhysicalDevicePresentRectanglesKHR;
+			PFN_vkAcquireNextImage2KHR pfn_vkAcquireNextImage2KHR;
+
 #ifdef RE_OS_WINDOWS
 			// Windows-specific
 			PFN_vkCreateWin32SurfaceKHR pfn_vkCreateWin32SurfaceKHR;
@@ -317,10 +330,15 @@ namespace RE {
 			VkQueue internalGraphicsQueue;
 			VkQueue internalPresentationQueue;
 			VkSurfaceKHR internalSurface;
+			VkSurfaceCapabilitiesKHR internalSurfaceCapabilities;
+			VkSurfaceFormatKHR* internalSurfaceFormats;
+			VkPresentModeKHR* internalPresentModes;
 
 			Vulkan();
 			~Vulkan();
 			bool isValid();
+			uint32_t getSurfaceFormatsCount();
+			uint32_t getPresentModesCount();
 			bool checkVulkanResult(VkResult result);
 	};
 
@@ -575,6 +593,17 @@ namespace RE {
 #define vkGetPhysicalDeviceSurfaceFormatsKHR Vulkan::instance->pfn_vkGetPhysicalDeviceSurfaceFormatsKHR
 #define vkGetPhysicalDeviceSurfacePresentModesKHR Vulkan::instance->pfn_vkGetPhysicalDeviceSurfacePresentModesKHR
 
+// Swapchain
+#define vkCreateSwapchainKHR Vulkan::instance->pfn_vkCreateSwapchainKHR
+#define vkDestroySwapchainKHR Vulkan::instance->pfn_vkDestroySwapchainKHR
+#define vkGetSwapchainImagesKHR Vulkan::instance->pfn_vkGetSwapchainImagesKHR
+#define vkAcquireNextImageKHR Vulkan::instance->pfn_vkAcquireNextImageKHR
+#define vkQueuePresentKHR Vulkan::instance->pfn_vkQueuePresentKHR
+#define vkGetDeviceGroupPresentCapabilitiesKHR Vulkan::instance->pfn_vkGetDeviceGroupPresentCapabilitiesKHR
+#define vkGetDeviceGroupSurfacePresentModesKHR Vulkan::instance->pfn_vkGetDeviceGroupSurfacePresentModesKHR
+#define vkGetPhysicalDevicePresentRectanglesKHR Vulkan::instance->pfn_vkGetPhysicalDevicePresentRectanglesKHR
+#define vkAcquireNextImage2KHR Vulkan::instance->pfn_vkAcquireNextImage2KHR
+
 #ifdef RE_OS_WINDOWS
 # define vkCreateWin32SurfaceKHR Vulkan::instance->pfn_vkCreateWin32SurfaceKHR
 # define vkGetPhysicalDeviceWin32PresentationSupportKHR Vulkan::instance->pfn_vkGetPhysicalDeviceWin32PresentationSupportKHR
@@ -592,6 +621,15 @@ namespace RE {
 #define vkGraphicsQueue Vulkan::instance->internalGraphicsQueue
 #define vkPresentQueue Vulkan::instance->internalPresentationQueue
 #define vkSurface Vulkan::instance->internalSurface
+#define vkSurfaceCapabilities Vulkan::instance->internalSurfaceCapabilities
+#define vkSurfaceFormats Vulkan::instance->internalSurfaceFormats
+#define vkSurfaceFormatsCount Vulkan::instance->getSurfaceFormatsCount()
+#define vkPresentModes Vulkan::instance->internalPresentModes
+#define vkPresentModesCount Vulkan::instance->getPresentModesCount()
+
+#define CHECK_VK_RESULT(T) Vulkan::instance->checkVulkanResult(T)
+
+#define VK_KHR_VALIDATION_LAYER_NAME "VK_LAYER_KHRONOS_validation"
 
 }
 

@@ -3,6 +3,7 @@
 #include "RE_Window_X11.hpp"
 #include "RE_Renderer.hpp"
 #include "RE_Vulkan.hpp"
+#include "RE_Render System.hpp"
 
 #include <chrono>
 #include <thread>
@@ -42,6 +43,9 @@ namespace RE {
 		}
 		Vulkan vulkan;
 		if (!vulkan.isValid())
+			return;
+		RenderSystem renderSystem;
+		if (!renderSystem.isValid())
 			return;
 		Renderer renderer;
 		running = true;

@@ -1,4 +1,5 @@
 bin/
+shaders/*.spv
 
 # Windows-specific
 Game (MinGW; Console).exe

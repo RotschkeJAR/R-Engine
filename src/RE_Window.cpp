@@ -1,10 +1,11 @@
 #include "RE_Window.hpp"
+#include "RE_Render System.hpp"
 
 namespace RE {
 	
 	Window* Window::instance = nullptr;
 
-	Window::Window() : title(u8"Untitled game window"), closeFlag(false), valid(false) {
+	Window::Window() : title(u8"Untitled game window"), size(600, 400), closeFlag(false), valid(false) {
 		if (instance) {
 			RE_FATAL_ERROR("A window already exists. New window has been discarded");
 			return;
@@ -15,6 +16,13 @@ namespace RE {
 	Window::~Window() {
 		if (instance == this)
 			instance = nullptr;
+	}
+
+	void Window::updateWindowSize(REushort newWidth, REushort newHeight) {
+		size[0] = newWidth;
+		size[1] = newHeight;
+		inputMgr.updateWinSize(size);
+		RenderSystem::instance->windowResize(size);
 	}
 
 	void Window::show(bool showWindow) {

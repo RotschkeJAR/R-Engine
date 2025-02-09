@@ -15,9 +15,7 @@ namespace RE {
 		else {
 			switch (uMsg) {
 				case WM_SIZE: /* resized */
-					win64->size[0] = LOWORD(lParam);
-					win64->size[1] = HIWORD(lParam);
-					win64->inputMgr.updateWinSize(win64->size);
+					win64->updateWindowSize(static_cast<REushort>(LOWORD(lParam)), static_cast<REushort>(HIWORD(lParam)));
 					return 0;
 				case WM_CLOSE: /* close */
 					win64->closeFlag = true;
@@ -116,7 +114,7 @@ namespace RE {
 			WINDOW_CLASS_NAME,
 			wTitleStr.c_str(),
 			WS_THICKFRAME | WS_MAXIMIZEBOX | WS_MINIMIZEBOX | WS_CAPTION | WS_SYSMENU,
-			10, 10, 200, 200,
+			10, 10, size[0], size[1],
 			nullptr,
 			nullptr,
 			hInstance,

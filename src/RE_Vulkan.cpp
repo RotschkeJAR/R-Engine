@@ -1253,6 +1253,10 @@ namespace RE {
 		vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamiliesCount, nullptr);
 		if (!queueFamiliesCount)
 			return false;
+		uint32_t extensionsCount = 0;
+		vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionsCount, nullptr);
+		if (!extensionsCount)
+			return false;
 		/* VkPhysicalDeviceProperties deviceProperties;
 		pfn_vkGetPhysicalDeviceProperties(device, &deviceProperties);
 		VkPhysicalDeviceFeatures deviceFeatures;
@@ -1270,7 +1274,19 @@ namespace RE {
 			}
 		}
 		delete[] queueFamilies;
-		return graphicsSupport && presentSupport;
+		if (!graphicsSupport || !presentSupport)
+			return false;
+		VkExtensionProperties* extensions = new VkExtensionProperties[extensionsCount];
+		vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionsCount, extensions);
+		bool swapchainSupport = false;
+		for (REubyte extensionsIndex = 0; extensionsIndex < extensionsCount; extensionsIndex++) {
+			if (strcmp(extensions[extensionsIndex].extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME) == 0) {
+				swapchainSupport = true;
+				break;
+			}
+		}
+		delete[] extensions;
+		return swapchainSupport;
 	}
 
 	bool Vulkan::pickPhysicalDevice() {
@@ -1282,53 +1298,44 @@ namespace RE {
 		}
 		VkPhysicalDevice* physicalDevices = new VkPhysicalDevice[physicalDeviceCount];
 		pfn_vkEnumeratePhysicalDevices(internalInstance, &physicalDeviceCount, physicalDevices);
-		if (physicalDeviceCount == 1) {
-			if (!isPhysicalDeviceSuitable(physicalDevices[0])) {
-				RE_FATAL_ERROR("The computer has only one physical device supporting Vulkan, but is not suitable for rendering");
-				delete[] physicalDevices;
-				return false;
+		REushort currentPhysicalDeviceScore = 0;
+		for (uint32_t physicalDeviceIndex = 0; physicalDeviceIndex < physicalDeviceCount; physicalDeviceIndex++) {
+			VkPhysicalDevice physicalDevice = physicalDevices[physicalDeviceIndex];
+
+			// Inspecting, whether GPU is suitable
+			if (!isPhysicalDeviceSuitable(physicalDevice))
+				continue;
+
+			// Fetch data about GPU
+			VkPhysicalDeviceProperties physicalDeviceProperties;
+			pfn_vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
+			VkPhysicalDeviceFeatures physicalDeviceFeatures;
+			pfn_vkGetPhysicalDeviceFeatures(physicalDevice, &physicalDeviceFeatures);
+
+			// Rating GPU
+			REushort physicalDeviceScore = 0;
+			switch (physicalDeviceProperties.deviceType) {
+				case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
+					physicalDeviceScore += 1000;
+					break;
+				case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
+					physicalDeviceScore += 500;
+					break;
+				default:
+					break;
 			}
-			internalPhysicalDevice = physicalDevices[0];
-		} else {
-			REushort currentPhysicalDeviceScore = 0;
-			for (uint32_t physicalDeviceIndex = 0; physicalDeviceIndex < physicalDeviceCount; physicalDeviceIndex++) {
-				// Fetch data about GPU
-				VkPhysicalDevice physicalDevice = physicalDevices[physicalDeviceIndex];
-				VkPhysicalDeviceProperties physicalDeviceProperties;
-				pfn_vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
-				VkPhysicalDeviceFeatures physicalDeviceFeatures;
-				pfn_vkGetPhysicalDeviceFeatures(physicalDevice, &physicalDeviceFeatures);
 
-				// Inspecting, whether GPU is suitable
-				if (!isPhysicalDeviceSuitable(physicalDevice))
-					continue;
-
-				// Rating GPU
-				REushort physicalDeviceScore = 0;
-				switch (physicalDeviceProperties.deviceType) {
-					case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
-						physicalDeviceScore += 1000;
-						break;
-					case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
-						physicalDeviceScore += 500;
-						break;
-					default:
-						break;
-				}
-
-				// Deciding, whether GPU is better and has to be chosen
-				if (physicalDeviceScore > currentPhysicalDeviceScore || internalPhysicalDevice == VK_NULL_HANDLE) {
-					internalPhysicalDevice = physicalDevice;
-					currentPhysicalDeviceScore = physicalDeviceScore;
-				}
-			}
-			if (internalPhysicalDevice == VK_NULL_HANDLE) {
-				RE_FATAL_ERROR("Failed finding a suitable device with Vulkan support");
-				delete[] physicalDevices;
-				return false;
+			// Deciding, whether GPU is better and has to be chosen
+			if (physicalDeviceScore > currentPhysicalDeviceScore || internalPhysicalDevice == VK_NULL_HANDLE) {
+				internalPhysicalDevice = physicalDevice;
+				currentPhysicalDeviceScore = physicalDeviceScore;
 			}
 		}
 		delete[] physicalDevices;
+		if (internalPhysicalDevice == VK_NULL_HANDLE) {
+			RE_FATAL_ERROR("Failed finding a suitable device with Vulkan support");
+			return false;
+		}
 		pfn_vkGetPhysicalDeviceProperties(internalPhysicalDevice, &internalPhysicalDeviceProperties);
 		pfn_vkGetPhysicalDeviceFeatures(internalPhysicalDevice, &internalPhysicalDeviceFeatures);
 		uint32_t queueFamiliesCount = 0;
@@ -1337,7 +1344,7 @@ namespace RE {
 		pfn_vkGetPhysicalDeviceQueueFamilyProperties(internalPhysicalDevice, &queueFamiliesCount, queueFamilies);
 		std::optional<uint32_t> graphicsIndex, presentIndex;
 		for (uint32_t queueFamilyIndex = 0; queueFamilyIndex < queueFamiliesCount; queueFamilyIndex++) {
-			if (!graphicsIndex.has_value() && (queueFamilies[queueFamilyIndex].queueFlags & VK_QUEUE_GRAPHICS_BIT))
+			if (!graphicsIndex.has_value() && queueFamilies[queueFamilyIndex].queueFlags & VK_QUEUE_GRAPHICS_BIT)
 				graphicsIndex = queueFamilyIndex;
 			if (!presentIndex.has_value()) {
 				VkBool32 presentQueueSupport = 0;
@@ -1345,10 +1352,6 @@ namespace RE {
 				if (presentQueueSupport)
 					presentIndex = queueFamilyIndex;
 			}
-		}
-		if (!graphicsIndex.has_value() || !presentIndex.has_value()) {
-			RE_FATAL_ERROR("Failed retrieving all necessary indices for queues from physical Vulkan device");
-			return false;
 		}
 		internalQueueIndices.graphicsFamily = graphicsIndex.value();
 		internalQueueIndices.presentationFamily = presentIndex.value();
@@ -1358,32 +1361,41 @@ namespace RE {
 	}
 
 	bool Vulkan::createLogicalDevice() {
-		constexpr uint32_t deviceQueueCreateInfosCount = 2;
-		VkDeviceQueueCreateInfo* deviceQueueCreateInfos = new VkDeviceQueueCreateInfo[deviceQueueCreateInfosCount];
+		std::vector<uint32_t> queueIndices;
+		for (REubyte i = 0; i < 2; i++) {
+			uint32_t index = 0;
+			switch (i) {
+				case 0:
+					index = internalQueueIndices.graphicsFamily;
+					break;
+				case 1:
+					index = internalQueueIndices.presentationFamily;
+					break;
+			}
+			if (std::find(queueIndices.begin(), queueIndices.end(), index) == queueIndices.end())
+				queueIndices.push_back(index);
+		}
+		VkDeviceQueueCreateInfo* deviceQueueCreateInfos = new VkDeviceQueueCreateInfo[queueIndices.size()];
 		const float queuePriority = 1.0f;
-		for (uint32_t deviceQueueCreateInfosIndex = 0; deviceQueueCreateInfosIndex < deviceQueueCreateInfosCount; deviceQueueCreateInfosIndex++) {
+		for (uint32_t deviceQueueCreateInfosIndex = 0; deviceQueueCreateInfosIndex < queueIndices.size(); deviceQueueCreateInfosIndex++) {
 			deviceQueueCreateInfos[deviceQueueCreateInfosIndex].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 			deviceQueueCreateInfos[deviceQueueCreateInfosIndex].pNext = nullptr;
 			deviceQueueCreateInfos[deviceQueueCreateInfosIndex].flags = 0;
-			switch (deviceQueueCreateInfosIndex) {
-				case 0:
-					deviceQueueCreateInfos[deviceQueueCreateInfosIndex].queueFamilyIndex = internalQueueIndices.graphicsFamily;
-					break;
-				case 1:
-					deviceQueueCreateInfos[deviceQueueCreateInfosIndex].queueFamilyIndex = internalQueueIndices.presentationFamily;
-					break;
-			}
+			deviceQueueCreateInfos[deviceQueueCreateInfosIndex].queueFamilyIndex = queueIndices.at(deviceQueueCreateInfosIndex);
 			deviceQueueCreateInfos[deviceQueueCreateInfosIndex].queueCount = 1;
 			deviceQueueCreateInfos[deviceQueueCreateInfosIndex].pQueuePriorities = &queuePriority;
 		}
+		constexpr uint32_t extensionsToLoadCount = 1;
+		const char** extensionsToLoad = new const char*[extensionsToLoadCount] {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+		constexpr uint32_t layersToLoadCount = 1;
+		const char** layersToLoad = new const char*[layersToLoadCount] {"VK_LAYER_KHRONOS_validation"};
 		VkPhysicalDeviceFeatures physicalDeviceFeatures = {};
 		VkDeviceCreateInfo logicalDeviceCreateInfo = { VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
 		logicalDeviceCreateInfo.pQueueCreateInfos = deviceQueueCreateInfos;
-		logicalDeviceCreateInfo.queueCreateInfoCount = deviceQueueCreateInfosCount;
+		logicalDeviceCreateInfo.queueCreateInfoCount = queueIndices.size();
 		logicalDeviceCreateInfo.pEnabledFeatures = &physicalDeviceFeatures;
-		logicalDeviceCreateInfo.enabledExtensionCount = 0;
-		constexpr uint32_t layersToLoadCount = 1;
-		const char** layersToLoad = new const char*[layersToLoadCount] {"VK_LAYER_KHRONOS_validation"};
+		logicalDeviceCreateInfo.ppEnabledExtensionNames = extensionsToLoad;
+		logicalDeviceCreateInfo.enabledExtensionCount = extensionsToLoadCount;
 		logicalDeviceCreateInfo.ppEnabledLayerNames = layersToLoad;
 		logicalDeviceCreateInfo.enabledLayerCount = layersToLoadCount;
 		VkResult successResult = pfn_vkCreateDevice(internalPhysicalDevice, &logicalDeviceCreateInfo, nullptr, &internalLogicalDevice);
@@ -1394,25 +1406,28 @@ namespace RE {
 			pfn_vkGetDeviceQueue(internalLogicalDevice, internalQueueIndices.presentationFamily, 0, &internalPresentationQueue);
 		}
 		delete[] deviceQueueCreateInfos;
+		delete[] extensionsToLoad;
+		delete[] layersToLoad;
 		return successResult == VK_SUCCESS;
 	}
 
 	bool Vulkan::createWindowSurface() {
+		VkResult successResult = VK_RESULT_MAX_ENUM;
 #ifdef RE_OS_WINDOWS
 		Window_Win64* windowWin64 = static_cast<Window_Win64*>(Window::instance);
 		VkWin32SurfaceCreateInfoKHR win64SurfaceCreateInfo = { VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR };
 		win64SurfaceCreateInfo.hinstance = windowWin64->hInstance;
 		win64SurfaceCreateInfo.hwnd = windowWin64->hWindow;
-		VkResult successResult = pfn_vkCreateWin32SurfaceKHR(internalInstance, &win64SurfaceCreateInfo, nullptr, &internalSurface);
+		successResult = pfn_vkCreateWin32SurfaceKHR(internalInstance, &win64SurfaceCreateInfo, nullptr, &internalSurface);
 #elif defined RE_OS_LINUX
 		Window_X11* windowX11 = static_cast<Window_X11*>(Window::instance);
 		VkXlibSurfaceCreateInfoKHR x11SurfaceCreateInfo = { VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR };
 		x11SurfaceCreateInfo.dpy = windowX11->xDisplay;
 		x11SurfaceCreateInfo.window = windowX11->xWindow;
-		VkResult successResult = pfn_vkCreateXlibSurfaceKHR(internalInstance, &x11SurfaceCreateInfo, nullptr, &internalSurface);
+		successResult = pfn_vkCreateXlibSurfaceKHR(internalInstance, &x11SurfaceCreateInfo, nullptr, &internalSurface);
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 		if (!checkVulkanResult(successResult)) {
-			RE_FATAL_ERROR("Failed creating a surface for the window");
+			RE_FATAL_ERROR("Failed creating a surface for the window and linking to Vulkan");
 			return false;
 		}
 		return true;

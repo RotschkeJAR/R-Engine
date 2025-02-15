@@ -481,26 +481,42 @@ namespace RE {
 		submitInfo.pWaitDstStageMask = waitStages;
 		submitInfo.commandBufferCount = 1;
 		submitInfo.pCommandBuffers = &internalCmdBuffer;
-		VkSemaphore semaphores[] = {internalRenderFinishedSemaphore};
 		submitInfo.signalSemaphoreCount = 1;
-		submitInfo.pSignalSemaphores = semaphores;
+		submitInfo.pSignalSemaphores = &internalRenderFinishedSemaphore;
 		if (!CHECK_VK_RESULT(vkQueueSubmit(vkGraphicsQueue, 1, &submitInfo, internalFence))) {
 			RE_FATAL_ERROR("Failed submitting data to graphics queue in Vulkan");
 			return;
 		}
 		VkPresentInfoKHR presentInfo = { VK_STRUCTURE_TYPE_PRESENT_INFO_KHR };
 		presentInfo.waitSemaphoreCount = 1;
-		presentInfo.pWaitSemaphores = semaphores;
+		presentInfo.pWaitSemaphores = &internalRenderFinishedSemaphore;
 		presentInfo.swapchainCount = 1;
 		presentInfo.pSwapchains = &internalSwapchain;
 		presentInfo.pImageIndices = &imgIndex;
 		presentInfo.pResults = nullptr;
 		vkQueuePresentKHR(vkPresentQueue, &presentInfo);
-		vkDeviceWaitIdle(vkDevice);
 	}
 
 	void RenderSystem::windowResize(Vector<REushort, 2> newSize) {
-
+		vkDeviceWaitIdle(vkDevice);
+		for (uint32_t i = 0; i < internalSwapchainImageCount; i++) {
+			vkDestroyFramebuffer(vkDevice, internalFramebuffers[i], nullptr);
+			vkDestroyImageView(vkDevice, internalSwapchainImageViews[i], nullptr);
+		}
+		delete[] internalFramebuffers;
+		internalFramebuffers = nullptr;
+		delete[] internalSwapchainImageViews;
+		internalSwapchainImageViews = nullptr;
+		delete[] internalSwapchainImages;
+		internalSwapchainImages = nullptr;
+		vkDestroySwapchainKHR(vkDevice, internalSwapchain, nullptr);
+		internalSwapchain = VK_NULL_HANDLE;
+		if (!createSwapchain())
+			return;
+		if (!createImageViews())
+			return;
+		if (!createFramebuffers())
+			return;
 	}
 
 	bool RenderSystem::isValid() {

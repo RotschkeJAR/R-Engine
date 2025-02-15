@@ -58,6 +58,7 @@ namespace RE {
 			running = !window->shouldClose() && !errorOccured;
 		}
 		window->show(false);
+		vkDeviceWaitIdle(vkDevice);
 		gameLogicThread.join();
 		delete window;
 	}

@@ -11,21 +11,38 @@ namespace RE {
 			bool vsyncActive;
 			VkPresentModeKHR vsyncMode;
 			VkPresentModeKHR noVsync;
-			VkSurfaceFormatKHR surfaceFormat;
-			VkExtent2D swapchainImageSize;
+			VkSurfaceFormatKHR internalSurfaceFormat;
+			VkExtent2D internalSwapchainImageSize;
 			VkSwapchainKHR internalSwapchain;
-			uint32_t swapchainImageCount;
-			VkImage* swapchainImages;
-			VkImageView* swapchainImageViews;
+			uint32_t internalSwapchainImageCount;
+			VkImage* internalSwapchainImages;
+			VkImageView* internalSwapchainImageViews;
+			VkShaderModule internalVertexShader, internalFragmentShader;
+			VkRenderPass internalRenderPass;
+			VkPipelineLayout internalPipelineLayout;
+			VkPipeline internalPipeline;
+			VkFramebuffer* internalFramebuffers;
+			VkCommandPool internalCmdPool;
+			VkCommandBuffer internalCmdBuffer;
+			VkSemaphore internalImgAvailableSemaphore, internalRenderFinishedSemaphore;
+			VkFence internalFence;
 
 			bool createSwapchain();
 			bool createImageViews();
+			bool createShaders();
+			bool createRenderPass();
+			bool createPipeline();
+			bool createFramebuffers();
+			bool createCommands();
+			bool createSync();
+			bool recordCommandBuffer(VkCommandBuffer cmdBuffer, uint32_t imgIndex);
 
 		public:
 			static RenderSystem* instance;
 
 			RenderSystem();
 			~RenderSystem();
+			void drawFrame();
 			void windowResize(Vector<REushort, 2> newSize);
 			bool isValid();
 	};

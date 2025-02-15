@@ -52,7 +52,8 @@ namespace RE {
 		std::thread gameLogicThread(gameThread);
 		while (running) {
 			window->update();
-			renderer.render();
+			renderSystem.drawFrame();
+			//renderer.render();
 			window->show(true);
 			running = !window->shouldClose() && !errorOccured;
 		}

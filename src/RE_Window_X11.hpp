@@ -13,6 +13,7 @@ namespace RE {
 			XAtom xaUTF8, xaWinName;
 			XInputMethod xInputMethod;
 			XInputContext xInputContext;
+			XSizeHints* xSizes;
 
 		protected:
 			void showInternal();

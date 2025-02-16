@@ -5,7 +5,7 @@
 namespace RE {
 
 #ifdef RE_OS_LINUX
-	Window_X11::Window_X11() : xWindow(0), xaClose(0), xaUTF8(0), xaWinName(0), xDisplay(XOpenDisplay(nullptr)) {
+	Window_X11::Window_X11() : xWindow(0), xaClose(0), xaUTF8(0), xaWinName(0), xSizes(XAllocSizeHints()), xDisplay(XOpenDisplay(nullptr)) {
 		if (!xDisplay) {
 			RE_FATAL_ERROR("Unable to connect to X11 server");
 			return;
@@ -33,6 +33,13 @@ namespace RE {
 		winAttrib.event_mask = ExposureMask | KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ResizeRedirectMask;
 		xWindow = XCreateWindow(xDisplay, root, 0, 0, size[0], size[1], 0, visualInfo.depth, InputOutput, visualInfo.visual, CWColormap | CWEventMask, &winAttrib);
 
+		xSizes->flags = PMinSize | PMaxSize;
+		xSizes->min_width = size[0];
+		xSizes->min_height = size[1];
+		xSizes->max_width = size[0];
+		xSizes->max_height = size[1];
+		XSetWMNormalHints(xDisplay, xWindow, xSizes);
+
 		xaClose = XInternAtom(xDisplay, "WM_DELETE_WINDOW", False);
 		XSetWMProtocols(xDisplay, xWindow, &xaClose, 1);
 		XSetLocaleModifiers("");
@@ -54,6 +61,7 @@ namespace RE {
 	}
 
 	Window_X11::~Window_X11() {
+		XFree(xSizes);
 		if (!xDisplay)
 			return;
 		if (xWindow) {

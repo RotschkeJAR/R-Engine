@@ -498,25 +498,7 @@ namespace RE {
 	}
 
 	void RenderSystem::windowResize(Vector<REushort, 2> newSize) {
-		vkDeviceWaitIdle(vkDevice);
-		for (uint32_t i = 0; i < internalSwapchainImageCount; i++) {
-			vkDestroyFramebuffer(vkDevice, internalFramebuffers[i], nullptr);
-			vkDestroyImageView(vkDevice, internalSwapchainImageViews[i], nullptr);
-		}
-		delete[] internalFramebuffers;
-		internalFramebuffers = nullptr;
-		delete[] internalSwapchainImageViews;
-		internalSwapchainImageViews = nullptr;
-		delete[] internalSwapchainImages;
-		internalSwapchainImages = nullptr;
-		vkDestroySwapchainKHR(vkDevice, internalSwapchain, nullptr);
-		internalSwapchain = VK_NULL_HANDLE;
-		if (!createSwapchain())
-			return;
-		if (!createImageViews())
-			return;
-		if (!createFramebuffers())
-			return;
+
 	}
 
 	bool RenderSystem::isValid() {

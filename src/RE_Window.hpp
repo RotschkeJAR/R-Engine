@@ -5,8 +5,6 @@
 #include "RE_Input.hpp"
 
 namespace RE {
-
-#define CONST_WINDOW_SIZE true
 	
 	class Window {
 		protected:

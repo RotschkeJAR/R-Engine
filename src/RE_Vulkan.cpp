@@ -4,7 +4,7 @@
 
 namespace RE {
 
-	Vulkan* Vulkan::instance = nullptr;
+	Vulkan* Vulkan::pInstance = nullptr;
 
 	bool Vulkan::loadVulkan_1_0() {
 		// Skipped initialization of "pfn_vkCreateInstance", because it's already loaded
@@ -783,26 +783,26 @@ namespace RE {
 		return true;
 	}
 	
-	Vulkan::Vulkan() : valid(false) {
-		if (Vulkan::instance) {
+	Vulkan::Vulkan() : bValid(false) {
+		if (Vulkan::pInstance) {
 			RE_ERROR("A new object of the Vulkan class has been constructed. Only one can exist at a time");
 			return;
 		}
-		Vulkan::instance = this;
+		Vulkan::pInstance = this;
 
-		debugMessenger = VK_NULL_HANDLE;
-		internalInstance = VK_NULL_HANDLE;
-		internalPhysicalDevice = VK_NULL_HANDLE;
-		internalPhysicalDeviceProperties = {};
-		internalPhysicalDeviceFeatures = {};
+		vk_hDebugMessenger = VK_NULL_HANDLE;
+		vk_hInternalInstance = VK_NULL_HANDLE;
+		vk_hInternalPhysicalDevice = VK_NULL_HANDLE;
+		vk_internalPhysicalDeviceProperties = {};
+		vk_internalPhysicalDeviceFeatures = {};
 		internalQueueIndices = {};
-		internalLogicalDevice = VK_NULL_HANDLE;
-		internalGraphicsQueue = VK_NULL_HANDLE;
-		internalPresentationQueue = VK_NULL_HANDLE;
-		internalSurface = VK_NULL_HANDLE;
-		internalSurfaceCapabilities = {};
-		internalSurfaceFormats = nullptr;
-		internalPresentModes = nullptr;
+		vk_hInternalDevice = VK_NULL_HANDLE;
+		vk_hInternalGraphicsQueue = VK_NULL_HANDLE;
+		vk_hInternalPresentationQueue = VK_NULL_HANDLE;
+		vk_hInternalSurface = VK_NULL_HANDLE;
+		vk_internalSurfaceCapabilities = {};
+		vk_pInternalSurfaceFormats = nullptr;
+		vk_pInternalPresentModes = nullptr;
 
 		pfn_vkCreateInstance = nullptr;
 		pfn_vkDestroyInstance = nullptr;
@@ -1056,21 +1056,21 @@ namespace RE {
 #ifdef RE_OS_WINDOWS
 		pfn_vkCreateWin32SurfaceKHR = nullptr;
 		pfn_vkGetPhysicalDeviceWin32PresentationSupportKHR = nullptr;
-		hVulkan = LoadLibraryW(L"vulkan-1.dll");
-		if (!hVulkan) {
+		win_hVulkan = LoadLibraryW(L"vulkan-1.dll");
+		if (!win_hVulkan) {
 			RE_FATAL_ERROR("Failed loading Vulkan library");
 			return;
 		}
-		pfn_vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(GetProcAddress(hVulkan, "vkGetInstanceProcAddr"));
+		pfn_vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(GetProcAddress(win_hVulkan, "vkGetInstanceProcAddr"));
 #elif defined RE_OS_LINUX
 		pfn_vkCreateXlibSurfaceKHR = nullptr;
 		pfn_vkGetPhysicalDeviceXlibPresentationSupportKHR = nullptr;
-		libVulkan = dlopen("libvulkan.so", RTLD_NOW | RTLD_LOCAL);
-		if (!libVulkan) {
+		linux_libVulkan = dlopen("libvulkan.so", RTLD_NOW | RTLD_LOCAL);
+		if (!linux_libVulkan) {
 			RE_FATAL_ERROR("Failed loading Vulkan library");
 			return;
 		}
-		pfn_vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(dlsym(libVulkan, "vkGetInstanceProcAddr"));
+		pfn_vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(dlsym(linux_libVulkan, "vkGetInstanceProcAddr"));
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 		if (!pfn_vkGetInstanceProcAddr) {
 			RE_FATAL_ERROR("Failed loading the Vulkan function \"vkGetInstanceProcAddr\" with OS-API function");
@@ -1115,22 +1115,22 @@ namespace RE {
 			return;
 		if (!createLogicalDevice())
 			return;
-		valid = true;
+		bValid = true;
 	}
 
 	Vulkan::~Vulkan() {
-		if (Vulkan::instance != this)
+		if (Vulkan::pInstance != this)
 			return;
-		Vulkan::instance = nullptr;
-		if (internalInstance != VK_NULL_HANDLE) {
-			if (internalSurface != VK_NULL_HANDLE)
-				pfn_vkDestroySurfaceKHR(internalInstance, internalSurface, nullptr);
-			if (internalLogicalDevice != VK_NULL_HANDLE)
-				pfn_vkDestroyDevice(internalLogicalDevice, nullptr);
-			if (debugMessenger != VK_NULL_HANDLE) {
+		Vulkan::pInstance = nullptr;
+		if (vk_hInternalInstance != VK_NULL_HANDLE) {
+			if (vk_hInternalSurface != VK_NULL_HANDLE)
+				pfn_vkDestroySurfaceKHR(vk_hInternalInstance, vk_hInternalSurface, nullptr);
+			if (vk_hInternalDevice != VK_NULL_HANDLE)
+				pfn_vkDestroyDevice(vk_hInternalDevice, nullptr);
+			if (vk_hDebugMessenger != VK_NULL_HANDLE) {
 				PFN_vkDestroyDebugUtilsMessengerEXT pfn_vkDestroyDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(loadFunc("vkDestroyDebugUtilsMessengerEXT"));
 				if (pfn_vkDestroyDebugUtilsMessengerEXT)
-					pfn_vkDestroyDebugUtilsMessengerEXT(internalInstance, debugMessenger, nullptr);
+					pfn_vkDestroyDebugUtilsMessengerEXT(vk_hInternalInstance, vk_hDebugMessenger, nullptr);
 				else
 					RE_ERROR("Failed loading the function for destroying the debug messenger used for Vulkan validation layers");
 			}
@@ -1140,41 +1140,41 @@ namespace RE {
 				if (!pfn_vkDestroyInstance)
 					RE_ERROR("Failed reloading the function for destroying the Vulkan instance");
 				else
-					pfn_vkDestroyInstance(internalInstance, nullptr);
+					pfn_vkDestroyInstance(vk_hInternalInstance, nullptr);
 			} else
-				pfn_vkDestroyInstance(internalInstance, nullptr);
+				pfn_vkDestroyInstance(vk_hInternalInstance, nullptr);
 		}
-		if (internalSurfaceFormats)
-			delete[] internalSurfaceFormats;
-		if (internalPresentModes)
-			delete[] internalPresentModes;
+		if (vk_pInternalSurfaceFormats)
+			delete[] vk_pInternalSurfaceFormats;
+		if (vk_pInternalPresentModes)
+			delete[] vk_pInternalPresentModes;
 #ifdef RE_OS_WINDOWS
-		FreeLibrary(hVulkan);
+		FreeLibrary(win_hVulkan);
 #elif defined RE_OS_LINUX
-		dlclose(libVulkan);
+		dlclose(linux_libVulkan);
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 	}
 
-	VKAPI_ATTR VkBool32 VKAPI_CALL Vulkan::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT severityFlagBits, VkDebugUtilsMessageTypeFlagsEXT msgTypeBits, const VkDebugUtilsMessengerCallbackDataEXT* callbackData, void* userData) {
-		if (severityFlagBits == VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+	VKAPI_ATTR VkBool32 VKAPI_CALL Vulkan::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT vk_eSeverityFlagBits, VkDebugUtilsMessageTypeFlagsEXT vk_eMsgTypeBits, const VkDebugUtilsMessengerCallbackDataEXT* vk_pCallbackData, void* vk_pUserData) {
+		if (vk_eSeverityFlagBits == VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
 			RE_WARNING("Vulkan's validation layers were triggered");
-		else if (severityFlagBits == VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+		else if (vk_eSeverityFlagBits == VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
 			RE_ERROR("Vulkan's validation layers were triggered");
 		else
 			RE_NOTE("Vulkan's validation layers were triggered. The severity couldn't be determined");
-		println(callbackData->pMessage);
+		println(vk_pCallbackData->pMessage);
 		return VK_FALSE;
 	}
 
-	void* Vulkan::loadFuncInstance(VkInstance instance, const char* funcName) {
-		void* funcPtr = reinterpret_cast<void*>(pfn_vkGetInstanceProcAddr(instance, funcName));
-		if (!funcPtr)
-			RE_ERROR(appendStrings("Failed loading the Vulkan function \"", funcName, "\""));
-		return funcPtr;
+	void* Vulkan::loadFuncInstance(VkInstance vk_hInstance, const char* pFuncName) {
+		void* pFuncPtr = reinterpret_cast<void*>(pfn_vkGetInstanceProcAddr(vk_hInstance, pFuncName));
+		if (!pFuncPtr)
+			RE_ERROR(appendStrings("Failed loading the Vulkan function \"", pFuncName, "\""));
+		return pFuncPtr;
 	}
 
-	void* Vulkan::loadFunc(const char* funcName) {
-		return loadFuncInstance(internalInstance, funcName);
+	void* Vulkan::loadFunc(const char* pFuncName) {
+		return loadFuncInstance(vk_hInternalInstance, pFuncName);
 	}
 
 	bool Vulkan::createInstance() {
@@ -1194,83 +1194,83 @@ namespace RE {
 			return false;
 		}
 
-		constexpr uint32_t extensionsToLoadCount = 3;
-		const char** extensionsToLoad = new const char*[extensionsToLoadCount] {VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_KHR_SURFACE_EXTENSION_NAME};
+		constexpr uint32_t u32ExtensionsToLoadCount = 3;
+		const char** ppcExtensionsToLoad = new const char*[u32ExtensionsToLoadCount] {VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_KHR_SURFACE_EXTENSION_NAME};
 #ifdef RE_OS_WINDOWS
-		extensionsToLoad[extensionsToLoadCount - 1] = VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
+		ppcExtensionsToLoad[u32ExtensionsToLoadCount - 1] = VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
 #elif defined RE_OS_LINUX
-		extensionsToLoad[extensionsToLoadCount - 1] = VK_KHR_XLIB_SURFACE_EXTENSION_NAME;
+		ppcExtensionsToLoad[u32ExtensionsToLoadCount - 1] = VK_KHR_XLIB_SURFACE_EXTENSION_NAME;
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
-		uint32_t availableExtensionsCount = 0;
-		pfn_vkEnumerateInstanceExtensionProperties(nullptr, &availableExtensionsCount, nullptr);
-		VkExtensionProperties* availableExtensions = new VkExtensionProperties[availableExtensionsCount];
-		pfn_vkEnumerateInstanceExtensionProperties(nullptr, &availableExtensionsCount, availableExtensions);
+		uint32_t u32AvailableExtensionsCount = 0;
+		pfn_vkEnumerateInstanceExtensionProperties(nullptr, &u32AvailableExtensionsCount, nullptr);
+		VkExtensionProperties* vk_pAvailableExtensions = new VkExtensionProperties[u32AvailableExtensionsCount];
+		pfn_vkEnumerateInstanceExtensionProperties(nullptr, &u32AvailableExtensionsCount, vk_pAvailableExtensions);
 		println("Available Vulkan instance extensions:");
-		for (uint32_t i = 0; i < availableExtensionsCount; i++)
-			println(appendStrings("\t", availableExtensions[i].extensionName, " (", VK_API_VERSION_MAJOR(availableExtensions[i].specVersion), ".", VK_API_VERSION_MINOR(availableExtensions[i].specVersion), ".", VK_API_VERSION_PATCH(availableExtensions[i].specVersion), ")"));
-		bool extensionsMissing = false;
-		for (uint32_t extToLoadIndex = 0; extToLoadIndex < extensionsToLoadCount; extToLoadIndex++) {
-			bool found = false;
-			for (uint32_t availableExtsIndex = 0; availableExtsIndex < availableExtensionsCount; availableExtsIndex++)
-				if (strcmp(extensionsToLoad[extToLoadIndex], availableExtensions[availableExtsIndex].extensionName) == 0) {
-					found = true;
+		for (uint32_t i = 0; i < u32AvailableExtensionsCount; i++)
+			println(appendStrings("\t", vk_pAvailableExtensions[i].extensionName, " (", VK_API_VERSION_MAJOR(vk_pAvailableExtensions[i].specVersion), ".", VK_API_VERSION_MINOR(vk_pAvailableExtensions[i].specVersion), ".", VK_API_VERSION_PATCH(vk_pAvailableExtensions[i].specVersion), ")"));
+		bool bExtensionsMissing = false;
+		for (uint32_t uiExtToLoadIndex = 0; uiExtToLoadIndex < u32ExtensionsToLoadCount; uiExtToLoadIndex++) {
+			bool bFound = false;
+			for (uint32_t uiAvailableExtsIndex = 0; uiAvailableExtsIndex < u32AvailableExtensionsCount; uiAvailableExtsIndex++)
+				if (strcmp(ppcExtensionsToLoad[uiExtToLoadIndex], vk_pAvailableExtensions[uiAvailableExtsIndex].extensionName) == 0) {
+					bFound = true;
 					break;
 				}
-			if (!found) {
-				RE_FATAL_ERROR(appendStrings("The requested Vulkan instance extension \"", extensionsToLoad[extToLoadIndex], "\" does not exist on this computer"));
-				extensionsMissing = true;
+			if (!bFound) {
+				RE_FATAL_ERROR(appendStrings("The requested Vulkan instance extension \"", ppcExtensionsToLoad[uiExtToLoadIndex], "\" does not exist on this computer"));
+				bExtensionsMissing = true;
 			}
 		}
 
-		constexpr uint32_t layersToLoadCount = 1;
-		const char** layersToLoad = new const char*[layersToLoadCount] {VK_KHR_VALIDATION_LAYER_NAME};
-		uint32_t availableLayersCount = 0;
-		pfn_vkEnumerateInstanceLayerProperties(&availableLayersCount, nullptr);
-		VkLayerProperties* availableLayers = new VkLayerProperties[availableLayersCount];
-		pfn_vkEnumerateInstanceLayerProperties(&availableLayersCount, availableLayers);
+		constexpr uint32_t u32LayersToLoadCount = 1;
+		const char** ppcLayersToLoad = new const char*[u32LayersToLoadCount] {VK_KHR_VALIDATION_LAYER_NAME};
+		uint32_t u32AvailableLayersCount = 0;
+		pfn_vkEnumerateInstanceLayerProperties(&u32AvailableLayersCount, nullptr);
+		VkLayerProperties* vk_pAvailableLayers = new VkLayerProperties[u32AvailableLayersCount];
+		pfn_vkEnumerateInstanceLayerProperties(&u32AvailableLayersCount, vk_pAvailableLayers);
 		println("Available Vulkan instance layers:");
-		for (uint32_t i = 0; i < availableLayersCount; i++)
-			println(appendStrings("\t", availableLayers[i].layerName, " (", VK_API_VERSION_MAJOR(availableLayers[i].specVersion), ".", VK_API_VERSION_MINOR(availableLayers[i].specVersion), ".",VK_API_VERSION_PATCH(availableLayers[i].specVersion), " - ", availableLayers[i].implementationVersion, "): ", availableLayers[i].description));
-		bool layersMissing = false;
-		for (uint32_t layersToLoadIndex = 0; layersToLoadIndex < layersToLoadCount; layersToLoadIndex++) {
-			bool found = false;
-			for (uint32_t availableLayersIndex = 0; availableLayersIndex < availableLayersCount; availableLayersIndex++)
-				if (strcmp(layersToLoad[layersToLoadIndex], availableLayers[availableLayersIndex].layerName) == 0) {
-					found = true;
+		for (uint32_t i = 0; i < u32AvailableLayersCount; i++)
+			println(appendStrings("\t", vk_pAvailableLayers[i].layerName, " (", VK_API_VERSION_MAJOR(vk_pAvailableLayers[i].specVersion), ".", VK_API_VERSION_MINOR(vk_pAvailableLayers[i].specVersion), ".",VK_API_VERSION_PATCH(vk_pAvailableLayers[i].specVersion), " - ", vk_pAvailableLayers[i].implementationVersion, "): ", vk_pAvailableLayers[i].description));
+		bool bLayersMissing = false;
+		for (uint32_t uiLayersToLoadIndex = 0; uiLayersToLoadIndex < u32LayersToLoadCount; uiLayersToLoadIndex++) {
+			bool bFound = false;
+			for (uint32_t uiAvailableLayersIndex = 0; uiAvailableLayersIndex < u32AvailableLayersCount; uiAvailableLayersIndex++)
+				if (strcmp(ppcLayersToLoad[uiLayersToLoadIndex], vk_pAvailableLayers[uiAvailableLayersIndex].layerName) == 0) {
+					bFound = true;
 					break;
 				}
-			if (!found) {
-				RE_FATAL_ERROR(appendStrings("The requested Vulkan instance layer \"", layersToLoad[layersToLoadIndex], "\" does not exist on this computer"));
-				layersMissing = true;
+			if (!bFound) {
+				RE_FATAL_ERROR(appendStrings("The requested Vulkan instance layer \"", ppcLayersToLoad[uiLayersToLoadIndex], "\" does not exist on this computer"));
+				bLayersMissing = true;
 			}
 		}
 
-		const bool instanceCreationAllowed = !extensionsMissing && !layersMissing;
-		bool instanceCreationSuccessful = false;
-		if (instanceCreationAllowed) {
-			VkApplicationInfo appInfo = { VK_STRUCTURE_TYPE_APPLICATION_INFO };
-			std::string appName = getAppName();
-			appInfo.pApplicationName = appName.c_str();
-			appInfo.applicationVersion = VK_MAKE_API_VERSION(0, 1, 0, 0);
-			appInfo.pEngineName = "R-Engine";
-			appInfo.engineVersion = VK_MAKE_API_VERSION(0, 1, 0, 0);
-			appInfo.apiVersion = VK_API_VERSION_1_3;
-			VkInstanceCreateInfo createInfo = { VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
-			createInfo.pApplicationInfo = &appInfo;
-			createInfo.enabledExtensionCount = extensionsToLoadCount;
-			createInfo.ppEnabledExtensionNames = extensionsToLoad;
-			createInfo.enabledLayerCount = layersToLoadCount;
-			createInfo.ppEnabledLayerNames = layersToLoad;
-			VkResult successResult = pfn_vkCreateInstance(&createInfo, nullptr, &internalInstance);
-			if (!checkVulkanResult(successResult))
+		const bool bInstanceCreationAllowed = !bExtensionsMissing && !bLayersMissing;
+		bool bInstanceCreationSuccessful = false;
+		if (bInstanceCreationAllowed) {
+			VkApplicationInfo vk_appInfo = { VK_STRUCTURE_TYPE_APPLICATION_INFO };
+			std::string strAppName = getAppName();
+			vk_appInfo.pApplicationName = strAppName.c_str();
+			vk_appInfo.applicationVersion = VK_MAKE_API_VERSION(0, 1, 0, 0);
+			vk_appInfo.pEngineName = "R-Engine";
+			vk_appInfo.engineVersion = VK_MAKE_API_VERSION(0, 1, 0, 0);
+			vk_appInfo.apiVersion = VK_API_VERSION_1_3;
+			VkInstanceCreateInfo vk_instanceCreateInfo = { VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
+			vk_instanceCreateInfo.pApplicationInfo = &vk_appInfo;
+			vk_instanceCreateInfo.enabledExtensionCount = u32ExtensionsToLoadCount;
+			vk_instanceCreateInfo.ppEnabledExtensionNames = ppcExtensionsToLoad;
+			vk_instanceCreateInfo.enabledLayerCount = u32LayersToLoadCount;
+			vk_instanceCreateInfo.ppEnabledLayerNames = ppcLayersToLoad;
+			VkResult vk_eSuccessResult = pfn_vkCreateInstance(&vk_instanceCreateInfo, nullptr, &vk_hInternalInstance);
+			if (!checkVulkanResult(vk_eSuccessResult))
 				RE_FATAL_ERROR("Failed creating Vulkan instance");
-			instanceCreationSuccessful = successResult == VK_SUCCESS;
+			bInstanceCreationSuccessful = vk_eSuccessResult == VK_SUCCESS;
 		}
-		delete[] extensionsToLoad;
-		delete[] availableExtensions;
-		delete[] layersToLoad;
-		delete[] availableLayers;
-		return instanceCreationSuccessful && instanceCreationAllowed;
+		delete[] ppcExtensionsToLoad;
+		delete[] vk_pAvailableExtensions;
+		delete[] ppcLayersToLoad;
+		delete[] vk_pAvailableLayers;
+		return bInstanceCreationSuccessful && bInstanceCreationAllowed;
 	}
 
 	bool Vulkan::setupValidationLayers() {
@@ -1279,211 +1279,212 @@ namespace RE {
 			RE_NOTE("Attempted to load the Vulkan function mentioned before for setting validation layers up");
 			return false;
 		}
-		VkDebugUtilsMessengerCreateInfoEXT createInfo = { VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT };
-		createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-		createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-		createInfo.pfnUserCallback = debugCallback;
-		createInfo.pUserData = nullptr;
-		if (!checkVulkanResult(pfn_vkCreateDebugUtilsMessengerEXT(internalInstance, &createInfo, nullptr, &debugMessenger))) {
+		VkDebugUtilsMessengerCreateInfoEXT vk_debugCreateInfo = { VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT };
+		vk_debugCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+		vk_debugCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+		vk_debugCreateInfo.pfnUserCallback = debugCallback;
+		vk_debugCreateInfo.pUserData = nullptr;
+		if (!checkVulkanResult(pfn_vkCreateDebugUtilsMessengerEXT(vk_hInternalInstance, &vk_debugCreateInfo, nullptr, &vk_hDebugMessenger))) {
 			RE_FATAL_ERROR("Failed creating Vulkan debug messenger for validation layers");
 			return false;
 		}
 		return true;
 	}
 
-	bool Vulkan::isPhysicalDeviceSuitable(VkPhysicalDevice device) {
-		uint32_t queueFamiliesCount = 0;
-		vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamiliesCount, nullptr);
-		if (!queueFamiliesCount)
+	bool Vulkan::isPhysicalDeviceSuitable(VkPhysicalDevice vk_hPhysicalDevice) {
+		uint32_t u32QueueFamiliesCount = 0;
+		vkGetPhysicalDeviceQueueFamilyProperties(vk_hPhysicalDevice, &u32QueueFamiliesCount, nullptr);
+		if (!u32QueueFamiliesCount)
 			return false;
-		uint32_t extensionsCount = 0;
-		vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionsCount, nullptr);
-		if (!extensionsCount)
+		uint32_t u32ExtensionsCount = 0;
+		vkEnumerateDeviceExtensionProperties(vk_hPhysicalDevice, nullptr, &u32ExtensionsCount, nullptr);
+		if (!u32ExtensionsCount)
 			return false;
 		/* VkPhysicalDeviceProperties deviceProperties;
-		pfn_vkGetPhysicalDeviceProperties(device, &deviceProperties);
+		pfn_vkGetPhysicalDeviceProperties(vk_hPhysicalDevice, &deviceProperties);
 		VkPhysicalDeviceFeatures deviceFeatures;
-		pfn_vkGetPhysicalDeviceFeatures(device, &deviceFeatures); */
-		VkQueueFamilyProperties* queueFamilies = new VkQueueFamilyProperties[queueFamiliesCount];
-		vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamiliesCount, queueFamilies);
-		bool graphicsSupport = false, presentSupport = false;
-		for (uint32_t queueFamilyIndex = 0; queueFamilyIndex < queueFamiliesCount; queueFamilyIndex++) {
-			if (!graphicsSupport && queueFamilies[queueFamilyIndex].queueFlags & VK_QUEUE_GRAPHICS_BIT)
-				graphicsSupport = true;
-			if (!presentSupport) {
-				VkBool32 presentQueueSupport = 0;
-				vkGetPhysicalDeviceSurfaceSupportKHR(device, queueFamilyIndex, vkSurface, &presentQueueSupport);
-				presentSupport = static_cast<bool>(presentQueueSupport);
+		pfn_vkGetPhysicalDeviceFeatures(vk_hPhysicalDevice, &deviceFeatures); */
+		VkQueueFamilyProperties* vk_pQueueFamilies = new VkQueueFamilyProperties[u32QueueFamiliesCount];
+		vkGetPhysicalDeviceQueueFamilyProperties(vk_hPhysicalDevice, &u32QueueFamiliesCount, vk_pQueueFamilies);
+		bool bGraphicsSupport = false, bPresentSupport = false;
+		for (uint32_t u32QueueFamilyIndex = 0; u32QueueFamilyIndex < u32QueueFamiliesCount; u32QueueFamilyIndex++) {
+			if (!bGraphicsSupport && vk_pQueueFamilies[u32QueueFamilyIndex].queueFlags & VK_QUEUE_GRAPHICS_BIT)
+				bGraphicsSupport = true;
+			if (!bPresentSupport) {
+				VkBool32 vk_presentQueueSupport = 0;
+				vkGetPhysicalDeviceSurfaceSupportKHR(vk_hPhysicalDevice, u32QueueFamilyIndex, Vulkan::pInstance->vk_hInternalSurface, &vk_presentQueueSupport);
+				bPresentSupport = static_cast<bool>(vk_presentQueueSupport);
 			}
 		}
-		delete[] queueFamilies;
-		if (!graphicsSupport || !presentSupport)
+		delete[] vk_pQueueFamilies;
+		if (!bGraphicsSupport || !bPresentSupport)
 			return false;
-		VkExtensionProperties* extensions = new VkExtensionProperties[extensionsCount];
-		vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionsCount, extensions);
-		bool swapchainSupport = false;
-		for (REubyte extensionsIndex = 0; extensionsIndex < extensionsCount; extensionsIndex++) {
-			if (strcmp(extensions[extensionsIndex].extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME) == 0) {
-				uint32_t count = 0;
-				vkGetPhysicalDeviceSurfaceFormatsKHR(device, vkSurface, &count, nullptr);
-				if (!count)
+		VkExtensionProperties* vk_pExtensions = new VkExtensionProperties[u32ExtensionsCount];
+		vkEnumerateDeviceExtensionProperties(vk_hPhysicalDevice, nullptr, &u32ExtensionsCount, vk_pExtensions);
+		bool bSwapchainSupport = false;
+		for (uint32_t uiExtensionsIndex = 0; uiExtensionsIndex < u32ExtensionsCount; uiExtensionsIndex++) {
+			if (strcmp(vk_pExtensions[uiExtensionsIndex].extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME) == 0) {
+				uint32_t u32Count = 0;
+				vkGetPhysicalDeviceSurfaceFormatsKHR(vk_hPhysicalDevice, Vulkan::pInstance->vk_hInternalSurface, &u32Count, nullptr);
+				if (!u32Count)
 					continue;
-				vkGetPhysicalDeviceSurfacePresentModesKHR(device, vkSurface, &count, nullptr);
-				if (!count)
+				vkGetPhysicalDeviceSurfacePresentModesKHR(vk_hPhysicalDevice, Vulkan::pInstance->vk_hInternalSurface, &u32Count, nullptr);
+				if (!u32Count)
 					continue;
-				swapchainSupport = true;
+				bSwapchainSupport = true;
 				break;
 			}
 		}
-		delete[] extensions;
-		return swapchainSupport;
+		delete[] vk_pExtensions;
+		return bSwapchainSupport;
 	}
 
 	bool Vulkan::pickPhysicalDevice() {
-		uint32_t physicalDeviceCount = 0;
-		pfn_vkEnumeratePhysicalDevices(internalInstance, &physicalDeviceCount, nullptr);
-		if (!physicalDeviceCount) {
+		uint32_t u32PhysicalDeviceCount = 0;
+		pfn_vkEnumeratePhysicalDevices(vk_hInternalInstance, &u32PhysicalDeviceCount, nullptr);
+		if (!u32PhysicalDeviceCount) {
 			RE_FATAL_ERROR("There aren't any physical devices with Vulkan support");
 			return false;
 		}
-		VkPhysicalDevice* physicalDevices = new VkPhysicalDevice[physicalDeviceCount];
-		pfn_vkEnumeratePhysicalDevices(internalInstance, &physicalDeviceCount, physicalDevices);
-		REushort currentPhysicalDeviceScore = 0;
-		for (uint32_t physicalDeviceIndex = 0; physicalDeviceIndex < physicalDeviceCount; physicalDeviceIndex++) {
-			VkPhysicalDevice physicalDevice = physicalDevices[physicalDeviceIndex];
+		VkPhysicalDevice* vk_pPhysicalDevices = new VkPhysicalDevice[u32PhysicalDeviceCount];
+		pfn_vkEnumeratePhysicalDevices(vk_hInternalInstance, &u32PhysicalDeviceCount, vk_pPhysicalDevices);
+		REushort u16CurrentPhysicalDeviceScore = 0;
+		for (uint32_t uiPhysicalDeviceIndex = 0; uiPhysicalDeviceIndex < u32PhysicalDeviceCount; uiPhysicalDeviceIndex++) {
+			VkPhysicalDevice vk_hPhysicalDevice = vk_pPhysicalDevices[uiPhysicalDeviceIndex];
 
 			// Inspecting, whether GPU is suitable
-			if (!isPhysicalDeviceSuitable(physicalDevice))
+			if (!isPhysicalDeviceSuitable(vk_hPhysicalDevice))
 				continue;
 
 			// Fetch data about GPU
-			VkPhysicalDeviceProperties physicalDeviceProperties;
-			pfn_vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
-			VkPhysicalDeviceFeatures physicalDeviceFeatures;
-			pfn_vkGetPhysicalDeviceFeatures(physicalDevice, &physicalDeviceFeatures);
+			VkPhysicalDeviceProperties vk_hPhysicalDeviceProperties;
+			pfn_vkGetPhysicalDeviceProperties(vk_hPhysicalDevice, &vk_hPhysicalDeviceProperties);
+			VkPhysicalDeviceFeatures vk_hPhysicalDeviceFeatures;
+			pfn_vkGetPhysicalDeviceFeatures(vk_hPhysicalDevice, &vk_hPhysicalDeviceFeatures);
 
 			// Rating GPU
-			REushort physicalDeviceScore = 0;
-			switch (physicalDeviceProperties.deviceType) {
+			REushort u16PhysicalDeviceScore = 0;
+			switch (vk_hPhysicalDeviceProperties.deviceType) {
 				case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
-					physicalDeviceScore += 1000;
+					u16PhysicalDeviceScore += 1000;
 					break;
 				case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
-					physicalDeviceScore += 500;
+					u16PhysicalDeviceScore += 500;
 					break;
 				default:
 					break;
 			}
 
 			// Deciding, whether GPU is better and has to be chosen
-			if (physicalDeviceScore > currentPhysicalDeviceScore || internalPhysicalDevice == VK_NULL_HANDLE) {
-				internalPhysicalDevice = physicalDevice;
-				currentPhysicalDeviceScore = physicalDeviceScore;
+			if (u16PhysicalDeviceScore > u16CurrentPhysicalDeviceScore || vk_hInternalPhysicalDevice == VK_NULL_HANDLE) {
+				vk_hInternalPhysicalDevice = vk_hPhysicalDevice;
+				u16CurrentPhysicalDeviceScore = u16PhysicalDeviceScore;
 			}
 		}
-		delete[] physicalDevices;
-		if (internalPhysicalDevice == VK_NULL_HANDLE) {
+		delete[] vk_pPhysicalDevices;
+		if (vk_hInternalPhysicalDevice == VK_NULL_HANDLE) {
 			RE_FATAL_ERROR("Failed finding a suitable device with Vulkan support");
 			return false;
 		}
-		pfn_vkGetPhysicalDeviceProperties(internalPhysicalDevice, &internalPhysicalDeviceProperties);
-		pfn_vkGetPhysicalDeviceFeatures(internalPhysicalDevice, &internalPhysicalDeviceFeatures);
-		uint32_t queueFamiliesCount = 0;
-		pfn_vkGetPhysicalDeviceQueueFamilyProperties(internalPhysicalDevice, &queueFamiliesCount, nullptr);
-		VkQueueFamilyProperties* queueFamilies = new VkQueueFamilyProperties[queueFamiliesCount];
-		pfn_vkGetPhysicalDeviceQueueFamilyProperties(internalPhysicalDevice, &queueFamiliesCount, queueFamilies);
-		std::optional<uint32_t> graphicsIndex, presentIndex;
-		for (uint32_t queueFamilyIndex = 0; queueFamilyIndex < queueFamiliesCount; queueFamilyIndex++) {
-			if (!graphicsIndex.has_value() && queueFamilies[queueFamilyIndex].queueFlags & VK_QUEUE_GRAPHICS_BIT)
-				graphicsIndex = queueFamilyIndex;
+		pfn_vkGetPhysicalDeviceProperties(vk_hInternalPhysicalDevice, &vk_internalPhysicalDeviceProperties);
+		pfn_vkGetPhysicalDeviceFeatures(vk_hInternalPhysicalDevice, &vk_internalPhysicalDeviceFeatures);
+		uint32_t u32QueueFamiliesCount = 0;
+		pfn_vkGetPhysicalDeviceQueueFamilyProperties(vk_hInternalPhysicalDevice, &u32QueueFamiliesCount, nullptr);
+		VkQueueFamilyProperties* vk_pQueueFamilies = new VkQueueFamilyProperties[u32QueueFamiliesCount];
+		pfn_vkGetPhysicalDeviceQueueFamilyProperties(vk_hInternalPhysicalDevice, &u32QueueFamiliesCount, vk_pQueueFamilies);
+		std::optional<uint32_t> graphicsIndex;
+		std::optional<uint32_t> presentIndex;
+		for (uint32_t u32QueueFamilyIndex = 0; u32QueueFamilyIndex < u32QueueFamiliesCount; u32QueueFamilyIndex++) {
+			if (!graphicsIndex.has_value() && vk_pQueueFamilies[u32QueueFamilyIndex].queueFlags & VK_QUEUE_GRAPHICS_BIT)
+				graphicsIndex = u32QueueFamilyIndex;
 			if (!presentIndex.has_value()) {
-				VkBool32 presentQueueSupport = 0;
-				pfn_vkGetPhysicalDeviceSurfaceSupportKHR(internalPhysicalDevice, queueFamilyIndex, internalSurface, &presentQueueSupport);
-				if (presentQueueSupport)
-					presentIndex = queueFamilyIndex;
+				VkBool32 vk_presentQueueSupport = 0;
+				pfn_vkGetPhysicalDeviceSurfaceSupportKHR(vk_hInternalPhysicalDevice, u32QueueFamilyIndex, vk_hInternalSurface, &vk_presentQueueSupport);
+				if (vk_presentQueueSupport)
+					presentIndex = u32QueueFamilyIndex;
 			}
 		}
-		internalQueueIndices.graphicsFamily = graphicsIndex.value();
-		internalQueueIndices.presentationFamily = presentIndex.value();
-		pfn_vkGetPhysicalDeviceSurfaceCapabilitiesKHR(internalPhysicalDevice, internalSurface, &internalSurfaceCapabilities);
-		pfn_vkGetPhysicalDeviceSurfaceFormatsKHR(internalPhysicalDevice, internalSurface, &internalSurfaceFormatsCount, nullptr);
-		internalSurfaceFormats = new VkSurfaceFormatKHR[internalSurfaceFormatsCount];
-		pfn_vkGetPhysicalDeviceSurfaceFormatsKHR(internalPhysicalDevice, internalSurface, &internalSurfaceFormatsCount, internalSurfaceFormats);
-		pfn_vkGetPhysicalDeviceSurfacePresentModesKHR(internalPhysicalDevice, internalSurface, &internalPresentModesCount, nullptr);
-		internalPresentModes = new VkPresentModeKHR[internalPresentModesCount];
-		pfn_vkGetPhysicalDeviceSurfacePresentModesKHR(internalPhysicalDevice, internalSurface, &internalPresentModesCount, internalPresentModes);
-		println(appendStrings("Selected GPU for rendering: ", internalPhysicalDeviceProperties.deviceName));
-		delete[] queueFamilies;
+		internalQueueIndices.u32GraphicsFamily = graphicsIndex.value();
+		internalQueueIndices.u32PresentationFamily = presentIndex.value();
+		pfn_vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk_hInternalPhysicalDevice, vk_hInternalSurface, &vk_internalSurfaceCapabilities);
+		pfn_vkGetPhysicalDeviceSurfaceFormatsKHR(vk_hInternalPhysicalDevice, vk_hInternalSurface, &u32InternalSurfaceFormatsCount, nullptr);
+		vk_pInternalSurfaceFormats = new VkSurfaceFormatKHR[u32InternalSurfaceFormatsCount];
+		pfn_vkGetPhysicalDeviceSurfaceFormatsKHR(vk_hInternalPhysicalDevice, vk_hInternalSurface, &u32InternalSurfaceFormatsCount, vk_pInternalSurfaceFormats);
+		pfn_vkGetPhysicalDeviceSurfacePresentModesKHR(vk_hInternalPhysicalDevice, vk_hInternalSurface, &u32InternalPresentModesCount, nullptr);
+		vk_pInternalPresentModes = new VkPresentModeKHR[u32InternalPresentModesCount];
+		pfn_vkGetPhysicalDeviceSurfacePresentModesKHR(vk_hInternalPhysicalDevice, vk_hInternalSurface, &u32InternalPresentModesCount, vk_pInternalPresentModes);
+		println(appendStrings("Selected GPU for rendering: ", vk_internalPhysicalDeviceProperties.deviceName));
+		delete[] vk_pQueueFamilies;
 		return true;
 	}
 
 	bool Vulkan::createLogicalDevice() {
 		std::vector<uint32_t> queueIndices;
-		for (REubyte i = 0; i < 2; i++) {
-			uint32_t index = 0;
-			switch (i) {
+		for (REubyte u8FamilyIndex = 0; u8FamilyIndex < 2; u8FamilyIndex++) {
+			uint32_t u32Index = 0;
+			switch (u8FamilyIndex) {
 				case 0:
-					index = internalQueueIndices.graphicsFamily;
+					u32Index = internalQueueIndices.u32GraphicsFamily;
 					break;
 				case 1:
-					index = internalQueueIndices.presentationFamily;
+					u32Index = internalQueueIndices.u32PresentationFamily;
 					break;
 			}
-			if (std::find(queueIndices.begin(), queueIndices.end(), index) == queueIndices.end())
-				queueIndices.push_back(index);
+			if (std::find(queueIndices.begin(), queueIndices.end(), u32Index) == queueIndices.end())
+				queueIndices.push_back(u32Index);
 		}
-		VkDeviceQueueCreateInfo* deviceQueueCreateInfos = new VkDeviceQueueCreateInfo[queueIndices.size()];
-		const float queuePriority = 1.0f;
-		for (uint32_t deviceQueueCreateInfosIndex = 0; deviceQueueCreateInfosIndex < queueIndices.size(); deviceQueueCreateInfosIndex++) {
-			deviceQueueCreateInfos[deviceQueueCreateInfosIndex].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-			deviceQueueCreateInfos[deviceQueueCreateInfosIndex].pNext = nullptr;
-			deviceQueueCreateInfos[deviceQueueCreateInfosIndex].flags = 0;
-			deviceQueueCreateInfos[deviceQueueCreateInfosIndex].queueFamilyIndex = queueIndices.at(deviceQueueCreateInfosIndex);
-			deviceQueueCreateInfos[deviceQueueCreateInfosIndex].queueCount = 1;
-			deviceQueueCreateInfos[deviceQueueCreateInfosIndex].pQueuePriorities = &queuePriority;
+		VkDeviceQueueCreateInfo* vk_pDeviceQueueCreateInfos = new VkDeviceQueueCreateInfo[queueIndices.size()];
+		const float fQueuePriority = 1.0f;
+		for (uint32_t u32DeviceQueueCreateInfosIndex = 0; u32DeviceQueueCreateInfosIndex < queueIndices.size(); u32DeviceQueueCreateInfosIndex++) {
+			vk_pDeviceQueueCreateInfos[u32DeviceQueueCreateInfosIndex].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+			vk_pDeviceQueueCreateInfos[u32DeviceQueueCreateInfosIndex].pNext = nullptr;
+			vk_pDeviceQueueCreateInfos[u32DeviceQueueCreateInfosIndex].flags = 0;
+			vk_pDeviceQueueCreateInfos[u32DeviceQueueCreateInfosIndex].queueFamilyIndex = queueIndices.at(u32DeviceQueueCreateInfosIndex);
+			vk_pDeviceQueueCreateInfos[u32DeviceQueueCreateInfosIndex].queueCount = 1;
+			vk_pDeviceQueueCreateInfos[u32DeviceQueueCreateInfosIndex].pQueuePriorities = &fQueuePriority;
 		}
-		constexpr uint32_t extensionsToLoadCount = 1;
-		const char** extensionsToLoad = new const char*[extensionsToLoadCount] {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
-		constexpr uint32_t layersToLoadCount = 1;
-		const char** layersToLoad = new const char*[layersToLoadCount] {VK_KHR_VALIDATION_LAYER_NAME};
-		VkPhysicalDeviceFeatures physicalDeviceFeatures = {};
-		VkDeviceCreateInfo logicalDeviceCreateInfo = { VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
-		logicalDeviceCreateInfo.pQueueCreateInfos = deviceQueueCreateInfos;
-		logicalDeviceCreateInfo.queueCreateInfoCount = queueIndices.size();
-		logicalDeviceCreateInfo.pEnabledFeatures = &physicalDeviceFeatures;
-		logicalDeviceCreateInfo.ppEnabledExtensionNames = extensionsToLoad;
-		logicalDeviceCreateInfo.enabledExtensionCount = extensionsToLoadCount;
-		logicalDeviceCreateInfo.ppEnabledLayerNames = layersToLoad;
-		logicalDeviceCreateInfo.enabledLayerCount = layersToLoadCount;
-		VkResult successResult = pfn_vkCreateDevice(internalPhysicalDevice, &logicalDeviceCreateInfo, nullptr, &internalLogicalDevice);
-		if (!checkVulkanResult(successResult))
+		constexpr uint32_t u32ExtensionsToLoadCount = 1;
+		const char** ppcExtensionsToLoad = new const char*[u32ExtensionsToLoadCount] {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+		constexpr uint32_t u32LayersToLoadCount = 1;
+		const char** ppcLayersToLoad = new const char*[u32LayersToLoadCount] {VK_KHR_VALIDATION_LAYER_NAME};
+		VkPhysicalDeviceFeatures vk_hPhysicalDeviceFeatures = {};
+		VkDeviceCreateInfo vk_deviceCreateInfo = { VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
+		vk_deviceCreateInfo.pQueueCreateInfos = vk_pDeviceQueueCreateInfos;
+		vk_deviceCreateInfo.queueCreateInfoCount = queueIndices.size();
+		vk_deviceCreateInfo.pEnabledFeatures = &vk_hPhysicalDeviceFeatures;
+		vk_deviceCreateInfo.ppEnabledExtensionNames = ppcExtensionsToLoad;
+		vk_deviceCreateInfo.enabledExtensionCount = u32ExtensionsToLoadCount;
+		vk_deviceCreateInfo.ppEnabledLayerNames = ppcLayersToLoad;
+		vk_deviceCreateInfo.enabledLayerCount = u32LayersToLoadCount;
+		VkResult vk_eSuccessResult = pfn_vkCreateDevice(vk_hInternalPhysicalDevice, &vk_deviceCreateInfo, nullptr, &vk_hInternalDevice);
+		if (!checkVulkanResult(vk_eSuccessResult))
 			RE_FATAL_ERROR("Failed creating a logical Vulkan device");
 		else {
-			pfn_vkGetDeviceQueue(internalLogicalDevice, internalQueueIndices.graphicsFamily, 0, &internalGraphicsQueue);
-			pfn_vkGetDeviceQueue(internalLogicalDevice, internalQueueIndices.presentationFamily, 0, &internalPresentationQueue);
+			pfn_vkGetDeviceQueue(vk_hInternalDevice, internalQueueIndices.u32GraphicsFamily, 0, &vk_hInternalGraphicsQueue);
+			pfn_vkGetDeviceQueue(vk_hInternalDevice, internalQueueIndices.u32PresentationFamily, 0, &vk_hInternalPresentationQueue);
 		}
-		delete[] deviceQueueCreateInfos;
-		delete[] extensionsToLoad;
-		delete[] layersToLoad;
-		return successResult == VK_SUCCESS;
+		delete[] vk_pDeviceQueueCreateInfos;
+		delete[] ppcExtensionsToLoad;
+		delete[] ppcLayersToLoad;
+		return vk_eSuccessResult == VK_SUCCESS;
 	}
 
 	bool Vulkan::createWindowSurface() {
-		VkResult successResult = VK_RESULT_MAX_ENUM;
+		VkResult vk_eSuccessResult = VK_RESULT_MAX_ENUM;
 #ifdef RE_OS_WINDOWS
-		Window_Win64* windowWin64 = static_cast<Window_Win64*>(Window::instance);
-		VkWin32SurfaceCreateInfoKHR win64SurfaceCreateInfo = { VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR };
-		win64SurfaceCreateInfo.hinstance = windowWin64->hInstance;
-		win64SurfaceCreateInfo.hwnd = windowWin64->hWindow;
-		successResult = pfn_vkCreateWin32SurfaceKHR(internalInstance, &win64SurfaceCreateInfo, nullptr, &internalSurface);
+		Window_Win64* pWindowWin64 = static_cast<Window_Win64*>(Window::pInstance);
+		VkWin32SurfaceCreateInfoKHR vk_win64SurfaceCreateInfo = { VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR };
+		vk_win64SurfaceCreateInfo.hinstance = pWindowWin64->win_hInstance;
+		vk_win64SurfaceCreateInfo.hwnd = pWindowWin64->win_hWindow;
+		vk_eSuccessResult = pfn_vkCreateWin32SurfaceKHR(vk_hInternalInstance, &vk_win64SurfaceCreateInfo, nullptr, &vk_hInternalSurface);
 #elif defined RE_OS_LINUX
-		Window_X11* windowX11 = static_cast<Window_X11*>(Window::instance);
-		VkXlibSurfaceCreateInfoKHR x11SurfaceCreateInfo = { VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR };
-		x11SurfaceCreateInfo.dpy = windowX11->xDisplay;
-		x11SurfaceCreateInfo.window = windowX11->xWindow;
-		successResult = pfn_vkCreateXlibSurfaceKHR(internalInstance, &x11SurfaceCreateInfo, nullptr, &internalSurface);
+		Window_X11* pWindowX11 = static_cast<Window_X11*>(Window::pInstance);
+		VkXlibSurfaceCreateInfoKHR vk_x11SurfaceCreateInfo = { VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR };
+		vk_x11SurfaceCreateInfo.dpy = pWindowX11->xDisplay;
+		vk_x11SurfaceCreateInfo.window = pWindowX11->xWindow;
+		vk_eSuccessResult = pfn_vkCreateXlibSurfaceKHR(vk_hInternalInstance, &vk_x11SurfaceCreateInfo, nullptr, &vk_hInternalSurface);
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
-		if (!checkVulkanResult(successResult)) {
+		if (!checkVulkanResult(vk_eSuccessResult)) {
 			RE_FATAL_ERROR("Failed creating a surface for the window and linking to Vulkan");
 			return false;
 		}
@@ -1491,229 +1492,229 @@ namespace RE {
 	}
 
 	bool Vulkan::isValid() {
-		return valid;
+		return bValid;
 	}
 
 	uint32_t Vulkan::getSurfaceFormatsCount() {
-		return internalSurfaceFormatsCount;
+		return u32InternalSurfaceFormatsCount;
 	}
 
 	uint32_t Vulkan::getPresentModesCount() {
-		return internalPresentModesCount;
+		return u32InternalPresentModesCount;
 	}
 
-	bool Vulkan::checkVulkanResult(VkResult result) {
-		const char* errorString = "unknown result";
-		const char* errorName = errorString;
-		switch (result) {
+	bool Vulkan::checkVulkanResult(VkResult vk_eResult) {
+		const char* pcErrName = "unknown enumeration value";
+		const char* pcErrDetail = pcErrName;
+		switch (vk_eResult) {
 			case VK_SUCCESS:
 				return true;
 
 			// Success codes, but treated as errors
 			case VK_NOT_READY:
-				errorName = "VK_NOT_READY";
-				errorString = "Not ready (a fence or query has not yet completed)";
+				pcErrName = "VK_NOT_READY";
+				pcErrDetail = "Not ready (a fence or query has not yet completed)";
 				break;
 			case VK_TIMEOUT:
-				errorName = "VK_TIMEOUT";
-				errorString = "Timeout (a wait operation has not completed in the specified time)";
+				pcErrName = "VK_TIMEOUT";
+				pcErrDetail = "Timeout (a wait operation has not completed in the specified time)";
 				break;
 			case VK_EVENT_SET:
-				errorName = "VK_EVENT_SET";
-				errorString = "Event signaled";
+				pcErrName = "VK_EVENT_SET";
+				pcErrDetail = "Event signaled";
 				break;
 			case VK_EVENT_RESET:
-				errorName = "VK_EVENT_RESET";
-				errorString = "Event unsignaled";
+				pcErrName = "VK_EVENT_RESET";
+				pcErrDetail = "Event unsignaled";
 				break;
 			case VK_INCOMPLETE:
-				errorName = "VK_INCOMPLETE";
-				errorString = "Incomplete (a return array was too small for the result)";
+				pcErrName = "VK_INCOMPLETE";
+				pcErrDetail = "Incomplete (a return array was too small for the result)";
 				break;
 			case VK_SUBOPTIMAL_KHR:
-				errorName = "VK_SUBOPTIMAL_KHR";
-				errorString = "A swapchain no longer matches the surface properties exactly";
+				pcErrName = "VK_SUBOPTIMAL_KHR";
+				pcErrDetail = "A swapchain no longer matches the surface properties exactly";
 				break;
 			case VK_THREAD_IDLE_KHR:
-				errorName = "VK_THREAD_IDLE_KHR";
-				errorString = "A deferred operation is not complete, but there's currently no work for this thread";
+				pcErrName = "VK_THREAD_IDLE_KHR";
+				pcErrDetail = "A deferred operation is not complete, but there's currently no work for this thread";
 				break;
 			case VK_THREAD_DONE_KHR:
-				errorName = "VK_THREAD_DONE_KHR";
-				errorString = "A deferred operation is not complete, but there's no work remaining";
+				pcErrName = "VK_THREAD_DONE_KHR";
+				pcErrDetail = "A deferred operation is not complete, but there's no work remaining";
 				break;
 			case VK_OPERATION_DEFERRED_KHR:
-				errorName = "VK_OPERATION_DEFERRED_KHR";
-				errorString = "A deferred operation was requested and some of the work has been deferred";
+				pcErrName = "VK_OPERATION_DEFERRED_KHR";
+				pcErrDetail = "A deferred operation was requested and some of the work has been deferred";
 				break;
 			case VK_OPERATION_NOT_DEFERRED_KHR:
-				errorName = "VK_OPERATION_NOT_DEFERRED_KHR";
-				errorString = "A deferred operation was requested and no operations were deferred";
+				pcErrName = "VK_OPERATION_NOT_DEFERRED_KHR";
+				pcErrDetail = "A deferred operation was requested and no operations were deferred";
 				break;
 			case VK_PIPELINE_COMPILE_REQUIRED:
-				errorName = "VK_PIPELINE_COMPILE_REQUIRED";
-				errorString = "Pipeline compilation required, but not done by the application";
+				pcErrName = "VK_PIPELINE_COMPILE_REQUIRED";
+				pcErrDetail = "Pipeline compilation required, but not done by the application";
 				break;
 #ifdef RE_OS_WINDOWS
 			case VK_PIPELINE_BINARY_MISSING_KHR:
-				errorName = "VK_PIPELINE_BINARY_MISSING_KHR";
-				errorString = "Attempted to create a pipeline binary by querying an internal cache, but the internal cache entry did not exist";
+				pcErrName = "VK_PIPELINE_BINARY_MISSING_KHR";
+				pcErrDetail = "Attempted to create a pipeline binary by querying an internal cache, but the internal cache entry did not exist";
 				break;
 			case VK_INCOMPATIBLE_SHADER_BINARY_EXT:
-				errorName = "VK_INCOMPATIBLE_SHADER_BINARY_EXT";
-				errorString = "The binary shader code is incompatible with the device";
+				pcErrName = "VK_INCOMPATIBLE_SHADER_BINARY_EXT";
+				pcErrDetail = "The binary shader code is incompatible with the device";
 				break;
 #endif
 
 			// Errors
 			case VK_ERROR_OUT_OF_HOST_MEMORY:
-				errorName = "VK_ERROR_OUT_OF_HOST_MEMORY";
-				errorString = "Out of host memory";
+				pcErrName = "VK_ERROR_OUT_OF_HOST_MEMORY";
+				pcErrDetail = "Out of host memory";
 				break;
 			case VK_ERROR_OUT_OF_DEVICE_MEMORY:
-				errorName = "VK_ERROR_OUT_OF_DEVICE_MEMORY";
-				errorString = "Out of device memory";
+				pcErrName = "VK_ERROR_OUT_OF_DEVICE_MEMORY";
+				pcErrDetail = "Out of device memory";
 				break;
 			case VK_ERROR_INITIALIZATION_FAILED:
-				errorName = "VK_ERROR_INITIALIZATION_FAILED";
-				errorString = "Initialization failed";
+				pcErrName = "VK_ERROR_INITIALIZATION_FAILED";
+				pcErrDetail = "Initialization failed";
 				break;
 			case VK_ERROR_DEVICE_LOST:
-				errorName = "VK_ERROR_DEVICE_LOST";
-				errorString = "Device lost";
+				pcErrName = "VK_ERROR_DEVICE_LOST";
+				pcErrDetail = "Device lost";
 				break;
 			case VK_ERROR_MEMORY_MAP_FAILED:
-				errorName = "VK_ERROR_MEMORY_MAP_FAILED";
-				errorString = "Memory map failed";
+				pcErrName = "VK_ERROR_MEMORY_MAP_FAILED";
+				pcErrDetail = "Memory map failed";
 				break;
 			case VK_ERROR_LAYER_NOT_PRESENT:
-				errorName = "VK_ERROR_LAYER_NOT_PRESENT";
-				errorString = "Layer not present";
+				pcErrName = "VK_ERROR_LAYER_NOT_PRESENT";
+				pcErrDetail = "Layer not present";
 				break;
 			case VK_ERROR_EXTENSION_NOT_PRESENT:
-				errorName = "VK_ERROR_EXTENSION_NOT_PRESENT";
-				errorString = "Extension not present";
+				pcErrName = "VK_ERROR_EXTENSION_NOT_PRESENT";
+				pcErrDetail = "Extension not present";
 				break;
 			case VK_ERROR_FEATURE_NOT_PRESENT:
-				errorName = "VK_ERROR_FEATURE_NOT_PRESENT";
-				errorString = "Feature not present";
+				pcErrName = "VK_ERROR_FEATURE_NOT_PRESENT";
+				pcErrDetail = "Feature not present";
 				break;
 			case VK_ERROR_INCOMPATIBLE_DRIVER:
-				errorName = "VK_ERROR_INCOMPATIBLE_DRIVER";
-				errorString = "Incompatible driver";
+				pcErrName = "VK_ERROR_INCOMPATIBLE_DRIVER";
+				pcErrDetail = "Incompatible driver";
 				break;
 			case VK_ERROR_TOO_MANY_OBJECTS:
-				errorName = "VK_ERROR_TOO_MANY_OBJECTS";
-				errorString = "Too many objects";
+				pcErrName = "VK_ERROR_TOO_MANY_OBJECTS";
+				pcErrDetail = "Too many objects";
 				break;
 			case VK_ERROR_FORMAT_NOT_SUPPORTED:
-				errorName = "VK_ERROR_FORMAT_NOT_SUPPORTED";
-				errorString = "Format not supported";
+				pcErrName = "VK_ERROR_FORMAT_NOT_SUPPORTED";
+				pcErrDetail = "Format not supported";
 				break;
 			case VK_ERROR_FRAGMENTED_POOL:
-				errorName = "VK_ERROR_FRAGMENTED_POOL";
-				errorString = "Fragmented pool";
+				pcErrName = "VK_ERROR_FRAGMENTED_POOL";
+				pcErrDetail = "Fragmented pool";
 				break;
 			case VK_ERROR_SURFACE_LOST_KHR:
-				errorName = "VK_ERROR_SURFACE_LOST_KHR";
-				errorString = "Surface has been lost and is no longer available";
+				pcErrName = "VK_ERROR_SURFACE_LOST_KHR";
+				pcErrDetail = "Surface has been lost and is no longer available";
 				break;
 			case VK_ERROR_NATIVE_WINDOW_IN_USE_KHR:
-				errorName = "VK_ERROR_NATIVE_WINDOW_IN_USE_KHR";
-				errorString = "The window is already in use by any API";
+				pcErrName = "VK_ERROR_NATIVE_WINDOW_IN_USE_KHR";
+				pcErrDetail = "The window is already in use by any API";
 				break;
 			case VK_ERROR_OUT_OF_DATE_KHR:
-				errorName = "VK_ERROR_OUT_OF_DATE_KHR";
-				errorString = "A surface has changed in a way that it's no longer compatible with the swapchain and further operations will fail";
+				pcErrName = "VK_ERROR_OUT_OF_DATE_KHR";
+				pcErrDetail = "A surface has changed in a way that it's no longer compatible with the swapchain and further operations will fail";
 				break;
 			case VK_ERROR_INCOMPATIBLE_DISPLAY_KHR:
-				errorName = "VK_ERROR_INCOMPATIBLE_DISPLAY_KHR";
-				errorString = "The display used by a swapchain doesn't use the same presentable image layout or is incompatible";
+				pcErrName = "VK_ERROR_INCOMPATIBLE_DISPLAY_KHR";
+				pcErrDetail = "The display used by a swapchain doesn't use the same presentable image layout or is incompatible";
 				break;
 			case VK_ERROR_INVALID_SHADER_NV:
-				errorName = "VK_ERROR_INVALID_SHADER_NV";
-				errorString = "One or more shaders failed to compile or link";
+				pcErrName = "VK_ERROR_INVALID_SHADER_NV";
+				pcErrDetail = "One or more shaders failed to compile or link";
 				break;
 			case VK_ERROR_OUT_OF_POOL_MEMORY:
-				errorName = "VK_ERROR_OUT_OF_POOL_MEMORY";
-				errorString = "Out of pool memory";
+				pcErrName = "VK_ERROR_OUT_OF_POOL_MEMORY";
+				pcErrDetail = "Out of pool memory";
 				break;
 			case VK_ERROR_INVALID_EXTERNAL_HANDLE:
-				errorName = "VK_ERROR_INVALID_EXTERNAL_HANDLE";
-				errorString = "Invalid external handle";
+				pcErrName = "VK_ERROR_INVALID_EXTERNAL_HANDLE";
+				pcErrDetail = "Invalid external handle";
 				break;
 			case VK_ERROR_FRAGMENTATION:
-				errorName = "VK_ERROR_FRAGMENTATION";
-				errorString = "Fragmentation";
+				pcErrName = "VK_ERROR_FRAGMENTATION";
+				pcErrDetail = "Fragmentation";
 				break;
 			case VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS:
-				errorName = "VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS";
-				errorString = "The memory address is not available";
+				pcErrName = "VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS";
+				pcErrDetail = "The memory address is not available";
 				break;
 			case VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT:
-				errorName = "VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT";
-				errorString = "Operation on swapchain created with VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT has failed, because the application didn't have exclusive fullscreen access (outside the application's control)";
+				pcErrName = "VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT";
+				pcErrDetail = "Operation on swapchain created with VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT has failed, because the application didn't have exclusive fullscreen access (outside the application's control)";
 				break;
 			case VK_ERROR_VALIDATION_FAILED_EXT:
-				errorName = "VK_ERROR_VALIDATION_FAILED_EXT";
-				errorString = "Invalid usage detected";
+				pcErrName = "VK_ERROR_VALIDATION_FAILED_EXT";
+				pcErrDetail = "Invalid usage detected";
 				break;
 			case VK_ERROR_COMPRESSION_EXHAUSTED_EXT:
-				errorName = "VK_ERROR_COMPRESSION_EXHAUSTED_EXT";
-				errorString = "Image creation failed for internal resources required for compression are exhausted";
+				pcErrName = "VK_ERROR_COMPRESSION_EXHAUSTED_EXT";
+				pcErrDetail = "Image creation failed for internal resources required for compression are exhausted";
 				break;
 			case VK_ERROR_IMAGE_USAGE_NOT_SUPPORTED_KHR:
-				errorName = "VK_ERROR_IMAGE_USAGE_NOT_SUPPORTED_KHR";
-				errorString = "Requested VkImageUsageFlags aren't supported";
+				pcErrName = "VK_ERROR_IMAGE_USAGE_NOT_SUPPORTED_KHR";
+				pcErrDetail = "Requested VkImageUsageFlags aren't supported";
 				break;
 			case VK_ERROR_VIDEO_PICTURE_LAYOUT_NOT_SUPPORTED_KHR:
-				errorName = "VK_ERROR_VIDEO_PICTURE_LAYOUT_NOT_SUPPORTED_KHR";
-				errorString = "Requested video picture layout not supported";
+				pcErrName = "VK_ERROR_VIDEO_PICTURE_LAYOUT_NOT_SUPPORTED_KHR";
+				pcErrDetail = "Requested video picture layout not supported";
 				break;
 			case VK_ERROR_VIDEO_PROFILE_OPERATION_NOT_SUPPORTED_KHR:
-				errorName = "VK_ERROR_VIDEO_PROFILE_OPERATION_NOT_SUPPORTED_KHR";
-				errorString = "Video profile operation not supported";
+				pcErrName = "VK_ERROR_VIDEO_PROFILE_OPERATION_NOT_SUPPORTED_KHR";
+				pcErrDetail = "Video profile operation not supported";
 				break;
 			case VK_ERROR_VIDEO_PROFILE_FORMAT_NOT_SUPPORTED_KHR:
-				errorName = "VK_ERROR_VIDEO_PROFILE_FORMAT_NOT_SUPPORTED_KHR";
-				errorString = "Video profile format parameters not supported";
+				pcErrName = "VK_ERROR_VIDEO_PROFILE_FORMAT_NOT_SUPPORTED_KHR";
+				pcErrDetail = "Video profile format parameters not supported";
 				break;
 			case VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR:
-				errorName = "VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR";
-				errorString = "Video profile codec not supported";
+				pcErrName = "VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR";
+				pcErrDetail = "Video profile codec not supported";
 				break;
 			case VK_ERROR_VIDEO_STD_VERSION_NOT_SUPPORTED_KHR:
-				errorName = "VK_ERROR_VIDEO_STD_VERSION_NOT_SUPPORTED_KHR";
-				errorString = "Specified video STD header version is not supported";
+				pcErrName = "VK_ERROR_VIDEO_STD_VERSION_NOT_SUPPORTED_KHR";
+				pcErrDetail = "Specified video STD header version is not supported";
 				break;
 #ifdef RE_OS_WINDOWS
 			case VK_ERROR_INVALID_VIDEO_STD_PARAMETERS_KHR:
-				errorName = "VK_ERROR_INVALID_VIDEO_STD_PARAMETERS_KHR";
-				errorString = "Invalid video STD parameters";
+				pcErrName = "VK_ERROR_INVALID_VIDEO_STD_PARAMETERS_KHR";
+				pcErrDetail = "Invalid video STD parameters";
 				break;
 #endif
 			case VK_ERROR_NOT_PERMITTED_KHR:
-				errorName = "VK_ERROR_NOT_PERMITTED_KHR";
-				errorString = "Action is not permitted to be executed due to the application's missing privileges";
+				pcErrName = "VK_ERROR_NOT_PERMITTED_KHR";
+				pcErrDetail = "Action is not permitted to be executed due to the application's missing privileges";
 				break;
 #ifdef RE_OS_WINDOWS
 			case VK_ERROR_NOT_ENOUGH_SPACE_KHR:
-				errorName = "VK_ERROR_NOT_ENOUGH_SPACE_KHR";
-				errorString = "Application didn't provide enough space to return the data";
+				pcErrName = "VK_ERROR_NOT_ENOUGH_SPACE_KHR";
+				pcErrDetail = "Application didn't provide enough space to return the data";
 				break;
 #endif
 			case VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT:
-				errorName = "VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT";
-				errorString = "";
+				pcErrName = "VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT";
+				pcErrDetail = "";
 				break;
 			case VK_ERROR_UNKNOWN:
-				errorName = "VK_ERROR_UNKNOWN";
-				errorString = "Unknown error";
+				pcErrName = "VK_ERROR_UNKNOWN";
+				pcErrDetail = "Unknown error";
 				break;
 			case VK_RESULT_MAX_ENUM:
 				break;
 		}
-		RE_ERROR(appendStrings("The recently called Vulkan function threw an error: (", errorName, ") ", errorString));
+		RE_ERROR(appendStrings("The recently called Vulkan function threw an error: (", pcErrName, ") ", pcErrDetail));
 		return false;
 	}
 

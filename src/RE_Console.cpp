@@ -6,65 +6,65 @@ namespace RE {
 
 #define DEFAULT_COLOR "\033[0m"
 
-	bool printColors = true;
-	bool treatWarningAsError = false;
-	bool errorAlwaysFatal = false;
+	bool bPrintColors = true;
+	bool bTreatWarningAsError = false;
+	bool bErrorAlwaysFatal = false;
 
-	std::string ESC_code(TerminalColor color, bool backgroundColored, bool bold) {
-		if (!printColors)
+	std::string ESC_code(TerminalColor eColor, bool bBackgroundColored, bool bBold) {
+		if (!bPrintColors)
 			return "";
-		unsigned int id = static_cast<unsigned int>(color);
-		if (id >= static_cast<unsigned int>(TerminalColor::Bright_Black))
-			id += 90 - static_cast<unsigned int>(TerminalColor::Bright_Black);
+		unsigned int uiId = static_cast<unsigned int>(eColor);
+		if (uiId >= static_cast<unsigned int>(TerminalColor::Bright_Black))
+			uiId += 90 - static_cast<unsigned int>(TerminalColor::Bright_Black);
 		else
-			id += 30;
-		if (backgroundColored)
-			id += 10;
+			uiId += 30;
+		if (bBackgroundColored)
+			uiId += 10;
 		std::string result("\033[");
-		if (bold)
+		if (bBold)
 			result += "1;";
-		result += std::to_string(id);
+		result += std::to_string(uiId);
 		result += "m";
 		return result;
 	}
 
-	void printErrMsg(const char* file, const char* func, unsigned int line, const char* detail) {
+	void printErrMsg(const char* pFile, const char* pFunc, unsigned int uiLine, const char* pDetail) {
 		print(" : ");
-		printColored(file, TerminalColor::Bright_White, false, true);
-		println(" (line ", line, "; in function \"", func, "\")");
-		println("\t", detail);
+		printColored(pFile, TerminalColor::Bright_White, false, true);
+		println(" (line ", uiLine, "; in function \"", pFunc, "\")");
+		println("\t", pDetail);
 	}
 
 
-	void printColored(const char* content, TerminalColor color, bool backgroundColored, bool bold) {
-		print(ESC_code(color, backgroundColored, bold), content, DEFAULT_COLOR);
+	void printColored(const char* pContent, TerminalColor eColor, bool bBackgroundColored, bool bBold) {
+		print(ESC_code(eColor, bBackgroundColored, bBold), pContent, DEFAULT_COLOR);
 	}
 
-	void printlnColored(const char* content, TerminalColor color, bool backgroundColored, bool bold) {
-		println(ESC_code(color, backgroundColored, bold), content, DEFAULT_COLOR);
+	void printlnColored(const char* pContent, TerminalColor eColor, bool bBackgroundColored, bool bBold) {
+		println(ESC_code(eColor, bBackgroundColored, bBold), pContent, DEFAULT_COLOR);
 	}
 	
-	void error(const char* file, const char* func, unsigned int line, const char* detail, bool terminate) {
+	void error(const char* pFile, const char* pFunc, unsigned int uiLine, const char* pDetail, bool bTerminate) {
 		printColored("ERROR", TerminalColor::Red, false, false);
-		printErrMsg(file, func, line, detail);
-		if (terminate || errorAlwaysFatal) {
-			errorOccured = true;
+		printErrMsg(pFile, pFunc, uiLine, pDetail);
+		if (bTerminate || bErrorAlwaysFatal) {
+			bErrorOccured = true;
 			printlnColored("Terminating...", TerminalColor::Bright_Black, false, false);
 		}
 	}
 
-	void warning(const char* file, const char* func, unsigned int line, const char* detail) {
-		if (treatWarningAsError)
-			error(file, func, line, detail, false);
+	void warning(const char* pFile, const char* pFunc, unsigned int uiLine, const char* pDetail) {
+		if (bTreatWarningAsError)
+			error(pFile, pFunc, uiLine, pDetail, false);
 		else {
 			printColored("WARNING", TerminalColor::Bright_Yellow, false, false);
-			printErrMsg(file, func, line, detail);
+			printErrMsg(pFile, pFunc, uiLine, pDetail);
 		}
 	}
 
-	void note(const char* file, const char* func, unsigned int line, const char* detail) {
+	void note(const char* pFile, const char* pFunc, unsigned int uiLine, const char* pDetail) {
 		printColored("NOTE", TerminalColor::White, false, false);
-		printErrMsg(file, func, line, detail);
+		printErrMsg(pFile, pFunc, uiLine, pDetail);
 	}
 
 }

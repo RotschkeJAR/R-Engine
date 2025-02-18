@@ -2,45 +2,39 @@
 
 namespace RE {
 	
-	std::string convertToUTF8(const wchar_t* wstring) {
-		const size_t strSize = wcslen(wstring) + 1;
-		std::string u8Str("", strSize);
-		wcstombs(&u8Str[0], wstring, strSize);
-		return u8Str;
+	std::string convertToUTF8(const wchar_t* pwcString) {
+		const REuint uiStringSize = wcslen(pwcString) + 1;
+		std::string strConverted("", uiStringSize);
+		wcstombs(&strConverted[0], pwcString, uiStringSize);
+		return strConverted;
 	}
 
-	std::wstring convertToWide(const char* string) {
-		const size_t strSize = strlen(string) + 1;
-		std::wstring wideStr(L"", strSize);
-		mbstowcs(&wideStr[0], string, strSize);
-		return wideStr;
+	std::wstring convertToWide(const char* pcString) {
+		const REuint uiStringSize = strlen(pcString) + 1;
+		std::wstring wstrConverted(L"", uiStringSize);
+		mbstowcs(&wstrConverted[0], pcString, uiStringSize);
+		return wstrConverted;
 	}
 
-	std::string appName;
-
-	const char* getAppName() {
-		if (!appName.empty())
-			return appName.c_str();
+	std::string getAppName() {
+		std::string strAppName;
 #ifdef RE_OS_WINDOWS
 # define PATH_SIZE 500
-		wchar_t wBuffer[PATH_SIZE] = {0};
-		if (!GetModuleFileNameW(nullptr, wBuffer, PATH_SIZE)) {
+		wchar_t wcBuffer[PATH_SIZE] = {0};
+		if (GetModuleFileNameW(nullptr, wcBuffer, PATH_SIZE)) 
+			strAppName = convertToUTF8(wcBuffer);
+		else
 			RE_ERROR("Failed retrieving the file name of the application");
-			return nullptr;
-		}
-		appName = convertToUTF8(wBuffer);
 #elif defined RE_OS_LINUX
-		std::ifstream fs("/proc/self/comm");
-		if (!fs) {
+		std::ifstream fileStream("/proc/self/comm");
+		if (fileStream.is_open())
+			fileStream >> strAppName;
+		else
 			RE_ERROR("Failed opening \"/proc/self/comm\" file for retrieving file name of the application");
-			return nullptr;
-		}
-		fs >> appName;
 #else
 		RE_ERROR("Unknown platform for retrieving file name of the application");
-		return nullptr;
 #endif
-		return appName.c_str();
+		return strAppName;
 	}
 
 }

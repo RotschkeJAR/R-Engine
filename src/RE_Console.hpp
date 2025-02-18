@@ -3,16 +3,16 @@
 
 namespace RE {
 
-	extern bool printColors;
-	extern bool treatWarningAsError;
-	extern bool errorAlwaysFatal;
+	extern bool bPrintColors;
+	extern bool bTreatWarningAsError;
+	extern bool bErrorAlwaysFatal;
 
-	void printColored(const char* content, TerminalColor color, bool backgroundColored, bool bold);
-	void printlnColored(const char* content, TerminalColor color, bool backgroundColored, bool bold);
+	void printColored(const char* pContent, TerminalColor eColor, bool bBackgroundColored, bool bBold);
+	void printlnColored(const char* pContent, TerminalColor eColor, bool bBackgroundColored, bool bBold);
 	
-	void error(const char* file, const char* func, unsigned int line, const char* detail, bool terminate);
-	void warning(const char* file, const char* func, unsigned int line, const char* detail);
-	void note(const char* file, const char* func, unsigned int line, const char* detail);
+	void error(const char* pFile, const char* pFunc, unsigned int pLine, const char* pDetail, bool bTerminate);
+	void warning(const char* pFile, const char* pFunc, unsigned int pLine, const char* pDetail);
+	void note(const char* pFile, const char* pFunc, unsigned int pLine, const char* pDetail);
 #define RE_FATAL_ERROR(T) error(__FILE__, __func__, __LINE__, appendStrings("[R-Engine] ", STRIP_QUOTE(T)).c_str(), true)
 #define RE_ERROR(T) error(__FILE__, __func__, __LINE__, appendStrings("[R-Engine] ", STRIP_QUOTE(T)).c_str(), false)
 #define RE_WARNING(T) warning(__FILE__, __func__, __LINE__, appendStrings("[R-Engine] ", STRIP_QUOTE(T)).c_str())

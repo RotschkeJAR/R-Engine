@@ -5,7 +5,7 @@ namespace RE {
 	
 	class Renderer {
 		private:
-			bool valid;
+			bool bValid;
 
 		public:
 			Renderer();

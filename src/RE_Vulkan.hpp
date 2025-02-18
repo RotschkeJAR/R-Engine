@@ -15,27 +15,27 @@
 namespace RE {
 
 	struct VulkanQueueIndices {
-		uint32_t graphicsFamily;
-		uint32_t presentationFamily;
+		uint32_t u32GraphicsFamily;
+		uint32_t u32PresentationFamily;
 	};
 	
 	class Vulkan {
 		private:
-			bool valid;
+			bool bValid;
 #ifdef RE_OS_WINDOWS
-			HMODULE hVulkan;
+			HMODULE win_hVulkan;
 #elif defined RE_OS_LINUX
-			void* libVulkan;
+			void* linux_libVulkan;
 #endif
-			uint32_t internalSurfaceFormatsCount;
-			uint32_t internalPresentModesCount;
-			VkDebugUtilsMessengerEXT debugMessenger;
+			uint32_t u32InternalSurfaceFormatsCount;
+			uint32_t u32InternalPresentModesCount;
+			VkDebugUtilsMessengerEXT vk_hDebugMessenger;
 
-			static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT severityFlagBits, VkDebugUtilsMessageTypeFlagsEXT msgTypeBits, const VkDebugUtilsMessengerCallbackDataEXT* callbackData, void* userData);
-			static bool isPhysicalDeviceSuitable(VkPhysicalDevice device);
+			static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT vk_severityFlagBits, VkDebugUtilsMessageTypeFlagsEXT vk_MsgTypeBits, const VkDebugUtilsMessengerCallbackDataEXT* ck_CallbackData, void* vk_UserData);
+			static bool isPhysicalDeviceSuitable(VkPhysicalDevice vk_hPhysicalDevice);
 			bool setupValidationLayers();
-			void* loadFuncInstance(VkInstance instance, const char* funcName);
-			void* loadFunc(const char* funcName);
+			void* loadFuncInstance(VkInstance vk_hInstance, const char* pFuncName);
+			void* loadFunc(const char* pFuncName);
 			bool createInstance();
 			bool loadVulkan_1_0();
 			bool loadVulkan_1_1();
@@ -320,314 +320,314 @@ namespace RE {
 			PFN_vkGetPhysicalDeviceXlibPresentationSupportKHR pfn_vkGetPhysicalDeviceXlibPresentationSupportKHR;
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 
-			static Vulkan* instance;
-			VkInstance internalInstance;
-			VkPhysicalDevice internalPhysicalDevice;
-			VkPhysicalDeviceProperties internalPhysicalDeviceProperties;
-			VkPhysicalDeviceFeatures internalPhysicalDeviceFeatures;
+			static Vulkan* pInstance;
+			VkInstance vk_hInternalInstance;
+			VkPhysicalDevice vk_hInternalPhysicalDevice;
+			VkPhysicalDeviceProperties vk_internalPhysicalDeviceProperties;
+			VkPhysicalDeviceFeatures vk_internalPhysicalDeviceFeatures;
 			VulkanQueueIndices internalQueueIndices;
-			VkDevice internalLogicalDevice;
-			VkQueue internalGraphicsQueue;
-			VkQueue internalPresentationQueue;
-			VkSurfaceKHR internalSurface;
-			VkSurfaceCapabilitiesKHR internalSurfaceCapabilities;
-			VkSurfaceFormatKHR* internalSurfaceFormats;
-			VkPresentModeKHR* internalPresentModes;
+			VkDevice vk_hInternalDevice;
+			VkQueue vk_hInternalGraphicsQueue;
+			VkQueue vk_hInternalPresentationQueue;
+			VkSurfaceKHR vk_hInternalSurface;
+			VkSurfaceCapabilitiesKHR vk_internalSurfaceCapabilities;
+			VkSurfaceFormatKHR* vk_pInternalSurfaceFormats;
+			VkPresentModeKHR* vk_pInternalPresentModes;
 
 			Vulkan();
 			~Vulkan();
 			bool isValid();
 			uint32_t getSurfaceFormatsCount();
 			uint32_t getPresentModesCount();
-			bool checkVulkanResult(VkResult result);
+			bool checkVulkanResult(VkResult vk_eResult);
 	};
 
 // Vulkan 1.0
-#define vkCreateInstance Vulkan::instance->pfn_vkCreateInstance
-#define vkDestroyInstance Vulkan::instance->pfn_vkDestroyInstance
-#define vkEnumeratePhysicalDevices Vulkan::instance->pfn_vkEnumeratePhysicalDevices
-#define vkGetPhysicalDeviceFeatures Vulkan::instance->pfn_vkGetPhysicalDeviceFeatures
-#define vkGetPhysicalDeviceFormatProperties Vulkan::instance->pfn_vkGetPhysicalDeviceFormatProperties
-#define vkGetPhysicalDeviceImageFormatProperties Vulkan::instance->pfn_vkGetPhysicalDeviceImageFormatProperties
-#define vkGetPhysicalDeviceProperties Vulkan::instance->pfn_vkGetPhysicalDeviceProperties
-#define vkGetPhysicalDeviceQueueFamilyProperties Vulkan::instance->pfn_vkGetPhysicalDeviceQueueFamilyProperties
-#define vkGetPhysicalDeviceMemoryProperties Vulkan::instance->pfn_vkGetPhysicalDeviceMemoryProperties
-#define vkGetInstanceProcAddr Vulkan::instance->pfn_vkGetInstanceProcAddr
-#define vkGetDeviceProcAddr Vulkan::instance->pfn_vkGetDeviceProcAddr
-#define vkCreateDevice Vulkan::instance->pfn_vkCreateDevice
-#define vkDestroyDevice Vulkan::instance->pfn_vkDestroyDevice
-#define vkEnumerateInstanceExtensionProperties Vulkan::instance->pfn_vkEnumerateInstanceExtensionProperties
-#define vkEnumerateDeviceExtensionProperties Vulkan::instance->pfn_vkEnumerateDeviceExtensionProperties
-#define vkEnumerateInstanceLayerProperties Vulkan::instance->pfn_vkEnumerateInstanceLayerProperties
-#define vkEnumerateDeviceLayerProperties Vulkan::instance->pfn_vkEnumerateDeviceLayerProperties
-#define vkGetDeviceQueue Vulkan::instance->pfn_vkGetDeviceQueue
-#define vkQueueSubmit Vulkan::instance->pfn_vkQueueSubmit
-#define vkQueueWaitIdle Vulkan::instance->pfn_vkQueueWaitIdle
-#define vkDeviceWaitIdle Vulkan::instance->pfn_vkDeviceWaitIdle
-#define vkAllocateMemory Vulkan::instance->pfn_vkAllocateMemory
-#define vkFreeMemory Vulkan::instance->pfn_vkFreeMemory
-#define vkMapMemory Vulkan::instance->pfn_vkMapMemory
-#define vkUnmapMemory Vulkan::instance->pfn_vkUnmapMemory
-#define vkFlushMappedMemoryRanges Vulkan::instance->pfn_vkFlushMappedMemoryRanges
-#define vkInvalidateMappedMemoryRanges Vulkan::instance->pfn_vkInvalidateMappedMemoryRanges
-#define vkGetDeviceMemoryCommitment Vulkan::instance->pfn_vkGetDeviceMemoryCommitment
-#define vkBindBufferMemory Vulkan::instance->pfn_vkBindBufferMemory
-#define vkBindImageMemory Vulkan::instance->pfn_vkBindImageMemory
-#define vkGetBufferMemoryRequirements Vulkan::instance->pfn_vkGetBufferMemoryRequirements
-#define vkGetImageMemoryRequirements Vulkan::instance->pfn_vkGetImageMemoryRequirements
-#define vkGetImageSparseMemoryRequirements Vulkan::instance->pfn_vkGetImageSparseMemoryRequirements
-#define vkGetPhysicalDeviceSparseImageFormatProperties Vulkan::instance->pfn_vkGetPhysicalDeviceSparseImageFormatProperties
-#define vkQueueBindSparse Vulkan::instance->pfn_vkQueueBindSparse
-#define vkCreateFence Vulkan::instance->pfn_vkCreateFence
-#define vkDestroyFence Vulkan::instance->pfn_vkDestroyFence
-#define vkResetFences Vulkan::instance->pfn_vkResetFences
-#define vkGetFenceStatus Vulkan::instance->pfn_vkGetFenceStatus
-#define vkWaitForFences Vulkan::instance->pfn_vkWaitForFences
-#define vkCreateSemaphore Vulkan::instance->pfn_vkCreateSemaphore
-#define vkDestroySemaphore Vulkan::instance->pfn_vkDestroySemaphore
-#define vkCreateEvent Vulkan::instance->pfn_vkCreateEvent
-#define vkDestroyEvent Vulkan::instance->pfn_vkDestroyEvent
-#define vkGetEventStatus Vulkan::instance->pfn_vkGetEventStatus
-#define vkSetEvent Vulkan::instance->pfn_vkSetEvent
-#define vkResetEvent Vulkan::instance->pfn_vkResetEvent
-#define vkCreateQueryPool Vulkan::instance->pfn_vkCreateQueryPool
-#define vkDestroyQueryPool Vulkan::instance->pfn_vkDestroyQueryPool
-#define vkGetQueryPoolResults Vulkan::instance->pfn_vkGetQueryPoolResults
-#define vkCreateBuffer Vulkan::instance->pfn_vkCreateBuffer
-#define vkDestroyBuffer Vulkan::instance->pfn_vkDestroyBuffer
-#define vkCreateBufferView Vulkan::instance->pfn_vkCreateBufferView
-#define vkDestroyBufferView Vulkan::instance->pfn_vkDestroyBufferView
-#define vkCreateImage Vulkan::instance->pfn_vkCreateImage
-#define vkDestroyImage Vulkan::instance->pfn_vkDestroyImage
-#define vkGetImageSubresourceLayout Vulkan::instance->pfn_vkGetImageSubresourceLayout
-#define vkCreateImageView Vulkan::instance->pfn_vkCreateImageView
-#define vkDestroyImageView Vulkan::instance->pfn_vkDestroyImageView
-#define vkCreateShaderModule Vulkan::instance->pfn_vkCreateShaderModule
-#define vkDestroyShaderModule Vulkan::instance->pfn_vkDestroyShaderModule
-#define vkCreatePipelineCache Vulkan::instance->pfn_vkCreatePipelineCache
-#define vkDestroyPipelineCache Vulkan::instance->pfn_vkDestroyPipelineCache
-#define vkGetPipelineCacheData Vulkan::instance->pfn_vkGetPipelineCacheData
-#define vkMergePipelineCaches Vulkan::instance->pfn_vkMergePipelineCaches
-#define vkCreateGraphicsPipelines Vulkan::instance->pfn_vkCreateGraphicsPipelines
-#define vkCreateComputePipelines Vulkan::instance->pfn_vkCreateComputePipelines
-#define vkDestroyPipeline Vulkan::instance->pfn_vkDestroyPipeline
-#define vkCreatePipelineLayout Vulkan::instance->pfn_vkCreatePipelineLayout
-#define vkDestroyPipelineLayout Vulkan::instance->pfn_vkDestroyPipelineLayout
-#define vkCreateSampler Vulkan::instance->pfn_vkCreateSampler
-#define vkDestroySampler Vulkan::instance->pfn_vkDestroySampler
-#define vkCreateDescriptorSetLayout Vulkan::instance->pfn_vkCreateDescriptorSetLayout
-#define vkDestroyDescriptorSetLayout Vulkan::instance->pfn_vkDestroyDescriptorSetLayout
-#define vkCreateDescriptorPool Vulkan::instance->pfn_vkCreateDescriptorPool
-#define vkDestroyDescriptorPool Vulkan::instance->pfn_vkDestroyDescriptorPool
-#define vkResetDescriptorPool Vulkan::instance->pfn_vkResetDescriptorPool
-#define vkAllocateDescriptorSets Vulkan::instance->pfn_vkAllocateDescriptorSets
-#define vkFreeDescriptorSets Vulkan::instance->pfn_vkFreeDescriptorSets
-#define vkUpdateDescriptorSets Vulkan::instance->pfn_vkUpdateDescriptorSets
-#define vkCreateFramebuffer Vulkan::instance->pfn_vkCreateFramebuffer
-#define vkDestroyFramebuffer Vulkan::instance->pfn_vkDestroyFramebuffer
-#define vkCreateRenderPass Vulkan::instance->pfn_vkCreateRenderPass
-#define vkDestroyRenderPass Vulkan::instance->pfn_vkDestroyRenderPass
-#define vkGetRenderAreaGranularity Vulkan::instance->pfn_vkGetRenderAreaGranularity
-#define vkCreateCommandPool Vulkan::instance->pfn_vkCreateCommandPool
-#define vkDestroyCommandPool Vulkan::instance->pfn_vkDestroyCommandPool
-#define vkResetCommandPool Vulkan::instance->pfn_vkResetCommandPool
-#define vkAllocateCommandBuffers Vulkan::instance->pfn_vkAllocateCommandBuffers
-#define vkFreeCommandBuffers Vulkan::instance->pfn_vkFreeCommandBuffers
-#define vkBeginCommandBuffer Vulkan::instance->pfn_vkBeginCommandBuffer
-#define vkEndCommandBuffer Vulkan::instance->pfn_vkEndCommandBuffer
-#define vkResetCommandBuffer Vulkan::instance->pfn_vkResetCommandBuffer
-#define vkCmdBindPipeline Vulkan::instance->pfn_vkCmdBindPipeline
-#define vkCmdSetViewport Vulkan::instance->pfn_vkCmdSetViewport
-#define vkCmdSetScissor Vulkan::instance->pfn_vkCmdSetScissor
-#define vkCmdSetLineWidth Vulkan::instance->pfn_vkCmdSetLineWidth
-#define vkCmdSetDepthBias Vulkan::instance->pfn_vkCmdSetDepthBias
-#define vkCmdSetBlendConstants Vulkan::instance->pfn_vkCmdSetBlendConstants
-#define vkCmdSetDepthBounds Vulkan::instance->pfn_vkCmdSetDepthBounds
-#define vkCmdSetStencilCompareMask Vulkan::instance->pfn_vkCmdSetStencilCompareMask
-#define vkCmdSetStencilWriteMask Vulkan::instance->pfn_vkCmdSetStencilWriteMask
-#define vkCmdSetStencilReference Vulkan::instance->pfn_vkCmdSetStencilReference
-#define vkCmdBindDescriptorSets Vulkan::instance->pfn_vkCmdBindDescriptorSets
-#define vkCmdBindIndexBuffer Vulkan::instance->pfn_vkCmdBindIndexBuffer
-#define vkCmdBindVertexBuffers Vulkan::instance->pfn_vkCmdBindVertexBuffers
-#define vkCmdDraw Vulkan::instance->pfn_vkCmdDraw
-#define vkCmdDrawIndexed Vulkan::instance->pfn_vkCmdDrawIndexed
-#define vkCmdDrawIndirect Vulkan::instance->pfn_vkCmdDrawIndirect
-#define vkCmdDrawIndexedIndirect Vulkan::instance->pfn_vkCmdDrawIndexedIndirect
-#define vkCmdDispatch Vulkan::instance->pfn_vkCmdDispatch
-#define vkCmdDispatchIndirect Vulkan::instance->pfn_vkCmdDispatchIndirect
-#define vkCmdCopyBuffer Vulkan::instance->pfn_vkCmdCopyBuffer
-#define vkCmdCopyImage Vulkan::instance->pfn_vkCmdCopyImage
-#define vkCmdBlitImage Vulkan::instance->pfn_vkCmdBlitImage
-#define vkCmdCopyBufferToImage Vulkan::instance->pfn_vkCmdCopyBufferToImage
-#define vkCmdCopyImageToBuffer Vulkan::instance->pfn_vkCmdCopyImageToBuffer
-#define vkCmdUpdateBuffer Vulkan::instance->pfn_vkCmdUpdateBuffer
-#define vkCmdFillBuffer Vulkan::instance->pfn_vkCmdFillBuffer
-#define vkCmdClearColorImage Vulkan::instance->pfn_vkCmdClearColorImage
-#define vkCmdClearDepthStencilImage Vulkan::instance->pfn_vkCmdClearDepthStencilImage
-#define vkCmdClearAttachments Vulkan::instance->pfn_vkCmdClearAttachments
-#define vkCmdResolveImage Vulkan::instance->pfn_vkCmdResolveImage
-#define vkCmdSetEvent Vulkan::instance->pfn_vkCmdSetEvent
-#define vkCmdResetEvent Vulkan::instance->pfn_vkCmdResetEvent
-#define vkCmdWaitEvents Vulkan::instance->pfn_vkCmdWaitEvents
-#define vkCmdPipelineBarrier Vulkan::instance->pfn_vkCmdPipelineBarrier
-#define vkCmdBeginQuery Vulkan::instance->pfn_vkCmdBeginQuery
-#define vkCmdEndQuery Vulkan::instance->pfn_vkCmdEndQuery
-#define vkCmdResetQueryPool Vulkan::instance->pfn_vkCmdResetQueryPool
-#define vkCmdWriteTimestamp Vulkan::instance->pfn_vkCmdWriteTimestamp
-#define vkCmdCopyQueryPoolResults Vulkan::instance->pfn_vkCmdCopyQueryPoolResults
-#define vkCmdPushConstants Vulkan::instance->pfn_vkCmdPushConstants
-#define vkCmdBeginRenderPass Vulkan::instance->pfn_vkCmdBeginRenderPass
-#define vkCmdNextSubpass Vulkan::instance->pfn_vkCmdNextSubpass
-#define vkCmdEndRenderPass Vulkan::instance->pfn_vkCmdEndRenderPass
-#define vkCmdExecuteCommands Vulkan::instance->pfn_vkCmdExecuteCommands
+#define vkCreateInstance Vulkan::pInstance->pfn_vkCreateInstance
+#define vkDestroyInstance Vulkan::pInstance->pfn_vkDestroyInstance
+#define vkEnumeratePhysicalDevices Vulkan::pInstance->pfn_vkEnumeratePhysicalDevices
+#define vkGetPhysicalDeviceFeatures Vulkan::pInstance->pfn_vkGetPhysicalDeviceFeatures
+#define vkGetPhysicalDeviceFormatProperties Vulkan::pInstance->pfn_vkGetPhysicalDeviceFormatProperties
+#define vkGetPhysicalDeviceImageFormatProperties Vulkan::pInstance->pfn_vkGetPhysicalDeviceImageFormatProperties
+#define vkGetPhysicalDeviceProperties Vulkan::pInstance->pfn_vkGetPhysicalDeviceProperties
+#define vkGetPhysicalDeviceQueueFamilyProperties Vulkan::pInstance->pfn_vkGetPhysicalDeviceQueueFamilyProperties
+#define vkGetPhysicalDeviceMemoryProperties Vulkan::pInstance->pfn_vkGetPhysicalDeviceMemoryProperties
+#define vkGetInstanceProcAddr Vulkan::pInstance->pfn_vkGetInstanceProcAddr
+#define vkGetDeviceProcAddr Vulkan::pInstance->pfn_vkGetDeviceProcAddr
+#define vkCreateDevice Vulkan::pInstance->pfn_vkCreateDevice
+#define vkDestroyDevice Vulkan::pInstance->pfn_vkDestroyDevice
+#define vkEnumerateInstanceExtensionProperties Vulkan::pInstance->pfn_vkEnumerateInstanceExtensionProperties
+#define vkEnumerateDeviceExtensionProperties Vulkan::pInstance->pfn_vkEnumerateDeviceExtensionProperties
+#define vkEnumerateInstanceLayerProperties Vulkan::pInstance->pfn_vkEnumerateInstanceLayerProperties
+#define vkEnumerateDeviceLayerProperties Vulkan::pInstance->pfn_vkEnumerateDeviceLayerProperties
+#define vkGetDeviceQueue Vulkan::pInstance->pfn_vkGetDeviceQueue
+#define vkQueueSubmit Vulkan::pInstance->pfn_vkQueueSubmit
+#define vkQueueWaitIdle Vulkan::pInstance->pfn_vkQueueWaitIdle
+#define vkDeviceWaitIdle Vulkan::pInstance->pfn_vkDeviceWaitIdle
+#define vkAllocateMemory Vulkan::pInstance->pfn_vkAllocateMemory
+#define vkFreeMemory Vulkan::pInstance->pfn_vkFreeMemory
+#define vkMapMemory Vulkan::pInstance->pfn_vkMapMemory
+#define vkUnmapMemory Vulkan::pInstance->pfn_vkUnmapMemory
+#define vkFlushMappedMemoryRanges Vulkan::pInstance->pfn_vkFlushMappedMemoryRanges
+#define vkInvalidateMappedMemoryRanges Vulkan::pInstance->pfn_vkInvalidateMappedMemoryRanges
+#define vkGetDeviceMemoryCommitment Vulkan::pInstance->pfn_vkGetDeviceMemoryCommitment
+#define vkBindBufferMemory Vulkan::pInstance->pfn_vkBindBufferMemory
+#define vkBindImageMemory Vulkan::pInstance->pfn_vkBindImageMemory
+#define vkGetBufferMemoryRequirements Vulkan::pInstance->pfn_vkGetBufferMemoryRequirements
+#define vkGetImageMemoryRequirements Vulkan::pInstance->pfn_vkGetImageMemoryRequirements
+#define vkGetImageSparseMemoryRequirements Vulkan::pInstance->pfn_vkGetImageSparseMemoryRequirements
+#define vkGetPhysicalDeviceSparseImageFormatProperties Vulkan::pInstance->pfn_vkGetPhysicalDeviceSparseImageFormatProperties
+#define vkQueueBindSparse Vulkan::pInstance->pfn_vkQueueBindSparse
+#define vkCreateFence Vulkan::pInstance->pfn_vkCreateFence
+#define vkDestroyFence Vulkan::pInstance->pfn_vkDestroyFence
+#define vkResetFences Vulkan::pInstance->pfn_vkResetFences
+#define vkGetFenceStatus Vulkan::pInstance->pfn_vkGetFenceStatus
+#define vkWaitForFences Vulkan::pInstance->pfn_vkWaitForFences
+#define vkCreateSemaphore Vulkan::pInstance->pfn_vkCreateSemaphore
+#define vkDestroySemaphore Vulkan::pInstance->pfn_vkDestroySemaphore
+#define vkCreateEvent Vulkan::pInstance->pfn_vkCreateEvent
+#define vkDestroyEvent Vulkan::pInstance->pfn_vkDestroyEvent
+#define vkGetEventStatus Vulkan::pInstance->pfn_vkGetEventStatus
+#define vkSetEvent Vulkan::pInstance->pfn_vkSetEvent
+#define vkResetEvent Vulkan::pInstance->pfn_vkResetEvent
+#define vkCreateQueryPool Vulkan::pInstance->pfn_vkCreateQueryPool
+#define vkDestroyQueryPool Vulkan::pInstance->pfn_vkDestroyQueryPool
+#define vkGetQueryPoolResults Vulkan::pInstance->pfn_vkGetQueryPoolResults
+#define vkCreateBuffer Vulkan::pInstance->pfn_vkCreateBuffer
+#define vkDestroyBuffer Vulkan::pInstance->pfn_vkDestroyBuffer
+#define vkCreateBufferView Vulkan::pInstance->pfn_vkCreateBufferView
+#define vkDestroyBufferView Vulkan::pInstance->pfn_vkDestroyBufferView
+#define vkCreateImage Vulkan::pInstance->pfn_vkCreateImage
+#define vkDestroyImage Vulkan::pInstance->pfn_vkDestroyImage
+#define vkGetImageSubresourceLayout Vulkan::pInstance->pfn_vkGetImageSubresourceLayout
+#define vkCreateImageView Vulkan::pInstance->pfn_vkCreateImageView
+#define vkDestroyImageView Vulkan::pInstance->pfn_vkDestroyImageView
+#define vkCreateShaderModule Vulkan::pInstance->pfn_vkCreateShaderModule
+#define vkDestroyShaderModule Vulkan::pInstance->pfn_vkDestroyShaderModule
+#define vkCreatePipelineCache Vulkan::pInstance->pfn_vkCreatePipelineCache
+#define vkDestroyPipelineCache Vulkan::pInstance->pfn_vkDestroyPipelineCache
+#define vkGetPipelineCacheData Vulkan::pInstance->pfn_vkGetPipelineCacheData
+#define vkMergePipelineCaches Vulkan::pInstance->pfn_vkMergePipelineCaches
+#define vkCreateGraphicsPipelines Vulkan::pInstance->pfn_vkCreateGraphicsPipelines
+#define vkCreateComputePipelines Vulkan::pInstance->pfn_vkCreateComputePipelines
+#define vkDestroyPipeline Vulkan::pInstance->pfn_vkDestroyPipeline
+#define vkCreatePipelineLayout Vulkan::pInstance->pfn_vkCreatePipelineLayout
+#define vkDestroyPipelineLayout Vulkan::pInstance->pfn_vkDestroyPipelineLayout
+#define vkCreateSampler Vulkan::pInstance->pfn_vkCreateSampler
+#define vkDestroySampler Vulkan::pInstance->pfn_vkDestroySampler
+#define vkCreateDescriptorSetLayout Vulkan::pInstance->pfn_vkCreateDescriptorSetLayout
+#define vkDestroyDescriptorSetLayout Vulkan::pInstance->pfn_vkDestroyDescriptorSetLayout
+#define vkCreateDescriptorPool Vulkan::pInstance->pfn_vkCreateDescriptorPool
+#define vkDestroyDescriptorPool Vulkan::pInstance->pfn_vkDestroyDescriptorPool
+#define vkResetDescriptorPool Vulkan::pInstance->pfn_vkResetDescriptorPool
+#define vkAllocateDescriptorSets Vulkan::pInstance->pfn_vkAllocateDescriptorSets
+#define vkFreeDescriptorSets Vulkan::pInstance->pfn_vkFreeDescriptorSets
+#define vkUpdateDescriptorSets Vulkan::pInstance->pfn_vkUpdateDescriptorSets
+#define vkCreateFramebuffer Vulkan::pInstance->pfn_vkCreateFramebuffer
+#define vkDestroyFramebuffer Vulkan::pInstance->pfn_vkDestroyFramebuffer
+#define vkCreateRenderPass Vulkan::pInstance->pfn_vkCreateRenderPass
+#define vkDestroyRenderPass Vulkan::pInstance->pfn_vkDestroyRenderPass
+#define vkGetRenderAreaGranularity Vulkan::pInstance->pfn_vkGetRenderAreaGranularity
+#define vkCreateCommandPool Vulkan::pInstance->pfn_vkCreateCommandPool
+#define vkDestroyCommandPool Vulkan::pInstance->pfn_vkDestroyCommandPool
+#define vkResetCommandPool Vulkan::pInstance->pfn_vkResetCommandPool
+#define vkAllocateCommandBuffers Vulkan::pInstance->pfn_vkAllocateCommandBuffers
+#define vkFreeCommandBuffers Vulkan::pInstance->pfn_vkFreeCommandBuffers
+#define vkBeginCommandBuffer Vulkan::pInstance->pfn_vkBeginCommandBuffer
+#define vkEndCommandBuffer Vulkan::pInstance->pfn_vkEndCommandBuffer
+#define vkResetCommandBuffer Vulkan::pInstance->pfn_vkResetCommandBuffer
+#define vkCmdBindPipeline Vulkan::pInstance->pfn_vkCmdBindPipeline
+#define vkCmdSetViewport Vulkan::pInstance->pfn_vkCmdSetViewport
+#define vkCmdSetScissor Vulkan::pInstance->pfn_vkCmdSetScissor
+#define vkCmdSetLineWidth Vulkan::pInstance->pfn_vkCmdSetLineWidth
+#define vkCmdSetDepthBias Vulkan::pInstance->pfn_vkCmdSetDepthBias
+#define vkCmdSetBlendConstants Vulkan::pInstance->pfn_vkCmdSetBlendConstants
+#define vkCmdSetDepthBounds Vulkan::pInstance->pfn_vkCmdSetDepthBounds
+#define vkCmdSetStencilCompareMask Vulkan::pInstance->pfn_vkCmdSetStencilCompareMask
+#define vkCmdSetStencilWriteMask Vulkan::pInstance->pfn_vkCmdSetStencilWriteMask
+#define vkCmdSetStencilReference Vulkan::pInstance->pfn_vkCmdSetStencilReference
+#define vkCmdBindDescriptorSets Vulkan::pInstance->pfn_vkCmdBindDescriptorSets
+#define vkCmdBindIndexBuffer Vulkan::pInstance->pfn_vkCmdBindIndexBuffer
+#define vkCmdBindVertexBuffers Vulkan::pInstance->pfn_vkCmdBindVertexBuffers
+#define vkCmdDraw Vulkan::pInstance->pfn_vkCmdDraw
+#define vkCmdDrawIndexed Vulkan::pInstance->pfn_vkCmdDrawIndexed
+#define vkCmdDrawIndirect Vulkan::pInstance->pfn_vkCmdDrawIndirect
+#define vkCmdDrawIndexedIndirect Vulkan::pInstance->pfn_vkCmdDrawIndexedIndirect
+#define vkCmdDispatch Vulkan::pInstance->pfn_vkCmdDispatch
+#define vkCmdDispatchIndirect Vulkan::pInstance->pfn_vkCmdDispatchIndirect
+#define vkCmdCopyBuffer Vulkan::pInstance->pfn_vkCmdCopyBuffer
+#define vkCmdCopyImage Vulkan::pInstance->pfn_vkCmdCopyImage
+#define vkCmdBlitImage Vulkan::pInstance->pfn_vkCmdBlitImage
+#define vkCmdCopyBufferToImage Vulkan::pInstance->pfn_vkCmdCopyBufferToImage
+#define vkCmdCopyImageToBuffer Vulkan::pInstance->pfn_vkCmdCopyImageToBuffer
+#define vkCmdUpdateBuffer Vulkan::pInstance->pfn_vkCmdUpdateBuffer
+#define vkCmdFillBuffer Vulkan::pInstance->pfn_vkCmdFillBuffer
+#define vkCmdClearColorImage Vulkan::pInstance->pfn_vkCmdClearColorImage
+#define vkCmdClearDepthStencilImage Vulkan::pInstance->pfn_vkCmdClearDepthStencilImage
+#define vkCmdClearAttachments Vulkan::pInstance->pfn_vkCmdClearAttachments
+#define vkCmdResolveImage Vulkan::pInstance->pfn_vkCmdResolveImage
+#define vkCmdSetEvent Vulkan::pInstance->pfn_vkCmdSetEvent
+#define vkCmdResetEvent Vulkan::pInstance->pfn_vkCmdResetEvent
+#define vkCmdWaitEvents Vulkan::pInstance->pfn_vkCmdWaitEvents
+#define vkCmdPipelineBarrier Vulkan::pInstance->pfn_vkCmdPipelineBarrier
+#define vkCmdBeginQuery Vulkan::pInstance->pfn_vkCmdBeginQuery
+#define vkCmdEndQuery Vulkan::pInstance->pfn_vkCmdEndQuery
+#define vkCmdResetQueryPool Vulkan::pInstance->pfn_vkCmdResetQueryPool
+#define vkCmdWriteTimestamp Vulkan::pInstance->pfn_vkCmdWriteTimestamp
+#define vkCmdCopyQueryPoolResults Vulkan::pInstance->pfn_vkCmdCopyQueryPoolResults
+#define vkCmdPushConstants Vulkan::pInstance->pfn_vkCmdPushConstants
+#define vkCmdBeginRenderPass Vulkan::pInstance->pfn_vkCmdBeginRenderPass
+#define vkCmdNextSubpass Vulkan::pInstance->pfn_vkCmdNextSubpass
+#define vkCmdEndRenderPass Vulkan::pInstance->pfn_vkCmdEndRenderPass
+#define vkCmdExecuteCommands Vulkan::pInstance->pfn_vkCmdExecuteCommands
 
 // Vulkan 1.1
-#define vkEnumerateInstanceVersion Vulkan::instance->pfn_vkEnumerateInstanceVersion
-#define vkBindBufferMemory2 Vulkan::instance->pfn_vkBindBufferMemory2
-#define vkBindImageMemory2 Vulkan::instance->pfn_vkBindImageMemory2
-#define vkGetDeviceGroupPeerMemoryFeatures Vulkan::instance->pfn_vkGetDeviceGroupPeerMemoryFeatures
-#define vkCmdSetDeviceMask Vulkan::instance->pfn_vkCmdSetDeviceMask
-#define vkCmdDispatchBase Vulkan::instance->pfn_vkCmdDispatchBase
-#define vkEnumeratePhysicalDeviceGroups Vulkan::instance->pfn_vkEnumeratePhysicalDeviceGroups
-#define vkGetImageMemoryRequirements2 Vulkan::instance->pfn_vkGetImageMemoryRequirements2
-#define vkGetBufferMemoryRequirements2 Vulkan::instance->pfn_vkGetBufferMemoryRequirements2
-#define vkGetImageSparseMemoryRequirements2 Vulkan::instance->pfn_vkGetImageSparseMemoryRequirements2
-#define vkGetPhysicalDeviceFeatures2 Vulkan::instance->pfn_vkGetPhysicalDeviceFeatures2
-#define vkGetPhysicalDeviceProperties2 Vulkan::instance->pfn_vkGetPhysicalDeviceProperties2
-#define vkGetPhysicalDeviceFormatProperties2 Vulkan::instance->pfn_vkGetPhysicalDeviceFormatProperties2
-#define vkGetPhysicalDeviceImageFormatProperties2 Vulkan::instance->pfn_vkGetPhysicalDeviceImageFormatProperties2
-#define vkGetPhysicalDeviceQueueFamilyProperties2 Vulkan::instance->pfn_vkGetPhysicalDeviceQueueFamilyProperties2
-#define vkGetPhysicalDeviceMemoryProperties2 Vulkan::instance->pfn_vkGetPhysicalDeviceMemoryProperties2
-#define vkGetPhysicalDeviceSparseImageFormatProperties2 Vulkan::instance->pfn_vkGetPhysicalDeviceSparseImageFormatProperties2
-#define vkTrimCommandPool Vulkan::instance->pfn_vkTrimCommandPool
-#define vkGetDeviceQueue2 Vulkan::instance->pfn_vkGetDeviceQueue2
-#define vkCreateSamplerYcbcrConversion Vulkan::instance->pfn_vkCreateSamplerYcbcrConversion
-#define vkDestroySamplerYcbcrConversion Vulkan::instance->pfn_vkDestroySamplerYcbcrConversion
-#define vkCreateDescriptorUpdateTemplate Vulkan::instance->pfn_vkCreateDescriptorUpdateTemplate
-#define vkDestroyDescriptorUpdateTemplate Vulkan::instance->pfn_vkDestroyDescriptorUpdateTemplate
-#define vkUpdateDescriptorSetWithTemplate Vulkan::instance->pfn_vkUpdateDescriptorSetWithTemplate
-#define vkGetPhysicalDeviceExternalBufferProperties Vulkan::instance->pfn_vkGetPhysicalDeviceExternalBufferProperties
-#define vkGetPhysicalDeviceExternalFenceProperties Vulkan::instance->pfn_vkGetPhysicalDeviceExternalFenceProperties
-#define vkGetPhysicalDeviceExternalSemaphoreProperties Vulkan::instance->pfn_vkGetPhysicalDeviceExternalSemaphoreProperties
-#define vkGetDescriptorSetLayoutSupport Vulkan::instance->pfn_vkGetDescriptorSetLayoutSupport
+#define vkEnumerateInstanceVersion Vulkan::pInstance->pfn_vkEnumerateInstanceVersion
+#define vkBindBufferMemory2 Vulkan::pInstance->pfn_vkBindBufferMemory2
+#define vkBindImageMemory2 Vulkan::pInstance->pfn_vkBindImageMemory2
+#define vkGetDeviceGroupPeerMemoryFeatures Vulkan::pInstance->pfn_vkGetDeviceGroupPeerMemoryFeatures
+#define vkCmdSetDeviceMask Vulkan::pInstance->pfn_vkCmdSetDeviceMask
+#define vkCmdDispatchBase Vulkan::pInstance->pfn_vkCmdDispatchBase
+#define vkEnumeratePhysicalDeviceGroups Vulkan::pInstance->pfn_vkEnumeratePhysicalDeviceGroups
+#define vkGetImageMemoryRequirements2 Vulkan::pInstance->pfn_vkGetImageMemoryRequirements2
+#define vkGetBufferMemoryRequirements2 Vulkan::pInstance->pfn_vkGetBufferMemoryRequirements2
+#define vkGetImageSparseMemoryRequirements2 Vulkan::pInstance->pfn_vkGetImageSparseMemoryRequirements2
+#define vkGetPhysicalDeviceFeatures2 Vulkan::pInstance->pfn_vkGetPhysicalDeviceFeatures2
+#define vkGetPhysicalDeviceProperties2 Vulkan::pInstance->pfn_vkGetPhysicalDeviceProperties2
+#define vkGetPhysicalDeviceFormatProperties2 Vulkan::pInstance->pfn_vkGetPhysicalDeviceFormatProperties2
+#define vkGetPhysicalDeviceImageFormatProperties2 Vulkan::pInstance->pfn_vkGetPhysicalDeviceImageFormatProperties2
+#define vkGetPhysicalDeviceQueueFamilyProperties2 Vulkan::pInstance->pfn_vkGetPhysicalDeviceQueueFamilyProperties2
+#define vkGetPhysicalDeviceMemoryProperties2 Vulkan::pInstance->pfn_vkGetPhysicalDeviceMemoryProperties2
+#define vkGetPhysicalDeviceSparseImageFormatProperties2 Vulkan::pInstance->pfn_vkGetPhysicalDeviceSparseImageFormatProperties2
+#define vkTrimCommandPool Vulkan::pInstance->pfn_vkTrimCommandPool
+#define vkGetDeviceQueue2 Vulkan::pInstance->pfn_vkGetDeviceQueue2
+#define vkCreateSamplerYcbcrConversion Vulkan::pInstance->pfn_vkCreateSamplerYcbcrConversion
+#define vkDestroySamplerYcbcrConversion Vulkan::pInstance->pfn_vkDestroySamplerYcbcrConversion
+#define vkCreateDescriptorUpdateTemplate Vulkan::pInstance->pfn_vkCreateDescriptorUpdateTemplate
+#define vkDestroyDescriptorUpdateTemplate Vulkan::pInstance->pfn_vkDestroyDescriptorUpdateTemplate
+#define vkUpdateDescriptorSetWithTemplate Vulkan::pInstance->pfn_vkUpdateDescriptorSetWithTemplate
+#define vkGetPhysicalDeviceExternalBufferProperties Vulkan::pInstance->pfn_vkGetPhysicalDeviceExternalBufferProperties
+#define vkGetPhysicalDeviceExternalFenceProperties Vulkan::pInstance->pfn_vkGetPhysicalDeviceExternalFenceProperties
+#define vkGetPhysicalDeviceExternalSemaphoreProperties Vulkan::pInstance->pfn_vkGetPhysicalDeviceExternalSemaphoreProperties
+#define vkGetDescriptorSetLayoutSupport Vulkan::pInstance->pfn_vkGetDescriptorSetLayoutSupport
 
 // Vulkan 1.2
-#define vkCmdDrawIndirectCount Vulkan::instance->pfn_vkCmdDrawIndirectCount
-#define vkCmdDrawIndexedIndirectCount Vulkan::instance->pfn_vkCmdDrawIndexedIndirectCount
-#define vkCreateRenderPass2 Vulkan::instance->pfn_vkCreateRenderPass2
-#define vkCmdBeginRenderPass2 Vulkan::instance->pfn_vkCmdBeginRenderPass2
-#define vkCmdNextSubpass2 Vulkan::instance->pfn_vkCmdNextSubpass2
-#define vkCmdEndRenderPass2 Vulkan::instance->pfn_vkCmdEndRenderPass2
-#define vkResetQueryPool Vulkan::instance->pfn_vkResetQueryPool
-#define vkGetSemaphoreCounterValue Vulkan::instance->pfn_vkGetSemaphoreCounterValue
-#define vkWaitSemaphores Vulkan::instance->pfn_vkWaitSemaphores
-#define vkSignalSemaphore Vulkan::instance->pfn_vkSignalSemaphore
-#define vkGetBufferDeviceAddress Vulkan::instance->pfn_vkGetBufferDeviceAddress
-#define vkGetBufferOpaqueCaptureAddress Vulkan::instance->pfn_vkGetBufferOpaqueCaptureAddress
-#define vkGetDeviceMemoryOpaqueCaptureAddress Vulkan::instance->pfn_vkGetDeviceMemoryOpaqueCaptureAddress
+#define vkCmdDrawIndirectCount Vulkan::pInstance->pfn_vkCmdDrawIndirectCount
+#define vkCmdDrawIndexedIndirectCount Vulkan::pInstance->pfn_vkCmdDrawIndexedIndirectCount
+#define vkCreateRenderPass2 Vulkan::pInstance->pfn_vkCreateRenderPass2
+#define vkCmdBeginRenderPass2 Vulkan::pInstance->pfn_vkCmdBeginRenderPass2
+#define vkCmdNextSubpass2 Vulkan::pInstance->pfn_vkCmdNextSubpass2
+#define vkCmdEndRenderPass2 Vulkan::pInstance->pfn_vkCmdEndRenderPass2
+#define vkResetQueryPool Vulkan::pInstance->pfn_vkResetQueryPool
+#define vkGetSemaphoreCounterValue Vulkan::pInstance->pfn_vkGetSemaphoreCounterValue
+#define vkWaitSemaphores Vulkan::pInstance->pfn_vkWaitSemaphores
+#define vkSignalSemaphore Vulkan::pInstance->pfn_vkSignalSemaphore
+#define vkGetBufferDeviceAddress Vulkan::pInstance->pfn_vkGetBufferDeviceAddress
+#define vkGetBufferOpaqueCaptureAddress Vulkan::pInstance->pfn_vkGetBufferOpaqueCaptureAddress
+#define vkGetDeviceMemoryOpaqueCaptureAddress Vulkan::pInstance->pfn_vkGetDeviceMemoryOpaqueCaptureAddress
 
 // Vulkan 1.3
-#define vkGetPhysicalDeviceToolProperties Vulkan::instance->pfn_vkGetPhysicalDeviceToolProperties
-#define vkCreatePrivateDataSlot Vulkan::instance->pfn_vkCreatePrivateDataSlot
-#define vkDestroyPrivateDataSlot Vulkan::instance->pfn_vkDestroyPrivateDataSlot
-#define vkSetPrivateData Vulkan::instance->pfn_vkSetPrivateData
-#define vkGetPrivateData Vulkan::instance->pfn_vkGetPrivateData
-#define vkCmdSetEvent2 Vulkan::instance->pfn_vkCmdSetEvent2
-#define vkCmdResetEvent2 Vulkan::instance->pfn_vkCmdResetEvent2
-#define vkCmdWaitEvents2 Vulkan::instance->pfn_vkCmdWaitEvents2
-#define vkCmdPipelineBarrier2 Vulkan::instance->pfn_vkCmdPipelineBarrier2
-#define vkCmdWriteTimestamp2 Vulkan::instance->pfn_vkCmdWriteTimestamp2
-#define vkQueueSubmit2 Vulkan::instance->pfn_vkQueueSubmit2
-#define vkCmdCopyBuffer2 Vulkan::instance->pfn_vkCmdCopyBuffer2
-#define vkCmdCopyImage2 Vulkan::instance->pfn_vkCmdCopyImage2
-#define vkCmdCopyBufferToImage2 Vulkan::instance->pfn_vkCmdCopyBufferToImage2
-#define vkCmdCopyImageToBuffer2 Vulkan::instance->pfn_vkCmdCopyImageToBuffer2
-#define vkCmdBlitImage2 Vulkan::instance->pfn_vkCmdBlitImage2
-#define vkCmdResolveImage2 Vulkan::instance->pfn_vkCmdResolveImage2
-#define vkCmdBeginRendering Vulkan::instance->pfn_vkCmdBeginRendering
-#define vkCmdEndRendering Vulkan::instance->pfn_vkCmdEndRendering
-#define vkCmdSetCullMode Vulkan::instance->pfn_vkCmdSetCullMode
-#define vkCmdSetFrontFace Vulkan::instance->pfn_vkCmdSetFrontFace
-#define vkCmdSetPrimitiveTopology Vulkan::instance->pfn_vkCmdSetPrimitiveTopology
-#define vkCmdSetViewportWithCount Vulkan::instance->pfn_vkCmdSetViewportWithCount
-#define vkCmdSetScissorWithCount Vulkan::instance->pfn_vkCmdSetScissorWithCount
-#define vkCmdBindVertexBuffers2 Vulkan::instance->pfn_vkCmdBindVertexBuffers2
-#define vkCmdSetDepthTestEnable Vulkan::instance->pfn_vkCmdSetDepthTestEnable
-#define vkCmdSetDepthWriteEnable Vulkan::instance->pfn_vkCmdSetDepthWriteEnable
-#define vkCmdSetDepthCompareOp Vulkan::instance->pfn_vkCmdSetDepthCompareOp
-#define vkCmdSetDepthBoundsTestEnable Vulkan::instance->pfn_vkCmdSetDepthBoundsTestEnable
-#define vkCmdSetStencilTestEnable Vulkan::instance->pfn_vkCmdSetStencilTestEnable
-#define vkCmdSetStencilOp Vulkan::instance->pfn_vkCmdSetStencilOp
-#define vkCmdSetRasterizerDiscardEnable Vulkan::instance->pfn_vkCmdSetRasterizerDiscardEnable
-#define vkCmdSetDepthBiasEnable Vulkan::instance->pfn_vkCmdSetDepthBiasEnable
-#define vkCmdSetPrimitiveRestartEnable Vulkan::instance->pfn_vkCmdSetPrimitiveRestartEnable
-#define vkGetDeviceBufferMemoryRequirements Vulkan::instance->pfn_vkGetDeviceBufferMemoryRequirements
-#define vkGetDeviceImageMemoryRequirements Vulkan::instance->pfn_vkGetDeviceImageMemoryRequirements
-#define vkGetDeviceImageSparseMemoryRequirements Vulkan::instance->pfn_vkGetDeviceImageSparseMemoryRequirements
+#define vkGetPhysicalDeviceToolProperties Vulkan::pInstance->pfn_vkGetPhysicalDeviceToolProperties
+#define vkCreatePrivateDataSlot Vulkan::pInstance->pfn_vkCreatePrivateDataSlot
+#define vkDestroyPrivateDataSlot Vulkan::pInstance->pfn_vkDestroyPrivateDataSlot
+#define vkSetPrivateData Vulkan::pInstance->pfn_vkSetPrivateData
+#define vkGetPrivateData Vulkan::pInstance->pfn_vkGetPrivateData
+#define vkCmdSetEvent2 Vulkan::pInstance->pfn_vkCmdSetEvent2
+#define vkCmdResetEvent2 Vulkan::pInstance->pfn_vkCmdResetEvent2
+#define vkCmdWaitEvents2 Vulkan::pInstance->pfn_vkCmdWaitEvents2
+#define vkCmdPipelineBarrier2 Vulkan::pInstance->pfn_vkCmdPipelineBarrier2
+#define vkCmdWriteTimestamp2 Vulkan::pInstance->pfn_vkCmdWriteTimestamp2
+#define vkQueueSubmit2 Vulkan::pInstance->pfn_vkQueueSubmit2
+#define vkCmdCopyBuffer2 Vulkan::pInstance->pfn_vkCmdCopyBuffer2
+#define vkCmdCopyImage2 Vulkan::pInstance->pfn_vkCmdCopyImage2
+#define vkCmdCopyBufferToImage2 Vulkan::pInstance->pfn_vkCmdCopyBufferToImage2
+#define vkCmdCopyImageToBuffer2 Vulkan::pInstance->pfn_vkCmdCopyImageToBuffer2
+#define vkCmdBlitImage2 Vulkan::pInstance->pfn_vkCmdBlitImage2
+#define vkCmdResolveImage2 Vulkan::pInstance->pfn_vkCmdResolveImage2
+#define vkCmdBeginRendering Vulkan::pInstance->pfn_vkCmdBeginRendering
+#define vkCmdEndRendering Vulkan::pInstance->pfn_vkCmdEndRendering
+#define vkCmdSetCullMode Vulkan::pInstance->pfn_vkCmdSetCullMode
+#define vkCmdSetFrontFace Vulkan::pInstance->pfn_vkCmdSetFrontFace
+#define vkCmdSetPrimitiveTopology Vulkan::pInstance->pfn_vkCmdSetPrimitiveTopology
+#define vkCmdSetViewportWithCount Vulkan::pInstance->pfn_vkCmdSetViewportWithCount
+#define vkCmdSetScissorWithCount Vulkan::pInstance->pfn_vkCmdSetScissorWithCount
+#define vkCmdBindVertexBuffers2 Vulkan::pInstance->pfn_vkCmdBindVertexBuffers2
+#define vkCmdSetDepthTestEnable Vulkan::pInstance->pfn_vkCmdSetDepthTestEnable
+#define vkCmdSetDepthWriteEnable Vulkan::pInstance->pfn_vkCmdSetDepthWriteEnable
+#define vkCmdSetDepthCompareOp Vulkan::pInstance->pfn_vkCmdSetDepthCompareOp
+#define vkCmdSetDepthBoundsTestEnable Vulkan::pInstance->pfn_vkCmdSetDepthBoundsTestEnable
+#define vkCmdSetStencilTestEnable Vulkan::pInstance->pfn_vkCmdSetStencilTestEnable
+#define vkCmdSetStencilOp Vulkan::pInstance->pfn_vkCmdSetStencilOp
+#define vkCmdSetRasterizerDiscardEnable Vulkan::pInstance->pfn_vkCmdSetRasterizerDiscardEnable
+#define vkCmdSetDepthBiasEnable Vulkan::pInstance->pfn_vkCmdSetDepthBiasEnable
+#define vkCmdSetPrimitiveRestartEnable Vulkan::pInstance->pfn_vkCmdSetPrimitiveRestartEnable
+#define vkGetDeviceBufferMemoryRequirements Vulkan::pInstance->pfn_vkGetDeviceBufferMemoryRequirements
+#define vkGetDeviceImageMemoryRequirements Vulkan::pInstance->pfn_vkGetDeviceImageMemoryRequirements
+#define vkGetDeviceImageSparseMemoryRequirements Vulkan::pInstance->pfn_vkGetDeviceImageSparseMemoryRequirements
 
 // Vulkan 1.4
-/* #define vkCmdSetLineStipple Vulkan::instance->pfn_vkCmdSetLineStipple
-#define vkMapMemory2 Vulkan::instance->pfn_vkMapMemory2
-#define vkUnmapMemory2 Vulkan::instance->pfn_vkUnmapMemory2
-#define vkCmdBindIndexBuffer2 Vulkan::instance->pfn_vkCmdBindIndexBuffer2
-#define vkGetRenderingAreaGranularity Vulkan::instance->pfn_vkGetRenderingAreaGranularity
-#define vkGetDeviceImageSubresourceLayout Vulkan::instance->pfn_vkGetDeviceImageSubresourceLayout
-#define vkGetImageSubresourceLayout2 Vulkan::instance->pfn_vkGetImageSubresourceLayout2
-#define vkCmdPushDescriptorSet Vulkan::instance->pfn_vkCmdPushDescriptorSet
-#define vkCmdPushDescriptorSetWithTemplate Vulkan::instance->pfn_vkCmdPushDescriptorSetWithTemplate
-#define vkCmdSetRenderingAttachmentLocations Vulkan::instance->pfn_vkCmdSetRenderingAttachmentLocations
-#define vkCmdSetRenderingInputAttachmentIndices Vulkan::instance->pfn_vkCmdSetRenderingInputAttachmentIndices
-#define vkCmdBindDescriptorSets2 Vulkan::instance->pfn_vkCmdBindDescriptorSets2
-#define vkCmdPushConstants2 Vulkan::instance->pfn_vkCmdPushConstants2
-#define vkCmdPushDescriptorSet2 Vulkan::instance->pfn_vkCmdPushDescriptorSet2
-#define vkCmdPushDescriptorSetWithTemplate2 Vulkan::instance->pfn_vkCmdPushDescriptorSetWithTemplate2
-#define vkCopyMemoryToImage Vulkan::instance->pfn_vkCopyMemoryToImage
-#define vkCopyImageToMemory Vulkan::instance->pfn_vkCopyImageToMemory
-#define vkCopyImageToImage Vulkan::instance->pfn_vkCopyImageToImage
-#define vkTransitionImageLayout Vulkan::instance->pfn_vkTransitionImageLayout */
+/* #define vkCmdSetLineStipple Vulkan::pInstance->pfn_vkCmdSetLineStipple
+#define vkMapMemory2 Vulkan::pInstance->pfn_vkMapMemory2
+#define vkUnmapMemory2 Vulkan::pInstance->pfn_vkUnmapMemory2
+#define vkCmdBindIndexBuffer2 Vulkan::pInstance->pfn_vkCmdBindIndexBuffer2
+#define vkGetRenderingAreaGranularity Vulkan::pInstance->pfn_vkGetRenderingAreaGranularity
+#define vkGetDeviceImageSubresourceLayout Vulkan::pInstance->pfn_vkGetDeviceImageSubresourceLayout
+#define vkGetImageSubresourceLayout2 Vulkan::pInstance->pfn_vkGetImageSubresourceLayout2
+#define vkCmdPushDescriptorSet Vulkan::pInstance->pfn_vkCmdPushDescriptorSet
+#define vkCmdPushDescriptorSetWithTemplate Vulkan::pInstance->pfn_vkCmdPushDescriptorSetWithTemplate
+#define vkCmdSetRenderingAttachmentLocations Vulkan::pInstance->pfn_vkCmdSetRenderingAttachmentLocations
+#define vkCmdSetRenderingInputAttachmentIndices Vulkan::pInstance->pfn_vkCmdSetRenderingInputAttachmentIndices
+#define vkCmdBindDescriptorSets2 Vulkan::pInstance->pfn_vkCmdBindDescriptorSets2
+#define vkCmdPushConstants2 Vulkan::pInstance->pfn_vkCmdPushConstants2
+#define vkCmdPushDescriptorSet2 Vulkan::pInstance->pfn_vkCmdPushDescriptorSet2
+#define vkCmdPushDescriptorSetWithTemplate2 Vulkan::pInstance->pfn_vkCmdPushDescriptorSetWithTemplate2
+#define vkCopyMemoryToImage Vulkan::pInstance->pfn_vkCopyMemoryToImage
+#define vkCopyImageToMemory Vulkan::pInstance->pfn_vkCopyImageToMemory
+#define vkCopyImageToImage Vulkan::pInstance->pfn_vkCopyImageToImage
+#define vkTransitionImageLayout Vulkan::pInstance->pfn_vkTransitionImageLayout */
 
 // Surface
-#define vkDestroySurfaceKHR Vulkan::instance->pfn_vkDestroySurfaceKHR
-#define vkGetPhysicalDeviceSurfaceSupportKHR Vulkan::instance->pfn_vkGetPhysicalDeviceSurfaceSupportKHR
-#define vkGetPhysicalDeviceSurfaceCapabilitiesKHR Vulkan::instance->pfn_vkGetPhysicalDeviceSurfaceCapabilitiesKHR
-#define vkGetPhysicalDeviceSurfaceFormatsKHR Vulkan::instance->pfn_vkGetPhysicalDeviceSurfaceFormatsKHR
-#define vkGetPhysicalDeviceSurfacePresentModesKHR Vulkan::instance->pfn_vkGetPhysicalDeviceSurfacePresentModesKHR
+#define vkDestroySurfaceKHR Vulkan::pInstance->pfn_vkDestroySurfaceKHR
+#define vkGetPhysicalDeviceSurfaceSupportKHR Vulkan::pInstance->pfn_vkGetPhysicalDeviceSurfaceSupportKHR
+#define vkGetPhysicalDeviceSurfaceCapabilitiesKHR Vulkan::pInstance->pfn_vkGetPhysicalDeviceSurfaceCapabilitiesKHR
+#define vkGetPhysicalDeviceSurfaceFormatsKHR Vulkan::pInstance->pfn_vkGetPhysicalDeviceSurfaceFormatsKHR
+#define vkGetPhysicalDeviceSurfacePresentModesKHR Vulkan::pInstance->pfn_vkGetPhysicalDeviceSurfacePresentModesKHR
 
 // Swapchain
-#define vkCreateSwapchainKHR Vulkan::instance->pfn_vkCreateSwapchainKHR
-#define vkDestroySwapchainKHR Vulkan::instance->pfn_vkDestroySwapchainKHR
-#define vkGetSwapchainImagesKHR Vulkan::instance->pfn_vkGetSwapchainImagesKHR
-#define vkAcquireNextImageKHR Vulkan::instance->pfn_vkAcquireNextImageKHR
-#define vkQueuePresentKHR Vulkan::instance->pfn_vkQueuePresentKHR
-#define vkGetDeviceGroupPresentCapabilitiesKHR Vulkan::instance->pfn_vkGetDeviceGroupPresentCapabilitiesKHR
-#define vkGetDeviceGroupSurfacePresentModesKHR Vulkan::instance->pfn_vkGetDeviceGroupSurfacePresentModesKHR
-#define vkGetPhysicalDevicePresentRectanglesKHR Vulkan::instance->pfn_vkGetPhysicalDevicePresentRectanglesKHR
-#define vkAcquireNextImage2KHR Vulkan::instance->pfn_vkAcquireNextImage2KHR
+#define vkCreateSwapchainKHR Vulkan::pInstance->pfn_vkCreateSwapchainKHR
+#define vkDestroySwapchainKHR Vulkan::pInstance->pfn_vkDestroySwapchainKHR
+#define vkGetSwapchainImagesKHR Vulkan::pInstance->pfn_vkGetSwapchainImagesKHR
+#define vkAcquireNextImageKHR Vulkan::pInstance->pfn_vkAcquireNextImageKHR
+#define vkQueuePresentKHR Vulkan::pInstance->pfn_vkQueuePresentKHR
+#define vkGetDeviceGroupPresentCapabilitiesKHR Vulkan::pInstance->pfn_vkGetDeviceGroupPresentCapabilitiesKHR
+#define vkGetDeviceGroupSurfacePresentModesKHR Vulkan::pInstance->pfn_vkGetDeviceGroupSurfacePresentModesKHR
+#define vkGetPhysicalDevicePresentRectanglesKHR Vulkan::pInstance->pfn_vkGetPhysicalDevicePresentRectanglesKHR
+#define vkAcquireNextImage2KHR Vulkan::pInstance->pfn_vkAcquireNextImage2KHR
 
 #ifdef RE_OS_WINDOWS
-# define vkCreateWin32SurfaceKHR Vulkan::instance->pfn_vkCreateWin32SurfaceKHR
-# define vkGetPhysicalDeviceWin32PresentationSupportKHR Vulkan::instance->pfn_vkGetPhysicalDeviceWin32PresentationSupportKHR
+# define vkCreateWin32SurfaceKHR Vulkan::pInstance->pfn_vkCreateWin32SurfaceKHR
+# define vkGetPhysicalDeviceWin32PresentationSupportKHR Vulkan::pInstance->pfn_vkGetPhysicalDeviceWin32PresentationSupportKHR
 #elif defined RE_OS_LINUX
-# define vkCreateXlibSurfaceKHR Vulkan::instance->pfn_vkCreateXlibSurfaceKHR
-# define vkGetPhysicalDeviceXlibPresentationSupportKHR Vulkan::instance->pfn_vkGetPhysicalDeviceXlibPresentationSupportKHR
+# define vkCreateXlibSurfaceKHR Vulkan::pInstance->pfn_vkCreateXlibSurfaceKHR
+# define vkGetPhysicalDeviceXlibPresentationSupportKHR Vulkan::pInstance->pfn_vkGetPhysicalDeviceXlibPresentationSupportKHR
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 
-#define vkInstance Vulkan::instance->internalInstance
-#define vkPhysicalDevice Vulkan::instance->internalPhysicalDevice
-#define vkPhysicalDeviceProperties Vulkan::instance->internalPhysicalDeviceProperties
-#define vkPhysicalDeviceFeatures Vulkan::instance->internalPhysicalDeviceFeatures
-#define vkQueueIndices Vulkan::instance->internalQueueIndices
-#define vkDevice Vulkan::instance->internalLogicalDevice
-#define vkGraphicsQueue Vulkan::instance->internalGraphicsQueue
-#define vkPresentQueue Vulkan::instance->internalPresentationQueue
-#define vkSurface Vulkan::instance->internalSurface
-#define vkSurfaceCapabilities Vulkan::instance->internalSurfaceCapabilities
-#define vkSurfaceFormats Vulkan::instance->internalSurfaceFormats
-#define vkSurfaceFormatsCount Vulkan::instance->getSurfaceFormatsCount()
-#define vkPresentModes Vulkan::instance->internalPresentModes
-#define vkPresentModesCount Vulkan::instance->getPresentModesCount()
+#define RE_VK_HANDLE_INSTANCE Vulkan::pInstance->vk_hInternalInstance
+#define RE_VK_HANDLE_PHYSICAL_DEVICE Vulkan::pInstance->vk_hInternalPhysicalDevice
+#define RE_VK_PHYSICAL_DEVICE_PROPERTIES Vulkan::pInstance->vk_hInternalPhysicalDeviceProperties
+#define RE_VK_PHYSICAL_DEVICE_FEATURES Vulkan::pInstance->vk_hInternalPhysicalDeviceFeatures
+#define RE_VK_QUEUE_INDICES Vulkan::pInstance->internalQueueIndices
+#define RE_VK_HANDLE_DEVICE Vulkan::pInstance->vk_hInternalDevice
+#define RE_VK_HANDLE_GRAPHICS_QUEUE Vulkan::pInstance->vk_hInternalGraphicsQueue
+#define RE_VK_HANDLE_PRESENT_QUEUE Vulkan::pInstance->vk_hInternalPresentationQueue
+#define RE_VK_HANDLE_SURFACE Vulkan::pInstance->vk_hInternalSurface
+#define RE_VK_SURFACE_CAPABILITIES Vulkan::pInstance->vk_internalSurfaceCapabilities
+#define RE_VK_PTR_SURFACE_FORMATS Vulkan::pInstance->vk_pInternalSurfaceFormats
+#define RE_VK_UINT_SURFACE_FORMATS_COUNT Vulkan::pInstance->getSurfaceFormatsCount()
+#define RE_VK_PTR_PRESENT_MODES Vulkan::pInstance->vk_pInternalPresentModes
+#define RE_VK_UINT_PRESENT_MODES_COUNT Vulkan::pInstance->getPresentModesCount()
 
-#define CHECK_VK_RESULT(T) Vulkan::instance->checkVulkanResult(T)
+#define CHECK_VK_RESULT(T) Vulkan::pInstance->checkVulkanResult(T)
 
 #define VK_KHR_VALIDATION_LAYER_NAME "VK_LAYER_KHRONOS_validation"
 

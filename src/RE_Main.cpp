@@ -4,63 +4,51 @@
 #include "RE_Renderer.hpp"
 #include "RE_Vulkan.hpp"
 #include "RE_Render System.hpp"
-
-#include <chrono>
-#include <thread>
+#include "RE_Manager.hpp"
 
 namespace RE {
 
-	bool errorOccured = false;
-	bool running = false;
-	Window* window = nullptr;
-
-	void waitForTrue(bool& value) {
-		REubyte distraction;
-		while (!value)
-			distraction ++;
-	}
-
-	void gameThread() {
-		while (running) {
-			std::this_thread::sleep_for(std::chrono::seconds(1));
-		}
-	}
+	bool bErrorOccured = false;
+	bool bRunning = false;
 	
 	void execute() {
 		std::setlocale(LC_ALL, "");
+		Window* pWindow = nullptr;
 #ifdef RE_OS_WINDOWS
-		window = new Window_Win64();
+		pWindow = new Window_Win64();
 #elif defined RE_OS_LINUX
-		window = new Window_X11();
+		pWindow = new Window_X11();
 #else
 # warning The targeted OS is unknown, so the engine will terminate immediatly upon execution
 		RE_FATAL_ERROR("The OS is unknown. The engine can't initialize");
 		return;
 #endif
-		if (!window->isValid()) {
-			delete window;
+		if (!pWindow->isValid()) {
+			delete pWindow;
 			return;
 		}
-		Vulkan vulkan;
-		if (!vulkan.isValid())
-			return;
-		RenderSystem renderSystem;
-		if (!renderSystem.isValid())
-			return;
-		Renderer renderer;
-		running = true;
-		std::thread gameLogicThread(gameThread);
-		while (running) {
-			window->update();
-			renderSystem.drawFrame();
-			//renderer.render();
-			window->show(true);
-			running = !window->shouldClose() && !errorOccured;
+		{
+			Manager gameMgr;
+			Vulkan vulkan;
+			if (!vulkan.isValid())
+				return;
+			RenderSystem renderSystem;
+			if (!renderSystem.isValid())
+				return;
+			//Renderer renderer;
+			bRunning = true;
+			while (bRunning) {
+				pWindow->update();
+				gameMgr.gameLogicUpdate();
+				renderSystem.drawFrame();
+				//renderer.render();
+				pWindow->show(true);
+				bRunning = !pWindow->shouldClose() && !bErrorOccured;
+			}
+			pWindow->show(false);
+			vkDeviceWaitIdle(RE_VK_HANDLE_DEVICE);
 		}
-		window->show(false);
-		vkDeviceWaitIdle(vkDevice);
-		gameLogicThread.join();
-		delete window;
+		delete pWindow;
 	}
 
 }

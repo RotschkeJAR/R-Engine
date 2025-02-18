@@ -22,15 +22,15 @@
 # include <X11/keysym.h>
 # include <X11/XKBlib.h>
 # include <dlfcn.h>
- typedef Display XDisplay;
- typedef Window XWindow;
- typedef Atom XAtom;
- typedef XIM XInputMethod;
- typedef XIC XInputContext;
- typedef KeyCode XKeyCode;
- typedef KeySym XKeySym;
- typedef Status XStatus;
- typedef Colormap XColormap;
+typedef Display XDisplay;
+typedef Window XWindow;
+typedef Atom XAtom;
+typedef XIM XInputMethod;
+typedef XIC XInputContext;
+typedef KeyCode XKeyCode;
+typedef KeySym XKeySym;
+typedef Status XStatus;
+typedef Colormap XColormap;
 # define XKeyPress KeyPress
 # define XKeyRelease KeyRelease
 # define XButtonPress ButtonPress

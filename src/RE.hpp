@@ -198,9 +198,9 @@ namespace RE {
 #define PRINT(MSG) print(appendStrings(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE(MSG)))
 #define PRINT_LN(MSG) print(appendStrings(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE(MSG), "\n"))
 
-	std::string convertToUTF8(const wchar_t* wstring);
-	std::wstring convertToWide(const char* string);
-	const char* getAppName();
+	std::string convertToUTF8(const wchar_t* pwcString);
+	std::wstring convertToWide(const char* pcString);
+	std::string getAppName();
 
 	template <typename T>
 	constexpr T nth_root(T n, T value) {
@@ -212,20 +212,20 @@ namespace RE {
 		return (... | (1L << static_cast<REulong>(bits)));
 	}
 
-	constexpr REulong genBitmaskRange(REulong begin, REulong end) {
-		if (begin > end)
-			std::swap(begin, end);
-		else if (begin == end)
-			return genBitmask(begin);
-		REulong result = 0L;
-		for (REulong i = begin; i < end; i++)
-			result |= genBitmask(i);
-		return result;
+	constexpr REulong genBitmaskRange(REulong ulBegin, REulong ulEnd) {
+		if (ulBegin > ulEnd)
+			std::swap(ulBegin, ulEnd);
+		else if (ulBegin == ulEnd)
+			return genBitmask(ulBegin);
+		REulong ulResult = 0L;
+		for (REulong ulCurrentNumber = ulBegin; ulCurrentNumber < ulEnd; ulCurrentNumber++)
+			ulResult |= genBitmask(ulCurrentNumber);
+		return ulResult;
 	}
 
 	template <typename T>
 	constexpr bool isBitTrue(T value, T bit) {
-		return (value & genBitmask<T>(bit)) != 0;
+		return (value & genBitmask<T>(bit)) != static_cast<T>(0);
 	}
 
 	template <typename T>
@@ -241,9 +241,9 @@ namespace RE {
 	}
 
 	template <typename T>
-	constexpr T setBit(T& value, T bit, bool newState) {
+	constexpr T setBit(T& value, T bit, bool bNewState) {
 		T targetBit = genBitmask<T>(bit);
-		if (newState)
+		if (bNewState)
 			value |= targetBit;
 		else
 			value &= ~targetBit;
@@ -251,17 +251,17 @@ namespace RE {
 	}
 
 	template <typename T>
-	constexpr std::string bitmaskToString(T bitmask, bool withSpace) {
-		std::string result("");
+	constexpr std::string bitmaskToString(T bitmask, bool bWithSpace) {
+		std::string strResult("");
 		T bits = sizeof(T) * static_cast<T>(8);
 		T rightShift = sizeof(T) * static_cast<T>(8) - static_cast<T>(1);
 		for (T bit = static_cast<T>(0); bit < bits; bit++) {
-			if (withSpace && bit % static_cast<T>(8) == static_cast<T>(0) && bit)
-				result += " ";
+			if (bWithSpace && bit % static_cast<T>(8) == static_cast<T>(0) && bit)
+				strResult += " ";
 			T shiftedNumber = bitmask << bit;
-			result += ((shiftedNumber >> rightShift) == static_cast<T>(1)) ? "1" : "0";
+			strResult += ((shiftedNumber >> rightShift) == static_cast<T>(1)) ? "1" : "0";
 		}
-		return result;
+		return strResult;
 	}
 
 	template <class... T>
@@ -271,26 +271,27 @@ namespace RE {
 		return std::string(ss.str());
 	}
 	
-	void error(const char* file, const char* func, REuint line, const char* detail, bool terminate);
-	void warning(const char* file, const char* func, REuint line, const char* detail);
-	void note(const char* file, const char* func, REuint line, const char* detail);
+	void error(const char* pcFile, const char* pcFunc, REuint uiLine, const char* pcDetail, bool bTerminate);
+	void warning(const char* pcFile, const char* pcFunc, REuint uiLine, const char* pcDetail);
+	void note(const char* pcFile, const char* pcFunc, REuint uiLine, const char* pcDetail);
 #define FATAL_ERROR(T) error(__FILE__, __func__, __LINE__, STRIP_QUOTE(T), true)
 #define ERROR(T) error(__FILE__, __func__, __LINE__, STRIP_QUOTE(T), false)
 #define WARNING(T) warning(__FILE__, __func__, __LINE__, STRIP_QUOTE(T))
 #define NOTE(T) note(__FILE__, __func__, __LINE__, STRIP_QUOTE(T))
 
-	template <typename T, REuint dimensions>
+	template <typename T, REuint uiDimensions>
 	class Vector {
+		static_assert(uiDimensions != 0, "A vector has zero dimensions");
+
 		public:
-			T coords[dimensions];
+			T coords[uiDimensions];
 
 			Vector() {
-				static_assert(dimensions != 0, "A vector has zero dimensions");
 				fill(static_cast<T>(0.0));
 			}
 			template <typename... V>
 			Vector(V... values) {
-				static_assert(dimensions != 0, "A vector has zero dimensions");
+				fill(static_cast<T>(0.0));
 				REuint index = 0;
 				([&]() {
 					coords[index] = static_cast<T>(values);
@@ -314,7 +315,7 @@ namespace RE {
 			}
 
 			T length() const {
-				return nth_root<T>(static_cast<T>(dimensions), sum());
+				return nth_root<T>(static_cast<T>(uiDimensions), sum());
 			}
 
 			void fill(T value) {
@@ -322,20 +323,20 @@ namespace RE {
 			}
 
 			constexpr REuint getDimensions() const {
-				return dimensions;
+				return uiDimensions;
 			}
 
 			T& operator[](REuint index) {
-				if (index >= dimensions) {
-					FATAL_ERROR(appendStrings("Index ", index, " is out of bounds: [0, ", dimensions, "]").c_str());
+				if (index >= uiDimensions) {
+					FATAL_ERROR(appendStrings("Index ", index, " is out of bounds: [0, ", uiDimensions, "]").c_str());
 					return coords[0];
 				}
 				return coords[index];
 			}
 
 			T operator[](REuint index) const {
-				if (index >= dimensions) {
-					FATAL_ERROR(appendStrings("Index ", index, " is out of bounds: [0, ", dimensions, "]").c_str());
+				if (index >= uiDimensions) {
+					FATAL_ERROR(appendStrings("Index ", index, " is out of bounds: [0, ", uiDimensions, "]").c_str());
 					return coords[0];
 				}
 				return coords[index];
@@ -351,6 +352,24 @@ namespace RE {
 				stream << ")";
 				return stream;
 			}
+	};
+
+	class Scene {
+		public:
+			Scene();
+			~Scene();
+			virtual void start();
+			virtual void update();
+			virtual void end();
+	};
+
+	class GameObject {
+		public:
+			GameObject();
+			~GameObject();
+			virtual void start();
+			virtual void update();
+			virtual void end();
 	};
 
 	void execute();

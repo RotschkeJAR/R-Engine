@@ -7,25 +7,25 @@ namespace RE {
 	
 	class RenderSystem {
 		private:
-			bool valid;
-			bool vsyncActive;
-			VkPresentModeKHR vsyncMode;
-			VkPresentModeKHR noVsync;
-			VkSurfaceFormatKHR internalSurfaceFormat;
-			VkExtent2D internalSwapchainImageSize;
-			VkSwapchainKHR internalSwapchain;
-			uint32_t internalSwapchainImageCount;
-			VkImage* internalSwapchainImages;
-			VkImageView* internalSwapchainImageViews;
-			VkShaderModule internalVertexShader, internalFragmentShader;
-			VkRenderPass internalRenderPass;
-			VkPipelineLayout internalPipelineLayout;
-			VkPipeline internalPipeline;
-			VkFramebuffer* internalFramebuffers;
-			VkCommandPool internalCmdPool;
-			VkCommandBuffer internalCmdBuffer;
-			VkSemaphore internalImgAvailableSemaphore, internalRenderFinishedSemaphore;
-			VkFence internalFence;
+			bool bValid;
+			bool bVsyncActive;
+			VkPresentModeKHR vk_eVsyncMode;
+			VkPresentModeKHR vk_eNoVsync;
+			VkSurfaceFormatKHR vk_internalSurfaceFormat;
+			VkExtent2D vk_internalSwapchainImageSize;
+			VkSwapchainKHR vk_hInternalSwapchain;
+			uint32_t u32InternalSwapchainImageCount;
+			VkImage* vk_pInternalSwapchainImages;
+			VkImageView* vk_pInternalSwapchainImageViews;
+			VkShaderModule vk_hInternalVertexShader, vk_hInternalFragmentShader;
+			VkRenderPass vk_hInternalRenderPass;
+			VkPipelineLayout vk_hInternalPipelineLayout;
+			VkPipeline vk_hInternalPipeline;
+			VkFramebuffer* vk_pInternalFramebuffers;
+			VkCommandPool vk_hInternalCmdPool;
+			VkCommandBuffer vk_hInternalCmdBuffer;
+			VkSemaphore vk_hInternalImgAvailableSemaphore, vk_hInternalRenderFinishedSemaphore;
+			VkFence vk_hInternalFence;
 
 			bool createSwapchain();
 			bool createImageViews();
@@ -38,7 +38,7 @@ namespace RE {
 			bool recordCommandBuffer(VkCommandBuffer cmdBuffer, uint32_t imgIndex);
 
 		public:
-			static RenderSystem* instance;
+			static RenderSystem* pInstance;
 
 			RenderSystem();
 			~RenderSystem();

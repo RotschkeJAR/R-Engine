@@ -8,10 +8,10 @@ namespace RE {
 #ifdef RE_OS_WINDOWS
 	class Window_Win64 : public Window {
 		private:
-			HINSTANCE hInstance;
-			HWND hWindow;
-			MSG msg;
-			HCURSOR hCursor;
+			HINSTANCE win_hInstance;
+			HWND win_hWindow;
+			MSG win_msg;
+			HCURSOR win_hCursor;
 
 		protected:
 			void showInternal();
@@ -23,7 +23,7 @@ namespace RE {
 			void processLoop();
 
 		friend class Vulkan;
-		friend LRESULT CALLBACK windowProcess(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+		friend LRESULT CALLBACK windowProcess(HWND win_hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	};
 #endif /* RE_OS_WINDOWS */
 

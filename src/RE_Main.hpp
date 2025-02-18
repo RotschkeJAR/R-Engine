@@ -3,8 +3,8 @@
 
 namespace RE {
 	
-	extern bool running;
-	extern bool errorOccured;
+	extern bool bRunning;
+	extern bool bErrorOccured;
 
 }
 

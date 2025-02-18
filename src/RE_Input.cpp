@@ -6,11 +6,11 @@ namespace RE {
 
 	InputMgr* inputMgr = nullptr;
 
-	InputMgr::InputMgr() : buttons(0), lastButtons(0), scroll(0) {
+	InputMgr::InputMgr() : u8Buttons(0), u8LastButtons(0), i8scroll(0) {
 		if (!inputMgr)
 			inputMgr = this;
-		std::fill(std::begin(keys), std::end(keys), 0);
-		std::fill(std::begin(lastKeys), std::end(lastKeys), 0);
+		std::fill(std::begin(u8Keys), std::end(u8Keys), 0);
+		std::fill(std::begin(u8LastKeys), std::end(u8LastKeys), 0);
 	}
 
 	InputMgr::~InputMgr() {
@@ -18,80 +18,80 @@ namespace RE {
 			inputMgr = nullptr;
 	}
 
-	void InputMgr::keyInput(REulong vkCode, REushort scancode, bool pressed) {
-		Keyboard key = Keyboard::Unknown;
+	void InputMgr::keyInput(REulong u64VirtualKeyCode, REushort u16Scancode, bool bPressed) {
+		Keyboard eKey = Keyboard::Unknown;
 #ifdef RE_OS_WINDOWS
-		key = winKeyFromVirtual(vkCode);
+		eKey = winKeyFromVirtual(u64VirtualKeyCode);
 #elif defined RE_OS_LINUX
-		key = x11KeyFromVirtual(vkCode);
+		eKey = x11KeyFromVirtual(u64VirtualKeyCode);
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
-		if (key == Keyboard::Unknown && pressed) {
-			RE_WARNING(appendStrings("An unknown key (scancode: ", scancode, ", virtual key code: ", vkCode, ") has been pressed"));
+		if (eKey == Keyboard::Unknown && bPressed) {
+			RE_WARNING(appendStrings("An unknown key (scancode: ", u16Scancode, ", virtual key code: ", u64VirtualKeyCode, ") has been pressed"));
 			return;
 		}
-		REushort keyIndex = static_cast<REushort>(key);
-		REushort keyBitmask = static_cast<REushort>(1) << (keyIndex - ((keyIndex / 8) * 8));
-		keyIndex /= 8;
-		if (pressed)
-			keys[keyIndex] |= keyBitmask;
+		REushort u16KeyIndex = static_cast<REushort>(eKey);
+		REushort u16KeyBitmask = static_cast<REushort>(1) << (u16KeyIndex - ((u16KeyIndex / 8) * 8));
+		u16KeyIndex /= 8;
+		if (bPressed)
+			u8Keys[u16KeyIndex] |= u16KeyBitmask;
 		else
-			keys[keyIndex] &= ~keyBitmask;
+			u8Keys[u16KeyIndex] &= ~u16KeyBitmask;
 	}
 
-	void InputMgr::charInput(const char* character) {
-		println("Entered character: ", character);
+	void InputMgr::charInput(const char* pcCharacter) {
+		println("Entered character: ", pcCharacter);
 	}
 
-	void InputMgr::buttonInput(REubyte buttoncode, bool pressed) {
-		REubyte buttonMask = static_cast<REubyte>(genBitmask(buttoncode));
-		if (pressed)
-			buttons |= buttonMask;
+	void InputMgr::buttonInput(REubyte u8Buttoncode, bool bPressed) {
+		REubyte u8ButtonMask = static_cast<REubyte>(genBitmask(u8Buttoncode));
+		if (bPressed)
+			u8Buttons |= u8ButtonMask;
 		else
-			buttons &= ~buttonMask;
+			u8Buttons &= ~u8ButtonMask;
 	}
 
-	void InputMgr::cursorInput(REint x, REint y) {
-		cursorPos[0] = x;
-		cursorPos[1] = y;
+	void InputMgr::cursorInput(REint i32CursorX, REint i32CursorY) {
+		cursorPos[0] = i32CursorX;
+		cursorPos[1] = i32CursorY;
 	}
 
-	void InputMgr::scrollInput(REbyte y) {
-		scroll += std::clamp(y, static_cast<REbyte>(-1), static_cast<REbyte>(1));
+	void InputMgr::scrollInput(REbyte i8ScrollY) {
+		i8scroll += std::clamp(i8ScrollY, static_cast<REbyte>(-1), static_cast<REbyte>(1));
 	}
 
 	void InputMgr::updateInput() {
-		lastButtons = buttons;
-		std::copy(std::begin(keys), std::end(keys), std::begin(lastKeys));
-		scroll = 0;
+		u8LastButtons = u8Buttons;
+		std::copy(std::begin(u8Keys), std::end(u8Keys), std::begin(u8LastKeys));
+		i8scroll = static_cast<REbyte>(0);
 		lastCursorPos[0] = cursorPos[0];
 		lastCursorPos[1] = cursorPos[1];
 	}
 
-	void InputMgr::updateWinSize(Vector<REushort, 2> updatedSize) {
+	void InputMgr::updateWindowSize(Vector<REushort, 2> updatedSize) {
 		for (REubyte i = 0; i < winSize.getDimensions(); i++)
 			winSize[i] = updatedSize[i];
 	}
 
-	bool InputMgr::isKeyDown(Keyboard key) const {
-		REushort keyIndex = static_cast<REushort>(key);
-		return (keys[keyIndex / 8] & genBitmask(keyIndex % 8)) != 0;
+	bool InputMgr::isKeyDown(Keyboard eKey) const {
+		REushort u16KeyIndex = static_cast<REushort>(eKey);
+		return (u8Keys[u16KeyIndex / 8] & genBitmask(u16KeyIndex % 8)) != 0;
 	}
 	
-	bool InputMgr::wasKeyDown(Keyboard key) const {
-		REushort keyIndex = static_cast<REushort>(key);
-		return (lastKeys[keyIndex / 8] & genBitmask(keyIndex % 8)) != 0;
+	bool InputMgr::wasKeyDown(Keyboard eKey) const {
+		REushort u16KeyIndex = static_cast<REushort>(eKey);
+		return (u8LastKeys[u16KeyIndex / 8] & genBitmask(u16KeyIndex % 8)) != 0;
 	}
 	
-	REubyte InputMgr::getScroll() const {
-		return scroll;
+	REbyte InputMgr::getScroll() const {
+		return i8scroll;
 	}
 
-	bool InputMgr::isButtonDown(MouseButton button) const {
-		return buttons & genBitmask(static_cast<REubyte>(button));
+	bool InputMgr::isButtonDown(MouseButton eButton) const {
+		return u8Buttons & genBitmask(static_cast<REubyte>(eButton));
 	}
 
-	bool InputMgr::wasButtonDown(MouseButton button) const {
-		return lastButtons & genBitmask(static_cast<REubyte>(button));
+	bool InputMgr::wasButtonDown(MouseButton eButton) const {
+		return u8LastButtons & genBitmask(static_cast<REubyte>(eButton));
 	}
 
 	REint InputMgr::getCursorX() const {
@@ -110,50 +110,50 @@ namespace RE {
 		return lastCursorPos[1];
 	}
 
-	REushort scancodeFromKey(Keyboard key) {
+	REushort scancodeFromKey(Keyboard eKey) {
 #ifdef RE_OS_WINDOWS
-		return MapVirtualKeyW(winVirtualFromKey(key), MAPVK_VK_TO_VSC_EX);
+		return MapVirtualKeyW(winVirtualFromKey(eKey), MAPVK_VK_TO_VSC_EX);
 #elif defined RE_OS_LINUX
-		return XKeysymToKeycode(static_cast<Window_X11*>(Window::instance)->xDisplay, x11VirtualFromKey(key));
+		return XKeysymToKeycode(static_cast<Window_X11*>(Window::instance)->xDisplay, x11VirtualFromKey(eKey));
 #else
 		RE_WARNING("Scancodes of a key cannot be determined, because the current OS is unknown");
 		return 0;
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 	}
 
-	Keyboard keyFromScancode(REushort scancode) {
+	Keyboard keyFromScancode(REushort u16Scancode) {
 #ifdef RE_OS_WINDOWS
-		return winKeyFromVirtual(MapVirtualKeyW(scancode, MAPVK_VSC_TO_VK_EX));
+		return winKeyFromVirtual(MapVirtualKeyW(u16Scancode, MAPVK_VSC_TO_VK_EX));
 #elif defined RE_OS_LINUX
-		return x11KeyFromVirtual(XkbKeycodeToKeysym(static_cast<Window_X11*>(Window::instance)->xDisplay, scancode, 0, 0));
+		return x11KeyFromVirtual(XkbKeycodeToKeysym(static_cast<Window_X11*>(Window::instance)->xDisplay, u16Scancode, 0, 0));
 #else
 		RE_WARNING("Scancodes cannot be used to determine the key, because the current OS is unknown");
 		return Keyboard::Unknown;
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 	}
 
-	bool isKeyDown(Keyboard key) {
-		return inputMgr->isKeyDown(key);
+	bool isKeyDown(Keyboard eKey) {
+		return inputMgr->isKeyDown(eKey);
 	}
 
-	bool isKeyPressed(Keyboard key) {
-		return inputMgr->isKeyDown(key) && !inputMgr->wasKeyDown(key);
+	bool isKeyPressed(Keyboard eKey) {
+		return inputMgr->isKeyDown(eKey) && !inputMgr->wasKeyDown(eKey);
 	}
 
-	bool isKeyReleased(Keyboard key) {
-		return !inputMgr->isKeyDown(key) && inputMgr->wasKeyDown(key);
+	bool isKeyReleased(Keyboard eKey) {
+		return !inputMgr->isKeyDown(eKey) && inputMgr->wasKeyDown(eKey);
 	}
 
-	bool isButtonDown(MouseButton button) {
-		return inputMgr->isButtonDown(button);
+	bool isButtonDown(MouseButton eButton) {
+		return inputMgr->isButtonDown(eButton);
 	}
 
-	bool isButtonPressed(MouseButton button) {
-		return inputMgr->isButtonDown(button) && !inputMgr->wasButtonDown(button);
+	bool isButtonPressed(MouseButton eButton) {
+		return inputMgr->isButtonDown(eButton) && !inputMgr->wasButtonDown(eButton);
 	}
 
-	bool isButtonReleased(MouseButton button) {
-		return !inputMgr->isButtonDown(button) && inputMgr->wasButtonDown(button);
+	bool isButtonReleased(MouseButton eButton) {
+		return !inputMgr->isButtonDown(eButton) && inputMgr->wasButtonDown(eButton);
 	}
 
 	bool isScrolling() {
@@ -205,8 +205,8 @@ namespace RE {
 	Vector<float, 2> normalCursorPos() {
 		Vector<REint, 2> position = cursorPos();
 		Vector<float, 2> normalPos;
-		for (REubyte i = 0; i < normalPos.getDimensions(); i++)
-			normalPos[i] = (static_cast<float>(position[i]) / static_cast<float>(inputMgr->winSize[i])) * 2.0f - 1.0f;
+		for (REubyte u8Index = 0; u8Index < normalPos.getDimensions(); u8Index++)
+			normalPos[u8Index] = (static_cast<float>(position[u8Index]) / static_cast<float>(inputMgr->winSize[u8Index])) * 2.0f - 1.0f;
 		return normalPos;
 	}
 
@@ -221,8 +221,8 @@ namespace RE {
 	Vector<float, 2> normalCursorDeltaPos() {
 		Vector<REint, 2> deltaPos = cursorDeltaPos();
 		Vector<float, 2> normalDelta;
-		for (REubyte i = 0; i < normalDelta.getDimensions(); i++)
-			normalDelta[i] = static_cast<float>(deltaPos[i]) / static_cast<float>(inputMgr->winSize[i]);
+		for (REubyte u8Index = 0; u8Index < normalDelta.getDimensions(); u8Index++)
+			normalDelta[u8Index] = static_cast<float>(deltaPos[u8Index]) / static_cast<float>(inputMgr->winSize[u8Index]);
 		return normalDelta;
 	}
 

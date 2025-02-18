@@ -3,39 +3,39 @@
 
 namespace RE {
 	
-	Window* Window::instance = nullptr;
+	Window* Window::pInstance = nullptr;
 
-	Window::Window() : title(u8"Untitled game window"), size(600, 400), closeFlag(false), valid(false) {
-		if (instance) {
+	Window::Window() : pcTitle("Untitled game window"), size(600, 400), bCloseFlag(false), bValid(false) {
+		if (pInstance) {
 			RE_FATAL_ERROR("A window already exists. New window has been discarded");
 			return;
 		}
-		instance = this;
+		pInstance = this;
 	}
 
 	Window::~Window() {
-		if (instance == this)
-			instance = nullptr;
+		if (pInstance == this)
+			pInstance = nullptr;
 	}
 
-	void Window::updateWindowSize(REushort newWidth, REushort newHeight) {
-		size[0] = newWidth;
-		size[1] = newHeight;
-		inputMgr.updateWinSize(size);
-		RenderSystem::instance->windowResize(size);
+	void Window::updateWindowSize(REushort u16NewWidth, REushort u16NewHeight) {
+		size[0] = u16NewWidth;
+		size[1] = u16NewHeight;
+		inputMgr.updateWindowSize(size);
+		RenderSystem::pInstance->windowResize(size);
 	}
 
-	void Window::show(bool showWindow) {
-		if (windowVisible == showWindow || !valid)
+	void Window::show(bool bShowWindow) {
+		if (bWindowVisible == bShowWindow || !bValid)
 			return;
-		windowVisible = showWindow;
+		bWindowVisible = bShowWindow;
 		showInternal();
 	}
 
-	void Window::setTitle(const char* newTitle) {
-		if (title == newTitle || !valid)
+	void Window::setTitle(const char* pNewTitle) {
+		if (strcmp(pcTitle, pNewTitle) == 0 || !bValid)
 			return;
-		title = newTitle;
+		pcTitle = pNewTitle;
 		updateTitleInternal();
 	}
 
@@ -45,11 +45,11 @@ namespace RE {
 	}
 
 	bool Window::shouldClose() {
-		return closeFlag;
+		return bCloseFlag;
 	}
 
 	bool Window::isValid() {
-		return valid;
+		return bValid;
 	}
 
 	Vector<REushort, 2> Window::getSize() {

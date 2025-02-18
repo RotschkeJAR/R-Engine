@@ -5,7 +5,7 @@
 namespace RE {
 	
 	Renderer::Renderer() {
-		valid = true;
+		bValid = true;
 	}
 
 	Renderer::~Renderer() {
@@ -17,7 +17,7 @@ namespace RE {
 	}
 
 	bool Renderer::isValid() {
-		return valid;
+		return bValid;
 	}
 
 }

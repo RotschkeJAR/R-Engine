@@ -9,24 +9,24 @@ namespace RE {
 	class Window {
 		protected:
 			InputMgr inputMgr;
-			const char* title;
+			const char* pcTitle;
 			Vector<REushort, 2> size;
-			bool windowVisible;
-			bool closeFlag;
-			bool valid;
+			bool bWindowVisible;
+			bool bCloseFlag;
+			bool bValid;
 
 			virtual void processLoop() = 0;
 			virtual void showInternal() = 0;
 			virtual void updateTitleInternal() = 0;
-			void updateWindowSize(REushort newWidth, REushort newHeight);
+			void updateWindowSize(REushort usNewWidth, REushort usNewHeight);
 
 		public:
-			static Window* instance;
+			static Window* pInstance;
 
 			Window();
 			virtual ~Window();
-			void show(bool showWindow);
-			void setTitle(const char* newTitle);
+			void show(bool bShowWindow);
+			void setTitle(const char* pNewTitle);
 			void update();
 			bool shouldClose();
 			bool isValid();

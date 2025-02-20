@@ -7,20 +7,35 @@ namespace RE {
 
 	class Manager {
 		private:
-			Scene *pCurrentScene, *pNextScene;
-			static std::vector<GameObject*> gameObjects;
-			static REuint u32ObjCount;
+			void startProc();
+			void updateProc();
+			void endProc();
+			void deleteProc();
+			void addProc();
 
 		public:
+			static Scene *pCurrentScene, *pNextScene;
+			std::vector<GameObject*> deletableGameObjects, newGameObjects;
+			static std::vector<GameObject*> gameObjects;
 			static Manager* pInstance;
 
 			Manager();
 			~Manager();
 			void gameLogicUpdate();
-
-		friend class Scene;
-		friend class GameObject;
+			void lastGameLogicUpdate();
+			bool isGameValid();
 	};
+
+	void markDelete(GameObject* rGameObject);
+
+	void setNextScene(Scene* pNextScene);
+	bool isNextSceneSet();
+	Scene* getCurrentScene();
+	REuint getCurrentSceneId();
+	bool isSceneCurrent(REuint u32SceneId);
+	Scene* getNextScene();
+	REuint getNextSceneId();
+	bool isSceneNext(REuint u32SceneId);
 
 }
 

@@ -356,8 +356,11 @@ namespace RE {
 
 	class Scene {
 		public:
-			Scene();
-			~Scene();
+			const REuint u32Id;
+
+			Scene() = delete;
+			Scene(REuint u32Id);
+			virtual ~Scene();
 			virtual void start();
 			virtual void update();
 			virtual void end();
@@ -365,23 +368,37 @@ namespace RE {
 
 	class GameObject {
 		public:
-			GameObject();
-			~GameObject();
-			virtual void start();
-			virtual void update();
-			virtual void end();
+			const REuint u32SceneParentId;
+			const REuint u32OwnId;
+
+			GameObject() = delete;
+			GameObject(REuint u32SceneParentId, REuint u32OwnId);
+			virtual ~GameObject();
+			virtual void start(Scene* pStartingScene);
+			virtual void update(Scene* pCurrentScene);
+			virtual void end(Scene* pEndingScene);
 	};
 
 	void execute();
 
-	REushort scancodeFromKey(Keyboard key);
-	Keyboard keyFromScancode(REushort scancode);
-	bool isKeyDown(Keyboard key);
-	bool isKeyPressed(Keyboard key);
-	bool isKeyReleased(Keyboard key);
-	bool isButtonDown(MouseButton button);
-	bool isButtonPressed(MouseButton button);
-	bool isButtonReleased(MouseButton button);
+	void markDelete(GameObject* rGameObject);
+	void setNextScene(Scene* pNextScene);
+	bool isNextSceneSet();
+	Scene* getCurrentScene();
+	REuint getCurrentSceneId();
+	bool isSceneCurrent(REuint u32SceneId);
+	Scene* getNextScene();
+	REuint getNextSceneId();
+	bool isSceneNext(REuint u32SceneId);
+
+	REushort scancodeFromKey(Keyboard eKey);
+	Keyboard keyFromScancode(REushort u16Scancode);
+	bool isKeyDown(Keyboard eKey);
+	bool isKeyPressed(Keyboard eKey);
+	bool isKeyReleased(Keyboard eKey);
+	bool isButtonDown(MouseButton eButton);
+	bool isButtonPressed(MouseButton eButton);
+	bool isButtonReleased(MouseButton eButton);
 	bool isScrolling();
 	bool isScrollingUpward();
 	bool isScrollingDownward();

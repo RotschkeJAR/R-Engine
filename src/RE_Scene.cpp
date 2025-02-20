@@ -3,16 +3,17 @@
 
 namespace RE {
 	
-	Scene::Scene() {}
+	Scene::Scene(REuint u32Id) : u32Id(u32Id) {
+		if (!u32Id)
+			RE_ERROR("The scene's ID shouldn't be zero. It will be discarded if activated");
+	}
 	Scene::~Scene() {
-		if (Manager::pInstance) {
-			if (Manager::pInstance->pCurrentScene == this) {
-				RE_ERROR("The scene, which is currently in use, has been deleted");
-				Manager::pInstance->pCurrentScene = nullptr;
-			} else if (Manager::pInstance->pNextScene == this) {
-				RE_WARNING("The scene, which is dedicated to be loaded next, has been deleted");
-				Manager::pInstance->pNextScene = nullptr;
-			}
+		if (Manager::pCurrentScene == this) {
+			RE_ERROR("The scene, which is currently in use, has been deleted");
+			Manager::pCurrentScene = nullptr;
+		} else if (Manager::pNextScene == this) {
+			RE_WARNING("The scene, which is dedicated to be loaded next, has been deleted");
+			Manager::pNextScene = Manager::pCurrentScene;
 		}
 	}
 

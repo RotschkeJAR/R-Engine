@@ -23,17 +23,17 @@ namespace RE {
 		RE_FATAL_ERROR("The OS is unknown. The engine can't initialize");
 		return;
 #endif
-		if (!pWindow->isValid()) {
+		if (!pWindow->isValid() || bErrorOccured) {
 			delete pWindow;
 			return;
 		}
 		{
 			Manager gameMgr;
 			Vulkan vulkan;
-			if (!vulkan.isValid())
+			if (!vulkan.isValid() || bErrorOccured)
 				return;
 			RenderSystem renderSystem;
-			if (!renderSystem.isValid())
+			if (!renderSystem.isValid() || bErrorOccured)
 				return;
 			//Renderer renderer;
 			bRunning = true;
@@ -43,9 +43,10 @@ namespace RE {
 				renderSystem.drawFrame();
 				//renderer.render();
 				pWindow->show(true);
-				bRunning = !pWindow->shouldClose() && !bErrorOccured;
+				bRunning = !pWindow->shouldClose() && gameMgr.isGameValid() && !bErrorOccured;
 			}
 			pWindow->show(false);
+			gameMgr.lastGameLogicUpdate();
 			vkDeviceWaitIdle(RE_VK_HANDLE_DEVICE);
 		}
 		delete pWindow;

@@ -114,7 +114,7 @@ namespace RE {
 #ifdef RE_OS_WINDOWS
 		return MapVirtualKeyW(winVirtualFromKey(eKey), MAPVK_VK_TO_VSC_EX);
 #elif defined RE_OS_LINUX
-		return XKeysymToKeycode(static_cast<Window_X11*>(Window::instance)->xDisplay, x11VirtualFromKey(eKey));
+		return XKeysymToKeycode(static_cast<Window_X11*>(Window::pInstance)->x11_pDisplay, x11VirtualFromKey(eKey));
 #else
 		RE_WARNING("Scancodes of a key cannot be determined, because the current OS is unknown");
 		return 0;
@@ -125,7 +125,7 @@ namespace RE {
 #ifdef RE_OS_WINDOWS
 		return winKeyFromVirtual(MapVirtualKeyW(u16Scancode, MAPVK_VSC_TO_VK_EX));
 #elif defined RE_OS_LINUX
-		return x11KeyFromVirtual(XkbKeycodeToKeysym(static_cast<Window_X11*>(Window::instance)->xDisplay, u16Scancode, 0, 0));
+		return x11KeyFromVirtual(XkbKeycodeToKeysym(static_cast<Window_X11*>(Window::pInstance)->x11_pDisplay, u16Scancode, 0, 0));
 #else
 		RE_WARNING("Scancodes cannot be used to determine the key, because the current OS is unknown");
 		return Keyboard::Unknown;

@@ -16,7 +16,7 @@ namespace RE {
 		XVisualInfo x11_visualInfo;
 		REint i32VisualsCount = 0;
 		XVisualInfo x11_visualTemplate = {};
-		x11_visualTemplate.screen = defaultScreen;
+		x11_visualTemplate.screen = i32DefaultScreen;
 		x11_visualTemplate.c_class = TrueColor;
 		XVisualInfo* x11_availableVisualInfos = XGetVisualInfo(x11_pDisplay, VisualScreenMask | VisualClassMask, &x11_visualTemplate, &i32VisualsCount);
 		if (!i32VisualsCount) {
@@ -77,7 +77,7 @@ namespace RE {
 	}
 
 	void Window_X11::showInternal() {
-		if (windowVisible)
+		if (bWindowVisible)
 			XMapWindow(x11_pDisplay, x11_hWindow);
 		else
 			XUnmapWindow(x11_pDisplay, x11_hWindow);

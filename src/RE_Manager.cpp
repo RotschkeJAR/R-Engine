@@ -3,7 +3,7 @@
 
 namespace RE {
 
-	Scene *Manager::pCurrentScene, *Manager::pNextScene;
+	Scene *Manager::pCurrentScene = nullptr, *Manager::pNextScene = nullptr;
 	std::vector<GameObject*> Manager::gameObjects;
 	Manager* Manager::pInstance = nullptr;
 	
@@ -69,8 +69,8 @@ namespace RE {
 			endProc();
 			deleteProc();
 			pCurrentScene = pNextScene;
-			addProc();
 			startProc();
+			addProc();
 		} else if (!pCurrentScene) {
 			RE_FATAL_ERROR("There is no active scene at the moment");
 			return;

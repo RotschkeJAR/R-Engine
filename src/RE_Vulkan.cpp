@@ -1480,8 +1480,8 @@ namespace RE {
 #elif defined RE_OS_LINUX
 		Window_X11* pWindowX11 = static_cast<Window_X11*>(Window::pInstance);
 		VkXlibSurfaceCreateInfoKHR vk_x11SurfaceCreateInfo = { VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR };
-		vk_x11SurfaceCreateInfo.dpy = pWindowX11->xDisplay;
-		vk_x11SurfaceCreateInfo.window = pWindowX11->xWindow;
+		vk_x11SurfaceCreateInfo.dpy = pWindowX11->x11_pDisplay;
+		vk_x11SurfaceCreateInfo.window = pWindowX11->x11_hWindow;
 		vk_eSuccessResult = pfn_vkCreateXlibSurfaceKHR(vk_hInternalInstance, &vk_x11SurfaceCreateInfo, nullptr, &vk_hInternalSurface);
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 		if (!checkVulkanResult(vk_eSuccessResult)) {

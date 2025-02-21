@@ -1,5 +1,10 @@
 #include "RE.hpp"
 
+#ifdef RE_OS_WINDOWS
+# define NOGDI
+# include <windows.h>
+#endif
+
 using namespace RE;
 
 class Nexie : public GameObject {
@@ -63,4 +68,8 @@ int main() {
 	RE::execute();
 	delete second;
 	return 0;
+}
+
+int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pwcCmdLine, int i32CmdShow) {
+	return main();
 }

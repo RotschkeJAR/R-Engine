@@ -1,9 +1,9 @@
 #ifndef __RE_H__
 #define __RE_H__
 
-#if (defined _WIN32 || defined _MSC_VER)
+#if defined(_WIN32) || defined(_MSV_VER)
 # define RE_OS_WINDOWS
-#elif defined __linux__
+#elif defined(__linux__)
 # define RE_OS_LINUX
 #else
 # warning The targeted OS is unknown to R-Engine

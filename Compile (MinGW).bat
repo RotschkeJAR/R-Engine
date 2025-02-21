@@ -5,7 +5,7 @@ set BIN=bin\MinGW
 
 set CC=g++
 set CFLAG=-std=c++17 -Wall -march=x86-64 -m64 -ffast-math -O2 -I"C:\VulkanSDK\1.4.304.0\Include"
-set LDFLAG=-lRE -lgdi32 -luser32 -I%SRC% -L%BIN%
+set LDFLAG=-lRE -lgdi32 -luser32 -I%SRC% -L%BIN% -static-libgcc -static-libstdc++
 
 %CC% %CFLAG% -c %SRC%\*.cpp
 if %ERRORLEVEL% NEQ 0 (

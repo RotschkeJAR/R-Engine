@@ -7,10 +7,16 @@
 #include <vector>
 
 #include "RE.hpp"
+#undef ERROR
+#undef WARNING
+#undef NOTE
 #include "RE_Console.hpp"
 
 #ifdef RE_OS_WINDOWS
 # define UNICODE
+# ifdef _MSC_VER
+#  define NOMINMAX
+# endif
 # define WIN32_LEAN_AND_MEAN /* speeds compilation up */
 # include <windows.h>
 # include <windowsx.h>

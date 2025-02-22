@@ -178,6 +178,12 @@ namespace RE {
 		Middle
 	};
 
+#define SAFE_DELETE(ptr) delete (ptr), (ptr) = nullptr
+
+	void addToStackTrace(const char* pcFile, const char* pcMethod, REuint u32Line);
+	void removeFromStackTrace();
+#define CATCH_SIGNAL(T) addToStackTrace(__FILE__, __func__, __LINE__), T, removeFromStackTrace()
+
 	template <class... T>
 	void print(T... content) {
 		([&]() {
@@ -368,11 +374,11 @@ namespace RE {
 
 	class GameObject {
 		public:
-			const REuint u32SceneParentId;
 			const REuint u32OwnId;
+			const REuint u32SceneParentId;
 
 			GameObject() = delete;
-			GameObject(REuint u32SceneParentId, REuint u32OwnId);
+			GameObject(REuint u32OwnId, REuint u32SceneParentId);
 			virtual ~GameObject();
 			virtual void start(Scene* pStartingScene);
 			virtual void update(Scene* pCurrentScene);
@@ -381,7 +387,9 @@ namespace RE {
 
 	void execute();
 
-	void markDelete(GameObject* rGameObject);
+	void markDelete(GameObject* pGameObject);
+#define MARK_SAFE_DELETE(ptr) markDelete(ptr), ptr = nullptr
+	
 	void setNextScene(Scene* pNextScene);
 	bool isNextSceneSet();
 	Scene* getCurrentScene();

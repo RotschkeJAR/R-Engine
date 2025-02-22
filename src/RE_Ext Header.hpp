@@ -5,6 +5,7 @@
 #include <fstream>
 #include <optional>
 #include <vector>
+#include <stack>
 
 #include "RE.hpp"
 #undef ERROR

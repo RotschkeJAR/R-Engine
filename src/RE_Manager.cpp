@@ -23,31 +23,35 @@ namespace RE {
 		pNextScene = nullptr;
 	}
 
+	bool Manager::shouldUpdateObject(GameObject* pGameObject) {
+		return !pGameObject->u32SceneParentId || pGameObject->u32SceneParentId == pCurrentScene->u32Id;
+	}
+
 	void Manager::startProc() {
 		if (!pCurrentScene)
 			return;
 		pCurrentScene->start();
-		for (GameObject* obj : gameObjects)
-			if (obj->u32SceneParentId && obj->u32SceneParentId == pCurrentScene->u32Id)
-				obj->start(pCurrentScene);
+		for (GameObject* pObj : gameObjects)
+			if (shouldUpdateObject(pObj))
+				pObj->start(pCurrentScene);
 	}
 
 	void Manager::updateProc() {
 		if (!pCurrentScene)
 			return;
 		pCurrentScene->update();
-		for (GameObject* obj : gameObjects)
-			if (obj->u32SceneParentId && obj->u32SceneParentId == pCurrentScene->u32Id)
-				obj->update(pCurrentScene);
+		for (GameObject* pObj : gameObjects)
+			if (shouldUpdateObject(pObj))
+				pObj->update(pCurrentScene);
 	}
 
 	void Manager::endProc() {
 		if (!pCurrentScene)
 			return;
 		pCurrentScene->end();
-		for (GameObject* obj : gameObjects)
-			if (obj->u32SceneParentId && obj->u32SceneParentId == pCurrentScene->u32Id)
-				obj->end(pCurrentScene);
+		for (GameObject* pObj : gameObjects)
+			if (shouldUpdateObject(pObj))
+				pObj->end(pCurrentScene);
 	}
 
 	void Manager::deleteProc() {
@@ -61,7 +65,6 @@ namespace RE {
 			gameObjects.push_back(newGameObject);
 		newGameObjects.clear();
 	}
-
 
 	void Manager::gameLogicUpdate() {
 		if (pNextScene != pCurrentScene && pNextScene) {
@@ -92,10 +95,16 @@ namespace RE {
 	void markDelete(GameObject* pGameObject) {
 		std::vector<GameObject*>::iterator iteratorGameObject = std::find(std::begin(Manager::gameObjects), std::end(Manager::gameObjects), pGameObject);
 		if (iteratorGameObject == std::end(Manager::gameObjects)) {
-			RE_NOTE(appendStrings("The memory address ", pGameObject, " doesn't point to a game object, that has to be deleted, or is not listed. In case it's been constructed before the main-function was executed, it will always be discarded"));
+			if (Manager::pInstance) {
+				iteratorGameObject = std::find(std::begin(Manager::pInstance->newGameObjects), std::end(Manager::pInstance->newGameObjects), pGameObject);
+				if (iteratorGameObject != std::end(Manager::pInstance->newGameObjects)) {
+					Manager::pInstance->newGameObjects.erase(iteratorGameObject);
+					return;
+				}
+			}
+			RE_NOTE(appendStrings("The memory address ", pGameObject, " doesn't point to a game object, that has to be deleted, or is not listed. In case it's constructed before the main-function is executed, it will always be discarded"));
 			return;
-		}
-		if (Manager::pInstance)
+		} else if (Manager::pInstance)
 			Manager::pInstance->deletableGameObjects.push_back(pGameObject);
 		else
 			delete pGameObject;

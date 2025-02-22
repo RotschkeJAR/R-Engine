@@ -3,7 +3,7 @@
 
 namespace RE {
 	
-	GameObject::GameObject(REuint u32SceneParentId, REuint u32OwnId) : u32SceneParentId(u32SceneParentId), u32OwnId(u32OwnId) {
+	GameObject::GameObject(REuint u32OwnId, REuint u32SceneParentId) : u32OwnId(u32OwnId), u32SceneParentId(u32SceneParentId) {
 		if (Manager::pInstance)
 			Manager::pInstance->newGameObjects.push_back(this);
 		else

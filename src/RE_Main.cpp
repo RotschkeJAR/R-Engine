@@ -5,6 +5,7 @@
 #include "RE_Vulkan.hpp"
 #include "RE_Render System.hpp"
 #include "RE_Manager.hpp"
+#include "RE_Signals.hpp"
 
 namespace RE {
 
@@ -13,6 +14,7 @@ namespace RE {
 	
 	void execute() {
 		std::setlocale(LC_ALL, "");
+		SignalCatcher signalCatcher;
 		Window* pWindow = nullptr;
 #ifdef RE_OS_WINDOWS
 		pWindow = new Window_Win64();

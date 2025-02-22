@@ -7,6 +7,7 @@ namespace RE {
 
 	class Manager {
 		private:
+			bool shouldUpdateObject(GameObject* pGameObject);
 			void startProc();
 			void updateProc();
 			void endProc();
@@ -26,7 +27,7 @@ namespace RE {
 			bool isGameValid();
 	};
 
-	void markDelete(GameObject* rGameObject);
+	void markDelete(GameObject* pGameObject);
 
 	void setNextScene(Scene* pNextScene);
 	bool isNextSceneSet();

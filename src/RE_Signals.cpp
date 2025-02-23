@@ -11,6 +11,7 @@ namespace RE {
 
 	SignalCatcher* SignalCatcher::pInstance = nullptr;
 	std::stack<AppLocation> stackTrace;
+	bool signalAlreadyCaught = false;
 
 	void printStackTrace() {
 		while (!stackTrace.empty()) {
@@ -20,19 +21,20 @@ namespace RE {
 			print(", in function ");
 			printColored(locationData.pcMethod, TerminalColor::Bright_White, false, false);
 			print(", at line ");
-			std::string strLine = std::to_string(locationData.u32Line);
-			printlnColored(strLine.c_str(), TerminalColor::Bright_White, false, false);
+			printlnColored(std::to_string(locationData.u32Line).c_str(), TerminalColor::Bright_White, false, false);
 			stackTrace.pop();
 		}
 	}
 
 	void handleSignal(int signalId) {
+		if (signalAlreadyCaught) {
+			printlnColored("\nThe signal handler has been called again. Terminating instantly", TerminalColor::Red, true, false);
+			exit(signalId);
+		}
+		signalAlreadyCaught = true;
 		switch (signalId) {
 			case SIGSEGV:
 				println("Segmentation fault (Invalid access to memory, e.g. dangling pointer, wild pointer, buffer overflow, array index out of bounds, etc.)");
-				break;
-			case SIGBUS:
-				println("Bus error (Invalid access to memory)");
 				break;
 			case SIGILL:
 				println("Illegal Instruction (The instruction was either corrupted or a non-instruction was used for execution)");
@@ -67,7 +69,6 @@ namespace RE {
 		}
 		pInstance = this;
 		signal(SIGSEGV, handleSignal);
-		signal(SIGBUS, handleSignal);
 		signal(SIGILL, handleSignal);
 		signal(SIGABRT, handleSignal);
 		signal(SIGFPE, handleSignal);
@@ -78,7 +79,6 @@ namespace RE {
 			return;
 		pInstance = nullptr;
 		signal(SIGSEGV, SIG_DFL);
-		signal(SIGBUS, SIG_DFL);
 		signal(SIGILL, SIG_DFL);
 		signal(SIGABRT, SIG_DFL);
 		signal(SIGFPE, SIG_DFL);

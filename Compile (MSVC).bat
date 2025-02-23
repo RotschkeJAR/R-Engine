@@ -13,9 +13,19 @@ call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build
 
 del /f *.obj %BIN%\*.obj
 %CC% %CFLAG% /c %SRC%\*.cpp /I "C:\VulkanSDK\1.4.304.0\Include"
+if %errorlevel% NEQ 0 (
+	del /f *.obj
+	pause
+	exit 1
+)
 move *.obj %BIN%
 lib /NOLOGO /OUT:%OUT_LIB% %BIN%\*.obj
 %CC% %CFLAG% /Fe:"Game (MSVC; Windows).exe" /I %SRC% *.cpp /link %OUT_LIB% %LDFLAG% /SUBSYSTEM:WINDOWS
+if %errorlevel% NEQ 0 (
+	del /f *.obj
+	pause
+	exit 1
+)
 %CC% %CFLAG% /Fe:"Game (MSVC; Console).exe" /I %SRC% *.cpp /link %OUT_LIB% %LDFLAG% /SUBSYSTEM:CONSOLE
 del /f *.obj
 

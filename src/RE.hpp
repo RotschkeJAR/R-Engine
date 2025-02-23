@@ -27,7 +27,7 @@ typedef uint64_t REulong;
 
 namespace RE {
 
-#define STRIP_QUOTE(T) T
+#define STRIP_QUOTE_MACRO(T) T
 
 	enum TerminalColor {
 		Black,
@@ -178,11 +178,15 @@ namespace RE {
 		Middle
 	};
 
-#define SAFE_DELETE(ptr) delete (ptr), (ptr) = nullptr
-
+#ifndef RE_COMPILE_MACRO_DISABLE_CATCHING_SIGNALS
 	void addToStackTrace(const char* pcFile, const char* pcMethod, REuint u32Line);
 	void removeFromStackTrace();
-#define CATCH_SIGNAL(T) addToStackTrace(__FILE__, __func__, __LINE__), T, removeFromStackTrace()
+# define CATCH_SIGNAL(T) addToStackTrace(__FILE__, __func__, __LINE__), T, removeFromStackTrace()
+#else
+# define CATCH_SIGNAL(T) T
+#endif /* RE_COMPILE_MACRO_DISABLE_CATCHING_SIGNALS */
+
+#define SAFE_DELETE(ptr) CATCH_SIGNAL(delete (ptr), (ptr) = nullptr)
 
 	template <class... T>
 	void print(T... content) {
@@ -201,8 +205,8 @@ namespace RE {
 	}
 	void printColored(const char* content, TerminalColor color, bool backgroundColored, bool bold);
 	void printlnColored(const char* content, TerminalColor color, bool backgroundColored, bool bold);
-#define PRINT(MSG) print(appendStrings(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE(MSG)))
-#define PRINT_LN(MSG) print(appendStrings(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE(MSG), "\n"))
+#define PRINT(MSG) print(appendStrings(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE_MACRO(MSG)))
+#define PRINT_LN(MSG) print(appendStrings(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE_MACRO(MSG), "\n"))
 
 	std::string convertToUTF8(const wchar_t* pwcString);
 	std::wstring convertToWide(const char* pcString);
@@ -210,7 +214,7 @@ namespace RE {
 
 	template <typename T>
 	constexpr T nth_root(T n, T value) {
-		return std::pow(value, static_cast<T>(1.0) / n);
+		return CATCH_SIGNAL(std::pow(value, static_cast<T>(1.0) / n));
 	}
 
 	template <typename... T>
@@ -280,10 +284,10 @@ namespace RE {
 	void error(const char* pcFile, const char* pcFunc, REuint uiLine, const char* pcDetail, bool bTerminate);
 	void warning(const char* pcFile, const char* pcFunc, REuint uiLine, const char* pcDetail);
 	void note(const char* pcFile, const char* pcFunc, REuint uiLine, const char* pcDetail);
-#define FATAL_ERROR(T) error(__FILE__, __func__, __LINE__, STRIP_QUOTE(T), true)
-#define ERROR(T) error(__FILE__, __func__, __LINE__, STRIP_QUOTE(T), false)
-#define WARNING(T) warning(__FILE__, __func__, __LINE__, STRIP_QUOTE(T))
-#define NOTE(T) note(__FILE__, __func__, __LINE__, STRIP_QUOTE(T))
+#define FATAL_ERROR(T) error(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(T), true)
+#define ERROR(T) error(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(T), false)
+#define WARNING(T) warning(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(T))
+#define NOTE(T) note(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(T))
 
 	template <typename T, REuint uiDimensions>
 	class Vector {
@@ -321,7 +325,7 @@ namespace RE {
 			}
 
 			T length() const {
-				return nth_root<T>(static_cast<T>(uiDimensions), sum());
+				return CATCH_SIGNAL(nth_root<T>(static_cast<T>(uiDimensions), sum()));
 			}
 
 			void fill(T value) {
@@ -333,19 +337,15 @@ namespace RE {
 			}
 
 			T& operator[](REuint index) {
-				if (index >= uiDimensions) {
+				if (index >= uiDimensions)
 					FATAL_ERROR(appendStrings("Index ", index, " is out of bounds: [0, ", uiDimensions, "]").c_str());
-					return coords[0];
-				}
-				return coords[index];
+				return CATCH_SIGNAL(coords[index]);
 			}
 
 			T operator[](REuint index) const {
-				if (index >= uiDimensions) {
+				if (index >= uiDimensions)
 					FATAL_ERROR(appendStrings("Index ", index, " is out of bounds: [0, ", uiDimensions, "]").c_str());
-					return coords[0];
-				}
-				return coords[index];
+				return CATCH_SIGNAL(coords[index]);
 			}
 
 			friend std::ostream& operator<<(std::ostream& stream, const Vector& vector) {
@@ -388,7 +388,7 @@ namespace RE {
 	void execute();
 
 	void markDelete(GameObject* pGameObject);
-#define MARK_SAFE_DELETE(ptr) markDelete(ptr), ptr = nullptr
+#define MARK_SAFE_DELETE(ptr) CATCH_SIGNAL(markDelete(ptr), ptr = nullptr)
 	
 	void setNextScene(Scene* pNextScene);
 	bool isNextSceneSet();

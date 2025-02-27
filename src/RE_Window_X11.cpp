@@ -27,11 +27,11 @@ namespace RE {
 		}
 		XFree(x11_availableVisualInfos);
 
-		XSetWindowAttributes winAttrib;
-		winAttrib.colormap = XCreateColormap(x11_pDisplay, root, x11_visualInfo.visual, AllocNone);
-		winAttrib.border_pixel = 0;
-		winAttrib.event_mask = ExposureMask | KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ResizeRedirectMask;
-		x11_hWindow = XCreateWindow(x11_pDisplay, root, 0, 0, size[0], size[1], 0, x11_visualInfo.depth, InputOutput, x11_visualInfo.visual, CWColormap | CWEventMask, &winAttrib);
+		XSetWindowAttributes winAttrib = {};
+		CATCH_SIGNAL(winAttrib.colormap = XCreateColormap(x11_pDisplay, root, x11_visualInfo.visual, AllocNone));
+		CATCH_SIGNAL(winAttrib.border_pixel = 0);
+		CATCH_SIGNAL(winAttrib.event_mask = ExposureMask | KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ResizeRedirectMask);
+		CATCH_SIGNAL(x11_hWindow = XCreateWindow(x11_pDisplay, root, 0, 0, size[0], size[1], 0, x11_visualInfo.depth, InputOutput, x11_visualInfo.visual, CWColormap | CWEventMask, &winAttrib));
 
 		x11_pSizes->flags = PMinSize | PMaxSize;
 		x11_pSizes->min_width = size[0];
@@ -89,8 +89,8 @@ namespace RE {
 
 	void Window_X11::processLoop() {
 		while (XPending(x11_pDisplay)) {
-			XEvent x11_event;
-			XNextEvent(x11_pDisplay, &x11_event);
+			XEvent x11_event = {};
+			NextEvent(x11_pDisplay, &x11_event);
 			switch (x11_event.type) {
 				case XClientMessage:
 					if (static_cast<XAtom>(x11_event.xclient.data.l[0]) == x11_hClose)
@@ -107,9 +107,9 @@ namespace RE {
 					REubyte u8CharLength = Xutf8LookupString(x11_hInputContext, &x11_keyEvent, cString, sizeof(cString) - 1, &x11_keySym, nullptr);
 					if (bKeyPressed && u8CharLength) {
 						cString[u8CharLength] = '\0';
-						inputMgr.charInput(cString);
+						CATCH_SIGNAL(inputMgr.charInput(cString));
 					}
-					inputMgr.keyInput(x11_keySym, static_cast<REushort>(x11_scancode), bKeyPressed);
+					CATCH_SIGNAL(inputMgr.keyInput(x11_keySym, static_cast<REuint>(x11_scancode), bKeyPressed));
 					} break;
 				case XButtonPress:
 				case XButtonRelease: {
@@ -141,7 +141,7 @@ namespace RE {
 					} break;
 				case XResizeRequest: { /* window resized */
 					XResizeRequestEvent x11_resizeEvent = x11_event.xresizerequest;
-					updateWindowSize(static_cast<REushort>(x11_resizeEvent.width), static_cast<REushort>(x11_resizeEvent.height));
+					CATCH_SIGNAL(updateWindowSize(static_cast<REushort>(x11_resizeEvent.width), static_cast<REushort>(x11_resizeEvent.height)));
 					} break;
 				default:
 					break;

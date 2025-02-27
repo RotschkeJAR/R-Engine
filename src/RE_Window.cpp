@@ -22,7 +22,7 @@ namespace RE {
 		size[0] = u16NewWidth;
 		size[1] = u16NewHeight;
 		inputMgr.updateWindowSize(size);
-		RenderSystem::pInstance->windowResize(size);
+		CATCH_SIGNAL(RenderSystem::pInstance->windowResize(size));
 	}
 
 	void Window::show(bool bShowWindow) {
@@ -40,8 +40,8 @@ namespace RE {
 	}
 
 	void Window::update() {
-		inputMgr.updateInput();
-		processLoop();
+		CATCH_SIGNAL(inputMgr.updateInput());
+		CATCH_SIGNAL(processLoop());
 	}
 
 	bool Window::shouldClose() {
@@ -54,8 +54,7 @@ namespace RE {
 
 	Vector<REushort, 2> Window::getSize() {
 		Vector<REushort, 2> copySize;
-		for (REuint i = 0; i < copySize.getDimensions(); i++)
-			copySize[i] = size[i];
+		copySize = size;
 		return copySize;
 	}
 

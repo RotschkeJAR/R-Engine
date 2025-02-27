@@ -98,6 +98,7 @@ int main() {
 
 #ifdef RE_OS_WINDOWS
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pwcCmdLine, int i32CmdShow) {
+	setHInstance(hInstance);
 	return main();
 }
 #endif

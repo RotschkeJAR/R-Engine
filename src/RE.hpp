@@ -1,8 +1,13 @@
 #ifndef __RE_H__
 #define __RE_H__
 
-#if defined(_WIN32) || defined(_MSV_VER)
+#if defined(_WIN32) || defined(_MSC_VER)
 # define RE_OS_WINDOWS
+# define NOGDI
+# ifdef _MSC_VER
+#  define NOMINMAX
+# endif
+# include <windows.h>
 #elif defined(__linux__)
 # define RE_OS_LINUX
 #else
@@ -178,15 +183,18 @@ namespace RE {
 		Middle
 	};
 
-#ifndef RE_COMPILE_MACRO_DISABLE_CATCHING_SIGNALS
 	void addToStackTrace(const char* pcFile, const char* pcMethod, REuint u32Line);
 	void removeFromStackTrace();
-# define CATCH_SIGNAL(T) addToStackTrace(__FILE__, __func__, __LINE__), T, removeFromStackTrace()
-#else
-# define CATCH_SIGNAL(T) T
-#endif /* RE_COMPILE_MACRO_DISABLE_CATCHING_SIGNALS */
+#define CATCH_SIGNAL(CMD) do { \
+			addToStackTrace(__FILE__, __func__, __LINE__); \
+			CMD; \
+			removeFromStackTrace(); \
+		} while (false)
 
-#define SAFE_DELETE(ptr) CATCH_SIGNAL(delete (ptr), (ptr) = nullptr)
+#define SAFE_DELETE(PTR_REF) CATCH_SIGNAL( do { \
+			delete (PTR_REF); \
+			(PTR_REF) = nullptr; \
+		} while (false) )
 
 	template <class... T>
 	void print(T... content) {
@@ -214,7 +222,9 @@ namespace RE {
 
 	template <typename T>
 	constexpr T nth_root(T n, T value) {
-		return CATCH_SIGNAL(std::pow(value, static_cast<T>(1.0) / n));
+		T result = static_cast<T>(0.0);
+		CATCH_SIGNAL(result = std::pow(value, static_cast<T>(1.0) / n));
+		return result;
 	}
 
 	template <typename... T>
@@ -289,12 +299,12 @@ namespace RE {
 #define WARNING(T) warning(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(T))
 #define NOTE(T) note(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(T))
 
-	template <typename T, REuint uiDimensions>
+	template <typename T, REuint u32Dimensions>
 	class Vector {
-		static_assert(uiDimensions != 0, "A vector has zero dimensions");
+		static_assert(u32Dimensions != 0, "A vector-template has zero dimensions");
 
 		public:
-			T coords[uiDimensions];
+			T coords[u32Dimensions];
 
 			Vector() {
 				fill(static_cast<T>(0.0));
@@ -325,7 +335,9 @@ namespace RE {
 			}
 
 			T length() const {
-				return CATCH_SIGNAL(nth_root<T>(static_cast<T>(uiDimensions), sum()));
+				T result;
+				CATCH_SIGNAL(result = nth_root<T>(static_cast<T>(u32Dimensions), sum()));
+				return result;
 			}
 
 			void fill(T value) {
@@ -333,22 +345,42 @@ namespace RE {
 			}
 
 			constexpr REuint getDimensions() const {
-				return uiDimensions;
+				return u32Dimensions;
 			}
 
-			T& operator[](REuint index) {
-				if (index >= uiDimensions)
-					FATAL_ERROR(appendStrings("Index ", index, " is out of bounds: [0, ", uiDimensions, "]").c_str());
-				return CATCH_SIGNAL(coords[index]);
+			T& operator [](REuint index) {
+				if (index >= u32Dimensions)
+					FATAL_ERROR(appendStrings("Index ", index, " is out of bounds: [0, ", u32Dimensions, "]").c_str());
+				return coords[index];
 			}
 
-			T operator[](REuint index) const {
-				if (index >= uiDimensions)
-					FATAL_ERROR(appendStrings("Index ", index, " is out of bounds: [0, ", uiDimensions, "]").c_str());
-				return CATCH_SIGNAL(coords[index]);
+			T operator [](REuint index) const {
+				if (index >= u32Dimensions)
+					FATAL_ERROR(appendStrings("Index ", index, " is out of bounds: [0, ", u32Dimensions, "]").c_str());
+				return coords[index];
 			}
 
-			friend std::ostream& operator<<(std::ostream& stream, const Vector& vector) {
+			void operator =(const Vector& copy) {
+				if (u32Dimensions != copy.getDimensions())
+					return;
+				for (REuint u32Index = 0; u32Index < u32Dimensions; u32Index++)
+					coords[u32Index] = copy[u32Index];
+			}
+
+			bool operator ==(const Vector& compareVector) const {
+				if (u32Dimensions != compareVector.getDimensions())
+					return false;
+				for (REuint u32Index = 0; u32Index < u32Dimensions; u32Index++)
+					if (coords[u32Index] != compareVector[u32Index])
+						return false;
+				return true;
+			}
+
+			bool operator !=(const Vector& compareVector) const {
+				return !(*this == compareVector);
+			}
+
+			friend std::ostream& operator <<(std::ostream& stream, const Vector& vector) {
 				stream << "(";
 				for (REuint i = 0; i < vector.getDimensions(); i++) {
 					if (i != 0)
@@ -359,6 +391,19 @@ namespace RE {
 				return stream;
 			}
 	};
+
+	typedef Vector<float, 2> Vector2f;
+	typedef Vector<float, 3> Vector3f;
+	typedef Vector<float, 4> Vector4f;
+	typedef Vector<double, 2> Vector2d;
+	typedef Vector<double, 3> Vector3d;
+	typedef Vector<double, 4> Vector4d;
+	typedef Vector<REint, 2> Vector2i;
+	typedef Vector<REint, 3> Vector3i;
+	typedef Vector<REint, 4> Vector4i;
+	typedef Vector<REuint, 2> Vector2u;
+	typedef Vector<REuint, 3> Vector3u;
+	typedef Vector<REuint, 4> Vector4u;
 
 	class Scene {
 		public:
@@ -388,7 +433,10 @@ namespace RE {
 	void execute();
 
 	void markDelete(GameObject* pGameObject);
-#define MARK_SAFE_DELETE(ptr) CATCH_SIGNAL(markDelete(ptr), ptr = nullptr)
+#define MARK_SAFE_DELETE(GAME_OBJECT_POINTER) CATCH_SIGNAL( do { \
+		markDelete(GAME_OBJECT_POINTER); \
+		GAME_OBJECT_POINTER = nullptr; \
+	} while (false) )
 	
 	void setNextScene(Scene* pNextScene);
 	bool isNextSceneSet();
@@ -399,8 +447,8 @@ namespace RE {
 	REuint getNextSceneId();
 	bool isSceneNext(REuint u32SceneId);
 
-	REushort scancodeFromKey(Keyboard eKey);
-	Keyboard keyFromScancode(REushort u16Scancode);
+	REuint scancodeFromKey(Keyboard eKey);
+	Keyboard keyFromScancode(REuint u32Scancode);
 	bool isKeyDown(Keyboard eKey);
 	bool isKeyPressed(Keyboard eKey);
 	bool isKeyReleased(Keyboard eKey);
@@ -411,18 +459,22 @@ namespace RE {
 	bool isScrollingUpward();
 	bool isScrollingDownward();
 	REbyte scrollDirection();
-	Vector<REint, 2> cursorPos();
+	Vector2i cursorPos();
 	REint cursorPosX();
 	REint cursorPosY();
-	Vector<REint, 2> cursorDeltaPos();
+	Vector2i cursorDeltaPos();
 	REint cursorDeltaPosX();
 	REint cursorDeltaPosY();
-	Vector<float, 2> normalCursorPos();
+	Vector2f normalCursorPos();
 	float normalCursorPosX();
 	float normalCursorPosY();
-	Vector<float, 2> normalCursorDeltaPos();
+	Vector2f normalCursorDeltaPos();
 	float normalCursorDeltaPosX();
 	float normalCursorDeltaPosY();
+
+#ifdef RE_OS_WINDOWS
+	void setHInstance(HINSTANCE win_hInstance);
+#endif
 
 }
 

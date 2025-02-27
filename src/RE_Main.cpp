@@ -17,9 +17,9 @@ namespace RE {
 		SignalCatcher signalCatcher;
 		Window* pWindow = nullptr;
 #ifdef RE_OS_WINDOWS
-		pWindow = new Window_Win64();
+		CATCH_SIGNAL(pWindow = new Window_Win64());
 #elif defined RE_OS_LINUX
-		pWindow = new Window_X11();
+		CATCH_SIGNAL(pWindow = new Window_X11());
 #else
 # warning The targeted OS is unknown, so the engine will terminate immediatly upon execution
 		RE_FATAL_ERROR("The OS is unknown. The engine can't initialize");
@@ -40,16 +40,16 @@ namespace RE {
 			//Renderer renderer;
 			bRunning = true;
 			while (bRunning) {
-				pWindow->update();
-				gameMgr.gameLogicUpdate();
-				renderSystem.drawFrame();
+				CATCH_SIGNAL(pWindow->update());
+				CATCH_SIGNAL(gameMgr.gameLogicUpdate());
+				CATCH_SIGNAL(renderSystem.drawFrame());
 				//renderer.render();
 				pWindow->show(true);
 				bRunning = !pWindow->shouldClose() && gameMgr.isGameValid() && !bErrorOccured;
 			}
 			pWindow->show(false);
-			gameMgr.lastGameLogicUpdate();
-			vkDeviceWaitIdle(RE_VK_HANDLE_DEVICE);
+			CATCH_SIGNAL(gameMgr.lastGameLogicUpdate());
+			CATCH_SIGNAL(vkDeviceWaitIdle(RE_VK_HANDLE_DEVICE));
 		}
 		delete pWindow;
 	}

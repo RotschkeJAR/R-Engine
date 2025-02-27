@@ -18,7 +18,7 @@ namespace RE {
 			inputMgr = nullptr;
 	}
 
-	void InputMgr::keyInput(REulong u64VirtualKeyCode, REushort u16Scancode, bool bPressed) {
+	void InputMgr::keyInput(REulong u64VirtualKeyCode, REuint u32Scancode, bool bPressed) {
 		Keyboard eKey = Keyboard::Unknown;
 #ifdef RE_OS_WINDOWS
 		eKey = winKeyFromVirtual(u64VirtualKeyCode);
@@ -26,7 +26,7 @@ namespace RE {
 		eKey = x11KeyFromVirtual(u64VirtualKeyCode);
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 		if (eKey == Keyboard::Unknown && bPressed) {
-			RE_WARNING(appendStrings("An unknown key (scancode: ", u16Scancode, ", virtual key code: ", u64VirtualKeyCode, ") has been pressed"));
+			RE_WARNING(appendStrings("An unknown key (scancode: ", u32Scancode, ", virtual key code: ", u64VirtualKeyCode, ") has been pressed"));
 			return;
 		}
 		REushort u16KeyIndex = static_cast<REushort>(eKey);
@@ -68,8 +68,7 @@ namespace RE {
 	}
 
 	void InputMgr::updateWindowSize(Vector<REushort, 2> updatedSize) {
-		for (REubyte i = 0; i < winSize.getDimensions(); i++)
-			winSize[i] = updatedSize[i];
+		winSize = updatedSize;
 	}
 
 	bool InputMgr::isKeyDown(Keyboard eKey) const {
@@ -110,26 +109,31 @@ namespace RE {
 		return lastCursorPos[1];
 	}
 
-	REushort scancodeFromKey(Keyboard eKey) {
+	REuint scancodeFromKey(Keyboard eKey) {
 #ifdef RE_OS_WINDOWS
-		return MapVirtualKeyW(winVirtualFromKey(eKey), MAPVK_VK_TO_VSC_EX);
+		UINT result;
+		CATCH_SIGNAL(result = MapVirtualKeyW(winVirtualFromKey(eKey), MAPVK_VK_TO_VSC_EX));
+		return static_cast<REuint>(result);
 #elif defined RE_OS_LINUX
-		return XKeysymToKeycode(static_cast<Window_X11*>(Window::pInstance)->x11_pDisplay, x11VirtualFromKey(eKey));
+		XKeyCode result;
+		CATCH_SIGNAL(result = XKeysymToKeycode(static_cast<Window_X11*>(Window::pInstance)->x11_pDisplay, x11VirtualFromKey(eKey)));
+		return result;
 #else
 		RE_WARNING("Scancodes of a key cannot be determined, because the current OS is unknown");
 		return 0;
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 	}
 
-	Keyboard keyFromScancode(REushort u16Scancode) {
+	Keyboard keyFromScancode(REuint u32Scancode) {
+		Keyboard result = Keyboard::Unknown;
 #ifdef RE_OS_WINDOWS
-		return winKeyFromVirtual(MapVirtualKeyW(u16Scancode, MAPVK_VSC_TO_VK_EX));
+		CATCH_SIGNAL(result = winKeyFromVirtual(MapVirtualKeyW(u32Scancode, MAPVK_VSC_TO_VK_EX)));
 #elif defined RE_OS_LINUX
-		return x11KeyFromVirtual(XkbKeycodeToKeysym(static_cast<Window_X11*>(Window::pInstance)->x11_pDisplay, u16Scancode, 0, 0));
+		CATCH_SIGNAL(result = x11KeyFromVirtual(XkbKeycodeToKeysym(static_cast<Window_X11*>(Window::pInstance)->x11_pDisplay, u32Scancode, 0, 0)));
 #else
 		RE_WARNING("Scancodes cannot be used to determine the key, because the current OS is unknown");
-		return Keyboard::Unknown;
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
+		return result;
 	}
 
 	bool isKeyDown(Keyboard eKey) {
@@ -172,7 +176,7 @@ namespace RE {
 		return inputMgr->getScroll();
 	}
 
-	Vector<REint, 2> cursorPos() {
+	Vector2i cursorPos() {
 		Vector<REint, 2> position;
 		position[0] = inputMgr->getCursorX();
 		position[1] = inputMgr->getCursorY();
@@ -187,7 +191,7 @@ namespace RE {
 		return cursorPos()[1];
 	}
 
-	Vector<REint, 2> cursorDeltaPos() {
+	Vector2i cursorDeltaPos() {
 		Vector<REint, 2> delta;
 		delta[0] = inputMgr->getCursorX() - inputMgr->getCursorLastX();
 		delta[1] = inputMgr->getCursorY() - inputMgr->getCursorLastY();
@@ -202,9 +206,9 @@ namespace RE {
 		return cursorDeltaPos()[1];
 	}
 
-	Vector<float, 2> normalCursorPos() {
-		Vector<REint, 2> position = cursorPos();
-		Vector<float, 2> normalPos;
+	Vector2f normalCursorPos() {
+		Vector2i position = cursorPos();
+		Vector2f normalPos;
 		for (REubyte u8Index = 0; u8Index < normalPos.getDimensions(); u8Index++)
 			normalPos[u8Index] = (static_cast<float>(position[u8Index]) / static_cast<float>(inputMgr->winSize[u8Index])) * 2.0f - 1.0f;
 		return normalPos;
@@ -218,9 +222,9 @@ namespace RE {
 		return normalCursorPos()[1];
 	}
 
-	Vector<float, 2> normalCursorDeltaPos() {
-		Vector<REint, 2> deltaPos = cursorDeltaPos();
-		Vector<float, 2> normalDelta;
+	Vector2f normalCursorDeltaPos() {
+		Vector2i deltaPos = cursorDeltaPos();
+		Vector2f normalDelta;
 		for (REubyte u8Index = 0; u8Index < normalDelta.getDimensions(); u8Index++)
 			normalDelta[u8Index] = static_cast<float>(deltaPos[u8Index]) / static_cast<float>(inputMgr->winSize[u8Index]);
 		return normalDelta;

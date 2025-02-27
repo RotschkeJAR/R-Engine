@@ -3,21 +3,21 @@
 namespace RE {
 	
 	std::string convertToUTF8(const wchar_t* pwcString) {
-		const REuint uiStringSize = wcslen(pwcString) + 1;
-		std::string strConverted("", uiStringSize);
-		wcstombs(&strConverted[0], pwcString, uiStringSize);
+		const REuint u32StringSize = wcslen(pwcString) + 1;
+		std::string strConverted("", u32StringSize);
+		wcstombs(&strConverted[0], pwcString, u32StringSize);
 		return strConverted;
 	}
 
 	std::wstring convertToWide(const char* pcString) {
-		const REuint uiStringSize = strlen(pcString) + 1;
-		std::wstring wstrConverted(L"", uiStringSize);
-		mbstowcs(&wstrConverted[0], pcString, uiStringSize);
+		const REuint u32StringSize = strlen(pcString) + 1;
+		std::wstring wstrConverted(L"", u32StringSize);
+		mbstowcs(&wstrConverted[0], pcString, u32StringSize);
 		return wstrConverted;
 	}
 
 	std::string getAppName() {
-		std::string strAppName;
+		std::string strAppName("Unknown app name");
 #ifdef RE_OS_WINDOWS
 # define PATH_SIZE 500
 		wchar_t wcBuffer[PATH_SIZE] = {0};

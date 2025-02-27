@@ -24,7 +24,7 @@ namespace RE {
 		public:
 			InputMgr();
 			~InputMgr();
-			void keyInput(REulong u64Key, REushort u16Scancode, bool bPressed);
+			void keyInput(REulong u64Key, REuint u32Scancode, bool bPressed);
 			void charInput(const char* pcCharacter);
 			void buttonInput(REubyte u8Buttoncode, bool bPressed);
 			void cursorInput(REint i32CursorX, REint i32CursorY);
@@ -42,8 +42,8 @@ namespace RE {
 			REint getCursorLastX() const;
 			REint getCursorLastY() const;
 
-			friend REushort scancodeFromKey(Keyboard eKey);
-			friend Keyboard keyFromScancode(REushort u16Scancode);
+			friend REuint scancodeFromKey(Keyboard eKey);
+			friend Keyboard keyFromScancode(REuint u32Scancode);
 			friend Vector<float, 2> normalCursorPos();
 			friend Vector<float, 2> normalCursorDeltaPos();
 	};
@@ -513,8 +513,8 @@ namespace RE {
 	}
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 
-	REushort scancodeFromKey(Keyboard eKey);
-	Keyboard keyFromScancode(REushort u16Scancode);
+	REuint scancodeFromKey(Keyboard eKey);
+	Keyboard keyFromScancode(REuint u32Scancode);
 
 	bool isKeyDown(Keyboard eKey);
 	bool isKeyPressed(Keyboard eKey);

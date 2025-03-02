@@ -30,33 +30,33 @@ namespace RE {
 	void Manager::startProc() {
 		if (!pCurrentScene)
 			return;
-		pCurrentScene->start();
+		CATCH_SIGNAL(pCurrentScene->start());
 		for (GameObject* pObj : gameObjects)
 			if (shouldUpdateObject(pObj))
-				pObj->start(pCurrentScene);
+				CATCH_SIGNAL(pObj->start(pCurrentScene));
 	}
 
 	void Manager::updateProc() {
 		if (!pCurrentScene)
 			return;
-		pCurrentScene->update();
+		CATCH_SIGNAL(pCurrentScene->update());
 		for (GameObject* pObj : gameObjects)
 			if (shouldUpdateObject(pObj))
-				pObj->update(pCurrentScene);
+				CATCH_SIGNAL(pObj->update(pCurrentScene));
 	}
 
 	void Manager::endProc() {
 		if (!pCurrentScene)
 			return;
-		pCurrentScene->end();
+		CATCH_SIGNAL(pCurrentScene->end());
 		for (GameObject* pObj : gameObjects)
 			if (shouldUpdateObject(pObj))
-				pObj->end(pCurrentScene);
+				CATCH_SIGNAL(pObj->end(pCurrentScene));
 	}
 
 	void Manager::deleteProc() {
 		for (GameObject* deletableGameObject : deletableGameObjects)
-			delete deletableGameObject;
+			CATCH_SIGNAL(delete deletableGameObject);
 		deletableGameObjects.clear();
 	}
 
@@ -69,23 +69,23 @@ namespace RE {
 	void Manager::gameLogicUpdate() {
 		if (pNextScene != pCurrentScene && pNextScene) {
 			// Switch scene
-			endProc();
-			deleteProc();
+			CATCH_SIGNAL(endProc());
+			CATCH_SIGNAL(deleteProc());
 			pCurrentScene = pNextScene;
-			startProc();
-			addProc();
+			CATCH_SIGNAL(startProc());
+			CATCH_SIGNAL(addProc());
 		} else if (!pCurrentScene) {
 			RE_FATAL_ERROR("There is no active scene at the moment");
 			return;
 		}
-		updateProc();
-		deleteProc();
-		addProc();
+		CATCH_SIGNAL(updateProc());
+		CATCH_SIGNAL(deleteProc());
+		CATCH_SIGNAL(addProc());
 	}
 
 	void Manager::lastGameLogicUpdate() {
-		endProc();
-		deleteProc();
+		CATCH_SIGNAL(endProc());
+		CATCH_SIGNAL(deleteProc());
 	}
 
 	bool Manager::isGameValid() {
@@ -107,10 +107,11 @@ namespace RE {
 		} else if (Manager::pInstance)
 			Manager::pInstance->deletableGameObjects.push_back(pGameObject);
 		else
-			delete pGameObject;
+			CATCH_SIGNAL(delete pGameObject);
 	}
 
 	void setNextScene(Scene* pNextScene) {
+		DEFINE_SIGNAL_GUARD(sigGuardSetNextSceneFunc);
 		if (!pNextScene)
 			return;
 		else if (!pNextScene->u32Id) {
@@ -130,11 +131,11 @@ namespace RE {
 
 	REuint getCurrentSceneId() {
 		Scene* pCurrentScene = getCurrentScene();
-		return pCurrentScene ? pCurrentScene->u32Id : static_cast<REuint>(0);
+		return pCurrentScene ? pCurrentScene->u32Id : 0U;
 	}
 
 	bool isSceneCurrent(REuint u32SceneId) {
-		return getCurrentSceneId() == u32SceneId && getCurrentScene();
+		return getCurrentScene() && getCurrentSceneId() == u32SceneId;
 	}
 
 	Scene* getNextScene() {
@@ -143,11 +144,11 @@ namespace RE {
 
 	REuint getNextSceneId() {
 		Scene* pNextScene = getNextScene();
-		return pNextScene ? pNextScene->u32Id : static_cast<REuint>(0);
+		return pNextScene ? pNextScene->u32Id : 0U;
 	}
 
 	bool isSceneNext(REuint u32SceneId) {
-		return getNextSceneId() == u32SceneId && getNextScene();
+		return getNextScene() && getNextSceneId() == u32SceneId;
 	}
 
 }

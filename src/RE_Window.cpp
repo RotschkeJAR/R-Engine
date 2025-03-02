@@ -21,7 +21,6 @@ namespace RE {
 	void Window::updateWindowSize(REushort u16NewWidth, REushort u16NewHeight) {
 		size[0] = u16NewWidth;
 		size[1] = u16NewHeight;
-		inputMgr.updateWindowSize(size);
 		CATCH_SIGNAL(RenderSystem::pInstance->windowResize(size));
 	}
 
@@ -33,14 +32,13 @@ namespace RE {
 	}
 
 	void Window::setTitle(const char* pNewTitle) {
-		if (strcmp(pcTitle, pNewTitle) == 0 || !bValid)
+		if (std::strcmp(pcTitle, pNewTitle) == 0 || !bValid)
 			return;
 		pcTitle = pNewTitle;
 		updateTitleInternal();
 	}
 
 	void Window::update() {
-		CATCH_SIGNAL(inputMgr.updateInput());
 		CATCH_SIGNAL(processLoop());
 	}
 

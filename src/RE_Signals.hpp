@@ -13,7 +13,7 @@ namespace RE {
 			~SignalCatcher();
 	};
 
-	void addToStackTrace(const char* pcFile, const char* pcMethod, REuint u32Line);
+	void addToStackTrace(const char* pcFile, const char* pcMethod, REuint u32Line, const char* pcDetails);
 	void removeFromStackTrace();
 
 }

@@ -1,5 +1,6 @@
 #include "RE_Ext Header.hpp"
 #include "RE_Manager.hpp"
+#include "RE_Main.hpp"
 
 namespace RE {
 	
@@ -11,6 +12,8 @@ namespace RE {
 		if (Manager::pCurrentScene == this) {
 			RE_ERROR("The scene, which is currently in use, has been deleted");
 			Manager::pCurrentScene = nullptr;
+			if (Manager::pNextScene == this)
+				Manager::pNextScene = nullptr;
 		} else if (Manager::pNextScene == this) {
 			RE_WARNING("The scene, which is dedicated to be loaded next, has been deleted");
 			Manager::pNextScene = Manager::pCurrentScene;

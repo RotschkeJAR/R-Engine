@@ -3,16 +3,16 @@
 namespace RE {
 	
 	std::string convertToUTF8(const wchar_t* pwcString) {
-		const REuint u32StringSize = wcslen(pwcString) + 1;
+		const REuint u32StringSize = std::wcslen(pwcString) + 1U;
 		std::string strConverted("", u32StringSize);
-		wcstombs(&strConverted[0], pwcString, u32StringSize);
+		std::wcstombs(&strConverted[0], pwcString, u32StringSize);
 		return strConverted;
 	}
 
 	std::wstring convertToWide(const char* pcString) {
-		const REuint u32StringSize = strlen(pcString) + 1;
+		const REuint u32StringSize = std::strlen(pcString) + 1U;
 		std::wstring wstrConverted(L"", u32StringSize);
-		mbstowcs(&wstrConverted[0], pcString, u32StringSize);
+		std::mbstowcs(&wstrConverted[0], pcString, u32StringSize);
 		return wstrConverted;
 	}
 

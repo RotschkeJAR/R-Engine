@@ -18,13 +18,13 @@ namespace RE {
 		XVisualInfo x11_visualTemplate = {};
 		x11_visualTemplate.screen = i32DefaultScreen;
 		x11_visualTemplate.c_class = TrueColor;
-		XVisualInfo* x11_availableVisualInfos = XGetVisualInfo(x11_pDisplay, VisualScreenMask | VisualClassMask, &x11_visualTemplate, &i32VisualsCount);
+		XVisualInfo* x11_availableVisualInfos;
+		CATCH_SIGNAL(x11_availableVisualInfos = XGetVisualInfo(x11_pDisplay, VisualScreenMask | VisualClassMask, &x11_visualTemplate, &i32VisualsCount));
 		if (!i32VisualsCount) {
 			RE_FATAL_ERROR("No visual information available for X11 window creation");
 			return;
-		} else {
-			x11_visualInfo = x11_availableVisualInfos[0];
 		}
+		x11_visualInfo = x11_availableVisualInfos[0];
 		XFree(x11_availableVisualInfos);
 
 		XSetWindowAttributes winAttrib = {};
@@ -40,11 +40,11 @@ namespace RE {
 		x11_pSizes->max_height = size[1];
 		XSetWMNormalHints(x11_pDisplay, x11_hWindow, x11_pSizes);
 
-		x11_hClose = XInternAtom(x11_pDisplay, "WM_DELETE_WINDOW", False);
+		x11_hClose = XInternAtom(x11_pDisplay, "WM_DELETE_WINDOW", XFalse);
 		XSetWMProtocols(x11_pDisplay, x11_hWindow, &x11_hClose, 1);
 		XSetLocaleModifiers("");
-		x11_hUTF8 = XInternAtom(x11_pDisplay, "UTF8_STRING", False);
-		x11_hWindowName = XInternAtom(x11_pDisplay, "_NET_WM_NAME", False);
+		x11_hUTF8 = XInternAtom(x11_pDisplay, "UTF8_STRING", XFalse);
+		x11_hWindowName = XInternAtom(x11_pDisplay, "_NET_WM_NAME", XFalse);
 
 		x11_hInputMethod = XOpenIM(x11_pDisplay, nullptr, nullptr, nullptr);
 		if (!x11_hInputMethod) {
@@ -84,13 +84,13 @@ namespace RE {
 	}
 
 	void Window_X11::updateTitleInternal() {
-		XChangeProperty(x11_pDisplay, x11_hWindow, x11_hWindowName, x11_hUTF8, 8, PropModeReplace, reinterpret_cast<const unsigned char*>(pcTitle), strlen(pcTitle));
+		XChangeProperty(x11_pDisplay, x11_hWindow, x11_hWindowName, x11_hUTF8, 8, PropModeReplace, reinterpret_cast<const unsigned char*>(pcTitle), std::strlen(pcTitle));
 	}
 
 	void Window_X11::processLoop() {
 		while (XPending(x11_pDisplay)) {
 			XEvent x11_event = {};
-			NextEvent(x11_pDisplay, &x11_event);
+			XNextEvent(x11_pDisplay, &x11_event);
 			switch (x11_event.type) {
 				case XClientMessage:
 					if (static_cast<XAtom>(x11_event.xclient.data.l[0]) == x11_hClose)
@@ -107,9 +107,7 @@ namespace RE {
 					REubyte u8CharLength = Xutf8LookupString(x11_hInputContext, &x11_keyEvent, cString, sizeof(cString) - 1, &x11_keySym, nullptr);
 					if (bKeyPressed && u8CharLength) {
 						cString[u8CharLength] = '\0';
-						CATCH_SIGNAL(inputMgr.charInput(cString));
 					}
-					CATCH_SIGNAL(inputMgr.keyInput(x11_keySym, static_cast<REuint>(x11_scancode), bKeyPressed));
 					} break;
 				case XButtonPress:
 				case XButtonRelease: {
@@ -117,19 +115,14 @@ namespace RE {
 					bool bButtonPressed = !static_cast<bool>(x11_buttonEvent.type - 4);
 					switch (x11_buttonEvent.button) {
 						case Button1: /* left click */
-							inputMgr.buttonInput(RE_LBUTTON, bButtonPressed);
 							break;
 						case Button2: /* middle click */
-							inputMgr.buttonInput(RE_MBUTTON, bButtonPressed);
 							break;
 						case Button3: /* right click */
-							inputMgr.buttonInput(RE_RBUTTON, bButtonPressed);
 							break;
 						case Button4: /* up scroll */
-							inputMgr.scrollInput(0.5f);
 							break;
 						case Button5: /* down scroll */
-							inputMgr.scrollInput(0.5f);
 							break;
 						default:
 							break;
@@ -137,7 +130,6 @@ namespace RE {
 					} break;
 				case XMotionNotify: { /* mouse moved */
 					XMotionEvent x11_motionEvent = x11_event.xmotion;
-					inputMgr.cursorInput(x11_motionEvent.x, x11_motionEvent.y);
 					} break;
 				case XResizeRequest: { /* window resized */
 					XResizeRequestEvent x11_resizeEvent = x11_event.xresizerequest;

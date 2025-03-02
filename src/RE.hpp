@@ -7,6 +7,7 @@
 # ifdef _MSC_VER
 #  define NOMINMAX
 # endif
+# define WIN32_LEAN_AND_MEAN /* speeds compilation up */
 # include <windows.h>
 #elif defined(__linux__)
 # define RE_OS_LINUX
@@ -20,6 +21,7 @@
 #include <string>
 #include <cmath>
 #include <cstdint>
+#include <random>
 
 typedef int8_t REbyte;
 typedef uint8_t REubyte;
@@ -53,143 +55,150 @@ namespace RE {
 		Bright_White
 	};
 
-	enum Keyboard {
-		Unknown,
-		Space,
-		A,
-		B,
-		C,
-		D,
-		E,
-		F,
-		G,
-		H,
-		I,
-		J,
-		K,
-		L,
-		M,
-		N,
-		O,
-		P,
-		Q,
-		R,
-		S,
-		T,
-		U,
-		V,
-		W,
-		X,
-		Y,
-		Z,
-		Top_0,
-		Top_1,
-		Top_2,
-		Top_3,
-		Top_4,
-		Top_5,
-		Top_6,
-		Top_7,
-		Top_8,
-		Top_9,
-		Slash, /* / */
-		Backslash, /* \ */
-		Comma, /* , */
-		Period, /* . */
-		Semicolon, /* ; */
-		Apostrophe, /* ' */
-		Accent, /* ` */
-		Left_Bracket, /* [ */
-		Right_Bracket, /* ] */
-		Equals, /* = */
-		Minus, /* - */
-		Right_Ctrl,
-		Left_Ctrl,
-		Right_Alt, /* AltGr */
-		Left_Alt,
-		Right_Shift,
-		Left_Shift,
-		Menu,
-		Tab,
-		Enter,
-		Escape,
-		Backspace,
-		Arrow_Left,
-		Arrow_Right,
-		Arrow_Up,
-		Arrow_Down,
-		Delete,
-		Insert,
-		Home,
-		End,
-		Print_Screen,
-		Scroll_Lock,
-		Pause,
-		Page_Up,
-		Page_Down,
-		F1,
-		F2,
-		F3,
-		F4,
-		F5,
-		F6,
-		F7,
-		F8,
-		F9,
-		F10,
-		F11,
-		F12,
-		F13,
-		F14,
-		F15,
-		F16,
-		F17,
-		F18,
-		F19,
-		F20,
-		F21,
-		F22,
-		F23,
-		F24,
-		F25,
-		Caps_Lock,
-		Numpad_Lock,
-		Numpad_0,
-		Numpad_1,
-		Numpad_2,
-		Numpad_3,
-		Numpad_4,
-		Numpad_5,
-		Numpad_6,
-		Numpad_7,
-		Numpad_8,
-		Numpad_9,
-		Numpad_Add,
-		Numpad_Subtract,
-		Numpad_Multiply,
-		Numpad_Divide,
-		Numpad_Enter,
-		Numpad_Period,
+	enum Input {
+		Unknown = 0x00,
+		ScrollUp = 0x01,
+		ScrollDown = 0x02,
+		LeftButton = 0x03,
+		RightButton = 0x04,
+		MiddleButton = 0x05,
+		Space = 0x06,
+		A = 0x07,
+		B = 0x08,
+		C = 0x09,
+		D = 0x0A,
+		E = 0x0B,
+		F = 0x0C,
+		G = 0x0D,
+		H = 0x0E,
+		I = 0x0F,
+		J = 0x10,
+		K = 0x11,
+		L = 0x12,
+		M = 0x13,
+		N = 0x14,
+		O = 0x15,
+		P = 0x16,
+		Q = 0x17,
+		R = 0x18,
+		S = 0x19,
+		T = 0x1A,
+		U = 0x1B,
+		V = 0x1C,
+		W = 0x1D,
+		X = 0x1E,
+		Y = 0x1F,
+		Z = 0x20,
+		Top_0 = 0x21,
+		Top_1 = 0x22,
+		Top_2 = 0x23,
+		Top_3 = 0x24,
+		Top_4 = 0x25,
+		Top_5 = 0x26,
+		Top_6 = 0x27,
+		Top_7 = 0x28,
+		Top_8 = 0x29,
+		Top_9 = 0x2A,
+		Slash = 0x2B, /* / */
+		Backslash = 0x2C, /* \ */
+		Comma = 0x2D, /* , */
+		Period = 0x2E, /* . */
+		Semicolon = 0x2F, /* ; */
+		Apostrophe = 0x30, /* ' */
+		Accent = 0x31, /* ` */
+		Left_Bracket = 0x32, /* [ */
+		Right_Bracket = 0x33, /* ] */
+		Equals = 0x34, /* = */
+		Minus = 0x35, /* - */
+		Right_Ctrl = 0x36,
+		Left_Ctrl = 0x37,
+		Right_Alt = 0x38, /* AltGr */
+		Left_Alt = 0x39,
+		Right_Shift = 0x3A,
+		Left_Shift = 0x3B,
+		Menu = 0x3C,
+		Tab = 0x3D,
+		Enter = 0x3E,
+		Escape = 0x3F,
+		Backspace = 0x40,
+		Arrow_Left = 0x41,
+		Arrow_Right = 0x42,
+		Arrow_Up = 0x43,
+		Arrow_Down = 0x44,
+		Delete = 0x45,
+		Insert = 0x46,
+		Home = 0x47,
+		End = 0x48,
+		Print_Screen = 0x49,
+		Scroll_Lock = 0x4A,
+		Pause = 0x4B,
+		Page_Up = 0x4C,
+		Page_Down = 0x4D,
+		F1 = 0x4E,
+		F2 = 0x4F,
+		F3 = 0x50,
+		F4 = 0x51,
+		F5 = 0x52,
+		F6 = 0x53,
+		F7 = 0x54,
+		F8 = 0x55,
+		F9 = 0x56,
+		F10 = 0x57,
+		F11 = 0x58,
+		F12 = 0x59,
+		F13 = 0x5A,
+		F14 = 0x5B,
+		F15 = 0x5C,
+		F16 = 0x5D,
+		F17 = 0x5E,
+		F18 = 0x5F,
+		F19 = 0x60,
+		F20 = 0x61,
+		F21 = 0x62,
+		F22 = 0x63,
+		F23 = 0x64,
+		F24 = 0x65,
+		F25 = 0x66,
+		Caps_Lock = 0x67,
+		Numpad_Lock = 0x68,
+		Numpad_0 = 0x69,
+		Numpad_1 = 0x6A,
+		Numpad_2 = 0x6B,
+		Numpad_3 = 0x6C,
+		Numpad_4 = 0x6D,
+		Numpad_5 = 0x6E,
+		Numpad_6 = 0x6F,
+		Numpad_7 = 0x70,
+		Numpad_8 = 0x71,
+		Numpad_9 = 0x72,
+		Numpad_Add = 0x73,
+		Numpad_Subtract = 0x74,
+		Numpad_Multiply = 0x75,
+		Numpad_Divide = 0x76,
+		Numpad_Enter = 0x77,
+		Numpad_Period = 0x78,
 		/**
 		 * Represents a key, that does not exist on US-keyboards:
 		 * - UK, DE: less than, (shift) greater than, (AltGr) vertical bar/pipe
 		 */
-		World_1
+		World_1 = 0x79
 	};
 
-	enum MouseButton {
-		Left,
-		Right,
-		Middle
-	};
-
-	void addToStackTrace(const char* pcFile, const char* pcMethod, REuint u32Line);
+	void addToStackTrace(const char* pcFile, const char* pcMethod, REuint u32Line, const char* pcDetails);
 	void removeFromStackTrace();
-#define CATCH_SIGNAL(CMD) do { \
-			addToStackTrace(__FILE__, __func__, __LINE__); \
+	class SignalGuard {
+		public:
+			SignalGuard(const char* pcFile, const char* pcFunc, REuint u32Line, const char* pcDetails);
+			~SignalGuard();
+	};
+#define DEFINE_SIGNAL_GUARD_DETAILED(NAME, DETAILS) SignalGuard NAME(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(DETAILS))
+#define DEFINE_SIGNAL_GUARD(NAME) DEFINE_SIGNAL_GUARD_DETAILED(NAME, "\0")
+#define CATCH_SIGNAL_DETAILED(CMD, DETAILS) do { \
+			addToStackTrace(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(DETAILS)); \
 			CMD; \
 			removeFromStackTrace(); \
 		} while (false)
+#define CATCH_SIGNAL(CMD) CATCH_SIGNAL_DETAILED(CMD, "\0")
 
 #define SAFE_DELETE(PTR_REF) CATCH_SIGNAL( do { \
 			delete (PTR_REF); \
@@ -203,6 +212,8 @@ namespace RE {
 				std::cout << static_cast<REushort>(content);
 			else if constexpr (std::is_same_v<T, REbyte>)
 				std::cout << static_cast<REshort>(content);
+			else if constexpr (std::is_same_v<T, bool>)
+				std::cout << (content ? "true" : "false");
 			else
 				std::cout << content;
 		} (), ...);
@@ -271,6 +282,13 @@ namespace RE {
 	}
 
 	template <typename T>
+	constexpr T setBits(T& value, T begin, T end, bool bNewState) {
+		for (T i = begin; i < end; i++)
+			setBit<T>(value, i, bNewState);
+		return value;
+	}
+
+	template <typename T>
 	constexpr std::string bitmaskToString(T bitmask, bool bWithSpace) {
 		std::string strResult("");
 		T bits = sizeof(T) * static_cast<T>(8);
@@ -301,7 +319,7 @@ namespace RE {
 
 	template <typename T, REuint u32Dimensions>
 	class Vector {
-		static_assert(u32Dimensions != 0, "A vector-template has zero dimensions");
+		static_assert(u32Dimensions != 0U, "A vector-template has zero dimensions");
 
 		public:
 			T coords[u32Dimensions];
@@ -312,10 +330,10 @@ namespace RE {
 			template <typename... V>
 			Vector(V... values) {
 				fill(static_cast<T>(0.0));
-				REuint index = 0;
+				REuint u32Index = 0U;
 				([&]() {
-					coords[index] = static_cast<T>(values);
-					index++;
+					CATCH_SIGNAL_DETAILED(coords[u32Index] = static_cast<T>(values), appendStrings("Index: ", u32Index).c_str());
+					u32Index++;
 				} (), ...);
 			}
 			~Vector() {}
@@ -363,14 +381,14 @@ namespace RE {
 			void operator =(const Vector& copy) {
 				if (u32Dimensions != copy.getDimensions())
 					return;
-				for (REuint u32Index = 0; u32Index < u32Dimensions; u32Index++)
+				for (REuint u32Index = 0U; u32Index < u32Dimensions; u32Index++)
 					coords[u32Index] = copy[u32Index];
 			}
 
 			bool operator ==(const Vector& compareVector) const {
 				if (u32Dimensions != compareVector.getDimensions())
 					return false;
-				for (REuint u32Index = 0; u32Index < u32Dimensions; u32Index++)
+				for (REuint u32Index = 0U; u32Index < u32Dimensions; u32Index++)
 					if (coords[u32Index] != compareVector[u32Index])
 						return false;
 				return true;
@@ -382,8 +400,8 @@ namespace RE {
 
 			friend std::ostream& operator <<(std::ostream& stream, const Vector& vector) {
 				stream << "(";
-				for (REuint i = 0; i < vector.getDimensions(); i++) {
-					if (i != 0)
+				for (REuint i = 0U; i < vector.getDimensions(); i++) {
+					if (i != 0U)
 						stream << ", ";
 					stream << vector.coords[i];
 				}
@@ -391,19 +409,33 @@ namespace RE {
 				return stream;
 			}
 	};
+	typedef Vector<float, 2U> Vector2f;
+	typedef Vector<float, 3U> Vector3f;
+	typedef Vector<float, 4U> Vector4f;
+	typedef Vector<double, 2U> Vector2d;
+	typedef Vector<double, 3U> Vector3d;
+	typedef Vector<double, 4U> Vector4d;
+	typedef Vector<REint, 2U> Vector2i;
+	typedef Vector<REint, 3U> Vector3i;
+	typedef Vector<REint, 4U> Vector4i;
+	typedef Vector<REuint, 2U> Vector2u;
+	typedef Vector<REuint, 3U> Vector3u;
+	typedef Vector<REuint, 4U> Vector4u;
 
-	typedef Vector<float, 2> Vector2f;
-	typedef Vector<float, 3> Vector3f;
-	typedef Vector<float, 4> Vector4f;
-	typedef Vector<double, 2> Vector2d;
-	typedef Vector<double, 3> Vector3d;
-	typedef Vector<double, 4> Vector4d;
-	typedef Vector<REint, 2> Vector2i;
-	typedef Vector<REint, 3> Vector3i;
-	typedef Vector<REint, 4> Vector4i;
-	typedef Vector<REuint, 2> Vector2u;
-	typedef Vector<REuint, 3> Vector3u;
-	typedef Vector<REuint, 4> Vector4u;
+	class RandomNumberGenerator {
+		private:
+			std::mt19937 rng;
+
+		public:
+			RandomNumberGenerator();
+			RandomNumberGenerator(REuint seed);
+			~RandomNumberGenerator();
+			REuint random();
+			REuint random(REuint max);
+			REuint random(REuint min, REuint max);
+			bool randomBool();
+	};
+	typedef RandomNumberGenerator RNG;
 
 	class Scene {
 		public:
@@ -446,31 +478,6 @@ namespace RE {
 	Scene* getNextScene();
 	REuint getNextSceneId();
 	bool isSceneNext(REuint u32SceneId);
-
-	REuint scancodeFromKey(Keyboard eKey);
-	Keyboard keyFromScancode(REuint u32Scancode);
-	bool isKeyDown(Keyboard eKey);
-	bool isKeyPressed(Keyboard eKey);
-	bool isKeyReleased(Keyboard eKey);
-	bool isButtonDown(MouseButton eButton);
-	bool isButtonPressed(MouseButton eButton);
-	bool isButtonReleased(MouseButton eButton);
-	bool isScrolling();
-	bool isScrollingUpward();
-	bool isScrollingDownward();
-	REbyte scrollDirection();
-	Vector2i cursorPos();
-	REint cursorPosX();
-	REint cursorPosY();
-	Vector2i cursorDeltaPos();
-	REint cursorDeltaPosX();
-	REint cursorDeltaPosY();
-	Vector2f normalCursorPos();
-	float normalCursorPosX();
-	float normalCursorPosY();
-	Vector2f normalCursorDeltaPos();
-	float normalCursorDeltaPosX();
-	float normalCursorDeltaPosY();
 
 #ifdef RE_OS_WINDOWS
 	void setHInstance(HINSTANCE win_hInstance);

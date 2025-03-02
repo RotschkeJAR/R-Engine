@@ -5,7 +5,7 @@
 namespace RE {
 
 	struct AppLocation {
-		const char *pcFile, *pcMethod;
+		const char *pcFile, *pcMethod, *pcDetails;
 		REuint u32Line;
 	};
 
@@ -16,12 +16,15 @@ namespace RE {
 	void printStackTrace() {
 		while (!stackTrace.empty()) {
 			AppLocation locationData = stackTrace.top();
-			print("in file ");
+			print("\tin file ");
 			printColored(locationData.pcFile, TerminalColor::Bright_White, false, false);
 			print(", in function ");
 			printColored(locationData.pcMethod, TerminalColor::Bright_White, false, false);
 			print(", at line ");
-			printlnColored(std::to_string(locationData.u32Line).c_str(), TerminalColor::Bright_White, false, false);
+			printColored(std::to_string(locationData.u32Line).c_str(), TerminalColor::Bright_White, false, false);
+			if (std::strcmp(locationData.pcDetails, "\0") != 0)
+				print(appendStrings(": ", locationData.pcDetails));
+			println();
 			stackTrace.pop();
 		}
 	}
@@ -29,12 +32,12 @@ namespace RE {
 	void handleSignal(int signalId) {
 		if (signalAlreadyCaught) {
 			printlnColored("\nThe signal handler has been called again. Terminating instantly", TerminalColor::Red, true, false);
-			exit(signalId);
+			std::exit(signalId);
 		}
 		signalAlreadyCaught = true;
 		switch (signalId) {
 			case SIGSEGV:
-				println("Segmentation fault (Invalid access to memory, e.g. dangling pointer, wild pointer, buffer overflow, array index out of bounds, etc.)");
+				println("Segmentation violation (Invalid access to memory, e.g. dangling pointer, wild pointer, buffer overflow, array index out of bounds, etc.)");
 				break;
 			case SIGILL:
 				println("Illegal Instruction (The instruction was either corrupted or a non-instruction was used for execution)");
@@ -50,11 +53,11 @@ namespace RE {
 				break;
 		}
 		printStackTrace();
-		exit(signalId);
+		std::exit(signalId);
 	}
 
-	void addToStackTrace(const char* pcFile, const char* pcMethod, REuint u32Line) {
-		AppLocation newTrace = {pcFile, pcMethod, u32Line};
+	void addToStackTrace(const char* pcFile, const char* pcMethod, REuint u32Line, const char* pcDetails) {
+		AppLocation newTrace = {pcFile, pcMethod, pcDetails, u32Line};
 		stackTrace.push(newTrace);
 	}
 
@@ -68,20 +71,20 @@ namespace RE {
 			return;
 		}
 		pInstance = this;
-		signal(SIGSEGV, handleSignal);
-		signal(SIGILL, handleSignal);
-		signal(SIGABRT, handleSignal);
-		signal(SIGFPE, handleSignal);
+		std::signal(SIGSEGV, handleSignal);
+		std::signal(SIGILL, handleSignal);
+		std::signal(SIGABRT, handleSignal);
+		std::signal(SIGFPE, handleSignal);
 	}
 
 	SignalCatcher::~SignalCatcher() {
 		if (pInstance != this)
 			return;
 		pInstance = nullptr;
-		signal(SIGSEGV, SIG_DFL);
-		signal(SIGILL, SIG_DFL);
-		signal(SIGABRT, SIG_DFL);
-		signal(SIGFPE, SIG_DFL);
+		std::signal(SIGSEGV, SIG_DFL);
+		std::signal(SIGILL, SIG_DFL);
+		std::signal(SIGABRT, SIG_DFL);
+		std::signal(SIGFPE, SIG_DFL);
 	}
 
 }

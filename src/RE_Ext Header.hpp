@@ -47,6 +47,7 @@ typedef Colormap XColormap;
 # define XResizeRequest ResizeRequest
 # define XNone None
 # define XNoSymbol NoSymbol
+# define XFalse False
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 
 namespace RE {

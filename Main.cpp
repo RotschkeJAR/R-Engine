@@ -52,16 +52,24 @@ Clonus* clonus = nullptr;
 
 class Objy : public GameObject {
 	public:
-		Objy() : GameObject(0, 1) {}
+		RNG rng;
+		REulong hits, misses;
+
+		Objy() : GameObject(0, 1), hits(0UL), misses(0UL) {}
 		~Objy() {}
 		void start(Scene* pStartingScene) {
 			println("start objy");
 		}
 		void update(Scene* pCurrentScene) {
-			println("update objy");
+			//println("update objy");
+			bool randomResult = rng.randomBool();
+			if (randomResult)
+				hits++;
+			else
+				misses++;
 		}
 		void end(Scene* pEndingScene) {
-			println("end objy");
+			println(hits, ", ", misses);
 		}
 };
 
@@ -72,16 +80,7 @@ class First : public Scene {
 		First() : Scene(1) {}
 		~First() {}
 		void start() {}
-		void update() {
-			if (isKeyPressed(Keyboard::Space))
-				setNextScene(second);
-			else if (isKeyPressed(Keyboard::Enter) && !clonus)
-				clonus = new Clonus();
-			else if (isKeyPressed(Keyboard::Backspace) && clonus)
-				MARK_SAFE_DELETE(clonus);
-			else if (isKeyPressed(Keyboard::Right_Shift))
-				CATCH_SIGNAL(raise(SIGSEGV));
-		}
+		void update() {}
 		void end() {}
 };
 

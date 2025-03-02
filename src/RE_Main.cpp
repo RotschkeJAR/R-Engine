@@ -13,6 +13,7 @@ namespace RE {
 	bool bRunning = false;
 	
 	void execute() {
+		DEFINE_SIGNAL_GUARD(sigGuardMainLoop);
 		std::setlocale(LC_ALL, "");
 		SignalCatcher signalCatcher;
 		Window* pWindow = nullptr;

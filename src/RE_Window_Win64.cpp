@@ -45,40 +45,31 @@ namespace RE {
 						default:
 							break;
 					}
-					CATCH_SIGNAL(pWin64->inputMgr.keyInput(vkCode, static_cast<REuint>(scanCode), !static_cast<bool>(keyReleased)));
 					} return 0;
 				case WM_CHAR: {
 					wchar_t character[2] = {static_cast<wchar_t>(wParam), L'\0'};
-					CATCH_SIGNAL(pWin64->inputMgr.charInput(convertToUTF8(character).c_str()));
 					} return 0;
 				case WM_LBUTTONDOWN: /* left mouse button pressed */
-					CATCH_SIGNAL(pWin64->inputMgr.buttonInput(RE_LBUTTON, true));
 					SetCapture(win_hWnd);
 					return 0;
 				case WM_LBUTTONUP: /* left mouse button released */
-					CATCH_SIGNAL(pWin64->inputMgr.buttonInput(RE_LBUTTON, false));
 					ReleaseCapture();
 					return 0;
 				case WM_RBUTTONDOWN: /* right mouse button pressed */
-					CATCH_SIGNAL(pWin64->inputMgr.buttonInput(RE_RBUTTON, true));
 					SetCapture(win_hWnd);
 					return 0;
 				case WM_RBUTTONUP: /* right mouse button released */
-					CATCH_SIGNAL(pWin64->inputMgr.buttonInput(RE_RBUTTON, false));
 					ReleaseCapture();
 					return 0;
 				case WM_MBUTTONDOWN: /* middle mouse button pressed */
-					CATCH_SIGNAL(pWin64->inputMgr.buttonInput(RE_MBUTTON, true));
 					SetCapture(win_hWnd);
 					return 0;
 				case WM_MBUTTONUP: /* middle mouse button released */
-					CATCH_SIGNAL(pWin64->inputMgr.buttonInput(RE_MBUTTON, false));
 					ReleaseCapture();
 					return 0;
 				case WM_MOUSEMOVE: { /* mouse moved */
 					REint iXPos = GET_X_LPARAM(lParam);
 					REint iYPos = GET_Y_LPARAM(lParam);
-					pWin64->inputMgr.cursorInput(iXPos, iYPos);
 					} return 0;
 				case WM_SETCURSOR:
 					if (LOWORD(lParam) == HTCLIENT) {
@@ -87,7 +78,6 @@ namespace RE {
 					}
 					break;
 				case WM_MOUSEWHEEL: /* mouse wheel used/scrolled */
-					pWin64->inputMgr.scrollInput(static_cast<REubyte>(GET_WHEEL_DELTA_WPARAM(wParam)));
 					return 0;
 				default:
 					break;

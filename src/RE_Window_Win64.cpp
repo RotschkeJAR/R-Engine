@@ -9,7 +9,7 @@ namespace RE {
 	HINSTANCE Window_Win64::win_hInstance = nullptr;
 	Window_Win64* pWin64 = nullptr;
 
-	LRESULT CALLBACK windowProcess(HWND win_hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	LRESULT CALLBACK windowProcess(HWND win_hWnd, UINT win_uMsg, WPARAM win_wParam, LPARAM win_lParam) {
 		if (!pWin64)
 			RE_FATAL_ERROR("Window process function has been called when no window is active");
 		else if (pWin64->win_hWindow != win_hWnd && bRunning)
@@ -17,7 +17,7 @@ namespace RE {
 		else {
 			switch (uMsg) {
 				case WM_SIZE: /* resized */
-					CATCH_SIGNAL(pWin64->updateWindowSize(static_cast<REushort>(LOWORD(lParam)), static_cast<REushort>(HIWORD(lParam))));
+					CATCH_SIGNAL(pWin64->updateWindowSize(static_cast<REushort>(LOWORD(win_lParam)), static_cast<REushort>(HIWORD(win_lParam))));
 					return 0;
 				case WM_CLOSE: /* close */
 					pWin64->bCloseFlag = true;
@@ -29,25 +29,26 @@ namespace RE {
 				case WM_SYSKEYDOWN:
 				case WM_KEYUP: /* key released */
 				case WM_SYSKEYUP: {
-					WORD vkCode = LOWORD(wParam);
-					WORD keyFlags = HIWORD(lParam);
-					WORD scanCode = LOBYTE(keyFlags);
-					BOOL extendedKey = (keyFlags & KF_EXTENDED) == KF_EXTENDED;
-					if (extendedKey)
-						scanCode = MAKEWORD(scanCode, 0xE0);
-					BOOL keyReleased = (keyFlags & KF_UP) == KF_UP;
+					WORD win_vkCode = LOWORD(win_wParam);
+					WORD win_keyFlags = HIWORD(win_lParam);
+					WORD win_scanCode = LOBYTE(win_keyFlags);
+					BOOL win_extendedKey = (win_keyFlags & KF_EXTENDED) == KF_EXTENDED;
+					if (win_extendedKey)
+						win_scanCode = MAKEWORD(win_scanCode, 0xE0);
+					BOOL win_keyReleased = (win_keyFlags & KF_UP) == KF_UP;
 					switch (vkCode) {
 						case VK_SHIFT:
 						case VK_CONTROL:
 						case VK_MENU:
-							vkCode = LOWORD(MapVirtualKeyW(scanCode, MAPVK_VSC_TO_VK_EX));
+							win_vkCode = LOWORD(MapVirtualKeyW(win_scanCode, MAPVK_VSC_TO_VK_EX));
 							break;
 						default:
 							break;
 					}
+					inputMgr.inputEvent(winKeyFromVirtual(static_cast<RElong>(win_vkCode)), static_cast<REuint>(win_scanCode), static_cast<bool>(win_keyReleased));
 					} return 0;
 				case WM_CHAR: {
-					wchar_t character[2] = {static_cast<wchar_t>(wParam), L'\0'};
+					wchar_t wCharacter[2] = {static_cast<wchar_t>(win_wParam), L'\0'};
 					} return 0;
 				case WM_LBUTTONDOWN: /* left mouse button pressed */
 					SetCapture(win_hWnd);
@@ -68,11 +69,12 @@ namespace RE {
 					ReleaseCapture();
 					return 0;
 				case WM_MOUSEMOVE: { /* mouse moved */
-					REint iXPos = GET_X_LPARAM(lParam);
-					REint iYPos = GET_Y_LPARAM(lParam);
+					REint i32XPos = GET_X_LPARAM(win_lParam);
+					REint i32YPos = GET_Y_LPARAM(win_lParam);
+					inputMgr.cursorEvent(i32XPos, i32YPos);
 					} return 0;
 				case WM_SETCURSOR:
-					if (LOWORD(lParam) == HTCLIENT) {
+					if (LOWORD(win_lParam) == HTCLIENT) {
 						SetCursor(pWin64->win_hCursor);
 						return TRUE;
 					}
@@ -83,9 +85,9 @@ namespace RE {
 					break;
 			}
 		}
-		LRESULT lResult = static_cast<LRESULT>(0);
-		CATCH_SIGNAL(lResult = DefWindowProcW(win_hWnd, uMsg, wParam, lParam));
-		return lResult;
+		LRESULT win_lResult = 0;
+		CATCH_SIGNAL(win_lResult = DefWindowProcW(win_hWnd, win_uMsg, win_wParam, win_lParam));
+		return win_lResult;
 	}
 	
 	Window_Win64::Window_Win64() : win_hWindow(nullptr), win_msg{}, win_hCursor(LoadCursor(nullptr, IDC_ARROW)) {

@@ -4,19 +4,24 @@
 #include "RE_Ext Header.hpp"
 
 namespace RE {
-
-#define RE_INPUT_BUFFER_LMB 2U
-#define RE_INPUT_BUFFER_RMB 3U
-#define RE_INPUT_BUFFER_MMB 4U
 	
 	class InputMgr {
 		private:
+#define RE_INPUT_BUFFER_SIZE (((static_cast<REuint>(RE_INPUT_MAX_ENUM) - 1U) / 8U) + ((static_cast<REuint>(RE_INPUT_MAX_ENUM) - 1U) % 8U > 0U ? 1U : 0U))
+			REubyte u8InputBuffer[RE_INPUT_BUFFER_SIZE], u8PrevInputBuffer[RE_INPUT_BUFFER_SIZE];
+#undef RE_INPUT_BUFFER_SIZE
+			Vector2i cursorPosition, prevCursorPosition;
+
+			void modifyInputBuffer(Input eInput, bool bNewState);
 
 		public:
 			static InputMgr* pInstance;
 
 			InputMgr();
 			~InputMgr();
+			void inputEvent(Input eInput, REuint u32Scancode, bool bPressed);
+			void cursorEvent(REint i32X, REint i32Y);
+			void preInputEvent();
 	};
 
 #ifdef RE_OS_WINDOWS
@@ -26,106 +31,106 @@ namespace RE {
 # define VK_9 0x39
 	constexpr RElong winVirtualFromKey(Input eKey) {
 		switch (eKey) {
-			case Input::Space:
+			case RE_INPUT_KEY_SPACE:
 				return VK_SPACE;
-			case Input::Backspace:
+			case RE_INPUT_KEY_BACKSPACE:
 				return VK_BACK;
-			case Input::Tab:
+			case RE_INPUT_KEY_TAB:
 				return VK_TAB;
-			case Input::Enter:
+			case RE_INPUT_KEY_ENTER:
 				return VK_RETURN;
-			case Input::Pause:
+			case RE_INPUT_KEY_PAUSE:
 				return VK_PAUSE;
-			case Input::Caps_Lock:
+			case RE_INPUT_KEY_CAPS_LOCK:
 				return VK_CAPITAL;
-			case Input::Escape:
+			case RE_INPUT_KEY_ESCAPE:
 				return VK_ESCAPE;
-			case Input::Page_Up:
+			case RE_INPUT_KEY_PAGE_UP:
 				return VK_PRIOR;
-			case Input::Page_Down:
+			case RE_INPUT_KEY_PAGE_DOWN:
 				return VK_NEXT;
-			case Input::End:
+			case RE_INPUT_KEY_END:
 				return VK_END;
-			case Input::Home:
+			case RE_INPUT_KEY_HOME:
 				return VK_HOME;
-			case Input::Arrow_Left:
+			case RE_INPUT_KEY_ARROW_LEFT:
 				return VK_LEFT;
-			case Input::Arrow_Right:
+			case RE_INPUT_KEY_ARROW_RIGHT:
 				return VK_RIGHT;
-			case Input::Arrow_Up:
+			case RE_INPUT_KEY_ARROW_UP:
 				return VK_UP;
-			case Input::Arrow_Down:
+			case RE_INPUT_KEY_ARROW_DOWN:
 				return VK_DOWN;
-			case Input::Print_Screen:
+			case RE_INPUT_KEY_PRINT_SCREEN:
 				return VK_SNAPSHOT;
-			case Input::Insert:
+			case RE_INPUT_KEY_INSERT:
 				return VK_INSERT;
-			case Input::Delete:
+			case RE_INPUT_KEY_DELETE:
 				return VK_DELETE;
-			case Input::Numpad_Multiply:
+			case RE_INPUT_KEY_NUMPAD_MULTIPLY:
 				return VK_MULTIPLY;
-			case Input::Numpad_Add:
+			case RE_INPUT_KEY_NUMPAD_ADD:
 				return VK_ADD;
-			case Input::Numpad_Subtract:
+			case RE_INPUT_KEY_NUMPAD_SUBTRACT:
 				return VK_SUBTRACT;
-			case Input::Numpad_Divide:
+			case RE_INPUT_KEY_NUMPAD_DIVIDE:
 				return VK_DIVIDE;
-			case Input::Numpad_Lock:
+			case RE_INPUT_KEY_NUMPAD_LOCK:
 				return VK_NUMLOCK;
-			case Input::Scroll_Lock:
+			case RE_INPUT_KEY_SCROLL_LOCK:
 				return VK_SCROLL;
-			case Input::Right_Shift:
+			case RE_INPUT_KEY_SHIFT_RIGHT:
 				return VK_RSHIFT;
-			case Input::Left_Shift:
+			case RE_INPUT_KEY_SHIFT_LEFT:
 				return VK_LSHIFT;
-			case Input::Right_Ctrl:
+			case RE_INPUT_KEY_CTRL_RIGHT:
 				return VK_RCONTROL;
-			case Input::Left_Ctrl:
+			case RE_INPUT_KEY_CTRL_LEFT:
 				return VK_LCONTROL;
-			case Input::Right_Alt:
+			case RE_INPUT_KEY_ALT_RIGHT:
 				return VK_RMENU;
-			case Input::Left_Alt:
+			case RE_INPUT_KEY_ALT_LEFT:
 				return VK_LMENU;
-			case Input::Semicolon:
+			case RE_INPUT_KEY_SEMICOLON:
 				return VK_OEM_1;
-			case Input::Slash:
+			case RE_INPUT_KEY_SLASH:
 				return VK_OEM_2;
-			case Input::Left_Bracket:
+			case RE_INPUT_KEY_BRACKET_LEFT:
 				return VK_OEM_4;
-			case Input::Right_Bracket:
+			case RE_INPUT_KEY_BRACKET_RIGHT:
 				return VK_OEM_6;
-			case Input::Backslash:
+			case RE_INPUT_KEY_BACKSLASH:
 				return VK_OEM_5;
-			case Input::Apostrophe:
+			case RE_INPUT_KEY_APOSTROPHE:
 				return VK_OEM_7;
-			case Input::Accent:
+			case RE_INPUT_KEY_ACCENT:
 				return VK_OEM_3;
-			case Input::Comma:
+			case RE_INPUT_KEY_COMMA:
 				return VK_OEM_COMMA;
-			case Input::Period:
+			case RE_INPUT_KEY_PERIOD:
 				return VK_OEM_PERIOD;
-			case Input::Equals:
+			case RE_INPUT_KEY_EQUALS:
 				return VK_OEM_PLUS;
-			case Input::Minus:
+			case RE_INPUT_KEY_MINUS:
 				return VK_OEM_MINUS;
-			case Input::Numpad_Enter:
+			case RE_INPUT_KEY_NUMPAD_ENTER:
 				return VK_RETURN;
-			case Input::Numpad_Period:
+			case RE_INPUT_KEY_NUMPAD_PERIOD:
 				return VK_DECIMAL;
-			case Input::Menu:
+			case RE_INPUT_KEY_MENU:
 				return VK_APPS;
-			case Input::World_1:
+			case RE_INPUT_KEY_WORLD_1:
 				return VK_OEM_102;
 			default:
 				RElong u64KeyId = static_cast<RElong>(eKey);
-				if (u64KeyId >= static_cast<RElong>(Input::A) && u64KeyId <= static_cast<RElong>(Input::Z))
-					return VK_A + (u64KeyId - static_cast<RElong>(Input::A));
-				if (u64KeyId >= static_cast<RElong>(Input::Top_0) && u64KeyId <= static_cast<RElong>(Input::Top_9))
-					return VK_0 + (u64KeyId - static_cast<RElong>(Input::Top_0));
-				if (u64KeyId >= static_cast<RElong>(Input::F1) && u64KeyId <= static_cast<RElong>(Input::F25))
-					return VK_F1 + (u64KeyId - static_cast<RElong>(Input::F1));
-				if (u64KeyId >= static_cast<RElong>(Input::Numpad_0) && u64KeyId <= static_cast<RElong>(Input::Numpad_9))
-					return VK_NUMPAD0 + (u64KeyId - static_cast<RElong>(Input::Numpad_0));
+				if (u64KeyId >= static_cast<RElong>(RE_INPUT_KEY_A) && u64KeyId <= static_cast<RElong>(RE_INPUT_KEY_Z))
+					return VK_A + (u64KeyId - static_cast<RElong>(RE_INPUT_KEY_A));
+				if (u64KeyId >= static_cast<RElong>(RE_INPUT_KEY_TOP_0) && u64KeyId <= static_cast<RElong>(RE_INPUT_KEY_TOP_9))
+					return VK_0 + (u64KeyId - static_cast<RElong>(RE_INPUT_KEY_TOP_0));
+				if (u64KeyId >= static_cast<RElong>(RE_INPUT_KEY_F1) && u64KeyId <= static_cast<RElong>(RE_INPUT_KEY_F25))
+					return VK_F1 + (u64KeyId - static_cast<RElong>(RE_INPUT_KEY_F1));
+				if (u64KeyId >= static_cast<RElong>(RE_INPUT_KEY_NUMPAD_0) && u64KeyId <= static_cast<RElong>(RE_INPUT_KEY_NUMPAD_9))
+					return VK_NUMPAD0 + (u64KeyId - static_cast<RElong>(RE_INPUT_KEY_NUMPAD_0));
 				return 0L;
 		}
 	}
@@ -133,209 +138,209 @@ namespace RE {
 	constexpr Input winKeyFromVirtual(RElong u64VirtualKeyCode) {
 		switch (u64VirtualKeyCode) {
 			case VK_SPACE:
-				return Input::Space;
+				return RE_INPUT_KEY_SPACE;
 			case VK_RETURN:
-				return Input::Enter;
+				return RE_INPUT_KEY_ENTER;
 			case VK_BACK:
-				return Input::Backspace;
+				return RE_INPUT_KEY_BACKSPACE;
 			case VK_TAB:
-				return Input::Tab;
+				return RE_INPUT_KEY_TAB;
 			case VK_PAUSE:
-				return Input::Pause;
+				return RE_INPUT_KEY_PAUSE;
 			case VK_HOME:
-				return Input::Home;
+				return RE_INPUT_KEY_HOME;
 			case VK_DELETE:
-				return Input::Delete;
+				return RE_INPUT_KEY_DELETE;
 			case VK_INSERT:
-				return Input::Insert;
+				return RE_INPUT_KEY_INSERT;
 			case VK_CAPITAL:
-				return Input::Caps_Lock;
+				return RE_INPUT_KEY_CAPS_LOCK;
 			case VK_ESCAPE:
-				return Input::Escape;
+				return RE_INPUT_KEY_ESCAPE;
 			case VK_PRIOR:
-				return Input::Page_Up;
+				return RE_INPUT_KEY_PAGE_UP;
 			case VK_NEXT:
-				return Input::Page_Down;
+				return RE_INPUT_KEY_PAGE_DOWN;
 			case VK_END:
-				return Input::End;
+				return RE_INPUT_KEY_END;
 			case VK_LEFT:
-				return Input::Arrow_Left;
+				return RE_INPUT_KEY_ARROW_LEFT;
 			case VK_RIGHT:
-				return Input::Arrow_Right;
+				return RE_INPUT_KEY_ARROW_RIGHT;
 			case VK_UP:
-				return Input::Arrow_Up;
+				return RE_INPUT_KEY_ARROW_UP;
 			case VK_DOWN:
-				return Input::Arrow_Down;
+				return RE_INPUT_KEY_ARROW_DOWN;
 			case VK_SNAPSHOT:
-				return Input::Print_Screen;
+				return RE_INPUT_KEY_PRINT_SCREEN;
 			case VK_MULTIPLY:
-				return Input::Numpad_Multiply;
+				return RE_INPUT_KEY_NUMPAD_MULTIPLY;
 			case VK_ADD:
-				return Input::Numpad_Add;
+				return RE_INPUT_KEY_NUMPAD_ADD;
 			case VK_SUBTRACT:
-				return Input::Numpad_Subtract;
+				return RE_INPUT_KEY_NUMPAD_SUBTRACT;
 			case VK_DIVIDE:
-				return Input::Numpad_Divide;
+				return RE_INPUT_KEY_NUMPAD_DIVIDE;
 			case VK_NUMLOCK:
-				return Input::Numpad_Lock;
+				return RE_INPUT_KEY_NUMPAD_LOCK;
 			case VK_SCROLL:
-				return Input::Scroll_Lock;
+				return RE_INPUT_KEY_SCROLL_LOCK;
 			case VK_LSHIFT:
-				return Input::Left_Shift;
+				return RE_INPUT_KEY_SHIFT_LEFT;
 			case VK_RSHIFT:
-				return Input::Right_Shift;
+				return RE_INPUT_KEY_SHIFT_RIGHT;
 			case VK_LCONTROL:
-				return Input::Left_Ctrl;
+				return RE_INPUT_KEY_CTRL_LEFT;
 			case VK_RCONTROL:
-				return Input::Right_Ctrl;
+				return RE_INPUT_KEY_CTRL_RIGHT;
 			case VK_LMENU:
-				return Input::Left_Alt;
+				return RE_INPUT_KEY_ALT_LEFT;
 			case VK_RMENU:
-				return Input::Right_Alt;
+				return RE_INPUT_KEY_ALT_RIGHT;
 			case VK_OEM_1:
-				return Input::Semicolon;
+				return RE_INPUT_KEY_SEMICOLON;
 			case VK_OEM_2:
-				return Input::Slash;
+				return RE_INPUT_KEY_SLASH;
 			case VK_OEM_3:
-				return Input::Accent;
+				return RE_INPUT_KEY_ACCENT;
 			case VK_OEM_4:
-				return Input::Left_Bracket;
+				return RE_INPUT_KEY_BRACKET_LEFT;
 			case VK_OEM_5:
-				return Input::Backslash;
+				return RE_INPUT_KEY_BACKSLASH;
 			case VK_OEM_6:
-				return Input::Right_Bracket;
+				return RE_INPUT_KEY_BRACKET_RIGHT;
 			case VK_OEM_7:
-				return Input::Apostrophe;
+				return RE_INPUT_KEY_APOSTROPHE;
 			case VK_OEM_102:
-				return Input::World_1;
+				return RE_INPUT_KEY_WORLD_1;
 			case VK_OEM_COMMA:
-				return Input::Comma;
+				return RE_INPUT_KEY_COMMA;
 			case VK_OEM_PERIOD:
-				return Input::Period;
+				return RE_INPUT_KEY_PERIOD;
 			case VK_OEM_PLUS:
-				return Input::Equals;
+				return RE_INPUT_KEY_EQUALS;
 			case VK_OEM_MINUS:
-				return Input::Minus;
+				return RE_INPUT_KEY_MINUS;
 			case VK_SEPARATOR:
 			case VK_DECIMAL:
-				return Input::Numpad_Period;
+				return RE_INPUT_KEY_NUMPAD_PERIOD;
 			case VK_APPS:
-				return Input::Menu;
+				return RE_INPUT_KEY_MENU;
 			default:
 				if (u64VirtualKeyCode >= VK_A && u64VirtualKeyCode <= VK_Z)
-					return static_cast<Input>(u64VirtualKeyCode - VK_A + static_cast<RElong>(Input::A));
+					return static_cast<Input>(u64VirtualKeyCode - VK_A + static_cast<RElong>(RE_INPUT_KEY_A));
 				if (u64VirtualKeyCode >= VK_0 && u64VirtualKeyCode <= VK_9)
-					return static_cast<Input>(u64VirtualKeyCode - VK_0 + static_cast<RElong>(Input::Top_0));
+					return static_cast<Input>(u64VirtualKeyCode - VK_0 + static_cast<RElong>(RE_INPUT_KEY_TOP_0));
 				if (u64VirtualKeyCode >= VK_F1 && u64VirtualKeyCode <= VK_F24)
-					return static_cast<Input>(u64VirtualKeyCode - VK_F1 + static_cast<RElong>(Input::F1));
+					return static_cast<Input>(u64VirtualKeyCode - VK_F1 + static_cast<RElong>(RE_INPUT_KEY_F1));
 				if (u64VirtualKeyCode >= VK_NUMPAD0 && u64VirtualKeyCode <= VK_NUMPAD9)
-					return static_cast<Input>(u64VirtualKeyCode - VK_NUMPAD0 + static_cast<RElong>(Input::Numpad_0));
-				return Input::Unknown;
+					return static_cast<Input>(u64VirtualKeyCode - VK_NUMPAD0 + static_cast<RElong>(RE_INPUT_KEY_NUMPAD_0));
+				return RE_INPUT_UNKNOWN;
 		}
 	}
 #elif defined RE_OS_LINUX
 	constexpr RElong x11VirtualFromKey(Input eKey) {
 		switch (eKey) {
-			case Input::Space:
+			case RE_INPUT_KEY_SPACE:
 				return XK_space;
-			case Input::Slash:
+			case RE_INPUT_KEY_SLASH:
 				return XK_slash;
-			case Input::Backslash:
+			case RE_INPUT_KEY_BACKSLASH:
 				return XK_backslash;
-			case Input::Comma:
+			case RE_INPUT_KEY_COMMA:
 				return XK_comma;
-			case Input::Period:
+			case RE_INPUT_KEY_PERIOD:
 				return XK_period;
-			case Input::Semicolon:
+			case RE_INPUT_KEY_SEMICOLON:
 				return XK_semicolon;
-			case Input::Apostrophe:
+			case RE_INPUT_KEY_APOSTROPHE:
 				return XK_apostrophe;
-			case Input::Accent:
+			case RE_INPUT_KEY_ACCENT:
 				return XK_grave;
-			case Input::Left_Bracket:
+			case RE_INPUT_KEY_BRACKET_LEFT:
 				return XK_bracketleft;
-			case Input::Right_Bracket:
+			case RE_INPUT_KEY_BRACKET_RIGHT:
 				return XK_bracketright;
-			case Input::Equals:
+			case RE_INPUT_KEY_EQUALS:
 				return XK_equal;
-			case Input::Minus:
+			case RE_INPUT_KEY_MINUS:
 				return XK_minus;
-			case Input::Right_Ctrl:
+			case RE_INPUT_KEY_CTRL_RIGHT:
 				return XK_Control_R;
-			case Input::Left_Ctrl:
+			case RE_INPUT_KEY_CTRL_LEFT:
 				return XK_Control_L;
-			case Input::Right_Alt:
+			case RE_INPUT_KEY_ALT_RIGHT:
 				return XK_Alt_R;
-			case Input::Left_Alt:
+			case RE_INPUT_KEY_ALT_LEFT:
 				return XK_Alt_L;
-			case Input::Right_Shift:
+			case RE_INPUT_KEY_SHIFT_RIGHT:
 				return XK_Shift_R;
-			case Input::Left_Shift:
+			case RE_INPUT_KEY_SHIFT_LEFT:
 				return XK_Shift_L;
-			case Input::Tab:
+			case RE_INPUT_KEY_TAB:
 				return XK_Tab;
-			case Input::Enter:
+			case RE_INPUT_KEY_ENTER:
 				return XK_Return;
-			case Input::Escape:
+			case RE_INPUT_KEY_ESCAPE:
 				return XK_Escape;
-			case Input::Backspace:
+			case RE_INPUT_KEY_BACKSPACE:
 				return XK_BackSpace;
-			case Input::Arrow_Left:
+			case RE_INPUT_KEY_ARROW_LEFT:
 				return XK_Left;
-			case Input::Arrow_Up:
+			case RE_INPUT_KEY_ARROW_UP:
 				return XK_Up;
-			case Input::Arrow_Down:
+			case RE_INPUT_KEY_ARROW_DOWN:
 				return XK_Down;
-			case Input::Arrow_Right:
+			case RE_INPUT_KEY_ARROW_RIGHT:
 				return XK_Right;
-			case Input::Delete:
+			case RE_INPUT_KEY_DELETE:
 				return XK_Delete;
-			case Input::Insert:
+			case RE_INPUT_KEY_INSERT:
 				return XK_Insert;
-			case Input::Home:
+			case RE_INPUT_KEY_HOME:
 				return XK_Home;
-			case Input::End:
+			case RE_INPUT_KEY_END:
 				return XK_End;
-			case Input::Print_Screen:
+			case RE_INPUT_KEY_PRINT_SCREEN:
 				return XK_Print;
-			case Input::Scroll_Lock:
+			case RE_INPUT_KEY_SCROLL_LOCK:
 				return XK_Scroll_Lock;
-			case Input::Pause:
+			case RE_INPUT_KEY_PAUSE:
 				return XK_Pause;
-			case Input::Page_Up:
+			case RE_INPUT_KEY_PAGE_UP:
 				return XK_Page_Up;
-			case Input::Page_Down:
+			case RE_INPUT_KEY_PAGE_DOWN:
 				return XK_Page_Down;
-			case Input::Caps_Lock:
+			case RE_INPUT_KEY_CAPS_LOCK:
 				return XK_Caps_Lock;
-			case Input::Numpad_Lock:
+			case RE_INPUT_KEY_NUMPAD_LOCK:
 				return XK_Num_Lock;
-			case Input::Numpad_Add:
+			case RE_INPUT_KEY_NUMPAD_ADD:
 				return XK_KP_Add;
-			case Input::Numpad_Subtract:
+			case RE_INPUT_KEY_NUMPAD_SUBTRACT:
 				return XK_KP_Subtract;
-			case Input::Numpad_Multiply:
+			case RE_INPUT_KEY_NUMPAD_MULTIPLY:
 				return XK_KP_Multiply;
-			case Input::Numpad_Divide:
+			case RE_INPUT_KEY_NUMPAD_DIVIDE:
 				return XK_KP_Divide;
-			case Input::Numpad_Enter:
+			case RE_INPUT_KEY_NUMPAD_ENTER:
 				return XK_KP_Enter;
-			case Input::Numpad_Period:
+			case RE_INPUT_KEY_NUMPAD_PERIOD:
 				return XK_KP_Decimal;
-			case Input::Menu:
+			case RE_INPUT_KEY_MENU:
 				return XK_Menu;
-			case Input::World_1:
+			case RE_INPUT_KEY_WORLD_1:
 				return XK_less;
 			default:
 				RElong u64KeyId = static_cast<RElong>(eKey);
-				if (u64KeyId >= static_cast<RElong>(Input::A) && u64KeyId <= static_cast<RElong>(Input::Z))
-					return XK_a + (u64KeyId - static_cast<RElong>(Input::A));
-				if (u64KeyId >= static_cast<RElong>(Input::Top_0) && u64KeyId <= static_cast<RElong>(Input::Top_9))
-					return XK_0 + (u64KeyId - static_cast<RElong>(Input::Top_0));
-				if (u64KeyId >= static_cast<RElong>(Input::F1) && u64KeyId <= static_cast<RElong>(Input::F25))
-					return XK_F1 + (u64KeyId - static_cast<RElong>(Input::F1));
-				if (u64KeyId >= static_cast<RElong>(Input::Numpad_0) && u64KeyId <= static_cast<RElong>(Input::Numpad_9))
-					return XK_KP_0 + (u64KeyId - static_cast<RElong>(Input::Numpad_0));
+				if (u64KeyId >= static_cast<RElong>(RE_INPUT_KEY_A) && u64KeyId <= static_cast<RElong>(RE_INPUT_KEY_Z))
+					return XK_a + (u64KeyId - static_cast<RElong>(RE_INPUT_KEY_A));
+				if (u64KeyId >= static_cast<RElong>(RE_INPUT_KEY_TOP_0) && u64KeyId <= static_cast<RElong>(RE_INPUT_KEY_TOP_9))
+					return XK_0 + (u64KeyId - static_cast<RElong>(RE_INPUT_KEY_TOP_0));
+				if (u64KeyId >= static_cast<RElong>(RE_INPUT_KEY_F1) && u64KeyId <= static_cast<RElong>(RE_INPUT_KEY_F25))
+					return XK_F1 + (u64KeyId - static_cast<RElong>(RE_INPUT_KEY_F1));
+				if (u64KeyId >= static_cast<RElong>(RE_INPUT_KEY_NUMPAD_0) && u64KeyId <= static_cast<RElong>(RE_INPUT_KEY_NUMPAD_9))
+					return XK_KP_0 + (u64KeyId - static_cast<RElong>(RE_INPUT_KEY_NUMPAD_0));
 				return 0L;
 		}
 	}
@@ -343,143 +348,140 @@ namespace RE {
 	constexpr Input x11KeyFromVirtual(RElong u64VirtualKeyCode) {
 		switch (u64VirtualKeyCode) {
 			case XK_space:
-				return Input::Space;
+				return RE_INPUT_KEY_SPACE;
 			case XK_BackSpace:
-				return Input::Backspace;
+				return RE_INPUT_KEY_BACKSPACE;
 			case XK_Tab:
-				return Input::Tab;
+				return RE_INPUT_KEY_TAB;
 			case XK_Return:
-				return Input::Enter;
+				return RE_INPUT_KEY_ENTER;
 			case XK_Pause:
-				return Input::Pause;
+				return RE_INPUT_KEY_PAUSE;
 			case XK_Scroll_Lock:
-				return Input::Scroll_Lock;
+				return RE_INPUT_KEY_SCROLL_LOCK;
 			case XK_Escape:
-				return Input::Escape;
+				return RE_INPUT_KEY_ESCAPE;
 			case XK_Delete:
-				return Input::Delete;
+				return RE_INPUT_KEY_DELETE;
 			case XK_Home:
-				return Input::Home;
+				return RE_INPUT_KEY_HOME;
 			case XK_Left:
-				return Input::Arrow_Left;
+				return RE_INPUT_KEY_ARROW_LEFT;
 			case XK_Up:
-				return Input::Arrow_Up;
+				return RE_INPUT_KEY_ARROW_UP;
 			case XK_Right:
-				return Input::Arrow_Right;
+				return RE_INPUT_KEY_ARROW_RIGHT;
 			case XK_Down:
-				return Input::Arrow_Down;
+				return RE_INPUT_KEY_ARROW_DOWN;
 			case XK_Page_Up:
-				return Input::Page_Up;
+				return RE_INPUT_KEY_PAGE_UP;
 			case XK_Page_Down:
-				return Input::Page_Down;
+				return RE_INPUT_KEY_PAGE_DOWN;
 			case XK_Insert:
-				return Input::Insert;
+				return RE_INPUT_KEY_INSERT;
 			case XK_End:
-				return Input::End;
+				return RE_INPUT_KEY_END;
 			case XK_Print:
-				return Input::Print_Screen;
+				return RE_INPUT_KEY_PRINT_SCREEN;
 			case XK_Num_Lock:
-				return Input::Numpad_Lock;
+				return RE_INPUT_KEY_NUMPAD_LOCK;
 			case XK_Shift_L:
-				return Input::Left_Shift;
+				return RE_INPUT_KEY_SHIFT_LEFT;
 			case XK_Shift_R:
-				return Input::Right_Shift;
+				return RE_INPUT_KEY_SHIFT_RIGHT;
 			case XK_Control_L:
-				return Input::Left_Ctrl;
+				return RE_INPUT_KEY_CTRL_LEFT;
 			case XK_Control_R:
-				return Input::Right_Ctrl;
+				return RE_INPUT_KEY_CTRL_RIGHT;
 			case XK_Caps_Lock:
-				return Input::Caps_Lock;
+				return RE_INPUT_KEY_CAPS_LOCK;
 			case XK_Alt_L:
-				return Input::Left_Alt;
+				return RE_INPUT_KEY_ALT_LEFT;
 			case XK_ISO_Level3_Shift:
 			case XK_Alt_R:
-				return Input::Right_Alt;
+				return RE_INPUT_KEY_ALT_RIGHT;
 			case XK_slash:
-				return Input::Slash;
+				return RE_INPUT_KEY_SLASH;
 			case XK_backslash:
-				return Input::Backslash;
+				return RE_INPUT_KEY_BACKSLASH;
 			case XK_less:
 			case XK_greater:
-				return Input::World_1;
+				return RE_INPUT_KEY_WORLD_1;
 			case XK_comma:
-				return Input::Comma;
+				return RE_INPUT_KEY_COMMA;
 			case XK_period:
-				return Input::Period;
+				return RE_INPUT_KEY_PERIOD;
 			case XK_semicolon:
-				return Input::Semicolon;
+			case XK_odiaeresis:
+				return RE_INPUT_KEY_SEMICOLON;
 			case XK_dead_acute:
 			case XK_apostrophe:
-				return Input::Apostrophe;
+			case XK_adiaeresis:
+				return RE_INPUT_KEY_APOSTROPHE;
 			case XK_grave:
-				return Input::Accent;
+				return RE_INPUT_KEY_ACCENT;
 			case XK_bracketleft:
-				return Input::Left_Bracket;
+			case XK_udiaeresis:
+				return RE_INPUT_KEY_BRACKET_LEFT;
 			case XK_bracketright:
-				return Input::Right_Bracket;
+				return RE_INPUT_KEY_BRACKET_RIGHT;
 			case XK_plus:
 			case XK_equal:
-				return Input::Equals;
+				return RE_INPUT_KEY_EQUALS;
 			case XK_minus:
-				return Input::Minus;
+				return RE_INPUT_KEY_MINUS;
 			case XK_KP_Add:
-				return Input::Numpad_Add;
+				return RE_INPUT_KEY_NUMPAD_ADD;
 			case XK_KP_Subtract:
-				return Input::Numpad_Subtract;
+				return RE_INPUT_KEY_NUMPAD_SUBTRACT;
 			case XK_KP_Multiply:
-				return Input::Numpad_Multiply;
+				return RE_INPUT_KEY_NUMPAD_MULTIPLY;
 			case XK_KP_Divide:
-				return Input::Numpad_Divide;
+				return RE_INPUT_KEY_NUMPAD_DIVIDE;
 			case XK_KP_Enter:
-				return Input::Numpad_Enter;
+				return RE_INPUT_KEY_NUMPAD_ENTER;
 			case XK_KP_Delete:
 			case XK_KP_Separator:
 			case XK_KP_Decimal:
-				return Input::Numpad_Period;
+				return RE_INPUT_KEY_NUMPAD_PERIOD;
 			case XK_KP_Insert:
-				return Input::Numpad_0;
+				return RE_INPUT_KEY_NUMPAD_0;
 			case XK_KP_End:
-				return Input::Numpad_1;
+				return RE_INPUT_KEY_NUMPAD_1;
 			case XK_KP_Page_Down:
-				return Input::Numpad_3;
+				return RE_INPUT_KEY_NUMPAD_3;
 			case XK_KP_Down:
-				return Input::Numpad_2;
+				return RE_INPUT_KEY_NUMPAD_2;
 			case XK_KP_Left:
-				return Input::Numpad_4;
+				return RE_INPUT_KEY_NUMPAD_4;
 			case XK_KP_Begin:
-				return Input::Numpad_5;
+				return RE_INPUT_KEY_NUMPAD_5;
 			case XK_KP_Right:
-				return Input::Numpad_6;
+				return RE_INPUT_KEY_NUMPAD_6;
 			case XK_KP_Home:
-				return Input::Numpad_7;
+				return RE_INPUT_KEY_NUMPAD_7;
 			case XK_KP_Up:
-				return Input::Numpad_8;
+				return RE_INPUT_KEY_NUMPAD_8;
 			case XK_KP_Page_Up:
-				return Input::Numpad_9;
+				return RE_INPUT_KEY_NUMPAD_9;
 			case XK_numbersign:
-				return Input::Top_3;
+				return RE_INPUT_KEY_TOP_3;
 			case XK_dead_circumflex:
-				return Input::Top_6;
+				return RE_INPUT_KEY_TOP_6;
 			case XK_Menu:
-				return Input::Menu;
-			case XK_adiaeresis:
-				return Input::A;
-			case XK_odiaeresis:
-				return Input::O;
-			case XK_udiaeresis:
-				return Input::U;
+				return RE_INPUT_KEY_MENU;
 			default:
 				if (u64VirtualKeyCode >= XK_a && u64VirtualKeyCode <= XK_z)
-					return static_cast<Input>(u64VirtualKeyCode - XK_a + static_cast<RElong>(Input::A));
+					return static_cast<Input>(u64VirtualKeyCode - XK_a + static_cast<RElong>(RE_INPUT_KEY_A));
 				if (u64VirtualKeyCode >= XK_A && u64VirtualKeyCode <= XK_Z)
-					return static_cast<Input>(u64VirtualKeyCode - XK_A + static_cast<RElong>(Input::A));
+					return static_cast<Input>(u64VirtualKeyCode - XK_A + static_cast<RElong>(RE_INPUT_KEY_A));
 				if (u64VirtualKeyCode >= XK_0 && u64VirtualKeyCode <= XK_9)
-					return static_cast<Input>(u64VirtualKeyCode - XK_0 + static_cast<RElong>(Input::Top_0));
+					return static_cast<Input>(u64VirtualKeyCode - XK_0 + static_cast<RElong>(RE_INPUT_KEY_TOP_0));
 				if (u64VirtualKeyCode >= XK_F1 && u64VirtualKeyCode <= XK_F25)
-					return static_cast<Input>(u64VirtualKeyCode - XK_F1 + static_cast<RElong>(Input::F1));
+					return static_cast<Input>(u64VirtualKeyCode - XK_F1 + static_cast<RElong>(RE_INPUT_KEY_F1));
 				if (u64VirtualKeyCode >= XK_KP_0 && u64VirtualKeyCode <= XK_KP_9)
-					return static_cast<Input>(u64VirtualKeyCode - XK_KP_0 + static_cast<RElong>(Input::Numpad_0));
-				return Input::Unknown;
+					return static_cast<Input>(u64VirtualKeyCode - XK_KP_0 + static_cast<RElong>(RE_INPUT_KEY_NUMPAD_0));
+				return RE_INPUT_UNKNOWN;
 		}
 	}
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */

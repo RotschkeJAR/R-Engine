@@ -14,8 +14,8 @@ namespace RE {
 		if (!bPrintColors)
 			return "";
 		unsigned int uiId = static_cast<unsigned int>(eColor);
-		if (uiId >= static_cast<unsigned int>(TerminalColor::Bright_Black))
-			uiId += 90 - static_cast<unsigned int>(TerminalColor::Bright_Black);
+		if (uiId >= static_cast<unsigned int>(RE_TERMINAL_COLOR_BRIGHT_BLACK))
+			uiId += 90 - static_cast<unsigned int>(RE_TERMINAL_COLOR_BRIGHT_BLACK);
 		else
 			uiId += 30;
 		if (bBackgroundColored)
@@ -30,7 +30,7 @@ namespace RE {
 
 	void printErrMsg(const char* pFile, const char* pFunc, unsigned int uiLine, const char* pDetail) {
 		print(" : ");
-		printColored(pFile, TerminalColor::Bright_White, false, true);
+		printColored(pFile, RE_TERMINAL_COLOR_BRIGHT_WHITE, false, true);
 		println(" (line ", uiLine, "; in function \"", pFunc, "\")");
 		println("\t", pDetail);
 	}
@@ -45,11 +45,11 @@ namespace RE {
 	}
 	
 	void error(const char* pFile, const char* pFunc, unsigned int uiLine, const char* pDetail, bool bTerminate) {
-		printColored("ERROR", TerminalColor::Red, false, false);
+		printColored("ERROR", RE_TERMINAL_COLOR_RED, false, false);
 		printErrMsg(pFile, pFunc, uiLine, pDetail);
 		if (bTerminate || bErrorAlwaysFatal) {
 			bErrorOccured = true;
-			printlnColored("Terminating...", TerminalColor::Bright_Black, false, false);
+			printlnColored("Terminating...", RE_TERMINAL_COLOR_BRIGHT_BLACK, false, false);
 		}
 	}
 
@@ -57,13 +57,13 @@ namespace RE {
 		if (bTreatWarningAsError)
 			error(pFile, pFunc, uiLine, pDetail, false);
 		else {
-			printColored("WARNING", TerminalColor::Bright_Yellow, false, false);
+			printColored("WARNING", RE_TERMINAL_COLOR_BRIGHT_YELLOW, false, false);
 			printErrMsg(pFile, pFunc, uiLine, pDetail);
 		}
 	}
 
 	void note(const char* pFile, const char* pFunc, unsigned int uiLine, const char* pDetail) {
-		printColored("NOTE", TerminalColor::White, false, false);
+		printColored("NOTE", RE_TERMINAL_COLOR_WHITE, false, false);
 		printErrMsg(pFile, pFunc, uiLine, pDetail);
 	}
 

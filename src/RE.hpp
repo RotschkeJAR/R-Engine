@@ -37,151 +37,153 @@ namespace RE {
 #define STRIP_QUOTE_MACRO(T) T
 
 	enum TerminalColor {
-		Black,
-		Red,
-		Green,
-		Yellow,
-		Blue,
-		Magenta,
-		Cyan,
-		White,
-		Bright_Black, /* gray */
-		Bright_Red,
-		Bright_Green,
-		Bright_Yellow,
-		Bright_Blue,
-		Bright_Magenta,
-		Bright_Cyan,
-		Bright_White
+		RE_TERMINAL_COLOR_BLACK = 0x00,
+		RE_TERMINAL_COLOR_RED = 0x01,
+		RE_TERMINAL_COLOR_GREEN = 0x02,
+		RE_TERMINAL_COLOR_YELLOW = 0x03,
+		RE_TERMINAL_COLOR_BLUE = 0x04,
+		RE_TERMINAL_COLOR_MAGENTA = 0x05,
+		RE_TERMINAL_COLOR_CYAN = 0x06,
+		RE_TERMINAL_COLOR_WHITE = 0x07,
+		RE_TERMINAL_COLOR_BRIGHT_BLACK = 0x08, /* gray */
+		RE_TERMINAL_COLOR_BRIGHT_RED = 0x09,
+		RE_TERMINAL_COLOR_BRIGHT_GREEN = 0x0A,
+		RE_TERMINAL_COLOR_BRIGHT_YELLOW = 0x0B,
+		RE_TERMINAL_COLOR_BRIGHT_BLUE = 0x0C,
+		RE_TERMINAL_COLOR_BRIGHT_MAGENTA = 0x0D,
+		RE_TERMINAL_COLOR_BRIGHT_CYAN = 0x0E,
+		RE_TERMINAL_COLOR_BRIGHT_WHITE = 0x0F,
+		RE_TERMINAL_COLOR_MAX_ENUM = 0x10
 	};
 
 	enum Input {
-		Unknown = 0x00,
-		ScrollUp = 0x01,
-		ScrollDown = 0x02,
-		LeftButton = 0x03,
-		RightButton = 0x04,
-		MiddleButton = 0x05,
-		Space = 0x06,
-		A = 0x07,
-		B = 0x08,
-		C = 0x09,
-		D = 0x0A,
-		E = 0x0B,
-		F = 0x0C,
-		G = 0x0D,
-		H = 0x0E,
-		I = 0x0F,
-		J = 0x10,
-		K = 0x11,
-		L = 0x12,
-		M = 0x13,
-		N = 0x14,
-		O = 0x15,
-		P = 0x16,
-		Q = 0x17,
-		R = 0x18,
-		S = 0x19,
-		T = 0x1A,
-		U = 0x1B,
-		V = 0x1C,
-		W = 0x1D,
-		X = 0x1E,
-		Y = 0x1F,
-		Z = 0x20,
-		Top_0 = 0x21,
-		Top_1 = 0x22,
-		Top_2 = 0x23,
-		Top_3 = 0x24,
-		Top_4 = 0x25,
-		Top_5 = 0x26,
-		Top_6 = 0x27,
-		Top_7 = 0x28,
-		Top_8 = 0x29,
-		Top_9 = 0x2A,
-		Slash = 0x2B, /* / */
-		Backslash = 0x2C, /* \ */
-		Comma = 0x2D, /* , */
-		Period = 0x2E, /* . */
-		Semicolon = 0x2F, /* ; */
-		Apostrophe = 0x30, /* ' */
-		Accent = 0x31, /* ` */
-		Left_Bracket = 0x32, /* [ */
-		Right_Bracket = 0x33, /* ] */
-		Equals = 0x34, /* = */
-		Minus = 0x35, /* - */
-		Right_Ctrl = 0x36,
-		Left_Ctrl = 0x37,
-		Right_Alt = 0x38, /* AltGr */
-		Left_Alt = 0x39,
-		Right_Shift = 0x3A,
-		Left_Shift = 0x3B,
-		Menu = 0x3C,
-		Tab = 0x3D,
-		Enter = 0x3E,
-		Escape = 0x3F,
-		Backspace = 0x40,
-		Arrow_Left = 0x41,
-		Arrow_Right = 0x42,
-		Arrow_Up = 0x43,
-		Arrow_Down = 0x44,
-		Delete = 0x45,
-		Insert = 0x46,
-		Home = 0x47,
-		End = 0x48,
-		Print_Screen = 0x49,
-		Scroll_Lock = 0x4A,
-		Pause = 0x4B,
-		Page_Up = 0x4C,
-		Page_Down = 0x4D,
-		F1 = 0x4E,
-		F2 = 0x4F,
-		F3 = 0x50,
-		F4 = 0x51,
-		F5 = 0x52,
-		F6 = 0x53,
-		F7 = 0x54,
-		F8 = 0x55,
-		F9 = 0x56,
-		F10 = 0x57,
-		F11 = 0x58,
-		F12 = 0x59,
-		F13 = 0x5A,
-		F14 = 0x5B,
-		F15 = 0x5C,
-		F16 = 0x5D,
-		F17 = 0x5E,
-		F18 = 0x5F,
-		F19 = 0x60,
-		F20 = 0x61,
-		F21 = 0x62,
-		F22 = 0x63,
-		F23 = 0x64,
-		F24 = 0x65,
-		F25 = 0x66,
-		Caps_Lock = 0x67,
-		Numpad_Lock = 0x68,
-		Numpad_0 = 0x69,
-		Numpad_1 = 0x6A,
-		Numpad_2 = 0x6B,
-		Numpad_3 = 0x6C,
-		Numpad_4 = 0x6D,
-		Numpad_5 = 0x6E,
-		Numpad_6 = 0x6F,
-		Numpad_7 = 0x70,
-		Numpad_8 = 0x71,
-		Numpad_9 = 0x72,
-		Numpad_Add = 0x73,
-		Numpad_Subtract = 0x74,
-		Numpad_Multiply = 0x75,
-		Numpad_Divide = 0x76,
-		Numpad_Enter = 0x77,
-		Numpad_Period = 0x78,
+		RE_INPUT_UNKNOWN = -0x01,
+		RE_INPUT_SCROLL_UP = 0x00,
+		RE_INPUT_SCROLL_DOWN = 0x01,
+		RE_INPUT_BUTTON_LEFT = 0x02,
+		RE_INPUT_BUTTON_RIGHT = 0x03,
+		RE_INPUT_BUTTON_MIDDLE = 0x04,
+		RE_INPUT_KEY_SPACE = 0x05,
+		RE_INPUT_KEY_A = 0x06,
+		RE_INPUT_KEY_B = 0x07,
+		RE_INPUT_KEY_C = 0x08,
+		RE_INPUT_KEY_D = 0x09,
+		RE_INPUT_KEY_E = 0x0A,
+		RE_INPUT_KEY_F = 0x0B,
+		RE_INPUT_KEY_G = 0x0C,
+		RE_INPUT_KEY_H = 0x0D,
+		RE_INPUT_KEY_I = 0x0E,
+		RE_INPUT_KEY_J = 0x0F,
+		RE_INPUT_KEY_K = 0x10,
+		RE_INPUT_KEY_L = 0x11,
+		RE_INPUT_KEY_M = 0x12,
+		RE_INPUT_KEY_N = 0x13,
+		RE_INPUT_KEY_O = 0x14,
+		RE_INPUT_KEY_P = 0x15,
+		RE_INPUT_KEY_Q = 0x16,
+		RE_INPUT_KEY_R = 0x17,
+		RE_INPUT_KEY_S = 0x18,
+		RE_INPUT_KEY_T = 0x19,
+		RE_INPUT_KEY_U = 0x1A,
+		RE_INPUT_KEY_V = 0x1B,
+		RE_INPUT_KEY_W = 0x1C,
+		RE_INPUT_KEY_X = 0x1D,
+		RE_INPUT_KEY_Y = 0x1E,
+		RE_INPUT_KEY_Z = 0x1F,
+		RE_INPUT_KEY_TOP_0 = 0x20,
+		RE_INPUT_KEY_TOP_1 = 0x21,
+		RE_INPUT_KEY_TOP_2 = 0x22,
+		RE_INPUT_KEY_TOP_3 = 0x23,
+		RE_INPUT_KEY_TOP_4 = 0x24,
+		RE_INPUT_KEY_TOP_5 = 0x25,
+		RE_INPUT_KEY_TOP_6 = 0x26,
+		RE_INPUT_KEY_TOP_7 = 0x27,
+		RE_INPUT_KEY_TOP_8 = 0x28,
+		RE_INPUT_KEY_TOP_9 = 0x29,
+		RE_INPUT_KEY_SLASH = 0x2A, /* / */
+		RE_INPUT_KEY_BACKSLASH = 0x2B, /* \ */
+		RE_INPUT_KEY_COMMA = 0x2C, /* , */
+		RE_INPUT_KEY_PERIOD = 0x2D, /* . */
+		RE_INPUT_KEY_SEMICOLON = 0x2E, /* ; */
+		RE_INPUT_KEY_APOSTROPHE = 0x2F, /* ' */
+		RE_INPUT_KEY_ACCENT = 0x30, /* ` */
+		RE_INPUT_KEY_BRACKET_LEFT = 0x31, /* [ */
+		RE_INPUT_KEY_BRACKET_RIGHT = 0x32, /* ] */
+		RE_INPUT_KEY_EQUALS = 0x33, /* = */
+		RE_INPUT_KEY_MINUS = 0x34, /* - */
+		RE_INPUT_KEY_CTRL_RIGHT = 0x35,
+		RE_INPUT_KEY_CTRL_LEFT = 0x36,
+		RE_INPUT_KEY_ALT_RIGHT = 0x37, /* AltGr */
+		RE_INPUT_KEY_ALT_LEFT = 0x38,
+		RE_INPUT_KEY_SHIFT_RIGHT = 0x39,
+		RE_INPUT_KEY_SHIFT_LEFT = 0x3A,
+		RE_INPUT_KEY_MENU = 0x3B,
+		RE_INPUT_KEY_TAB = 0x3C,
+		RE_INPUT_KEY_ENTER = 0x3D,
+		RE_INPUT_KEY_ESCAPE = 0x3E,
+		RE_INPUT_KEY_BACKSPACE = 0x3F,
+		RE_INPUT_KEY_ARROW_LEFT = 0x40,
+		RE_INPUT_KEY_ARROW_RIGHT = 0x41,
+		RE_INPUT_KEY_ARROW_UP = 0x42,
+		RE_INPUT_KEY_ARROW_DOWN = 0x43,
+		RE_INPUT_KEY_DELETE = 0x44,
+		RE_INPUT_KEY_INSERT = 0x45,
+		RE_INPUT_KEY_HOME = 0x46,
+		RE_INPUT_KEY_END = 0x47,
+		RE_INPUT_KEY_PRINT_SCREEN = 0x48,
+		RE_INPUT_KEY_SCROLL_LOCK = 0x49,
+		RE_INPUT_KEY_PAUSE = 0x4A,
+		RE_INPUT_KEY_PAGE_UP = 0x4B,
+		RE_INPUT_KEY_PAGE_DOWN = 0x4C,
+		RE_INPUT_KEY_F1 = 0x4D,
+		RE_INPUT_KEY_F2 = 0x4E,
+		RE_INPUT_KEY_F3 = 0x4F,
+		RE_INPUT_KEY_F4 = 0x50,
+		RE_INPUT_KEY_F5 = 0x51,
+		RE_INPUT_KEY_F6 = 0x52,
+		RE_INPUT_KEY_F7 = 0x53,
+		RE_INPUT_KEY_F8 = 0x54,
+		RE_INPUT_KEY_F9 = 0x55,
+		RE_INPUT_KEY_F10 = 0x56,
+		RE_INPUT_KEY_F11 = 0x57,
+		RE_INPUT_KEY_F12 = 0x58,
+		RE_INPUT_KEY_F13 = 0x59,
+		RE_INPUT_KEY_F14 = 0x5A,
+		RE_INPUT_KEY_F15 = 0x5B,
+		RE_INPUT_KEY_F16 = 0x5C,
+		RE_INPUT_KEY_F17 = 0x5D,
+		RE_INPUT_KEY_F18 = 0x5E,
+		RE_INPUT_KEY_F19 = 0x5F,
+		RE_INPUT_KEY_F20 = 0x60,
+		RE_INPUT_KEY_F21 = 0x61,
+		RE_INPUT_KEY_F22 = 0x62,
+		RE_INPUT_KEY_F23 = 0x63,
+		RE_INPUT_KEY_F24 = 0x64,
+		RE_INPUT_KEY_F25 = 0x65,
+		RE_INPUT_KEY_CAPS_LOCK = 0x66,
+		RE_INPUT_KEY_NUMPAD_LOCK = 0x67,
+		RE_INPUT_KEY_NUMPAD_0 = 0x68,
+		RE_INPUT_KEY_NUMPAD_1 = 0x69,
+		RE_INPUT_KEY_NUMPAD_2 = 0x6A,
+		RE_INPUT_KEY_NUMPAD_3 = 0x6B,
+		RE_INPUT_KEY_NUMPAD_4 = 0x6C,
+		RE_INPUT_KEY_NUMPAD_5 = 0x6D,
+		RE_INPUT_KEY_NUMPAD_6 = 0x6E,
+		RE_INPUT_KEY_NUMPAD_7 = 0x6F,
+		RE_INPUT_KEY_NUMPAD_8 = 0x70,
+		RE_INPUT_KEY_NUMPAD_9 = 0x71,
+		RE_INPUT_KEY_NUMPAD_ADD = 0x72,
+		RE_INPUT_KEY_NUMPAD_SUBTRACT = 0x73,
+		RE_INPUT_KEY_NUMPAD_MULTIPLY = 0x74,
+		RE_INPUT_KEY_NUMPAD_DIVIDE = 0x75,
+		RE_INPUT_KEY_NUMPAD_ENTER = 0x76,
+		RE_INPUT_KEY_NUMPAD_PERIOD = 0x77,
 		/**
 		 * Represents a key, that does not exist on US-keyboards:
-		 * - UK, DE: less than, (shift) greater than, (AltGr) vertical bar/pipe
+		 * - UK, DE (next to left shift): less than, (shift) greater than, (AltGr) vertical bar/pipe
 		 */
-		World_1 = 0x79
+		RE_INPUT_KEY_WORLD_1 = 0x78,
+		RE_INPUT_MAX_ENUM = 0x79
 	};
 
 	void addToStackTrace(const char* pcFile, const char* pcMethod, REuint u32Line, const char* pcDetails);
@@ -362,6 +364,24 @@ namespace RE {
 				std::fill(std::begin(coords), std::end(coords), value);
 			}
 
+			void copyFrom(const Vector& copyVector) {
+				if (u32Dimensions != copyVector.getDimensions()) {
+					WARNING(appendStrings("Tried to copy values from one vector (", copyVector.getDimensions(), ") to another (", u32Dimensions, ")").c_str());
+					return;
+				}
+				for (REuint u32Index = 0U; u32Index < u32Dimensions; u32Index++)
+					coords[u32Index] = copyVector[u32Index];
+			}
+
+			bool equals(Vector& compareVector) const {
+				if (u32Dimensions != compareVector.getDimensions())
+					return false;
+				for (REuint u32Index = 0U; u32Index < u32Dimensions; u32Index++)
+					if (coords[u32Index] != compareVector[u32Index])
+						return false;
+				return true;
+			}
+
 			constexpr REuint getDimensions() const {
 				return u32Dimensions;
 			}
@@ -378,24 +398,16 @@ namespace RE {
 				return coords[index];
 			}
 
-			void operator =(const Vector& copy) {
-				if (u32Dimensions != copy.getDimensions())
-					return;
-				for (REuint u32Index = 0U; u32Index < u32Dimensions; u32Index++)
-					coords[u32Index] = copy[u32Index];
+			void operator =(const Vector& copyVector) {
+				copyFrom(copyVector);
 			}
 
 			bool operator ==(const Vector& compareVector) const {
-				if (u32Dimensions != compareVector.getDimensions())
-					return false;
-				for (REuint u32Index = 0U; u32Index < u32Dimensions; u32Index++)
-					if (coords[u32Index] != compareVector[u32Index])
-						return false;
-				return true;
+				return equals(compareVector);
 			}
 
 			bool operator !=(const Vector& compareVector) const {
-				return !(*this == compareVector);
+				return !equals(compareVector);
 			}
 
 			friend std::ostream& operator <<(std::ostream& stream, const Vector& vector) {

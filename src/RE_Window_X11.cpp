@@ -99,7 +99,7 @@ namespace RE {
 				case XKeyPress:
 				case XKeyRelease: {
 					XKeyEvent x11_keyEvent = x11_event.xkey;
-					bool bKeyPressed = !static_cast<bool>(x11_keyEvent.type - 2);
+					bool bKeyPressed = x11_keyEvent.type == XKeyPress;
 					XKeyCode x11_scancode = x11_keyEvent.keycode;
 					char cString[5];
 					std::fill(std::begin(cString), std::end(cString), '\0');
@@ -108,21 +108,27 @@ namespace RE {
 					if (bKeyPressed && u8CharLength) {
 						cString[u8CharLength] = '\0';
 					}
+					CATCH_SIGNAL(inputMgr.inputEvent(x11KeyFromVirtual(static_cast<RElong>(x11_keySym)), static_cast<REuint>(x11_scancode), bKeyPressed));
 					} break;
 				case XButtonPress:
 				case XButtonRelease: {
 					XButtonEvent x11_buttonEvent = x11_event.xbutton;
-					bool bButtonPressed = !static_cast<bool>(x11_buttonEvent.type - 4);
+					bool bButtonPressed = x11_buttonEvent.type == XButtonPress;
 					switch (x11_buttonEvent.button) {
 						case Button1: /* left click */
+							CATCH_SIGNAL(inputMgr.inputEvent(RE_INPUT_BUTTON_LEFT, 0U, bButtonPressed));
 							break;
 						case Button2: /* middle click */
+							CATCH_SIGNAL(inputMgr.inputEvent(RE_INPUT_BUTTON_MIDDLE, 0U, bButtonPressed));
 							break;
 						case Button3: /* right click */
+							CATCH_SIGNAL(inputMgr.inputEvent(RE_INPUT_BUTTON_RIGHT, 0U, bButtonPressed));
 							break;
 						case Button4: /* up scroll */
+							CATCH_SIGNAL(inputMgr.inputEvent(RE_INPUT_SCROLL_UP, 0U, true));
 							break;
 						case Button5: /* down scroll */
+							CATCH_SIGNAL(inputMgr.inputEvent(RE_INPUT_SCROLL_DOWN, 0U, true));
 							break;
 						default:
 							break;
@@ -130,6 +136,7 @@ namespace RE {
 					} break;
 				case XMotionNotify: { /* mouse moved */
 					XMotionEvent x11_motionEvent = x11_event.xmotion;
+					CATCH_SIGNAL(inputMgr.cursorEvent(x11_motionEvent.x, x11_motionEvent.y));
 					} break;
 				case XResizeRequest: { /* window resized */
 					XResizeRequestEvent x11_resizeEvent = x11_event.xresizerequest;

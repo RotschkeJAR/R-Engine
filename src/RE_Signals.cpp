@@ -13,25 +13,9 @@ namespace RE {
 	std::stack<AppLocation> stackTrace;
 	bool signalAlreadyCaught = false;
 
-	void printStackTrace() {
-		while (!stackTrace.empty()) {
-			AppLocation locationData = stackTrace.top();
-			print("\tin file ");
-			printColored(locationData.pcFile, TerminalColor::Bright_White, false, false);
-			print(", in function ");
-			printColored(locationData.pcMethod, TerminalColor::Bright_White, false, false);
-			print(", at line ");
-			printColored(std::to_string(locationData.u32Line).c_str(), TerminalColor::Bright_White, false, false);
-			if (std::strcmp(locationData.pcDetails, "\0") != 0)
-				print(appendStrings(": ", locationData.pcDetails));
-			println();
-			stackTrace.pop();
-		}
-	}
-
 	void handleSignal(int signalId) {
 		if (signalAlreadyCaught) {
-			printlnColored("\nThe signal handler has been called again. Terminating instantly", TerminalColor::Red, true, false);
+			printlnColored("\nThe signal handler has been called again. Terminating instantly", RE_TERMINAL_COLOR_RED, true, false);
 			std::exit(signalId);
 		}
 		signalAlreadyCaught = true;
@@ -52,17 +36,20 @@ namespace RE {
 				println("Unknown signal received");
 				break;
 		}
-		printStackTrace();
+		while (!stackTrace.empty()) { // prints stack trace
+			AppLocation locationData = stackTrace.top();
+			print("\tin file ");
+			printColored(locationData.pcFile, RE_TERMINAL_COLOR_BRIGHT_WHITE, false, false);
+			print(", in function ");
+			printColored(locationData.pcMethod, RE_TERMINAL_COLOR_BRIGHT_WHITE, false, false);
+			print(", at line ");
+			printColored(std::to_string(locationData.u32Line).c_str(), RE_TERMINAL_COLOR_BRIGHT_WHITE, false, false);
+			if (std::strcmp(locationData.pcDetails, "\0") != 0)
+				print(appendStrings(": ", locationData.pcDetails));
+			println();
+			stackTrace.pop();
+		}
 		std::exit(signalId);
-	}
-
-	void addToStackTrace(const char* pcFile, const char* pcMethod, REuint u32Line, const char* pcDetails) {
-		AppLocation newTrace = {pcFile, pcMethod, pcDetails, u32Line};
-		stackTrace.push(newTrace);
-	}
-
-	void removeFromStackTrace() {
-		stackTrace.pop();
 	}
 
 	SignalCatcher::SignalCatcher() {
@@ -85,6 +72,15 @@ namespace RE {
 		std::signal(SIGILL, SIG_DFL);
 		std::signal(SIGABRT, SIG_DFL);
 		std::signal(SIGFPE, SIG_DFL);
+	}
+
+	void addToStackTrace(const char* pcFile, const char* pcMethod, REuint u32Line, const char* pcDetails) {
+		AppLocation newTrace = {pcFile, pcMethod, pcDetails, u32Line};
+		stackTrace.push(newTrace);
+	}
+
+	void removeFromStackTrace() {
+		stackTrace.pop();
 	}
 
 }

@@ -39,6 +39,7 @@ namespace RE {
 	}
 
 	void Window::update() {
+		CATCH_SIGNAL(inputMgr.preInputEvent());
 		CATCH_SIGNAL(processLoop());
 	}
 

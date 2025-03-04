@@ -31,6 +31,8 @@ namespace RE {
 			bool shouldClose();
 			bool isValid();
 			Vector<REushort, 2> getSize();
+
+		friend class InputMgr;
 	};
 
 }

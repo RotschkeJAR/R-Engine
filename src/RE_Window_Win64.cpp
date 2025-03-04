@@ -15,7 +15,7 @@ namespace RE {
 		else if (pWin64->win_hWindow != win_hWnd && bRunning)
 			RE_FATAL_ERROR("Window process function has been called by another window");
 		else {
-			switch (uMsg) {
+			switch (win_uMsg) {
 				case WM_SIZE: /* resized */
 					CATCH_SIGNAL(pWin64->updateWindowSize(static_cast<REushort>(LOWORD(win_lParam)), static_cast<REushort>(HIWORD(win_lParam))));
 					return 0;
@@ -36,7 +36,7 @@ namespace RE {
 					if (win_extendedKey)
 						win_scanCode = MAKEWORD(win_scanCode, 0xE0);
 					BOOL win_keyReleased = (win_keyFlags & KF_UP) == KF_UP;
-					switch (vkCode) {
+					switch (win_vkCode) {
 						case VK_SHIFT:
 						case VK_CONTROL:
 						case VK_MENU:
@@ -45,33 +45,39 @@ namespace RE {
 						default:
 							break;
 					}
-					inputMgr.inputEvent(winKeyFromVirtual(static_cast<RElong>(win_vkCode)), static_cast<REuint>(win_scanCode), static_cast<bool>(win_keyReleased));
+					CATCH_SIGNAL(pWin64->inputMgr.inputEvent(winKeyFromVirtual(static_cast<RElong>(win_vkCode)), static_cast<REuint>(win_scanCode), static_cast<bool>(win_keyReleased)));
 					} return 0;
 				case WM_CHAR: {
 					wchar_t wCharacter[2] = {static_cast<wchar_t>(win_wParam), L'\0'};
 					} return 0;
 				case WM_LBUTTONDOWN: /* left mouse button pressed */
+					CATCH_SIGNAL(pWin64->inputMgr.inputEvent(RE_INPUT_BUTTON_LEFT, 0U, true));
 					SetCapture(win_hWnd);
 					return 0;
 				case WM_LBUTTONUP: /* left mouse button released */
+					CATCH_SIGNAL(pWin64->inputMgr.inputEvent(RE_INPUT_BUTTON_LEFT, 0U, false));
 					ReleaseCapture();
 					return 0;
 				case WM_RBUTTONDOWN: /* right mouse button pressed */
+					CATCH_SIGNAL(pWin64->inputMgr.inputEvent(RE_INPUT_BUTTON_RIGHT, 0U, true));
 					SetCapture(win_hWnd);
 					return 0;
 				case WM_RBUTTONUP: /* right mouse button released */
+					CATCH_SIGNAL(pWin64->inputMgr.inputEvent(RE_INPUT_BUTTON_RIGHT, 0U, false));
 					ReleaseCapture();
 					return 0;
 				case WM_MBUTTONDOWN: /* middle mouse button pressed */
+					CATCH_SIGNAL(pWin64->inputMgr.inputEvent(RE_INPUT_BUTTON_MIDDLE, 0U, true));
 					SetCapture(win_hWnd);
 					return 0;
 				case WM_MBUTTONUP: /* middle mouse button released */
+					CATCH_SIGNAL(pWin64->inputMgr.inputEvent(RE_INPUT_BUTTON_MIDDLE, 0U, false));
 					ReleaseCapture();
 					return 0;
 				case WM_MOUSEMOVE: { /* mouse moved */
 					REint i32XPos = GET_X_LPARAM(win_lParam);
 					REint i32YPos = GET_Y_LPARAM(win_lParam);
-					inputMgr.cursorEvent(i32XPos, i32YPos);
+					CATCH_SIGNAL(pWin64->inputMgr.cursorEvent(i32XPos, i32YPos));
 					} return 0;
 				case WM_SETCURSOR:
 					if (LOWORD(win_lParam) == HTCLIENT) {
@@ -79,8 +85,13 @@ namespace RE {
 						return TRUE;
 					}
 					break;
-				case WM_MOUSEWHEEL: /* mouse wheel used/scrolled */
-					return 0;
+				case WM_MOUSEWHEEL: { /* mouse wheel used/scrolled */
+					REint deltaMouseWheel = GET_WHEEL_DELTA_WPARAM(win_wParam);
+					if (deltaMouseWheel > 0)
+						CATCH_SIGNAL(pWin64->inputMgr.inputEvent(RE_INPUT_SCROLL_UP, 0U, true));
+					else
+						CATCH_SIGNAL(pWin64->inputMgr.inputEvent(RE_INPUT_SCROLL_DOWN, 0U, true));
+					} return 0;
 				default:
 					break;
 			}

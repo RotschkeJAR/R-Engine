@@ -28,11 +28,10 @@ namespace RE {
 			VkFence vk_hInternalFence;
 
 			bool create_swapchain();
-			bool create_swapchain_image_views();
+			void clear_swapchain();
 			bool create_shaders();
 			bool create_renderpass();
 			bool create_pipeline();
-			bool create_framebuffers();
 			bool create_command_buffers();
 			bool create_sync_objects();
 			bool record_command_buffer(VkCommandBuffer cmdBuffer, uint32_t imgIndex);

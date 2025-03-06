@@ -210,8 +210,12 @@ namespace RE {
 		} while (false)
 #define CATCH_SIGNAL(CMD) CATCH_SIGNAL_DETAILED(CMD, "\0")
 
-#define SAFE_DELETE(PTR_REF) CATCH_SIGNAL( do { \
+#define DELETE_SAFELY(PTR_REF) CATCH_SIGNAL( do { \
 			delete (PTR_REF); \
+			(PTR_REF) = nullptr; \
+		} while (false) )
+#define DELETE_ARRAY_SAFELY(PTR_REF) CATCH_SIGNAL( do { \
+			delete[] (PTR_REF); \
 			(PTR_REF) = nullptr; \
 		} while (false) )
 

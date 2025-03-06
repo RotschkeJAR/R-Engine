@@ -46,9 +46,6 @@ namespace RE {
 		CATCH_SIGNAL(bRecentSuccess = create_swapchain());
 		if (!bRecentSuccess)
 			return;
-		CATCH_SIGNAL(bRecentSuccess = create_swapchain_image_views());
-		if (!bRecentSuccess)
-			return;
 		CATCH_SIGNAL(bRecentSuccess = create_shaders());
 		if (!bRecentSuccess)
 			return;
@@ -56,9 +53,6 @@ namespace RE {
 		if (!bRecentSuccess)
 			return;
 		CATCH_SIGNAL(bRecentSuccess = create_pipeline());
-		if (!bRecentSuccess)
-			return;
-		CATCH_SIGNAL(bRecentSuccess = create_framebuffers());
 		if (!bRecentSuccess)
 			return;
 		CATCH_SIGNAL(bRecentSuccess = create_command_buffers());
@@ -75,6 +69,7 @@ namespace RE {
 			return;
 		RenderSystem::pInstance = nullptr;
 
+		clear_swapchain_related_objects();
 		if (vk_hInternalImgAvailableSemaphore != VK_NULL_HANDLE)
 			CATCH_SIGNAL(vkDestroySemaphore(RE_VK_HANDLE_DEVICE, vk_hInternalImgAvailableSemaphore, nullptr));
 		if (vk_hInternalRenderFinishedSemaphore != VK_NULL_HANDLE)
@@ -83,11 +78,6 @@ namespace RE {
 			CATCH_SIGNAL(vkDestroyFence(RE_VK_HANDLE_DEVICE, vk_hInternalFence, nullptr));
 		if (vk_hInternalCmdPool != VK_NULL_HANDLE)
 			CATCH_SIGNAL(vkDestroyCommandPool(RE_VK_HANDLE_DEVICE, vk_hInternalCmdPool, nullptr));
-		if (vk_pInternalFramebuffers) {
-			for (uint32_t i = 0U; i < u32InternalSwapchainImageCount; i++)
-				CATCH_SIGNAL_DETAILED(vkDestroyFramebuffer(RE_VK_HANDLE_DEVICE, vk_pInternalFramebuffers[i], nullptr), append_strings("Framebuffer index: ", i).c_str());
-			CATCH_SIGNAL(delete[] vk_pInternalFramebuffers);
-		}
 		if (vk_hInternalPipeline != VK_NULL_HANDLE)
 			CATCH_SIGNAL(vkDestroyPipeline(RE_VK_HANDLE_DEVICE, vk_hInternalPipeline, nullptr));
 		if (vk_hInternalPipelineLayout != VK_NULL_HANDLE)
@@ -98,16 +88,6 @@ namespace RE {
 			CATCH_SIGNAL(vkDestroyShaderModule(RE_VK_HANDLE_DEVICE, vk_hInternalVertexShader, nullptr));
 		if (vk_hInternalFragmentShader != VK_NULL_HANDLE)
 			CATCH_SIGNAL(vkDestroyShaderModule(RE_VK_HANDLE_DEVICE, vk_hInternalFragmentShader, nullptr));
-		if (vk_pInternalSwapchainImageViews)
-			for (uint32_t i = 0U; i < u32InternalSwapchainImageCount; i++)
-				if (vk_pInternalSwapchainImageViews[i] != VK_NULL_HANDLE)
-					CATCH_SIGNAL_DETAILED(vkDestroyImageView(RE_VK_HANDLE_DEVICE, vk_pInternalSwapchainImageViews[i], nullptr), append_strings("Image index: ", i).c_str());
-		if (vk_pInternalSwapchainImages) {
-			CATCH_SIGNAL(delete[] vk_pInternalSwapchainImages);
-			CATCH_SIGNAL(delete[] vk_pInternalSwapchainImageViews);
-		}
-		if (vk_hInternalSwapchain != VK_NULL_HANDLE)
-			CATCH_SIGNAL(vkDestroySwapchainKHR(RE_VK_HANDLE_DEVICE, vk_hInternalSwapchain, nullptr));
 	}
 
 	bool RenderSystem::create_swapchain() {
@@ -133,6 +113,7 @@ namespace RE {
 		if (RE_VK_SURFACE_CAPABILITIES.maxImageCount > 0 && u32InternalSwapchainImageCount > RE_VK_SURFACE_CAPABILITIES.maxImageCount)
 			u32InternalSwapchainImageCount = RE_VK_SURFACE_CAPABILITIES.maxImageCount;
 
+		// Actual swapchain
 		VkSwapchainCreateInfoKHR vk_swapchainCreateInfo = { VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR };
 		vk_swapchainCreateInfo.surface = RE_VK_HANDLE_SURFACE;
 		vk_swapchainCreateInfo.minImageCount = u32InternalSwapchainImageCount;
@@ -155,12 +136,12 @@ namespace RE {
 		vk_swapchainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
 		VkResult vk_eSuccessResult;
 		CATCH_SIGNAL(vk_eSuccessResult = vkCreateSwapchainKHR(RE_VK_HANDLE_DEVICE, &vk_swapchainCreateInfo, nullptr, &vk_hInternalSwapchain));
-		if (!CHECK_VK_RESULT(vk_eSuccessResult))
+		if (!CHECK_VK_RESULT(vk_eSuccessResult)) {
 			RE_FATAL_ERROR("Failed creating swapchain in Vulkan");
-		return vk_eSuccessResult == VK_SUCCESS;
-	}
+			return false;
+		}
 
-	bool RenderSystem::create_swapchain_image_views() {
+		// Swapchain image views
 		CATCH_SIGNAL(vkGetSwapchainImagesKHR(RE_VK_HANDLE_DEVICE, vk_hInternalSwapchain, &u32InternalSwapchainImageCount, nullptr));
 		vk_pInternalSwapchainImages = new VkImage[u32InternalSwapchainImageCount];
 		vk_pInternalSwapchainImageViews = new VkImageView[u32InternalSwapchainImageCount];
@@ -182,14 +163,51 @@ namespace RE {
 			vk_imgViewCreateInfo.subresourceRange.levelCount = 1;
 			vk_imgViewCreateInfo.subresourceRange.baseArrayLayer = 0;
 			vk_imgViewCreateInfo.subresourceRange.layerCount = 1;
-			VkResult vk_eSuccessResult;
 			CATCH_SIGNAL_DETAILED(vk_eSuccessResult = vkCreateImageView(RE_VK_HANDLE_DEVICE, &vk_imgViewCreateInfo, nullptr, &vk_pInternalSwapchainImageViews[u32ImageIndex]), append_strings("Image index: ", u32ImageIndex).c_str());
 			if (!CHECK_VK_RESULT(vk_eSuccessResult)) {
 				RE_FATAL_ERROR(append_strings("Failed creating image view ", u32ImageIndex, " out of ", u32InternalSwapchainImageCount, " in Vulkan"));
 				bFailure = true;
 			}
 		}
+		if (!bFailure)
+			return false;
+
+		// Framebuffers
+		vk_pInternalFramebuffers = new VkFramebuffer[u32InternalSwapchainImageCount];
+		for (uint32_t u32FramebufferIndex = 0U; u32FramebufferIndex < u32InternalSwapchainImageCount; u32FramebufferIndex++) {
+			VkFramebufferCreateInfo vk_framebufferCreateInfo = { VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO };
+			vk_framebufferCreateInfo.renderPass = vk_hInternalRenderPass;
+			vk_framebufferCreateInfo.attachmentCount = 1;
+			vk_framebufferCreateInfo.pAttachments = &vk_pInternalSwapchainImageViews[u32FramebufferIndex];
+			vk_framebufferCreateInfo.width = vk_internalSwapchainImageSize.width;
+			vk_framebufferCreateInfo.height = vk_internalSwapchainImageSize.height;
+			vk_framebufferCreateInfo.layers = 1;
+			CATCH_SIGNAL_DETAILED(vk_eSuccessResult = vkCreateFramebuffer(RE_VK_HANDLE_DEVICE, &vk_framebufferCreateInfo, nullptr, &vk_pInternalFramebuffers[u32FramebufferIndex]), append_strings("Framebuffer index: ", u32FramebufferIndex).c_str());
+			if (!CHECK_VK_RESULT(vk_eSuccessResult)) {
+				RE_FATAL_ERROR(append_strings("Failed creating a framebuffer at index ", u32FramebufferIndex, " in Vulkan"));
+				bFailure = true;
+			}
+		}
 		return !bFailure;
+	}
+
+	void RenderSystem::clear_swapchain() {
+		if (vk_pInternalFramebuffers) {
+			for (uint32_t i = 0U; i < u32InternalSwapchainImageCount; i++)
+				CATCH_SIGNAL_DETAILED(vkDestroyFramebuffer(RE_VK_HANDLE_DEVICE, vk_pInternalFramebuffers[i], nullptr), append_strings("Framebuffer index: ", i).c_str());
+			DELETE_ARRAY_SAFELY(vk_pInternalFramebuffers);
+		}
+		if (vk_pInternalSwapchainImageViews) {
+			for (uint32_t i = 0U; i < u32InternalSwapchainImageCount; i++)
+				if (vk_pInternalSwapchainImageViews[i] != VK_NULL_HANDLE)
+					CATCH_SIGNAL_DETAILED(vkDestroyImageView(RE_VK_HANDLE_DEVICE, vk_pInternalSwapchainImageViews[i], nullptr), append_strings("Image index: ", i).c_str());
+			DELETE_ARRAY_SAFELY(vk_pInternalSwapchainImages);
+			DELETE_ARRAY_SAFELY(vk_pInternalSwapchainImageViews);
+		}
+		if (vk_hInternalSwapchain != VK_NULL_HANDLE) {
+			CATCH_SIGNAL(vkDestroySwapchainKHR(RE_VK_HANDLE_DEVICE, vk_hInternalSwapchain, nullptr));
+			vk_hInternalSwapchain = VK_NULL_HANDLE;
+		}
 	}
 
 	bool RenderSystem::create_shaders() {
@@ -395,27 +413,6 @@ namespace RE {
 		return vk_eSuccessResult == VK_SUCCESS;
 	}
 
-	bool RenderSystem::create_framebuffers() {
-		vk_pInternalFramebuffers = new VkFramebuffer[u32InternalSwapchainImageCount];
-		bool bFailure = false;
-		for (uint32_t u32FramebufferIndex = 0U; u32FramebufferIndex < u32InternalSwapchainImageCount; u32FramebufferIndex++) {
-			VkFramebufferCreateInfo vk_framebufferCreateInfo = { VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO };
-			vk_framebufferCreateInfo.renderPass = vk_hInternalRenderPass;
-			vk_framebufferCreateInfo.attachmentCount = 1;
-			vk_framebufferCreateInfo.pAttachments = &vk_pInternalSwapchainImageViews[u32FramebufferIndex];
-			vk_framebufferCreateInfo.width = vk_internalSwapchainImageSize.width;
-			vk_framebufferCreateInfo.height = vk_internalSwapchainImageSize.height;
-			vk_framebufferCreateInfo.layers = 1;
-			VkResult vk_eSuccessResult;
-			CATCH_SIGNAL_DETAILED(vk_eSuccessResult = vkCreateFramebuffer(RE_VK_HANDLE_DEVICE, &vk_framebufferCreateInfo, nullptr, &vk_pInternalFramebuffers[u32FramebufferIndex]), append_strings("Framebuffer index: ", u32FramebufferIndex).c_str());
-			if (!CHECK_VK_RESULT(vk_eSuccessResult)) {
-				RE_FATAL_ERROR(append_strings("Failed creating a framebuffer at index ", u32FramebufferIndex, " in Vulkan"));
-				bFailure = true;
-			}
-		}
-		return !bFailure;
-	}
-
 	bool RenderSystem::create_command_buffers() {
 		VkCommandPoolCreateInfo vk_cmdPoolCreateInfo = { VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
 		vk_cmdPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
@@ -547,7 +544,12 @@ namespace RE {
 	}
 
 	void RenderSystem::window_resize_event(Vector<REushort, 2U> newSize) {
-
+		CATCH_SIGNAL(clear_swapchain());
+		CATCH_SIGNAL(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(RE_VK_HANDLE_PHYSICAL_DEVICE, RE_VK_HANDLE_SURFACE, &RE_VK_SURFACE_CAPABILITIES));
+		bool bRecentSuccess;
+		CATCH_SIGNAL(bRecentSuccess = create_swapchain());
+		if (!bRecentSuccess)
+			RE_FATAL_ERROR("Failed recreating the swapchain");
 	}
 
 	bool RenderSystem::is_valid() {

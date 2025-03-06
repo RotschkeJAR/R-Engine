@@ -9,8 +9,7 @@ namespace RE {
 		private:
 			bool bValid;
 			bool bVsyncActive;
-			VkPresentModeKHR vk_eVsyncMode;
-			VkPresentModeKHR vk_eNoVsync;
+			VkPresentModeKHR vk_eVsyncMode, vk_eNoVsync;
 			VkSurfaceFormatKHR vk_internalSurfaceFormat;
 			VkExtent2D vk_internalSwapchainImageSize;
 			VkSwapchainKHR vk_hInternalSwapchain;
@@ -32,6 +31,7 @@ namespace RE {
 			bool create_shaders();
 			bool create_renderpass();
 			bool create_pipeline();
+			bool create_framebuffers();
 			bool create_command_buffers();
 			bool create_sync_objects();
 			bool record_command_buffer(VkCommandBuffer cmdBuffer, uint32_t imgIndex);

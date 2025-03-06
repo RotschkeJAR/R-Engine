@@ -5,7 +5,7 @@ namespace RE {
 
 #ifdef RE_OS_WINDOWS
 # define WINDOW_CLASS_NAME L"RE_WindowClass"
-# define WINDOW_STYLE_FLAGS (WS_BORDER | WS_CAPTION | WS_SYSMENU)
+# define WINDOW_STYLE_FLAGS /* (WS_BORDER | WS_CAPTION | WS_SYSMENU) */ (WS_SIZEBOX | WS_MAXIMIZEBOX | WS_CAPTION | WS_SYSMENU)
 	HINSTANCE Window_Win64::win_hInstance = nullptr;
 	Window_Win64* pWin64 = nullptr;
 

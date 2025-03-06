@@ -38,7 +38,7 @@ namespace RE {
 		x11_pSizes->min_height = size[1];
 		x11_pSizes->max_width = size[0];
 		x11_pSizes->max_height = size[1];
-		XSetWMNormalHints(x11_pDisplay, x11_hWindow, x11_pSizes);
+		//XSetWMNormalHints(x11_pDisplay, x11_hWindow, x11_pSizes);
 
 		x11_hClose = XInternAtom(x11_pDisplay, "WM_DELETE_WINDOW", XFalse);
 		XSetWMProtocols(x11_pDisplay, x11_hWindow, &x11_hClose, 1);

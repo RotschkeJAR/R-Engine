@@ -1,11 +1,6 @@
 #include "RE.hpp"
 #include <csignal>
 
-#ifdef RE_OS_WINDOWS
-# define NOGDI
-# include <windows.h>
-#endif
-
 using namespace RE;
 
 class Nexie : public GameObject {
@@ -52,7 +47,7 @@ Clonus* clonus = nullptr;
 
 class Objy : public GameObject {
 	public:
-		RNG rng;
+		RandomNumberGenerator rng;
 		REulong hits, misses;
 
 		Objy() : GameObject(0, 1), hits(0UL), misses(0UL) {}
@@ -62,7 +57,7 @@ class Objy : public GameObject {
 		}
 		void update(Scene* pCurrentScene) {
 			//println("update objy");
-			bool randomResult = rng.randomBool();
+			bool randomResult = rng.random_bool(0.2f);
 			if (randomResult)
 				hits++;
 			else
@@ -87,7 +82,7 @@ class First : public Scene {
 int main() {
 	First first;
 	second = new Second();
-	setNextScene(&first);
+	set_next_scene(&first);
 	RE::execute();
 	delete second;
 	if (clonus)
@@ -97,7 +92,7 @@ int main() {
 
 #ifdef RE_OS_WINDOWS
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pwcCmdLine, int i32CmdShow) {
-	setHInstance(hInstance);
+	set_hinstance(hInstance);
 	return main();
 }
 #endif

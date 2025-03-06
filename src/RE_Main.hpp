@@ -6,6 +6,9 @@ namespace RE {
 	extern bool bRunning;
 	extern bool bErrorOccured;
 
+	float get_deltaseconds();
+	float get_fps_rate();
+
 }
 
 #endif /* __RE_MAIN_H__ */

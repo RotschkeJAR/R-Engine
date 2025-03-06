@@ -1,4 +1,4 @@
-#include "RE_Ext Header.hpp"
+#include "RE_Internal Header.hpp"
 #include "RE_Manager.hpp"
 
 namespace RE {

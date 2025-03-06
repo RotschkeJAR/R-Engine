@@ -6,6 +6,8 @@
 #include <optional>
 #include <vector>
 #include <stack>
+#include <time.h>
+#include <chrono>
 
 #include "RE.hpp"
 #undef ERROR

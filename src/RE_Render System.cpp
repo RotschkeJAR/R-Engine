@@ -1,6 +1,8 @@
 #include "RE_Render System.hpp"
 #include "RE_Window.hpp"
 
+#include "RE_Main.hpp"
+
 namespace RE {
 	
 	RenderSystem* RenderSystem::pInstance = nullptr;
@@ -41,28 +43,28 @@ namespace RE {
 				vk_eNoVsync = VK_PRESENT_MODE_MAILBOX_KHR;
 		}
 		bool bRecentSuccess;
-		CATCH_SIGNAL(bRecentSuccess = createSwapchain());
+		CATCH_SIGNAL(bRecentSuccess = create_swapchain());
 		if (!bRecentSuccess)
 			return;
-		CATCH_SIGNAL(bRecentSuccess = createImageViews());
+		CATCH_SIGNAL(bRecentSuccess = create_swapchain_image_views());
 		if (!bRecentSuccess)
 			return;
-		CATCH_SIGNAL(bRecentSuccess = createShaders());
+		CATCH_SIGNAL(bRecentSuccess = create_shaders());
 		if (!bRecentSuccess)
 			return;
-		CATCH_SIGNAL(bRecentSuccess = createRenderPass());
+		CATCH_SIGNAL(bRecentSuccess = create_renderpass());
 		if (!bRecentSuccess)
 			return;
-		CATCH_SIGNAL(bRecentSuccess = createPipeline());
+		CATCH_SIGNAL(bRecentSuccess = create_pipeline());
 		if (!bRecentSuccess)
 			return;
-		CATCH_SIGNAL(bRecentSuccess = createFramebuffers());
+		CATCH_SIGNAL(bRecentSuccess = create_framebuffers());
 		if (!bRecentSuccess)
 			return;
-		CATCH_SIGNAL(bRecentSuccess = createCommands());
+		CATCH_SIGNAL(bRecentSuccess = create_command_buffers());
 		if (!bRecentSuccess)
 			return;
-		CATCH_SIGNAL(bRecentSuccess = createSync());
+		CATCH_SIGNAL(bRecentSuccess = create_sync_objects());
 		if (!bRecentSuccess)
 			return;
 		bValid = true;
@@ -83,7 +85,7 @@ namespace RE {
 			CATCH_SIGNAL(vkDestroyCommandPool(RE_VK_HANDLE_DEVICE, vk_hInternalCmdPool, nullptr));
 		if (vk_pInternalFramebuffers) {
 			for (uint32_t i = 0U; i < u32InternalSwapchainImageCount; i++)
-				CATCH_SIGNAL_DETAILED(vkDestroyFramebuffer(RE_VK_HANDLE_DEVICE, vk_pInternalFramebuffers[i], nullptr), appendStrings("Framebuffer index: ", i).c_str());
+				CATCH_SIGNAL_DETAILED(vkDestroyFramebuffer(RE_VK_HANDLE_DEVICE, vk_pInternalFramebuffers[i], nullptr), append_strings("Framebuffer index: ", i).c_str());
 			CATCH_SIGNAL(delete[] vk_pInternalFramebuffers);
 		}
 		if (vk_hInternalPipeline != VK_NULL_HANDLE)
@@ -99,7 +101,7 @@ namespace RE {
 		if (vk_pInternalSwapchainImageViews)
 			for (uint32_t i = 0U; i < u32InternalSwapchainImageCount; i++)
 				if (vk_pInternalSwapchainImageViews[i] != VK_NULL_HANDLE)
-					CATCH_SIGNAL_DETAILED(vkDestroyImageView(RE_VK_HANDLE_DEVICE, vk_pInternalSwapchainImageViews[i], nullptr), appendStrings("Image index: ", i).c_str());
+					CATCH_SIGNAL_DETAILED(vkDestroyImageView(RE_VK_HANDLE_DEVICE, vk_pInternalSwapchainImageViews[i], nullptr), append_strings("Image index: ", i).c_str());
 		if (vk_pInternalSwapchainImages) {
 			CATCH_SIGNAL(delete[] vk_pInternalSwapchainImages);
 			CATCH_SIGNAL(delete[] vk_pInternalSwapchainImageViews);
@@ -108,7 +110,7 @@ namespace RE {
 			CATCH_SIGNAL(vkDestroySwapchainKHR(RE_VK_HANDLE_DEVICE, vk_hInternalSwapchain, nullptr));
 	}
 
-	bool RenderSystem::createSwapchain() {
+	bool RenderSystem::create_swapchain() {
 		bool bFoundFormat = false;
 		for (uint32_t u32SurfaceFormatIndex = 0U; u32SurfaceFormatIndex < RE_VK_UINT_SURFACE_FORMATS_COUNT; u32SurfaceFormatIndex++) {
 			if (RE_VK_PTR_SURFACE_FORMATS[u32SurfaceFormatIndex].format == VK_FORMAT_R8G8B8A8_SRGB && RE_VK_PTR_SURFACE_FORMATS[u32SurfaceFormatIndex].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
@@ -122,7 +124,7 @@ namespace RE {
 		if (RE_VK_SURFACE_CAPABILITIES.currentExtent.width != std::numeric_limits<uint32_t>::max() && RE_VK_SURFACE_CAPABILITIES.currentExtent.height != std::numeric_limits<uint32_t>::max())
 			vk_internalSwapchainImageSize = RE_VK_SURFACE_CAPABILITIES.currentExtent;
 		else {
-			Vector<REushort, 2> winSize = Window::pInstance->getSize();
+			Vector<REushort, 2> winSize = Window::pInstance->get_size();
 			vk_internalSwapchainImageSize = {static_cast<uint32_t>(winSize[0]), static_cast<uint32_t>(winSize[1])};
 			vk_internalSwapchainImageSize.width = std::clamp(vk_internalSwapchainImageSize.width, RE_VK_SURFACE_CAPABILITIES.minImageExtent.width, RE_VK_SURFACE_CAPABILITIES.maxImageExtent.width);
 			vk_internalSwapchainImageSize.height = std::clamp(vk_internalSwapchainImageSize.height, RE_VK_SURFACE_CAPABILITIES.minImageExtent.height, RE_VK_SURFACE_CAPABILITIES.maxImageExtent.height);
@@ -158,7 +160,7 @@ namespace RE {
 		return vk_eSuccessResult == VK_SUCCESS;
 	}
 
-	bool RenderSystem::createImageViews() {
+	bool RenderSystem::create_swapchain_image_views() {
 		CATCH_SIGNAL(vkGetSwapchainImagesKHR(RE_VK_HANDLE_DEVICE, vk_hInternalSwapchain, &u32InternalSwapchainImageCount, nullptr));
 		vk_pInternalSwapchainImages = new VkImage[u32InternalSwapchainImageCount];
 		vk_pInternalSwapchainImageViews = new VkImageView[u32InternalSwapchainImageCount];
@@ -181,16 +183,16 @@ namespace RE {
 			vk_imgViewCreateInfo.subresourceRange.baseArrayLayer = 0;
 			vk_imgViewCreateInfo.subresourceRange.layerCount = 1;
 			VkResult vk_eSuccessResult;
-			CATCH_SIGNAL_DETAILED(vk_eSuccessResult = vkCreateImageView(RE_VK_HANDLE_DEVICE, &vk_imgViewCreateInfo, nullptr, &vk_pInternalSwapchainImageViews[u32ImageIndex]), appendStrings("Image index: ", u32ImageIndex).c_str());
+			CATCH_SIGNAL_DETAILED(vk_eSuccessResult = vkCreateImageView(RE_VK_HANDLE_DEVICE, &vk_imgViewCreateInfo, nullptr, &vk_pInternalSwapchainImageViews[u32ImageIndex]), append_strings("Image index: ", u32ImageIndex).c_str());
 			if (!CHECK_VK_RESULT(vk_eSuccessResult)) {
-				RE_FATAL_ERROR(appendStrings("Failed creating image view ", u32ImageIndex, " out of ", u32InternalSwapchainImageCount, " in Vulkan"));
+				RE_FATAL_ERROR(append_strings("Failed creating image view ", u32ImageIndex, " out of ", u32InternalSwapchainImageCount, " in Vulkan"));
 				bFailure = true;
 			}
 		}
 		return !bFailure;
 	}
 
-	bool RenderSystem::createShaders() {
+	bool RenderSystem::create_shaders() {
 		std::ifstream vertexFile("shaders/vertex.spv", std::ios::ate | std::ios::binary);
 		if (!vertexFile.is_open()) {
 			RE_FATAL_ERROR("Failed opening vertex binary file");
@@ -232,7 +234,7 @@ namespace RE {
 		return vk_eSuccessResult == VK_SUCCESS;
 	}
 
-	bool RenderSystem::createRenderPass() {
+	bool RenderSystem::create_renderpass() {
 		VkAttachmentDescription vk_attachmentDesc = {};
 		vk_attachmentDesc.format = vk_internalSurfaceFormat.format;
 		vk_attachmentDesc.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -274,7 +276,7 @@ namespace RE {
 		return vk_eSuccessResult == VK_SUCCESS;
 	}
 
-	bool RenderSystem::createPipeline() {
+	bool RenderSystem::create_pipeline() {
 		VkPipelineLayoutCreateInfo vk_layoutCreateInfo = { VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
 		vk_layoutCreateInfo.setLayoutCount = 0;
 		vk_layoutCreateInfo.pSetLayouts = nullptr;
@@ -393,7 +395,7 @@ namespace RE {
 		return vk_eSuccessResult == VK_SUCCESS;
 	}
 
-	bool RenderSystem::createFramebuffers() {
+	bool RenderSystem::create_framebuffers() {
 		vk_pInternalFramebuffers = new VkFramebuffer[u32InternalSwapchainImageCount];
 		bool bFailure = false;
 		for (uint32_t u32FramebufferIndex = 0U; u32FramebufferIndex < u32InternalSwapchainImageCount; u32FramebufferIndex++) {
@@ -405,16 +407,16 @@ namespace RE {
 			vk_framebufferCreateInfo.height = vk_internalSwapchainImageSize.height;
 			vk_framebufferCreateInfo.layers = 1;
 			VkResult vk_eSuccessResult;
-			CATCH_SIGNAL_DETAILED(vk_eSuccessResult = vkCreateFramebuffer(RE_VK_HANDLE_DEVICE, &vk_framebufferCreateInfo, nullptr, &vk_pInternalFramebuffers[u32FramebufferIndex]), appendStrings("Framebuffer index: ", u32FramebufferIndex).c_str());
+			CATCH_SIGNAL_DETAILED(vk_eSuccessResult = vkCreateFramebuffer(RE_VK_HANDLE_DEVICE, &vk_framebufferCreateInfo, nullptr, &vk_pInternalFramebuffers[u32FramebufferIndex]), append_strings("Framebuffer index: ", u32FramebufferIndex).c_str());
 			if (!CHECK_VK_RESULT(vk_eSuccessResult)) {
-				RE_FATAL_ERROR(appendStrings("Failed creating a framebuffer at index ", u32FramebufferIndex, " in Vulkan"));
+				RE_FATAL_ERROR(append_strings("Failed creating a framebuffer at index ", u32FramebufferIndex, " in Vulkan"));
 				bFailure = true;
 			}
 		}
 		return !bFailure;
 	}
 
-	bool RenderSystem::createCommands() {
+	bool RenderSystem::create_command_buffers() {
 		VkCommandPoolCreateInfo vk_cmdPoolCreateInfo = { VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
 		vk_cmdPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 		vk_cmdPoolCreateInfo.queueFamilyIndex = RE_VK_QUEUE_INDICES.u32GraphicsFamily;
@@ -437,7 +439,7 @@ namespace RE {
 		return true;
 	}
 
-	bool RenderSystem::createSync() {
+	bool RenderSystem::create_sync_objects() {
 		VkSemaphoreCreateInfo vk_semaphoreCreateInfo = { VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
 		VkFenceCreateInfo fenceCreateInfo = { VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
 		fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
@@ -460,7 +462,7 @@ namespace RE {
 		return true;
 	}
 
-	bool RenderSystem::recordCommandBuffer(VkCommandBuffer vk_cmdBuffer, uint32_t u32ImgIndex) {
+	bool RenderSystem::record_command_buffer(VkCommandBuffer vk_cmdBuffer, uint32_t u32ImgIndex) {
 		VkCommandBufferBeginInfo vk_cmdBufferBeginInfo = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
 		vk_cmdBufferBeginInfo.flags = 0;
 		vk_cmdBufferBeginInfo.pInheritanceInfo = nullptr;
@@ -473,11 +475,18 @@ namespace RE {
 		VkRenderPassBeginInfo vk_renderPassBeginInfo = { VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
 		vk_renderPassBeginInfo.renderPass = vk_hInternalRenderPass;
 		vk_renderPassBeginInfo.framebuffer = vk_pInternalFramebuffers[u32ImgIndex];
-		vk_renderPassBeginInfo.renderArea.offset = {0, 0};
+		vk_renderPassBeginInfo.renderArea.offset.x = 0;
+		vk_renderPassBeginInfo.renderArea.offset.y = 0;
 		vk_renderPassBeginInfo.renderArea.extent = vk_internalSwapchainImageSize;
-		VkClearValue vk_clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
+		VkClearValue vk_clearValue = {};
+		vk_clearValue.color.float32[0] = 0.0f;
+		vk_clearValue.color.float32[1] = 0.0f;
+		vk_clearValue.color.float32[2] = 0.0f;
+		vk_clearValue.color.float32[3] = 1.0f;
+		vk_clearValue.depthStencil.depth = 0.0f;
+		vk_clearValue.depthStencil.stencil = 0U;
 		vk_renderPassBeginInfo.clearValueCount = 1;
-		vk_renderPassBeginInfo.pClearValues = &vk_clearColor;
+		vk_renderPassBeginInfo.pClearValues = &vk_clearValue;
 		CATCH_SIGNAL(vkCmdBeginRenderPass(vk_cmdBuffer, &vk_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE));
 		CATCH_SIGNAL(vkCmdBindPipeline(vk_cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hInternalPipeline));
 		VkViewport vk_viewport = {};
@@ -489,8 +498,10 @@ namespace RE {
 		vk_viewport.maxDepth = 1.0f;
 		CATCH_SIGNAL(vkCmdSetViewport(vk_cmdBuffer, 0, 1, &vk_viewport));
 		VkRect2D vk_scissor = {};
-		vk_scissor.offset = {0, 0};
-		vk_scissor.extent = vk_internalSwapchainImageSize;
+		vk_scissor.offset.x = 0;
+		vk_scissor.offset.y = 0;
+		vk_scissor.extent.width = vk_internalSwapchainImageSize.width;
+		vk_scissor.extent.height = vk_internalSwapchainImageSize.height;
 		CATCH_SIGNAL(vkCmdSetScissor(vk_cmdBuffer, 0, 1, &vk_scissor));
 		CATCH_SIGNAL(vkCmdDraw(vk_cmdBuffer, 3, 1, 0, 0));
 		CATCH_SIGNAL(vkCmdEndRenderPass(vk_cmdBuffer));
@@ -502,13 +513,13 @@ namespace RE {
 		return true;
 	}
 
-	void RenderSystem::drawFrame() {
+	void RenderSystem::draw_frame() {
 		vkWaitForFences(RE_VK_HANDLE_DEVICE, 1, &vk_hInternalFence, VK_TRUE, UINT64_MAX);
 		vkResetFences(RE_VK_HANDLE_DEVICE, 1, &vk_hInternalFence);
 		uint32_t u32ImgIndex = 0U;
 		vkAcquireNextImageKHR(RE_VK_HANDLE_DEVICE, vk_hInternalSwapchain, UINT64_MAX, vk_hInternalImgAvailableSemaphore, VK_NULL_HANDLE, &u32ImgIndex);
 		vkResetCommandBuffer(vk_hInternalCmdBuffer, 0);
-		CATCH_SIGNAL(recordCommandBuffer(vk_hInternalCmdBuffer, u32ImgIndex));
+		CATCH_SIGNAL(record_command_buffer(vk_hInternalCmdBuffer, u32ImgIndex));
 
 		VkSubmitInfo vk_submitInfo = { VK_STRUCTURE_TYPE_SUBMIT_INFO };
 		vk_submitInfo.waitSemaphoreCount = 1;
@@ -535,11 +546,11 @@ namespace RE {
 		CATCH_SIGNAL(vkQueuePresentKHR(RE_VK_HANDLE_PRESENT_QUEUE, &vk_presentInfo));
 	}
 
-	void RenderSystem::windowResize(Vector<REushort, 2U> newSize) {
+	void RenderSystem::window_resize_event(Vector<REushort, 2U> newSize) {
 
 	}
 
-	bool RenderSystem::isValid() {
+	bool RenderSystem::is_valid() {
 		return bValid;
 	}
 

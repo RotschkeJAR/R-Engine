@@ -1,7 +1,7 @@
 #ifndef __RE_VULKAN_H__
 #define __RE_VULKAN_H__
 
-#include "RE_Ext Header.hpp"
+#include "RE_Internal Header.hpp"
 #ifdef RE_OS_WINDOWS
 # define VK_USE_PLATFORM_WIN32_KHR
 #elif defined RE_OS_LINUX
@@ -31,21 +31,21 @@ namespace RE {
 			uint32_t u32InternalPresentModesCount;
 			VkDebugUtilsMessengerEXT vk_hDebugMessenger;
 
-			static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT vk_severityFlagBits, VkDebugUtilsMessageTypeFlagsEXT vk_MsgTypeBits, const VkDebugUtilsMessengerCallbackDataEXT* ck_CallbackData, void* vk_UserData);
-			static bool isPhysicalDeviceSuitable(VkPhysicalDevice vk_hPhysicalDevice);
-			bool setupValidationLayers();
-			void* loadFuncInstance(VkInstance vk_hInstance, const char* pFuncName);
-			void* loadFunc(const char* pFuncName);
-			bool createInstance();
-			bool loadVulkan_1_0();
-			bool loadVulkan_1_1();
-			bool loadVulkan_1_2();
-			bool loadVulkan_1_3();
-			// bool loadVulkan_1_4();
-			bool loadExtensionFuncs();
-			bool pickPhysicalDevice();
-			bool createLogicalDevice();
-			bool createWindowSurface();
+			static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT vk_severityFlagBits, VkDebugUtilsMessageTypeFlagsEXT vk_MsgTypeBits, const VkDebugUtilsMessengerCallbackDataEXT* ck_CallbackData, void* vk_UserData);
+			static bool is_physical_device_suitable(VkPhysicalDevice vk_hPhysicalDevice);
+			bool setup_validation_layers();
+			void* load_func_with_instance(VkInstance vk_hInstance, const char* pFuncName);
+			void* load_func(const char* pFuncName);
+			bool create_instance();
+			bool load_vulkan_1_0();
+			bool load_vulkan_1_1();
+			bool load_vulkan_1_2();
+			bool load_vulkan_1_3();
+			// bool load_vulkan_1_4();
+			bool load_extension_funcs();
+			bool pick_physical_device();
+			bool create_logical_device();
+			bool create_window_surface();
 
 		public:
 			// Vulkan 1.0
@@ -336,10 +336,10 @@ namespace RE {
 
 			Vulkan();
 			~Vulkan();
-			bool isValid();
-			uint32_t getSurfaceFormatsCount();
-			uint32_t getPresentModesCount();
-			bool checkVulkanResult(VkResult vk_eResult);
+			bool is_valid();
+			uint32_t get_surface_formats_count();
+			uint32_t get_present_modes_count();
+			bool check_vulkan_result(VkResult vk_eResult);
 	};
 
 // Vulkan 1.0
@@ -623,11 +623,11 @@ namespace RE {
 #define RE_VK_HANDLE_SURFACE Vulkan::pInstance->vk_hInternalSurface
 #define RE_VK_SURFACE_CAPABILITIES Vulkan::pInstance->vk_internalSurfaceCapabilities
 #define RE_VK_PTR_SURFACE_FORMATS Vulkan::pInstance->vk_pInternalSurfaceFormats
-#define RE_VK_UINT_SURFACE_FORMATS_COUNT Vulkan::pInstance->getSurfaceFormatsCount()
+#define RE_VK_UINT_SURFACE_FORMATS_COUNT Vulkan::pInstance->get_surface_formats_count()
 #define RE_VK_PTR_PRESENT_MODES Vulkan::pInstance->vk_pInternalPresentModes
-#define RE_VK_UINT_PRESENT_MODES_COUNT Vulkan::pInstance->getPresentModesCount()
+#define RE_VK_UINT_PRESENT_MODES_COUNT Vulkan::pInstance->get_present_modes_count()
 
-#define CHECK_VK_RESULT(T) Vulkan::pInstance->checkVulkanResult(T)
+#define CHECK_VK_RESULT(T) Vulkan::pInstance->check_vulkan_result(T)
 
 #define VK_KHR_VALIDATION_LAYER_NAME "VK_LAYER_KHRONOS_validation"
 

@@ -23,76 +23,76 @@ namespace RE {
 		pNextScene = nullptr;
 	}
 
-	bool Manager::shouldUpdateObject(GameObject* pGameObject) {
+	bool Manager::should_update_object(GameObject* pGameObject) {
 		return !pGameObject->u32SceneParentId || pGameObject->u32SceneParentId == pCurrentScene->u32Id;
 	}
 
-	void Manager::startProc() {
+	void Manager::start_proc() {
 		if (!pCurrentScene)
 			return;
 		CATCH_SIGNAL(pCurrentScene->start());
 		for (GameObject* pObj : gameObjects)
-			if (shouldUpdateObject(pObj))
+			if (should_update_object(pObj))
 				CATCH_SIGNAL(pObj->start(pCurrentScene));
 	}
 
-	void Manager::updateProc() {
+	void Manager::update_proc() {
 		if (!pCurrentScene)
 			return;
 		CATCH_SIGNAL(pCurrentScene->update());
 		for (GameObject* pObj : gameObjects)
-			if (shouldUpdateObject(pObj))
+			if (should_update_object(pObj))
 				CATCH_SIGNAL(pObj->update(pCurrentScene));
 	}
 
-	void Manager::endProc() {
+	void Manager::end_proc() {
 		if (!pCurrentScene)
 			return;
 		CATCH_SIGNAL(pCurrentScene->end());
 		for (GameObject* pObj : gameObjects)
-			if (shouldUpdateObject(pObj))
+			if (should_update_object(pObj))
 				CATCH_SIGNAL(pObj->end(pCurrentScene));
 	}
 
-	void Manager::deleteProc() {
+	void Manager::delete_proc() {
 		for (GameObject* deletableGameObject : deletableGameObjects)
 			CATCH_SIGNAL(delete deletableGameObject);
 		deletableGameObjects.clear();
 	}
 
-	void Manager::addProc() {
+	void Manager::add_proc() {
 		for (GameObject* newGameObject : newGameObjects)
 			gameObjects.push_back(newGameObject);
 		newGameObjects.clear();
 	}
 
-	void Manager::gameLogicUpdate() {
+	void Manager::game_logic_update() {
 		if (pNextScene != pCurrentScene && pNextScene) {
 			// Switch scene
-			CATCH_SIGNAL(endProc());
-			CATCH_SIGNAL(deleteProc());
+			CATCH_SIGNAL(end_proc());
+			CATCH_SIGNAL(delete_proc());
 			pCurrentScene = pNextScene;
-			CATCH_SIGNAL(startProc());
-			CATCH_SIGNAL(addProc());
+			CATCH_SIGNAL(start_proc());
+			CATCH_SIGNAL(add_proc());
 		} else if (!pCurrentScene) {
 			RE_FATAL_ERROR("There is no active scene at the moment");
 			return;
 		}
-		CATCH_SIGNAL(updateProc());
-		CATCH_SIGNAL(deleteProc());
-		CATCH_SIGNAL(addProc());
+		CATCH_SIGNAL(update_proc());
+		CATCH_SIGNAL(delete_proc());
+		CATCH_SIGNAL(add_proc());
 	}
 
-	void Manager::lastGameLogicUpdate() {
-		CATCH_SIGNAL(endProc());
-		CATCH_SIGNAL(deleteProc());
+	void Manager::last_game_logic_update() {
+		CATCH_SIGNAL(end_proc());
+		CATCH_SIGNAL(delete_proc());
 	}
 
-	bool Manager::isGameValid() {
+	bool Manager::is_game_valid() {
 		return pCurrentScene || pNextScene;
 	}
 
-	void markDelete(GameObject* pGameObject) {
+	void mark_delete(GameObject* pGameObject) {
 		std::vector<GameObject*>::iterator iteratorGameObject = std::find(std::begin(Manager::gameObjects), std::end(Manager::gameObjects), pGameObject);
 		if (iteratorGameObject == std::end(Manager::gameObjects)) {
 			if (Manager::pInstance) {
@@ -102,7 +102,7 @@ namespace RE {
 					return;
 				}
 			}
-			RE_NOTE(appendStrings("The memory address ", pGameObject, " doesn't point to a game object, that has to be deleted, or is not listed. In case it's constructed before the main-function is executed, it will always be discarded"));
+			RE_NOTE(append_strings("The memory address ", pGameObject, " doesn't point to a game object, that has to be deleted, or is not listed. In case it's constructed before the main-function is executed, it will always be discarded"));
 			return;
 		} else if (Manager::pInstance)
 			Manager::pInstance->deletableGameObjects.push_back(pGameObject);
@@ -110,7 +110,7 @@ namespace RE {
 			CATCH_SIGNAL(delete pGameObject);
 	}
 
-	void setNextScene(Scene* pNextScene) {
+	void set_next_scene(Scene* pNextScene) {
 		DEFINE_SIGNAL_GUARD(sigGuardSetNextSceneFunc);
 		if (!pNextScene)
 			return;
@@ -121,34 +121,34 @@ namespace RE {
 		Manager::pNextScene = pNextScene;
 	}
 
-	bool isNextSceneSet() {
+	bool is_next_scene_set() {
 		return Manager::pCurrentScene != Manager::pNextScene && Manager::pNextScene;
 	}
 
-	Scene* getCurrentScene() {
+	Scene* get_current_scene() {
 		return Manager::pCurrentScene;
 	}
 
-	REuint getCurrentSceneId() {
-		Scene* pCurrentScene = getCurrentScene();
+	REuint get_current_scene_id() {
+		Scene* pCurrentScene = get_current_scene();
 		return pCurrentScene ? pCurrentScene->u32Id : 0U;
 	}
 
-	bool isSceneCurrent(REuint u32SceneId) {
-		return getCurrentScene() && getCurrentSceneId() == u32SceneId;
+	bool is_scene_current(REuint u32SceneId) {
+		return get_current_scene() && get_current_scene_id() == u32SceneId;
 	}
 
-	Scene* getNextScene() {
+	Scene* get_next_scene() {
 		return Manager::pNextScene;
 	}
 
-	REuint getNextSceneId() {
-		Scene* pNextScene = getNextScene();
+	REuint get_next_scene_id() {
+		Scene* pNextScene = get_next_scene();
 		return pNextScene ? pNextScene->u32Id : 0U;
 	}
 
-	bool isSceneNext(REuint u32SceneId) {
-		return getNextScene() && getNextSceneId() == u32SceneId;
+	bool is_scene_next(REuint u32SceneId) {
+		return get_next_scene() && get_next_scene_id() == u32SceneId;
 	}
 
 }

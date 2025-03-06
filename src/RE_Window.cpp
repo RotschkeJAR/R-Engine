@@ -18,40 +18,40 @@ namespace RE {
 			pInstance = nullptr;
 	}
 
-	void Window::updateWindowSize(REushort u16NewWidth, REushort u16NewHeight) {
+	void Window::update_window_size(REushort u16NewWidth, REushort u16NewHeight) {
 		size[0] = u16NewWidth;
 		size[1] = u16NewHeight;
-		CATCH_SIGNAL(RenderSystem::pInstance->windowResize(size));
+		CATCH_SIGNAL(RenderSystem::pInstance->window_resize_event(size));
 	}
 
-	void Window::show(bool bShowWindow) {
+	void Window::show_window(bool bShowWindow) {
 		if (bWindowVisible == bShowWindow || !bValid)
 			return;
 		bWindowVisible = bShowWindow;
-		showInternal();
+		internal_show_window();
 	}
 
-	void Window::setTitle(const char* pNewTitle) {
+	void Window::set_window_title(const char* pNewTitle) {
 		if (std::strcmp(pcTitle, pNewTitle) == 0 || !bValid)
 			return;
 		pcTitle = pNewTitle;
-		updateTitleInternal();
+		internal_update_title();
 	}
 
-	void Window::update() {
-		CATCH_SIGNAL(inputMgr.preInputEvent());
-		CATCH_SIGNAL(processLoop());
+	void Window::window_proc() {
+		CATCH_SIGNAL(inputMgr.update_input_buffers());
+		CATCH_SIGNAL(internal_window_proc());
 	}
 
-	bool Window::shouldClose() {
+	bool Window::should_close() {
 		return bCloseFlag;
 	}
 
-	bool Window::isValid() {
+	bool Window::is_valid() {
 		return bValid;
 	}
 
-	Vector<REushort, 2> Window::getSize() {
+	Vector<REushort, 2> Window::get_size() {
 		Vector<REushort, 2> copySize;
 		copySize = size;
 		return copySize;

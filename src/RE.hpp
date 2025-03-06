@@ -18,9 +18,9 @@
 #include <iostream>
 #include <sstream>
 #include <cstring>
-#include <string>
-#include <cmath>
-#include <cstdint>
+#include <string.h>
+#include <math.h>
+#include <stdint.h>
 #include <random>
 
 typedef int8_t REbyte;
@@ -180,14 +180,22 @@ namespace RE {
 		RE_INPUT_KEY_NUMPAD_PERIOD = 0x77,
 		/**
 		 * Represents a key, that does not exist on US-keyboards:
-		 * - UK, DE (next to left shift): less than, (shift) greater than, (AltGr) vertical bar/pipe
+		 * - UK, DE (next to left shift): less than, (shift) greater than, (right Alt = AltGr) vertical bar/pipe
 		 */
 		RE_INPUT_KEY_WORLD_1 = 0x78,
 		RE_INPUT_MAX_ENUM = 0x79
 	};
+	
+	void error(const char* pcFile, const char* pcFunc, REuint uiLine, const char* pcDetail, bool bTerminate);
+	void warning(const char* pcFile, const char* pcFunc, REuint uiLine, const char* pcDetail);
+	void note(const char* pcFile, const char* pcFunc, REuint uiLine, const char* pcDetail);
+#define FATAL_ERROR(T) error(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(T), true)
+#define ERROR(T) error(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(T), false)
+#define WARNING(T) warning(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(T))
+#define NOTE(T) note(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(T))
 
-	void addToStackTrace(const char* pcFile, const char* pcMethod, REuint u32Line, const char* pcDetails);
-	void removeFromStackTrace();
+	void add_to_stack_trace(const char* pcFile, const char* pcMethod, REuint u32Line, const char* pcDetails);
+	void remove_from_stack_trace();
 	class SignalGuard {
 		public:
 			SignalGuard(const char* pcFile, const char* pcFunc, REuint u32Line, const char* pcDetails);
@@ -196,9 +204,9 @@ namespace RE {
 #define DEFINE_SIGNAL_GUARD_DETAILED(NAME, DETAILS) SignalGuard NAME(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(DETAILS))
 #define DEFINE_SIGNAL_GUARD(NAME) DEFINE_SIGNAL_GUARD_DETAILED(NAME, "\0")
 #define CATCH_SIGNAL_DETAILED(CMD, DETAILS) do { \
-			addToStackTrace(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(DETAILS)); \
+			add_to_stack_trace(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(DETAILS)); \
 			CMD; \
-			removeFromStackTrace(); \
+			remove_from_stack_trace(); \
 		} while (false)
 #define CATCH_SIGNAL(CMD) CATCH_SIGNAL_DETAILED(CMD, "\0")
 
@@ -206,6 +214,13 @@ namespace RE {
 			delete (PTR_REF); \
 			(PTR_REF) = nullptr; \
 		} while (false) )
+
+	template <class... T>
+	std::string append_strings(T... strings) {
+		std::stringstream ss("");
+		(ss << ... << strings);
+		return std::string(ss.str());
+	}
 
 	template <class... T>
 	void print(T... content) {
@@ -224,14 +239,14 @@ namespace RE {
 	void println(T... content) {
 		print(content..., "\n");
 	}
-	void printColored(const char* content, TerminalColor color, bool backgroundColored, bool bold);
-	void printlnColored(const char* content, TerminalColor color, bool backgroundColored, bool bold);
-#define PRINT(MSG) print(appendStrings(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE_MACRO(MSG)))
-#define PRINT_LN(MSG) print(appendStrings(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE_MACRO(MSG), "\n"))
+	void print_colored(const char* content, TerminalColor color, bool backgroundColored, bool bold);
+	void println_colored(const char* content, TerminalColor color, bool backgroundColored, bool bold);
+#define PRINT(MSG) print(append_strings(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE_MACRO(MSG)))
+#define PRINT_LN(MSG) print(append_strings(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE_MACRO(MSG), "\n"))
 
-	std::string convertToUTF8(const wchar_t* pwcString);
-	std::wstring convertToWide(const char* pcString);
-	std::string getAppName();
+	std::string convert_wide_chars_to_utf8(const wchar_t* pwcString);
+	std::wstring convert_chars_to_wide(const char* pcString);
+	std::string get_app_name();
 
 	template <typename T>
 	constexpr T nth_root(T n, T value) {
@@ -241,41 +256,43 @@ namespace RE {
 	}
 
 	template <typename... T>
-	constexpr REulong genBitmask(T... bits) {
-		return (... | (1L << static_cast<REulong>(bits)));
+	constexpr REulong gen_bitmask(T... bits) {
+		return (... | (1UL << static_cast<REulong>(bits)));
 	}
 
-	constexpr REulong genBitmaskRange(REulong ulBegin, REulong ulEnd) {
-		if (ulBegin > ulEnd)
-			std::swap(ulBegin, ulEnd);
-		else if (ulBegin == ulEnd)
-			return genBitmask(ulBegin);
-		REulong ulResult = 0L;
-		for (REulong ulCurrentNumber = ulBegin; ulCurrentNumber < ulEnd; ulCurrentNumber++)
-			ulResult |= genBitmask(ulCurrentNumber);
-		return ulResult;
-	}
-
-	template <typename T>
-	constexpr bool isBitTrue(T value, T bit) {
-		return (value & genBitmask<T>(bit)) != static_cast<T>(0);
+	constexpr REulong gen_bitmask_in_range(REulong u64Begin, REulong u64End) {
+		if (u64Begin > u64End) {
+			FATAL_ERROR(append_strings("Start (", u64Begin, ") of the range is larger than end (", u64End, ")").c_str());
+			return 0UL;
+		} else if (u64Begin == u64End)
+			return gen_bitmask(u64Begin);
+		REulong u64Result = 0UL;
+		for (REulong u64CurrentNumber = u64Begin; u64CurrentNumber < u64End; u64CurrentNumber++)
+			u64Result |= gen_bitmask(u64CurrentNumber);
+		return u64Result;
 	}
 
 	template <typename T>
-	constexpr bool areBitsTrueRange(T value, T begin, T end) {
-		if (begin > end)
-			std::swap(begin, end);
-		else if (begin == end)
-			return isBitTrue<T>(value, begin);
+	constexpr bool is_bit_true(T value, T bit) {
+		return (value & gen_bitmask<T>(bit)) != static_cast<T>(0);
+	}
+
+	template <typename T>
+	constexpr bool are_bits_true_in_range(T value, T begin, T end) {
+		if (begin > end) {
+			FATAL_ERROR(append_strings("Start (", begin, ") of the range is larger than end (", end, ")").c_str());
+			return false;
+		} else if (begin == end)
+			return is_bit_true<T>(value, begin);
 		for (T i = begin; i < end; i++)
-			if (!isBitTrue<T>(value, i))
+			if (!is_bit_true<T>(value, i))
 				return false;
 		return true;
 	}
 
 	template <typename T>
-	constexpr T setBit(T& value, T bit, bool bNewState) {
-		T targetBit = genBitmask<T>(bit);
+	constexpr T set_bit(T& value, T bit, bool bNewState) {
+		T targetBit = gen_bitmask<T>(bit);
 		if (bNewState)
 			value |= targetBit;
 		else
@@ -284,14 +301,18 @@ namespace RE {
 	}
 
 	template <typename T>
-	constexpr T setBits(T& value, T begin, T end, bool bNewState) {
+	constexpr T set_bits(T& value, T begin, T end, bool bNewState) {
+		if (begin > end) {
+			FATAL_ERROR(append_strings("Start (", begin, ") of the range is larger than end (", end, ")").c_str());
+			return static_cast<T>(0.0);
+		}
 		for (T i = begin; i < end; i++)
-			setBit<T>(value, i, bNewState);
+			set_bit<T>(value, i, bNewState);
 		return value;
 	}
 
 	template <typename T>
-	constexpr std::string bitmaskToString(T bitmask, bool bWithSpace) {
+	constexpr std::string bitmask_to_string(T bitmask, bool bWithSpace) {
 		std::string strResult("");
 		T bits = sizeof(T) * static_cast<T>(8);
 		T rightShift = sizeof(T) * static_cast<T>(8) - static_cast<T>(1);
@@ -303,21 +324,6 @@ namespace RE {
 		}
 		return strResult;
 	}
-
-	template <class... T>
-	std::string appendStrings(T... strings) {
-		std::stringstream ss("");
-		(ss << ... << strings);
-		return std::string(ss.str());
-	}
-	
-	void error(const char* pcFile, const char* pcFunc, REuint uiLine, const char* pcDetail, bool bTerminate);
-	void warning(const char* pcFile, const char* pcFunc, REuint uiLine, const char* pcDetail);
-	void note(const char* pcFile, const char* pcFunc, REuint uiLine, const char* pcDetail);
-#define FATAL_ERROR(T) error(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(T), true)
-#define ERROR(T) error(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(T), false)
-#define WARNING(T) warning(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(T))
-#define NOTE(T) note(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(T))
 
 	template <typename T, REuint u32Dimensions>
 	class Vector {
@@ -334,7 +340,7 @@ namespace RE {
 				fill(static_cast<T>(0.0));
 				REuint u32Index = 0U;
 				([&]() {
-					CATCH_SIGNAL_DETAILED(coords[u32Index] = static_cast<T>(values), appendStrings("Index: ", u32Index).c_str());
+					CATCH_SIGNAL_DETAILED(coords[u32Index] = static_cast<T>(values), append_strings("Index: ", u32Index).c_str());
 					u32Index++;
 				} (), ...);
 			}
@@ -364,9 +370,9 @@ namespace RE {
 				std::fill(std::begin(coords), std::end(coords), value);
 			}
 
-			void copyFrom(const Vector& copyVector) {
-				if (u32Dimensions != copyVector.getDimensions()) {
-					WARNING(appendStrings("Tried to copy values from one vector (", copyVector.getDimensions(), ") to another (", u32Dimensions, ")").c_str());
+			void copy_from(const Vector& copyVector) {
+				if (u32Dimensions != copyVector.get_dimensions()) {
+					WARNING(append_strings("Tried to copy values from one vector (", copyVector.get_dimensions(), ") to another (", u32Dimensions, ")").c_str());
 					return;
 				}
 				for (REuint u32Index = 0U; u32Index < u32Dimensions; u32Index++)
@@ -374,7 +380,7 @@ namespace RE {
 			}
 
 			bool equals(Vector& compareVector) const {
-				if (u32Dimensions != compareVector.getDimensions())
+				if (u32Dimensions != compareVector.get_dimensions())
 					return false;
 				for (REuint u32Index = 0U; u32Index < u32Dimensions; u32Index++)
 					if (coords[u32Index] != compareVector[u32Index])
@@ -382,24 +388,24 @@ namespace RE {
 				return true;
 			}
 
-			constexpr REuint getDimensions() const {
+			constexpr REuint get_dimensions() const {
 				return u32Dimensions;
 			}
 
 			T& operator [](REuint index) {
 				if (index >= u32Dimensions)
-					FATAL_ERROR(appendStrings("Index ", index, " is out of bounds: [0, ", u32Dimensions, "]").c_str());
+					FATAL_ERROR(append_strings("Index ", index, " is out of bounds: [0, ", u32Dimensions, "]").c_str());
 				return coords[index];
 			}
 
 			T operator [](REuint index) const {
 				if (index >= u32Dimensions)
-					FATAL_ERROR(appendStrings("Index ", index, " is out of bounds: [0, ", u32Dimensions, "]").c_str());
+					FATAL_ERROR(append_strings("Index ", index, " is out of bounds: [0, ", u32Dimensions, "]").c_str());
 				return coords[index];
 			}
 
 			void operator =(const Vector& copyVector) {
-				copyFrom(copyVector);
+				copy_from(copyVector);
 			}
 
 			bool operator ==(const Vector& compareVector) const {
@@ -412,7 +418,7 @@ namespace RE {
 
 			friend std::ostream& operator <<(std::ostream& stream, const Vector& vector) {
 				stream << "(";
-				for (REuint i = 0U; i < vector.getDimensions(); i++) {
+				for (REuint i = 0U; i < vector.get_dimensions(); i++) {
 					if (i != 0U)
 						stream << ", ";
 					stream << vector.coords[i];
@@ -440,14 +446,26 @@ namespace RE {
 
 		public:
 			RandomNumberGenerator();
-			RandomNumberGenerator(REuint seed);
+			RandomNumberGenerator(REuint u32Seed);
 			~RandomNumberGenerator();
-			REuint random();
-			REuint random(REuint max);
-			REuint random(REuint min, REuint max);
-			bool randomBool();
+			void set_seed(REuint newSeed);
+			template <typename T>
+			T random(T min, T max) {
+				std::uniform_int_distribution<T> range(min, max);
+				return range(rng);
+			}
+			template <typename T>
+			T random(T max) {
+				return random<T>(static_cast<T>(0.0), max);
+			}
+			template <typename T>
+			T random() {
+				return random<T>(std::numeric_limits<T>::max());
+			}
+			bool random_bool();
+			bool random_bool(float fChance);
+			float random_percentage();
 	};
-	typedef RandomNumberGenerator RNG;
 
 	class Scene {
 		public:
@@ -475,24 +493,26 @@ namespace RE {
 	};
 
 	void execute();
+	float get_deltaseconds();
+	float get_fps_rate();
 
-	void markDelete(GameObject* pGameObject);
+	void mark_delete(GameObject* pGameObject);
 #define MARK_SAFE_DELETE(GAME_OBJECT_POINTER) CATCH_SIGNAL( do { \
 		markDelete(GAME_OBJECT_POINTER); \
 		GAME_OBJECT_POINTER = nullptr; \
 	} while (false) )
 	
-	void setNextScene(Scene* pNextScene);
-	bool isNextSceneSet();
-	Scene* getCurrentScene();
-	REuint getCurrentSceneId();
-	bool isSceneCurrent(REuint u32SceneId);
-	Scene* getNextScene();
-	REuint getNextSceneId();
-	bool isSceneNext(REuint u32SceneId);
+	void set_next_scene(Scene* pNextScene);
+	bool is_next_scene_set();
+	Scene* get_current_scene();
+	REuint get_current_scene_id();
+	bool is_scene_current(REuint u32SceneId);
+	Scene* get_next_scene();
+	REuint get_next_scene_id();
+	bool is_scene_next(REuint u32SceneId);
 
 #ifdef RE_OS_WINDOWS
-	void setHInstance(HINSTANCE win_hInstance);
+	void set_hinstance(HINSTANCE win_hInstance);
 #endif
 
 }

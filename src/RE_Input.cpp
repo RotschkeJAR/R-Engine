@@ -1,6 +1,5 @@
 #include "RE_Input.hpp"
-#include "RE_Ext Header.hpp"
-#include "RE_Window_X11.hpp"
+#include "RE_Internal Header.hpp"
 
 namespace RE {
 
@@ -22,27 +21,27 @@ namespace RE {
 		pInstance = nullptr;
 	}
 
-	void InputMgr::modifyInputBuffer(Input eInput, bool bNewState) {
+	void InputMgr::modify_input_buffer(Input eInput, bool bNewState) {
 		REint i32Index = static_cast<REint>(eInput);
-		setBit<REubyte>(u8InputBuffer[i32Index], i32Index % 8, bNewState);
+		set_bit<REubyte>(u8InputBuffer[i32Index], i32Index % 8, bNewState);
 	}
 
-	void InputMgr::inputEvent(Input eInput, REuint u32Scancode, bool bPressed) {
+	void InputMgr::input_event(Input eInput, REuint u32Scancode, bool bPressed) {
 		if (eInput <= RE_INPUT_UNKNOWN || eInput >= RE_INPUT_MAX_ENUM)
 			return;
-		modifyInputBuffer(eInput, bPressed);
+		modify_input_buffer(eInput, bPressed);
 	}
 
-	void InputMgr::cursorEvent(REint i32X, REint i32Y) {
+	void InputMgr::cursor_event(REint i32X, REint i32Y) {
 		cursorPosition[0] = i32X;
 		cursorPosition[1] = i32Y;
 	}
 
-	void InputMgr::preInputEvent() {
+	void InputMgr::update_input_buffers() {
 		std::copy(std::begin(u8InputBuffer), std::end(u8InputBuffer), std::begin(u8PrevInputBuffer));
-		prevCursorPosition.copyFrom(cursorPosition);
-		modifyInputBuffer(RE_INPUT_SCROLL_UP, false);
-		modifyInputBuffer(RE_INPUT_SCROLL_DOWN, false);
+		prevCursorPosition.copy_from(cursorPosition);
+		modify_input_buffer(RE_INPUT_SCROLL_UP, false);
+		modify_input_buffer(RE_INPUT_SCROLL_DOWN, false);
 	}
 
 }

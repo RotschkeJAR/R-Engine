@@ -1,5 +1,5 @@
 #include "RE_Renderer.hpp"
-#include "RE_Ext Header.hpp"
+#include "RE_Internal Header.hpp"
 #include "RE_Vulkan.hpp"
 
 namespace RE {
@@ -16,7 +16,7 @@ namespace RE {
 		
 	}
 
-	bool Renderer::isValid() {
+	bool Renderer::is_valid() {
 		return bValid;
 	}
 

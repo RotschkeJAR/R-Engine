@@ -16,15 +16,15 @@ namespace RE {
 			XSizeHints* x11_pSizes;
 
 		protected:
-			void showInternal();
-			void updateTitleInternal();
+			void internal_window_proc();
+			void internal_show_window();
+			void internal_update_title();
 
 		public:
 			XDisplay* const x11_pDisplay;
 			
 			Window_X11();
 			~Window_X11();
-			void processLoop();
 
 		friend class Vulkan;
 	};

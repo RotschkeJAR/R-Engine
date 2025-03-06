@@ -1,18 +1,18 @@
 #ifndef __RE_MANAGER_H__
 #define __RE_MANAGER_H__
 
-#include "RE_Ext Header.hpp"
+#include "RE_Internal Header.hpp"
 
 namespace RE {
 
 	class Manager {
 		private:
-			bool shouldUpdateObject(GameObject* pGameObject);
-			void startProc();
-			void updateProc();
-			void endProc();
-			void deleteProc();
-			void addProc();
+			bool should_update_object(GameObject* pGameObject);
+			void start_proc();
+			void update_proc();
+			void end_proc();
+			void delete_proc();
+			void add_proc();
 
 		public:
 			static Scene *pCurrentScene, *pNextScene;
@@ -22,21 +22,21 @@ namespace RE {
 
 			Manager();
 			~Manager();
-			void gameLogicUpdate();
-			void lastGameLogicUpdate();
-			bool isGameValid();
+			void game_logic_update();
+			void last_game_logic_update();
+			bool is_game_valid();
 	};
 
-	void markDelete(GameObject* pGameObject);
+	void mark_delete(GameObject* pGameObject);
 
-	void setNextScene(Scene* pNextScene);
-	bool isNextSceneSet();
-	Scene* getCurrentScene();
-	REuint getCurrentSceneId();
-	bool isSceneCurrent(REuint u32SceneId);
-	Scene* getNextScene();
-	REuint getNextSceneId();
-	bool isSceneNext(REuint u32SceneId);
+	void set_next_scene(Scene* pNextScene);
+	bool is_next_scene_set();
+	Scene* get_current_scene();
+	REuint get_current_scene_id();
+	bool is_scene_current(REuint u32SceneId);
+	Scene* get_next_scene();
+	REuint get_next_scene_id();
+	bool is_scene_next(REuint u32SceneId);
 
 }
 

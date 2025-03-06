@@ -11,7 +11,7 @@ namespace RE {
 			Renderer();
 			~Renderer();
 			void render();
-			bool isValid();
+			bool is_valid();
 	};
 
 }

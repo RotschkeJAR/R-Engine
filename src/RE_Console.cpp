@@ -1,4 +1,4 @@
-#include "RE_Ext Header.hpp"
+#include "RE_Internal Header.hpp"
 #include "RE_Console.hpp"
 #include "RE_Main.hpp"
 
@@ -10,7 +10,7 @@ namespace RE {
 	bool bTreatWarningAsError = false;
 	bool bErrorAlwaysFatal = false;
 
-	std::string ESC_code(TerminalColor eColor, bool bBackgroundColored, bool bBold) {
+	std::string escape_code_to_string(TerminalColor eColor, bool bBackgroundColored, bool bBold) {
 		if (!bPrintColors)
 			return "";
 		unsigned int uiId = static_cast<unsigned int>(eColor);
@@ -28,28 +28,28 @@ namespace RE {
 		return result;
 	}
 
-	void printErrMsg(const char* pFile, const char* pFunc, unsigned int uiLine, const char* pDetail) {
+	void print_error_msg(const char* pFile, const char* pFunc, unsigned int uiLine, const char* pDetail) {
 		print(" : ");
-		printColored(pFile, RE_TERMINAL_COLOR_BRIGHT_WHITE, false, true);
+		print_colored(pFile, RE_TERMINAL_COLOR_BRIGHT_WHITE, false, true);
 		println(" (line ", uiLine, "; in function \"", pFunc, "\")");
 		println("\t", pDetail);
 	}
 
 
-	void printColored(const char* pContent, TerminalColor eColor, bool bBackgroundColored, bool bBold) {
-		print(ESC_code(eColor, bBackgroundColored, bBold), pContent, DEFAULT_COLOR);
+	void print_colored(const char* pContent, TerminalColor eColor, bool bBackgroundColored, bool bBold) {
+		print(escape_code_to_string(eColor, bBackgroundColored, bBold), pContent, DEFAULT_COLOR);
 	}
 
-	void printlnColored(const char* pContent, TerminalColor eColor, bool bBackgroundColored, bool bBold) {
-		println(ESC_code(eColor, bBackgroundColored, bBold), pContent, DEFAULT_COLOR);
+	void println_colored(const char* pContent, TerminalColor eColor, bool bBackgroundColored, bool bBold) {
+		println(escape_code_to_string(eColor, bBackgroundColored, bBold), pContent, DEFAULT_COLOR);
 	}
 	
 	void error(const char* pFile, const char* pFunc, unsigned int uiLine, const char* pDetail, bool bTerminate) {
-		printColored("ERROR", RE_TERMINAL_COLOR_RED, false, false);
-		printErrMsg(pFile, pFunc, uiLine, pDetail);
+		print_colored("ERROR", RE_TERMINAL_COLOR_RED, false, false);
+		print_error_msg(pFile, pFunc, uiLine, pDetail);
 		if (bTerminate || bErrorAlwaysFatal) {
 			bErrorOccured = true;
-			printlnColored("Terminating...", RE_TERMINAL_COLOR_BRIGHT_BLACK, false, false);
+			println_colored("Terminating...", RE_TERMINAL_COLOR_BRIGHT_BLACK, false, false);
 		}
 	}
 
@@ -57,14 +57,14 @@ namespace RE {
 		if (bTreatWarningAsError)
 			error(pFile, pFunc, uiLine, pDetail, false);
 		else {
-			printColored("WARNING", RE_TERMINAL_COLOR_BRIGHT_YELLOW, false, false);
-			printErrMsg(pFile, pFunc, uiLine, pDetail);
+			print_colored("WARNING", RE_TERMINAL_COLOR_BRIGHT_YELLOW, false, false);
+			print_error_msg(pFile, pFunc, uiLine, pDetail);
 		}
 	}
 
 	void note(const char* pFile, const char* pFunc, unsigned int uiLine, const char* pDetail) {
-		printColored("NOTE", RE_TERMINAL_COLOR_WHITE, false, false);
-		printErrMsg(pFile, pFunc, uiLine, pDetail);
+		print_colored("NOTE", RE_TERMINAL_COLOR_WHITE, false, false);
+		print_error_msg(pFile, pFunc, uiLine, pDetail);
 	}
 
 }

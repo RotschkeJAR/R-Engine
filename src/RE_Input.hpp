@@ -1,7 +1,7 @@
 #ifndef __RE_INPUT_H__
 #define __RE_INPUT_H__
 
-#include "RE_Ext Header.hpp"
+#include "RE_Internal Header.hpp"
 
 namespace RE {
 	
@@ -12,16 +12,16 @@ namespace RE {
 #undef RE_INPUT_BUFFER_SIZE
 			Vector2i cursorPosition, prevCursorPosition;
 
-			void modifyInputBuffer(Input eInput, bool bNewState);
+			void modify_input_buffer(Input eInput, bool bNewState);
 
 		public:
 			static InputMgr* pInstance;
 
 			InputMgr();
 			~InputMgr();
-			void inputEvent(Input eInput, REuint u32Scancode, bool bPressed);
-			void cursorEvent(REint i32X, REint i32Y);
-			void preInputEvent();
+			void input_event(Input eInput, REuint u32Scancode, bool bPressed);
+			void cursor_event(REint i32X, REint i32Y);
+			void update_input_buffers();
 	};
 
 #ifdef RE_OS_WINDOWS
@@ -29,7 +29,7 @@ namespace RE {
 # define VK_Z 0x5A
 # define VK_0 0x30
 # define VK_9 0x39
-	constexpr RElong winVirtualFromKey(Input eKey) {
+	constexpr RElong windows_virtual_keycode_from_key(Input eKey) {
 		switch (eKey) {
 			case RE_INPUT_KEY_SPACE:
 				return VK_SPACE;
@@ -135,7 +135,7 @@ namespace RE {
 		}
 	}
 
-	constexpr Input winKeyFromVirtual(RElong u64VirtualKeyCode) {
+	constexpr Input windows_key_from_virtual_keycode(RElong u64VirtualKeyCode) {
 		switch (u64VirtualKeyCode) {
 			case VK_SPACE:
 				return RE_INPUT_KEY_SPACE;
@@ -239,7 +239,7 @@ namespace RE {
 		}
 	}
 #elif defined RE_OS_LINUX
-	constexpr RElong x11VirtualFromKey(Input eKey) {
+	constexpr RElong x11_virtual_keycode_from_key(Input eKey) {
 		switch (eKey) {
 			case RE_INPUT_KEY_SPACE:
 				return XK_space;
@@ -345,7 +345,7 @@ namespace RE {
 		}
 	}
 
-	constexpr Input x11KeyFromVirtual(RElong u64VirtualKeyCode) {
+	constexpr Input x11_key_from_virtual_keycode(RElong u64VirtualKeyCode) {
 		switch (u64VirtualKeyCode) {
 			case XK_space:
 				return RE_INPUT_KEY_SPACE;

@@ -56,7 +56,7 @@ namespace RE {
 			RE_FATAL_ERROR("Failed creating X11 input context");
 			return;
 		}
-		updateTitleInternal();
+		internal_update_title();
 		bValid = true;
 	}
 
@@ -76,18 +76,18 @@ namespace RE {
 		XCloseDisplay(x11_pDisplay);
 	}
 
-	void Window_X11::showInternal() {
+	void Window_X11::internal_show_window() {
 		if (bWindowVisible)
 			XMapWindow(x11_pDisplay, x11_hWindow);
 		else
 			XUnmapWindow(x11_pDisplay, x11_hWindow);
 	}
 
-	void Window_X11::updateTitleInternal() {
+	void Window_X11::internal_update_title() {
 		XChangeProperty(x11_pDisplay, x11_hWindow, x11_hWindowName, x11_hUTF8, 8, PropModeReplace, reinterpret_cast<const unsigned char*>(pcTitle), std::strlen(pcTitle));
 	}
 
-	void Window_X11::processLoop() {
+	void Window_X11::internal_window_proc() {
 		while (XPending(x11_pDisplay)) {
 			XEvent x11_event = {};
 			XNextEvent(x11_pDisplay, &x11_event);
@@ -108,7 +108,7 @@ namespace RE {
 					if (bKeyPressed && u8CharLength) {
 						cString[u8CharLength] = '\0';
 					}
-					CATCH_SIGNAL(inputMgr.inputEvent(x11KeyFromVirtual(static_cast<RElong>(x11_keySym)), static_cast<REuint>(x11_scancode), bKeyPressed));
+					CATCH_SIGNAL(inputMgr.input_event(x11_key_from_virtual_keycode(static_cast<RElong>(x11_keySym)), static_cast<REuint>(x11_scancode), bKeyPressed));
 					} break;
 				case XButtonPress:
 				case XButtonRelease: {
@@ -116,19 +116,19 @@ namespace RE {
 					bool bButtonPressed = x11_buttonEvent.type == XButtonPress;
 					switch (x11_buttonEvent.button) {
 						case Button1: /* left click */
-							CATCH_SIGNAL(inputMgr.inputEvent(RE_INPUT_BUTTON_LEFT, 0U, bButtonPressed));
+							CATCH_SIGNAL(inputMgr.input_event(RE_INPUT_BUTTON_LEFT, 0U, bButtonPressed));
 							break;
 						case Button2: /* middle click */
-							CATCH_SIGNAL(inputMgr.inputEvent(RE_INPUT_BUTTON_MIDDLE, 0U, bButtonPressed));
+							CATCH_SIGNAL(inputMgr.input_event(RE_INPUT_BUTTON_MIDDLE, 0U, bButtonPressed));
 							break;
 						case Button3: /* right click */
-							CATCH_SIGNAL(inputMgr.inputEvent(RE_INPUT_BUTTON_RIGHT, 0U, bButtonPressed));
+							CATCH_SIGNAL(inputMgr.input_event(RE_INPUT_BUTTON_RIGHT, 0U, bButtonPressed));
 							break;
 						case Button4: /* up scroll */
-							CATCH_SIGNAL(inputMgr.inputEvent(RE_INPUT_SCROLL_UP, 0U, true));
+							CATCH_SIGNAL(inputMgr.input_event(RE_INPUT_SCROLL_UP, 0U, true));
 							break;
 						case Button5: /* down scroll */
-							CATCH_SIGNAL(inputMgr.inputEvent(RE_INPUT_SCROLL_DOWN, 0U, true));
+							CATCH_SIGNAL(inputMgr.input_event(RE_INPUT_SCROLL_DOWN, 0U, true));
 							break;
 						default:
 							break;
@@ -136,11 +136,11 @@ namespace RE {
 					} break;
 				case XMotionNotify: { /* mouse moved */
 					XMotionEvent x11_motionEvent = x11_event.xmotion;
-					CATCH_SIGNAL(inputMgr.cursorEvent(x11_motionEvent.x, x11_motionEvent.y));
+					CATCH_SIGNAL(inputMgr.cursor_event(x11_motionEvent.x, x11_motionEvent.y));
 					} break;
 				case XResizeRequest: { /* window resized */
 					XResizeRequestEvent x11_resizeEvent = x11_event.xresizerequest;
-					CATCH_SIGNAL(updateWindowSize(static_cast<REushort>(x11_resizeEvent.width), static_cast<REushort>(x11_resizeEvent.height)));
+					CATCH_SIGNAL(update_window_size(static_cast<REushort>(x11_resizeEvent.width), static_cast<REushort>(x11_resizeEvent.height)));
 					} break;
 				default:
 					break;

@@ -27,24 +27,24 @@ namespace RE {
 			VkSemaphore vk_hInternalImgAvailableSemaphore, vk_hInternalRenderFinishedSemaphore;
 			VkFence vk_hInternalFence;
 
-			bool createSwapchain();
-			bool createImageViews();
-			bool createShaders();
-			bool createRenderPass();
-			bool createPipeline();
-			bool createFramebuffers();
-			bool createCommands();
-			bool createSync();
-			bool recordCommandBuffer(VkCommandBuffer cmdBuffer, uint32_t imgIndex);
+			bool create_swapchain();
+			bool create_swapchain_image_views();
+			bool create_shaders();
+			bool create_renderpass();
+			bool create_pipeline();
+			bool create_framebuffers();
+			bool create_command_buffers();
+			bool create_sync_objects();
+			bool record_command_buffer(VkCommandBuffer cmdBuffer, uint32_t imgIndex);
 
 		public:
 			static RenderSystem* pInstance;
 
 			RenderSystem();
 			~RenderSystem();
-			void drawFrame();
-			void windowResize(Vector<REushort, 2> newSize);
-			bool isValid();
+			void draw_frame();
+			void window_resize_event(Vector<REushort, 2> newSize);
+			bool is_valid();
 	};
 
 }

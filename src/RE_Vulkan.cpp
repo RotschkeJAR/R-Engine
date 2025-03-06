@@ -6,777 +6,777 @@ namespace RE {
 
 	Vulkan* Vulkan::pInstance = nullptr;
 
-	bool Vulkan::loadVulkan_1_0() {
+	bool Vulkan::load_vulkan_1_0() {
 		// Skipped initialization of "pfn_vkCreateInstance", because it's already loaded
-		pfn_vkDestroyInstance = reinterpret_cast<PFN_vkDestroyInstance>(loadFunc("vkDestroyInstance"));
+		pfn_vkDestroyInstance = reinterpret_cast<PFN_vkDestroyInstance>(load_func("vkDestroyInstance"));
 		if (!pfn_vkDestroyInstance)
 			return false;
-		pfn_vkEnumeratePhysicalDevices = reinterpret_cast<PFN_vkEnumeratePhysicalDevices>(loadFunc("vkEnumeratePhysicalDevices"));
+		pfn_vkEnumeratePhysicalDevices = reinterpret_cast<PFN_vkEnumeratePhysicalDevices>(load_func("vkEnumeratePhysicalDevices"));
 		if (!pfn_vkEnumeratePhysicalDevices)
 			return false;
-		pfn_vkGetPhysicalDeviceFeatures = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures>(loadFunc("vkGetPhysicalDeviceFeatures"));
+		pfn_vkGetPhysicalDeviceFeatures = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures>(load_func("vkGetPhysicalDeviceFeatures"));
 		if (!pfn_vkGetPhysicalDeviceFeatures)
 			return false;
-		pfn_vkGetPhysicalDeviceFormatProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceFormatProperties>(loadFunc("vkGetPhysicalDeviceFormatProperties"));
+		pfn_vkGetPhysicalDeviceFormatProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceFormatProperties>(load_func("vkGetPhysicalDeviceFormatProperties"));
 		if (!pfn_vkGetPhysicalDeviceFormatProperties)
 			return false;
-		pfn_vkGetPhysicalDeviceImageFormatProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceImageFormatProperties>(loadFunc("vkGetPhysicalDeviceImageFormatProperties"));
+		pfn_vkGetPhysicalDeviceImageFormatProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceImageFormatProperties>(load_func("vkGetPhysicalDeviceImageFormatProperties"));
 		if (!pfn_vkGetPhysicalDeviceImageFormatProperties)
 			return false;
-		pfn_vkGetPhysicalDeviceProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties>(loadFunc("vkGetPhysicalDeviceProperties"));
+		pfn_vkGetPhysicalDeviceProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties>(load_func("vkGetPhysicalDeviceProperties"));
 		if (!pfn_vkGetPhysicalDeviceProperties)
 			return false;
-		pfn_vkGetPhysicalDeviceQueueFamilyProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceQueueFamilyProperties>(loadFunc("vkGetPhysicalDeviceQueueFamilyProperties"));
+		pfn_vkGetPhysicalDeviceQueueFamilyProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceQueueFamilyProperties>(load_func("vkGetPhysicalDeviceQueueFamilyProperties"));
 		if (!pfn_vkGetPhysicalDeviceQueueFamilyProperties)
 			return false;
-		pfn_vkGetPhysicalDeviceMemoryProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceMemoryProperties>(loadFunc("vkGetPhysicalDeviceMemoryProperties"));
+		pfn_vkGetPhysicalDeviceMemoryProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceMemoryProperties>(load_func("vkGetPhysicalDeviceMemoryProperties"));
 		if (!pfn_vkGetPhysicalDeviceMemoryProperties)
 			return false;
-		pfn_vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(loadFunc("vkGetInstanceProcAddr"));
+		pfn_vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(load_func("vkGetInstanceProcAddr"));
 		if (!pfn_vkGetInstanceProcAddr)
 			return false;
-		pfn_vkGetDeviceProcAddr = reinterpret_cast<PFN_vkGetDeviceProcAddr>(loadFunc("vkGetDeviceProcAddr"));
+		pfn_vkGetDeviceProcAddr = reinterpret_cast<PFN_vkGetDeviceProcAddr>(load_func("vkGetDeviceProcAddr"));
 		if (!pfn_vkGetDeviceProcAddr)
 			return false;
-		pfn_vkCreateDevice = reinterpret_cast<PFN_vkCreateDevice>(loadFunc("vkCreateDevice"));
+		pfn_vkCreateDevice = reinterpret_cast<PFN_vkCreateDevice>(load_func("vkCreateDevice"));
 		if (!pfn_vkCreateDevice)
 			return false;
-		pfn_vkDestroyDevice = reinterpret_cast<PFN_vkDestroyDevice>(loadFunc("vkDestroyDevice"));
+		pfn_vkDestroyDevice = reinterpret_cast<PFN_vkDestroyDevice>(load_func("vkDestroyDevice"));
 		if (!pfn_vkDestroyDevice)
 			return false;
 		// Skipped initialization of "pfn_vkEnumerateInstanceExtensionProperties", because it's already loaded
-		pfn_vkEnumerateDeviceExtensionProperties = reinterpret_cast<PFN_vkEnumerateDeviceExtensionProperties>(loadFunc("vkEnumerateDeviceExtensionProperties"));
+		pfn_vkEnumerateDeviceExtensionProperties = reinterpret_cast<PFN_vkEnumerateDeviceExtensionProperties>(load_func("vkEnumerateDeviceExtensionProperties"));
 		if (!pfn_vkEnumerateDeviceExtensionProperties)
 			return false;
 		// Skipped initialization of "pfn_vkEnumerateInstanceLayerProperties", because it's already loaded
-		pfn_vkEnumerateDeviceLayerProperties = reinterpret_cast<PFN_vkEnumerateDeviceLayerProperties>(loadFunc("vkEnumerateDeviceLayerProperties"));
+		pfn_vkEnumerateDeviceLayerProperties = reinterpret_cast<PFN_vkEnumerateDeviceLayerProperties>(load_func("vkEnumerateDeviceLayerProperties"));
 		if (!pfn_vkEnumerateDeviceLayerProperties)
 			return false;
-		pfn_vkGetDeviceQueue = reinterpret_cast<PFN_vkGetDeviceQueue>(loadFunc("vkGetDeviceQueue"));
+		pfn_vkGetDeviceQueue = reinterpret_cast<PFN_vkGetDeviceQueue>(load_func("vkGetDeviceQueue"));
 		if (!pfn_vkGetDeviceQueue)
 			return false;
-		pfn_vkQueueSubmit = reinterpret_cast<PFN_vkQueueSubmit>(loadFunc("vkQueueSubmit"));
+		pfn_vkQueueSubmit = reinterpret_cast<PFN_vkQueueSubmit>(load_func("vkQueueSubmit"));
 		if (!pfn_vkQueueSubmit)
 			return false;
-		pfn_vkQueueWaitIdle = reinterpret_cast<PFN_vkQueueWaitIdle>(loadFunc("vkQueueWaitIdle"));
+		pfn_vkQueueWaitIdle = reinterpret_cast<PFN_vkQueueWaitIdle>(load_func("vkQueueWaitIdle"));
 		if (!pfn_vkQueueWaitIdle)
 			return false;
-		pfn_vkDeviceWaitIdle = reinterpret_cast<PFN_vkDeviceWaitIdle>(loadFunc("vkDeviceWaitIdle"));
+		pfn_vkDeviceWaitIdle = reinterpret_cast<PFN_vkDeviceWaitIdle>(load_func("vkDeviceWaitIdle"));
 		if (!pfn_vkDeviceWaitIdle)
 			return false;
-		pfn_vkAllocateMemory = reinterpret_cast<PFN_vkAllocateMemory>(loadFunc("vkAllocateMemory"));
+		pfn_vkAllocateMemory = reinterpret_cast<PFN_vkAllocateMemory>(load_func("vkAllocateMemory"));
 		if (!pfn_vkAllocateMemory)
 			return false;
-		pfn_vkFreeMemory = reinterpret_cast<PFN_vkFreeMemory>(loadFunc("vkFreeMemory"));
+		pfn_vkFreeMemory = reinterpret_cast<PFN_vkFreeMemory>(load_func("vkFreeMemory"));
 		if (!pfn_vkFreeMemory)
 			return false;
-		pfn_vkMapMemory = reinterpret_cast<PFN_vkMapMemory>(loadFunc("vkMapMemory"));
+		pfn_vkMapMemory = reinterpret_cast<PFN_vkMapMemory>(load_func("vkMapMemory"));
 		if (!pfn_vkMapMemory)
 			return false;
-		pfn_vkUnmapMemory = reinterpret_cast<PFN_vkUnmapMemory>(loadFunc("vkUnmapMemory"));
+		pfn_vkUnmapMemory = reinterpret_cast<PFN_vkUnmapMemory>(load_func("vkUnmapMemory"));
 		if (!pfn_vkUnmapMemory)
 			return false;
-		pfn_vkFlushMappedMemoryRanges = reinterpret_cast<PFN_vkFlushMappedMemoryRanges>(loadFunc("vkFlushMappedMemoryRanges"));
+		pfn_vkFlushMappedMemoryRanges = reinterpret_cast<PFN_vkFlushMappedMemoryRanges>(load_func("vkFlushMappedMemoryRanges"));
 		if (!pfn_vkFlushMappedMemoryRanges)
 			return false;
-		pfn_vkInvalidateMappedMemoryRanges = reinterpret_cast<PFN_vkInvalidateMappedMemoryRanges>(loadFunc("vkInvalidateMappedMemoryRanges"));
+		pfn_vkInvalidateMappedMemoryRanges = reinterpret_cast<PFN_vkInvalidateMappedMemoryRanges>(load_func("vkInvalidateMappedMemoryRanges"));
 		if (!pfn_vkInvalidateMappedMemoryRanges)
 			return false;
-		pfn_vkGetDeviceMemoryCommitment = reinterpret_cast<PFN_vkGetDeviceMemoryCommitment>(loadFunc("vkGetDeviceMemoryCommitment"));
+		pfn_vkGetDeviceMemoryCommitment = reinterpret_cast<PFN_vkGetDeviceMemoryCommitment>(load_func("vkGetDeviceMemoryCommitment"));
 		if (!pfn_vkGetDeviceMemoryCommitment)
 			return false;
-		pfn_vkBindBufferMemory = reinterpret_cast<PFN_vkBindBufferMemory>(loadFunc("vkBindBufferMemory"));
+		pfn_vkBindBufferMemory = reinterpret_cast<PFN_vkBindBufferMemory>(load_func("vkBindBufferMemory"));
 		if (!pfn_vkBindBufferMemory)
 			return false;
-		pfn_vkBindImageMemory = reinterpret_cast<PFN_vkBindImageMemory>(loadFunc("vkBindImageMemory"));
+		pfn_vkBindImageMemory = reinterpret_cast<PFN_vkBindImageMemory>(load_func("vkBindImageMemory"));
 		if (!pfn_vkBindImageMemory)
 			return false;
-		pfn_vkGetBufferMemoryRequirements = reinterpret_cast<PFN_vkGetBufferMemoryRequirements>(loadFunc("vkGetBufferMemoryRequirements"));
+		pfn_vkGetBufferMemoryRequirements = reinterpret_cast<PFN_vkGetBufferMemoryRequirements>(load_func("vkGetBufferMemoryRequirements"));
 		if (!pfn_vkGetBufferMemoryRequirements)
 			return false;
-		pfn_vkGetImageMemoryRequirements = reinterpret_cast<PFN_vkGetImageMemoryRequirements>(loadFunc("vkGetImageMemoryRequirements"));
+		pfn_vkGetImageMemoryRequirements = reinterpret_cast<PFN_vkGetImageMemoryRequirements>(load_func("vkGetImageMemoryRequirements"));
 		if (!pfn_vkGetImageMemoryRequirements)
 			return false;
-		pfn_vkGetImageSparseMemoryRequirements = reinterpret_cast<PFN_vkGetImageSparseMemoryRequirements>(loadFunc("vkGetImageSparseMemoryRequirements"));
+		pfn_vkGetImageSparseMemoryRequirements = reinterpret_cast<PFN_vkGetImageSparseMemoryRequirements>(load_func("vkGetImageSparseMemoryRequirements"));
 		if (!pfn_vkGetImageSparseMemoryRequirements)
 			return false;
-		pfn_vkGetPhysicalDeviceSparseImageFormatProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceSparseImageFormatProperties>(loadFunc("vkGetPhysicalDeviceSparseImageFormatProperties"));
+		pfn_vkGetPhysicalDeviceSparseImageFormatProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceSparseImageFormatProperties>(load_func("vkGetPhysicalDeviceSparseImageFormatProperties"));
 		if (!pfn_vkGetPhysicalDeviceSparseImageFormatProperties)
 			return false;
-		pfn_vkQueueBindSparse = reinterpret_cast<PFN_vkQueueBindSparse>(loadFunc("vkQueueBindSparse"));
+		pfn_vkQueueBindSparse = reinterpret_cast<PFN_vkQueueBindSparse>(load_func("vkQueueBindSparse"));
 		if (!pfn_vkQueueBindSparse)
 			return false;
-		pfn_vkCreateFence = reinterpret_cast<PFN_vkCreateFence>(loadFunc("vkCreateFence"));
+		pfn_vkCreateFence = reinterpret_cast<PFN_vkCreateFence>(load_func("vkCreateFence"));
 		if (!pfn_vkCreateFence)
 			return false;
-		pfn_vkDestroyFence = reinterpret_cast<PFN_vkDestroyFence>(loadFunc("vkDestroyFence"));
+		pfn_vkDestroyFence = reinterpret_cast<PFN_vkDestroyFence>(load_func("vkDestroyFence"));
 		if (!pfn_vkDestroyFence)
 			return false;
-		pfn_vkResetFences = reinterpret_cast<PFN_vkResetFences>(loadFunc("vkResetFences"));
+		pfn_vkResetFences = reinterpret_cast<PFN_vkResetFences>(load_func("vkResetFences"));
 		if (!pfn_vkResetFences)
 			return false;
-		pfn_vkGetFenceStatus = reinterpret_cast<PFN_vkGetFenceStatus>(loadFunc("vkGetFenceStatus"));
+		pfn_vkGetFenceStatus = reinterpret_cast<PFN_vkGetFenceStatus>(load_func("vkGetFenceStatus"));
 		if (!pfn_vkGetFenceStatus)
 			return false;
-		pfn_vkWaitForFences = reinterpret_cast<PFN_vkWaitForFences>(loadFunc("vkWaitForFences"));
+		pfn_vkWaitForFences = reinterpret_cast<PFN_vkWaitForFences>(load_func("vkWaitForFences"));
 		if (!pfn_vkWaitForFences)
 			return false;
-		pfn_vkCreateSemaphore = reinterpret_cast<PFN_vkCreateSemaphore>(loadFunc("vkCreateSemaphore"));
+		pfn_vkCreateSemaphore = reinterpret_cast<PFN_vkCreateSemaphore>(load_func("vkCreateSemaphore"));
 		if (!pfn_vkCreateSemaphore)
 			return false;
-		pfn_vkDestroySemaphore = reinterpret_cast<PFN_vkDestroySemaphore>(loadFunc("vkDestroySemaphore"));
+		pfn_vkDestroySemaphore = reinterpret_cast<PFN_vkDestroySemaphore>(load_func("vkDestroySemaphore"));
 		if (!pfn_vkDestroySemaphore)
 			return false;
-		pfn_vkCreateEvent = reinterpret_cast<PFN_vkCreateEvent>(loadFunc("vkCreateEvent"));
+		pfn_vkCreateEvent = reinterpret_cast<PFN_vkCreateEvent>(load_func("vkCreateEvent"));
 		if (!pfn_vkCreateEvent)
 			return false;
-		pfn_vkDestroyEvent = reinterpret_cast<PFN_vkDestroyEvent>(loadFunc("vkDestroyEvent"));
+		pfn_vkDestroyEvent = reinterpret_cast<PFN_vkDestroyEvent>(load_func("vkDestroyEvent"));
 		if (!pfn_vkDestroyEvent)
 			return false;
-		pfn_vkGetEventStatus = reinterpret_cast<PFN_vkGetEventStatus>(loadFunc("vkGetEventStatus"));
+		pfn_vkGetEventStatus = reinterpret_cast<PFN_vkGetEventStatus>(load_func("vkGetEventStatus"));
 		if (!pfn_vkGetEventStatus)
 			return false;
-		pfn_vkSetEvent = reinterpret_cast<PFN_vkSetEvent>(loadFunc("vkSetEvent"));
+		pfn_vkSetEvent = reinterpret_cast<PFN_vkSetEvent>(load_func("vkSetEvent"));
 		if (!pfn_vkSetEvent)
 			return false;
-		pfn_vkResetEvent = reinterpret_cast<PFN_vkResetEvent>(loadFunc("vkResetEvent"));
+		pfn_vkResetEvent = reinterpret_cast<PFN_vkResetEvent>(load_func("vkResetEvent"));
 		if (!pfn_vkResetEvent)
 			return false;
-		pfn_vkCreateQueryPool = reinterpret_cast<PFN_vkCreateQueryPool>(loadFunc("vkCreateQueryPool"));
+		pfn_vkCreateQueryPool = reinterpret_cast<PFN_vkCreateQueryPool>(load_func("vkCreateQueryPool"));
 		if (!pfn_vkCreateQueryPool)
 			return false;
-		pfn_vkDestroyQueryPool = reinterpret_cast<PFN_vkDestroyQueryPool>(loadFunc("vkDestroyQueryPool"));
+		pfn_vkDestroyQueryPool = reinterpret_cast<PFN_vkDestroyQueryPool>(load_func("vkDestroyQueryPool"));
 		if (!pfn_vkDestroyQueryPool)
 			return false;
-		pfn_vkGetQueryPoolResults = reinterpret_cast<PFN_vkGetQueryPoolResults>(loadFunc("vkGetQueryPoolResults"));
+		pfn_vkGetQueryPoolResults = reinterpret_cast<PFN_vkGetQueryPoolResults>(load_func("vkGetQueryPoolResults"));
 		if (!pfn_vkGetQueryPoolResults)
 			return false;
-		pfn_vkCreateBuffer = reinterpret_cast<PFN_vkCreateBuffer>(loadFunc("vkCreateBuffer"));
+		pfn_vkCreateBuffer = reinterpret_cast<PFN_vkCreateBuffer>(load_func("vkCreateBuffer"));
 		if (!pfn_vkCreateBuffer)
 			return false;
-		pfn_vkDestroyBuffer = reinterpret_cast<PFN_vkDestroyBuffer>(loadFunc("vkDestroyBuffer"));
+		pfn_vkDestroyBuffer = reinterpret_cast<PFN_vkDestroyBuffer>(load_func("vkDestroyBuffer"));
 		if (!pfn_vkDestroyBuffer)
 			return false;
-		pfn_vkCreateBufferView = reinterpret_cast<PFN_vkCreateBufferView>(loadFunc("vkCreateBufferView"));
+		pfn_vkCreateBufferView = reinterpret_cast<PFN_vkCreateBufferView>(load_func("vkCreateBufferView"));
 		if (!pfn_vkCreateBufferView)
 			return false;
-		pfn_vkDestroyBufferView = reinterpret_cast<PFN_vkDestroyBufferView>(loadFunc("vkDestroyBufferView"));
+		pfn_vkDestroyBufferView = reinterpret_cast<PFN_vkDestroyBufferView>(load_func("vkDestroyBufferView"));
 		if (!pfn_vkDestroyBufferView)
 			return false;
-		pfn_vkCreateImage = reinterpret_cast<PFN_vkCreateImage>(loadFunc("vkCreateImage"));
+		pfn_vkCreateImage = reinterpret_cast<PFN_vkCreateImage>(load_func("vkCreateImage"));
 		if (!pfn_vkCreateImage)
 			return false;
-		pfn_vkDestroyImage = reinterpret_cast<PFN_vkDestroyImage>(loadFunc("vkDestroyImage"));
+		pfn_vkDestroyImage = reinterpret_cast<PFN_vkDestroyImage>(load_func("vkDestroyImage"));
 		if (!pfn_vkDestroyImage)
 			return false;
-		pfn_vkGetImageSubresourceLayout = reinterpret_cast<PFN_vkGetImageSubresourceLayout>(loadFunc("vkGetImageSubresourceLayout"));
+		pfn_vkGetImageSubresourceLayout = reinterpret_cast<PFN_vkGetImageSubresourceLayout>(load_func("vkGetImageSubresourceLayout"));
 		if (!pfn_vkGetImageSubresourceLayout)
 			return false;
-		pfn_vkCreateImageView = reinterpret_cast<PFN_vkCreateImageView>(loadFunc("vkCreateImageView"));
+		pfn_vkCreateImageView = reinterpret_cast<PFN_vkCreateImageView>(load_func("vkCreateImageView"));
 		if (!pfn_vkCreateImageView)
 			return false;
-		pfn_vkDestroyImageView = reinterpret_cast<PFN_vkDestroyImageView>(loadFunc("vkDestroyImageView"));
+		pfn_vkDestroyImageView = reinterpret_cast<PFN_vkDestroyImageView>(load_func("vkDestroyImageView"));
 		if (!pfn_vkDestroyImageView)
 			return false;
-		pfn_vkCreateShaderModule = reinterpret_cast<PFN_vkCreateShaderModule>(loadFunc("vkCreateShaderModule"));
+		pfn_vkCreateShaderModule = reinterpret_cast<PFN_vkCreateShaderModule>(load_func("vkCreateShaderModule"));
 		if (!pfn_vkCreateShaderModule)
 			return false;
-		pfn_vkDestroyShaderModule = reinterpret_cast<PFN_vkDestroyShaderModule>(loadFunc("vkDestroyShaderModule"));
+		pfn_vkDestroyShaderModule = reinterpret_cast<PFN_vkDestroyShaderModule>(load_func("vkDestroyShaderModule"));
 		if (!pfn_vkDestroyShaderModule)
 			return false;
-		pfn_vkCreatePipelineCache = reinterpret_cast<PFN_vkCreatePipelineCache>(loadFunc("vkCreatePipelineCache"));
+		pfn_vkCreatePipelineCache = reinterpret_cast<PFN_vkCreatePipelineCache>(load_func("vkCreatePipelineCache"));
 		if (!pfn_vkCreatePipelineCache)
 			return false;
-		pfn_vkDestroyPipelineCache = reinterpret_cast<PFN_vkDestroyPipelineCache>(loadFunc("vkDestroyPipelineCache"));
+		pfn_vkDestroyPipelineCache = reinterpret_cast<PFN_vkDestroyPipelineCache>(load_func("vkDestroyPipelineCache"));
 		if (!pfn_vkDestroyPipelineCache)
 			return false;
-		pfn_vkGetPipelineCacheData = reinterpret_cast<PFN_vkGetPipelineCacheData>(loadFunc("vkGetPipelineCacheData"));
+		pfn_vkGetPipelineCacheData = reinterpret_cast<PFN_vkGetPipelineCacheData>(load_func("vkGetPipelineCacheData"));
 		if (!pfn_vkGetPipelineCacheData)
 			return false;
-		pfn_vkMergePipelineCaches = reinterpret_cast<PFN_vkMergePipelineCaches>(loadFunc("vkMergePipelineCaches"));
+		pfn_vkMergePipelineCaches = reinterpret_cast<PFN_vkMergePipelineCaches>(load_func("vkMergePipelineCaches"));
 		if (!pfn_vkMergePipelineCaches)
 			return false;
-		pfn_vkCreateGraphicsPipelines = reinterpret_cast<PFN_vkCreateGraphicsPipelines>(loadFunc("vkCreateGraphicsPipelines"));
+		pfn_vkCreateGraphicsPipelines = reinterpret_cast<PFN_vkCreateGraphicsPipelines>(load_func("vkCreateGraphicsPipelines"));
 		if (!pfn_vkCreateGraphicsPipelines)
 			return false;
-		pfn_vkCreateComputePipelines = reinterpret_cast<PFN_vkCreateComputePipelines>(loadFunc("vkCreateComputePipelines"));
+		pfn_vkCreateComputePipelines = reinterpret_cast<PFN_vkCreateComputePipelines>(load_func("vkCreateComputePipelines"));
 		if (!pfn_vkCreateComputePipelines)
 			return false;
-		pfn_vkDestroyPipeline = reinterpret_cast<PFN_vkDestroyPipeline>(loadFunc("vkDestroyPipeline"));
+		pfn_vkDestroyPipeline = reinterpret_cast<PFN_vkDestroyPipeline>(load_func("vkDestroyPipeline"));
 		if (!pfn_vkDestroyPipeline)
 			return false;
-		pfn_vkCreatePipelineLayout = reinterpret_cast<PFN_vkCreatePipelineLayout>(loadFunc("vkCreatePipelineLayout"));
+		pfn_vkCreatePipelineLayout = reinterpret_cast<PFN_vkCreatePipelineLayout>(load_func("vkCreatePipelineLayout"));
 		if (!pfn_vkCreatePipelineLayout)
 			return false;
-		pfn_vkDestroyPipelineLayout = reinterpret_cast<PFN_vkDestroyPipelineLayout>(loadFunc("vkDestroyPipelineLayout"));
+		pfn_vkDestroyPipelineLayout = reinterpret_cast<PFN_vkDestroyPipelineLayout>(load_func("vkDestroyPipelineLayout"));
 		if (!pfn_vkDestroyPipelineLayout)
 			return false;
-		pfn_vkCreateSampler = reinterpret_cast<PFN_vkCreateSampler>(loadFunc("vkCreateSampler"));
+		pfn_vkCreateSampler = reinterpret_cast<PFN_vkCreateSampler>(load_func("vkCreateSampler"));
 		if (!pfn_vkCreateSampler)
 			return false;
-		pfn_vkDestroySampler = reinterpret_cast<PFN_vkDestroySampler>(loadFunc("vkDestroySampler"));
+		pfn_vkDestroySampler = reinterpret_cast<PFN_vkDestroySampler>(load_func("vkDestroySampler"));
 		if (!pfn_vkDestroySampler)
 			return false;
-		pfn_vkCreateDescriptorSetLayout = reinterpret_cast<PFN_vkCreateDescriptorSetLayout>(loadFunc("vkCreateDescriptorSetLayout"));
+		pfn_vkCreateDescriptorSetLayout = reinterpret_cast<PFN_vkCreateDescriptorSetLayout>(load_func("vkCreateDescriptorSetLayout"));
 		if (!pfn_vkCreateDescriptorSetLayout)
 			return false;
-		pfn_vkDestroyDescriptorSetLayout = reinterpret_cast<PFN_vkDestroyDescriptorSetLayout>(loadFunc("vkDestroyDescriptorSetLayout"));
+		pfn_vkDestroyDescriptorSetLayout = reinterpret_cast<PFN_vkDestroyDescriptorSetLayout>(load_func("vkDestroyDescriptorSetLayout"));
 		if (!pfn_vkDestroyDescriptorSetLayout)
 			return false;
-		pfn_vkCreateDescriptorPool = reinterpret_cast<PFN_vkCreateDescriptorPool>(loadFunc("vkCreateDescriptorPool"));
+		pfn_vkCreateDescriptorPool = reinterpret_cast<PFN_vkCreateDescriptorPool>(load_func("vkCreateDescriptorPool"));
 		if (!pfn_vkCreateDescriptorPool)
 			return false;
-		pfn_vkDestroyDescriptorPool = reinterpret_cast<PFN_vkDestroyDescriptorPool>(loadFunc("vkDestroyDescriptorPool"));
+		pfn_vkDestroyDescriptorPool = reinterpret_cast<PFN_vkDestroyDescriptorPool>(load_func("vkDestroyDescriptorPool"));
 		if (!pfn_vkDestroyDescriptorPool)
 			return false;
-		pfn_vkResetDescriptorPool = reinterpret_cast<PFN_vkResetDescriptorPool>(loadFunc("vkResetDescriptorPool"));
+		pfn_vkResetDescriptorPool = reinterpret_cast<PFN_vkResetDescriptorPool>(load_func("vkResetDescriptorPool"));
 		if (!pfn_vkResetDescriptorPool)
 			return false;
-		pfn_vkAllocateDescriptorSets = reinterpret_cast<PFN_vkAllocateDescriptorSets>(loadFunc("vkAllocateDescriptorSets"));
+		pfn_vkAllocateDescriptorSets = reinterpret_cast<PFN_vkAllocateDescriptorSets>(load_func("vkAllocateDescriptorSets"));
 		if (!pfn_vkAllocateDescriptorSets)
 			return false;
-		pfn_vkFreeDescriptorSets = reinterpret_cast<PFN_vkFreeDescriptorSets>(loadFunc("vkFreeDescriptorSets"));
+		pfn_vkFreeDescriptorSets = reinterpret_cast<PFN_vkFreeDescriptorSets>(load_func("vkFreeDescriptorSets"));
 		if (!pfn_vkFreeDescriptorSets)
 			return false;
-		pfn_vkUpdateDescriptorSets = reinterpret_cast<PFN_vkUpdateDescriptorSets>(loadFunc("vkUpdateDescriptorSets"));
+		pfn_vkUpdateDescriptorSets = reinterpret_cast<PFN_vkUpdateDescriptorSets>(load_func("vkUpdateDescriptorSets"));
 		if (!pfn_vkUpdateDescriptorSets)
 			return false;
-		pfn_vkCreateFramebuffer = reinterpret_cast<PFN_vkCreateFramebuffer>(loadFunc("vkCreateFramebuffer"));
+		pfn_vkCreateFramebuffer = reinterpret_cast<PFN_vkCreateFramebuffer>(load_func("vkCreateFramebuffer"));
 		if (!pfn_vkCreateFramebuffer)
 			return false;
-		pfn_vkDestroyFramebuffer = reinterpret_cast<PFN_vkDestroyFramebuffer>(loadFunc("vkDestroyFramebuffer"));
+		pfn_vkDestroyFramebuffer = reinterpret_cast<PFN_vkDestroyFramebuffer>(load_func("vkDestroyFramebuffer"));
 		if (!pfn_vkDestroyFramebuffer)
 			return false;
-		pfn_vkCreateRenderPass = reinterpret_cast<PFN_vkCreateRenderPass>(loadFunc("vkCreateRenderPass"));
+		pfn_vkCreateRenderPass = reinterpret_cast<PFN_vkCreateRenderPass>(load_func("vkCreateRenderPass"));
 		if (!pfn_vkCreateRenderPass)
 			return false;
-		pfn_vkDestroyRenderPass = reinterpret_cast<PFN_vkDestroyRenderPass>(loadFunc("vkDestroyRenderPass"));
+		pfn_vkDestroyRenderPass = reinterpret_cast<PFN_vkDestroyRenderPass>(load_func("vkDestroyRenderPass"));
 		if (!pfn_vkDestroyRenderPass)
 			return false;
-		pfn_vkGetRenderAreaGranularity = reinterpret_cast<PFN_vkGetRenderAreaGranularity>(loadFunc("vkGetRenderAreaGranularity"));
+		pfn_vkGetRenderAreaGranularity = reinterpret_cast<PFN_vkGetRenderAreaGranularity>(load_func("vkGetRenderAreaGranularity"));
 		if (!pfn_vkGetRenderAreaGranularity)
 			return false;
-		pfn_vkCreateCommandPool = reinterpret_cast<PFN_vkCreateCommandPool>(loadFunc("vkCreateCommandPool"));
+		pfn_vkCreateCommandPool = reinterpret_cast<PFN_vkCreateCommandPool>(load_func("vkCreateCommandPool"));
 		if (!pfn_vkCreateCommandPool)
 			return false;
-		pfn_vkDestroyCommandPool = reinterpret_cast<PFN_vkDestroyCommandPool>(loadFunc("vkDestroyCommandPool"));
+		pfn_vkDestroyCommandPool = reinterpret_cast<PFN_vkDestroyCommandPool>(load_func("vkDestroyCommandPool"));
 		if (!pfn_vkDestroyCommandPool)
 			return false;
-		pfn_vkResetCommandPool = reinterpret_cast<PFN_vkResetCommandPool>(loadFunc("vkResetCommandPool"));
+		pfn_vkResetCommandPool = reinterpret_cast<PFN_vkResetCommandPool>(load_func("vkResetCommandPool"));
 		if (!pfn_vkResetCommandPool)
 			return false;
-		pfn_vkAllocateCommandBuffers = reinterpret_cast<PFN_vkAllocateCommandBuffers>(loadFunc("vkAllocateCommandBuffers"));
+		pfn_vkAllocateCommandBuffers = reinterpret_cast<PFN_vkAllocateCommandBuffers>(load_func("vkAllocateCommandBuffers"));
 		if (!pfn_vkAllocateCommandBuffers)
 			return false;
-		pfn_vkFreeCommandBuffers = reinterpret_cast<PFN_vkFreeCommandBuffers>(loadFunc("vkFreeCommandBuffers"));
+		pfn_vkFreeCommandBuffers = reinterpret_cast<PFN_vkFreeCommandBuffers>(load_func("vkFreeCommandBuffers"));
 		if (!pfn_vkFreeCommandBuffers)
 			return false;
-		pfn_vkBeginCommandBuffer = reinterpret_cast<PFN_vkBeginCommandBuffer>(loadFunc("vkBeginCommandBuffer"));
+		pfn_vkBeginCommandBuffer = reinterpret_cast<PFN_vkBeginCommandBuffer>(load_func("vkBeginCommandBuffer"));
 		if (!pfn_vkBeginCommandBuffer)
 			return false;
-		pfn_vkEndCommandBuffer = reinterpret_cast<PFN_vkEndCommandBuffer>(loadFunc("vkEndCommandBuffer"));
+		pfn_vkEndCommandBuffer = reinterpret_cast<PFN_vkEndCommandBuffer>(load_func("vkEndCommandBuffer"));
 		if (!pfn_vkEndCommandBuffer)
 			return false;
-		pfn_vkResetCommandBuffer = reinterpret_cast<PFN_vkResetCommandBuffer>(loadFunc("vkResetCommandBuffer"));
+		pfn_vkResetCommandBuffer = reinterpret_cast<PFN_vkResetCommandBuffer>(load_func("vkResetCommandBuffer"));
 		if (!pfn_vkResetCommandBuffer)
 			return false;
-		pfn_vkCmdBindPipeline = reinterpret_cast<PFN_vkCmdBindPipeline>(loadFunc("vkCmdBindPipeline"));
+		pfn_vkCmdBindPipeline = reinterpret_cast<PFN_vkCmdBindPipeline>(load_func("vkCmdBindPipeline"));
 		if (!pfn_vkCmdBindPipeline)
 			return false;
-		pfn_vkCmdSetViewport = reinterpret_cast<PFN_vkCmdSetViewport>(loadFunc("vkCmdSetViewport"));
+		pfn_vkCmdSetViewport = reinterpret_cast<PFN_vkCmdSetViewport>(load_func("vkCmdSetViewport"));
 		if (!pfn_vkCmdSetViewport)
 			return false;
-		pfn_vkCmdSetScissor = reinterpret_cast<PFN_vkCmdSetScissor>(loadFunc("vkCmdSetScissor"));
+		pfn_vkCmdSetScissor = reinterpret_cast<PFN_vkCmdSetScissor>(load_func("vkCmdSetScissor"));
 		if (!pfn_vkCmdSetScissor)
 			return false;
-		pfn_vkCmdSetLineWidth = reinterpret_cast<PFN_vkCmdSetLineWidth>(loadFunc("vkCmdSetLineWidth"));
+		pfn_vkCmdSetLineWidth = reinterpret_cast<PFN_vkCmdSetLineWidth>(load_func("vkCmdSetLineWidth"));
 		if (!pfn_vkCmdSetLineWidth)
 			return false;
-		pfn_vkCmdSetDepthBias = reinterpret_cast<PFN_vkCmdSetDepthBias>(loadFunc("vkCmdSetDepthBias"));
+		pfn_vkCmdSetDepthBias = reinterpret_cast<PFN_vkCmdSetDepthBias>(load_func("vkCmdSetDepthBias"));
 		if (!pfn_vkCmdSetDepthBias)
 			return false;
-		pfn_vkCmdSetBlendConstants = reinterpret_cast<PFN_vkCmdSetBlendConstants>(loadFunc("vkCmdSetBlendConstants"));
+		pfn_vkCmdSetBlendConstants = reinterpret_cast<PFN_vkCmdSetBlendConstants>(load_func("vkCmdSetBlendConstants"));
 		if (!pfn_vkCmdSetBlendConstants)
 			return false;
-		pfn_vkCmdSetDepthBounds = reinterpret_cast<PFN_vkCmdSetDepthBounds>(loadFunc("vkCmdSetDepthBounds"));
+		pfn_vkCmdSetDepthBounds = reinterpret_cast<PFN_vkCmdSetDepthBounds>(load_func("vkCmdSetDepthBounds"));
 		if (!pfn_vkCmdSetDepthBounds)
 			return false;
-		pfn_vkCmdSetStencilCompareMask = reinterpret_cast<PFN_vkCmdSetStencilCompareMask>(loadFunc("vkCmdSetStencilCompareMask"));
+		pfn_vkCmdSetStencilCompareMask = reinterpret_cast<PFN_vkCmdSetStencilCompareMask>(load_func("vkCmdSetStencilCompareMask"));
 		if (!pfn_vkCmdSetStencilCompareMask)
 			return false;
-		pfn_vkCmdSetStencilWriteMask = reinterpret_cast<PFN_vkCmdSetStencilWriteMask>(loadFunc("vkCmdSetStencilWriteMask"));
+		pfn_vkCmdSetStencilWriteMask = reinterpret_cast<PFN_vkCmdSetStencilWriteMask>(load_func("vkCmdSetStencilWriteMask"));
 		if (!pfn_vkCmdSetStencilWriteMask)
 			return false;
-		pfn_vkCmdSetStencilReference = reinterpret_cast<PFN_vkCmdSetStencilReference>(loadFunc("vkCmdSetStencilReference"));
+		pfn_vkCmdSetStencilReference = reinterpret_cast<PFN_vkCmdSetStencilReference>(load_func("vkCmdSetStencilReference"));
 		if (!pfn_vkCmdSetStencilReference)
 			return false;
-		pfn_vkCmdBindDescriptorSets = reinterpret_cast<PFN_vkCmdBindDescriptorSets>(loadFunc("vkCmdBindDescriptorSets"));
+		pfn_vkCmdBindDescriptorSets = reinterpret_cast<PFN_vkCmdBindDescriptorSets>(load_func("vkCmdBindDescriptorSets"));
 		if (!pfn_vkCmdBindDescriptorSets)
 			return false;
-		pfn_vkCmdBindIndexBuffer = reinterpret_cast<PFN_vkCmdBindIndexBuffer>(loadFunc("vkCmdBindIndexBuffer"));
+		pfn_vkCmdBindIndexBuffer = reinterpret_cast<PFN_vkCmdBindIndexBuffer>(load_func("vkCmdBindIndexBuffer"));
 		if (!pfn_vkCmdBindIndexBuffer)
 			return false;
-		pfn_vkCmdBindVertexBuffers = reinterpret_cast<PFN_vkCmdBindVertexBuffers>(loadFunc("vkCmdBindVertexBuffers"));
+		pfn_vkCmdBindVertexBuffers = reinterpret_cast<PFN_vkCmdBindVertexBuffers>(load_func("vkCmdBindVertexBuffers"));
 		if (!pfn_vkCmdBindVertexBuffers)
 			return false;
-		pfn_vkCmdDraw = reinterpret_cast<PFN_vkCmdDraw>(loadFunc("vkCmdDraw"));
+		pfn_vkCmdDraw = reinterpret_cast<PFN_vkCmdDraw>(load_func("vkCmdDraw"));
 		if (!pfn_vkCmdDraw)
 			return false;
-		pfn_vkCmdDrawIndexed = reinterpret_cast<PFN_vkCmdDrawIndexed>(loadFunc("vkCmdDrawIndexed"));
+		pfn_vkCmdDrawIndexed = reinterpret_cast<PFN_vkCmdDrawIndexed>(load_func("vkCmdDrawIndexed"));
 		if (!pfn_vkCmdDrawIndexed)
 			return false;
-		pfn_vkCmdDrawIndirect = reinterpret_cast<PFN_vkCmdDrawIndirect>(loadFunc("vkCmdDrawIndirect"));
+		pfn_vkCmdDrawIndirect = reinterpret_cast<PFN_vkCmdDrawIndirect>(load_func("vkCmdDrawIndirect"));
 		if (!pfn_vkCmdDrawIndirect)
 			return false;
-		pfn_vkCmdDrawIndexedIndirect = reinterpret_cast<PFN_vkCmdDrawIndexedIndirect>(loadFunc("vkCmdDrawIndexedIndirect"));
+		pfn_vkCmdDrawIndexedIndirect = reinterpret_cast<PFN_vkCmdDrawIndexedIndirect>(load_func("vkCmdDrawIndexedIndirect"));
 		if (!pfn_vkCmdDrawIndexedIndirect)
 			return false;
-		pfn_vkCmdDispatch = reinterpret_cast<PFN_vkCmdDispatch>(loadFunc("vkCmdDispatch"));
+		pfn_vkCmdDispatch = reinterpret_cast<PFN_vkCmdDispatch>(load_func("vkCmdDispatch"));
 		if (!pfn_vkCmdDispatch)
 			return false;
-		pfn_vkCmdDispatchIndirect = reinterpret_cast<PFN_vkCmdDispatchIndirect>(loadFunc("vkCmdDispatchIndirect"));
+		pfn_vkCmdDispatchIndirect = reinterpret_cast<PFN_vkCmdDispatchIndirect>(load_func("vkCmdDispatchIndirect"));
 		if (!pfn_vkCmdDispatchIndirect)
 			return false;
-		pfn_vkCmdCopyBuffer = reinterpret_cast<PFN_vkCmdCopyBuffer>(loadFunc("vkCmdCopyBuffer"));
+		pfn_vkCmdCopyBuffer = reinterpret_cast<PFN_vkCmdCopyBuffer>(load_func("vkCmdCopyBuffer"));
 		if (!pfn_vkCmdCopyBuffer)
 			return false;
-		pfn_vkCmdCopyImage = reinterpret_cast<PFN_vkCmdCopyImage>(loadFunc("vkCmdCopyImage"));
+		pfn_vkCmdCopyImage = reinterpret_cast<PFN_vkCmdCopyImage>(load_func("vkCmdCopyImage"));
 		if (!pfn_vkCmdCopyImage)
 			return false;
-		pfn_vkCmdBlitImage = reinterpret_cast<PFN_vkCmdBlitImage>(loadFunc("vkCmdBlitImage"));
+		pfn_vkCmdBlitImage = reinterpret_cast<PFN_vkCmdBlitImage>(load_func("vkCmdBlitImage"));
 		if (!pfn_vkCmdBlitImage)
 			return false;
-		pfn_vkCmdCopyBufferToImage = reinterpret_cast<PFN_vkCmdCopyBufferToImage>(loadFunc("vkCmdCopyBufferToImage"));
+		pfn_vkCmdCopyBufferToImage = reinterpret_cast<PFN_vkCmdCopyBufferToImage>(load_func("vkCmdCopyBufferToImage"));
 		if (!pfn_vkCmdCopyBufferToImage)
 			return false;
-		pfn_vkCmdCopyImageToBuffer = reinterpret_cast<PFN_vkCmdCopyImageToBuffer>(loadFunc("vkCmdCopyImageToBuffer"));
+		pfn_vkCmdCopyImageToBuffer = reinterpret_cast<PFN_vkCmdCopyImageToBuffer>(load_func("vkCmdCopyImageToBuffer"));
 		if (!pfn_vkCmdCopyImageToBuffer)
 			return false;
-		pfn_vkCmdUpdateBuffer = reinterpret_cast<PFN_vkCmdUpdateBuffer>(loadFunc("vkCmdUpdateBuffer"));
+		pfn_vkCmdUpdateBuffer = reinterpret_cast<PFN_vkCmdUpdateBuffer>(load_func("vkCmdUpdateBuffer"));
 		if (!pfn_vkCmdUpdateBuffer)
 			return false;
-		pfn_vkCmdFillBuffer = reinterpret_cast<PFN_vkCmdFillBuffer>(loadFunc("vkCmdFillBuffer"));
+		pfn_vkCmdFillBuffer = reinterpret_cast<PFN_vkCmdFillBuffer>(load_func("vkCmdFillBuffer"));
 		if (!pfn_vkCmdFillBuffer)
 			return false;
-		pfn_vkCmdClearColorImage = reinterpret_cast<PFN_vkCmdClearColorImage>(loadFunc("vkCmdClearColorImage"));
+		pfn_vkCmdClearColorImage = reinterpret_cast<PFN_vkCmdClearColorImage>(load_func("vkCmdClearColorImage"));
 		if (!pfn_vkCmdClearColorImage)
 			return false;
-		pfn_vkCmdClearDepthStencilImage = reinterpret_cast<PFN_vkCmdClearDepthStencilImage>(loadFunc("vkCmdClearDepthStencilImage"));
+		pfn_vkCmdClearDepthStencilImage = reinterpret_cast<PFN_vkCmdClearDepthStencilImage>(load_func("vkCmdClearDepthStencilImage"));
 		if (!pfn_vkCmdClearDepthStencilImage)
 			return false;
-		pfn_vkCmdClearAttachments = reinterpret_cast<PFN_vkCmdClearAttachments>(loadFunc("vkCmdClearAttachments"));
+		pfn_vkCmdClearAttachments = reinterpret_cast<PFN_vkCmdClearAttachments>(load_func("vkCmdClearAttachments"));
 		if (!pfn_vkCmdClearAttachments)
 			return false;
-		pfn_vkCmdResolveImage = reinterpret_cast<PFN_vkCmdResolveImage>(loadFunc("vkCmdResolveImage"));
+		pfn_vkCmdResolveImage = reinterpret_cast<PFN_vkCmdResolveImage>(load_func("vkCmdResolveImage"));
 		if (!pfn_vkCmdResolveImage)
 			return false;
-		pfn_vkCmdSetEvent = reinterpret_cast<PFN_vkCmdSetEvent>(loadFunc("vkCmdSetEvent"));
+		pfn_vkCmdSetEvent = reinterpret_cast<PFN_vkCmdSetEvent>(load_func("vkCmdSetEvent"));
 		if (!pfn_vkCmdSetEvent)
 			return false;
-		pfn_vkCmdResetEvent = reinterpret_cast<PFN_vkCmdResetEvent>(loadFunc("vkCmdResetEvent"));
+		pfn_vkCmdResetEvent = reinterpret_cast<PFN_vkCmdResetEvent>(load_func("vkCmdResetEvent"));
 		if (!pfn_vkCmdResetEvent)
 			return false;
-		pfn_vkCmdWaitEvents = reinterpret_cast<PFN_vkCmdWaitEvents>(loadFunc("vkCmdWaitEvents"));
+		pfn_vkCmdWaitEvents = reinterpret_cast<PFN_vkCmdWaitEvents>(load_func("vkCmdWaitEvents"));
 		if (!pfn_vkCmdWaitEvents)
 			return false;
-		pfn_vkCmdPipelineBarrier = reinterpret_cast<PFN_vkCmdPipelineBarrier>(loadFunc("vkCmdPipelineBarrier"));
+		pfn_vkCmdPipelineBarrier = reinterpret_cast<PFN_vkCmdPipelineBarrier>(load_func("vkCmdPipelineBarrier"));
 		if (!pfn_vkCmdPipelineBarrier)
 			return false;
-		pfn_vkCmdBeginQuery = reinterpret_cast<PFN_vkCmdBeginQuery>(loadFunc("vkCmdBeginQuery"));
+		pfn_vkCmdBeginQuery = reinterpret_cast<PFN_vkCmdBeginQuery>(load_func("vkCmdBeginQuery"));
 		if (!pfn_vkCmdBeginQuery)
 			return false;
-		pfn_vkCmdEndQuery = reinterpret_cast<PFN_vkCmdEndQuery>(loadFunc("vkCmdEndQuery"));
+		pfn_vkCmdEndQuery = reinterpret_cast<PFN_vkCmdEndQuery>(load_func("vkCmdEndQuery"));
 		if (!pfn_vkCmdEndQuery)
 			return false;
-		pfn_vkCmdResetQueryPool = reinterpret_cast<PFN_vkCmdResetQueryPool>(loadFunc("vkCmdResetQueryPool"));
+		pfn_vkCmdResetQueryPool = reinterpret_cast<PFN_vkCmdResetQueryPool>(load_func("vkCmdResetQueryPool"));
 		if (!pfn_vkCmdResetQueryPool)
 			return false;
-		pfn_vkCmdWriteTimestamp = reinterpret_cast<PFN_vkCmdWriteTimestamp>(loadFunc("vkCmdWriteTimestamp"));
+		pfn_vkCmdWriteTimestamp = reinterpret_cast<PFN_vkCmdWriteTimestamp>(load_func("vkCmdWriteTimestamp"));
 		if (!pfn_vkCmdWriteTimestamp)
 			return false;
-		pfn_vkCmdCopyQueryPoolResults = reinterpret_cast<PFN_vkCmdCopyQueryPoolResults>(loadFunc("vkCmdCopyQueryPoolResults"));
+		pfn_vkCmdCopyQueryPoolResults = reinterpret_cast<PFN_vkCmdCopyQueryPoolResults>(load_func("vkCmdCopyQueryPoolResults"));
 		if (!pfn_vkCmdCopyQueryPoolResults)
 			return false;
-		pfn_vkCmdPushConstants = reinterpret_cast<PFN_vkCmdPushConstants>(loadFunc("vkCmdPushConstants"));
+		pfn_vkCmdPushConstants = reinterpret_cast<PFN_vkCmdPushConstants>(load_func("vkCmdPushConstants"));
 		if (!pfn_vkCmdPushConstants)
 			return false;
-		pfn_vkCmdBeginRenderPass = reinterpret_cast<PFN_vkCmdBeginRenderPass>(loadFunc("vkCmdBeginRenderPass"));
+		pfn_vkCmdBeginRenderPass = reinterpret_cast<PFN_vkCmdBeginRenderPass>(load_func("vkCmdBeginRenderPass"));
 		if (!pfn_vkCmdBeginRenderPass)
 			return false;
-		pfn_vkCmdNextSubpass = reinterpret_cast<PFN_vkCmdNextSubpass>(loadFunc("vkCmdNextSubpass"));
+		pfn_vkCmdNextSubpass = reinterpret_cast<PFN_vkCmdNextSubpass>(load_func("vkCmdNextSubpass"));
 		if (!pfn_vkCmdNextSubpass)
 			return false;
-		pfn_vkCmdEndRenderPass = reinterpret_cast<PFN_vkCmdEndRenderPass>(loadFunc("vkCmdEndRenderPass"));
+		pfn_vkCmdEndRenderPass = reinterpret_cast<PFN_vkCmdEndRenderPass>(load_func("vkCmdEndRenderPass"));
 		if (!pfn_vkCmdEndRenderPass)
 			return false;
-		pfn_vkCmdExecuteCommands = reinterpret_cast<PFN_vkCmdExecuteCommands>(loadFunc("vkCmdExecuteCommands"));
+		pfn_vkCmdExecuteCommands = reinterpret_cast<PFN_vkCmdExecuteCommands>(load_func("vkCmdExecuteCommands"));
 		if (!pfn_vkCmdExecuteCommands)
 			return false;
 		return true;
 	}
 
-	bool Vulkan::loadVulkan_1_1() {
-		pfn_vkEnumerateInstanceVersion = reinterpret_cast<PFN_vkEnumerateInstanceVersion>(loadFuncInstance(nullptr, "vkEnumerateInstanceVersion"));
+	bool Vulkan::load_vulkan_1_1() {
+		pfn_vkEnumerateInstanceVersion = reinterpret_cast<PFN_vkEnumerateInstanceVersion>(load_func_with_instance(nullptr, "vkEnumerateInstanceVersion"));
 		if (!pfn_vkEnumerateInstanceVersion)
 			return false;
-		pfn_vkBindBufferMemory2 = reinterpret_cast<PFN_vkBindBufferMemory2>(loadFunc("vkBindBufferMemory2"));
+		pfn_vkBindBufferMemory2 = reinterpret_cast<PFN_vkBindBufferMemory2>(load_func("vkBindBufferMemory2"));
 		if (!pfn_vkBindBufferMemory2)
 			return false;
-		pfn_vkBindImageMemory2 = reinterpret_cast<PFN_vkBindImageMemory2>(loadFunc("vkBindImageMemory2"));
+		pfn_vkBindImageMemory2 = reinterpret_cast<PFN_vkBindImageMemory2>(load_func("vkBindImageMemory2"));
 		if (!pfn_vkBindImageMemory2)
 			return false;
-		pfn_vkGetDeviceGroupPeerMemoryFeatures = reinterpret_cast<PFN_vkGetDeviceGroupPeerMemoryFeatures>(loadFunc("vkGetDeviceGroupPeerMemoryFeatures"));
+		pfn_vkGetDeviceGroupPeerMemoryFeatures = reinterpret_cast<PFN_vkGetDeviceGroupPeerMemoryFeatures>(load_func("vkGetDeviceGroupPeerMemoryFeatures"));
 		if (!pfn_vkGetDeviceGroupPeerMemoryFeatures)
 			return false;
-		pfn_vkCmdSetDeviceMask = reinterpret_cast<PFN_vkCmdSetDeviceMask>(loadFunc("vkCmdSetDeviceMask"));
+		pfn_vkCmdSetDeviceMask = reinterpret_cast<PFN_vkCmdSetDeviceMask>(load_func("vkCmdSetDeviceMask"));
 		if (!pfn_vkCmdSetDeviceMask)
 			return false;
-		pfn_vkCmdDispatchBase = reinterpret_cast<PFN_vkCmdDispatchBase>(loadFunc("vkCmdDispatchBase"));
+		pfn_vkCmdDispatchBase = reinterpret_cast<PFN_vkCmdDispatchBase>(load_func("vkCmdDispatchBase"));
 		if (!pfn_vkCmdDispatchBase)
 			return false;
-		pfn_vkEnumeratePhysicalDeviceGroups = reinterpret_cast<PFN_vkEnumeratePhysicalDeviceGroups>(loadFunc("vkEnumeratePhysicalDeviceGroups"));
+		pfn_vkEnumeratePhysicalDeviceGroups = reinterpret_cast<PFN_vkEnumeratePhysicalDeviceGroups>(load_func("vkEnumeratePhysicalDeviceGroups"));
 		if (!pfn_vkEnumeratePhysicalDeviceGroups)
 			return false;
-		pfn_vkGetImageMemoryRequirements2 = reinterpret_cast<PFN_vkGetImageMemoryRequirements2>(loadFunc("vkGetImageMemoryRequirements2"));
+		pfn_vkGetImageMemoryRequirements2 = reinterpret_cast<PFN_vkGetImageMemoryRequirements2>(load_func("vkGetImageMemoryRequirements2"));
 		if (!pfn_vkGetImageMemoryRequirements2)
 			return false;
-		pfn_vkGetBufferMemoryRequirements2 = reinterpret_cast<PFN_vkGetBufferMemoryRequirements2>(loadFunc("vkGetBufferMemoryRequirements2"));
+		pfn_vkGetBufferMemoryRequirements2 = reinterpret_cast<PFN_vkGetBufferMemoryRequirements2>(load_func("vkGetBufferMemoryRequirements2"));
 		if (!pfn_vkGetBufferMemoryRequirements2)
 			return false;
-		pfn_vkGetImageSparseMemoryRequirements2 = reinterpret_cast<PFN_vkGetImageSparseMemoryRequirements2>(loadFunc("vkGetImageSparseMemoryRequirements2"));
+		pfn_vkGetImageSparseMemoryRequirements2 = reinterpret_cast<PFN_vkGetImageSparseMemoryRequirements2>(load_func("vkGetImageSparseMemoryRequirements2"));
 		if (!pfn_vkGetImageSparseMemoryRequirements2)
 			return false;
-		pfn_vkGetPhysicalDeviceFeatures2 = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2>(loadFunc("vkGetPhysicalDeviceFeatures2"));
+		pfn_vkGetPhysicalDeviceFeatures2 = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2>(load_func("vkGetPhysicalDeviceFeatures2"));
 		if (!pfn_vkGetPhysicalDeviceFeatures2)
 			return false;
-		pfn_vkGetPhysicalDeviceProperties2 = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2>(loadFunc("vkGetPhysicalDeviceProperties2"));
+		pfn_vkGetPhysicalDeviceProperties2 = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2>(load_func("vkGetPhysicalDeviceProperties2"));
 		if (!pfn_vkGetPhysicalDeviceProperties2)
 			return false;
-		pfn_vkGetPhysicalDeviceFormatProperties2 = reinterpret_cast<PFN_vkGetPhysicalDeviceFormatProperties2>(loadFunc("vkGetPhysicalDeviceFormatProperties2"));
+		pfn_vkGetPhysicalDeviceFormatProperties2 = reinterpret_cast<PFN_vkGetPhysicalDeviceFormatProperties2>(load_func("vkGetPhysicalDeviceFormatProperties2"));
 		if (!pfn_vkGetPhysicalDeviceFormatProperties2)
 			return false;
-		pfn_vkGetPhysicalDeviceImageFormatProperties2 = reinterpret_cast<PFN_vkGetPhysicalDeviceImageFormatProperties2>(loadFunc("vkGetPhysicalDeviceImageFormatProperties2"));
+		pfn_vkGetPhysicalDeviceImageFormatProperties2 = reinterpret_cast<PFN_vkGetPhysicalDeviceImageFormatProperties2>(load_func("vkGetPhysicalDeviceImageFormatProperties2"));
 		if (!pfn_vkGetPhysicalDeviceImageFormatProperties2)
 			return false;
-		pfn_vkGetPhysicalDeviceQueueFamilyProperties2 = reinterpret_cast<PFN_vkGetPhysicalDeviceQueueFamilyProperties2>(loadFunc("vkGetPhysicalDeviceQueueFamilyProperties2"));
+		pfn_vkGetPhysicalDeviceQueueFamilyProperties2 = reinterpret_cast<PFN_vkGetPhysicalDeviceQueueFamilyProperties2>(load_func("vkGetPhysicalDeviceQueueFamilyProperties2"));
 		if (!pfn_vkGetPhysicalDeviceQueueFamilyProperties2)
 			return false;
-		pfn_vkGetPhysicalDeviceMemoryProperties2 = reinterpret_cast<PFN_vkGetPhysicalDeviceMemoryProperties2>(loadFunc("vkGetPhysicalDeviceMemoryProperties2"));
+		pfn_vkGetPhysicalDeviceMemoryProperties2 = reinterpret_cast<PFN_vkGetPhysicalDeviceMemoryProperties2>(load_func("vkGetPhysicalDeviceMemoryProperties2"));
 		if (!pfn_vkGetPhysicalDeviceMemoryProperties2)
 			return false;
-		pfn_vkGetPhysicalDeviceSparseImageFormatProperties2 = reinterpret_cast<PFN_vkGetPhysicalDeviceSparseImageFormatProperties2>(loadFunc("vkGetPhysicalDeviceSparseImageFormatProperties2"));
+		pfn_vkGetPhysicalDeviceSparseImageFormatProperties2 = reinterpret_cast<PFN_vkGetPhysicalDeviceSparseImageFormatProperties2>(load_func("vkGetPhysicalDeviceSparseImageFormatProperties2"));
 		if (!pfn_vkGetPhysicalDeviceSparseImageFormatProperties2)
 			return false;
-		pfn_vkTrimCommandPool = reinterpret_cast<PFN_vkTrimCommandPool>(loadFunc("vkTrimCommandPool"));
+		pfn_vkTrimCommandPool = reinterpret_cast<PFN_vkTrimCommandPool>(load_func("vkTrimCommandPool"));
 		if (!pfn_vkTrimCommandPool)
 			return false;
-		pfn_vkGetDeviceQueue2 = reinterpret_cast<PFN_vkGetDeviceQueue2>(loadFunc("vkGetDeviceQueue2"));
+		pfn_vkGetDeviceQueue2 = reinterpret_cast<PFN_vkGetDeviceQueue2>(load_func("vkGetDeviceQueue2"));
 		if (!pfn_vkGetDeviceQueue2)
 			return false;
-		pfn_vkCreateSamplerYcbcrConversion = reinterpret_cast<PFN_vkCreateSamplerYcbcrConversion>(loadFunc("vkCreateSamplerYcbcrConversion"));
+		pfn_vkCreateSamplerYcbcrConversion = reinterpret_cast<PFN_vkCreateSamplerYcbcrConversion>(load_func("vkCreateSamplerYcbcrConversion"));
 		if (!pfn_vkCreateSamplerYcbcrConversion)
 			return false;
-		pfn_vkDestroySamplerYcbcrConversion = reinterpret_cast<PFN_vkDestroySamplerYcbcrConversion>(loadFunc("vkDestroySamplerYcbcrConversion"));
+		pfn_vkDestroySamplerYcbcrConversion = reinterpret_cast<PFN_vkDestroySamplerYcbcrConversion>(load_func("vkDestroySamplerYcbcrConversion"));
 		if (!pfn_vkDestroySamplerYcbcrConversion)
 			return false;
-		pfn_vkCreateDescriptorUpdateTemplate = reinterpret_cast<PFN_vkCreateDescriptorUpdateTemplate>(loadFunc("vkCreateDescriptorUpdateTemplate"));
+		pfn_vkCreateDescriptorUpdateTemplate = reinterpret_cast<PFN_vkCreateDescriptorUpdateTemplate>(load_func("vkCreateDescriptorUpdateTemplate"));
 		if (!pfn_vkCreateDescriptorUpdateTemplate)
 			return false;
-		pfn_vkDestroyDescriptorUpdateTemplate = reinterpret_cast<PFN_vkDestroyDescriptorUpdateTemplate>(loadFunc("vkDestroyDescriptorUpdateTemplate"));
+		pfn_vkDestroyDescriptorUpdateTemplate = reinterpret_cast<PFN_vkDestroyDescriptorUpdateTemplate>(load_func("vkDestroyDescriptorUpdateTemplate"));
 		if (!pfn_vkDestroyDescriptorUpdateTemplate)
 			return false;
-		pfn_vkUpdateDescriptorSetWithTemplate = reinterpret_cast<PFN_vkUpdateDescriptorSetWithTemplate>(loadFunc("vkUpdateDescriptorSetWithTemplate"));
+		pfn_vkUpdateDescriptorSetWithTemplate = reinterpret_cast<PFN_vkUpdateDescriptorSetWithTemplate>(load_func("vkUpdateDescriptorSetWithTemplate"));
 		if (!pfn_vkUpdateDescriptorSetWithTemplate)
 			return false;
-		pfn_vkGetPhysicalDeviceExternalBufferProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalBufferProperties>(loadFunc("vkGetPhysicalDeviceExternalBufferProperties"));
+		pfn_vkGetPhysicalDeviceExternalBufferProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalBufferProperties>(load_func("vkGetPhysicalDeviceExternalBufferProperties"));
 		if (!pfn_vkGetPhysicalDeviceExternalBufferProperties)
 			return false;
-		pfn_vkGetPhysicalDeviceExternalFenceProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalFenceProperties>(loadFunc("vkGetPhysicalDeviceExternalFenceProperties"));
+		pfn_vkGetPhysicalDeviceExternalFenceProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalFenceProperties>(load_func("vkGetPhysicalDeviceExternalFenceProperties"));
 		if (!pfn_vkGetPhysicalDeviceExternalFenceProperties)
 			return false;
-		pfn_vkGetPhysicalDeviceExternalSemaphoreProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalSemaphoreProperties>(loadFunc("vkGetPhysicalDeviceExternalSemaphoreProperties"));
+		pfn_vkGetPhysicalDeviceExternalSemaphoreProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalSemaphoreProperties>(load_func("vkGetPhysicalDeviceExternalSemaphoreProperties"));
 		if (!pfn_vkGetPhysicalDeviceExternalSemaphoreProperties)
 			return false;
-		pfn_vkGetDescriptorSetLayoutSupport = reinterpret_cast<PFN_vkGetDescriptorSetLayoutSupport>(loadFunc("vkGetDescriptorSetLayoutSupport"));
+		pfn_vkGetDescriptorSetLayoutSupport = reinterpret_cast<PFN_vkGetDescriptorSetLayoutSupport>(load_func("vkGetDescriptorSetLayoutSupport"));
 		if (!pfn_vkGetDescriptorSetLayoutSupport)
 			return false;
 		return true;
 	}
 
-	bool Vulkan::loadVulkan_1_2() {
-		pfn_vkCmdDrawIndirectCount = reinterpret_cast<PFN_vkCmdDrawIndirectCount>(loadFunc("vkCmdDrawIndirectCount"));
+	bool Vulkan::load_vulkan_1_2() {
+		pfn_vkCmdDrawIndirectCount = reinterpret_cast<PFN_vkCmdDrawIndirectCount>(load_func("vkCmdDrawIndirectCount"));
 		if (!pfn_vkCmdDrawIndirectCount)
 			return false;
-		pfn_vkCmdDrawIndexedIndirectCount = reinterpret_cast<PFN_vkCmdDrawIndexedIndirectCount>(loadFunc("vkCmdDrawIndexedIndirectCount"));
+		pfn_vkCmdDrawIndexedIndirectCount = reinterpret_cast<PFN_vkCmdDrawIndexedIndirectCount>(load_func("vkCmdDrawIndexedIndirectCount"));
 		if (!pfn_vkCmdDrawIndexedIndirectCount)
 			return false;
-		pfn_vkCreateRenderPass2 = reinterpret_cast<PFN_vkCreateRenderPass2>(loadFunc("vkCreateRenderPass2"));
+		pfn_vkCreateRenderPass2 = reinterpret_cast<PFN_vkCreateRenderPass2>(load_func("vkCreateRenderPass2"));
 		if (!pfn_vkCreateRenderPass2)
 			return false;
-		pfn_vkCmdBeginRenderPass2 = reinterpret_cast<PFN_vkCmdBeginRenderPass2>(loadFunc("vkCmdBeginRenderPass2"));
+		pfn_vkCmdBeginRenderPass2 = reinterpret_cast<PFN_vkCmdBeginRenderPass2>(load_func("vkCmdBeginRenderPass2"));
 		if (!pfn_vkCmdBeginRenderPass2)
 			return false;
-		pfn_vkCmdNextSubpass2 = reinterpret_cast<PFN_vkCmdNextSubpass2>(loadFunc("vkCmdNextSubpass2"));
+		pfn_vkCmdNextSubpass2 = reinterpret_cast<PFN_vkCmdNextSubpass2>(load_func("vkCmdNextSubpass2"));
 		if (!pfn_vkCmdNextSubpass2)
 			return false;
-		pfn_vkCmdEndRenderPass2 = reinterpret_cast<PFN_vkCmdEndRenderPass2>(loadFunc("vkCmdEndRenderPass2"));
+		pfn_vkCmdEndRenderPass2 = reinterpret_cast<PFN_vkCmdEndRenderPass2>(load_func("vkCmdEndRenderPass2"));
 		if (!pfn_vkCmdEndRenderPass2)
 			return false;
-		pfn_vkResetQueryPool = reinterpret_cast<PFN_vkResetQueryPool>(loadFunc("vkResetQueryPool"));
+		pfn_vkResetQueryPool = reinterpret_cast<PFN_vkResetQueryPool>(load_func("vkResetQueryPool"));
 		if (!pfn_vkResetQueryPool)
 			return false;
-		pfn_vkGetSemaphoreCounterValue = reinterpret_cast<PFN_vkGetSemaphoreCounterValue>(loadFunc("vkGetSemaphoreCounterValue"));
+		pfn_vkGetSemaphoreCounterValue = reinterpret_cast<PFN_vkGetSemaphoreCounterValue>(load_func("vkGetSemaphoreCounterValue"));
 		if (!pfn_vkGetSemaphoreCounterValue)
 			return false;
-		pfn_vkWaitSemaphores = reinterpret_cast<PFN_vkWaitSemaphores>(loadFunc("vkWaitSemaphores"));
+		pfn_vkWaitSemaphores = reinterpret_cast<PFN_vkWaitSemaphores>(load_func("vkWaitSemaphores"));
 		if (!pfn_vkWaitSemaphores)
 			return false;
-		pfn_vkSignalSemaphore = reinterpret_cast<PFN_vkSignalSemaphore>(loadFunc("vkSignalSemaphore"));
+		pfn_vkSignalSemaphore = reinterpret_cast<PFN_vkSignalSemaphore>(load_func("vkSignalSemaphore"));
 		if (!pfn_vkSignalSemaphore)
 			return false;
-		pfn_vkGetBufferDeviceAddress = reinterpret_cast<PFN_vkGetBufferDeviceAddress>(loadFunc("vkGetBufferDeviceAddress"));
+		pfn_vkGetBufferDeviceAddress = reinterpret_cast<PFN_vkGetBufferDeviceAddress>(load_func("vkGetBufferDeviceAddress"));
 		if (!pfn_vkGetBufferDeviceAddress)
 			return false;
-		pfn_vkGetBufferOpaqueCaptureAddress = reinterpret_cast<PFN_vkGetBufferOpaqueCaptureAddress>(loadFunc("vkGetBufferOpaqueCaptureAddress"));
+		pfn_vkGetBufferOpaqueCaptureAddress = reinterpret_cast<PFN_vkGetBufferOpaqueCaptureAddress>(load_func("vkGetBufferOpaqueCaptureAddress"));
 		if (!pfn_vkGetBufferOpaqueCaptureAddress)
 			return false;
-		pfn_vkGetDeviceMemoryOpaqueCaptureAddress = reinterpret_cast<PFN_vkGetDeviceMemoryOpaqueCaptureAddress>(loadFunc("vkGetDeviceMemoryOpaqueCaptureAddress"));
+		pfn_vkGetDeviceMemoryOpaqueCaptureAddress = reinterpret_cast<PFN_vkGetDeviceMemoryOpaqueCaptureAddress>(load_func("vkGetDeviceMemoryOpaqueCaptureAddress"));
 		if (!pfn_vkGetDeviceMemoryOpaqueCaptureAddress)
 			return false;
 		return true;
 	}
 
-	bool Vulkan::loadVulkan_1_3() {
-		pfn_vkGetPhysicalDeviceToolProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceToolProperties>(loadFunc("vkGetPhysicalDeviceToolProperties"));
+	bool Vulkan::load_vulkan_1_3() {
+		pfn_vkGetPhysicalDeviceToolProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceToolProperties>(load_func("vkGetPhysicalDeviceToolProperties"));
 		if (!pfn_vkGetPhysicalDeviceToolProperties)
 			return false;
-		pfn_vkCreatePrivateDataSlot = reinterpret_cast<PFN_vkCreatePrivateDataSlot>(loadFunc("vkCreatePrivateDataSlot"));
+		pfn_vkCreatePrivateDataSlot = reinterpret_cast<PFN_vkCreatePrivateDataSlot>(load_func("vkCreatePrivateDataSlot"));
 		if (!pfn_vkCreatePrivateDataSlot)
 			return false;
-		pfn_vkDestroyPrivateDataSlot = reinterpret_cast<PFN_vkDestroyPrivateDataSlot>(loadFunc("vkDestroyPrivateDataSlot"));
+		pfn_vkDestroyPrivateDataSlot = reinterpret_cast<PFN_vkDestroyPrivateDataSlot>(load_func("vkDestroyPrivateDataSlot"));
 		if (!pfn_vkDestroyPrivateDataSlot)
 			return false;
-		pfn_vkSetPrivateData = reinterpret_cast<PFN_vkSetPrivateData>(loadFunc("vkSetPrivateData"));
+		pfn_vkSetPrivateData = reinterpret_cast<PFN_vkSetPrivateData>(load_func("vkSetPrivateData"));
 		if (!pfn_vkSetPrivateData)
 			return false;
-		pfn_vkGetPrivateData = reinterpret_cast<PFN_vkGetPrivateData>(loadFunc("vkGetPrivateData"));
+		pfn_vkGetPrivateData = reinterpret_cast<PFN_vkGetPrivateData>(load_func("vkGetPrivateData"));
 		if (!pfn_vkGetPrivateData)
 			return false;
-		pfn_vkCmdSetEvent2 = reinterpret_cast<PFN_vkCmdSetEvent2>(loadFunc("vkCmdSetEvent2"));
+		pfn_vkCmdSetEvent2 = reinterpret_cast<PFN_vkCmdSetEvent2>(load_func("vkCmdSetEvent2"));
 		if (!pfn_vkCmdSetEvent2)
 			return false;
-		pfn_vkCmdResetEvent2 = reinterpret_cast<PFN_vkCmdResetEvent2>(loadFunc("vkCmdResetEvent2"));
+		pfn_vkCmdResetEvent2 = reinterpret_cast<PFN_vkCmdResetEvent2>(load_func("vkCmdResetEvent2"));
 		if (!pfn_vkCmdResetEvent2)
 			return false;
-		pfn_vkCmdWaitEvents2 = reinterpret_cast<PFN_vkCmdWaitEvents2>(loadFunc("vkCmdWaitEvents2"));
+		pfn_vkCmdWaitEvents2 = reinterpret_cast<PFN_vkCmdWaitEvents2>(load_func("vkCmdWaitEvents2"));
 		if (!pfn_vkCmdWaitEvents2)
 			return false;
-		pfn_vkCmdPipelineBarrier2 = reinterpret_cast<PFN_vkCmdPipelineBarrier2>(loadFunc("vkCmdPipelineBarrier2"));
+		pfn_vkCmdPipelineBarrier2 = reinterpret_cast<PFN_vkCmdPipelineBarrier2>(load_func("vkCmdPipelineBarrier2"));
 		if (!pfn_vkCmdPipelineBarrier2)
 			return false;
-		pfn_vkCmdWriteTimestamp2 = reinterpret_cast<PFN_vkCmdWriteTimestamp2>(loadFunc("vkCmdWriteTimestamp2"));
+		pfn_vkCmdWriteTimestamp2 = reinterpret_cast<PFN_vkCmdWriteTimestamp2>(load_func("vkCmdWriteTimestamp2"));
 		if (!pfn_vkCmdWriteTimestamp2)
 			return false;
-		pfn_vkQueueSubmit2 = reinterpret_cast<PFN_vkQueueSubmit2>(loadFunc("vkQueueSubmit2"));
+		pfn_vkQueueSubmit2 = reinterpret_cast<PFN_vkQueueSubmit2>(load_func("vkQueueSubmit2"));
 		if (!pfn_vkQueueSubmit2)
 			return false;
-		pfn_vkCmdCopyBuffer2 = reinterpret_cast<PFN_vkCmdCopyBuffer2>(loadFunc("vkCmdCopyBuffer2"));
+		pfn_vkCmdCopyBuffer2 = reinterpret_cast<PFN_vkCmdCopyBuffer2>(load_func("vkCmdCopyBuffer2"));
 		if (!pfn_vkCmdCopyBuffer2)
 			return false;
-		pfn_vkCmdCopyImage2 = reinterpret_cast<PFN_vkCmdCopyImage2>(loadFunc("vkCmdCopyImage2"));
+		pfn_vkCmdCopyImage2 = reinterpret_cast<PFN_vkCmdCopyImage2>(load_func("vkCmdCopyImage2"));
 		if (!pfn_vkCmdCopyImage2)
 			return false;
-		pfn_vkCmdCopyBufferToImage2 = reinterpret_cast<PFN_vkCmdCopyBufferToImage2>(loadFunc("vkCmdCopyBufferToImage2"));
+		pfn_vkCmdCopyBufferToImage2 = reinterpret_cast<PFN_vkCmdCopyBufferToImage2>(load_func("vkCmdCopyBufferToImage2"));
 		if (!pfn_vkCmdCopyBufferToImage2)
 			return false;
-		pfn_vkCmdCopyImageToBuffer2 = reinterpret_cast<PFN_vkCmdCopyImageToBuffer2>(loadFunc("vkCmdCopyImageToBuffer2"));
+		pfn_vkCmdCopyImageToBuffer2 = reinterpret_cast<PFN_vkCmdCopyImageToBuffer2>(load_func("vkCmdCopyImageToBuffer2"));
 		if (!pfn_vkCmdCopyImageToBuffer2)
 			return false;
-		pfn_vkCmdBlitImage2 = reinterpret_cast<PFN_vkCmdBlitImage2>(loadFunc("vkCmdBlitImage2"));
+		pfn_vkCmdBlitImage2 = reinterpret_cast<PFN_vkCmdBlitImage2>(load_func("vkCmdBlitImage2"));
 		if (!pfn_vkCmdBlitImage2)
 			return false;
-		pfn_vkCmdResolveImage2 = reinterpret_cast<PFN_vkCmdResolveImage2>(loadFunc("vkCmdResolveImage2"));
+		pfn_vkCmdResolveImage2 = reinterpret_cast<PFN_vkCmdResolveImage2>(load_func("vkCmdResolveImage2"));
 		if (!pfn_vkCmdResolveImage2)
 			return false;
-		pfn_vkCmdBeginRendering = reinterpret_cast<PFN_vkCmdBeginRendering>(loadFunc("vkCmdBeginRendering"));
+		pfn_vkCmdBeginRendering = reinterpret_cast<PFN_vkCmdBeginRendering>(load_func("vkCmdBeginRendering"));
 		if (!pfn_vkCmdBeginRendering)
 			return false;
-		pfn_vkCmdEndRendering = reinterpret_cast<PFN_vkCmdEndRendering>(loadFunc("vkCmdEndRendering"));
+		pfn_vkCmdEndRendering = reinterpret_cast<PFN_vkCmdEndRendering>(load_func("vkCmdEndRendering"));
 		if (!pfn_vkCmdEndRendering)
 			return false;
-		pfn_vkCmdSetCullMode = reinterpret_cast<PFN_vkCmdSetCullMode>(loadFunc("vkCmdSetCullMode"));
+		pfn_vkCmdSetCullMode = reinterpret_cast<PFN_vkCmdSetCullMode>(load_func("vkCmdSetCullMode"));
 		if (!pfn_vkCmdSetCullMode)
 			return false;
-		pfn_vkCmdSetFrontFace = reinterpret_cast<PFN_vkCmdSetFrontFace>(loadFunc("vkCmdSetFrontFace"));
+		pfn_vkCmdSetFrontFace = reinterpret_cast<PFN_vkCmdSetFrontFace>(load_func("vkCmdSetFrontFace"));
 		if (!pfn_vkCmdSetFrontFace)
 			return false;
-		pfn_vkCmdSetPrimitiveTopology = reinterpret_cast<PFN_vkCmdSetPrimitiveTopology>(loadFunc("vkCmdSetPrimitiveTopology"));
+		pfn_vkCmdSetPrimitiveTopology = reinterpret_cast<PFN_vkCmdSetPrimitiveTopology>(load_func("vkCmdSetPrimitiveTopology"));
 		if (!pfn_vkCmdSetPrimitiveTopology)
 			return false;
-		pfn_vkCmdSetViewportWithCount = reinterpret_cast<PFN_vkCmdSetViewportWithCount>(loadFunc("vkCmdSetViewportWithCount"));
+		pfn_vkCmdSetViewportWithCount = reinterpret_cast<PFN_vkCmdSetViewportWithCount>(load_func("vkCmdSetViewportWithCount"));
 		if (!pfn_vkCmdSetViewportWithCount)
 			return false;
-		pfn_vkCmdSetScissorWithCount = reinterpret_cast<PFN_vkCmdSetScissorWithCount>(loadFunc("vkCmdSetScissorWithCount"));
+		pfn_vkCmdSetScissorWithCount = reinterpret_cast<PFN_vkCmdSetScissorWithCount>(load_func("vkCmdSetScissorWithCount"));
 		if (!pfn_vkCmdSetScissorWithCount)
 			return false;
-		pfn_vkCmdBindVertexBuffers2 = reinterpret_cast<PFN_vkCmdBindVertexBuffers2>(loadFunc("vkCmdBindVertexBuffers2"));
+		pfn_vkCmdBindVertexBuffers2 = reinterpret_cast<PFN_vkCmdBindVertexBuffers2>(load_func("vkCmdBindVertexBuffers2"));
 		if (!pfn_vkCmdBindVertexBuffers2)
 			return false;
-		pfn_vkCmdSetDepthTestEnable = reinterpret_cast<PFN_vkCmdSetDepthTestEnable>(loadFunc("vkCmdSetDepthTestEnable"));
+		pfn_vkCmdSetDepthTestEnable = reinterpret_cast<PFN_vkCmdSetDepthTestEnable>(load_func("vkCmdSetDepthTestEnable"));
 		if (!pfn_vkCmdSetDepthTestEnable)
 			return false;
-		pfn_vkCmdSetDepthWriteEnable = reinterpret_cast<PFN_vkCmdSetDepthWriteEnable>(loadFunc("vkCmdSetDepthWriteEnable"));
+		pfn_vkCmdSetDepthWriteEnable = reinterpret_cast<PFN_vkCmdSetDepthWriteEnable>(load_func("vkCmdSetDepthWriteEnable"));
 		if (!pfn_vkCmdSetDepthWriteEnable)
 			return false;
-		pfn_vkCmdSetDepthCompareOp = reinterpret_cast<PFN_vkCmdSetDepthCompareOp>(loadFunc("vkCmdSetDepthCompareOp"));
+		pfn_vkCmdSetDepthCompareOp = reinterpret_cast<PFN_vkCmdSetDepthCompareOp>(load_func("vkCmdSetDepthCompareOp"));
 		if (!pfn_vkCmdSetDepthCompareOp)
 			return false;
-		pfn_vkCmdSetDepthBoundsTestEnable = reinterpret_cast<PFN_vkCmdSetDepthBoundsTestEnable>(loadFunc("vkCmdSetDepthBoundsTestEnable"));
+		pfn_vkCmdSetDepthBoundsTestEnable = reinterpret_cast<PFN_vkCmdSetDepthBoundsTestEnable>(load_func("vkCmdSetDepthBoundsTestEnable"));
 		if (!pfn_vkCmdSetDepthBoundsTestEnable)
 			return false;
-		pfn_vkCmdSetStencilTestEnable = reinterpret_cast<PFN_vkCmdSetStencilTestEnable>(loadFunc("vkCmdSetStencilTestEnable"));
+		pfn_vkCmdSetStencilTestEnable = reinterpret_cast<PFN_vkCmdSetStencilTestEnable>(load_func("vkCmdSetStencilTestEnable"));
 		if (!pfn_vkCmdSetStencilTestEnable)
 			return false;
-		pfn_vkCmdSetStencilOp = reinterpret_cast<PFN_vkCmdSetStencilOp>(loadFunc("vkCmdSetStencilOp"));
+		pfn_vkCmdSetStencilOp = reinterpret_cast<PFN_vkCmdSetStencilOp>(load_func("vkCmdSetStencilOp"));
 		if (!pfn_vkCmdSetStencilOp)
 			return false;
-		pfn_vkCmdSetRasterizerDiscardEnable = reinterpret_cast<PFN_vkCmdSetRasterizerDiscardEnable>(loadFunc("vkCmdSetRasterizerDiscardEnable"));
+		pfn_vkCmdSetRasterizerDiscardEnable = reinterpret_cast<PFN_vkCmdSetRasterizerDiscardEnable>(load_func("vkCmdSetRasterizerDiscardEnable"));
 		if (!pfn_vkCmdSetRasterizerDiscardEnable)
 			return false;
-		pfn_vkCmdSetDepthBiasEnable = reinterpret_cast<PFN_vkCmdSetDepthBiasEnable>(loadFunc("vkCmdSetDepthBiasEnable"));
+		pfn_vkCmdSetDepthBiasEnable = reinterpret_cast<PFN_vkCmdSetDepthBiasEnable>(load_func("vkCmdSetDepthBiasEnable"));
 		if (!pfn_vkCmdSetDepthBiasEnable)
 			return false;
-		pfn_vkCmdSetPrimitiveRestartEnable = reinterpret_cast<PFN_vkCmdSetPrimitiveRestartEnable>(loadFunc("vkCmdSetPrimitiveRestartEnable"));
+		pfn_vkCmdSetPrimitiveRestartEnable = reinterpret_cast<PFN_vkCmdSetPrimitiveRestartEnable>(load_func("vkCmdSetPrimitiveRestartEnable"));
 		if (!pfn_vkCmdSetPrimitiveRestartEnable)
 			return false;
-		pfn_vkGetDeviceBufferMemoryRequirements = reinterpret_cast<PFN_vkGetDeviceBufferMemoryRequirements>(loadFunc("vkGetDeviceBufferMemoryRequirements"));
+		pfn_vkGetDeviceBufferMemoryRequirements = reinterpret_cast<PFN_vkGetDeviceBufferMemoryRequirements>(load_func("vkGetDeviceBufferMemoryRequirements"));
 		if (!pfn_vkGetDeviceBufferMemoryRequirements)
 			return false;
-		pfn_vkGetDeviceImageMemoryRequirements = reinterpret_cast<PFN_vkGetDeviceImageMemoryRequirements>(loadFunc("vkGetDeviceImageMemoryRequirements"));
+		pfn_vkGetDeviceImageMemoryRequirements = reinterpret_cast<PFN_vkGetDeviceImageMemoryRequirements>(load_func("vkGetDeviceImageMemoryRequirements"));
 		if (!pfn_vkGetDeviceImageMemoryRequirements)
 			return false;
-		pfn_vkGetDeviceImageSparseMemoryRequirements = reinterpret_cast<PFN_vkGetDeviceImageSparseMemoryRequirements>(loadFunc("vkGetDeviceImageSparseMemoryRequirements"));
+		pfn_vkGetDeviceImageSparseMemoryRequirements = reinterpret_cast<PFN_vkGetDeviceImageSparseMemoryRequirements>(load_func("vkGetDeviceImageSparseMemoryRequirements"));
 		if (!pfn_vkGetDeviceImageSparseMemoryRequirements)
 			return false;
 		return true;
 	}
 
-	/* bool Vulkan::loadVulkan_1_4() {
-		pfn_vkCmdSetLineStipple = reinterpret_cast<PFN_vkCmdSetLineStipple>(loadFunc("vkCmdSetLineStipple"));
+	/* bool Vulkan::load_vulkan_1_4() {
+		pfn_vkCmdSetLineStipple = reinterpret_cast<PFN_vkCmdSetLineStipple>(load_func("vkCmdSetLineStipple"));
 		if (!pfn_vkCmdSetLineStipple)
 			return false;
-		pfn_vkMapMemory2 = reinterpret_cast<PFN_vkMapMemory2>(loadFunc("vkMapMemory2"));
+		pfn_vkMapMemory2 = reinterpret_cast<PFN_vkMapMemory2>(load_func("vkMapMemory2"));
 		if (!pfn_vkMapMemory2)
 			return false;
-		pfn_vkUnmapMemory2 = reinterpret_cast<PFN_vkUnmapMemory2>(loadFunc("vkUnmapMemory2"));
+		pfn_vkUnmapMemory2 = reinterpret_cast<PFN_vkUnmapMemory2>(load_func("vkUnmapMemory2"));
 		if (!pfn_vkUnmapMemory2)
 			return false;
-		pfn_vkCmdBindIndexBuffer2 = reinterpret_cast<PFN_vkCmdBindIndexBuffer2>(loadFunc("vkCmdBindIndexBuffer2"));
+		pfn_vkCmdBindIndexBuffer2 = reinterpret_cast<PFN_vkCmdBindIndexBuffer2>(load_func("vkCmdBindIndexBuffer2"));
 		if (!pfn_vkCmdBindIndexBuffer2)
 			return false;
-		pfn_vkGetRenderingAreaGranularity = reinterpret_cast<PFN_vkGetRenderingAreaGranularity>(loadFunc("vkCmdSetLineStipple"));
+		pfn_vkGetRenderingAreaGranularity = reinterpret_cast<PFN_vkGetRenderingAreaGranularity>(load_func("vkCmdSetLineStipple"));
 		if (!pfn_vkGetRenderingAreaGranularity)
 			return false;
-		pfn_vkGetDeviceImageSubresourceLayout = reinterpret_cast<PFN_vkGetDeviceImageSubresourceLayout>(loadFunc("vkGetDeviceImageSubresourceLayout"));
+		pfn_vkGetDeviceImageSubresourceLayout = reinterpret_cast<PFN_vkGetDeviceImageSubresourceLayout>(load_func("vkGetDeviceImageSubresourceLayout"));
 		if (!pfn_vkGetDeviceImageSubresourceLayout)
 			return false;
-		pfn_vkGetImageSubresourceLayout2 = reinterpret_cast<PFN_vkGetImageSubresourceLayout2>(loadFunc("vkGetImageSubresourceLayout2"));
+		pfn_vkGetImageSubresourceLayout2 = reinterpret_cast<PFN_vkGetImageSubresourceLayout2>(load_func("vkGetImageSubresourceLayout2"));
 		if (!pfn_vkGetImageSubresourceLayout2)
 			return false;
-		pfn_vkCmdPushDescriptorSet = reinterpret_cast<PFN_vkCmdPushDescriptorSet>(loadFunc("vkCmdPushDescriptorSet"));
+		pfn_vkCmdPushDescriptorSet = reinterpret_cast<PFN_vkCmdPushDescriptorSet>(load_func("vkCmdPushDescriptorSet"));
 		if (!pfn_vkCmdPushDescriptorSet)
 			return false;
-		pfn_vkCmdPushDescriptorSetWithTemplate = reinterpret_cast<PFN_vkCmdPushDescriptorSetWithTemplate>(loadFunc("vkCmdPushDescriptorSetWithTemplate"));
+		pfn_vkCmdPushDescriptorSetWithTemplate = reinterpret_cast<PFN_vkCmdPushDescriptorSetWithTemplate>(load_func("vkCmdPushDescriptorSetWithTemplate"));
 		if (!pfn_vkCmdPushDescriptorSetWithTemplate)
 			return false;
-		pfn_vkCmdSetRenderingAttachmentLocations = reinterpret_cast<PFN_vkCmdSetRenderingAttachmentLocations>(loadFunc("vkCmdSetRenderingAttachmentLocations"));
+		pfn_vkCmdSetRenderingAttachmentLocations = reinterpret_cast<PFN_vkCmdSetRenderingAttachmentLocations>(load_func("vkCmdSetRenderingAttachmentLocations"));
 		if (!pfn_vkCmdSetRenderingAttachmentLocations)
 			return false;
-		pfn_vkCmdSetRenderingInputAttachmentIndices = reinterpret_cast<PFN_vkCmdSetRenderingInputAttachmentIndices>(loadFunc("vkCmdSetRenderingInputAttachmentIndices"));
+		pfn_vkCmdSetRenderingInputAttachmentIndices = reinterpret_cast<PFN_vkCmdSetRenderingInputAttachmentIndices>(load_func("vkCmdSetRenderingInputAttachmentIndices"));
 		if (!pfn_vkCmdSetRenderingInputAttachmentIndices)
 			return false;
-		pfn_vkCmdBindDescriptorSets2 = reinterpret_cast<PFN_vkCmdBindDescriptorSets2>(loadFunc("vkCmdBindDescriptorSets2"));
+		pfn_vkCmdBindDescriptorSets2 = reinterpret_cast<PFN_vkCmdBindDescriptorSets2>(load_func("vkCmdBindDescriptorSets2"));
 		if (!pfn_vkCmdBindDescriptorSets2)
 			return false;
-		pfn_vkCmdPushConstants2 = reinterpret_cast<PFN_vkCmdPushConstants2>(loadFunc("vkCmdPushConstants2"));
+		pfn_vkCmdPushConstants2 = reinterpret_cast<PFN_vkCmdPushConstants2>(load_func("vkCmdPushConstants2"));
 		if (!pfn_vkCmdPushConstants2)
 			return false;
-		pfn_vkCmdPushDescriptorSet2 = reinterpret_cast<PFN_vkCmdPushDescriptorSet2>(loadFunc("vkCmdPushDescriptorSet2"));
+		pfn_vkCmdPushDescriptorSet2 = reinterpret_cast<PFN_vkCmdPushDescriptorSet2>(load_func("vkCmdPushDescriptorSet2"));
 		if (!pfn_vkCmdPushDescriptorSet2)
 			return false;
-		pfn_vkCmdPushDescriptorSetWithTemplate2 = reinterpret_cast<PFN_vkCmdPushDescriptorSetWithTemplate2>(loadFunc("vkCmdPushDescriptorSetWithTemplate2"));
+		pfn_vkCmdPushDescriptorSetWithTemplate2 = reinterpret_cast<PFN_vkCmdPushDescriptorSetWithTemplate2>(load_func("vkCmdPushDescriptorSetWithTemplate2"));
 		if (!pfn_vkCmdPushDescriptorSetWithTemplate2)
 			return false;
-		pfn_vkCopyMemoryToImage = reinterpret_cast<PFN_vkCopyMemoryToImage>(loadFunc("vkCopyMemoryToImage"));
+		pfn_vkCopyMemoryToImage = reinterpret_cast<PFN_vkCopyMemoryToImage>(load_func("vkCopyMemoryToImage"));
 		if (!pfn_vkCopyMemoryToImage)
 			return false;
-		pfn_vkCopyImageToMemory = reinterpret_cast<PFN_vkCopyImageToMemory>(loadFunc("vkCopyImageToMemory"));
+		pfn_vkCopyImageToMemory = reinterpret_cast<PFN_vkCopyImageToMemory>(load_func("vkCopyImageToMemory"));
 		if (!pfn_vkCopyImageToMemory)
 			return false;
-		pfn_vkCopyImageToImage = reinterpret_cast<PFN_vkCopyImageToImage>(loadFunc("vkCopyImageToImage"));
+		pfn_vkCopyImageToImage = reinterpret_cast<PFN_vkCopyImageToImage>(load_func("vkCopyImageToImage"));
 		if (!pfn_vkCopyImageToImage)
 			return false;
-		pfn_vkTransitionImageLayout = reinterpret_cast<PFN_vkTransitionImageLayout>(loadFunc("vkTransitionImageLayout"));
+		pfn_vkTransitionImageLayout = reinterpret_cast<PFN_vkTransitionImageLayout>(load_func("vkTransitionImageLayout"));
 		if (!pfn_vkTransitionImageLayout)
 			return false;
 		return true;
 	} */
 
-	bool Vulkan::loadExtensionFuncs() {
-		pfn_vkDestroySurfaceKHR = reinterpret_cast<PFN_vkDestroySurfaceKHR>(loadFunc("vkDestroySurfaceKHR"));
+	bool Vulkan::load_extension_funcs() {
+		pfn_vkDestroySurfaceKHR = reinterpret_cast<PFN_vkDestroySurfaceKHR>(load_func("vkDestroySurfaceKHR"));
 		if (!pfn_vkDestroySurfaceKHR)
 			return false;
-		pfn_vkGetPhysicalDeviceSurfaceSupportKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceSupportKHR>(loadFunc("vkGetPhysicalDeviceSurfaceSupportKHR"));
+		pfn_vkGetPhysicalDeviceSurfaceSupportKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceSupportKHR>(load_func("vkGetPhysicalDeviceSurfaceSupportKHR"));
 		if (!pfn_vkGetPhysicalDeviceSurfaceSupportKHR)
 			return false;
-		pfn_vkGetPhysicalDeviceSurfaceCapabilitiesKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR>(loadFunc("vkGetPhysicalDeviceSurfaceCapabilitiesKHR"));
+		pfn_vkGetPhysicalDeviceSurfaceCapabilitiesKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR>(load_func("vkGetPhysicalDeviceSurfaceCapabilitiesKHR"));
 		if (!pfn_vkGetPhysicalDeviceSurfaceCapabilitiesKHR)
 			return false;
-		pfn_vkGetPhysicalDeviceSurfaceFormatsKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceFormatsKHR>(loadFunc("vkGetPhysicalDeviceSurfaceFormatsKHR"));
+		pfn_vkGetPhysicalDeviceSurfaceFormatsKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceFormatsKHR>(load_func("vkGetPhysicalDeviceSurfaceFormatsKHR"));
 		if (!pfn_vkGetPhysicalDeviceSurfaceFormatsKHR)
 			return false;
-		pfn_vkGetPhysicalDeviceSurfacePresentModesKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfacePresentModesKHR>(loadFunc("vkGetPhysicalDeviceSurfacePresentModesKHR"));
+		pfn_vkGetPhysicalDeviceSurfacePresentModesKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfacePresentModesKHR>(load_func("vkGetPhysicalDeviceSurfacePresentModesKHR"));
 		if (!pfn_vkGetPhysicalDeviceSurfacePresentModesKHR)
 			return false;
-		pfn_vkCreateSwapchainKHR = reinterpret_cast<PFN_vkCreateSwapchainKHR>(loadFunc("vkCreateSwapchainKHR"));
+		pfn_vkCreateSwapchainKHR = reinterpret_cast<PFN_vkCreateSwapchainKHR>(load_func("vkCreateSwapchainKHR"));
 		if (!pfn_vkCreateSwapchainKHR)
 			return false;
-		pfn_vkDestroySwapchainKHR = reinterpret_cast<PFN_vkDestroySwapchainKHR>(loadFunc("vkDestroySwapchainKHR"));
+		pfn_vkDestroySwapchainKHR = reinterpret_cast<PFN_vkDestroySwapchainKHR>(load_func("vkDestroySwapchainKHR"));
 		if (!pfn_vkDestroySwapchainKHR)
 			return false;
-		pfn_vkGetSwapchainImagesKHR = reinterpret_cast<PFN_vkGetSwapchainImagesKHR>(loadFunc("vkGetSwapchainImagesKHR"));
+		pfn_vkGetSwapchainImagesKHR = reinterpret_cast<PFN_vkGetSwapchainImagesKHR>(load_func("vkGetSwapchainImagesKHR"));
 		if (!pfn_vkGetSwapchainImagesKHR)
 			return false;
-		pfn_vkAcquireNextImageKHR = reinterpret_cast<PFN_vkAcquireNextImageKHR>(loadFunc("vkAcquireNextImageKHR"));
+		pfn_vkAcquireNextImageKHR = reinterpret_cast<PFN_vkAcquireNextImageKHR>(load_func("vkAcquireNextImageKHR"));
 		if (!pfn_vkAcquireNextImageKHR)
 			return false;
-		pfn_vkQueuePresentKHR = reinterpret_cast<PFN_vkQueuePresentKHR>(loadFunc("vkQueuePresentKHR"));
+		pfn_vkQueuePresentKHR = reinterpret_cast<PFN_vkQueuePresentKHR>(load_func("vkQueuePresentKHR"));
 		if (!pfn_vkQueuePresentKHR)
 			return false;
-		pfn_vkGetDeviceGroupPresentCapabilitiesKHR = reinterpret_cast<PFN_vkGetDeviceGroupPresentCapabilitiesKHR>(loadFunc("vkGetDeviceGroupPresentCapabilitiesKHR"));
+		pfn_vkGetDeviceGroupPresentCapabilitiesKHR = reinterpret_cast<PFN_vkGetDeviceGroupPresentCapabilitiesKHR>(load_func("vkGetDeviceGroupPresentCapabilitiesKHR"));
 		if (!pfn_vkGetDeviceGroupPresentCapabilitiesKHR)
 			return false;
-		pfn_vkGetDeviceGroupSurfacePresentModesKHR = reinterpret_cast<PFN_vkGetDeviceGroupSurfacePresentModesKHR>(loadFunc("vkGetDeviceGroupSurfacePresentModesKHR"));
+		pfn_vkGetDeviceGroupSurfacePresentModesKHR = reinterpret_cast<PFN_vkGetDeviceGroupSurfacePresentModesKHR>(load_func("vkGetDeviceGroupSurfacePresentModesKHR"));
 		if (!pfn_vkGetDeviceGroupSurfacePresentModesKHR)
 			return false;
-		pfn_vkGetPhysicalDevicePresentRectanglesKHR = reinterpret_cast<PFN_vkGetPhysicalDevicePresentRectanglesKHR>(loadFunc("vkGetPhysicalDevicePresentRectanglesKHR"));
+		pfn_vkGetPhysicalDevicePresentRectanglesKHR = reinterpret_cast<PFN_vkGetPhysicalDevicePresentRectanglesKHR>(load_func("vkGetPhysicalDevicePresentRectanglesKHR"));
 		if (!pfn_vkGetPhysicalDevicePresentRectanglesKHR)
 			return false;
-		pfn_vkAcquireNextImage2KHR = reinterpret_cast<PFN_vkAcquireNextImage2KHR>(loadFunc("vkAcquireNextImage2KHR"));
+		pfn_vkAcquireNextImage2KHR = reinterpret_cast<PFN_vkAcquireNextImage2KHR>(load_func("vkAcquireNextImage2KHR"));
 		if (!pfn_vkAcquireNextImage2KHR)
 			return false;
 #ifdef RE_OS_WINDOWS
-		pfn_vkCreateWin32SurfaceKHR = reinterpret_cast<PFN_vkCreateWin32SurfaceKHR>(loadFunc("vkCreateWin32SurfaceKHR"));
+		pfn_vkCreateWin32SurfaceKHR = reinterpret_cast<PFN_vkCreateWin32SurfaceKHR>(load_func("vkCreateWin32SurfaceKHR"));
 		if (!pfn_vkCreateWin32SurfaceKHR)
 			return false;
-		pfn_vkGetPhysicalDeviceWin32PresentationSupportKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceWin32PresentationSupportKHR>(loadFunc("vkGetPhysicalDeviceWin32PresentationSupportKHR"));
+		pfn_vkGetPhysicalDeviceWin32PresentationSupportKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceWin32PresentationSupportKHR>(load_func("vkGetPhysicalDeviceWin32PresentationSupportKHR"));
 		if (!pfn_vkGetPhysicalDeviceWin32PresentationSupportKHR)
 			return false;
 #elif defined RE_OS_LINUX
-		pfn_vkCreateXlibSurfaceKHR = reinterpret_cast<PFN_vkCreateXlibSurfaceKHR>(loadFunc("vkCreateXlibSurfaceKHR"));
+		pfn_vkCreateXlibSurfaceKHR = reinterpret_cast<PFN_vkCreateXlibSurfaceKHR>(load_func("vkCreateXlibSurfaceKHR"));
 		if (!pfn_vkCreateXlibSurfaceKHR)
 			return false;
-		pfn_vkGetPhysicalDeviceXlibPresentationSupportKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceXlibPresentationSupportKHR>(loadFunc("vkGetPhysicalDeviceXlibPresentationSupportKHR"));
+		pfn_vkGetPhysicalDeviceXlibPresentationSupportKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceXlibPresentationSupportKHR>(load_func("vkGetPhysicalDeviceXlibPresentationSupportKHR"));
 		if (!pfn_vkGetPhysicalDeviceXlibPresentationSupportKHR)
 			return false;
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
@@ -1079,53 +1079,53 @@ namespace RE {
 		}
 
 		bool bRecentSuccess;
-		CATCH_SIGNAL(bRecentSuccess = createInstance());
+		CATCH_SIGNAL(bRecentSuccess = create_instance());
 		if (!bRecentSuccess) {
 			RE_FATAL_ERROR("Failed creating a Vulkan instance");
 			return;
 		}
-		CATCH_SIGNAL(bRecentSuccess = setupValidationLayers());
+		CATCH_SIGNAL(bRecentSuccess = setup_validation_layers());
 		if (!bRecentSuccess) {
 			RE_FATAL_ERROR("Failed setting Vulkan validation layers up");
 			return;
 		}
-		CATCH_SIGNAL(bRecentSuccess = loadVulkan_1_0());
+		CATCH_SIGNAL(bRecentSuccess = load_vulkan_1_0());
 		if (!bRecentSuccess) {
 			RE_FATAL_ERROR("Failed loading Vulkan 1.0 functions");
 			return;
 		}
-		CATCH_SIGNAL(bRecentSuccess = loadVulkan_1_1());
+		CATCH_SIGNAL(bRecentSuccess = load_vulkan_1_1());
 		if (!bRecentSuccess) {
 			RE_FATAL_ERROR("Failed loading Vulkan 1.1 functions");
 			return;
 		}
-		CATCH_SIGNAL(bRecentSuccess = loadVulkan_1_2());
+		CATCH_SIGNAL(bRecentSuccess = load_vulkan_1_2());
 		if (!bRecentSuccess) {
 			RE_FATAL_ERROR("Failed loading Vulkan 1.2 functions");
 			return;
 		}
-		CATCH_SIGNAL(bRecentSuccess = loadVulkan_1_3());
+		CATCH_SIGNAL(bRecentSuccess = load_vulkan_1_3());
 		if (!bRecentSuccess) {
 			RE_FATAL_ERROR("Failed loading Vulkan 1.3 functions");
 			return;
 		}
-		/* CATCH_SIGNAL(bRecentSuccess = loadVulkan_1_4());
+		/* CATCH_SIGNAL(bRecentSuccess = load_vulkan_1_4());
 		if (!bRecentSuccess) {
 			RE_ERROR("Failed loading Vulkan 1.4 functions");
 			return;
 		} */
-		CATCH_SIGNAL(bRecentSuccess = loadExtensionFuncs());
+		CATCH_SIGNAL(bRecentSuccess = load_extension_funcs());
 		if (!bRecentSuccess) {
 			RE_FATAL_ERROR("Failed loading Vulkan extension functions");
 			return;
 		}
-		CATCH_SIGNAL(bRecentSuccess = createWindowSurface());
+		CATCH_SIGNAL(bRecentSuccess = create_window_surface());
 		if (!bRecentSuccess)
 			return;
-		CATCH_SIGNAL(bRecentSuccess = pickPhysicalDevice());
+		CATCH_SIGNAL(bRecentSuccess = pick_physical_device());
 		if (!bRecentSuccess)
 			return;
-		CATCH_SIGNAL(bRecentSuccess = createLogicalDevice());
+		CATCH_SIGNAL(bRecentSuccess = create_logical_device());
 		if (!bRecentSuccess)
 			return;
 		bValid = true;
@@ -1141,7 +1141,7 @@ namespace RE {
 			if (vk_hInternalDevice != VK_NULL_HANDLE)
 				CATCH_SIGNAL(pfn_vkDestroyDevice(vk_hInternalDevice, nullptr));
 			if (vk_hDebugMessenger != VK_NULL_HANDLE) {
-				PFN_vkDestroyDebugUtilsMessengerEXT pfn_vkDestroyDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(loadFunc("vkDestroyDebugUtilsMessengerEXT"));
+				PFN_vkDestroyDebugUtilsMessengerEXT pfn_vkDestroyDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(load_func("vkDestroyDebugUtilsMessengerEXT"));
 				if (pfn_vkDestroyDebugUtilsMessengerEXT)
 					CATCH_SIGNAL(pfn_vkDestroyDebugUtilsMessengerEXT(vk_hInternalInstance, vk_hDebugMessenger, nullptr));
 				else
@@ -1149,7 +1149,7 @@ namespace RE {
 			}
 			if (!pfn_vkDestroyInstance) {
 				RE_NOTE("Attempting to reload function for destroying Vulkan instances");
-				pfn_vkDestroyInstance = reinterpret_cast<PFN_vkDestroyInstance>(loadFuncInstance(VK_NULL_HANDLE, "vkDestroyInstance"));
+				pfn_vkDestroyInstance = reinterpret_cast<PFN_vkDestroyInstance>(load_func_with_instance(VK_NULL_HANDLE, "vkDestroyInstance"));
 				if (!pfn_vkDestroyInstance)
 					RE_ERROR("Failed reloading the function for destroying the Vulkan instance");
 				else
@@ -1168,7 +1168,7 @@ namespace RE {
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 	}
 
-	VKAPI_ATTR VkBool32 VKAPI_CALL Vulkan::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT vk_eSeverityFlagBits, VkDebugUtilsMessageTypeFlagsEXT vk_eMsgTypeBits, const VkDebugUtilsMessengerCallbackDataEXT* vk_pCallbackData, void* vk_pUserData) {
+	VKAPI_ATTR VkBool32 VKAPI_CALL Vulkan::debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT vk_eSeverityFlagBits, VkDebugUtilsMessageTypeFlagsEXT vk_eMsgTypeBits, const VkDebugUtilsMessengerCallbackDataEXT* vk_pCallbackData, void* vk_pUserData) {
 		if (vk_eSeverityFlagBits == VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
 			RE_WARNING("Vulkan's validation layers were triggered");
 		else if (vk_eSeverityFlagBits == VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
@@ -1179,29 +1179,29 @@ namespace RE {
 		return VK_FALSE;
 	}
 
-	void* Vulkan::loadFuncInstance(VkInstance vk_hInstance, const char* pFuncName) {
+	void* Vulkan::load_func_with_instance(VkInstance vk_hInstance, const char* pFuncName) {
 		void* pFuncPtr = reinterpret_cast<void*>(pfn_vkGetInstanceProcAddr(vk_hInstance, pFuncName));
 		if (!pFuncPtr)
-			RE_ERROR(appendStrings("Failed loading the Vulkan function \"", pFuncName, "\""));
+			RE_ERROR(append_strings("Failed loading the Vulkan function \"", pFuncName, "\""));
 		return pFuncPtr;
 	}
 
-	void* Vulkan::loadFunc(const char* pFuncName) {
-		return loadFuncInstance(vk_hInternalInstance, pFuncName);
+	void* Vulkan::load_func(const char* pFuncName) {
+		return load_func_with_instance(vk_hInternalInstance, pFuncName);
 	}
 
-	bool Vulkan::createInstance() {
-		pfn_vkCreateInstance = reinterpret_cast<PFN_vkCreateInstance>(loadFuncInstance(nullptr, "vkCreateInstance"));
+	bool Vulkan::create_instance() {
+		pfn_vkCreateInstance = reinterpret_cast<PFN_vkCreateInstance>(load_func_with_instance(nullptr, "vkCreateInstance"));
 		if (!pfn_vkCreateInstance) {
 			RE_NOTE("Attempted to load the Vulkan function mentioned before for creating a Vulkan instance");
 			return false;
 		}
-		pfn_vkEnumerateInstanceExtensionProperties = reinterpret_cast<PFN_vkEnumerateInstanceExtensionProperties>(loadFuncInstance(nullptr, "vkEnumerateInstanceExtensionProperties"));
+		pfn_vkEnumerateInstanceExtensionProperties = reinterpret_cast<PFN_vkEnumerateInstanceExtensionProperties>(load_func_with_instance(nullptr, "vkEnumerateInstanceExtensionProperties"));
 		if (!pfn_vkEnumerateInstanceExtensionProperties) {
 			RE_NOTE("Attempted to load the Vulkan function mentioned before for creating a Vulkan instance");
 			return false;
 		}
-		pfn_vkEnumerateInstanceLayerProperties = reinterpret_cast<PFN_vkEnumerateInstanceLayerProperties>(loadFuncInstance(nullptr, "vkEnumerateInstanceLayerProperties"));
+		pfn_vkEnumerateInstanceLayerProperties = reinterpret_cast<PFN_vkEnumerateInstanceLayerProperties>(load_func_with_instance(nullptr, "vkEnumerateInstanceLayerProperties"));
 		if (!pfn_vkEnumerateInstanceLayerProperties) {
 			RE_NOTE("Attempted to load the Vulkan function mentioned before for creating a Vulkan instance");
 			return false;
@@ -1220,7 +1220,7 @@ namespace RE {
 		CATCH_SIGNAL(pfn_vkEnumerateInstanceExtensionProperties(nullptr, &u32AvailableExtensionsCount, vk_pAvailableExtensions));
 		println("Available Vulkan instance extensions:");
 		for (uint32_t i = 0U; i < u32AvailableExtensionsCount; i++)
-			println(appendStrings("\t", vk_pAvailableExtensions[i].extensionName, " (", VK_API_VERSION_MAJOR(vk_pAvailableExtensions[i].specVersion), ".", VK_API_VERSION_MINOR(vk_pAvailableExtensions[i].specVersion), ".", VK_API_VERSION_PATCH(vk_pAvailableExtensions[i].specVersion), ")"));
+			println(append_strings("\t", vk_pAvailableExtensions[i].extensionName, " (", VK_API_VERSION_MAJOR(vk_pAvailableExtensions[i].specVersion), ".", VK_API_VERSION_MINOR(vk_pAvailableExtensions[i].specVersion), ".", VK_API_VERSION_PATCH(vk_pAvailableExtensions[i].specVersion), ")"));
 		bool bExtensionsMissing = false;
 		for (uint32_t uiExtToLoadIndex = 0U; uiExtToLoadIndex < u32ExtensionsToLoadCount; uiExtToLoadIndex++) {
 			bool bFound = false;
@@ -1230,7 +1230,7 @@ namespace RE {
 					break;
 				}
 			if (!bFound) {
-				RE_FATAL_ERROR(appendStrings("The requested Vulkan instance extension \"", ppcExtensionsToLoad[uiExtToLoadIndex], "\" does not exist on this computer"));
+				RE_FATAL_ERROR(append_strings("The requested Vulkan instance extension \"", ppcExtensionsToLoad[uiExtToLoadIndex], "\" does not exist on this computer"));
 				bExtensionsMissing = true;
 			}
 		}
@@ -1243,7 +1243,7 @@ namespace RE {
 		CATCH_SIGNAL(pfn_vkEnumerateInstanceLayerProperties(&u32AvailableLayersCount, vk_pAvailableLayers));
 		println("Available Vulkan instance layers:");
 		for (uint32_t i = 0; i < u32AvailableLayersCount; i++)
-			println(appendStrings("\t", vk_pAvailableLayers[i].layerName, " (", VK_API_VERSION_MAJOR(vk_pAvailableLayers[i].specVersion), ".", VK_API_VERSION_MINOR(vk_pAvailableLayers[i].specVersion), ".",VK_API_VERSION_PATCH(vk_pAvailableLayers[i].specVersion), " - ", vk_pAvailableLayers[i].implementationVersion, "): ", vk_pAvailableLayers[i].description));
+			println(append_strings("\t", vk_pAvailableLayers[i].layerName, " (", VK_API_VERSION_MAJOR(vk_pAvailableLayers[i].specVersion), ".", VK_API_VERSION_MINOR(vk_pAvailableLayers[i].specVersion), ".",VK_API_VERSION_PATCH(vk_pAvailableLayers[i].specVersion), " - ", vk_pAvailableLayers[i].implementationVersion, "): ", vk_pAvailableLayers[i].description));
 		bool bLayersMissing = false;
 		for (uint32_t uiLayersToLoadIndex = 0U; uiLayersToLoadIndex < u32LayersToLoadCount; uiLayersToLoadIndex++) {
 			bool bFound = false;
@@ -1253,7 +1253,7 @@ namespace RE {
 					break;
 				}
 			if (!bFound) {
-				RE_FATAL_ERROR(appendStrings("The requested Vulkan instance layer \"", ppcLayersToLoad[uiLayersToLoadIndex], "\" does not exist on this computer"));
+				RE_FATAL_ERROR(append_strings("The requested Vulkan instance layer \"", ppcLayersToLoad[uiLayersToLoadIndex], "\" does not exist on this computer"));
 				bLayersMissing = true;
 			}
 		}
@@ -1261,7 +1261,7 @@ namespace RE {
 		bool bInstanceCreationSuccessful = false;
 		if (!bExtensionsMissing && !bLayersMissing) {
 			VkApplicationInfo vk_appInfo = { VK_STRUCTURE_TYPE_APPLICATION_INFO };
-			std::string strAppName = getAppName();
+			std::string strAppName = get_app_name();
 			vk_appInfo.pApplicationName = strAppName.c_str();
 			vk_appInfo.applicationVersion = VK_MAKE_API_VERSION(0, 1, 0, 0);
 			vk_appInfo.pEngineName = "R-Engine";
@@ -1275,7 +1275,7 @@ namespace RE {
 			vk_instanceCreateInfo.ppEnabledLayerNames = ppcLayersToLoad;
 			VkResult vk_eSuccessResult;
 			CATCH_SIGNAL(vk_eSuccessResult = pfn_vkCreateInstance(&vk_instanceCreateInfo, nullptr, &vk_hInternalInstance));
-			if (!checkVulkanResult(vk_eSuccessResult))
+			if (!check_vulkan_result(vk_eSuccessResult))
 				RE_FATAL_ERROR("Failed creating Vulkan instance");
 			bInstanceCreationSuccessful = vk_eSuccessResult == VK_SUCCESS;
 		}
@@ -1286,8 +1286,8 @@ namespace RE {
 		return bInstanceCreationSuccessful;
 	}
 
-	bool Vulkan::setupValidationLayers() {
-		PFN_vkCreateDebugUtilsMessengerEXT pfn_vkCreateDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(loadFunc("vkCreateDebugUtilsMessengerEXT"));
+	bool Vulkan::setup_validation_layers() {
+		PFN_vkCreateDebugUtilsMessengerEXT pfn_vkCreateDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(load_func("vkCreateDebugUtilsMessengerEXT"));
 		if (!pfn_vkCreateDebugUtilsMessengerEXT) {
 			RE_NOTE("Attempted to load the Vulkan function mentioned before for setting validation layers up");
 			return false;
@@ -1295,18 +1295,18 @@ namespace RE {
 		VkDebugUtilsMessengerCreateInfoEXT vk_debugCreateInfo = { VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT };
 		vk_debugCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
 		vk_debugCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-		vk_debugCreateInfo.pfnUserCallback = debugCallback;
+		vk_debugCreateInfo.pfnUserCallback = debug_callback;
 		vk_debugCreateInfo.pUserData = nullptr;
 		VkResult vk_eSuccessResult;
 		CATCH_SIGNAL(vk_eSuccessResult = pfn_vkCreateDebugUtilsMessengerEXT(vk_hInternalInstance, &vk_debugCreateInfo, nullptr, &vk_hDebugMessenger));
-		if (!checkVulkanResult(vk_eSuccessResult)) {
+		if (!check_vulkan_result(vk_eSuccessResult)) {
 			RE_FATAL_ERROR("Failed creating Vulkan debug messenger for validation layers");
 			return false;
 		}
 		return true;
 	}
 
-	bool Vulkan::isPhysicalDeviceSuitable(VkPhysicalDevice vk_hPhysicalDevice) {
+	bool Vulkan::is_physical_device_suitable(VkPhysicalDevice vk_hPhysicalDevice) {
 		uint32_t u32QueueFamiliesCount = 0U;
 		CATCH_SIGNAL(vkGetPhysicalDeviceQueueFamilyProperties(vk_hPhysicalDevice, &u32QueueFamiliesCount, nullptr));
 		if (!u32QueueFamiliesCount)
@@ -1354,7 +1354,7 @@ namespace RE {
 		return bSwapchainSupport;
 	}
 
-	bool Vulkan::pickPhysicalDevice() {
+	bool Vulkan::pick_physical_device() {
 		uint32_t u32PhysicalDeviceCount = 0U;
 		CATCH_SIGNAL(pfn_vkEnumeratePhysicalDevices(vk_hInternalInstance, &u32PhysicalDeviceCount, nullptr));
 		if (!u32PhysicalDeviceCount) {
@@ -1369,7 +1369,7 @@ namespace RE {
 
 			// Inspecting, whether GPU is suitable
 			bool bDeviceIsSuitable;
-			CATCH_SIGNAL(bDeviceIsSuitable = isPhysicalDeviceSuitable(vk_hPhysicalDevice));
+			CATCH_SIGNAL(bDeviceIsSuitable = is_physical_device_suitable(vk_hPhysicalDevice));
 			if (!bDeviceIsSuitable)
 				continue;
 
@@ -1430,12 +1430,12 @@ namespace RE {
 		CATCH_SIGNAL(pfn_vkGetPhysicalDeviceSurfacePresentModesKHR(vk_hInternalPhysicalDevice, vk_hInternalSurface, &u32InternalPresentModesCount, nullptr));
 		vk_pInternalPresentModes = new VkPresentModeKHR[u32InternalPresentModesCount];
 		CATCH_SIGNAL(pfn_vkGetPhysicalDeviceSurfacePresentModesKHR(vk_hInternalPhysicalDevice, vk_hInternalSurface, &u32InternalPresentModesCount, vk_pInternalPresentModes));
-		println(appendStrings("Selected GPU for rendering: ", vk_internalPhysicalDeviceProperties.deviceName));
+		println(append_strings("Selected GPU for rendering: ", vk_internalPhysicalDeviceProperties.deviceName));
 		CATCH_SIGNAL(delete[] vk_pQueueFamilies);
 		return true;
 	}
 
-	bool Vulkan::createLogicalDevice() {
+	bool Vulkan::create_logical_device() {
 		std::vector<uint32_t> queueIndices;
 		for (REubyte u8FamilyIndex = 0U; u8FamilyIndex < 2U; u8FamilyIndex++) {
 			uint32_t u32Index = 0;
@@ -1475,7 +1475,7 @@ namespace RE {
 		vk_deviceCreateInfo.enabledLayerCount = u32LayersToLoadCount;
 		VkResult vk_eSuccessResult;
 		CATCH_SIGNAL(vk_eSuccessResult = pfn_vkCreateDevice(vk_hInternalPhysicalDevice, &vk_deviceCreateInfo, nullptr, &vk_hInternalDevice));
-		if (!checkVulkanResult(vk_eSuccessResult))
+		if (!check_vulkan_result(vk_eSuccessResult))
 			RE_FATAL_ERROR("Failed creating a logical Vulkan device");
 		else {
 			CATCH_SIGNAL(pfn_vkGetDeviceQueue(vk_hInternalDevice, internalQueueIndices.u32GraphicsFamily, 0, &vk_hInternalGraphicsQueue));
@@ -1487,7 +1487,7 @@ namespace RE {
 		return vk_eSuccessResult == VK_SUCCESS;
 	}
 
-	bool Vulkan::createWindowSurface() {
+	bool Vulkan::create_window_surface() {
 		VkResult vk_eSuccessResult;
 #ifdef RE_OS_WINDOWS
 		Window_Win64* pWindowWin64 = static_cast<Window_Win64*>(Window::pInstance);
@@ -1502,26 +1502,26 @@ namespace RE {
 		vk_x11SurfaceCreateInfo.window = pWindowX11->x11_hWindow;
 		CATCH_SIGNAL(vk_eSuccessResult = pfn_vkCreateXlibSurfaceKHR(vk_hInternalInstance, &vk_x11SurfaceCreateInfo, nullptr, &vk_hInternalSurface));
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
-		if (!checkVulkanResult(vk_eSuccessResult)) {
+		if (!check_vulkan_result(vk_eSuccessResult)) {
 			RE_FATAL_ERROR("Failed creating a surface for the window and linking to Vulkan");
 			return false;
 		}
 		return true;
 	}
 
-	bool Vulkan::isValid() {
+	bool Vulkan::is_valid() {
 		return bValid;
 	}
 
-	uint32_t Vulkan::getSurfaceFormatsCount() {
+	uint32_t Vulkan::get_surface_formats_count() {
 		return u32InternalSurfaceFormatsCount;
 	}
 
-	uint32_t Vulkan::getPresentModesCount() {
+	uint32_t Vulkan::get_present_modes_count() {
 		return u32InternalPresentModesCount;
 	}
 
-	bool Vulkan::checkVulkanResult(VkResult vk_eResult) {
+	bool Vulkan::check_vulkan_result(VkResult vk_eResult) {
 		const char* pcErrName = "unknown enumeration value";
 		const char* pcErrDetail = pcErrName;
 		switch (vk_eResult) {
@@ -1732,7 +1732,7 @@ namespace RE {
 			case VK_RESULT_MAX_ENUM:
 				break;
 		}
-		RE_ERROR(appendStrings("The recently called Vulkan function threw an error: (", pcErrName, ") ", pcErrDetail));
+		RE_ERROR(append_strings("The recently called Vulkan function threw an error: (", pcErrName, ") ", pcErrDetail));
 		return false;
 	}
 

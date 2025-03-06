@@ -12,24 +12,24 @@ namespace RE {
 			MSG win_msg;
 			HCURSOR win_hCursor;
 
-			Vector2i getAdjustedWindowSize(Vector<REushort, 2> size);
+			Vector2i get_adjusted_window_size(Vector<REushort, 2> size);
 
 		protected:
-			void showInternal();
-			void updateTitleInternal();
+			void internal_window_proc();
+			void internal_show_window();
+			void internal_update_title();
 
 		public:
 			static HINSTANCE win_hInstance;
 			
 			Window_Win64();
 			~Window_Win64();
-			void processLoop();
 
 		friend class Vulkan;
-		friend LRESULT CALLBACK windowProcess(HWND win_hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+		friend LRESULT CALLBACK windows_window_process(HWND win_hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	};
 
-	void setHInstance(HINSTANCE win_hInstance);
+	void set_hinstance(HINSTANCE win_hInstance);
 #endif /* RE_OS_WINDOWS */
 
 }

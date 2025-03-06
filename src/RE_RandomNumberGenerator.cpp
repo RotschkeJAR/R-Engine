@@ -1,26 +1,33 @@
-#include "RE.hpp"
+#include "RE_Internal Header.hpp"
 
 namespace RE {
 	
-	RandomNumberGenerator::RandomNumberGenerator() : rng(std::random_device{}()) {}
-	RandomNumberGenerator::RandomNumberGenerator(REuint seed) : rng(seed) {}
+	RandomNumberGenerator::RandomNumberGenerator() {
+		try {
+			std::random_device rd;
+			rng.seed(rd());
+		} catch (...) {
+			RE_ERROR("Failed seeding the random number generator due to the lack of a true random number generator. Using time instead");
+			rng.seed(time(nullptr));
+		}
+	}
+	RandomNumberGenerator::RandomNumberGenerator(REuint u32Seed) : rng(u32Seed) {}
 	RandomNumberGenerator::~RandomNumberGenerator() {}
 
-	REuint RandomNumberGenerator::random() {
-		return random(std::numeric_limits<REuint>::max());
+	void RandomNumberGenerator::set_seed(REuint newSeed) {
+		rng.seed(newSeed);
 	}
 
-	REuint RandomNumberGenerator::random(REuint max) {
-		return random(0U, max);
+	bool RandomNumberGenerator::random_bool() {
+		return static_cast<bool>(random<REubyte>() & 1U);
 	}
 
-	REuint RandomNumberGenerator::random(REuint min, REuint max) {
-		std::uniform_int_distribution<REuint> range(min, max - 1U);
-		return range(rng);
+	bool RandomNumberGenerator::random_bool(float fChance) {
+		return random_percentage() <= fChance;
 	}
 
-	bool RandomNumberGenerator::randomBool() {
-		return static_cast<bool>(random() & 1U);
+	float RandomNumberGenerator::random_percentage() {
+		return static_cast<float>(random<REuint>()) / std::numeric_limits<REuint>::max();
 	}
 
 }

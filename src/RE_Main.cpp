@@ -1,4 +1,4 @@
-#include "RE_Ext Header.hpp"
+#include "RE_Internal Header.hpp"
 #include "RE_Window_Win64.hpp"
 #include "RE_Window_X11.hpp"
 #include "RE_Renderer.hpp"
@@ -11,12 +11,13 @@ namespace RE {
 
 	bool bErrorOccured = false;
 	bool bRunning = false;
+	float fDeltaseconds = 0.0f;
 	
 	void execute() {
 		DEFINE_SIGNAL_GUARD(sigGuardMainLoop);
 		std::setlocale(LC_ALL, "");
 		SignalCatcher signalCatcher;
-		Window* pWindow = nullptr;
+		Window* pWindow;
 #ifdef RE_OS_WINDOWS
 		CATCH_SIGNAL(pWindow = new Window_Win64());
 #elif defined RE_OS_LINUX
@@ -26,33 +27,49 @@ namespace RE {
 		RE_FATAL_ERROR("The OS is unknown. The engine can't initialize");
 		return;
 #endif
-		if (!pWindow->isValid() || bErrorOccured) {
+		if (!pWindow->is_valid() || bErrorOccured) {
 			delete pWindow;
 			return;
 		}
 		{
 			Manager gameMgr;
 			Vulkan vulkan;
-			if (!vulkan.isValid() || bErrorOccured)
+			if (!vulkan.is_valid() || bErrorOccured)
 				return;
 			RenderSystem renderSystem;
-			if (!renderSystem.isValid() || bErrorOccured)
+			if (!renderSystem.is_valid() || bErrorOccured)
 				return;
 			//Renderer renderer;
+			std::chrono::high_resolution_clock::time_point currentFrameTime = std::chrono::high_resolution_clock::now(), lastFrameTime;
 			bRunning = true;
 			while (bRunning) {
-				CATCH_SIGNAL(pWindow->update());
-				CATCH_SIGNAL(gameMgr.gameLogicUpdate());
-				CATCH_SIGNAL(renderSystem.drawFrame());
+				CATCH_SIGNAL(pWindow->window_proc());
+				CATCH_SIGNAL(gameMgr.game_logic_update());
+				CATCH_SIGNAL(renderSystem.draw_frame());
 				//renderer.render();
-				pWindow->show(true);
-				bRunning = !pWindow->shouldClose() && gameMgr.isGameValid() && !bErrorOccured;
+				lastFrameTime = currentFrameTime;
+				currentFrameTime = std::chrono::high_resolution_clock::now();
+				fDeltaseconds = std::chrono::duration_cast<std::chrono::duration<float>>(currentFrameTime - lastFrameTime).count();
+				pWindow->show_window(true);
+				bRunning = !pWindow->should_close() && gameMgr.is_game_valid() && !bErrorOccured;
 			}
-			pWindow->show(false);
-			CATCH_SIGNAL(gameMgr.lastGameLogicUpdate());
+			pWindow->show_window(false);
+			CATCH_SIGNAL(gameMgr.last_game_logic_update());
 			CATCH_SIGNAL(vkDeviceWaitIdle(RE_VK_HANDLE_DEVICE));
+			fDeltaseconds = 0.0f;
 		}
 		delete pWindow;
+	}
+
+	float get_deltaseconds() {
+		return fDeltaseconds;
+	}
+
+	float get_fps_rate() {
+		if (fDeltaseconds > 0.0f)
+			return 1.0f / fDeltaseconds;
+		RE_ERROR("FPS rate couldn't be calculated, because the deltatime is still in its default value");
+		return 0.0f;
 	}
 
 }

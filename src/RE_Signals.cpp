@@ -13,9 +13,9 @@ namespace RE {
 	std::stack<AppLocation> stackTrace;
 	bool signalAlreadyCaught = false;
 
-	void handleSignal(int signalId) {
+	void handle_signal(int signalId) {
 		if (signalAlreadyCaught) {
-			printlnColored("\nThe signal handler has been called again. Terminating instantly", RE_TERMINAL_COLOR_RED, true, false);
+			println_colored("\nThe signal handler has been called again. Terminating instantly", RE_TERMINAL_COLOR_RED, true, false);
 			std::exit(signalId);
 		}
 		signalAlreadyCaught = true;
@@ -39,13 +39,13 @@ namespace RE {
 		while (!stackTrace.empty()) { // prints stack trace
 			AppLocation locationData = stackTrace.top();
 			print("\tin file ");
-			printColored(locationData.pcFile, RE_TERMINAL_COLOR_BRIGHT_WHITE, false, false);
+			print_colored(locationData.pcFile, RE_TERMINAL_COLOR_BRIGHT_WHITE, false, false);
 			print(", in function ");
-			printColored(locationData.pcMethod, RE_TERMINAL_COLOR_BRIGHT_WHITE, false, false);
+			print_colored(locationData.pcMethod, RE_TERMINAL_COLOR_BRIGHT_WHITE, false, false);
 			print(", at line ");
-			printColored(std::to_string(locationData.u32Line).c_str(), RE_TERMINAL_COLOR_BRIGHT_WHITE, false, false);
+			print_colored(std::to_string(locationData.u32Line).c_str(), RE_TERMINAL_COLOR_BRIGHT_WHITE, false, false);
 			if (std::strcmp(locationData.pcDetails, "\0") != 0)
-				print(appendStrings(": ", locationData.pcDetails));
+				print(append_strings(": ", locationData.pcDetails));
 			println();
 			stackTrace.pop();
 		}
@@ -58,10 +58,10 @@ namespace RE {
 			return;
 		}
 		pInstance = this;
-		std::signal(SIGSEGV, handleSignal);
-		std::signal(SIGILL, handleSignal);
-		std::signal(SIGABRT, handleSignal);
-		std::signal(SIGFPE, handleSignal);
+		std::signal(SIGSEGV, handle_signal);
+		std::signal(SIGILL, handle_signal);
+		std::signal(SIGABRT, handle_signal);
+		std::signal(SIGFPE, handle_signal);
 	}
 
 	SignalCatcher::~SignalCatcher() {
@@ -74,12 +74,16 @@ namespace RE {
 		std::signal(SIGFPE, SIG_DFL);
 	}
 
-	void addToStackTrace(const char* pcFile, const char* pcMethod, REuint u32Line, const char* pcDetails) {
-		AppLocation newTrace = {pcFile, pcMethod, pcDetails, u32Line};
+	void add_to_stack_trace(const char* pcFile, const char* pcMethod, REuint u32Line, const char* pcDetails) {
+		AppLocation newTrace = {};
+		newTrace.pcFile = pcFile;
+		newTrace.pcMethod = pcMethod;
+		newTrace.pcDetails = pcDetails;
+		newTrace.u32Line = u32Line;
 		stackTrace.push(newTrace);
 	}
 
-	void removeFromStackTrace() {
+	void remove_from_stack_trace() {
 		stackTrace.pop();
 	}
 

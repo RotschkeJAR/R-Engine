@@ -19,7 +19,7 @@ namespace RE {
 	}
 
 	bool RandomNumberGenerator::random_bool() {
-		return static_cast<bool>(random<REubyte>() & 1U);
+		return static_cast<bool>(random<REushort>() & 1U);
 	}
 
 	bool RandomNumberGenerator::random_bool(float fChance) {

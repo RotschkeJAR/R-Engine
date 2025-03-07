@@ -26,7 +26,7 @@ namespace RE {
 			~Window_Win64();
 
 		friend class Vulkan;
-		friend LRESULT CALLBACK windows_window_process(HWND win_hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+		friend LRESULT CALLBACK windows_window_proc(HWND win_hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	};
 
 	void set_hinstance(HINSTANCE win_hInstance);

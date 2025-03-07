@@ -9,7 +9,7 @@ namespace RE {
 	HINSTANCE Window_Win64::win_hInstance = nullptr;
 	Window_Win64* pWin64 = nullptr;
 
-	LRESULT CALLBACK windows_window_process(HWND win_hWnd, UINT win_uMsg, WPARAM win_wParam, LPARAM win_lParam) {
+	LRESULT CALLBACK windows_window_proc(HWND win_hWnd, UINT win_uMsg, WPARAM win_wParam, LPARAM win_lParam) {
 		if (!pWin64)
 			RE_FATAL_ERROR("Window process function has been called when no window is active");
 		else if (pWin64->win_hWindow != win_hWnd && bRunning)
@@ -116,7 +116,7 @@ namespace RE {
 		const std::wstring wideTitleStr = convert_chars_to_wide(pcTitle);
 		WNDCLASSEXW win_WinClass = {};
 		win_WinClass.cbSize = sizeof(WNDCLASSEXW);
-		win_WinClass.lpfnWndProc = windows_window_process;
+		win_WinClass.lpfnWndProc = windows_window_proc;
 		win_WinClass.hInstance = win_hInstance;
 		win_WinClass.lpszClassName = WINDOW_CLASS_NAME;
 		if (!RegisterClassExW(&win_WinClass)) {

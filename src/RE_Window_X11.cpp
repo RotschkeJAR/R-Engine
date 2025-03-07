@@ -10,8 +10,9 @@ namespace RE {
 			RE_FATAL_ERROR("Unable to connect to X11 server");
 			return;
 		}
-		REint i32DefaultScreen = DefaultScreen(x11_pDisplay);
-		XWindow root = RootWindow(x11_pDisplay, i32DefaultScreen);
+		REint i32DefaultScreen = XDefaultScreen(x11_pDisplay);
+		XWindow x11_rootWindow = XDefaultRootWindow(x11_pDisplay);
+		XScreen* x11_pDefaultScreen = XScreenOfDisplay(x11_pDisplay, i32DefaultScreen);
 
 		XVisualInfo x11_visualInfo;
 		REint i32VisualsCount = 0;
@@ -28,17 +29,17 @@ namespace RE {
 		XFree(x11_availableVisualInfos);
 
 		XSetWindowAttributes winAttrib = {};
-		CATCH_SIGNAL(winAttrib.colormap = XCreateColormap(x11_pDisplay, root, x11_visualInfo.visual, AllocNone));
+		CATCH_SIGNAL(winAttrib.colormap = XCreateColormap(x11_pDisplay, x11_rootWindow, x11_visualInfo.visual, AllocNone));
 		CATCH_SIGNAL(winAttrib.border_pixel = 0);
 		CATCH_SIGNAL(winAttrib.event_mask = ExposureMask | KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ResizeRedirectMask);
-		CATCH_SIGNAL(x11_hWindow = XCreateWindow(x11_pDisplay, root, 0, 0, size[0], size[1], 0, x11_visualInfo.depth, InputOutput, x11_visualInfo.visual, CWColormap | CWEventMask, &winAttrib));
+		CATCH_SIGNAL(x11_hWindow = XCreateWindow(x11_pDisplay, x11_rootWindow, 0, 0, size[0], size[1], 0, x11_visualInfo.depth, InputOutput, x11_visualInfo.visual, CWColormap | CWEventMask, &winAttrib));
 
 		x11_pSizes->flags = PMinSize | PMaxSize;
-		x11_pSizes->min_width = size[0];
-		x11_pSizes->min_height = size[1];
-		x11_pSizes->max_width = size[0];
-		x11_pSizes->max_height = size[1];
-		//XSetWMNormalHints(x11_pDisplay, x11_hWindow, x11_pSizes);
+		x11_pSizes->min_width = 75;
+		x11_pSizes->min_height = 50;
+		x11_pSizes->max_width = XWidthOfScreen(x11_pDefaultScreen) - 100;
+		x11_pSizes->max_height = XHeightOfScreen(x11_pDefaultScreen) - 100;
+		XSetWMNormalHints(x11_pDisplay, x11_hWindow, x11_pSizes);
 
 		x11_hClose = XInternAtom(x11_pDisplay, "WM_DELETE_WINDOW", XFalse);
 		XSetWMProtocols(x11_pDisplay, x11_hWindow, &x11_hClose, 1);

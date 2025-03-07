@@ -33,6 +33,7 @@
 # include <dlfcn.h>
 typedef Display XDisplay;
 typedef Window XWindow;
+typedef Screen XScreen;
 typedef Atom XAtom;
 typedef XIM XInputMethod;
 typedef XIC XInputContext;

@@ -30,28 +30,28 @@ namespace RE {
 	void Manager::start_proc() {
 		if (!pCurrentScene)
 			return;
-		CATCH_SIGNAL(pCurrentScene->start());
+		CATCH_SIGNAL_DETAILED(pCurrentScene->start(), append_to_string("Scene ID: ", pCurrentScene->u32Id).c_str());
 		for (GameObject* pObj : gameObjects)
 			if (should_update_object(pObj))
-				CATCH_SIGNAL(pObj->start(pCurrentScene));
+				CATCH_SIGNAL_DETAILED(pObj->start(pCurrentScene), append_to_string("Game Object ID: ", pObj->u32OwnId).c_str());
 	}
 
 	void Manager::update_proc() {
 		if (!pCurrentScene)
 			return;
-		CATCH_SIGNAL(pCurrentScene->update());
+		CATCH_SIGNAL_DETAILED(pCurrentScene->update(), append_to_string("Scene ID: ", pCurrentScene->u32Id).c_str());
 		for (GameObject* pObj : gameObjects)
 			if (should_update_object(pObj))
-				CATCH_SIGNAL(pObj->update(pCurrentScene));
+				CATCH_SIGNAL_DETAILED(pObj->update(pCurrentScene), append_to_string("Game Object ID: ", pObj->u32OwnId).c_str());
 	}
 
 	void Manager::end_proc() {
 		if (!pCurrentScene)
 			return;
-		CATCH_SIGNAL(pCurrentScene->end());
+		CATCH_SIGNAL_DETAILED(pCurrentScene->end(), append_to_string("Scene ID: ", pCurrentScene->u32Id).c_str());
 		for (GameObject* pObj : gameObjects)
 			if (should_update_object(pObj))
-				CATCH_SIGNAL(pObj->end(pCurrentScene));
+				CATCH_SIGNAL_DETAILED(pObj->end(pCurrentScene), append_to_string("Game Object ID: ", pObj->u32OwnId).c_str());
 	}
 
 	void Manager::delete_proc() {
@@ -75,7 +75,7 @@ namespace RE {
 			CATCH_SIGNAL(start_proc());
 			CATCH_SIGNAL(add_proc());
 		} else if (!pCurrentScene) {
-			RE_FATAL_ERROR("There is no active scene at the moment");
+			RE_ERROR("There is no active scene at the moment");
 			return;
 		}
 		CATCH_SIGNAL(update_proc());
@@ -102,7 +102,7 @@ namespace RE {
 					return;
 				}
 			}
-			RE_NOTE(append_strings("The memory address ", pGameObject, " doesn't point to a game object, that has to be deleted, or is not listed. In case it's constructed before the main-function is executed, it will always be discarded"));
+			RE_NOTE(append_to_string("The memory address ", pGameObject, " doesn't point to a game object, that has to be deleted, or is not listed. In case it's been constructed before the main-function had been started executing, it will always be discarded"));
 			return;
 		} else if (Manager::pInstance)
 			Manager::pInstance->deletableGameObjects.push_back(pGameObject);

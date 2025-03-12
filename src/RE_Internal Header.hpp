@@ -8,6 +8,8 @@
 #include <stack>
 #include <time.h>
 #include <chrono>
+#include <unordered_map>
+#include <memory>
 
 #include "RE.hpp"
 #undef ERROR

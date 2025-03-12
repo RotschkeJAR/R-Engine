@@ -9,7 +9,6 @@ namespace RE {
 	class Window_Win64 : public Window {
 		private:
 			HWND win_hWindow;
-			MSG win_msg;
 			HCURSOR win_hCursor;
 
 			Vector2i get_adjusted_window_size(Vector<REushort, 2> size);

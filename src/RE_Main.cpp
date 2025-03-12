@@ -5,7 +5,6 @@
 #include "RE_Vulkan.hpp"
 #include "RE_Render System.hpp"
 #include "RE_Manager.hpp"
-#include "RE_Signals.hpp"
 
 namespace RE {
 
@@ -24,11 +23,11 @@ namespace RE {
 		CATCH_SIGNAL(pWindow = new Window_X11());
 #else
 # warning The targeted OS is unknown, so the engine will terminate immediatly upon execution
-		RE_FATAL_ERROR("The OS is unknown. The engine can't initialize");
+		RE_ERROR("The OS is unknown. The engine can't initialize");
 		return;
 #endif
 		if (!pWindow->is_valid() || bErrorOccured) {
-			delete pWindow;
+			CATCH_SIGNAL(delete pWindow);
 			return;
 		}
 		{
@@ -50,7 +49,7 @@ namespace RE {
 				lastFrameTime = currentFrameTime;
 				currentFrameTime = std::chrono::high_resolution_clock::now();
 				fDeltaseconds = std::chrono::duration_cast<std::chrono::duration<float>>(currentFrameTime - lastFrameTime).count();
-				pWindow->show_window(true);
+				CATCH_SIGNAL(pWindow->show_window(true));
 				bRunning = !pWindow->should_close() && gameMgr.is_game_valid() && !bErrorOccured;
 			}
 			pWindow->show_window(false);
@@ -58,7 +57,7 @@ namespace RE {
 			CATCH_SIGNAL(vkDeviceWaitIdle(RE_VK_HANDLE_DEVICE));
 			fDeltaseconds = 0.0f;
 		}
-		delete pWindow;
+		CATCH_SIGNAL(delete pWindow);
 	}
 
 	float get_deltaseconds() {
@@ -66,6 +65,7 @@ namespace RE {
 	}
 
 	float get_fps_rate() {
+		DEFINE_SIGNAL_GUARD(sigGuardGetFpsRate);
 		if (fDeltaseconds > 0.0f)
 			return 1.0f / fDeltaseconds;
 		RE_ERROR("FPS rate couldn't be calculated, because the deltatime is still in its default value");

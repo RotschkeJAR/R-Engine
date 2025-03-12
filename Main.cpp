@@ -8,13 +8,13 @@ class Nexie : public GameObject {
 		Nexie() : GameObject(0, 2) {}
 		~Nexie() {}
 		void start(Scene* pStartingScene) {
-			println("start nexie");
+			PRINT_LN("start nexie");
 		}
 		void update(Scene* pCurrentScene) {
-			println("update nexie");
+			PRINT_LN("update nexie");
 		}
 		void end(Scene* pEndingScene) {
-			println("end nexie");
+			PRINT_LN("end nexie");
 		}
 };
 
@@ -33,13 +33,13 @@ class Clonus : public GameObject {
 		Clonus() : GameObject(0, 0) {}
 		~Clonus() {}
 		void start(Scene* pStartingScene) {
-			println("start clonus");
+			PRINT_LN("start clonus");
 		}
 		void update(Scene* pCurrentScene) {
-			println("update clonus");
+			PRINT_LN("update clonus");
 		}
 		void end(Scene* pEndingScene) {
-			println("end clonus");
+			PRINT_LN("end clonus");
 		}
 };
 
@@ -53,10 +53,10 @@ class Objy : public GameObject {
 		Objy() : GameObject(0, 1), hits(0UL), misses(0UL) {}
 		~Objy() {}
 		void start(Scene* pStartingScene) {
-			println("start objy");
+			PRINT_LN("start objy");
 		}
 		void update(Scene* pCurrentScene) {
-			//println("update objy");
+			//PRINT_LN("update objy");
 			bool randomResult = rng.random_bool(0.2f);
 			if (randomResult)
 				hits++;
@@ -64,7 +64,7 @@ class Objy : public GameObject {
 				misses++;
 		}
 		void end(Scene* pEndingScene) {
-			println(hits, ", ", misses);
+			PRINT_LN(append_to_string(hits, ", ", misses).c_str());
 		}
 };
 
@@ -80,6 +80,7 @@ class First : public Scene {
 };
 
 int main() {
+	SignalCatcher sigCatcher;
 	First first;
 	second = new Second();
 	set_next_scene(&first);

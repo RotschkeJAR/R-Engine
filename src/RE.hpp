@@ -111,8 +111,8 @@ namespace RE {
 		RE_INPUT_KEY_BRACKET_RIGHT = 0x32, /* ] */
 		RE_INPUT_KEY_EQUALS = 0x33, /* = */
 		RE_INPUT_KEY_MINUS = 0x34, /* - */
-		RE_INPUT_KEY_CTRL_RIGHT = 0x35,
-		RE_INPUT_KEY_CTRL_LEFT = 0x36,
+		RE_INPUT_KEY_CRTL_RIGHT = 0x35,
+		RE_INPUT_KEY_CRTL_LEFT = 0x36,
 		RE_INPUT_KEY_ALT_RIGHT = 0x37, /* AltGr */
 		RE_INPUT_KEY_ALT_LEFT = 0x38,
 		RE_INPUT_KEY_SHIFT_RIGHT = 0x39,
@@ -193,6 +193,12 @@ namespace RE {
 #define ERROR(T) error(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(T), false)
 #define WARNING(T) warning(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(T))
 #define NOTE(T) note(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(T))
+	
+	class SignalCatcher {
+		public:
+			SignalCatcher();
+			~SignalCatcher();
+	};
 
 	void add_to_stack_trace(const char* pcFile, const char* pcMethod, REuint u32Line, const char* pcDetails);
 	void remove_from_stack_trace();
@@ -211,16 +217,20 @@ namespace RE {
 #define CATCH_SIGNAL(CMD) CATCH_SIGNAL_DETAILED(CMD, "\0")
 
 #define DELETE_SAFELY(PTR_REF) CATCH_SIGNAL( do { \
+			if (!PTR_REF) \
+				break; \
 			delete (PTR_REF); \
 			(PTR_REF) = nullptr; \
 		} while (false) )
 #define DELETE_ARRAY_SAFELY(PTR_REF) CATCH_SIGNAL( do { \
+			if (!PTR_REF) \
+				break; \
 			delete[] (PTR_REF); \
 			(PTR_REF) = nullptr; \
 		} while (false) )
 
 	template <class... T>
-	std::string append_strings(T... strings) {
+	std::string append_to_string(T... strings) {
 		std::stringstream ss("");
 		(ss << ... << strings);
 		return std::string(ss.str());
@@ -233,8 +243,6 @@ namespace RE {
 				std::cout << static_cast<REushort>(content);
 			else if constexpr (std::is_same_v<T, REbyte>)
 				std::cout << static_cast<REshort>(content);
-			else if constexpr (std::is_same_v<T, bool>)
-				std::cout << (content ? "true" : "false");
 			else
 				std::cout << content;
 		} (), ...);
@@ -245,8 +253,8 @@ namespace RE {
 	}
 	void print_colored(const char* content, TerminalColor color, bool backgroundColored, bool bold);
 	void println_colored(const char* content, TerminalColor color, bool backgroundColored, bool bold);
-#define PRINT(MSG) print(append_strings(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE_MACRO(MSG)))
-#define PRINT_LN(MSG) print(append_strings(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE_MACRO(MSG), "\n"))
+#define PRINT(MSG) print(append_to_string(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE_MACRO(MSG)))
+#define PRINT_LN(MSG) print(append_to_string(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE_MACRO(MSG), "\n"))
 
 	std::string convert_wide_chars_to_utf8(const wchar_t* pwcString);
 	std::wstring convert_chars_to_wide(const char* pcString);
@@ -259,6 +267,32 @@ namespace RE {
 		return result;
 	}
 
+	template <typename T>
+	std::string hexadecimal_to_string(T number, bool bCutZeros) {
+		std::stringstream ss("");
+		if (number < static_cast<T>(0.0))
+			ss << "-";
+		ss << "0x";
+		number = std::abs(number);
+		constexpr REint i32HexadecimalDigits = sizeof(T) * 8 / 4;
+		bool bNumbersPresent = !bCutZeros;
+		for (REint i32Digit = i32HexadecimalDigits - 1U; i32Digit >= 0; i32Digit--) {
+			T base = std::pow(16, static_cast<T>(i32Digit));
+			REuint u32HexadecimalCharacterIndex = static_cast<REuint>(number / base);
+			number -= base * u32HexadecimalCharacterIndex;
+			if (u32HexadecimalCharacterIndex || bNumbersPresent) {
+				bNumbersPresent = true;
+				if (u32HexadecimalCharacterIndex < 10)
+					ss << u32HexadecimalCharacterIndex;
+				else
+					ss << static_cast<char>(u32HexadecimalCharacterIndex - 10 + static_cast<REuint>('A'));
+			}
+		}
+		if (!bNumbersPresent)
+			ss << "0";
+		return std::string(ss.str());
+	}
+
 	template <typename... T>
 	constexpr REulong gen_bitmask(T... bits) {
 		return (... | (1UL << static_cast<REulong>(bits)));
@@ -266,7 +300,7 @@ namespace RE {
 
 	constexpr REulong gen_bitmask_in_range(REulong u64Begin, REulong u64End) {
 		if (u64Begin > u64End) {
-			FATAL_ERROR(append_strings("Start (", u64Begin, ") of the range is larger than end (", u64End, ")").c_str());
+			FATAL_ERROR(append_to_string("Start (", u64Begin, ") of the range is larger than end (", u64End, ")").c_str());
 			return 0UL;
 		} else if (u64Begin == u64End)
 			return gen_bitmask(u64Begin);
@@ -284,7 +318,7 @@ namespace RE {
 	template <typename T>
 	constexpr bool are_bits_true_in_range(T value, T begin, T end) {
 		if (begin > end) {
-			FATAL_ERROR(append_strings("Start (", begin, ") of the range is larger than end (", end, ")").c_str());
+			FATAL_ERROR(append_to_string("Start (", begin, ") of the range is larger than end (", end, ")").c_str());
 			return false;
 		} else if (begin == end)
 			return is_bit_true<T>(value, begin);
@@ -307,8 +341,8 @@ namespace RE {
 	template <typename T>
 	constexpr T set_bits(T& value, T begin, T end, bool bNewState) {
 		if (begin > end) {
-			FATAL_ERROR(append_strings("Start (", begin, ") of the range is larger than end (", end, ")").c_str());
-			return static_cast<T>(0.0);
+			FATAL_ERROR(append_to_string("Start (", begin, ") of the range is larger than end (", end, ")").c_str());
+			return value;
 		}
 		for (T i = begin; i < end; i++)
 			set_bit<T>(value, i, bNewState);
@@ -316,17 +350,15 @@ namespace RE {
 	}
 
 	template <typename T>
-	constexpr std::string bitmask_to_string(T bitmask, bool bWithSpace) {
-		std::string strResult("");
-		T bits = sizeof(T) * static_cast<T>(8);
-		T rightShift = sizeof(T) * static_cast<T>(8) - static_cast<T>(1);
-		for (T bit = static_cast<T>(0); bit < bits; bit++) {
-			if (bWithSpace && bit % static_cast<T>(8) == static_cast<T>(0) && bit)
-				strResult += " ";
-			T shiftedNumber = bitmask << bit;
-			strResult += ((shiftedNumber >> rightShift) == static_cast<T>(1)) ? "1" : "0";
+	std::string bitmask_to_string(T bitmask, bool bWithSpace) {
+		std::stringstream strResult("");
+		constexpr T bits = sizeof(T) * 8;
+		for (T bit = 0; bit < bits; bit++) {
+			if (bWithSpace && bit && (bit % 8) == 0)
+				strResult << " ";
+			strResult << ((bitmask >> (bits - 1 - bit)) & 1);
 		}
-		return strResult;
+		return std::string(strResult.str());
 	}
 
 	template <typename T, REuint u32Dimensions>
@@ -344,7 +376,7 @@ namespace RE {
 				fill(static_cast<T>(0.0));
 				REuint u32Index = 0U;
 				([&]() {
-					CATCH_SIGNAL_DETAILED(coords[u32Index] = static_cast<T>(values), append_strings("Index: ", u32Index).c_str());
+					CATCH_SIGNAL_DETAILED(coords[u32Index] = static_cast<T>(values), append_to_string("Index: ", u32Index).c_str());
 					u32Index++;
 				} (), ...);
 			}
@@ -376,7 +408,7 @@ namespace RE {
 
 			void copy_from(const Vector& copyVector) {
 				if (u32Dimensions != copyVector.get_dimensions()) {
-					WARNING(append_strings("Tried to copy values from one vector (", copyVector.get_dimensions(), ") to another (", u32Dimensions, ")").c_str());
+					WARNING(append_to_string("Tried to copy values from one vector (", copyVector.get_dimensions(), ") to another (", u32Dimensions, "). This process has been terminated").c_str());
 					return;
 				}
 				for (REuint u32Index = 0U; u32Index < u32Dimensions; u32Index++)
@@ -398,13 +430,13 @@ namespace RE {
 
 			T& operator [](REuint index) {
 				if (index >= u32Dimensions)
-					FATAL_ERROR(append_strings("Index ", index, " is out of bounds: [0, ", u32Dimensions, "]").c_str());
+					FATAL_ERROR(append_to_string("Index ", index, " is out of bounds: [0, ", u32Dimensions, "]").c_str());
 				return coords[index];
 			}
 
 			T operator [](REuint index) const {
 				if (index >= u32Dimensions)
-					FATAL_ERROR(append_strings("Index ", index, " is out of bounds: [0, ", u32Dimensions, "]").c_str());
+					FATAL_ERROR(append_to_string("Index ", index, " is out of bounds: [0, ", u32Dimensions, "]").c_str());
 				return coords[index];
 			}
 
@@ -494,6 +526,23 @@ namespace RE {
 			virtual void start(Scene* pStartingScene);
 			virtual void update(Scene* pCurrentScene);
 			virtual void end(Scene* pEndingScene);
+	};
+
+	class InputAction {
+		private:
+			REuint u32KeyScancode;
+			Input eInput;
+
+		public:
+			InputAction();
+			InputAction(Input eInput);
+			InputAction(REuint u32KeyScancode);
+			~InputAction();
+			void changeInput(Input eInput, REuint u32NewKeyScancode);
+			bool is_pressed();
+			bool is_down();
+			bool is_released();
+			bool has_valid_input_values();
 	};
 
 	void execute();

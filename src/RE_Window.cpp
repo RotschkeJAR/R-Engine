@@ -28,14 +28,14 @@ namespace RE {
 		if (bWindowVisible == bShowWindow || !bValid)
 			return;
 		bWindowVisible = bShowWindow;
-		internal_show_window();
+		CATCH_SIGNAL(internal_show_window());
 	}
 
 	void Window::set_window_title(const char* pNewTitle) {
 		if (std::strcmp(pcTitle, pNewTitle) == 0 || !bValid)
 			return;
 		pcTitle = pNewTitle;
-		internal_update_title();
+		CATCH_SIGNAL(internal_update_title());
 	}
 
 	void Window::window_proc() {

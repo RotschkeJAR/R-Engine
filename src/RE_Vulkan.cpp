@@ -785,7 +785,7 @@ namespace RE {
 	
 	Vulkan::Vulkan() : bValid(false) {
 		if (Vulkan::pInstance) {
-			RE_ERROR("A new object of the Vulkan class has been constructed. Only one can exist at a time");
+			RE_FATAL_ERROR("A new object of the Vulkan class has been constructed. Only one can exist at a time");
 			return;
 		}
 		Vulkan::pInstance = this;
@@ -1057,21 +1057,21 @@ namespace RE {
 #ifdef RE_OS_WINDOWS
 		pfn_vkCreateWin32SurfaceKHR = nullptr;
 		pfn_vkGetPhysicalDeviceWin32PresentationSupportKHR = nullptr;
-		win_hVulkan = LoadLibraryW(L"vulkan-1.dll");
+		CATCH_SIGNAL(win_hVulkan = LoadLibraryW(L"vulkan-1.dll"));
 		if (!win_hVulkan) {
 			RE_FATAL_ERROR("Failed loading Vulkan library");
 			return;
 		}
-		pfn_vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(GetProcAddress(win_hVulkan, "vkGetInstanceProcAddr"));
+		CATCH_SIGNAL(pfn_vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(GetProcAddress(win_hVulkan, "vkGetInstanceProcAddr")));
 #elif defined RE_OS_LINUX
 		pfn_vkCreateXlibSurfaceKHR = nullptr;
 		pfn_vkGetPhysicalDeviceXlibPresentationSupportKHR = nullptr;
-		linux_libVulkan = dlopen("libvulkan.so", RTLD_NOW | RTLD_LOCAL);
+		CATCH_SIGNAL(linux_libVulkan = dlopen("libvulkan.so", RTLD_NOW | RTLD_LOCAL));
 		if (!linux_libVulkan) {
 			RE_FATAL_ERROR("Failed loading Vulkan library");
 			return;
 		}
-		pfn_vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(dlsym(linux_libVulkan, "vkGetInstanceProcAddr"));
+		CATCH_SIGNAL(pfn_vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(dlsym(linux_libVulkan, "vkGetInstanceProcAddr")));
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 		if (!pfn_vkGetInstanceProcAddr) {
 			RE_FATAL_ERROR("Failed loading the Vulkan function \"vkGetInstanceProcAddr\" with OS-API function");
@@ -1180,28 +1180,31 @@ namespace RE {
 	}
 
 	void* Vulkan::load_func_with_instance(VkInstance vk_hInstance, const char* pFuncName) {
-		void* pFuncPtr = reinterpret_cast<void*>(pfn_vkGetInstanceProcAddr(vk_hInstance, pFuncName));
+		void* pFuncPtr;
+		CATCH_SIGNAL(pFuncPtr = reinterpret_cast<void*>(pfn_vkGetInstanceProcAddr(vk_hInstance, pFuncName)));
 		if (!pFuncPtr)
-			RE_ERROR(append_strings("Failed loading the Vulkan function \"", pFuncName, "\""));
+			RE_ERROR(append_to_string("Failed loading the Vulkan function \"", pFuncName, "\""));
 		return pFuncPtr;
 	}
 
 	void* Vulkan::load_func(const char* pFuncName) {
-		return load_func_with_instance(vk_hInternalInstance, pFuncName);
+		void* pFuncPtr;
+		CATCH_SIGNAL(pFuncPtr = load_func_with_instance(vk_hInternalInstance, pFuncName));
+		return pFuncPtr;
 	}
 
 	bool Vulkan::create_instance() {
-		pfn_vkCreateInstance = reinterpret_cast<PFN_vkCreateInstance>(load_func_with_instance(nullptr, "vkCreateInstance"));
+		CATCH_SIGNAL(pfn_vkCreateInstance = reinterpret_cast<PFN_vkCreateInstance>(load_func_with_instance(nullptr, "vkCreateInstance")));
 		if (!pfn_vkCreateInstance) {
 			RE_NOTE("Attempted to load the Vulkan function mentioned before for creating a Vulkan instance");
 			return false;
 		}
-		pfn_vkEnumerateInstanceExtensionProperties = reinterpret_cast<PFN_vkEnumerateInstanceExtensionProperties>(load_func_with_instance(nullptr, "vkEnumerateInstanceExtensionProperties"));
+		CATCH_SIGNAL(pfn_vkEnumerateInstanceExtensionProperties = reinterpret_cast<PFN_vkEnumerateInstanceExtensionProperties>(load_func_with_instance(nullptr, "vkEnumerateInstanceExtensionProperties")));
 		if (!pfn_vkEnumerateInstanceExtensionProperties) {
 			RE_NOTE("Attempted to load the Vulkan function mentioned before for creating a Vulkan instance");
 			return false;
 		}
-		pfn_vkEnumerateInstanceLayerProperties = reinterpret_cast<PFN_vkEnumerateInstanceLayerProperties>(load_func_with_instance(nullptr, "vkEnumerateInstanceLayerProperties"));
+		CATCH_SIGNAL(pfn_vkEnumerateInstanceLayerProperties = reinterpret_cast<PFN_vkEnumerateInstanceLayerProperties>(load_func_with_instance(nullptr, "vkEnumerateInstanceLayerProperties")));
 		if (!pfn_vkEnumerateInstanceLayerProperties) {
 			RE_NOTE("Attempted to load the Vulkan function mentioned before for creating a Vulkan instance");
 			return false;
@@ -1220,17 +1223,17 @@ namespace RE {
 		CATCH_SIGNAL(pfn_vkEnumerateInstanceExtensionProperties(nullptr, &u32AvailableExtensionsCount, vk_pAvailableExtensions));
 		println("Available Vulkan instance extensions:");
 		for (uint32_t i = 0U; i < u32AvailableExtensionsCount; i++)
-			println(append_strings("\t", vk_pAvailableExtensions[i].extensionName, " (", VK_API_VERSION_MAJOR(vk_pAvailableExtensions[i].specVersion), ".", VK_API_VERSION_MINOR(vk_pAvailableExtensions[i].specVersion), ".", VK_API_VERSION_PATCH(vk_pAvailableExtensions[i].specVersion), ")"));
+			println(append_to_string("\t", vk_pAvailableExtensions[i].extensionName, " (", VK_API_VERSION_MAJOR(vk_pAvailableExtensions[i].specVersion), ".", VK_API_VERSION_MINOR(vk_pAvailableExtensions[i].specVersion), ".", VK_API_VERSION_PATCH(vk_pAvailableExtensions[i].specVersion), ")"));
 		bool bExtensionsMissing = false;
-		for (uint32_t uiExtToLoadIndex = 0U; uiExtToLoadIndex < u32ExtensionsToLoadCount; uiExtToLoadIndex++) {
+		for (uint32_t u32ExtToLoadIndex = 0U; u32ExtToLoadIndex < u32ExtensionsToLoadCount; u32ExtToLoadIndex++) {
 			bool bFound = false;
 			for (uint32_t uiAvailableExtsIndex = 0U; uiAvailableExtsIndex < u32AvailableExtensionsCount; uiAvailableExtsIndex++)
-				if (std::strcmp(ppcExtensionsToLoad[uiExtToLoadIndex], vk_pAvailableExtensions[uiAvailableExtsIndex].extensionName) == 0) {
+				if (std::strcmp(ppcExtensionsToLoad[u32ExtToLoadIndex], vk_pAvailableExtensions[uiAvailableExtsIndex].extensionName) == 0) {
 					bFound = true;
 					break;
 				}
 			if (!bFound) {
-				RE_FATAL_ERROR(append_strings("The requested Vulkan instance extension \"", ppcExtensionsToLoad[uiExtToLoadIndex], "\" does not exist on this computer"));
+				RE_FATAL_ERROR(append_to_string("The requested Vulkan instance extension \"", ppcExtensionsToLoad[u32ExtToLoadIndex], "\" does not exist on this computer"));
 				bExtensionsMissing = true;
 			}
 		}
@@ -1242,18 +1245,18 @@ namespace RE {
 		VkLayerProperties* vk_pAvailableLayers = new VkLayerProperties[u32AvailableLayersCount];
 		CATCH_SIGNAL(pfn_vkEnumerateInstanceLayerProperties(&u32AvailableLayersCount, vk_pAvailableLayers));
 		println("Available Vulkan instance layers:");
-		for (uint32_t i = 0; i < u32AvailableLayersCount; i++)
-			println(append_strings("\t", vk_pAvailableLayers[i].layerName, " (", VK_API_VERSION_MAJOR(vk_pAvailableLayers[i].specVersion), ".", VK_API_VERSION_MINOR(vk_pAvailableLayers[i].specVersion), ".",VK_API_VERSION_PATCH(vk_pAvailableLayers[i].specVersion), " - ", vk_pAvailableLayers[i].implementationVersion, "): ", vk_pAvailableLayers[i].description));
+		for (uint32_t u32LayerIndex = 0; u32LayerIndex < u32AvailableLayersCount; u32LayerIndex++)
+			println(append_to_string("\t", vk_pAvailableLayers[u32LayerIndex].layerName, " (", VK_API_VERSION_MAJOR(vk_pAvailableLayers[u32LayerIndex].specVersion), ".", VK_API_VERSION_MINOR(vk_pAvailableLayers[u32LayerIndex].specVersion), ".",VK_API_VERSION_PATCH(vk_pAvailableLayers[u32LayerIndex].specVersion), " - ", vk_pAvailableLayers[u32LayerIndex].implementationVersion, "): ", vk_pAvailableLayers[u32LayerIndex].description));
 		bool bLayersMissing = false;
-		for (uint32_t uiLayersToLoadIndex = 0U; uiLayersToLoadIndex < u32LayersToLoadCount; uiLayersToLoadIndex++) {
+		for (uint32_t u32LayersToLoadIndex = 0U; u32LayersToLoadIndex < u32LayersToLoadCount; u32LayersToLoadIndex++) {
 			bool bFound = false;
-			for (uint32_t uiAvailableLayersIndex = 0U; uiAvailableLayersIndex < u32AvailableLayersCount; uiAvailableLayersIndex++)
-				if (std::strcmp(ppcLayersToLoad[uiLayersToLoadIndex], vk_pAvailableLayers[uiAvailableLayersIndex].layerName) == 0) {
+			for (uint32_t u32AvailableLayersIndex = 0U; u32AvailableLayersIndex < u32AvailableLayersCount; u32AvailableLayersIndex++)
+				if (std::strcmp(ppcLayersToLoad[u32LayersToLoadIndex], vk_pAvailableLayers[u32AvailableLayersIndex].layerName) == 0) {
 					bFound = true;
 					break;
 				}
 			if (!bFound) {
-				RE_FATAL_ERROR(append_strings("The requested Vulkan instance layer \"", ppcLayersToLoad[uiLayersToLoadIndex], "\" does not exist on this computer"));
+				RE_FATAL_ERROR(append_to_string("The requested Vulkan instance layer \"", ppcLayersToLoad[u32LayersToLoadIndex], "\" does not exist on this computer"));
 				bLayersMissing = true;
 			}
 		}
@@ -1279,10 +1282,10 @@ namespace RE {
 				RE_FATAL_ERROR("Failed creating Vulkan instance");
 			bInstanceCreationSuccessful = vk_eSuccessResult == VK_SUCCESS;
 		}
-		delete[] ppcExtensionsToLoad;
-		delete[] vk_pAvailableExtensions;
-		delete[] ppcLayersToLoad;
-		delete[] vk_pAvailableLayers;
+		CATCH_SIGNAL(delete[] ppcExtensionsToLoad);
+		CATCH_SIGNAL(delete[] vk_pAvailableExtensions);
+		CATCH_SIGNAL(delete[] ppcLayersToLoad);
+		CATCH_SIGNAL(delete[] vk_pAvailableLayers);
 		return bInstanceCreationSuccessful;
 	}
 
@@ -1331,14 +1334,14 @@ namespace RE {
 				bPresentSupport = static_cast<bool>(vk_presentQueueSupport);
 			}
 		}
-		delete[] vk_pQueueFamilies;
+		CATCH_SIGNAL(delete[] vk_pQueueFamilies);
 		if (!bGraphicsSupport || !bPresentSupport)
 			return false;
 		VkExtensionProperties* vk_pExtensions = new VkExtensionProperties[u32ExtensionsCount];
 		CATCH_SIGNAL(vkEnumerateDeviceExtensionProperties(vk_hPhysicalDevice, nullptr, &u32ExtensionsCount, vk_pExtensions));
 		bool bSwapchainSupport = false;
-		for (uint32_t uiExtensionsIndex = 0U; uiExtensionsIndex < u32ExtensionsCount; uiExtensionsIndex++) {
-			if (std::strcmp(vk_pExtensions[uiExtensionsIndex].extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME) == 0) {
+		for (uint32_t u32ExtensionsIndex = 0U; u32ExtensionsIndex < u32ExtensionsCount; u32ExtensionsIndex++) {
+			if (std::strcmp(vk_pExtensions[u32ExtensionsIndex].extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME) == 0) {
 				uint32_t u32Count = 0U;
 				CATCH_SIGNAL(vkGetPhysicalDeviceSurfaceFormatsKHR(vk_hPhysicalDevice, Vulkan::pInstance->vk_hInternalSurface, &u32Count, nullptr));
 				if (!u32Count)
@@ -1350,7 +1353,7 @@ namespace RE {
 				break;
 			}
 		}
-		delete[] vk_pExtensions;
+		CATCH_SIGNAL(delete[] vk_pExtensions);
 		return bSwapchainSupport;
 	}
 
@@ -1364,8 +1367,8 @@ namespace RE {
 		VkPhysicalDevice* vk_pPhysicalDevices = new VkPhysicalDevice[u32PhysicalDeviceCount];
 		CATCH_SIGNAL(pfn_vkEnumeratePhysicalDevices(vk_hInternalInstance, &u32PhysicalDeviceCount, vk_pPhysicalDevices));
 		REushort u16CurrentPhysicalDeviceScore = 0;
-		for (uint32_t uiPhysicalDeviceIndex = 0U; uiPhysicalDeviceIndex < u32PhysicalDeviceCount; uiPhysicalDeviceIndex++) {
-			VkPhysicalDevice vk_hPhysicalDevice = vk_pPhysicalDevices[uiPhysicalDeviceIndex];
+		for (uint32_t u32PhysicalDeviceIndex = 0U; u32PhysicalDeviceIndex < u32PhysicalDeviceCount; u32PhysicalDeviceIndex++) {
+			VkPhysicalDevice vk_hPhysicalDevice = vk_pPhysicalDevices[u32PhysicalDeviceIndex];
 
 			// Inspecting, whether GPU is suitable
 			bool bDeviceIsSuitable;
@@ -1398,7 +1401,7 @@ namespace RE {
 				u16CurrentPhysicalDeviceScore = u16PhysicalDeviceScore;
 			}
 		}
-		delete[] vk_pPhysicalDevices;
+		CATCH_SIGNAL(delete[] vk_pPhysicalDevices);
 		if (vk_hInternalPhysicalDevice == VK_NULL_HANDLE) {
 			RE_FATAL_ERROR("Failed finding a suitable device with Vulkan support");
 			return false;
@@ -1430,7 +1433,7 @@ namespace RE {
 		CATCH_SIGNAL(pfn_vkGetPhysicalDeviceSurfacePresentModesKHR(vk_hInternalPhysicalDevice, vk_hInternalSurface, &u32InternalPresentModesCount, nullptr));
 		vk_pInternalPresentModes = new VkPresentModeKHR[u32InternalPresentModesCount];
 		CATCH_SIGNAL(pfn_vkGetPhysicalDeviceSurfacePresentModesKHR(vk_hInternalPhysicalDevice, vk_hInternalSurface, &u32InternalPresentModesCount, vk_pInternalPresentModes));
-		println(append_strings("Selected GPU for rendering: ", vk_internalPhysicalDeviceProperties.deviceName));
+		println(append_to_string("Selected GPU for rendering: ", vk_internalPhysicalDeviceProperties.deviceName));
 		CATCH_SIGNAL(delete[] vk_pQueueFamilies);
 		return true;
 	}
@@ -1438,7 +1441,7 @@ namespace RE {
 	bool Vulkan::create_logical_device() {
 		std::vector<uint32_t> queueIndices;
 		for (REubyte u8FamilyIndex = 0U; u8FamilyIndex < 2U; u8FamilyIndex++) {
-			uint32_t u32Index = 0;
+			uint32_t u32Index = 0U;
 			switch (u8FamilyIndex) {
 				case 0U:
 					u32Index = internalQueueIndices.u32GraphicsFamily;
@@ -1481,9 +1484,9 @@ namespace RE {
 			CATCH_SIGNAL(pfn_vkGetDeviceQueue(vk_hInternalDevice, internalQueueIndices.u32GraphicsFamily, 0, &vk_hInternalGraphicsQueue));
 			CATCH_SIGNAL(pfn_vkGetDeviceQueue(vk_hInternalDevice, internalQueueIndices.u32PresentationFamily, 0, &vk_hInternalPresentationQueue));
 		}
-		delete[] vk_pDeviceQueueCreateInfos;
-		delete[] ppcExtensionsToLoad;
-		delete[] ppcLayersToLoad;
+		CATCH_SIGNAL(delete[] vk_pDeviceQueueCreateInfos);
+		CATCH_SIGNAL(delete[] ppcExtensionsToLoad);
+		CATCH_SIGNAL(delete[] ppcLayersToLoad);
 		return vk_eSuccessResult == VK_SUCCESS;
 	}
 
@@ -1732,7 +1735,7 @@ namespace RE {
 			case VK_RESULT_MAX_ENUM:
 				break;
 		}
-		RE_ERROR(append_strings("The recently called Vulkan function threw an error: (", pcErrName, ") ", pcErrDetail));
+		RE_ERROR(append_to_string("The recently called Vulkan function threw an error: (", pcErrName, ") ", pcErrDetail));
 		return false;
 	}
 

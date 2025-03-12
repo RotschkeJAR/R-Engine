@@ -9,11 +9,11 @@ namespace RE {
 	HINSTANCE Window_Win64::win_hInstance = nullptr;
 	Window_Win64* pWin64 = nullptr;
 
-	LRESULT CALLBACK windows_window_proc(HWND win_hWnd, UINT win_uMsg, WPARAM win_wParam, LPARAM win_lParam) {
+	LRESULT CALLBACK windows_window_proc(HWND win_hWndParam, UINT win_uMsg, WPARAM win_wParam, LPARAM win_lParam) {
 		if (!pWin64)
-			RE_FATAL_ERROR("Window process function has been called when no window is active");
-		else if (pWin64->win_hWindow != win_hWnd && bRunning)
-			RE_FATAL_ERROR("Window process function has been called by another window");
+			RE_ERROR("Window process function has been called when no window is active");
+		else if (pWin64->win_hWindow != win_hWndParam && bRunning)
+			RE_ERROR(append_to_string("Window process function has been called by another window (actual: ", pWin64->win_hWindow, "; passed to procedure: ", win_hWndParam, ")"));
 		else {
 			switch (win_uMsg) {
 				case WM_SIZE: /* resized */
@@ -23,56 +23,70 @@ namespace RE {
 					pWin64->bCloseFlag = true;
 					return 0;
 				case WM_DESTROY: /* destroy window */
-					PostQuitMessage(0);
+					CATCH_SIGNAL(PostQuitMessage(0));
 					return 0;
+				/* case WM_GETMINMAXINFO: {
+					MINMAXINFO* win_windowSizeLimits = (MINMAXINFO*) win_lParam;
+					win_windowSizeLimits->ptMinTrackSize.x = 100;
+					win_windowSizeLimits->ptMinTrackSize.y = 100;
+					MONITORINFO win_monitorInfo = {};
+					win_monitorInfo.cbSize = sizeof(MONITORINFO);
+					BOOL win_monitorInfoRetrieved;
+					CATCH_SIGNAL(win_monitorInfoRetrieved = GetMonitorInfoW(MonitorFromWindow(win_hWndParam, MONITOR_DEFAULTTOPRIMARY), &win_monitorInfo));
+					if (win_monitorInfoRetrieved) {
+						win_windowSizeLimits->ptMaxTrackSize.x = std::abs(win_monitorInfo.rcWork.right - win_monitorInfo.rcWork.left - 100);
+						win_windowSizeLimits->ptMaxTrackSize.y = std::abs(win_monitorInfo.rcWork.bottom - win_monitorInfo.rcWork.top - 100);
+					} else
+						RE_FATAL_ERROR("Failed getting the monitor, where the window is currently on");
+					} return 0; */
 				case WM_KEYDOWN: /* key pressed */
 				case WM_SYSKEYDOWN:
 				case WM_KEYUP: /* key released */
 				case WM_SYSKEYUP: {
-					WORD win_vkCode = LOWORD(win_wParam);
+					WORD win_virtualKeyCode = LOWORD(win_wParam);
 					WORD win_keyFlags = HIWORD(win_lParam);
-					WORD win_scanCode = LOBYTE(win_keyFlags);
-					BOOL win_extendedKey = (win_keyFlags & KF_EXTENDED) == KF_EXTENDED;
-					if (win_extendedKey)
-						win_scanCode = MAKEWORD(win_scanCode, 0xE0);
-					BOOL win_keyReleased = (win_keyFlags & KF_UP) == KF_UP;
-					switch (win_vkCode) {
+					BYTE win_scancode = LOBYTE(win_keyFlags);
+					WORD win_extScancode = static_cast<WORD>(win_scancode);
+					if ((win_keyFlags & KF_EXTENDED) == KF_EXTENDED)
+						win_extScancode = MAKEWORD(win_scancode, 0xE0);
+					switch (win_virtualKeyCode) {
 						case VK_SHIFT:
 						case VK_CONTROL:
 						case VK_MENU:
-							win_vkCode = LOWORD(MapVirtualKeyW(win_scanCode, MAPVK_VSC_TO_VK_EX));
+							win_virtualKeyCode = LOWORD(MapVirtualKeyW(win_extScancode, MAPVK_VSC_TO_VK_EX));
 							break;
 						default:
 							break;
 					}
-					CATCH_SIGNAL(pWin64->inputMgr.input_event(windows_key_from_virtual_keycode(static_cast<RElong>(win_vkCode)), static_cast<REuint>(win_scanCode), static_cast<bool>(win_keyReleased)));
+					BOOL win_keyReleased = (win_keyFlags & KF_UP) == KF_UP;
+					CATCH_SIGNAL(pWin64->inputMgr.input_event(windows_key_from_virtual_keycode(static_cast<RElong>(win_virtualKeyCode)), static_cast<REuint>(win_extScancode), !static_cast<bool>(win_keyReleased)));
 					} return 0;
 				case WM_CHAR: {
 					wchar_t wCharacter[2] = {static_cast<wchar_t>(win_wParam), L'\0'};
 					} return 0;
 				case WM_LBUTTONDOWN: /* left mouse button pressed */
 					CATCH_SIGNAL(pWin64->inputMgr.input_event(RE_INPUT_BUTTON_LEFT, 0U, true));
-					SetCapture(win_hWnd);
+					CATCH_SIGNAL(SetCapture(win_hWndParam));
 					return 0;
 				case WM_LBUTTONUP: /* left mouse button released */
 					CATCH_SIGNAL(pWin64->inputMgr.input_event(RE_INPUT_BUTTON_LEFT, 0U, false));
-					ReleaseCapture();
+					CATCH_SIGNAL(ReleaseCapture());
 					return 0;
 				case WM_RBUTTONDOWN: /* right mouse button pressed */
 					CATCH_SIGNAL(pWin64->inputMgr.input_event(RE_INPUT_BUTTON_RIGHT, 0U, true));
-					SetCapture(win_hWnd);
+					CATCH_SIGNAL(SetCapture(win_hWndParam));
 					return 0;
 				case WM_RBUTTONUP: /* right mouse button released */
 					CATCH_SIGNAL(pWin64->inputMgr.input_event(RE_INPUT_BUTTON_RIGHT, 0U, false));
-					ReleaseCapture();
+					CATCH_SIGNAL(ReleaseCapture());
 					return 0;
 				case WM_MBUTTONDOWN: /* middle mouse button pressed */
 					CATCH_SIGNAL(pWin64->inputMgr.input_event(RE_INPUT_BUTTON_MIDDLE, 0U, true));
-					SetCapture(win_hWnd);
+					CATCH_SIGNAL(SetCapture(win_hWndParam));
 					return 0;
 				case WM_MBUTTONUP: /* middle mouse button released */
 					CATCH_SIGNAL(pWin64->inputMgr.input_event(RE_INPUT_BUTTON_MIDDLE, 0U, false));
-					ReleaseCapture();
+					CATCH_SIGNAL(ReleaseCapture());
 					return 0;
 				case WM_MOUSEMOVE: { /* mouse moved */
 					REint i32XPos = GET_X_LPARAM(win_lParam);
@@ -81,7 +95,7 @@ namespace RE {
 					} return 0;
 				case WM_SETCURSOR:
 					if (LOWORD(win_lParam) == HTCLIENT) {
-						SetCursor(pWin64->win_hCursor);
+						CATCH_SIGNAL(SetCursor(pWin64->win_hCursor));
 						return TRUE;
 					}
 					break;
@@ -97,18 +111,18 @@ namespace RE {
 			}
 		}
 		LRESULT win_lResult = 0;
-		CATCH_SIGNAL(win_lResult = DefWindowProcW(win_hWnd, win_uMsg, win_wParam, win_lParam));
+		CATCH_SIGNAL(win_lResult = DefWindowProcW(win_hWndParam, win_uMsg, win_wParam, win_lParam));
 		return win_lResult;
 	}
 	
-	Window_Win64::Window_Win64() : win_hWindow(nullptr), win_msg{}, win_hCursor(LoadCursor(nullptr, IDC_ARROW)) {
+	Window_Win64::Window_Win64() : win_hWindow(nullptr), win_hCursor(LoadCursor(nullptr, IDC_ARROW)) {
 		if (pWin64) {
 			RE_FATAL_ERROR("An instance of the class \"Window_Win64\" has already been constructed. Discarding new one");
 			return;
 		}
 		pWin64 = this;
 		if (!win_hInstance)
-			win_hInstance = GetModuleHandle(nullptr);
+			CATCH_SIGNAL(win_hInstance = GetModuleHandle(nullptr));
 		if (!win_hInstance) {
 			RE_FATAL_ERROR("Failed getting the HINSTANCE for window creation");
 			return;
@@ -119,14 +133,23 @@ namespace RE {
 		win_WinClass.lpfnWndProc = windows_window_proc;
 		win_WinClass.hInstance = win_hInstance;
 		win_WinClass.lpszClassName = WINDOW_CLASS_NAME;
-		if (!RegisterClassExW(&win_WinClass)) {
+		ATOM win_registeredWndClassAtom;
+		CATCH_SIGNAL(win_registeredWndClassAtom = RegisterClassExW(&win_WinClass));
+		if (!win_registeredWndClassAtom) {
 			RE_FATAL_ERROR("Failed registering class for window creation");
 			return;
 		};
-		Vector2i adjustedSize = get_adjusted_window_size(size);
-		win_hWindow = CreateWindowExW(0, WINDOW_CLASS_NAME, wideTitleStr.c_str(), WINDOW_STYLE_FLAGS, CW_USEDEFAULT, CW_USEDEFAULT, adjustedSize[0], adjustedSize[1], nullptr, nullptr, win_hInstance, nullptr);
+		Vector2i adjustedSize;
+		CATCH_SIGNAL(adjustedSize = get_adjusted_window_size(size));
+		CATCH_SIGNAL(win_hWindow = CreateWindowExW(0, WINDOW_CLASS_NAME, wideTitleStr.c_str(), WINDOW_STYLE_FLAGS, CW_USEDEFAULT, CW_USEDEFAULT, adjustedSize[0], adjustedSize[1], nullptr, nullptr, win_hInstance, nullptr));
 		if (!win_hWindow) {
 			RE_FATAL_ERROR("Failed creating window");
+			return;
+		}
+		BOOL win_dpiAwarenessChangedResult;
+		CATCH_SIGNAL(win_dpiAwarenessChangedResult = SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_UNAWARE));
+		if (!win_dpiAwarenessChangedResult) {
+			RE_FATAL_ERROR("Failed telling Windows R-Engine's DPI awareness");
 			return;
 		}
 		bValid = true;
@@ -135,33 +158,38 @@ namespace RE {
 	Window_Win64::~Window_Win64() {
 		if (pWin64 != this)
 			return;
-		DestroyWindow(win_hWindow);
-		UnregisterClassW(WINDOW_CLASS_NAME, win_hInstance);
+		CATCH_SIGNAL(DestroyWindow(win_hWindow));
+		CATCH_SIGNAL(UnregisterClassW(WINDOW_CLASS_NAME, win_hInstance));
 		pWin64 = nullptr;
 	}
 
 	Vector2i Window_Win64::get_adjusted_window_size(Vector<REushort, 2> size) {
 		RECT win_adjustableSize = {0, 0, size[0], size[1]};
-		AdjustWindowRect(&win_adjustableSize, WINDOW_STYLE_FLAGS, FALSE);
+		CATCH_SIGNAL(AdjustWindowRect(&win_adjustableSize, WINDOW_STYLE_FLAGS, FALSE));
 		return Vector2i(win_adjustableSize.right - win_adjustableSize.left, win_adjustableSize.bottom - win_adjustableSize.top);
 	}
 
 	void Window_Win64::internal_show_window() {
-		ShowWindow(win_hWindow, bWindowVisible ? TRUE : FALSE);
+		CATCH_SIGNAL(ShowWindow(win_hWindow, bWindowVisible ? TRUE : FALSE));
 	}
 
 	void Window_Win64::internal_update_title() {
-		if (!SetWindowTextW(win_hWindow, convert_chars_to_wide(pcTitle).c_str()))
+		BOOL win_success;
+		CATCH_SIGNAL(win_success = SetWindowTextW(win_hWindow, convert_chars_to_wide(pcTitle).c_str()));
+		if (!win_success)
 			RE_FATAL_ERROR("Failed updating the title in the window title bar");
 	}
 
 	void Window_Win64::internal_window_proc() {
-		while (PeekMessageW(&win_msg, win_hWindow, 0, 0, PM_REMOVE)) {
-			if (win_msg.message == WM_QUIT)
+		BOOL win_msgInQueue;
+		MSG win_msg;
+		do {
+			CATCH_SIGNAL(win_msgInQueue = PeekMessageW(&win_msg, win_hWindow, 0, 0, PM_REMOVE));
+			if (!win_msgInQueue || win_msg.message == WM_QUIT)
 				break;
-			TranslateMessage(&win_msg);
+			CATCH_SIGNAL(TranslateMessage(&win_msg));
 			CATCH_SIGNAL(DispatchMessageW(&win_msg)); /* calls window procedure */
-		}
+		} while (win_msgInQueue);
 	}
 
 	void set_hinstance(HINSTANCE win_hInstance) {

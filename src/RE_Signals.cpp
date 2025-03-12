@@ -1,4 +1,4 @@
-#include "RE_Signals.hpp"
+#include "RE_Internal Header.hpp"
 
 #include <csignal>
 
@@ -9,7 +9,7 @@ namespace RE {
 		REuint u32Line;
 	};
 
-	SignalCatcher* SignalCatcher::pInstance = nullptr;
+	SignalCatcher* pInstance = nullptr;
 	std::stack<AppLocation> stackTrace;
 	bool signalAlreadyCaught = false;
 
@@ -27,10 +27,10 @@ namespace RE {
 				println("Illegal Instruction (The instruction was either corrupted or a non-instruction was used for execution)");
 				break;
 			case SIGABRT:
-				println("Abortion (The program has abnormally exited by calling \"abort\"");
+				println("Abortion (The program has abnormally exited by calling \"abort\", which most likely happens for errors)");
 				break;
 			case SIGFPE:
-				println("Floating-point exception (An arithmetic operation failed or a number overflowed)");
+				println("Floating-point exception (An arithmetic operation failed, e.g. division by zero, or a number overflowed)");
 				break;
 			default:
 				println("Unknown signal received");
@@ -45,7 +45,7 @@ namespace RE {
 			print(", at line ");
 			print_colored(std::to_string(locationData.u32Line).c_str(), RE_TERMINAL_COLOR_BRIGHT_WHITE, false, false);
 			if (std::strcmp(locationData.pcDetails, "\0") != 0)
-				print(append_strings(": ", locationData.pcDetails));
+				print(append_to_string(": ", locationData.pcDetails));
 			println();
 			stackTrace.pop();
 		}
@@ -53,10 +53,8 @@ namespace RE {
 	}
 
 	SignalCatcher::SignalCatcher() {
-		if (pInstance) {
-			RE_FATAL_ERROR("An object of the class \"SignalCatcher\" has already been constructed");
+		if (pInstance)
 			return;
-		}
 		pInstance = this;
 		std::signal(SIGSEGV, handle_signal);
 		std::signal(SIGILL, handle_signal);

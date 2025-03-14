@@ -1,5 +1,4 @@
 #include "RE.hpp"
-#include <csignal>
 
 using namespace RE;
 
@@ -10,9 +9,7 @@ class Nexie : public GameObject {
 		void start(Scene* pStartingScene) {
 			PRINT_LN("start nexie");
 		}
-		void update(Scene* pCurrentScene) {
-			PRINT_LN("update nexie");
-		}
+		void update(Scene* pCurrentScene) {}
 		void end(Scene* pEndingScene) {
 			PRINT_LN("end nexie");
 		}
@@ -35,9 +32,7 @@ class Clonus : public GameObject {
 		void start(Scene* pStartingScene) {
 			PRINT_LN("start clonus");
 		}
-		void update(Scene* pCurrentScene) {
-			PRINT_LN("update clonus");
-		}
+		void update(Scene* pCurrentScene) {}
 		void end(Scene* pEndingScene) {
 			PRINT_LN("end clonus");
 		}
@@ -56,7 +51,6 @@ class Objy : public GameObject {
 			PRINT_LN("start objy");
 		}
 		void update(Scene* pCurrentScene) {
-			//PRINT_LN("update objy");
 			bool randomResult = rng.random_bool(0.2f);
 			if (randomResult)
 				hits++;
@@ -71,23 +65,30 @@ class Objy : public GameObject {
 class First : public Scene {
 	public:
 		Objy objy;
+		InputAction trigger;
 
 		First() : Scene(1) {}
 		~First() {}
-		void start() {}
-		void update() {}
+		void start() {
+			trigger.change_input(RE_INPUT_KEY_CTRL_LEFT);
+		}
+		void update() {
+			if (trigger.is_down())
+				set_next_scene(second);
+		}
 		void end() {}
 };
 
 int main() {
 	SignalCatcher sigCatcher;
-	First first;
+	std::unique_ptr<First> first(new First());
 	second = new Second();
-	set_next_scene(&first);
+	set_next_scene(first.get());
 	RE::execute();
 	delete second;
 	if (clonus)
 		delete clonus;
+	first.reset();
 	return 0;
 }
 

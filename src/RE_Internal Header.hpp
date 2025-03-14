@@ -9,7 +9,7 @@
 #include <time.h>
 #include <chrono>
 #include <unordered_map>
-#include <memory>
+#include <array>
 
 #include "RE.hpp"
 #undef ERROR
@@ -53,6 +53,7 @@ typedef Colormap XColormap;
 # define XNone None
 # define XNoSymbol NoSymbol
 # define XFalse False
+# define XSuccess Success
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 
 namespace RE {

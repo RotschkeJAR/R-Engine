@@ -19,12 +19,13 @@ namespace RE {
 			void internal_update_title();
 
 		public:
+			const HKL win_keyboardLayout;
 			static HINSTANCE win_hInstance;
 			
 			Window_Win64();
 			~Window_Win64();
+			HWND get_hwindow();
 
-		friend class Vulkan;
 		friend LRESULT CALLBACK windows_window_proc(HWND win_hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	};
 

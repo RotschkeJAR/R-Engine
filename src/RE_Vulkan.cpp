@@ -1221,7 +1221,7 @@ namespace RE {
 		CATCH_SIGNAL(pfn_vkEnumerateInstanceExtensionProperties(nullptr, &u32AvailableExtensionsCount, nullptr));
 		VkExtensionProperties* vk_pAvailableExtensions = new VkExtensionProperties[u32AvailableExtensionsCount];
 		CATCH_SIGNAL(pfn_vkEnumerateInstanceExtensionProperties(nullptr, &u32AvailableExtensionsCount, vk_pAvailableExtensions));
-		println("Available Vulkan instance extensions:");
+		PRINT_LN("Available Vulkan instance extensions:");
 		for (uint32_t i = 0U; i < u32AvailableExtensionsCount; i++)
 			println(append_to_string("\t", vk_pAvailableExtensions[i].extensionName, " (", VK_API_VERSION_MAJOR(vk_pAvailableExtensions[i].specVersion), ".", VK_API_VERSION_MINOR(vk_pAvailableExtensions[i].specVersion), ".", VK_API_VERSION_PATCH(vk_pAvailableExtensions[i].specVersion), ")"));
 		bool bExtensionsMissing = false;
@@ -1244,7 +1244,7 @@ namespace RE {
 		CATCH_SIGNAL(pfn_vkEnumerateInstanceLayerProperties(&u32AvailableLayersCount, nullptr));
 		VkLayerProperties* vk_pAvailableLayers = new VkLayerProperties[u32AvailableLayersCount];
 		CATCH_SIGNAL(pfn_vkEnumerateInstanceLayerProperties(&u32AvailableLayersCount, vk_pAvailableLayers));
-		println("Available Vulkan instance layers:");
+		PRINT_LN("Available Vulkan instance layers:");
 		for (uint32_t u32LayerIndex = 0; u32LayerIndex < u32AvailableLayersCount; u32LayerIndex++)
 			println(append_to_string("\t", vk_pAvailableLayers[u32LayerIndex].layerName, " (", VK_API_VERSION_MAJOR(vk_pAvailableLayers[u32LayerIndex].specVersion), ".", VK_API_VERSION_MINOR(vk_pAvailableLayers[u32LayerIndex].specVersion), ".",VK_API_VERSION_PATCH(vk_pAvailableLayers[u32LayerIndex].specVersion), " - ", vk_pAvailableLayers[u32LayerIndex].implementationVersion, "): ", vk_pAvailableLayers[u32LayerIndex].description));
 		bool bLayersMissing = false;
@@ -1496,7 +1496,7 @@ namespace RE {
 		Window_Win64* pWindowWin64 = static_cast<Window_Win64*>(Window::pInstance);
 		VkWin32SurfaceCreateInfoKHR vk_win64SurfaceCreateInfo = { VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR };
 		vk_win64SurfaceCreateInfo.hinstance = pWindowWin64->win_hInstance;
-		vk_win64SurfaceCreateInfo.hwnd = pWindowWin64->win_hWindow;
+		vk_win64SurfaceCreateInfo.hwnd = pWindowWin64->get_hwindow();
 		CATCH_SIGNAL(vk_eSuccessResult = pfn_vkCreateWin32SurfaceKHR(vk_hInternalInstance, &vk_win64SurfaceCreateInfo, nullptr, &vk_hInternalSurface));
 #elif defined RE_OS_LINUX
 		Window_X11* pWindowX11 = static_cast<Window_X11*>(Window::pInstance);

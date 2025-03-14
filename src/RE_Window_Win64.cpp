@@ -49,43 +49,51 @@ namespace RE {
 					WORD win_extScancode = static_cast<WORD>(win_scancode);
 					if ((win_keyFlags & KF_EXTENDED) == KF_EXTENDED)
 						win_extScancode = MAKEWORD(win_scancode, 0xE0);
+					bool bFallbackToInput = false;
 					switch (win_virtualKeyCode) {
-						case VK_SHIFT:
+						case VK_SHIFT: // Have to be differentiated between left and right
 						case VK_CONTROL:
 						case VK_MENU:
-							win_virtualKeyCode = LOWORD(MapVirtualKeyW(win_extScancode, MAPVK_VSC_TO_VK_EX));
+							win_virtualKeyCode = LOWORD(MapVirtualKeyExW(win_extScancode, MAPVK_VSC_TO_VK_EX, pWin64->win_keyboardLayout));
+							break;
+						case VK_LWIN: // Ignore Windows-keys
+						case VK_RWIN:
+							return 0;
+						case VK_NUMLOCK: // May have different scancode than expected
+						case VK_SNAPSHOT:
+							bFallbackToInput = true;
 							break;
 						default:
 							break;
 					}
 					BOOL win_keyReleased = (win_keyFlags & KF_UP) == KF_UP;
-					CATCH_SIGNAL(pWin64->inputMgr.input_event(windows_key_from_virtual_keycode(static_cast<RElong>(win_virtualKeyCode)), static_cast<REuint>(win_extScancode), !static_cast<bool>(win_keyReleased)));
+					CATCH_SIGNAL(pWin64->inputMgr.input_event(windows_key_from_virtual_keycode(static_cast<RElong>(win_virtualKeyCode)), static_cast<REuint>(win_extScancode), !static_cast<bool>(win_keyReleased), bFallbackToInput));
 					} return 0;
 				case WM_CHAR: {
 					wchar_t wCharacter[2] = {static_cast<wchar_t>(win_wParam), L'\0'};
 					} return 0;
 				case WM_LBUTTONDOWN: /* left mouse button pressed */
-					CATCH_SIGNAL(pWin64->inputMgr.input_event(RE_INPUT_BUTTON_LEFT, 0U, true));
+					CATCH_SIGNAL(pWin64->inputMgr.input_event(RE_INPUT_BUTTON_LEFT, 0U, true, false));
 					CATCH_SIGNAL(SetCapture(win_hWndParam));
 					return 0;
 				case WM_LBUTTONUP: /* left mouse button released */
-					CATCH_SIGNAL(pWin64->inputMgr.input_event(RE_INPUT_BUTTON_LEFT, 0U, false));
+					CATCH_SIGNAL(pWin64->inputMgr.input_event(RE_INPUT_BUTTON_LEFT, 0U, false, false));
 					CATCH_SIGNAL(ReleaseCapture());
 					return 0;
 				case WM_RBUTTONDOWN: /* right mouse button pressed */
-					CATCH_SIGNAL(pWin64->inputMgr.input_event(RE_INPUT_BUTTON_RIGHT, 0U, true));
+					CATCH_SIGNAL(pWin64->inputMgr.input_event(RE_INPUT_BUTTON_RIGHT, 0U, true, false));
 					CATCH_SIGNAL(SetCapture(win_hWndParam));
 					return 0;
 				case WM_RBUTTONUP: /* right mouse button released */
-					CATCH_SIGNAL(pWin64->inputMgr.input_event(RE_INPUT_BUTTON_RIGHT, 0U, false));
+					CATCH_SIGNAL(pWin64->inputMgr.input_event(RE_INPUT_BUTTON_RIGHT, 0U, false, false));
 					CATCH_SIGNAL(ReleaseCapture());
 					return 0;
 				case WM_MBUTTONDOWN: /* middle mouse button pressed */
-					CATCH_SIGNAL(pWin64->inputMgr.input_event(RE_INPUT_BUTTON_MIDDLE, 0U, true));
+					CATCH_SIGNAL(pWin64->inputMgr.input_event(RE_INPUT_BUTTON_MIDDLE, 0U, true, false));
 					CATCH_SIGNAL(SetCapture(win_hWndParam));
 					return 0;
 				case WM_MBUTTONUP: /* middle mouse button released */
-					CATCH_SIGNAL(pWin64->inputMgr.input_event(RE_INPUT_BUTTON_MIDDLE, 0U, false));
+					CATCH_SIGNAL(pWin64->inputMgr.input_event(RE_INPUT_BUTTON_MIDDLE, 0U, false, false));
 					CATCH_SIGNAL(ReleaseCapture());
 					return 0;
 				case WM_MOUSEMOVE: { /* mouse moved */
@@ -102,9 +110,9 @@ namespace RE {
 				case WM_MOUSEWHEEL: { /* mouse wheel used/scrolled */
 					REint deltaMouseWheel = GET_WHEEL_DELTA_WPARAM(win_wParam);
 					if (deltaMouseWheel > 0)
-						CATCH_SIGNAL(pWin64->inputMgr.input_event(RE_INPUT_SCROLL_UP, 0U, true));
+						CATCH_SIGNAL(pWin64->inputMgr.input_event(RE_INPUT_SCROLL_UP, 0U, true, false));
 					else
-						CATCH_SIGNAL(pWin64->inputMgr.input_event(RE_INPUT_SCROLL_DOWN, 0U, true));
+						CATCH_SIGNAL(pWin64->inputMgr.input_event(RE_INPUT_SCROLL_DOWN, 0U, true, false));
 					} return 0;
 				default:
 					break;
@@ -115,7 +123,7 @@ namespace RE {
 		return win_lResult;
 	}
 	
-	Window_Win64::Window_Win64() : win_hWindow(nullptr), win_hCursor(LoadCursor(nullptr, IDC_ARROW)) {
+	Window_Win64::Window_Win64() : win_hWindow(nullptr), win_hCursor(LoadCursor(nullptr, IDC_ARROW)), win_keyboardLayout(GetKeyboardLayout(0)) {
 		if (pWin64) {
 			RE_FATAL_ERROR("An instance of the class \"Window_Win64\" has already been constructed. Discarding new one");
 			return;
@@ -185,11 +193,15 @@ namespace RE {
 		MSG win_msg;
 		do {
 			CATCH_SIGNAL(win_msgInQueue = PeekMessageW(&win_msg, win_hWindow, 0, 0, PM_REMOVE));
-			if (!win_msgInQueue || win_msg.message == WM_QUIT)
+			if (!win_msgInQueue || LOWORD(win_msg.message) == WM_QUIT)
 				break;
 			CATCH_SIGNAL(TranslateMessage(&win_msg));
 			CATCH_SIGNAL(DispatchMessageW(&win_msg)); /* calls window procedure */
 		} while (win_msgInQueue);
+	}
+
+	HWND Window_Win64::get_hwindow() {
+		return win_hWindow;
 	}
 
 	void set_hinstance(HINSTANCE win_hInstance) {

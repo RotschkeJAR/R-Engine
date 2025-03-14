@@ -2,7 +2,7 @@
 #define __RE_H__
 
 #if defined(_WIN32) || defined(_MSC_VER)
-# define RE_OS_WINDOWS
+# define RE_OS_WINDOWS 1
 # define NOGDI
 # ifdef _MSC_VER
 #  define NOMINMAX
@@ -10,7 +10,7 @@
 # define WIN32_LEAN_AND_MEAN /* speeds compilation up */
 # include <windows.h>
 #elif defined(__linux__)
-# define RE_OS_LINUX
+# define RE_OS_LINUX 1
 #else
 # warning The targeted OS is unknown to R-Engine
 #endif
@@ -22,6 +22,7 @@
 #include <math.h>
 #include <stdint.h>
 #include <random>
+#include <memory>
 
 typedef int8_t REbyte;
 typedef uint8_t REubyte;
@@ -111,8 +112,8 @@ namespace RE {
 		RE_INPUT_KEY_BRACKET_RIGHT = 0x32, /* ] */
 		RE_INPUT_KEY_EQUALS = 0x33, /* = */
 		RE_INPUT_KEY_MINUS = 0x34, /* - */
-		RE_INPUT_KEY_CRTL_RIGHT = 0x35,
-		RE_INPUT_KEY_CRTL_LEFT = 0x36,
+		RE_INPUT_KEY_CTRL_RIGHT = 0x35,
+		RE_INPUT_KEY_CTRL_LEFT = 0x36,
 		RE_INPUT_KEY_ALT_RIGHT = 0x37, /* AltGr */
 		RE_INPUT_KEY_ALT_LEFT = 0x38,
 		RE_INPUT_KEY_SHIFT_RIGHT = 0x39,
@@ -185,10 +186,14 @@ namespace RE {
 		RE_INPUT_KEY_WORLD_1 = 0x78,
 		RE_INPUT_MAX_ENUM = 0x79
 	};
+
+	extern bool bPrintColors;
+	extern bool bTreatWarningAsError;
+	extern bool bErrorAlwaysFatal;
 	
-	void error(const char* pcFile, const char* pcFunc, REuint uiLine, const char* pcDetail, bool bTerminate);
-	void warning(const char* pcFile, const char* pcFunc, REuint uiLine, const char* pcDetail);
-	void note(const char* pcFile, const char* pcFunc, REuint uiLine, const char* pcDetail);
+	void error(const char* pcFile, const char* pcFunc, REuint u32Line, const char* pcDetail, bool bTerminate);
+	void warning(const char* pcFile, const char* pcFunc, REuint u32Line, const char* pcDetail);
+	void note(const char* pcFile, const char* pcFunc, REuint u32Line, const char* pcDetail);
 #define FATAL_ERROR(T) error(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(T), true)
 #define ERROR(T) error(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(T), false)
 #define WARNING(T) warning(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(T))
@@ -273,7 +278,8 @@ namespace RE {
 		if (number < static_cast<T>(0.0))
 			ss << "-";
 		ss << "0x";
-		number = std::abs(number);
+		if constexpr (std::is_signed<T>::value)
+			number = std::abs(number);
 		constexpr REint i32HexadecimalDigits = sizeof(T) * 8 / 4;
 		bool bNumbersPresent = !bCutZeros;
 		for (REint i32Digit = i32HexadecimalDigits - 1U; i32Digit >= 0; i32Digit--) {
@@ -430,13 +436,13 @@ namespace RE {
 
 			T& operator [](REuint index) {
 				if (index >= u32Dimensions)
-					FATAL_ERROR(append_to_string("Index ", index, " is out of bounds: [0, ", u32Dimensions, "]").c_str());
+					FATAL_ERROR(append_to_string("Index ", index, " is out of bounds: [0, ", u32Dimensions, ")").c_str());
 				return coords[index];
 			}
 
 			T operator [](REuint index) const {
 				if (index >= u32Dimensions)
-					FATAL_ERROR(append_to_string("Index ", index, " is out of bounds: [0, ", u32Dimensions, "]").c_str());
+					FATAL_ERROR(append_to_string("Index ", index, " is out of bounds: [0, ", u32Dimensions, ")").c_str());
 				return coords[index];
 			}
 
@@ -538,12 +544,16 @@ namespace RE {
 			InputAction(Input eInput);
 			InputAction(REuint u32KeyScancode);
 			~InputAction();
-			void changeInput(Input eInput, REuint u32NewKeyScancode);
+			void change_input(Input eInput);
+			void change_scancode(REuint u32NewScancode);
 			bool is_pressed();
 			bool is_down();
 			bool is_released();
 			bool has_valid_input_values();
 	};
+
+	Input map_scancode_to_input(REuint u32Scancode);
+	REuint map_input_to_scancode(Input eInput);
 
 	void execute();
 	float get_deltaseconds();

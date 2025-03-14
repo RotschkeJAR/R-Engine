@@ -4,8 +4,8 @@
 namespace RE {
 
 	Scene *Manager::pCurrentScene = nullptr, *Manager::pNextScene = nullptr;
-	std::vector<GameObject*> Manager::gameObjects;
-	Manager* Manager::pInstance = nullptr;
+	std::vector<GameObject*> Manager::gameObjects, Manager::deletableGameObjects, Manager::newGameObjects;
+	Manager *Manager::pInstance = nullptr;
 	
 	Manager::Manager() {
 		if (pInstance) {
@@ -24,7 +24,9 @@ namespace RE {
 	}
 
 	bool Manager::should_update_object(GameObject* pGameObject) {
-		return !pGameObject->u32SceneParentId || pGameObject->u32SceneParentId == pCurrentScene->u32Id;
+		bool bResult;
+		CATCH_SIGNAL(bResult = !pGameObject->u32SceneParentId || pGameObject->u32SceneParentId == pCurrentScene->u32Id);
+		return bResult;
 	}
 
 	void Manager::start_proc() {
@@ -56,7 +58,7 @@ namespace RE {
 
 	void Manager::delete_proc() {
 		for (GameObject* deletableGameObject : deletableGameObjects)
-			CATCH_SIGNAL(delete deletableGameObject);
+			DELETE_SAFELY(deletableGameObject);
 		deletableGameObjects.clear();
 	}
 

@@ -15,7 +15,7 @@ namespace RE {
 	void execute() {
 		DEFINE_SIGNAL_GUARD(sigGuardMainLoop);
 		std::setlocale(LC_ALL, "");
-		SignalCatcher signalCatcher;
+		//SignalCatcher signalCatcher;
 		Window* pWindow;
 #ifdef RE_OS_WINDOWS
 		CATCH_SIGNAL(pWindow = new Window_Win64());
@@ -68,7 +68,7 @@ namespace RE {
 		DEFINE_SIGNAL_GUARD(sigGuardGetFpsRate);
 		if (fDeltaseconds > 0.0f)
 			return 1.0f / fDeltaseconds;
-		RE_ERROR("FPS rate couldn't be calculated, because the deltatime is still in its default value");
+		RE_ERROR("FPS rate couldn't be calculated, because the deltatime is still in its default value and would crash the game");
 		return 0.0f;
 	}
 

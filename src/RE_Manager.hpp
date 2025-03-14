@@ -16,9 +16,8 @@ namespace RE {
 
 		public:
 			static Scene *pCurrentScene, *pNextScene;
-			std::vector<GameObject*> deletableGameObjects, newGameObjects;
-			static std::vector<GameObject*> gameObjects;
-			static Manager* pInstance;
+			static std::vector<GameObject*> gameObjects, deletableGameObjects, newGameObjects;
+			static Manager *pInstance;
 
 			Manager();
 			~Manager();

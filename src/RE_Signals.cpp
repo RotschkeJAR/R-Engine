@@ -32,6 +32,12 @@ namespace RE {
 			case SIGFPE:
 				println("Floating-point exception (An arithmetic operation failed, e.g. division by zero, or a number overflowed)");
 				break;
+			case SIGTERM:
+				println("Program terminated");
+				std::exit(SIGTERM);
+			case SIGINT:
+				println("Extern interruption");
+				std::exit(SIGINT);
 			default:
 				println("Unknown signal received");
 				break;
@@ -60,6 +66,8 @@ namespace RE {
 		std::signal(SIGILL, handle_signal);
 		std::signal(SIGABRT, handle_signal);
 		std::signal(SIGFPE, handle_signal);
+		std::signal(SIGTERM, handle_signal);
+		std::signal(SIGINT, handle_signal);
 	}
 
 	SignalCatcher::~SignalCatcher() {
@@ -70,6 +78,8 @@ namespace RE {
 		std::signal(SIGILL, SIG_DFL);
 		std::signal(SIGABRT, SIG_DFL);
 		std::signal(SIGFPE, SIG_DFL);
+		std::signal(SIGTERM, SIG_DFL);
+		std::signal(SIGINT, SIG_DFL);
 	}
 
 	void add_to_stack_trace(const char* pcFile, const char* pcMethod, REuint u32Line, const char* pcDetails) {

@@ -116,10 +116,9 @@ namespace RE {
 					CATCH_SIGNAL(x11_keySym = XLookupKeysym(&x11_keyEvent, 0));
 					REubyte u8CharLength;
 					CATCH_SIGNAL(u8CharLength = Xutf8LookupString(x11_hInputContext, &x11_keyEvent, cString, sizeof(cString) - 1, &x11_keySym, nullptr));
-					if (bKeyPressed && u8CharLength) {
+					if (bKeyPressed && u8CharLength)
 						cString[u8CharLength] = '\0';
-					}
-					CATCH_SIGNAL(inputMgr.input_event(x11_key_from_virtual_keycode(static_cast<RElong>(x11_keySym)), static_cast<REuint>(x11_scancode), bKeyPressed));
+					CATCH_SIGNAL(inputMgr.input_event(x11_key_from_virtual_keycode(static_cast<RElong>(x11_keySym)), static_cast<REuint>(x11_scancode), bKeyPressed, false));
 					} break;
 				case XButtonPress:
 				case XButtonRelease: {
@@ -127,19 +126,19 @@ namespace RE {
 					bool bButtonPressed = x11_buttonEvent.type == XButtonPress;
 					switch (x11_buttonEvent.button) {
 						case Button1: /* left click */
-							CATCH_SIGNAL(inputMgr.input_event(RE_INPUT_BUTTON_LEFT, 0U, bButtonPressed));
+							CATCH_SIGNAL(inputMgr.input_event(RE_INPUT_BUTTON_LEFT, 0U, bButtonPressed, false));
 							break;
 						case Button2: /* middle click */
-							CATCH_SIGNAL(inputMgr.input_event(RE_INPUT_BUTTON_MIDDLE, 0U, bButtonPressed));
+							CATCH_SIGNAL(inputMgr.input_event(RE_INPUT_BUTTON_MIDDLE, 0U, bButtonPressed, false));
 							break;
 						case Button3: /* right click */
-							CATCH_SIGNAL(inputMgr.input_event(RE_INPUT_BUTTON_RIGHT, 0U, bButtonPressed));
+							CATCH_SIGNAL(inputMgr.input_event(RE_INPUT_BUTTON_RIGHT, 0U, bButtonPressed, false));
 							break;
 						case Button4: /* up scroll */
-							CATCH_SIGNAL(inputMgr.input_event(RE_INPUT_SCROLL_UP, 0U, true));
+							CATCH_SIGNAL(inputMgr.input_event(RE_INPUT_SCROLL_UP, 0U, true, false));
 							break;
 						case Button5: /* down scroll */
-							CATCH_SIGNAL(inputMgr.input_event(RE_INPUT_SCROLL_DOWN, 0U, true));
+							CATCH_SIGNAL(inputMgr.input_event(RE_INPUT_SCROLL_DOWN, 0U, true, false));
 							break;
 						default:
 							break;

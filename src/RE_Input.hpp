@@ -5,28 +5,39 @@
 
 namespace RE {
 
-	struct KeyInfo;
+#define MAXIMUM_PHYSICAL_KEYS 150
+#define KEY_BUFFER_SIZE (MAXIMUM_PHYSICAL_KEYS / 8 + (MAXIMUM_PHYSICAL_KEYS % 8 > 0 ? 1 : 0))
 	
 	class InputMgr {
 		private:
-			const REuint u32NumberOfKeys;
-			std::unique_ptr<KeyInfo[]> keyTable;
+			REuint u32Scancodes[MAXIMUM_PHYSICAL_KEYS];
+			Input eInputs[MAXIMUM_PHYSICAL_KEYS];
+			REubyte u8KeyBuffer[KEY_BUFFER_SIZE], u8PrevKeyBuffer[KEY_BUFFER_SIZE]; // Keyboard
+			REuint u32NumberOfKeys;
+			REubyte u8SpecialInputBuffer, u8PrevSpecialInputBuffer; // Scrolling and mouse buttons
 			Vector2i cursorPosition, prevCursorPosition;
+
+			REint get_index_for_scancode(REuint u32Scancode);
+			REint get_index_for_input(Input eSearchedInput);
+			bool process_request(Input eInput, REuint u32Scancode, bool bRequestForPast);
 
 		public:
 			static InputMgr* pInstance;
 
 			InputMgr();
 			~InputMgr();
-			void input_event(Input eInput, REuint u32Scancode, bool bPressed);
+			void input_event(Input eInput, REuint u32Scancode, bool bPressed, bool bFallbackToInput);
 			void cursor_event(REint i32X, REint i32Y);
 			void update_input_buffers();
-
-		friend class InputAction;
+			Input map_scancode_to_input(REuint u32Scancode);
+			REuint map_input_to_scancode(Input eInput);
+			bool is_down(Input eInput, REuint u32Scancode);
+			bool was_down(Input eInput, REuint u32Scancode);
+			REuint get_number_of_keys(); // Call once to set u32NumberOfKeys to correct value
 	};
 
-#define SCANCODE_CURRENT_BIT 0
-#define SCANCODE_PREV_BIT 1
+	Input map_scancode_to_input(REuint u32Scancode);
+	REuint map_input_to_scancode(Input eInput);
 
 #ifdef RE_OS_WINDOWS
 # define VK_A 0x41
@@ -41,6 +52,7 @@ namespace RE {
 				return VK_BACK;
 			case RE_INPUT_KEY_TAB:
 				return VK_TAB;
+			case RE_INPUT_KEY_NUMPAD_ENTER:
 			case RE_INPUT_KEY_ENTER:
 				return VK_RETURN;
 			case RE_INPUT_KEY_PAUSE:
@@ -87,9 +99,9 @@ namespace RE {
 				return VK_RSHIFT;
 			case RE_INPUT_KEY_SHIFT_LEFT:
 				return VK_LSHIFT;
-			case RE_INPUT_KEY_CRTL_RIGHT:
+			case RE_INPUT_KEY_CTRL_RIGHT:
 				return VK_RCONTROL;
-			case RE_INPUT_KEY_CRTL_LEFT:
+			case RE_INPUT_KEY_CTRL_LEFT:
 				return VK_LCONTROL;
 			case RE_INPUT_KEY_ALT_RIGHT:
 				return VK_RMENU;
@@ -117,8 +129,6 @@ namespace RE {
 				return VK_OEM_PLUS;
 			case RE_INPUT_KEY_MINUS:
 				return VK_OEM_MINUS;
-			case RE_INPUT_KEY_NUMPAD_ENTER:
-				return VK_RETURN;
 			case RE_INPUT_KEY_NUMPAD_PERIOD:
 				return VK_DECIMAL;
 			case RE_INPUT_KEY_MENU:
@@ -149,6 +159,8 @@ namespace RE {
 				return RE_INPUT_KEY_BACKSPACE;
 			case VK_TAB:
 				return RE_INPUT_KEY_TAB;
+			case VK_CLEAR:
+				return RE_INPUT_KEY_NUMPAD_5;
 			case VK_PAUSE:
 				return RE_INPUT_KEY_PAUSE;
 			case VK_HOME:
@@ -194,9 +206,9 @@ namespace RE {
 			case VK_RSHIFT:
 				return RE_INPUT_KEY_SHIFT_RIGHT;
 			case VK_LCONTROL:
-				return RE_INPUT_KEY_CRTL_LEFT;
+				return RE_INPUT_KEY_CTRL_LEFT;
 			case VK_RCONTROL:
-				return RE_INPUT_KEY_CRTL_RIGHT;
+				return RE_INPUT_KEY_CTRL_RIGHT;
 			case VK_LMENU:
 				return RE_INPUT_KEY_ALT_LEFT;
 			case VK_RMENU:
@@ -230,6 +242,9 @@ namespace RE {
 				return RE_INPUT_KEY_NUMPAD_PERIOD;
 			case VK_APPS:
 				return RE_INPUT_KEY_MENU;
+			case VK_LWIN:
+			case VK_RWIN:
+				return RE_INPUT_UNKNOWN;
 			default:
 				if (i64VirtualKeyCode >= VK_A && i64VirtualKeyCode <= VK_Z)
 					return static_cast<Input>(i64VirtualKeyCode - VK_A + static_cast<RElong>(RE_INPUT_KEY_A));
@@ -239,10 +254,8 @@ namespace RE {
 					return static_cast<Input>(i64VirtualKeyCode - VK_F1 + static_cast<RElong>(RE_INPUT_KEY_F1));
 				else if (i64VirtualKeyCode >= VK_NUMPAD0 && i64VirtualKeyCode <= VK_NUMPAD9)
 					return static_cast<Input>(i64VirtualKeyCode - VK_NUMPAD0 + static_cast<RElong>(RE_INPUT_KEY_NUMPAD_0));
-				else {
-					RE_WARNING(append_to_string("A Windows-virtual keycode couldn't be converted to the Input-enumeration: ", hexadecimal_to_string(i64VirtualKeyCode, true)));
+				else
 					return RE_INPUT_UNKNOWN;
-				}
 		}
 	}
 #elif defined RE_OS_LINUX
@@ -272,9 +285,9 @@ namespace RE {
 				return XK_equal;
 			case RE_INPUT_KEY_MINUS:
 				return XK_minus;
-			case RE_INPUT_KEY_CRTL_RIGHT:
+			case RE_INPUT_KEY_CTRL_RIGHT:
 				return XK_Control_R;
-			case RE_INPUT_KEY_CRTL_LEFT:
+			case RE_INPUT_KEY_CTRL_LEFT:
 				return XK_Control_L;
 			case RE_INPUT_KEY_ALT_RIGHT:
 				return XK_Alt_R;
@@ -397,9 +410,9 @@ namespace RE {
 			case XK_Shift_R:
 				return RE_INPUT_KEY_SHIFT_RIGHT;
 			case XK_Control_L:
-				return RE_INPUT_KEY_CRTL_LEFT;
+				return RE_INPUT_KEY_CTRL_LEFT;
 			case XK_Control_R:
-				return RE_INPUT_KEY_CRTL_RIGHT;
+				return RE_INPUT_KEY_CTRL_RIGHT;
 			case XK_Caps_Lock:
 				return RE_INPUT_KEY_CAPS_LOCK;
 			case XK_Alt_L:
@@ -480,16 +493,16 @@ namespace RE {
 			default:
 				if (i64VirtualKeyCode >= XK_a && i64VirtualKeyCode <= XK_z)
 					return static_cast<Input>(i64VirtualKeyCode - XK_a + static_cast<RElong>(RE_INPUT_KEY_A));
+				else if (i64VirtualKeyCode >= XK_A && i64VirtualKeyCode <= XK_Z)
+					return static_cast<Input>(i64VirtualKeyCode - XK_A + static_cast<RElong>(RE_INPUT_KEY_A));
 				else if (i64VirtualKeyCode >= XK_0 && i64VirtualKeyCode <= XK_9)
 					return static_cast<Input>(i64VirtualKeyCode - XK_0 + static_cast<RElong>(RE_INPUT_KEY_TOP_0));
 				else if (i64VirtualKeyCode >= XK_F1 && i64VirtualKeyCode <= XK_F25)
 					return static_cast<Input>(i64VirtualKeyCode - XK_F1 + static_cast<RElong>(RE_INPUT_KEY_F1));
 				else if (i64VirtualKeyCode >= XK_KP_0 && i64VirtualKeyCode <= XK_KP_9)
 					return static_cast<Input>(i64VirtualKeyCode - XK_KP_0 + static_cast<RElong>(RE_INPUT_KEY_NUMPAD_0));
-				else {
-					RE_WARNING(append_to_string("An X11-virtual keycode couldn't be converted to the Input-enumeration: ", hexadecimal_to_string(i64VirtualKeyCode, true)));
+				else
 					return RE_INPUT_UNKNOWN;
-				}
 		}
 	}
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */

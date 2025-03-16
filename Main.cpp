@@ -65,30 +65,32 @@ class Objy : public GameObject {
 class First : public Scene {
 	public:
 		Objy objy;
-		InputAction trigger;
+		InputAction trigger, refresh;
 
 		First() : Scene(1) {}
 		~First() {}
 		void start() {
-			trigger.change_input(RE_INPUT_KEY_CTRL_LEFT);
+			trigger.change_input(RE_INPUT_KEY_NUMPAD_ENTER);
+			refresh.change_input(RE_INPUT_KEY_ESCAPE);
 		}
 		void update() {
-			if (trigger.is_down())
+			if (trigger.is_pressed())
 				set_next_scene(second);
+			else if (refresh.is_pressed())
+				trigger.update_input();
 		}
 		void end() {}
 };
 
 int main() {
 	SignalCatcher sigCatcher;
-	std::unique_ptr<First> first(new First());
+	First first;
 	second = new Second();
-	set_next_scene(first.get());
+	set_next_scene(&first);
 	RE::execute();
 	delete second;
 	if (clonus)
 		delete clonus;
-	first.reset();
 	return 0;
 }
 

@@ -22,7 +22,6 @@
 #include <math.h>
 #include <stdint.h>
 #include <random>
-#include <memory>
 
 typedef int8_t REbyte;
 typedef uint8_t REubyte;
@@ -187,9 +186,27 @@ namespace RE {
 		RE_INPUT_MAX_ENUM = 0x79
 	};
 
-	extern bool bPrintColors;
-	extern bool bTreatWarningAsError;
-	extern bool bErrorAlwaysFatal;
+	template <class... T>
+	void print(T... content) {
+		([&]() {
+			if constexpr (std::is_same_v<T, REubyte>)
+				std::cout << static_cast<REushort>(content);
+			else if constexpr (std::is_same_v<T, REbyte>)
+				std::cout << static_cast<REshort>(content);
+			else if constexpr (std::is_same_v<T, wchar_t> || std::is_same_v<T, const wchar_t> || std::is_same_v<T, wchar_t*> || std::is_same_v<T, const wchar_t*> || std::is_same_v<T, std::wstring>)
+				std::wcout << content;
+			else
+				std::cout << content;
+		} (), ...);
+	}
+	template <class... T>
+	void println(T... content) {
+		print(content..., "\n");
+	}
+	void print_colored(const char* pcContent, TerminalColor eColor, bool bBackgroundColored, bool bBold);
+	void println_colored(const char* pcContent, TerminalColor eColor, bool bBackgroundColored, bool bBold);
+#define PRINT(MSG) print(append_to_string(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE_MACRO(MSG)))
+#define PRINT_LN(MSG) print(append_to_string(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE_MACRO(MSG), "\n"))
 	
 	void error(const char* pcFile, const char* pcFunc, REuint u32Line, const char* pcDetail, bool bTerminate);
 	void warning(const char* pcFile, const char* pcFunc, REuint u32Line, const char* pcDetail);
@@ -198,6 +215,10 @@ namespace RE {
 #define ERROR(T) error(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(T), false)
 #define WARNING(T) warning(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(T))
 #define NOTE(T) note(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(T))
+	void enable_colorful_printing(bool bEnable);
+	void treat_warnings_as_errors(bool bEnable);
+	void make_errors_always_fatal(bool bEnable);
+	void show_message_box_on_error(bool bEnable);
 	
 	class SignalCatcher {
 		public:
@@ -241,32 +262,16 @@ namespace RE {
 		return std::string(ss.str());
 	}
 
-	template <class... T>
-	void print(T... content) {
-		([&]() {
-			if constexpr (std::is_same_v<T, REubyte>)
-				std::cout << static_cast<REushort>(content);
-			else if constexpr (std::is_same_v<T, REbyte>)
-				std::cout << static_cast<REshort>(content);
-			else
-				std::cout << content;
-		} (), ...);
-	}
-	template <class... T>
-	void println(T... content) {
-		print(content..., "\n");
-	}
-	void print_colored(const char* content, TerminalColor color, bool backgroundColored, bool bold);
-	void println_colored(const char* content, TerminalColor color, bool backgroundColored, bool bold);
-#define PRINT(MSG) print(append_to_string(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE_MACRO(MSG)))
-#define PRINT_LN(MSG) print(append_to_string(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE_MACRO(MSG), "\n"))
-
 	std::string convert_wide_chars_to_utf8(const wchar_t* pwcString);
 	std::wstring convert_chars_to_wide(const char* pcString);
 	std::string get_app_name();
 
 	template <typename T>
 	constexpr T nth_root(T n, T value) {
+		if (!n) {
+			FATAL_ERROR("The value of n shouldn't be zero in an nth root");
+			return static_cast<T>(0.0);
+		}
 		T result = static_cast<T>(0.0);
 		CATCH_SIGNAL(result = std::pow(value, static_cast<T>(1.0) / n));
 		return result;
@@ -274,6 +279,7 @@ namespace RE {
 
 	template <typename T>
 	std::string hexadecimal_to_string(T number, bool bCutZeros) {
+		DEFINE_SIGNAL_GUARD(sigGuardHexadecimalToString);
 		std::stringstream ss("");
 		if (number < static_cast<T>(0.0))
 			ss << "-";
@@ -297,6 +303,11 @@ namespace RE {
 		if (!bNumbersPresent)
 			ss << "0";
 		return std::string(ss.str());
+	}
+
+	template <typename T>
+	std::string hexadecimal_to_string(T number) {
+		return hexadecimal_to_string<T>(number, true);
 	}
 
 	template <typename... T>
@@ -491,6 +502,7 @@ namespace RE {
 			RandomNumberGenerator(REuint u32Seed);
 			~RandomNumberGenerator();
 			void set_seed(REuint newSeed);
+
 			template <typename T>
 			T random(T min, T max) {
 				std::uniform_int_distribution<T> range(min, max);
@@ -516,6 +528,7 @@ namespace RE {
 			Scene() = delete;
 			Scene(REuint u32Id);
 			virtual ~Scene();
+
 			virtual void start();
 			virtual void update();
 			virtual void end();
@@ -529,6 +542,7 @@ namespace RE {
 			GameObject() = delete;
 			GameObject(REuint u32OwnId, REuint u32SceneParentId);
 			virtual ~GameObject();
+
 			virtual void start(Scene* pStartingScene);
 			virtual void update(Scene* pCurrentScene);
 			virtual void end(Scene* pEndingScene);
@@ -544,11 +558,22 @@ namespace RE {
 			InputAction(Input eInput);
 			InputAction(REuint u32KeyScancode);
 			~InputAction();
+			bool is_scroll_wheel();
+			bool is_button();
+			bool is_key();
+
+			void update_input();
+			bool is_updating();
+			void cancel_update();
+			static bool can_update();
+
 			void change_input(Input eInput);
 			void change_scancode(REuint u32NewScancode);
+
 			bool is_pressed();
 			bool is_down();
 			bool is_released();
+
 			bool has_valid_input_values();
 	};
 
@@ -561,9 +586,9 @@ namespace RE {
 
 	void mark_delete(GameObject* pGameObject);
 #define MARK_SAFE_DELETE(GAME_OBJECT_POINTER) CATCH_SIGNAL( do { \
-		markDelete(GAME_OBJECT_POINTER); \
-		GAME_OBJECT_POINTER = nullptr; \
-	} while (false) )
+			markDelete(GAME_OBJECT_POINTER); \
+			GAME_OBJECT_POINTER = nullptr; \
+		} while (false) )
 	
 	void set_next_scene(Scene* pNextScene);
 	bool is_next_scene_set();

@@ -10,7 +10,7 @@ namespace RE {
 
 	InputMgr *InputMgr::pInstance = nullptr;
 
-	InputMgr::InputMgr() : u8SpecialInputBuffer(0U), u8PrevSpecialInputBuffer(0U) {
+	InputMgr::InputMgr() : u8SpecialInputBuffer(0U), u8PrevSpecialInputBuffer(0U), pUpdateInputObject(nullptr) {
 		if (pInstance) {
 			RE_FATAL_ERROR("An instance of the class \"InputMgr\" has already been constructed");
 			return;
@@ -42,8 +42,8 @@ namespace RE {
 					continue; // No scancode assigned to keycode
 				switch (u32VirtualKeycodeDummy) {
 					case VK_RETURN:
-						bRetry = !bRetry; // Retry required, because virtual keycode can represent multiple physical keys
-						// Don't break here
+						bRetry = !bRetry; // Retry required, because virtual keycode can represent enter and numpad enter-key
+						// Don't break here!
 					case VK_DELETE: // Delete-key
 					case VK_INSERT: // Insert-key
 					case VK_HOME: // Home-key
@@ -131,7 +131,7 @@ namespace RE {
 			else
 				usedInputs.push_back(info);
 		}
-		u32NumberOfKeys = existingKeys.size();
+		u8NumberOfKeys = std::clamp<REubyte>(existingKeys.size(), 0U, MAXIMUM_PHYSICAL_KEYS);
 		std::fill(std::begin(u8KeyBuffer), std::end(u8KeyBuffer), 0U);
 		std::fill(std::begin(u8PrevKeyBuffer), std::end(u8PrevKeyBuffer), 0U);
 	}
@@ -142,13 +142,13 @@ namespace RE {
 		pInstance = nullptr;
 	}
 
-	REint InputMgr::get_index_for_scancode(REuint u32SearchedScancode) {
-		REuint u32CurrentIndex = u32NumberOfKeys / 2U, u32MinIndex = 0U, u32MaxIndex = u32NumberOfKeys - 1U;
+	REshort InputMgr::get_index_for_scancode(REuint u32SearchedScancode) {
+		REuint u32CurrentIndex = u8NumberOfKeys / 2U, u32MinIndex = 0U, u32MaxIndex = u8NumberOfKeys - 1U;
 		REuint u32CurrentScancode = 0U;
 		while (true) {
 			CATCH_SIGNAL_DETAILED(u32CurrentScancode = u32Scancodes[u32CurrentIndex], append_to_string("Index: ", u32CurrentIndex).c_str());
 			if (u32CurrentScancode == u32SearchedScancode)
-				return u32CurrentIndex;
+				return static_cast<REshort>(u32CurrentIndex);
 			else if (u32CurrentScancode > u32SearchedScancode && u32MinIndex < u32CurrentIndex)
 				u32MaxIndex = u32CurrentIndex - 1U;
 			else if (u32CurrentScancode < u32SearchedScancode && u32MaxIndex > u32CurrentIndex)
@@ -159,38 +159,51 @@ namespace RE {
 		}
 	}
 
-	REint InputMgr::get_index_for_input(Input eSearchedInput) {
-		for (REuint i = 0U; i < u32NumberOfKeys; i++)
+	REshort InputMgr::get_index_for_input(Input eSearchedInput) {
+		for (REuint i = 0U; i < u8NumberOfKeys; i++)
 			if (eInputs[i] == eSearchedInput)
-				return static_cast<REint>(i);
+				return static_cast<REshort>(i);
 		return -1;
 	}
 
-	bool InputMgr::process_request(Input eInput, REuint u32Scancode, bool bRequestForPast) {
+	bool InputMgr::process_request(Input &eInput, REuint &u32Scancode, bool bRequestForPast) {
 		if (eInput >= RE_INPUT_UNKNOWN && eInput < RE_INPUT_MAX_ENUM) {
+			DEFINE_SIGNAL_GUARD(sigGuardProcessingRequest);
 			switch (eInput) {
 				case RE_INPUT_SCROLL_UP:
 				case RE_INPUT_SCROLL_DOWN:
 				case RE_INPUT_BUTTON_LEFT:
 				case RE_INPUT_BUTTON_RIGHT:
 				case RE_INPUT_BUTTON_MIDDLE:
-					return is_bit_true<REubyte>(u8SpecialInputBuffer, static_cast<REubyte>(eInput - RE_INPUT_SCROLL_UP));
-				default:
-					REint i32KeyIndex = -1;
-					if (u32Scancode)
-						i32KeyIndex = get_index_for_scancode(u32Scancode);
-					if (i32KeyIndex < 0 && eInput != RE_INPUT_UNKNOWN)
-						i32KeyIndex = get_index_for_input(eInput);
 					if (bRequestForPast)
-						return i32KeyIndex >= 0 ? is_bit_true<REubyte>(u8PrevKeyBuffer[i32KeyIndex / 8], i32KeyIndex % 8) : false;
+						return is_bit_true<REubyte>(u8PrevSpecialInputBuffer, static_cast<REubyte>(eInput - RE_INPUT_SCROLL_UP));
 					else
-						return i32KeyIndex >= 0 ? is_bit_true<REubyte>(u8KeyBuffer[i32KeyIndex / 8], i32KeyIndex % 8) : false;
+						return is_bit_true<REubyte>(u8SpecialInputBuffer, static_cast<REubyte>(eInput - RE_INPUT_SCROLL_UP));
+				default:
+					REshort i16KeyIndex = -1;
+					if (u32Scancode)
+						i16KeyIndex = get_index_for_scancode(u32Scancode);
+					if (i16KeyIndex < 0 && eInput != RE_INPUT_UNKNOWN) {
+						i16KeyIndex = get_index_for_input(eInput);
+						if (i16KeyIndex >= 0)
+							u32Scancode = u32Scancodes[i16KeyIndex];
+					}
+					if (i16KeyIndex < 0) {
+						RE_ERROR(append_to_string("Input ", hexadecimal_to_string<REshort>(eInput, true), " and scancode ", hexadecimal_to_string(u32Scancode, true), " were not in the physical keys-list"));
+						eInput = RE_INPUT_UNKNOWN;
+						u32Scancode = 0U;
+						return false;
+					}
+					if (bRequestForPast)
+						return i16KeyIndex >= 0 ? is_bit_true<REubyte>(u8PrevKeyBuffer[i16KeyIndex / 8], i16KeyIndex % 8) : false;
+					else
+						return i16KeyIndex >= 0 ? is_bit_true<REubyte>(u8KeyBuffer[i16KeyIndex / 8], i16KeyIndex % 8) : false;
 			}
 		}
 		return false;
 	}
 
-	void InputMgr::input_event(Input eInput, REuint u32Scancode, bool bPressed, bool bFallbackToInput) {
+	void InputMgr::input_event(const Input eInput, const REuint u32Scancode, const bool bPressed, const bool bFallbackToInput) {
 		switch (eInput) {
 			case RE_INPUT_SCROLL_UP:
 			case RE_INPUT_SCROLL_DOWN:
@@ -198,18 +211,68 @@ namespace RE {
 			case RE_INPUT_BUTTON_RIGHT:
 			case RE_INPUT_BUTTON_MIDDLE:
 				CATCH_SIGNAL(set_bit<REubyte>(u8SpecialInputBuffer, static_cast<REubyte>(eInput - RE_INPUT_SCROLL_UP), bPressed));
+				if (pUpdateInputObject && bPressed) {
+					pUpdateInputObject->change_input(eInput);
+					pUpdateInputObject = nullptr;
+				}
 				break;
 			default: // Keyboard input
-				if (eInput >= RE_INPUT_UNKNOWN && eInput < RE_INPUT_MAX_ENUM) {
-					REint i32KeyIndex = -1;
+				if ((!u32Scancode && !bFallbackToInput) || eInput < RE_INPUT_UNKNOWN || eInput >= RE_INPUT_MAX_ENUM)
+					break;
+				REshort i16KeyIndex = -1;
+				if (u32Scancode)
+					CATCH_SIGNAL(i16KeyIndex = get_index_for_scancode(u32Scancode));
+				if (i16KeyIndex < 0 && bFallbackToInput && eInput != RE_INPUT_UNKNOWN)
+					CATCH_SIGNAL(i16KeyIndex = get_index_for_input(eInput));
+				if (i16KeyIndex >= 0)
+					CATCH_SIGNAL(set_bit<REubyte>(u8KeyBuffer[i16KeyIndex / 8], i16KeyIndex % 8, bPressed));
+				else { // Keyboard input unknown
+					RE_NOTE(append_to_string("The scancode is missing in the scancode list: ", hexadecimal_to_string(u32Scancode, true), " (Assumed input: ", hexadecimal_to_string<REshort>(eInput, true), ")"));
+					if (u8NumberOfKeys == MAXIMUM_PHYSICAL_KEYS || (eInput == RE_INPUT_UNKNOWN && !u32Scancode)) {
+						RE_WARNING("New scancode mentioned before cannot be added, because the list is full");
+						break;
+					}
+					REubyte u8InsertionIndex = u8NumberOfKeys;
+					{ // Looking for suitable place to insert new scancode to keep ascending order
+						REubyte u8CurrentIndex = u8NumberOfKeys / 2U, u8MinIndex = 0U, u8MaxIndex = u8NumberOfKeys - 1U;
+						while (true) {
+							REuint u32CurrentScancode = u32Scancodes[u8CurrentIndex];
+							if (u32Scancode < u32CurrentScancode) {
+								if (u8CurrentIndex == 0U)
+									break;
+								else {
+									REuint u32LowerScancode = u32Scancodes[u8CurrentIndex - 1U];
+									if (u32Scancode > u32LowerScancode)
+										break;
+									else
+										u8MaxIndex = std::clamp(u8CurrentIndex - 2U, 0U, MAXIMUM_PHYSICAL_KEYS - 1U);
+								}
+							} else
+								u8MinIndex = u8CurrentIndex + 1U;
+							u8CurrentIndex = u8MinIndex + (u8MaxIndex - u8MinIndex) / 2U;
+						}
+						u8InsertionIndex = u8CurrentIndex;
+					}
+					for (REubyte i = u8NumberOfKeys; i > u8InsertionIndex; i--) {
+						const REubyte u8LowerIndex = i - 1U;
+						u32Scancodes[i] = u32Scancodes[u8LowerIndex];
+						eInputs[i] = eInputs[u8LowerIndex];
+						set_bit<REubyte>(u8KeyBuffer[u8LowerIndex / 8U], u8LowerIndex % 8U, is_bit_true<REubyte>(u8KeyBuffer[i / 8U], i % 8U));
+						set_bit<REubyte>(u8PrevKeyBuffer[u8LowerIndex / 8U], u8LowerIndex % 8U, is_bit_true<REubyte>(u8PrevKeyBuffer[i / 8U], i % 8U));
+					}
+					u32Scancodes[u8InsertionIndex] = u32Scancode;
+					eInputs[u8InsertionIndex] = eInput;
+					set_bit<REubyte>(u8KeyBuffer[u8InsertionIndex / 8U], u8InsertionIndex % 8U, bPressed);
+					set_bit<REubyte>(u8PrevKeyBuffer[u8InsertionIndex / 8U], u8InsertionIndex % 8U, false);
+					u8NumberOfKeys++;
+					RE_NOTE(append_to_string("Remaining slots for more undetected physical keys: ", MAXIMUM_PHYSICAL_KEYS - u8NumberOfKeys));
+				}
+				if (pUpdateInputObject && bPressed) {
 					if (u32Scancode)
-						CATCH_SIGNAL(i32KeyIndex = get_index_for_scancode(u32Scancode));
-					if (i32KeyIndex < 0 && bFallbackToInput && eInput != RE_INPUT_UNKNOWN)
-						CATCH_SIGNAL(i32KeyIndex = get_index_for_input(eInput));
-					if (i32KeyIndex < 0) // Input entirely unknown
-						RE_NOTE(append_to_string("The scancode is missing in the scancode list: ", hexadecimal_to_string(u32Scancode, true), " (Assumed input: ", hexadecimal_to_string<REshort>(eInput, true), ")"));
+						pUpdateInputObject->change_scancode(u32Scancode);
 					else
-						CATCH_SIGNAL(set_bit<REubyte>(u8KeyBuffer[i32KeyIndex / 8], i32KeyIndex % 8, bPressed));
+						pUpdateInputObject->change_input(eInput);
+					pUpdateInputObject = nullptr;
 				}
 				break;
 		}
@@ -229,27 +292,27 @@ namespace RE {
 
 	Input InputMgr::map_scancode_to_input(REuint u32Scancode) {
 		if (u32Scancode) {
-			REint i32Index = get_index_for_scancode(u32Scancode);
-			if (i32Index >= 0 && i32Index < static_cast<REint>(u32NumberOfKeys))
-				return eInputs[i32Index];
+			REshort i16Index = get_index_for_scancode(u32Scancode);
+			if (i16Index >= 0 && i16Index < static_cast<REshort>(u8NumberOfKeys))
+				return eInputs[i16Index];
 		}
 		return RE_INPUT_UNKNOWN;
 	}
 
 	REuint InputMgr::map_input_to_scancode(Input eInput) {
-		if (eInput >= RE_INPUT_UNKNOWN && eInput < RE_INPUT_MAX_ENUM) {
-			REint i32Index = get_index_for_input(eInput);
-			if (i32Index >= 0 && i32Index < static_cast<REint>(u32NumberOfKeys))
-				return u32Scancodes[i32Index];
+		if (eInput >= RE_INPUT_KEY_SPACE && eInput < RE_INPUT_MAX_ENUM) {
+			REshort i16Index = get_index_for_input(eInput);
+			if (i16Index >= 0 && i16Index < static_cast<REshort>(u8NumberOfKeys))
+				return u32Scancodes[i16Index];
 		}
 		return 0U;
 	}
 
-	bool InputMgr::is_down(Input eInput, REuint u32Scancode) {
+	bool InputMgr::is_down(Input &eInput, REuint &u32Scancode) {
 		return process_request(eInput, u32Scancode, false);
 	}
 	
-	bool InputMgr::was_down(Input eInput, REuint u32Scancode) {
+	bool InputMgr::was_down(Input &eInput, REuint &u32Scancode) {
 		return process_request(eInput, u32Scancode, true);
 	}
 

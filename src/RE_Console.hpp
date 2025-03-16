@@ -5,10 +5,6 @@
 
 namespace RE {
 
-	extern bool bPrintColors;
-	extern bool bTreatWarningAsError;
-	extern bool bErrorAlwaysFatal;
-
 	void print_colored(const char* pcContent, TerminalColor eColor, bool bBackgroundColored, bool bBold);
 	void println_colored(const char* pcContent, TerminalColor eColor, bool bBackgroundColored, bool bBold);
 	
@@ -19,6 +15,11 @@ namespace RE {
 #define RE_ERROR(T) error(__FILE__, __func__, __LINE__, append_to_string("[R-Engine] ", STRIP_QUOTE_MACRO(T)).c_str(), false)
 #define RE_WARNING(T) warning(__FILE__, __func__, __LINE__, append_to_string("[R-Engine] ", STRIP_QUOTE_MACRO(T)).c_str())
 #define RE_NOTE(T) note(__FILE__, __func__, __LINE__, append_to_string("[R-Engine] ", STRIP_QUOTE_MACRO(T)).c_str())
+
+	void enable_colorful_printing(bool bEnable);
+	void treat_warnings_as_errors(bool bEnable);
+	void make_errors_always_fatal(bool bEnable);
+	void show_message_box_on_error(bool bEnable);
 
 }
 

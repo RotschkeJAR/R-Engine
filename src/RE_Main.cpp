@@ -10,7 +10,7 @@ namespace RE {
 
 	bool bErrorOccured = false;
 	bool bRunning = false;
-	float fDeltaseconds = 0.0f;
+	float fDeltaseconds = 0.0f, fMinDeltatime = -1.0f;
 	
 	void execute() {
 		DEFINE_SIGNAL_GUARD(sigGuardMainLoop);

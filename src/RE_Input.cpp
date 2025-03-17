@@ -91,16 +91,27 @@ namespace RE {
 		REint i32MinScancode = 0, i32MaxScancode = 0;
 		XDisplayKeycodes(x11_pDummyDisplay, &i32MinScancode, &i32MaxScancode);
 		REint i32KeysymsPerScancode = 0;
-		KeySym *const x11_pKeyMap = XGetKeyboardMapping(x11_pDummyDisplay, i32MinScancode, i32MaxScancode - i32MinScancode + 1, &i32KeysymsPerScancode);
+		XKeySym *const x11_pKeyMap = XGetKeyboardMapping(x11_pDummyDisplay, i32MinScancode, i32MaxScancode - i32MinScancode + 1, &i32KeysymsPerScancode);
 		if (x11_pKeyMap) {
-			for (REint i32ScancodeElement = i32MinScancode; i32ScancodeElement <= i32MaxScancode; i32ScancodeElement++)
+			for (REint i32ScancodeElement = i32MinScancode; i32ScancodeElement <= i32MaxScancode; i32ScancodeElement++) {
+				if (x11_pKeyMap[(i32ScancodeElement - i32MinScancode) * i32KeysymsPerScancode] == XNoSymbol)
+					continue;
+				PRINT(append_to_string("Scancode: ", hexadecimal_to_string(i32ScancodeElement, true)));
+				Input eInputAlias = RE_INPUT_UNKNOWN;
 				for (REint i32KeySymbol = 0; i32KeySymbol < i32KeysymsPerScancode; i32KeySymbol++) {
-					KeySym x11_keySymbol = x11_pKeyMap[(i32ScancodeElement - i32MinScancode) * i32KeysymsPerScancode + i32KeySymbol];
-					if (x11_keySymbol != XNoSymbol) {
-						existingKeys.push_back({static_cast<REuint>(i32ScancodeElement), x11_key_from_virtual_keycode(x11_keySymbol)});
+					eInputAlias = x11_key_from_virtual_keycode(x11_pKeyMap[(i32ScancodeElement - i32MinScancode) * i32KeysymsPerScancode + i32KeySymbol]);
+					if (eInputAlias != RE_INPUT_UNKNOWN)
 						break;
-					}
 				}
+				if (eInputAlias == RE_INPUT_UNKNOWN) {
+					for (REint i = 0; i < i32KeysymsPerScancode; i++)
+						print(append_to_string(", ", hexadecimal_to_string(x11_pKeyMap[(i32ScancodeElement - i32MinScancode) * i32KeysymsPerScancode + i])));
+					println();
+					continue;
+				}
+				existingKeys.push_back({static_cast<REuint>(i32ScancodeElement), eInputAlias});
+				println();
+			}
 			XFree(x11_pKeyMap);
 		} else {
 			RE_FATAL_ERROR("Failed getting key map from X11");
@@ -131,7 +142,8 @@ namespace RE {
 			else
 				usedInputs.push_back(info);
 		}
-		u8NumberOfKeys = std::clamp<REubyte>(existingKeys.size(), 0U, MAXIMUM_PHYSICAL_KEYS);
+		u8NumberOfKeys = static_cast<REubyte>(std::clamp<REuint>(existingKeys.size(), 0U, MAXIMUM_PHYSICAL_KEYS));
+		PRINT_LN(static_cast<REuint>(u8NumberOfKeys));
 		std::fill(std::begin(u8KeyBuffer), std::end(u8KeyBuffer), 0U);
 		std::fill(std::begin(u8PrevKeyBuffer), std::end(u8PrevKeyBuffer), 0U);
 	}
@@ -228,7 +240,7 @@ namespace RE {
 					CATCH_SIGNAL(set_bit<REubyte>(u8KeyBuffer[i16KeyIndex / 8], i16KeyIndex % 8, bPressed));
 				else { // Keyboard input unknown
 					RE_NOTE(append_to_string("The scancode is missing in the scancode list: ", hexadecimal_to_string(u32Scancode, true), " (Assumed input: ", hexadecimal_to_string<REshort>(eInput, true), ")"));
-					if (u8NumberOfKeys == MAXIMUM_PHYSICAL_KEYS || (eInput == RE_INPUT_UNKNOWN && !u32Scancode)) {
+					if (u8NumberOfKeys >= MAXIMUM_PHYSICAL_KEYS || (eInput == RE_INPUT_UNKNOWN && !u32Scancode)) {
 						RE_WARNING("New scancode mentioned before cannot be added, because the list is full");
 						break;
 					}
@@ -244,11 +256,17 @@ namespace RE {
 									REuint u32LowerScancode = u32Scancodes[u8CurrentIndex - 1U];
 									if (u32Scancode > u32LowerScancode)
 										break;
-									else
+									else {
+										if (u8MinIndex == u8MaxIndex)
+											return;
 										u8MaxIndex = std::clamp(u8CurrentIndex - 2U, 0U, MAXIMUM_PHYSICAL_KEYS - 1U);
+									}
 								}
-							} else
+							} else {
+								if (u8MinIndex == u8MaxIndex)
+									return;
 								u8MinIndex = u8CurrentIndex + 1U;
+							}
 							u8CurrentIndex = u8MinIndex + (u8MaxIndex - u8MinIndex) / 2U;
 						}
 						u8InsertionIndex = u8CurrentIndex;

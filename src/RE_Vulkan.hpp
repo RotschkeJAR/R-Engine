@@ -13,27 +13,19 @@
 #define VK_LAYER_KHR_VALIDATION_NAME "VK_LAYER_KHRONOS_validation"
 
 namespace RE {
-
-	struct VulkanQueueIndices {
-		uint32_t u32GraphicsFamily;
-		uint32_t u32PresentationFamily;
-	};
 	
 	class Vulkan {
 		private:
 			bool bValid;
 #ifdef RE_OS_WINDOWS
-			HMODULE win_hVulkan;
+			HMODULE hLibVulkan;
 #elif defined RE_OS_LINUX
-			void* linux_libVulkan;
+			void* hLibVulkan;
 #endif
-			uint32_t u32InternalSurfaceFormatsCount;
-			uint32_t u32InternalPresentModesCount;
+			VkInstance vk_hInstance;
 			VkDebugUtilsMessengerEXT vk_hDebugMessenger;
 
 			static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT vk_severityFlagBits, VkDebugUtilsMessageTypeFlagsEXT vk_MsgTypeBits, const VkDebugUtilsMessengerCallbackDataEXT* ck_CallbackData, void* vk_UserData);
-			static bool is_physical_device_suitable(VkPhysicalDevice vk_hPhysicalDevice);
-			bool setup_validation_layers();
 			void* load_func_with_instance(VkInstance vk_hInstance, const char* pFuncName);
 			void* load_func(const char* pFuncName);
 			bool create_instance();
@@ -43,9 +35,7 @@ namespace RE {
 			bool load_vulkan_1_3();
 			// bool load_vulkan_1_4();
 			bool load_extension_funcs();
-			bool pick_physical_device();
-			bool create_logical_device();
-			bool create_window_surface();
+			bool setup_validation_layers();
 
 		public:
 			// Vulkan 1.0
@@ -292,6 +282,19 @@ namespace RE {
 			PFN_vkCopyImageToImage pfn_vkCopyImageToImage;
 			PFN_vkTransitionImageLayout pfn_vkTransitionImageLayout; */
 
+			// Debug Messages
+			PFN_vkSetDebugUtilsObjectNameEXT pfn_vkSetDebugUtilsObjectNameEXT;
+			PFN_vkSetDebugUtilsObjectTagEXT pfn_vkSetDebugUtilsObjectTagEXT;
+			PFN_vkQueueBeginDebugUtilsLabelEXT pfn_vkQueueBeginDebugUtilsLabelEXT;
+			PFN_vkQueueEndDebugUtilsLabelEXT pfn_vkQueueEndDebugUtilsLabelEXT;
+			PFN_vkQueueInsertDebugUtilsLabelEXT pfn_vkQueueInsertDebugUtilsLabelEXT;
+			PFN_vkCmdBeginDebugUtilsLabelEXT pfn_vkCmdBeginDebugUtilsLabelEXT;
+			PFN_vkCmdEndDebugUtilsLabelEXT pfn_vkCmdEndDebugUtilsLabelEXT;
+			PFN_vkCmdInsertDebugUtilsLabelEXT pfn_vkCmdInsertDebugUtilsLabelEXT;
+			PFN_vkCreateDebugUtilsMessengerEXT pfn_vkCreateDebugUtilsMessengerEXT;
+			PFN_vkDestroyDebugUtilsMessengerEXT pfn_vkDestroyDebugUtilsMessengerEXT;
+			PFN_vkSubmitDebugUtilsMessageEXT pfn_vkSubmitDebugUtilsMessageEXT;
+
 			// Surface
 			PFN_vkDestroySurfaceKHR pfn_vkDestroySurfaceKHR;
 			PFN_vkGetPhysicalDeviceSurfaceSupportKHR pfn_vkGetPhysicalDeviceSurfaceSupportKHR;
@@ -311,36 +314,30 @@ namespace RE {
 			PFN_vkAcquireNextImage2KHR pfn_vkAcquireNextImage2KHR;
 
 #ifdef RE_OS_WINDOWS
-			// Windows-specific
+			// Win32-Surface
 			PFN_vkCreateWin32SurfaceKHR pfn_vkCreateWin32SurfaceKHR;
 			PFN_vkGetPhysicalDeviceWin32PresentationSupportKHR pfn_vkGetPhysicalDeviceWin32PresentationSupportKHR;
 #elif defined RE_OS_LINUX
-			// X11-specific
+			// X11-Surface
 			PFN_vkCreateXlibSurfaceKHR pfn_vkCreateXlibSurfaceKHR;
 			PFN_vkGetPhysicalDeviceXlibPresentationSupportKHR pfn_vkGetPhysicalDeviceXlibPresentationSupportKHR;
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 
 			static Vulkan* pInstance;
-			VkInstance vk_hInternalInstance;
-			VkPhysicalDevice vk_hInternalPhysicalDevice;
-			VkPhysicalDeviceProperties vk_internalPhysicalDeviceProperties;
-			VkPhysicalDeviceFeatures vk_internalPhysicalDeviceFeatures;
-			VulkanQueueIndices internalQueueIndices;
-			VkDevice vk_hInternalDevice;
-			VkQueue vk_hInternalGraphicsQueue;
-			VkQueue vk_hInternalPresentationQueue;
-			VkSurfaceKHR vk_hInternalSurface;
-			VkSurfaceCapabilitiesKHR vk_internalSurfaceCapabilities;
-			VkSurfaceFormatKHR* vk_pInternalSurfaceFormats;
-			VkPresentModeKHR* vk_pInternalPresentModes;
 
 			Vulkan();
 			~Vulkan();
+			VkInstance get_instance();
 			bool is_valid();
-			uint32_t get_surface_formats_count();
-			uint32_t get_present_modes_count();
-			bool check_vulkan_result(VkResult vk_eResult);
 	};
+
+	bool check_vulkan_result(VkResult vk_eResult, const char* pcFile, const char* pcFunc, REuint u32Line);
+#define CHECK_VK_RESULT(T) ([&](const char *const pcActualFunc) -> bool { \
+		add_to_stack_trace(__FILE__, pcActualFunc, __LINE__, "\0"); \
+		const bool bResult = check_vulkan_result(T, __FILE__, pcActualFunc, __LINE__); \
+		remove_from_stack_trace(); \
+		return bResult; \
+		})(__func__)
 
 // Vulkan 1.0
 #define vkCreateInstance Vulkan::pInstance->pfn_vkCreateInstance
@@ -586,6 +583,19 @@ namespace RE {
 #define vkCopyImageToImage Vulkan::pInstance->pfn_vkCopyImageToImage
 #define vkTransitionImageLayout Vulkan::pInstance->pfn_vkTransitionImageLayout */
 
+// Debug Messages
+#define vkSetDebugUtilsObjectNameEXT Vulkan::pInstance->pfn_vkSetDebugUtilsObjectNameEXT;
+#define vkSetDebugUtilsObjectTagEXT Vulkan::pInstance->pfn_vkSetDebugUtilsObjectTagEXT;
+#define vkQueueBeginDebugUtilsLabelEXT Vulkan::pInstance->pfn_vkQueueBeginDebugUtilsLabelEXT;
+#define vkQueueEndDebugUtilsLabelEXT Vulkan::pInstance->pfn_vkQueueEndDebugUtilsLabelEXT;
+#define vkQueueInsertDebugUtilsLabelEXT Vulkan::pInstance->pfn_vkQueueInsertDebugUtilsLabelEXT;
+#define vkCmdBeginDebugUtilsLabelEXT Vulkan::pInstance->pfn_vkCmdBeginDebugUtilsLabelEXT;
+#define vkCmdEndDebugUtilsLabelEXT Vulkan::pInstance->pfn_vkCmdEndDebugUtilsLabelEXT;
+#define vkCmdInsertDebugUtilsLabelEXT Vulkan::pInstance->pfn_vkCmdInsertDebugUtilsLabelEXT;
+#define vkCreateDebugUtilsMessengerEXT Vulkan::pInstance->pfn_vkCreateDebugUtilsMessengerEXT;
+#define vkDestroyDebugUtilsMessengerEXT Vulkan::pInstance->pfn_vkDestroyDebugUtilsMessengerEXT;
+#define vkSubmitDebugUtilsMessageEXT Vulkan::pInstance->pfn_vkSubmitDebugUtilsMessageEXT;
+
 // Surface
 #define vkDestroySurfaceKHR Vulkan::pInstance->pfn_vkDestroySurfaceKHR
 #define vkGetPhysicalDeviceSurfaceSupportKHR Vulkan::pInstance->pfn_vkGetPhysicalDeviceSurfaceSupportKHR
@@ -612,22 +622,7 @@ namespace RE {
 # define vkGetPhysicalDeviceXlibPresentationSupportKHR Vulkan::pInstance->pfn_vkGetPhysicalDeviceXlibPresentationSupportKHR
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 
-#define RE_VK_HANDLE_INSTANCE Vulkan::pInstance->vk_hInternalInstance
-#define RE_VK_HANDLE_PHYSICAL_DEVICE Vulkan::pInstance->vk_hInternalPhysicalDevice
-#define RE_VK_PHYSICAL_DEVICE_PROPERTIES Vulkan::pInstance->vk_hInternalPhysicalDeviceProperties
-#define RE_VK_PHYSICAL_DEVICE_FEATURES Vulkan::pInstance->vk_hInternalPhysicalDeviceFeatures
-#define RE_VK_QUEUE_INDICES Vulkan::pInstance->internalQueueIndices
-#define RE_VK_HANDLE_DEVICE Vulkan::pInstance->vk_hInternalDevice
-#define RE_VK_HANDLE_GRAPHICS_QUEUE Vulkan::pInstance->vk_hInternalGraphicsQueue
-#define RE_VK_HANDLE_PRESENT_QUEUE Vulkan::pInstance->vk_hInternalPresentationQueue
-#define RE_VK_HANDLE_SURFACE Vulkan::pInstance->vk_hInternalSurface
-#define RE_VK_SURFACE_CAPABILITIES Vulkan::pInstance->vk_internalSurfaceCapabilities
-#define RE_VK_PTR_SURFACE_FORMATS Vulkan::pInstance->vk_pInternalSurfaceFormats
-#define RE_VK_UINT_SURFACE_FORMATS_COUNT Vulkan::pInstance->get_surface_formats_count()
-#define RE_VK_PTR_PRESENT_MODES Vulkan::pInstance->vk_pInternalPresentModes
-#define RE_VK_UINT_PRESENT_MODES_COUNT Vulkan::pInstance->get_present_modes_count()
-
-#define CHECK_VK_RESULT(T) Vulkan::pInstance->check_vulkan_result(T)
+#define RE_VK_INSTANCE Vulkan::pInstance->get_instance()
 
 #define VK_KHR_VALIDATION_LAYER_NAME "VK_LAYER_KHRONOS_validation"
 

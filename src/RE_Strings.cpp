@@ -1,6 +1,58 @@
 #include "RE_Internal Header.hpp"
 
 namespace RE {
+
+	bool is_string_empty(const char* pcString) {
+		return std::strlen(pcString) == 0;
+	}
+
+	REuint get_line_count(const char* pcString) {
+		if (is_string_empty(pcString))
+			return 0;
+		REuint u32CurrentLine = 1, u32CurrentCharacter = 0;
+		while (true) {
+			switch (pcString[u32CurrentCharacter]) {
+				case '\0':
+					return u32CurrentLine;
+				case '\n':
+					u32CurrentLine++;
+				default:
+					break;
+			}
+			u32CurrentCharacter++;
+		}
+	}
+
+	std::string get_line(const char* pcString, REuint u32Line) {
+		REuint u32CurrentLine = 0U, u32CurrentCharacter = 0U;
+		std::stringstream resultStream("");
+		bool bReachedEndOfString = false;
+		while (true) {
+			const bool bLineFound = u32CurrentLine == u32Line;
+			while (true) {
+				bool bBreakout = false;
+				switch (pcString[u32CurrentCharacter]) {
+					case '\0':
+						bReachedEndOfString = true;
+						// Don't break here!
+					case '\n':
+						bBreakout = true;
+						break;
+					default:
+						if (bLineFound)
+							resultStream << pcString[u32CurrentCharacter];
+						break;
+				}
+				u32CurrentCharacter++;
+				if (bBreakout)
+					break;
+			}
+			if (bLineFound || bReachedEndOfString)
+				break;
+			u32CurrentLine++;
+		}
+		return std::string(resultStream.str());
+	}
 	
 	std::string convert_wide_chars_to_utf8(const wchar_t* pwcString) {
 		const REuint u32StringSize = std::wcslen(pwcString) + 1U;

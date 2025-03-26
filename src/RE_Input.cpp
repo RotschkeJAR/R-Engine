@@ -1,5 +1,4 @@
 #include "RE_Input.hpp"
-#include "RE_Internal Header.hpp"
 
 namespace RE {
 
@@ -70,7 +69,7 @@ namespace RE {
 				RElong i64ModifiedScancode = static_cast<RElong>((win_scancode & 0xFFU) << 16U) | (static_cast<RElong>(bExtendedScancode) << 24L);
 				wchar_t wcKeyNameDummy[2];
 				if (GetKeyState(u32VirtualKeycodeDummy) != 0 || GetKeyNameTextW(i64ModifiedScancode, wcKeyNameDummy, 2) > 0) {
-					KeyInfo newInfo = {win_scancode, windows_key_from_virtual_keycode(u32VirtualKeycodeDummy)};
+					KeyInfo newInfo = {win_scancode, key_from_virtual_keycode(u32VirtualKeycodeDummy)};
 					switch (u32VirtualKeycodeDummy) {
 						case VK_RETURN: // Prevents algorithm from not detecting the numpad's enter-key
 							if (bRetry)
@@ -99,7 +98,7 @@ namespace RE {
 				PRINT(append_to_string("Scancode: ", hexadecimal_to_string(i32ScancodeElement, true)));
 				Input eInputAlias = RE_INPUT_UNKNOWN;
 				for (REint i32KeySymbol = 0; i32KeySymbol < i32KeysymsPerScancode; i32KeySymbol++) {
-					eInputAlias = x11_key_from_virtual_keycode(x11_pKeyMap[(i32ScancodeElement - i32MinScancode) * i32KeysymsPerScancode + i32KeySymbol]);
+					eInputAlias = key_from_virtual_keycode(x11_pKeyMap[(i32ScancodeElement - i32MinScancode) * i32KeysymsPerScancode + i32KeySymbol]);
 					if (eInputAlias != RE_INPUT_UNKNOWN)
 						break;
 				}

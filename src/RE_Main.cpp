@@ -54,7 +54,7 @@ namespace RE {
 			}
 			pWindow->show_window(false);
 			CATCH_SIGNAL(gameMgr.last_game_logic_update());
-			CATCH_SIGNAL(vkDeviceWaitIdle(RE_VK_HANDLE_DEVICE));
+			CATCH_SIGNAL(renderSystem.wait_for_idle_device());
 			fDeltaseconds = 0.0f;
 		}
 		CATCH_SIGNAL(delete pWindow);

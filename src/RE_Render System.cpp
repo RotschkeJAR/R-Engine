@@ -1,68 +1,53 @@
 #include "RE_Render System.hpp"
-#include "RE_Window.hpp"
-
-#include "RE_Main.hpp"
+#include "RE_Window_Win64.hpp"
+#include "RE_Window_X11.hpp"
 
 namespace RE {
+
+#define RE_VK_QUEUE_GRAPHICS_INDEX 0U
+#define RE_VK_QUEUE_PRESENT_INDEX 0U
+
+#define RE_VK_SEMAPHORE_IMAGE_AVAILABLE_INDEX 0U
+#define RE_VK_SEMAPHORE_RENDERING_FINISHED_INDEX 1U
 	
 	RenderSystem* RenderSystem::pInstance = nullptr;
 
-	RenderSystem::RenderSystem() {
+	RenderSystem::RenderSystem() : bValid(false) {
 		if (RenderSystem::pInstance) {
 			RE_ERROR("An instance of the render system has already been created. The new one won't be initialized and remains invalid");
 			return;
 		}
 		RenderSystem::pInstance = this;
-
-		bValid = false;
-		bVsyncActive = false;
-		vk_eVsyncMode = VK_PRESENT_MODE_FIFO_KHR;
-		vk_eNoVsync = VK_PRESENT_MODE_FIFO_KHR;
-		vk_internalSurfaceFormat = {};
-		vk_internalSwapchainImageSize = {};
-		vk_hInternalSwapchain = VK_NULL_HANDLE;
-		u32InternalSwapchainImageCount = 0;
-		vk_pInternalSwapchainImages = nullptr;
-		vk_pInternalSwapchainImageViews = nullptr;
-		vk_hInternalVertexShader = VK_NULL_HANDLE;
-		vk_hInternalFragmentShader = VK_NULL_HANDLE;
-		vk_hInternalRenderPass = VK_NULL_HANDLE;
-		vk_hInternalPipelineLayout = VK_NULL_HANDLE;
-		vk_hInternalPipeline = VK_NULL_HANDLE;
-		vk_pInternalFramebuffers = nullptr;
-		vk_hInternalCmdPool = VK_NULL_HANDLE;
-		vk_hInternalCmdBuffer = VK_NULL_HANDLE;
-		vk_hInternalImgAvailableSemaphore = VK_NULL_HANDLE;
-		vk_hInternalRenderFinishedSemaphore = VK_NULL_HANDLE;
-		vk_hInternalFence = VK_NULL_HANDLE;
-
-		for (uint32_t i = 0U; i < RE_VK_UINT_PRESENT_MODES_COUNT; i++) {
-			if (RE_VK_PTR_PRESENT_MODES[i] == VK_PRESENT_MODE_IMMEDIATE_KHR)
-				vk_eVsyncMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
-			else if (RE_VK_PTR_PRESENT_MODES[i] == VK_PRESENT_MODE_MAILBOX_KHR)
-				vk_eNoVsync = VK_PRESENT_MODE_MAILBOX_KHR;
+		DEFINE_SIGNAL_GUARD(sigGuardConstructorRenderSystem);
+		vk_hSwapchain = VK_NULL_HANDLE;
+		if (!create_surface() || !alloc_physical_device_list())
+			return;
+		REint i32DeviceScoreBest = std::numeric_limits<REint>::min();
+		for (uint32_t i = 0U; i < u32PhysicalDevicesAvailableCount; i++) {
+			VkPhysicalDeviceProperties vk_physicalDeviceProperties;
+			CATCH_SIGNAL(vkGetPhysicalDeviceProperties(vk_phPhysicalDevicesAvailable[i], &vk_physicalDeviceProperties));
+			REint i32CurrentDeviceScore = 0;
+			switch (vk_physicalDeviceProperties.deviceType) {
+				case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
+					i32DeviceScoreBest += 1000;
+					break;
+				case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
+					i32DeviceScoreBest += 500;
+					break;
+				default:
+					i32DeviceScoreBest -= 1000;
+					break;
+			}
+			i32DeviceScoreBest += vk_physicalDeviceProperties.limits.maxImageDimension2D;
+			if (i32DeviceScoreBest < i32CurrentDeviceScore) {
+				i32DeviceScoreBest = i32CurrentDeviceScore;
+				vk_hPhysicalDeviceSelected = vk_phPhysicalDevicesAvailable[i];
+			}
 		}
-		bool bRecentSuccess;
-		CATCH_SIGNAL(bRecentSuccess = create_swapchain());
-		if (!bRecentSuccess)
-			return;
-		CATCH_SIGNAL(bRecentSuccess = create_shaders());
-		if (!bRecentSuccess)
-			return;
-		CATCH_SIGNAL(bRecentSuccess = create_renderpass());
-		if (!bRecentSuccess)
-			return;
-		CATCH_SIGNAL(bRecentSuccess = create_pipeline());
-		if (!bRecentSuccess)
-			return;
-		CATCH_SIGNAL(bRecentSuccess = create_framebuffers());
-		if (!bRecentSuccess)
-			return;
-		CATCH_SIGNAL(bRecentSuccess = create_command_buffers());
-		if (!bRecentSuccess)
-			return;
-		CATCH_SIGNAL(bRecentSuccess = create_sync_objects());
-		if (!bRecentSuccess)
+		CATCH_SIGNAL(fetch_surface_infos());
+		vk_surfaceFormatSelected = vk_peSurfaceFormatsAvailable[0];
+		bVsyncEnabled = true;
+		if (!create_device() || !create_swapchain() || !create_shaders() || !create_pipeline_layout() || !create_renderpass() || !create_graphics_pipeline() || !create_framebuffers() || !alloc_command_buffers() || !record_command_buffers() || !create_sync_objects())
 			return;
 		bValid = true;
 	}
@@ -71,499 +56,705 @@ namespace RE {
 		if (RenderSystem::pInstance != this)
 			return;
 		RenderSystem::pInstance = nullptr;
+		CATCH_SIGNAL(destroy_sync_objects());
+		CATCH_SIGNAL(free_command_buffers());
+		CATCH_SIGNAL(destroy_framebuffers());
+		CATCH_SIGNAL(destroy_graphics_pipeline());
+		CATCH_SIGNAL(destroy_renderpass());
+		CATCH_SIGNAL(destroy_pipeline_layout());
+		CATCH_SIGNAL(destroy_shaders());
+		CATCH_SIGNAL(destroy_swapchain());
+		CATCH_SIGNAL(destroy_surface());
+		CATCH_SIGNAL(destroy_device());
+		CATCH_SIGNAL(free_physical_device_list());
+	}
 
-		clear_swapchain();
-		if (vk_hInternalImgAvailableSemaphore != VK_NULL_HANDLE)
-			CATCH_SIGNAL(vkDestroySemaphore(RE_VK_HANDLE_DEVICE, vk_hInternalImgAvailableSemaphore, nullptr));
-		if (vk_hInternalRenderFinishedSemaphore != VK_NULL_HANDLE)
-			CATCH_SIGNAL(vkDestroySemaphore(RE_VK_HANDLE_DEVICE, vk_hInternalRenderFinishedSemaphore, nullptr));
-		if (vk_hInternalFence != VK_NULL_HANDLE)
-			CATCH_SIGNAL(vkDestroyFence(RE_VK_HANDLE_DEVICE, vk_hInternalFence, nullptr));
-		if (vk_hInternalCmdPool != VK_NULL_HANDLE)
-			CATCH_SIGNAL(vkDestroyCommandPool(RE_VK_HANDLE_DEVICE, vk_hInternalCmdPool, nullptr));
-		if (vk_hInternalPipeline != VK_NULL_HANDLE)
-			CATCH_SIGNAL(vkDestroyPipeline(RE_VK_HANDLE_DEVICE, vk_hInternalPipeline, nullptr));
-		if (vk_hInternalPipelineLayout != VK_NULL_HANDLE)
-			CATCH_SIGNAL(vkDestroyPipelineLayout(RE_VK_HANDLE_DEVICE, vk_hInternalPipelineLayout, nullptr));
-		if (vk_hInternalRenderPass != VK_NULL_HANDLE)
-			CATCH_SIGNAL(vkDestroyRenderPass(RE_VK_HANDLE_DEVICE, vk_hInternalRenderPass, nullptr));
-		if (vk_hInternalVertexShader != VK_NULL_HANDLE)
-			CATCH_SIGNAL(vkDestroyShaderModule(RE_VK_HANDLE_DEVICE, vk_hInternalVertexShader, nullptr));
-		if (vk_hInternalFragmentShader != VK_NULL_HANDLE)
-			CATCH_SIGNAL(vkDestroyShaderModule(RE_VK_HANDLE_DEVICE, vk_hInternalFragmentShader, nullptr));
+	bool RenderSystem::create_surface() {
+		DEFINE_SIGNAL_GUARD(sigGuardCreateSurface);
+#ifdef RE_OS_WINDOWS
+		VkWin32SurfaceCreateInfoKHR vk_win32SurfaceCreateInfo = {};
+		vk_win32SurfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+		vk_win32SurfaceCreateInfo.hwnd = static_cast<Window_Win64*>(Window::pInstance)->get_hwindow();
+		vk_win32SurfaceCreateInfo.hinstance = Window_Win64::win_hInstance;
+		return CHECK_VK_RESULT(vkCreateWin32SurfaceKHR(RE_VK_INSTANCE, &vk_win32SurfaceCreateInfo, nullptr, &vk_hSurface));
+#elif defined RE_OS_LINUX
+		VkXlibSurfaceCreateInfoKHR vk_x11SurfaceCreateInfo = {};
+		vk_x11SurfaceCreateInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
+		vk_x11SurfaceCreateInfo.dpy = Window_X11::x11_pDisplay;
+		vk_x11SurfaceCreateInfo.window = static_cast<Window_X11*>(Window::pInstance)->get_xwindow();
+		return CHECK_VK_RESULT(PFN_vkCreateXlibSurfaceKHR(RE_VK_INSTANCE, &vk_x11SurfaceCreateInfo, nullptr, &vk_hSurface));
+#else
+		return false;
+#endif
+	}
+	
+	void RenderSystem::destroy_surface() {
+		CATCH_SIGNAL(vkDestroySurfaceKHR(RE_VK_INSTANCE, vk_hSurface, nullptr));
+		DELETE_ARRAY_SAFELY(vk_peSurfaceFormatsAvailable);
+	}
+
+	void RenderSystem::fetch_surface_infos() {
+		CATCH_SIGNAL(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &vk_surfaceCapabilities));
+		CATCH_SIGNAL(vkGetPhysicalDeviceSurfaceFormatsKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &u32SurfaceFormatsAvailableCount, nullptr));
+		vk_peSurfaceFormatsAvailable = new VkSurfaceFormatKHR[u32SurfaceFormatsAvailableCount];
+		CATCH_SIGNAL(vkGetPhysicalDeviceSurfaceFormatsKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &u32SurfaceFormatsAvailableCount, vk_peSurfaceFormatsAvailable));
+		uint32_t u32PresentModesCount;
+		CATCH_SIGNAL(vkGetPhysicalDeviceSurfacePresentModesKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &u32PresentModesCount, nullptr));
+		VkPresentModeKHR *const vk_peAllPresentModes = new VkPresentModeKHR[u32PresentModesCount];
+		CATCH_SIGNAL(vkGetPhysicalDeviceSurfacePresentModesKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &u32PresentModesCount, vk_peAllPresentModes));
+		vk_ePresentModeVsync = VK_PRESENT_MODE_FIFO_KHR;
+		vk_ePresentModeNoVsync = VK_PRESENT_MODE_FIFO_KHR;
+		for (uint32_t u32PresentModeIndex = 0U; u32PresentModeIndex < u32PresentModesCount; u32PresentModeIndex++) {
+			switch (vk_peAllPresentModes[u32PresentModeIndex]) {
+				case VK_PRESENT_MODE_IMMEDIATE_KHR:
+					vk_ePresentModeNoVsync = VK_PRESENT_MODE_IMMEDIATE_KHR;
+					break;
+				case VK_PRESENT_MODE_MAILBOX_KHR:
+					vk_ePresentModeVsync = VK_PRESENT_MODE_MAILBOX_KHR;
+					break;
+				default:
+					break;
+			}
+		}
+		delete[] vk_peAllPresentModes;
+	}
+
+	bool RenderSystem::alloc_physical_device_list() {
+		DEFINE_SIGNAL_GUARD(sigGuardAllocPhysicalDeviceList);
+		uint32_t u32TotalPhysicalDeviceCount;
+		CATCH_SIGNAL(vkEnumeratePhysicalDevices(RE_VK_INSTANCE, &u32TotalPhysicalDeviceCount, nullptr));
+		if (!u32TotalPhysicalDeviceCount) {
+			RE_FATAL_ERROR("There aren't any devices supporting Vulkan");
+			return false;
+		}
+		VkPhysicalDevice *const vk_phTotalPhysicalDevice = new VkPhysicalDevice[u32TotalPhysicalDeviceCount];
+		CATCH_SIGNAL(vkEnumeratePhysicalDevices(RE_VK_INSTANCE, &u32TotalPhysicalDeviceCount, vk_phTotalPhysicalDevice));
+		std::vector<VkPhysicalDevice> suitablePhysicalDevices;
+		for (uint32_t u32PhysicalDeviceIndex = 0U; u32PhysicalDeviceIndex < u32TotalPhysicalDeviceCount; u32PhysicalDeviceIndex++) {
+			const VkPhysicalDevice vk_hPhysicalDevice = vk_phTotalPhysicalDevice[u32PhysicalDeviceIndex];
+
+			// Check if there are surface formats defined
+			uint32_t u32PhysicalDeviceSurfaceFormatCount;
+			CATCH_SIGNAL(vkGetPhysicalDeviceSurfaceFormatsKHR(vk_hPhysicalDevice, vk_hSurface, &u32PhysicalDeviceSurfaceFormatCount, nullptr));
+			if (!u32PhysicalDeviceSurfaceFormatCount)
+				continue;
+
+			// Check if there are present modes defined
+			uint32_t u32PhysicalDevicePresentModeCount;
+			CATCH_SIGNAL(vkGetPhysicalDeviceSurfacePresentModesKHR(vk_hPhysicalDevice, vk_hSurface, &u32PhysicalDevicePresentModeCount, nullptr));
+			if (!u32PhysicalDevicePresentModeCount)
+				continue;
+
+			// Check if the required extensions exist
+			uint32_t u32PhysicalDeviceExtensionCount;
+			CATCH_SIGNAL(vkEnumerateDeviceExtensionProperties(vk_hPhysicalDevice, nullptr, &u32PhysicalDeviceExtensionCount, nullptr));
+			if (!u32PhysicalDeviceExtensionCount)
+				continue;
+			VkExtensionProperties *const vk_pPhysicalDeviceExtensionProperties = new VkExtensionProperties[u32PhysicalDeviceExtensionCount];
+			CATCH_SIGNAL(vkEnumerateDeviceExtensionProperties(vk_hPhysicalDevice, nullptr, &u32PhysicalDeviceExtensionCount, vk_pPhysicalDeviceExtensionProperties));
+			bool bSwapchainExtists = false;
+			for (uint32_t u32PhysicalDeviceExtensionIndex = 0U; u32PhysicalDeviceExtensionIndex < u32PhysicalDeviceExtensionCount; u32PhysicalDeviceExtensionIndex++) {
+				if (!bSwapchainExtists && std::strcmp(vk_pPhysicalDeviceExtensionProperties[u32PhysicalDeviceExtensionIndex].extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME) == 0)
+					bSwapchainExtists = true;
+				if (bSwapchainExtists)
+					break;
+			}
+			if (!bSwapchainExtists) {
+				delete[] vk_pPhysicalDeviceExtensionProperties;
+				continue;
+			}
+
+			// Check if required queues exist
+			uint32_t u32PhysicalDeviceQueueFamilyCount;
+			CATCH_SIGNAL(vkGetPhysicalDeviceQueueFamilyProperties(vk_hPhysicalDevice, &u32PhysicalDeviceQueueFamilyCount, nullptr));
+			VkQueueFamilyProperties *const vk_pPhysicalDeviceQueueFamilyProperties = new VkQueueFamilyProperties[u32PhysicalDeviceQueueFamilyCount];
+			CATCH_SIGNAL(vkGetPhysicalDeviceQueueFamilyProperties(vk_hPhysicalDevice, &u32PhysicalDeviceQueueFamilyCount, vk_pPhysicalDeviceQueueFamilyProperties));
+			bool bGraphicsQueueExists = false, bPresentQueueExists = false;
+			for (uint32_t u32PhysicalDeviceQueueFamilyIndex = 0U; u32PhysicalDeviceQueueFamilyIndex < u32PhysicalDeviceQueueFamilyCount; u32PhysicalDeviceQueueFamilyIndex++) {
+				if (!bPresentQueueExists) {
+					VkBool32 surfaceSupportExists;
+					CATCH_SIGNAL(vkGetPhysicalDeviceSurfaceSupportKHR(vk_hPhysicalDevice, u32PhysicalDeviceQueueFamilyIndex, vk_hSurface, &surfaceSupportExists));
+					if (surfaceSupportExists)
+						bPresentQueueExists = true;
+				}
+				if (!bGraphicsQueueExists && (vk_pPhysicalDeviceQueueFamilyProperties[u32PhysicalDeviceQueueFamilyIndex].queueFlags & VK_QUEUE_GRAPHICS_BIT))
+					bGraphicsQueueExists = true;
+				if (bGraphicsQueueExists && bPresentQueueExists)
+					break;
+			}
+			if (bGraphicsQueueExists && bPresentQueueExists)
+				suitablePhysicalDevices.push_back(vk_hPhysicalDevice);
+
+			delete[] vk_pPhysicalDeviceExtensionProperties;
+			delete[] vk_pPhysicalDeviceQueueFamilyProperties;
+		}
+		delete[] vk_phTotalPhysicalDevice;
+		u32PhysicalDevicesAvailableCount = suitablePhysicalDevices.size();
+		if (!u32PhysicalDevicesAvailableCount) {
+			RE_FATAL_ERROR("There aren't any physical devices supporting the necessary features in Vulkan");
+			return false;
+		}
+		vk_phPhysicalDevicesAvailable = new VkPhysicalDevice[u32PhysicalDevicesAvailableCount];
+		REuint u32CurrentIndex = 0U;
+		for (VkPhysicalDevice vk_hPhysicalDevice : suitablePhysicalDevices) {
+			vk_phPhysicalDevicesAvailable[u32CurrentIndex] = vk_hPhysicalDevice;
+			u32CurrentIndex++;
+		}
+		return true;
+	}
+
+	void RenderSystem::free_physical_device_list() {
+		DELETE_ARRAY_SAFELY(vk_phPhysicalDevicesAvailable);
+	}
+
+	bool RenderSystem::create_device() {
+		DEFINE_SIGNAL_GUARD(sigGuardCreateDevice);
+		constexpr uint32_t u32PhysicalDeviceExtensionCount = 1U;
+		const char *const pcPhysicalDeviceExtensions[u32PhysicalDeviceExtensionCount] = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+		uint32_t u32PhysicalDeviceQueueFamilyCount;
+		CATCH_SIGNAL(vkGetPhysicalDeviceQueueFamilyProperties(vk_hPhysicalDeviceSelected, &u32PhysicalDeviceQueueFamilyCount, nullptr));
+		VkQueueFamilyProperties *vk_pPhysicalDeviceQueueFamilyProperties = new VkQueueFamilyProperties[u32PhysicalDeviceQueueFamilyCount];
+		CATCH_SIGNAL(vkGetPhysicalDeviceQueueFamilyProperties(vk_hPhysicalDeviceSelected, &u32PhysicalDeviceQueueFamilyCount, vk_pPhysicalDeviceQueueFamilyProperties));
+		std::optional<uint32_t> graphicsQueueIndex, presentQueueIndex;
+		std::vector<uint32_t> uniqueQueueIndices;
+		for (uint32_t u32PhysicalDeviceQueueFamilyIndex = 0U; u32PhysicalDeviceQueueFamilyIndex < u32PhysicalDeviceQueueFamilyCount; u32PhysicalDeviceQueueFamilyIndex++) {
+			if (!presentQueueIndex.has_value()) {
+				VkBool32 surfaceSupportExists;
+				CATCH_SIGNAL(vkGetPhysicalDeviceSurfaceSupportKHR(vk_hPhysicalDeviceSelected, u32PhysicalDeviceQueueFamilyIndex, vk_hSurface, &surfaceSupportExists));
+				if (surfaceSupportExists) {
+					presentQueueIndex = u32PhysicalDeviceQueueFamilyIndex;
+					if (std::find(uniqueQueueIndices.begin(), uniqueQueueIndices.end(), u32PhysicalDeviceQueueFamilyIndex) == uniqueQueueIndices.end())
+						uniqueQueueIndices.push_back(u32PhysicalDeviceQueueFamilyIndex);
+				}
+			}
+			if (!graphicsQueueIndex.has_value() && (vk_pPhysicalDeviceQueueFamilyProperties[u32PhysicalDeviceQueueFamilyIndex].queueFlags & VK_QUEUE_GRAPHICS_BIT)) {
+				graphicsQueueIndex = u32PhysicalDeviceQueueFamilyIndex;
+				if (std::find(uniqueQueueIndices.begin(), uniqueQueueIndices.end(), u32PhysicalDeviceQueueFamilyIndex) == uniqueQueueIndices.end())
+					uniqueQueueIndices.push_back(u32PhysicalDeviceQueueFamilyIndex);
+			}
+			if (graphicsQueueIndex.has_value() && presentQueueIndex.has_value())
+				break;
+		}
+		const float fQueuePriority = 1.0f;
+		const size_t uniqueQueueIndexCount = uniqueQueueIndices.size();
+		VkDeviceQueueCreateInfo *vk_pDeviceQueueCreateInfos = new VkDeviceQueueCreateInfo[uniqueQueueIndexCount];
+		REuint u32UniqueQueueIndexIndex = 0U;
+		for (uint32_t u32UniqueQueueIndex : uniqueQueueIndices) {
+			vk_pDeviceQueueCreateInfos[u32UniqueQueueIndexIndex] = {};
+			vk_pDeviceQueueCreateInfos[u32UniqueQueueIndexIndex].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+			vk_pDeviceQueueCreateInfos[u32UniqueQueueIndexIndex].queueFamilyIndex = u32UniqueQueueIndex;
+			vk_pDeviceQueueCreateInfos[u32UniqueQueueIndexIndex].queueCount = 1U;
+			vk_pDeviceQueueCreateInfos[u32UniqueQueueIndexIndex].pQueuePriorities = &fQueuePriority;
+			u32UniqueQueueIndexIndex++;
+		}
+
+		VkPhysicalDeviceFeatures vk_physicalDeviceFeaturesEnabled = {};
+
+		VkDeviceCreateInfo vk_deviceCreateInfo = {};
+		vk_deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+		vk_deviceCreateInfo.pQueueCreateInfos = vk_pDeviceQueueCreateInfos;
+		vk_deviceCreateInfo.queueCreateInfoCount = static_cast<uint32_t>(uniqueQueueIndexCount);
+		vk_deviceCreateInfo.enabledExtensionCount = u32PhysicalDeviceExtensionCount;
+		vk_deviceCreateInfo.ppEnabledExtensionNames = static_cast<const char *const *>(pcPhysicalDeviceExtensions);
+		vk_deviceCreateInfo.pEnabledFeatures = &vk_physicalDeviceFeaturesEnabled;
+		const bool bCreatedDeviceSuccessfully = CHECK_VK_RESULT(vkCreateDevice(vk_hPhysicalDeviceSelected, &vk_deviceCreateInfo, nullptr, &vk_hDevice));
+		DELETE_ARRAY_SAFELY(vk_pDeviceQueueCreateInfos);
+		if (!bCreatedDeviceSuccessfully)
+			return false;
+
+		CATCH_SIGNAL(vkGetDeviceQueue(vk_hDevice, graphicsQueueIndex.value(), 0, &vk_hQueues[RE_VK_QUEUE_GRAPHICS_INDEX]));
+		u32QueueIndices[RE_VK_QUEUE_GRAPHICS_INDEX] = graphicsQueueIndex.value();
+		CATCH_SIGNAL(vkGetDeviceQueue(vk_hDevice, presentQueueIndex.value(), 0, &vk_hQueues[RE_VK_QUEUE_PRESENT_INDEX]));
+		u32QueueIndices[RE_VK_QUEUE_PRESENT_INDEX] = presentQueueIndex.value();
+		return true;
+	}
+	
+	void RenderSystem::destroy_device() {
+		CATCH_SIGNAL(vkDestroyDevice(vk_hDevice, nullptr));
 	}
 
 	bool RenderSystem::create_swapchain() {
-		bool bFoundFormat = false;
-		for (uint32_t u32SurfaceFormatIndex = 0U; u32SurfaceFormatIndex < RE_VK_UINT_SURFACE_FORMATS_COUNT; u32SurfaceFormatIndex++) {
-			if (RE_VK_PTR_SURFACE_FORMATS[u32SurfaceFormatIndex].format == VK_FORMAT_R8G8B8A8_SRGB && RE_VK_PTR_SURFACE_FORMATS[u32SurfaceFormatIndex].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
-				vk_internalSurfaceFormat = RE_VK_PTR_SURFACE_FORMATS[u32SurfaceFormatIndex];
-				bFoundFormat = true;
-				break;
-			}
-		}
-		if (!bFoundFormat)
-			vk_internalSurfaceFormat = RE_VK_PTR_SURFACE_FORMATS[0];
-		if (RE_VK_SURFACE_CAPABILITIES.currentExtent.width != std::numeric_limits<uint32_t>::max() && RE_VK_SURFACE_CAPABILITIES.currentExtent.height != std::numeric_limits<uint32_t>::max())
-			vk_internalSwapchainImageSize = RE_VK_SURFACE_CAPABILITIES.currentExtent;
+		vk_eSwapchainImageFormat = vk_surfaceFormatSelected.format;
+		VkSwapchainCreateInfoKHR vk_swapchainCreateInfo = {};
+		vk_swapchainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+		vk_swapchainCreateInfo.surface = vk_hSurface;
+		vk_swapchainCreateInfo.minImageCount = std::clamp(vk_surfaceCapabilities.minImageCount + 1U, vk_surfaceCapabilities.minImageCount, vk_surfaceCapabilities.maxImageCount > 0U ? vk_surfaceCapabilities.maxImageCount : std::numeric_limits<uint32_t>::max());
+		vk_swapchainCreateInfo.imageFormat = vk_eSwapchainImageFormat;
+		vk_swapchainCreateInfo.imageColorSpace = vk_surfaceFormatSelected.colorSpace;
+		if (vk_surfaceCapabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
+			vk_swapchainResolution = vk_surfaceCapabilities.currentExtent;
 		else {
-			Vector<REushort, 2> winSize = Window::pInstance->get_size();
-			vk_internalSwapchainImageSize = {static_cast<uint32_t>(winSize[0]), static_cast<uint32_t>(winSize[1])};
-			vk_internalSwapchainImageSize.width = std::clamp(vk_internalSwapchainImageSize.width, RE_VK_SURFACE_CAPABILITIES.minImageExtent.width, RE_VK_SURFACE_CAPABILITIES.maxImageExtent.width);
-			vk_internalSwapchainImageSize.height = std::clamp(vk_internalSwapchainImageSize.height, RE_VK_SURFACE_CAPABILITIES.minImageExtent.height, RE_VK_SURFACE_CAPABILITIES.maxImageExtent.height);
+			vk_swapchainResolution.width = std::clamp<REushort>(Window::pInstance->get_size()[0], vk_surfaceCapabilities.minImageExtent.width, vk_surfaceCapabilities.maxImageExtent.width);
+			vk_swapchainResolution.height = std::clamp<REushort>(Window::pInstance->get_size()[1], vk_surfaceCapabilities.minImageExtent.height, vk_surfaceCapabilities.maxImageExtent.height);
 		}
-		u32InternalSwapchainImageCount = RE_VK_SURFACE_CAPABILITIES.minImageCount + 1;
-		if (RE_VK_SURFACE_CAPABILITIES.maxImageCount > 0 && u32InternalSwapchainImageCount > RE_VK_SURFACE_CAPABILITIES.maxImageCount)
-			u32InternalSwapchainImageCount = RE_VK_SURFACE_CAPABILITIES.maxImageCount;
-
-		// Actual swapchain
-		VkSwapchainCreateInfoKHR vk_swapchainCreateInfo = { VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR };
-		vk_swapchainCreateInfo.surface = RE_VK_HANDLE_SURFACE;
-		vk_swapchainCreateInfo.minImageCount = u32InternalSwapchainImageCount;
-		vk_swapchainCreateInfo.imageFormat = vk_internalSurfaceFormat.format;
-		vk_swapchainCreateInfo.imageColorSpace = vk_internalSurfaceFormat.colorSpace;
-		vk_swapchainCreateInfo.imageExtent = vk_internalSwapchainImageSize;
-		vk_swapchainCreateInfo.imageArrayLayers = 1;
+		vk_swapchainCreateInfo.imageExtent = vk_swapchainResolution;
+		vk_swapchainCreateInfo.imageArrayLayers = 1U;
 		vk_swapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-		uint32_t u32QueueFamilyIndices[] = {RE_VK_QUEUE_INDICES.u32GraphicsFamily, RE_VK_QUEUE_INDICES.u32PresentationFamily};
-		if (RE_VK_QUEUE_INDICES.u32GraphicsFamily != RE_VK_QUEUE_INDICES.u32PresentationFamily) {
+		uint32_t u32SwapchainRelevantQueueIndices[2] = {u32QueueIndices[RE_VK_QUEUE_GRAPHICS_INDEX], u32QueueIndices[RE_VK_QUEUE_PRESENT_INDEX]};
+		if (u32QueueIndices[RE_VK_QUEUE_GRAPHICS_INDEX] != u32QueueIndices[RE_VK_QUEUE_PRESENT_INDEX]) {
 			vk_swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-			vk_swapchainCreateInfo.queueFamilyIndexCount = 2;
-			vk_swapchainCreateInfo.pQueueFamilyIndices = u32QueueFamilyIndices;
+			vk_swapchainCreateInfo.queueFamilyIndexCount = 2U;
+			vk_swapchainCreateInfo.pQueueFamilyIndices = u32SwapchainRelevantQueueIndices;
 		} else
 			vk_swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-		vk_swapchainCreateInfo.preTransform = RE_VK_SURFACE_CAPABILITIES.currentTransform;
+		vk_swapchainCreateInfo.preTransform = vk_surfaceCapabilities.currentTransform;
 		vk_swapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-		vk_swapchainCreateInfo.presentMode = bVsyncActive ? vk_eVsyncMode : vk_eNoVsync;
+		vk_swapchainCreateInfo.presentMode = bVsyncEnabled ? vk_ePresentModeVsync : vk_ePresentModeNoVsync;
 		vk_swapchainCreateInfo.clipped = VK_TRUE;
-		vk_swapchainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
-		VkResult vk_eSuccessResult;
-		CATCH_SIGNAL(vk_eSuccessResult = vkCreateSwapchainKHR(RE_VK_HANDLE_DEVICE, &vk_swapchainCreateInfo, nullptr, &vk_hInternalSwapchain));
-		if (!CHECK_VK_RESULT(vk_eSuccessResult)) {
-			RE_FATAL_ERROR("Failed creating swapchain in Vulkan");
+		vk_swapchainCreateInfo.oldSwapchain = vk_hSwapchain;
+		if (!CHECK_VK_RESULT(vkCreateSwapchainKHR(vk_hDevice, &vk_swapchainCreateInfo, nullptr, &vk_hSwapchain)))
 			return false;
-		}
 
-		// Swapchain image views
-		CATCH_SIGNAL(vkGetSwapchainImagesKHR(RE_VK_HANDLE_DEVICE, vk_hInternalSwapchain, &u32InternalSwapchainImageCount, nullptr));
-		vk_pInternalSwapchainImages = new VkImage[u32InternalSwapchainImageCount];
-		vk_pInternalSwapchainImageViews = new VkImageView[u32InternalSwapchainImageCount];
-		for (uint32_t u32Index = 0U; u32Index < u32InternalSwapchainImageCount; u32Index++) {
-			vk_pInternalSwapchainImages[u32Index] = VK_NULL_HANDLE;
-			vk_pInternalSwapchainImageViews[u32Index] = VK_NULL_HANDLE;
-		}
-		CATCH_SIGNAL(vkGetSwapchainImagesKHR(RE_VK_HANDLE_DEVICE, vk_hInternalSwapchain, &u32InternalSwapchainImageCount, vk_pInternalSwapchainImages));
-		bool bFailure = false;
-		for (uint32_t u32ImageIndex = 0U; u32ImageIndex < u32InternalSwapchainImageCount; u32ImageIndex++) {
-			VkImageViewCreateInfo vk_imgViewCreateInfo = { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
-			vk_imgViewCreateInfo.image = vk_pInternalSwapchainImages[u32ImageIndex];
-			vk_imgViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-			vk_imgViewCreateInfo.format = vk_internalSurfaceFormat.format;
-			vk_imgViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-			vk_imgViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-			vk_imgViewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-			vk_imgViewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-			vk_imgViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-			vk_imgViewCreateInfo.subresourceRange.baseMipLevel = 0;
-			vk_imgViewCreateInfo.subresourceRange.levelCount = 1;
-			vk_imgViewCreateInfo.subresourceRange.baseArrayLayer = 0;
-			vk_imgViewCreateInfo.subresourceRange.layerCount = 1;
-			CATCH_SIGNAL_DETAILED(vk_eSuccessResult = vkCreateImageView(RE_VK_HANDLE_DEVICE, &vk_imgViewCreateInfo, nullptr, &vk_pInternalSwapchainImageViews[u32ImageIndex]), append_to_string("Image index: ", u32ImageIndex).c_str());
-			if (!CHECK_VK_RESULT(vk_eSuccessResult)) {
-				RE_FATAL_ERROR(append_to_string("Failed creating image view ", u32ImageIndex, " out of ", u32InternalSwapchainImageCount, " in Vulkan"));
-				bFailure = true;
+		CATCH_SIGNAL(vkGetSwapchainImagesKHR(vk_hDevice, vk_hSwapchain, &u32SwapchainImageCount, nullptr));
+		vk_pSwapchainImages = new VkImage[u32SwapchainImageCount];
+		CATCH_SIGNAL(vkGetSwapchainImagesKHR(vk_hDevice, vk_hSwapchain, &u32SwapchainImageCount, vk_pSwapchainImages));
+		vk_pSwapchainImageView = new VkImageView[u32SwapchainImageCount];
+		for (uint32_t u32SwapchainImageIndex = 0U; u32SwapchainImageIndex < u32SwapchainImageCount; u32SwapchainImageIndex++) {
+			VkImageViewCreateInfo vk_swapchainImageViewCreateInfo = {};
+			vk_swapchainImageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+			vk_swapchainImageViewCreateInfo.image = vk_pSwapchainImages[u32SwapchainImageIndex];
+			vk_swapchainImageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+			vk_swapchainImageViewCreateInfo.format = vk_eSwapchainImageFormat;
+			vk_swapchainImageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+			vk_swapchainImageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+			vk_swapchainImageViewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+			vk_swapchainImageViewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+			vk_swapchainImageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			vk_swapchainImageViewCreateInfo.subresourceRange.baseMipLevel = 0U;
+			vk_swapchainImageViewCreateInfo.subresourceRange.levelCount = 1U;
+			vk_swapchainImageViewCreateInfo.subresourceRange.baseArrayLayer = 0U;
+			vk_swapchainImageViewCreateInfo.subresourceRange.layerCount = 1U;
+			if (!CHECK_VK_RESULT(vkCreateImageView(vk_hDevice, &vk_swapchainImageViewCreateInfo, nullptr, &vk_pSwapchainImageView[u32SwapchainImageIndex]))) {
+				DELETE_ARRAY_SAFELY(vk_pSwapchainImages);
+				DELETE_ARRAY_SAFELY(vk_pSwapchainImageView);
+				CATCH_SIGNAL(vkDestroySwapchainKHR(vk_hDevice, vk_hSwapchain, nullptr));
+				vk_hSwapchain = VK_NULL_HANDLE;
+				return false;
 			}
 		}
-		return !bFailure;
+		return true;
 	}
-
-	void RenderSystem::clear_swapchain() {
-		if (vk_pInternalFramebuffers) {
-			for (uint32_t i = 0U; i < u32InternalSwapchainImageCount; i++)
-				CATCH_SIGNAL_DETAILED(vkDestroyFramebuffer(RE_VK_HANDLE_DEVICE, vk_pInternalFramebuffers[i], nullptr), append_to_string("Framebuffer index: ", i).c_str());
-			DELETE_ARRAY_SAFELY(vk_pInternalFramebuffers);
-		}
-		if (vk_pInternalSwapchainImageViews) {
-			for (uint32_t i = 0U; i < u32InternalSwapchainImageCount; i++)
-				if (vk_pInternalSwapchainImageViews[i] != VK_NULL_HANDLE)
-					CATCH_SIGNAL_DETAILED(vkDestroyImageView(RE_VK_HANDLE_DEVICE, vk_pInternalSwapchainImageViews[i], nullptr), append_to_string("Image index: ", i).c_str());
-			DELETE_ARRAY_SAFELY(vk_pInternalSwapchainImages);
-			DELETE_ARRAY_SAFELY(vk_pInternalSwapchainImageViews);
-		}
-		if (vk_hInternalSwapchain != VK_NULL_HANDLE) {
-			CATCH_SIGNAL(vkDestroySwapchainKHR(RE_VK_HANDLE_DEVICE, vk_hInternalSwapchain, nullptr));
-			vk_hInternalSwapchain = VK_NULL_HANDLE;
-		}
+	
+	void RenderSystem::destroy_swapchain() {
+		for (uint32_t u32SwapchainImageIndex = 0U; u32SwapchainImageIndex < u32SwapchainImageCount; u32SwapchainImageIndex++)
+			CATCH_SIGNAL(vkDestroyImageView(vk_hDevice, vk_pSwapchainImageView[u32SwapchainImageIndex], nullptr));
+		DELETE_ARRAY_SAFELY(vk_pSwapchainImages);
+		DELETE_ARRAY_SAFELY(vk_pSwapchainImageView);
+		CATCH_SIGNAL(vkDestroySwapchainKHR(vk_hDevice, vk_hSwapchain, nullptr));
+		vk_hSwapchain = VK_NULL_HANDLE;
 	}
 
 	bool RenderSystem::create_shaders() {
-		std::ifstream vertexFile("shaders/vertex.spv", std::ios::ate | std::ios::binary);
-		if (!vertexFile.is_open()) {
-			RE_FATAL_ERROR("Failed opening vertex binary file");
+		std::ifstream vertexBinaryFile("shaders/vertex.spv", std::ios::ate | std::ios::binary);
+		if (!vertexBinaryFile.is_open()) {
+			RE_FATAL_ERROR("Failed loading the vertex shader binary file");
 			return false;
 		}
-		REuint u32FileSize = static_cast<REuint>(vertexFile.tellg());
-		vertexFile.seekg(0);
-		char* pcData = new char[u32FileSize];
-		vertexFile.read(pcData, u32FileSize);
-		vertexFile.close();
-		VkShaderModuleCreateInfo vk_shaderCreateInfo = { VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO };
-		vk_shaderCreateInfo.codeSize = u32FileSize;
-		vk_shaderCreateInfo.pCode = reinterpret_cast<const uint32_t*>(pcData);
-		VkResult vk_eSuccessResult;
-		CATCH_SIGNAL(vk_eSuccessResult = vkCreateShaderModule(RE_VK_HANDLE_DEVICE, &vk_shaderCreateInfo, nullptr, &vk_hInternalVertexShader));
-		if (!CHECK_VK_RESULT(vk_eSuccessResult)) {
-			RE_FATAL_ERROR("Failed creating vertex shader in Vulkan");
-			delete[] pcData;
+		const size_t vertexBinaryFileSize = vertexBinaryFile.tellg();
+		char *const pcVertexShaderBinaries = new char[vertexBinaryFileSize];
+		vertexBinaryFile.seekg(0);
+		CATCH_SIGNAL(vertexBinaryFile.read(pcVertexShaderBinaries, vertexBinaryFileSize));
+		vertexBinaryFile.close();
+		VkShaderModuleCreateInfo vk_vertexShaderCreateInfo = {};
+		vk_vertexShaderCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+		vk_vertexShaderCreateInfo.codeSize = static_cast<uint32_t>(vertexBinaryFileSize);
+		vk_vertexShaderCreateInfo.pCode = reinterpret_cast<const uint32_t*>(pcVertexShaderBinaries);
+		const bool bVertexShaderCreatedSuccessfully = CHECK_VK_RESULT(vkCreateShaderModule(vk_hDevice, &vk_vertexShaderCreateInfo, nullptr, &vk_hVertexShader));
+		delete[] pcVertexShaderBinaries;
+		if (!bVertexShaderCreatedSuccessfully)
 			return false;
-		}
-		delete[] pcData;
 
-		std::ifstream fragmentFile("shaders/fragment.spv", std::ios::ate | std::ios::binary);
-		if (!fragmentFile.is_open()) {
-			RE_FATAL_ERROR("Failed opening fragment binary file");
+		std::ifstream fragmentBinaryFile("shaders/fragment.spv", std::ios::ate | std::ios::binary);
+		if (!fragmentBinaryFile.is_open()) {
+			RE_FATAL_ERROR("Failed loading the fragment shader binary file");
+			CATCH_SIGNAL(vkDestroyShaderModule(vk_hDevice, vk_hVertexShader, nullptr));
 			return false;
 		}
-		u32FileSize = static_cast<REuint>(fragmentFile.tellg());
-		fragmentFile.seekg(0);
-		pcData = new char[u32FileSize];
-		fragmentFile.read(pcData, u32FileSize);
-		fragmentFile.close();
-		vk_shaderCreateInfo.codeSize = u32FileSize;
-		vk_shaderCreateInfo.pCode = reinterpret_cast<const uint32_t*>(pcData);
-		CATCH_SIGNAL(vk_eSuccessResult = vkCreateShaderModule(RE_VK_HANDLE_DEVICE, &vk_shaderCreateInfo, nullptr, &vk_hInternalFragmentShader));
-		if (!CHECK_VK_RESULT(vk_eSuccessResult))
-			RE_FATAL_ERROR("Failed creating fragment shader in Vulkan");
-		delete[] pcData;
-		return vk_eSuccessResult == VK_SUCCESS;
+		const size_t fragmentBinaryFileSize = fragmentBinaryFile.tellg();
+		char *const pcFragmentShaderBinaries = new char[fragmentBinaryFileSize];
+		fragmentBinaryFile.seekg(0);
+		CATCH_SIGNAL(fragmentBinaryFile.read(pcFragmentShaderBinaries, fragmentBinaryFileSize));
+		fragmentBinaryFile.close();
+		VkShaderModuleCreateInfo vk_fragmentShaderCreateInfo = {};
+		vk_fragmentShaderCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+		vk_fragmentShaderCreateInfo.codeSize = static_cast<uint32_t>(fragmentBinaryFileSize);
+		vk_fragmentShaderCreateInfo.pCode = reinterpret_cast<const uint32_t*>(pcFragmentShaderBinaries);
+		const bool bFragmentShaderCreatedSuccessfully = CHECK_VK_RESULT(vkCreateShaderModule(vk_hDevice, &vk_fragmentShaderCreateInfo, nullptr, &vk_hFragmentShader));
+		delete[] pcFragmentShaderBinaries;
+		if (!bFragmentShaderCreatedSuccessfully) {
+			CATCH_SIGNAL(vkDestroyShaderModule(vk_hDevice, vk_hVertexShader, nullptr));
+			return false;
+		}
+		return true;
+	}
+	
+	void RenderSystem::destroy_shaders() {
+		CATCH_SIGNAL(vkDestroyShaderModule(vk_hDevice, vk_hVertexShader, nullptr));
+		CATCH_SIGNAL(vkDestroyShaderModule(vk_hDevice, vk_hFragmentShader, nullptr));
+	}
+
+	bool RenderSystem::create_pipeline_layout() {
+		VkPipelineLayoutCreateInfo vk_pipelineLayoutCreateInfo = {};
+		vk_pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+		vk_pipelineLayoutCreateInfo.setLayoutCount = 0U;
+		vk_pipelineLayoutCreateInfo.pSetLayouts = nullptr;
+		vk_pipelineLayoutCreateInfo.pushConstantRangeCount = 0U;
+		vk_pipelineLayoutCreateInfo.pPushConstantRanges = nullptr;
+		return CHECK_VK_RESULT(vkCreatePipelineLayout(vk_hDevice, &vk_pipelineLayoutCreateInfo, nullptr, &vk_hPipelineLayout));
+	}
+	
+	void RenderSystem::destroy_pipeline_layout() {
+		CATCH_SIGNAL(vkDestroyPipelineLayout(vk_hDevice, vk_hPipelineLayout, nullptr));
 	}
 
 	bool RenderSystem::create_renderpass() {
-		VkAttachmentDescription vk_attachmentDesc = {};
-		vk_attachmentDesc.format = vk_internalSurfaceFormat.format;
-		vk_attachmentDesc.samples = VK_SAMPLE_COUNT_1_BIT;
-		vk_attachmentDesc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-		vk_attachmentDesc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-		vk_attachmentDesc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-		vk_attachmentDesc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-		vk_attachmentDesc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		vk_attachmentDesc.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+		VkAttachmentDescription vk_colorAttachment = {};
+		vk_colorAttachment.format = vk_eSwapchainImageFormat;
+		vk_colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+		vk_colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		vk_colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+		vk_colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		vk_colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		vk_colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		vk_colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
-		VkAttachmentReference vk_attachmentRef = {};
-		vk_attachmentRef.attachment = 0;
-		vk_attachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		VkAttachmentReference vk_attachmentReference = {};
+		vk_attachmentReference.attachment = 0U;
+		vk_attachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-		VkSubpassDescription vk_subpassDesc = {};
-		vk_subpassDesc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-		vk_subpassDesc.colorAttachmentCount = 1;
-		vk_subpassDesc.pColorAttachments = &vk_attachmentRef;
+		VkSubpassDescription vk_subpassDescription = {};
+		vk_subpassDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+		vk_subpassDescription.colorAttachmentCount = 1U;
+		vk_subpassDescription.pColorAttachments = &vk_attachmentReference;
 
 		VkSubpassDependency vk_subpassDependency = {};
 		vk_subpassDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
 		vk_subpassDependency.dstSubpass = 0;
 		vk_subpassDependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-		vk_subpassDependency.srcAccessMask = 0;
+		vk_subpassDependency.srcAccessMask = 0U;
 		vk_subpassDependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-		vk_subpassDependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		vk_subpassDependency.dstAccessMask = 0U;
 
-		VkRenderPassCreateInfo vk_hInternalRenderPassCreateInfo = { VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO };
-		vk_hInternalRenderPassCreateInfo.attachmentCount = 1;
-		vk_hInternalRenderPassCreateInfo.pAttachments = &vk_attachmentDesc;
-		vk_hInternalRenderPassCreateInfo.subpassCount = 1;
-		vk_hInternalRenderPassCreateInfo.pSubpasses = &vk_subpassDesc;
-		vk_hInternalRenderPassCreateInfo.dependencyCount = 1;
-		vk_hInternalRenderPassCreateInfo.pDependencies = &vk_subpassDependency;
-		VkResult vk_eSuccessResult;
-		CATCH_SIGNAL(vk_eSuccessResult = vkCreateRenderPass(RE_VK_HANDLE_DEVICE, &vk_hInternalRenderPassCreateInfo, nullptr, &vk_hInternalRenderPass));
-		if (!CHECK_VK_RESULT(vk_eSuccessResult))
-			RE_FATAL_ERROR("Failed creating a render pass in Vulkan");
-		return vk_eSuccessResult == VK_SUCCESS;
+		VkRenderPassCreateInfo vk_renderPassCreateInfo = {};
+		vk_renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+		vk_renderPassCreateInfo.attachmentCount = 1U;
+		vk_renderPassCreateInfo.pAttachments = &vk_colorAttachment;
+		vk_renderPassCreateInfo.subpassCount = 1U;
+		vk_renderPassCreateInfo.pSubpasses = &vk_subpassDescription;
+		vk_renderPassCreateInfo.dependencyCount = 1U;
+		vk_renderPassCreateInfo.pDependencies = &vk_subpassDependency;
+		return CHECK_VK_RESULT(vkCreateRenderPass(vk_hDevice, &vk_renderPassCreateInfo, nullptr, &vk_hRenderPass));
+	}
+	
+	void RenderSystem::destroy_renderpass() {
+		CATCH_SIGNAL(vkDestroyRenderPass(vk_hDevice, vk_hRenderPass, nullptr));
 	}
 
-	bool RenderSystem::create_pipeline() {
-		VkPipelineLayoutCreateInfo vk_layoutCreateInfo = { VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
-		vk_layoutCreateInfo.setLayoutCount = 0;
-		vk_layoutCreateInfo.pSetLayouts = nullptr;
-		vk_layoutCreateInfo.pushConstantRangeCount = 0;
-		vk_layoutCreateInfo.pPushConstantRanges = nullptr;
-		VkResult vk_eSuccessResult;
-		CATCH_SIGNAL(vk_eSuccessResult = vkCreatePipelineLayout(RE_VK_HANDLE_DEVICE, &vk_layoutCreateInfo, nullptr, &vk_hInternalPipelineLayout));
-		if (!CHECK_VK_RESULT(vk_eSuccessResult)) {
-			RE_FATAL_ERROR("Failed creating pipeline layout in Vulkan");
-			return false;
-		}
+	bool RenderSystem::create_graphics_pipeline() {
+		VkPipelineShaderStageCreateInfo vk_pipelineVertexShaderStateCreateInfo = {};
+		vk_pipelineVertexShaderStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		vk_pipelineVertexShaderStateCreateInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+		vk_pipelineVertexShaderStateCreateInfo.module = vk_hVertexShader;
+		vk_pipelineVertexShaderStateCreateInfo.pName = "main";
+		VkPipelineShaderStageCreateInfo vk_pipelineFragmentShaderStateCreateInfo = {};
+		vk_pipelineFragmentShaderStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		vk_pipelineFragmentShaderStateCreateInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+		vk_pipelineFragmentShaderStateCreateInfo.module = vk_hFragmentShader;
+		vk_pipelineFragmentShaderStateCreateInfo.pName = "main";
+		VkPipelineShaderStageCreateInfo vk_pipelineShaderStateCreateInfos[2] = {vk_pipelineVertexShaderStateCreateInfo, vk_pipelineFragmentShaderStateCreateInfo};
 
-		VkPipelineShaderStageCreateInfo vk_shaderStageCreateInfos[2] = {{}, {}};
-		const REuint u32ShaderStagesCount = sizeof(vk_shaderStageCreateInfos) / sizeof(VkPipelineShaderStageCreateInfo);
-		for (REuint i = 0U; i < u32ShaderStagesCount; i++) {
-			vk_shaderStageCreateInfos[i].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-			vk_shaderStageCreateInfos[i].pName = "main";
-		}
-		vk_shaderStageCreateInfos[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
-		vk_shaderStageCreateInfos[0].module = vk_hInternalVertexShader;
-		vk_shaderStageCreateInfos[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-		vk_shaderStageCreateInfos[1].module = vk_hInternalFragmentShader;
+		VkDynamicState vk_dynamicStates[2] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+		VkPipelineDynamicStateCreateInfo vk_pipelineDynamicStateCreateInfo = {};
+		vk_pipelineDynamicStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+		vk_pipelineDynamicStateCreateInfo.dynamicStateCount = sizeof(vk_dynamicStates) / sizeof(VkDynamicState);
+		vk_pipelineDynamicStateCreateInfo.pDynamicStates = vk_dynamicStates;
 
-		VkDynamicState vk_dynamicStates[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
-		VkPipelineDynamicStateCreateInfo vk_dynamicStatesCreateInfo = { VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO };
-		vk_dynamicStatesCreateInfo.dynamicStateCount = sizeof(vk_dynamicStates) / sizeof(VkDynamicState);
-		vk_dynamicStatesCreateInfo.pDynamicStates = vk_dynamicStates;
+		VkPipelineVertexInputStateCreateInfo vk_pipelineVertexInputStateCreateInfo = {};
+		vk_pipelineVertexInputStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
-		VkPipelineVertexInputStateCreateInfo vk_vertexInputCreateInfo = { VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO };
-		vk_vertexInputCreateInfo.vertexBindingDescriptionCount = 0;
-		vk_vertexInputCreateInfo.pVertexBindingDescriptions = nullptr;
-		vk_vertexInputCreateInfo.vertexAttributeDescriptionCount = 0;
-		vk_vertexInputCreateInfo.pVertexAttributeDescriptions = nullptr;
-
-		VkPipelineInputAssemblyStateCreateInfo vk_inputAssemblyCreateInfo = { VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO };
-		vk_inputAssemblyCreateInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-		vk_inputAssemblyCreateInfo.primitiveRestartEnable = VK_FALSE;
+		VkPipelineInputAssemblyStateCreateInfo vk_pipelineInputAssemblyStateCreateInfo = {};
+		vk_pipelineInputAssemblyStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+		vk_pipelineInputAssemblyStateCreateInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		vk_pipelineInputAssemblyStateCreateInfo.primitiveRestartEnable = VK_FALSE;
 
 		VkViewport vk_viewport = {};
 		vk_viewport.x = 0.0f;
 		vk_viewport.y = 0.0f;
-		vk_viewport.width = static_cast<float>(vk_internalSwapchainImageSize.width);
-		vk_viewport.height = static_cast<float>(vk_internalSwapchainImageSize.height);
+		vk_viewport.width = vk_swapchainResolution.width;
+		vk_viewport.height = vk_swapchainResolution.height;
 		vk_viewport.minDepth = 0.0f;
 		vk_viewport.maxDepth = 1.0f;
 
 		VkRect2D vk_scissor = {};
-		vk_scissor.offset = {0, 0};
-		vk_scissor.extent = vk_internalSwapchainImageSize;
+		vk_scissor.offset.x = 0.0f;
+		vk_scissor.offset.y = 0.0f;
+		vk_scissor.extent = vk_swapchainResolution;
 
-		VkPipelineViewportStateCreateInfo vk_viewportCreateInfo = { VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO };
-		vk_viewportCreateInfo.viewportCount = 1;
-		vk_viewportCreateInfo.pViewports = &vk_viewport;
-		vk_viewportCreateInfo.scissorCount = 1;
-		vk_viewportCreateInfo.pScissors = &vk_scissor;
+		VkPipelineViewportStateCreateInfo vk_pipelineViewportStateCreateInfo = {};
+		vk_pipelineViewportStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+		vk_pipelineViewportStateCreateInfo.viewportCount = 1U;
+		vk_pipelineViewportStateCreateInfo.pViewports = &vk_viewport;
+		vk_pipelineViewportStateCreateInfo.scissorCount = 1U;
+		vk_pipelineViewportStateCreateInfo.pScissors = &vk_scissor;
 
-		VkPipelineRasterizationStateCreateInfo vk_rasterizationCreateInfo = { VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO };
-		vk_rasterizationCreateInfo.depthClampEnable = VK_FALSE;
-		vk_rasterizationCreateInfo.rasterizerDiscardEnable = VK_FALSE;
-		vk_rasterizationCreateInfo.polygonMode = VK_POLYGON_MODE_FILL;
-		vk_rasterizationCreateInfo.lineWidth = 1.0f;
-		vk_rasterizationCreateInfo.cullMode = VK_CULL_MODE_NONE;
-		vk_rasterizationCreateInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
-		vk_rasterizationCreateInfo.depthBiasEnable = VK_FALSE;
-		vk_rasterizationCreateInfo.depthBiasConstantFactor = 0.0f;
-		vk_rasterizationCreateInfo.depthBiasClamp = 0.0f;
-		vk_rasterizationCreateInfo.depthBiasSlopeFactor = 0.0f;
+		VkPipelineRasterizationStateCreateInfo vk_pipelineRasterizationStateCreateInfo = {};
+		vk_pipelineRasterizationStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+		vk_pipelineRasterizationStateCreateInfo.depthClampEnable = VK_FALSE;
+		vk_pipelineRasterizationStateCreateInfo.rasterizerDiscardEnable = VK_FALSE;
+		vk_pipelineRasterizationStateCreateInfo.polygonMode = VK_POLYGON_MODE_FILL;
+		vk_pipelineRasterizationStateCreateInfo.lineWidth = 1.0f;
+		vk_pipelineRasterizationStateCreateInfo.cullMode = VK_CULL_MODE_BACK_BIT;
+		vk_pipelineRasterizationStateCreateInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
+		vk_pipelineRasterizationStateCreateInfo.depthBiasEnable = VK_FALSE;
+		vk_pipelineRasterizationStateCreateInfo.depthBiasConstantFactor = 0.0f;
+		vk_pipelineRasterizationStateCreateInfo.depthBiasClamp = 0.0f;
+		vk_pipelineRasterizationStateCreateInfo.depthBiasSlopeFactor = 0.0f;
 
-		VkPipelineMultisampleStateCreateInfo vk_multisampleCreateInfo = { VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO };
-		vk_multisampleCreateInfo.sampleShadingEnable = VK_FALSE;
-		vk_multisampleCreateInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-		vk_multisampleCreateInfo.minSampleShading = 1.0f;
-		vk_multisampleCreateInfo.pSampleMask = nullptr;
-		vk_multisampleCreateInfo.alphaToCoverageEnable = VK_FALSE;
-		vk_multisampleCreateInfo.alphaToOneEnable = VK_FALSE;
+		VkPipelineMultisampleStateCreateInfo vk_pipelineMultisampleStateCreateInfo = {};
+		vk_pipelineMultisampleStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+		vk_pipelineMultisampleStateCreateInfo.sampleShadingEnable = VK_FALSE;
+		vk_pipelineMultisampleStateCreateInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+		vk_pipelineMultisampleStateCreateInfo.minSampleShading = 1.0f;
+		vk_pipelineMultisampleStateCreateInfo.pSampleMask = nullptr;
+		vk_pipelineMultisampleStateCreateInfo.alphaToCoverageEnable = VK_FALSE;
+		vk_pipelineMultisampleStateCreateInfo.alphaToOneEnable = VK_FALSE;
 
-		VkPipelineColorBlendAttachmentState vk_colorBlendAttachment = {};
-		vk_colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-		vk_colorBlendAttachment.blendEnable = VK_TRUE;
-		vk_colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-		vk_colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-		vk_colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
-		vk_colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-		vk_colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-		vk_colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+		VkPipelineColorBlendAttachmentState vk_pipelineColorBlendAttachmentState = {};
+		vk_pipelineColorBlendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+		vk_pipelineColorBlendAttachmentState.blendEnable = VK_TRUE;
+		vk_pipelineColorBlendAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+		vk_pipelineColorBlendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+		vk_pipelineColorBlendAttachmentState.colorBlendOp = VK_BLEND_OP_ADD;
+		vk_pipelineColorBlendAttachmentState.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+		vk_pipelineColorBlendAttachmentState.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+		vk_pipelineColorBlendAttachmentState.alphaBlendOp = VK_BLEND_OP_ADD;
 
-		VkPipelineColorBlendStateCreateInfo vk_colorBlendCreateInfo = { VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO };
-		vk_colorBlendCreateInfo.logicOpEnable = VK_FALSE;
-		vk_colorBlendCreateInfo.logicOp = VK_LOGIC_OP_COPY;
-		vk_colorBlendCreateInfo.attachmentCount = 1;
-		vk_colorBlendCreateInfo.pAttachments = &vk_colorBlendAttachment;
-		vk_colorBlendCreateInfo.blendConstants[0] = 0.0f;
-		vk_colorBlendCreateInfo.blendConstants[1] = 0.0f;
-		vk_colorBlendCreateInfo.blendConstants[2] = 0.0f;
-		vk_colorBlendCreateInfo.blendConstants[3] = 0.0f;
+		VkPipelineColorBlendStateCreateInfo vk_pipelineColorBlendStateCreateInfo = {};
+		vk_pipelineColorBlendStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+		vk_pipelineColorBlendStateCreateInfo.logicOpEnable = VK_FALSE;
+		vk_pipelineColorBlendStateCreateInfo.logicOp = VK_LOGIC_OP_COPY;
+		vk_pipelineColorBlendStateCreateInfo.attachmentCount = 1U;
+		vk_pipelineColorBlendStateCreateInfo.pAttachments = &vk_pipelineColorBlendAttachmentState;
+		vk_pipelineColorBlendStateCreateInfo.blendConstants[0] = 0.0f;
+		vk_pipelineColorBlendStateCreateInfo.blendConstants[1] = 0.0f;
+		vk_pipelineColorBlendStateCreateInfo.blendConstants[2] = 0.0f;
+		vk_pipelineColorBlendStateCreateInfo.blendConstants[3] = 0.0f;
 
-		VkGraphicsPipelineCreateInfo vk_pipelineCreateInfo = { VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO };
-		vk_pipelineCreateInfo.stageCount = u32ShaderStagesCount;
-		vk_pipelineCreateInfo.pStages = vk_shaderStageCreateInfos;
-		vk_pipelineCreateInfo.pVertexInputState = &vk_vertexInputCreateInfo;
-		vk_pipelineCreateInfo.pInputAssemblyState = &vk_inputAssemblyCreateInfo;
-		vk_pipelineCreateInfo.pViewportState = &vk_viewportCreateInfo;
-		vk_pipelineCreateInfo.pRasterizationState = &vk_rasterizationCreateInfo;
-		vk_pipelineCreateInfo.pMultisampleState = &vk_multisampleCreateInfo;
-		vk_pipelineCreateInfo.pDepthStencilState = nullptr;
-		vk_pipelineCreateInfo.pColorBlendState = &vk_colorBlendCreateInfo;
-		vk_pipelineCreateInfo.pDynamicState = &vk_dynamicStatesCreateInfo;
-		vk_pipelineCreateInfo.layout = vk_hInternalPipelineLayout;
-		vk_pipelineCreateInfo.renderPass = vk_hInternalRenderPass;
-		vk_pipelineCreateInfo.subpass = 0;
-		vk_pipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;
-		vk_pipelineCreateInfo.basePipelineIndex = -1;
-		CATCH_SIGNAL(vk_eSuccessResult = vkCreateGraphicsPipelines(RE_VK_HANDLE_DEVICE, VK_NULL_HANDLE, 1, &vk_pipelineCreateInfo, nullptr, &vk_hInternalPipeline));
-		if (!CHECK_VK_RESULT(vk_eSuccessResult))
-			RE_FATAL_ERROR("Failed creating a graphics render pipeline in Vulkan");
-		return vk_eSuccessResult == VK_SUCCESS;
+		VkGraphicsPipelineCreateInfo vk_graphicsPipelineCreateInfo = {};
+		vk_graphicsPipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+		vk_graphicsPipelineCreateInfo.stageCount = sizeof(vk_pipelineShaderStateCreateInfos) / sizeof(VkPipelineShaderStageCreateInfo);
+		vk_graphicsPipelineCreateInfo.pStages = vk_pipelineShaderStateCreateInfos;
+		vk_graphicsPipelineCreateInfo.pVertexInputState = &vk_pipelineVertexInputStateCreateInfo;
+		vk_graphicsPipelineCreateInfo.pInputAssemblyState = &vk_pipelineInputAssemblyStateCreateInfo;
+		vk_graphicsPipelineCreateInfo.pViewportState = &vk_pipelineViewportStateCreateInfo;
+		vk_graphicsPipelineCreateInfo.pRasterizationState = &vk_pipelineRasterizationStateCreateInfo;
+		vk_graphicsPipelineCreateInfo.pMultisampleState = &vk_pipelineMultisampleStateCreateInfo;
+		vk_graphicsPipelineCreateInfo.pDepthStencilState = nullptr;
+		vk_graphicsPipelineCreateInfo.pColorBlendState = &vk_pipelineColorBlendStateCreateInfo;
+		vk_graphicsPipelineCreateInfo.pDynamicState = &vk_pipelineDynamicStateCreateInfo;
+		vk_graphicsPipelineCreateInfo.layout = vk_hPipelineLayout;
+		vk_graphicsPipelineCreateInfo.renderPass = vk_hRenderPass;
+		vk_graphicsPipelineCreateInfo.subpass = 0U;
+		vk_graphicsPipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;
+		vk_graphicsPipelineCreateInfo.basePipelineIndex = -1;
+		return CHECK_VK_RESULT(vkCreateGraphicsPipelines(vk_hDevice, VK_NULL_HANDLE, 1, &vk_graphicsPipelineCreateInfo, nullptr, &vk_hGraphicsPipeline));
+	}
+	
+	void RenderSystem::destroy_graphics_pipeline() {
+		CATCH_SIGNAL(vkDestroyPipeline(vk_hDevice, vk_hGraphicsPipeline, nullptr));
 	}
 
 	bool RenderSystem::create_framebuffers() {
-		vk_pInternalFramebuffers = new VkFramebuffer[u32InternalSwapchainImageCount];
-		bool bFailure = false;
-		for (uint32_t u32FramebufferIndex = 0U; u32FramebufferIndex < u32InternalSwapchainImageCount; u32FramebufferIndex++) {
-			VkFramebufferCreateInfo vk_framebufferCreateInfo = { VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO };
-			vk_framebufferCreateInfo.renderPass = vk_hInternalRenderPass;
-			vk_framebufferCreateInfo.attachmentCount = 1;
-			vk_framebufferCreateInfo.pAttachments = &vk_pInternalSwapchainImageViews[u32FramebufferIndex];
-			vk_framebufferCreateInfo.width = vk_internalSwapchainImageSize.width;
-			vk_framebufferCreateInfo.height = vk_internalSwapchainImageSize.height;
-			vk_framebufferCreateInfo.layers = 1;
-			VkResult vk_eSuccessResult;
-			CATCH_SIGNAL_DETAILED(vk_eSuccessResult = vkCreateFramebuffer(RE_VK_HANDLE_DEVICE, &vk_framebufferCreateInfo, nullptr, &vk_pInternalFramebuffers[u32FramebufferIndex]), append_to_string("Framebuffer index: ", u32FramebufferIndex).c_str());
-			if (!CHECK_VK_RESULT(vk_eSuccessResult)) {
-				RE_FATAL_ERROR(append_to_string("Failed creating a framebuffer at index ", u32FramebufferIndex, " in Vulkan"));
-				bFailure = true;
-			}
+		vk_phSwapchainFramebuffers = new VkFramebuffer[u32SwapchainImageCount];
+		uint32_t u32FramebuffersCreatedSuccessfully = 0U;
+		while (u32FramebuffersCreatedSuccessfully < u32SwapchainImageCount) {
+			VkFramebufferCreateInfo vk_framebufferCreateInfo = {};
+			vk_framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+			vk_framebufferCreateInfo.renderPass = vk_hRenderPass;
+			vk_framebufferCreateInfo.attachmentCount = 1U;
+			vk_framebufferCreateInfo.pAttachments = &vk_pSwapchainImageView[u32FramebuffersCreatedSuccessfully];
+			vk_framebufferCreateInfo.width = vk_swapchainResolution.width;
+			vk_framebufferCreateInfo.height = vk_swapchainResolution.height;
+			vk_framebufferCreateInfo.layers = 1U;
+			if (!CHECK_VK_RESULT(vkCreateFramebuffer(vk_hDevice, &vk_framebufferCreateInfo, nullptr, &vk_phSwapchainFramebuffers[u32FramebuffersCreatedSuccessfully])))
+				break;
+			u32FramebuffersCreatedSuccessfully++;
 		}
-		return !bFailure;
+		if (u32FramebuffersCreatedSuccessfully != u32SwapchainImageCount) {
+			for (uint32_t u32FramebufferDeleteIndex = u32FramebuffersCreatedSuccessfully + 1U; u32FramebufferDeleteIndex > 0U; u32FramebufferDeleteIndex--)
+				CATCH_SIGNAL(vkDestroyFramebuffer(vk_hDevice, vk_phSwapchainFramebuffers[u32FramebufferDeleteIndex - 1U], nullptr));
+			DELETE_ARRAY_SAFELY(vk_phSwapchainFramebuffers);
+			return false;
+		}
+		return true;
+	}
+	
+	void RenderSystem::destroy_framebuffers() {
+		for (uint32_t u32FramebufferIndex = 0U; u32FramebufferIndex < u32SwapchainImageCount; u32FramebufferIndex++)
+			CATCH_SIGNAL_DETAILED(vkDestroyFramebuffer(vk_hDevice, vk_phSwapchainFramebuffers[u32FramebufferIndex], nullptr), append_to_string("Framebuffer index: ", u32FramebufferIndex).c_str());
+		DELETE_ARRAY_SAFELY(vk_phSwapchainFramebuffers);
 	}
 
-	bool RenderSystem::create_command_buffers() {
-		VkCommandPoolCreateInfo vk_cmdPoolCreateInfo = { VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
-		vk_cmdPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-		vk_cmdPoolCreateInfo.queueFamilyIndex = RE_VK_QUEUE_INDICES.u32GraphicsFamily;
-		VkResult vk_eSuccessResult;
-		CATCH_SIGNAL(vk_eSuccessResult = vkCreateCommandPool(RE_VK_HANDLE_DEVICE, &vk_cmdPoolCreateInfo, nullptr, &vk_hInternalCmdPool));
-		if (!CHECK_VK_RESULT(vk_eSuccessResult)) {
-			RE_FATAL_ERROR("Failed creating a command pool in Vulkan");
+	bool RenderSystem::alloc_command_buffers() {
+		VkCommandPoolCreateInfo vk_commandPoolCreateInfo = {};
+		vk_commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+		vk_commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+		vk_commandPoolCreateInfo.queueFamilyIndex = u32QueueIndices[RE_VK_QUEUE_GRAPHICS_INDEX];
+		if (!CHECK_VK_RESULT(vkCreateCommandPool(vk_hDevice, &vk_commandPoolCreateInfo, nullptr, &vk_hCommandPool)))
+			return false;
+		
+		VkCommandBufferAllocateInfo vk_commandBufferAllocInfo = {};
+		vk_commandBufferAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		vk_commandBufferAllocInfo.commandPool = vk_hCommandPool;
+		vk_commandBufferAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		vk_commandBufferAllocInfo.commandBufferCount = u32SwapchainImageCount;
+		vk_phCommandBuffers = new VkCommandBuffer[u32SwapchainImageCount];
+		if (!CHECK_VK_RESULT(vkAllocateCommandBuffers(vk_hDevice, &vk_commandBufferAllocInfo, vk_phCommandBuffers))) {
+			CATCH_SIGNAL(vkDestroyCommandPool(vk_hDevice, vk_hCommandPool, nullptr));
 			return false;
 		}
+		return true;
+	}
+	
+	void RenderSystem::free_command_buffers() {
+		CATCH_SIGNAL(vkDestroyCommandPool(vk_hDevice, vk_hCommandPool, nullptr));
+	}
 
-		VkCommandBufferAllocateInfo vk_cmdBufferAllocInfo = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
-		vk_cmdBufferAllocInfo.commandPool = vk_hInternalCmdPool;
-		vk_cmdBufferAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-		vk_cmdBufferAllocInfo.commandBufferCount = 1;
-		CATCH_SIGNAL(vk_eSuccessResult = vkAllocateCommandBuffers(RE_VK_HANDLE_DEVICE, &vk_cmdBufferAllocInfo, &vk_hInternalCmdBuffer));
-		if (!CHECK_VK_RESULT(vk_eSuccessResult)) {
-			RE_FATAL_ERROR("Failed allocating a command buffer in Vulkan");
-			return false;
+	bool RenderSystem::record_command_buffers() {
+		for (uint32_t u32CommandBufferIndex = 0U; u32CommandBufferIndex < u32SwapchainImageCount; u32CommandBufferIndex++) {
+			const VkCommandBuffer vk_hCommandBuffer = vk_phCommandBuffers[u32CommandBufferIndex];
+			CATCH_SIGNAL(vkResetCommandBuffer(vk_hCommandBuffer, 0));
+			VkCommandBufferBeginInfo vk_commandBufferBeginInfo = {};
+			vk_commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+			vk_commandBufferBeginInfo.flags = 0U;
+			vk_commandBufferBeginInfo.pInheritanceInfo = nullptr;
+			if (!CHECK_VK_RESULT(vkBeginCommandBuffer(vk_hCommandBuffer, &vk_commandBufferBeginInfo)))
+				return false;
+			VkClearValue vk_clearValues;
+			vk_clearValues.color.float32[0] = 0.0f;
+			vk_clearValues.color.float32[1] = 0.0f;
+			vk_clearValues.color.float32[2] = 0.0f;
+			vk_clearValues.color.float32[3] = 1.0f;
+			vk_clearValues.color.int32[0] = 0;
+			vk_clearValues.color.int32[1] = 0;
+			vk_clearValues.color.int32[2] = 0;
+			vk_clearValues.color.int32[3] = 0xFF;
+			vk_clearValues.color.uint32[0] = 0U;
+			vk_clearValues.color.uint32[1] = 0U;
+			vk_clearValues.color.uint32[2] = 0U;
+			vk_clearValues.color.uint32[3] = 0xFFU;
+			vk_clearValues.depthStencil.depth = 0.0f;
+			vk_clearValues.depthStencil.stencil = 0U;
+			VkRenderPassBeginInfo vk_commandBufferRenderpassBeginInfo = {};
+			vk_commandBufferRenderpassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+			vk_commandBufferRenderpassBeginInfo.renderPass = vk_hRenderPass;
+			vk_commandBufferRenderpassBeginInfo.framebuffer = vk_phSwapchainFramebuffers[u32CommandBufferIndex];
+			vk_commandBufferRenderpassBeginInfo.renderArea.offset.x = 0;
+			vk_commandBufferRenderpassBeginInfo.renderArea.offset.y = 0;
+			vk_commandBufferRenderpassBeginInfo.renderArea.extent = vk_swapchainResolution;
+			vk_commandBufferRenderpassBeginInfo.clearValueCount = 1U;
+			vk_commandBufferRenderpassBeginInfo.pClearValues = &vk_clearValues;
+			CATCH_SIGNAL(vkCmdBeginRenderPass(vk_hCommandBuffer, &vk_commandBufferRenderpassBeginInfo, VK_SUBPASS_CONTENTS_INLINE));
+			CATCH_SIGNAL(vkCmdBindPipeline(vk_hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hGraphicsPipeline));
+			VkViewport vk_viewport = {};
+			vk_viewport.x = 0.0f;
+			vk_viewport.y = 0.0f;
+			vk_viewport.width = vk_swapchainResolution.width;
+			vk_viewport.height = vk_swapchainResolution.height;
+			vk_viewport.minDepth = 0.0f;
+			vk_viewport.maxDepth = 1.0f;
+			CATCH_SIGNAL(vkCmdSetViewport(vk_hCommandBuffer, 0, 1, &vk_viewport));
+			VkRect2D vk_scissor = {};
+			vk_scissor.offset.x = 0;
+			vk_scissor.offset.y = 0;
+			vk_scissor.extent = vk_swapchainResolution;
+			CATCH_SIGNAL(vkCmdSetScissor(vk_hCommandBuffer, 0, 1, &vk_scissor));
+			CATCH_SIGNAL(vkCmdDraw(vk_hCommandBuffer, 3, 1, 0, 0));
+			CATCH_SIGNAL(vkCmdEndRenderPass(vk_hCommandBuffer));
+			if (!CHECK_VK_RESULT(vkEndCommandBuffer(vk_hCommandBuffer)))
+				return false;
 		}
 		return true;
 	}
 
 	bool RenderSystem::create_sync_objects() {
-		VkSemaphoreCreateInfo vk_semaphoreCreateInfo = { VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
-		VkFenceCreateInfo fenceCreateInfo = { VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
-		fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-		VkResult vk_eSuccessResult;
-		CATCH_SIGNAL(vk_eSuccessResult = vkCreateSemaphore(RE_VK_HANDLE_DEVICE, &vk_semaphoreCreateInfo, nullptr, &vk_hInternalImgAvailableSemaphore));
-		if (!CHECK_VK_RESULT(vk_eSuccessResult)) {
-			RE_FATAL_ERROR("Failed creating semaphore for synchronizing image availability in Vulkan");
+		VkSemaphoreCreateInfo vk_semaphoreCreateInfo = {};
+		vk_semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+		if (!CHECK_VK_RESULT(vkCreateSemaphore(vk_hDevice, &vk_semaphoreCreateInfo, nullptr, &vk_hSemaphores[RE_VK_SEMAPHORE_IMAGE_AVAILABLE_INDEX])))
+			return false;
+		if (!CHECK_VK_RESULT(vkCreateSemaphore(vk_hDevice, &vk_semaphoreCreateInfo, nullptr, &vk_hSemaphores[RE_VK_SEMAPHORE_RENDERING_FINISHED_INDEX]))) {
+			CATCH_SIGNAL(vkDestroySemaphore(vk_hDevice, vk_hSemaphores[RE_VK_SEMAPHORE_IMAGE_AVAILABLE_INDEX], nullptr));
 			return false;
 		}
-		CATCH_SIGNAL(vk_eSuccessResult = vkCreateSemaphore(RE_VK_HANDLE_DEVICE, &vk_semaphoreCreateInfo, nullptr, &vk_hInternalRenderFinishedSemaphore));
-		if (!CHECK_VK_RESULT(vk_eSuccessResult)) {
-			RE_FATAL_ERROR("Failed creating semaphore for finished rendering in Vulkan");
-			return false;
-		}
-		CATCH_SIGNAL(vk_eSuccessResult = vkCreateFence(RE_VK_HANDLE_DEVICE, &fenceCreateInfo, nullptr, &vk_hInternalFence));
-		if (!CHECK_VK_RESULT(vk_eSuccessResult)) {
-			RE_FATAL_ERROR("Failed creating fence in Vulkan");
+		VkFenceCreateInfo vk_fenceCreateInfo = {};
+		vk_fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+		vk_fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+		if (!CHECK_VK_RESULT(vkCreateFence(vk_hDevice, &vk_fenceCreateInfo, nullptr, &vk_hFence))) {
+			CATCH_SIGNAL(vkDestroySemaphore(vk_hDevice, vk_hSemaphores[RE_VK_SEMAPHORE_IMAGE_AVAILABLE_INDEX], nullptr));
+			CATCH_SIGNAL(vkDestroySemaphore(vk_hDevice, vk_hSemaphores[RE_VK_SEMAPHORE_RENDERING_FINISHED_INDEX], nullptr));
 			return false;
 		}
 		return true;
 	}
-
-	bool RenderSystem::record_command_buffer(VkCommandBuffer vk_cmdBuffer, uint32_t u32ImgIndex) {
-		VkCommandBufferBeginInfo vk_cmdBufferBeginInfo = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
-		vk_cmdBufferBeginInfo.flags = 0;
-		vk_cmdBufferBeginInfo.pInheritanceInfo = nullptr;
-		VkResult vk_eSuccessResult;
-		CATCH_SIGNAL(vk_eSuccessResult = vkBeginCommandBuffer(vk_cmdBuffer, &vk_cmdBufferBeginInfo));
-		if (!CHECK_VK_RESULT(vk_eSuccessResult)) {
-			RE_FATAL_ERROR("Failed beginning to record the command buffer in Vulkan");
-			return false;
-		}
-		VkRenderPassBeginInfo vk_renderPassBeginInfo = { VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
-		vk_renderPassBeginInfo.renderPass = vk_hInternalRenderPass;
-		vk_renderPassBeginInfo.framebuffer = vk_pInternalFramebuffers[u32ImgIndex];
-		vk_renderPassBeginInfo.renderArea.offset.x = 0;
-		vk_renderPassBeginInfo.renderArea.offset.y = 0;
-		vk_renderPassBeginInfo.renderArea.extent = vk_internalSwapchainImageSize;
-		VkClearValue vk_clearValue = {};
-		vk_clearValue.color.float32[0] = 0.0f;
-		vk_clearValue.color.float32[1] = 0.0f;
-		vk_clearValue.color.float32[2] = 0.0f;
-		vk_clearValue.color.float32[3] = 1.0f;
-		vk_clearValue.depthStencil.depth = 0.0f;
-		vk_clearValue.depthStencil.stencil = 0U;
-		vk_renderPassBeginInfo.clearValueCount = 1;
-		vk_renderPassBeginInfo.pClearValues = &vk_clearValue;
-		CATCH_SIGNAL(vkCmdBeginRenderPass(vk_cmdBuffer, &vk_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE));
-		CATCH_SIGNAL(vkCmdBindPipeline(vk_cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hInternalPipeline));
-		VkViewport vk_viewport = {};
-		vk_viewport.x = 0.0f;
-		vk_viewport.y = 0.0f;
-		vk_viewport.width = static_cast<float>(vk_internalSwapchainImageSize.width);
-		vk_viewport.height = static_cast<float>(vk_internalSwapchainImageSize.height);
-		vk_viewport.minDepth = 0.0f;
-		vk_viewport.maxDepth = 1.0f;
-		CATCH_SIGNAL(vkCmdSetViewport(vk_cmdBuffer, 0, 1, &vk_viewport));
-		VkRect2D vk_scissor = {};
-		vk_scissor.offset.x = 0;
-		vk_scissor.offset.y = 0;
-		vk_scissor.extent.width = vk_internalSwapchainImageSize.width;
-		vk_scissor.extent.height = vk_internalSwapchainImageSize.height;
-		CATCH_SIGNAL(vkCmdSetScissor(vk_cmdBuffer, 0, 1, &vk_scissor));
-		CATCH_SIGNAL(vkCmdDraw(vk_cmdBuffer, 3, 1, 0, 0));
-		CATCH_SIGNAL(vkCmdEndRenderPass(vk_cmdBuffer));
-		CATCH_SIGNAL(vk_eSuccessResult = vkEndCommandBuffer(vk_cmdBuffer));
-		if (!CHECK_VK_RESULT(vk_eSuccessResult)) {
-			RE_FATAL_ERROR("Failed stopping to record the command buffer in Vulkan");
-			return false;
-		}
-		return true;
+	
+	void RenderSystem::destroy_sync_objects() {
+		CATCH_SIGNAL(vkDestroySemaphore(vk_hDevice, vk_hSemaphores[RE_VK_SEMAPHORE_IMAGE_AVAILABLE_INDEX], nullptr));
+		CATCH_SIGNAL(vkDestroySemaphore(vk_hDevice, vk_hSemaphores[RE_VK_SEMAPHORE_RENDERING_FINISHED_INDEX], nullptr));
+		CATCH_SIGNAL(vkDestroyFence(vk_hDevice, vk_hFence, nullptr));
 	}
 
 	void RenderSystem::draw_frame() {
-		vkWaitForFences(RE_VK_HANDLE_DEVICE, 1, &vk_hInternalFence, VK_TRUE, UINT64_MAX);
-		vkResetFences(RE_VK_HANDLE_DEVICE, 1, &vk_hInternalFence);
-		uint32_t u32ImgIndex = 0U;
-		vkAcquireNextImageKHR(RE_VK_HANDLE_DEVICE, vk_hInternalSwapchain, UINT64_MAX, vk_hInternalImgAvailableSemaphore, VK_NULL_HANDLE, &u32ImgIndex);
-		vkResetCommandBuffer(vk_hInternalCmdBuffer, 0);
-		CATCH_SIGNAL(record_command_buffer(vk_hInternalCmdBuffer, u32ImgIndex));
-
-		VkSubmitInfo vk_submitInfo = { VK_STRUCTURE_TYPE_SUBMIT_INFO };
-		vk_submitInfo.waitSemaphoreCount = 1;
-		vk_submitInfo.pWaitSemaphores = &vk_hInternalImgAvailableSemaphore;
-		VkPipelineStageFlags vk_waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-		vk_submitInfo.pWaitDstStageMask = vk_waitStages;
-		vk_submitInfo.commandBufferCount = 1;
-		vk_submitInfo.pCommandBuffers = &vk_hInternalCmdBuffer;
-		vk_submitInfo.signalSemaphoreCount = 1;
-		vk_submitInfo.pSignalSemaphores = &vk_hInternalRenderFinishedSemaphore;
-		VkResult vk_eSuccessResult;
-		CATCH_SIGNAL(vk_eSuccessResult = vkQueueSubmit(RE_VK_HANDLE_GRAPHICS_QUEUE, 1, &vk_submitInfo, vk_hInternalFence));
-		if (!CHECK_VK_RESULT(vk_eSuccessResult)) {
-			RE_FATAL_ERROR("Failed submitting data to graphics queue in Vulkan");
+		CATCH_SIGNAL(vkWaitForFences(vk_hDevice, 1U, &vk_hFence, VK_TRUE, std::numeric_limits<uint64_t>::max()));
+		CATCH_SIGNAL(vkResetFences(vk_hDevice, 1U, &vk_hFence));
+		uint32_t u32NextSwapchainImageIndex;
+		VkResult vk_nextImageObtainedResult;
+		CATCH_SIGNAL(vk_nextImageObtainedResult = vkAcquireNextImageKHR(vk_hDevice, vk_hSwapchain, std::numeric_limits<uint64_t>::max(), vk_hSemaphores[RE_VK_SEMAPHORE_IMAGE_AVAILABLE_INDEX], VK_NULL_HANDLE, &u32NextSwapchainImageIndex));
+		switch (vk_nextImageObtainedResult) {
+			case VK_SUCCESS:
+				break;
+			case VK_SUBOPTIMAL_KHR:
+			case VK_ERROR_OUT_OF_DATE_KHR:
+				CATCH_SIGNAL(window_resize_event());
+				break;
+			default:
+				CHECK_VK_RESULT(vk_nextImageObtainedResult);
+				return;
+		}
+		VkPipelineStageFlags vk_pipelineStageFlags[1] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+		VkSubmitInfo vk_queueGraphicsSubmitInfo = {};
+		vk_queueGraphicsSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		vk_queueGraphicsSubmitInfo.waitSemaphoreCount = 1U;
+		vk_queueGraphicsSubmitInfo.pWaitSemaphores = &vk_hSemaphores[RE_VK_SEMAPHORE_IMAGE_AVAILABLE_INDEX];
+		vk_queueGraphicsSubmitInfo.pWaitDstStageMask = vk_pipelineStageFlags;
+		vk_queueGraphicsSubmitInfo.commandBufferCount = 1U;
+		CATCH_SIGNAL(vk_queueGraphicsSubmitInfo.pCommandBuffers = &vk_phCommandBuffers[u32NextSwapchainImageIndex]);
+		vk_queueGraphicsSubmitInfo.signalSemaphoreCount = 1U;
+		vk_queueGraphicsSubmitInfo.pSignalSemaphores = &vk_hSemaphores[RE_VK_SEMAPHORE_RENDERING_FINISHED_INDEX];
+		if (!CHECK_VK_RESULT(vkQueueSubmit(vk_hQueues[RE_VK_QUEUE_GRAPHICS_INDEX], 1U, &vk_queueGraphicsSubmitInfo, vk_hFence))) {
+			RE_FATAL_ERROR("Failed submitting data to the graphics queue in Vulkan");
 			return;
 		}
-		VkPresentInfoKHR vk_presentInfo = { VK_STRUCTURE_TYPE_PRESENT_INFO_KHR };
-		vk_presentInfo.waitSemaphoreCount = 1;
-		vk_presentInfo.pWaitSemaphores = &vk_hInternalRenderFinishedSemaphore;
-		vk_presentInfo.swapchainCount = 1;
-		vk_presentInfo.pSwapchains = &vk_hInternalSwapchain;
-		vk_presentInfo.pImageIndices = &u32ImgIndex;
-		vk_presentInfo.pResults = nullptr;
-		CATCH_SIGNAL(vkQueuePresentKHR(RE_VK_HANDLE_PRESENT_QUEUE, &vk_presentInfo));
+		VkPresentInfoKHR vk_queuePresentSubmitInfo = {};
+		vk_queuePresentSubmitInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+		vk_queuePresentSubmitInfo.waitSemaphoreCount = 1U;
+		vk_queuePresentSubmitInfo.pWaitSemaphores = &vk_hSemaphores[RE_VK_SEMAPHORE_RENDERING_FINISHED_INDEX];
+		vk_queuePresentSubmitInfo.swapchainCount = 1U;
+		vk_queuePresentSubmitInfo.pSwapchains = &vk_hSwapchain;
+		vk_queuePresentSubmitInfo.pImageIndices = &u32NextSwapchainImageIndex;
+		CATCH_SIGNAL(vkQueuePresentKHR(vk_hQueues[RE_VK_QUEUE_PRESENT_INDEX], &vk_queuePresentSubmitInfo));
 	}
 
-	void RenderSystem::window_resize_event(Vector<REushort, 2U> newSize) {
-		vkDeviceWaitIdle(RE_VK_HANDLE_DEVICE);
-		CATCH_SIGNAL(clear_swapchain());
-		CATCH_SIGNAL(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(RE_VK_HANDLE_PHYSICAL_DEVICE, RE_VK_HANDLE_SURFACE, &RE_VK_SURFACE_CAPABILITIES));
-		PRINT_LN(append_to_string("New surface size: ", RE_VK_SURFACE_CAPABILITIES.currentExtent.width, ", ", RE_VK_SURFACE_CAPABILITIES.currentExtent.height, "; max size: ", RE_VK_SURFACE_CAPABILITIES.maxImageExtent.width, ", ", RE_VK_SURFACE_CAPABILITIES.maxImageExtent.height).c_str());
-		bool bRecentSuccess;
-		CATCH_SIGNAL(bRecentSuccess = create_swapchain());
-		if (!bRecentSuccess) {
-			RE_FATAL_ERROR("Failed recreating the swapchain");
-			return;
-		}
-		CATCH_SIGNAL(bRecentSuccess = create_framebuffers());
-		if (!bRecentSuccess)
-			RE_FATAL_ERROR("Failed recreating the framebuffers");
+	void RenderSystem::window_resize_event() {
+		CATCH_SIGNAL(wait_for_idle_device());
+		CATCH_SIGNAL(destroy_framebuffers());
+		CATCH_SIGNAL(destroy_swapchain());
+		CATCH_SIGNAL(create_swapchain());
+		CATCH_SIGNAL(create_framebuffers());
+		CATCH_SIGNAL(record_command_buffers());
+	}
+
+	void RenderSystem::wait_for_idle_device() {
+		CATCH_SIGNAL(vkDeviceWaitIdle(vk_hDevice));
 	}
 
 	bool RenderSystem::is_valid() {

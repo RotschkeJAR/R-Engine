@@ -22,6 +22,7 @@
 #include <math.h>
 #include <stdint.h>
 #include <random>
+#include <limits.h>
 
 typedef int8_t REbyte;
 typedef uint8_t REubyte;
@@ -262,6 +263,16 @@ namespace RE {
 		return std::string(ss.str());
 	}
 
+	template <class... T>
+	std::wstring append_to_wstring(T... strings) {
+		std::wstringstream wss(L"");
+		(wss << ... << strings);
+		return std::wstring(wss.str());
+	}
+
+	bool is_string_empty(const char* pcString);
+	REuint get_line_count(const char* pcString);
+	std::string get_line(const char* pcString, REuint u32Line);
 	std::string convert_wide_chars_to_utf8(const wchar_t* pwcString);
 	std::wstring convert_chars_to_wide(const char* pcString);
 	std::string get_app_name();

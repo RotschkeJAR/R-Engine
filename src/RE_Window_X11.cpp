@@ -118,7 +118,7 @@ namespace RE {
 					CATCH_SIGNAL(u8CharLength = Xutf8LookupString(x11_hInputContext, &x11_keyEvent, cString, sizeof(cString) - 1, &x11_keySym, nullptr));
 					if (bKeyPressed && u8CharLength)
 						cString[u8CharLength] = '\0';
-					CATCH_SIGNAL(inputMgr.input_event(x11_key_from_virtual_keycode(static_cast<RElong>(x11_keySym)), static_cast<REuint>(x11_scancode), bKeyPressed, false));
+					CATCH_SIGNAL(inputMgr.input_event(key_from_virtual_keycode(static_cast<RElong>(x11_keySym)), static_cast<REuint>(x11_scancode), bKeyPressed, false));
 					} break;
 				case XButtonPress:
 				case XButtonRelease: {
@@ -156,6 +156,10 @@ namespace RE {
 					break;
 			}
 		} while (i32PendingEvents);
+	}
+
+	XWindow Window_X11::get_xwindow() {
+		return x11_hWindow;
 	}
 #endif /* RE_OS_LINUX */
 

@@ -25,8 +25,7 @@ namespace RE {
 			
 			Window_X11();
 			~Window_X11();
-
-		friend class Vulkan;
+			XWindow get_xwindow();
 	};
 #endif /* RE_OS_LINUX */
 

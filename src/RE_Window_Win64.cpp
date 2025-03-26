@@ -67,7 +67,7 @@ namespace RE {
 							break;
 					}
 					BOOL win_keyReleased = (win_keyFlags & KF_UP) == KF_UP;
-					CATCH_SIGNAL(pWin64->inputMgr.input_event(windows_key_from_virtual_keycode(static_cast<RElong>(win_virtualKeyCode)), static_cast<REuint>(win_extScancode), !static_cast<bool>(win_keyReleased), bFallbackToInput));
+					CATCH_SIGNAL(pWin64->inputMgr.input_event(key_from_virtual_keycode(static_cast<RElong>(win_virtualKeyCode)), static_cast<REuint>(win_extScancode), !static_cast<bool>(win_keyReleased), bFallbackToInput));
 					} return 0;
 				case WM_CHAR: {
 					wchar_t wCharacter[2] = {static_cast<wchar_t>(win_wParam), L'\0'};
@@ -149,7 +149,7 @@ namespace RE {
 		};
 		Vector2i adjustedSize;
 		CATCH_SIGNAL(adjustedSize = get_adjusted_window_size(size));
-		CATCH_SIGNAL(win_hWindow = CreateWindowExW(0, WINDOW_CLASS_NAME, wideTitleStr.c_str(), WINDOW_STYLE_FLAGS, CW_USEDEFAULT, CW_USEDEFAULT, adjustedSize[0], adjustedSize[1], nullptr, nullptr, win_hInstance, nullptr));
+		CATCH_SIGNAL(win_hWindow = CreateWindowExW(0, WINDOW_CLASS_NAME, wideTitleStr.c_str(), WINDOW_STYLE_FLAGS, CW_USEDEFAULT, CW_USEDEFAULT, size[0], size[1], nullptr, nullptr, win_hInstance, nullptr));
 		if (!win_hWindow) {
 			RE_FATAL_ERROR("Failed creating window");
 			return;

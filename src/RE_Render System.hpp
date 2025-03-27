@@ -55,6 +55,7 @@ namespace RE {
 			void destroy_device();
 			bool create_swapchain();
 			void destroy_swapchain();
+			void recreate_swapchain();
 			bool create_shaders();
 			void destroy_shaders();
 			bool create_pipeline_layout();
@@ -77,7 +78,6 @@ namespace RE {
 			RenderSystem();
 			~RenderSystem();
 			void draw_frame();
-			void window_resize_event();
 			void wait_for_idle_device();
 			bool is_valid();
 	};

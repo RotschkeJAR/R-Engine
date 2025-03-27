@@ -20,7 +20,7 @@ namespace RE {
 
 			REshort get_index_for_scancode(REuint u32Scancode);
 			REshort get_index_for_input(Input eSearchedInput);
-			bool process_request(Input &eInput, REuint &u32Scancode, bool bRequestForPast);
+			bool process_request(Input eInput, REuint u32Scancode, bool bRequestForPast);
 
 		public:
 			static InputMgr *pInstance;
@@ -28,13 +28,13 @@ namespace RE {
 
 			InputMgr();
 			~InputMgr();
-			void input_event(const Input eInput, const REuint u32Scancode, const bool bPressed, const bool bFallbackToInput);
+			void input_event(const Input eEnteredInput, const REuint u32EnteredScancode, const bool bPressed, const bool bFallbackToInput);
 			void cursor_event(REint i32X, REint i32Y);
 			void update_input_buffers();
 			Input map_scancode_to_input(REuint u32Scancode);
 			REuint map_input_to_scancode(Input eInput);
-			bool is_down(Input &eInput, REuint &u32Scancode);
-			bool was_down(Input &eInput, REuint &u32Scancode);
+			bool is_down(Input eInput, REuint u32Scancode);
+			bool was_down(Input eInput, REuint u32Scancode);
 	};
 
 	Input map_scancode_to_input(REuint u32Scancode);

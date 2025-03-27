@@ -80,9 +80,9 @@ namespace RE {
 #elif defined RE_OS_LINUX
 		VkXlibSurfaceCreateInfoKHR vk_x11SurfaceCreateInfo = {};
 		vk_x11SurfaceCreateInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
-		vk_x11SurfaceCreateInfo.dpy = Window_X11::x11_pDisplay;
+		vk_x11SurfaceCreateInfo.dpy = static_cast<Window_X11*>(Window::pInstance)->x11_pDisplay;
 		vk_x11SurfaceCreateInfo.window = static_cast<Window_X11*>(Window::pInstance)->get_xwindow();
-		return CHECK_VK_RESULT(PFN_vkCreateXlibSurfaceKHR(RE_VK_INSTANCE, &vk_x11SurfaceCreateInfo, nullptr, &vk_hSurface));
+		return CHECK_VK_RESULT(vkCreateXlibSurfaceKHR(RE_VK_INSTANCE, &vk_x11SurfaceCreateInfo, nullptr, &vk_hSurface));
 #else
 		return false;
 #endif
@@ -342,6 +342,16 @@ namespace RE {
 		DELETE_ARRAY_SAFELY(vk_pSwapchainImageView);
 		CATCH_SIGNAL(vkDestroySwapchainKHR(vk_hDevice, vk_hSwapchain, nullptr));
 		vk_hSwapchain = VK_NULL_HANDLE;
+	}
+
+	void RenderSystem::recreate_swapchain() {
+		CATCH_SIGNAL(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &vk_surfaceCapabilities));
+		CATCH_SIGNAL(wait_for_idle_device());
+		CATCH_SIGNAL(destroy_framebuffers());
+		CATCH_SIGNAL(destroy_swapchain());
+		CATCH_SIGNAL(create_swapchain());
+		CATCH_SIGNAL(create_framebuffers());
+		CATCH_SIGNAL(record_command_buffers());
 	}
 
 	bool RenderSystem::create_shaders() {
@@ -648,7 +658,7 @@ namespace RE {
 			VkRenderPassBeginInfo vk_commandBufferRenderpassBeginInfo = {};
 			vk_commandBufferRenderpassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 			vk_commandBufferRenderpassBeginInfo.renderPass = vk_hRenderPass;
-			vk_commandBufferRenderpassBeginInfo.framebuffer = vk_phSwapchainFramebuffers[u32CommandBufferIndex];
+			CATCH_SIGNAL(vk_commandBufferRenderpassBeginInfo.framebuffer = vk_phSwapchainFramebuffers[u32CommandBufferIndex]);
 			vk_commandBufferRenderpassBeginInfo.renderArea.offset.x = 0;
 			vk_commandBufferRenderpassBeginInfo.renderArea.offset.y = 0;
 			vk_commandBufferRenderpassBeginInfo.renderArea.extent = vk_swapchainResolution;
@@ -714,7 +724,7 @@ namespace RE {
 				break;
 			case VK_SUBOPTIMAL_KHR:
 			case VK_ERROR_OUT_OF_DATE_KHR:
-				CATCH_SIGNAL(window_resize_event());
+				CATCH_SIGNAL(recreate_swapchain());
 				break;
 			default:
 				CHECK_VK_RESULT(vk_nextImageObtainedResult);
@@ -742,15 +752,6 @@ namespace RE {
 		vk_queuePresentSubmitInfo.pSwapchains = &vk_hSwapchain;
 		vk_queuePresentSubmitInfo.pImageIndices = &u32NextSwapchainImageIndex;
 		CATCH_SIGNAL(vkQueuePresentKHR(vk_hQueues[RE_VK_QUEUE_PRESENT_INDEX], &vk_queuePresentSubmitInfo));
-	}
-
-	void RenderSystem::window_resize_event() {
-		CATCH_SIGNAL(wait_for_idle_device());
-		CATCH_SIGNAL(destroy_framebuffers());
-		CATCH_SIGNAL(destroy_swapchain());
-		CATCH_SIGNAL(create_swapchain());
-		CATCH_SIGNAL(create_framebuffers());
-		CATCH_SIGNAL(record_command_buffers());
 	}
 
 	void RenderSystem::wait_for_idle_device() {

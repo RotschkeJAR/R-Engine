@@ -7,13 +7,16 @@ namespace RE {
 
 #define RE_VK_QUEUE_COUNT 2U
 #define RE_VK_COMMAND_BUFFER_COUNT 1U
-#define RE_VK_SEMAPHORE_COUNT 2U
+
+#define RE_VK_SEMAPHORE_COUNT 4U
+
+#define RE_VK_FENCE_COUNT 2U
 	
 	class RenderSystem {
 		private:
 			bool bValid;
 
-			// Handles making rendering in Vulkan work
+			// Attributes initialized at beginning and rarely changed
 			VkPhysicalDevice *vk_phPhysicalDevicesAvailable;
 			uint32_t u32PhysicalDevicesAvailableCount;
 			VkDevice vk_hDevice;
@@ -38,7 +41,10 @@ namespace RE {
 			VkCommandPool vk_hCommandPool;
 			VkCommandBuffer *vk_phCommandBuffers;
 			VkSemaphore vk_hSemaphores[RE_VK_SEMAPHORE_COUNT];
-			VkFence vk_hFence;
+			VkFence vk_hFences[RE_VK_FENCE_COUNT];
+
+			// Runtime changing variables
+			bool bUseOtherFrame;
 
 			// Configurable settings
 			VkPhysicalDevice vk_hPhysicalDeviceSelected;
@@ -78,6 +84,7 @@ namespace RE {
 			RenderSystem();
 			~RenderSystem();
 			void draw_frame();
+			void window_resize_event();
 			void wait_for_idle_device();
 			bool is_valid();
 	};

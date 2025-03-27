@@ -83,6 +83,7 @@ class First : public Scene {
 };
 
 int main() {
+	show_message_box_on_error(false);
 	SignalCatcher sigCatcher;
 	First first;
 	second = new Second();

@@ -9,10 +9,11 @@ namespace RE {
 
 #define RE_VK_SEMAPHORE_IMAGE_AVAILABLE_INDEX 0U
 #define RE_VK_SEMAPHORE_RENDERING_FINISHED_INDEX 1U
+#define RE_VK_SEMAPHORES_PER_FRAME 2U
 	
 	RenderSystem* RenderSystem::pInstance = nullptr;
 
-	RenderSystem::RenderSystem() : bValid(false) {
+	RenderSystem::RenderSystem() : bValid(false), bUseOtherFrame(false), bVsyncEnabled(true) {
 		if (RenderSystem::pInstance) {
 			RE_ERROR("An instance of the render system has already been created. The new one won't be initialized and remains invalid");
 			return;
@@ -45,8 +46,12 @@ namespace RE {
 			}
 		}
 		CATCH_SIGNAL(fetch_surface_infos());
+		PRINT_LN(u32SurfaceFormatsAvailableCount);
+		for (uint32_t i = 0U; i < u32SurfaceFormatsAvailableCount; i++) {
+			PRINT(vk_peSurfaceFormatsAvailable[i].format);
+			println(" - ", vk_peSurfaceFormatsAvailable[i].colorSpace);
+		}
 		vk_surfaceFormatSelected = vk_peSurfaceFormatsAvailable[0];
-		bVsyncEnabled = true;
 		if (!create_device() || !create_swapchain() || !create_shaders() || !create_pipeline_layout() || !create_renderpass() || !create_graphics_pipeline() || !create_framebuffers() || !alloc_command_buffers() || !record_command_buffers() || !create_sync_objects())
 			return;
 		bValid = true;
@@ -690,35 +695,52 @@ namespace RE {
 	bool RenderSystem::create_sync_objects() {
 		VkSemaphoreCreateInfo vk_semaphoreCreateInfo = {};
 		vk_semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-		if (!CHECK_VK_RESULT(vkCreateSemaphore(vk_hDevice, &vk_semaphoreCreateInfo, nullptr, &vk_hSemaphores[RE_VK_SEMAPHORE_IMAGE_AVAILABLE_INDEX])))
-			return false;
-		if (!CHECK_VK_RESULT(vkCreateSemaphore(vk_hDevice, &vk_semaphoreCreateInfo, nullptr, &vk_hSemaphores[RE_VK_SEMAPHORE_RENDERING_FINISHED_INDEX]))) {
-			CATCH_SIGNAL(vkDestroySemaphore(vk_hDevice, vk_hSemaphores[RE_VK_SEMAPHORE_IMAGE_AVAILABLE_INDEX], nullptr));
+		uint32_t u32SemaphoresCreatedSuccessfully = 0U;
+		for (uint32_t u32SemaphoreCreateIndex = 0U; u32SemaphoreCreateIndex < RE_VK_SEMAPHORE_COUNT; u32SemaphoreCreateIndex++) {
+			if (!CHECK_VK_RESULT(vkCreateSemaphore(vk_hDevice, &vk_semaphoreCreateInfo, nullptr, &vk_hSemaphores[u32SemaphoreCreateIndex])))
+				break;
+			u32SemaphoresCreatedSuccessfully++;
+		}
+		if (u32SemaphoresCreatedSuccessfully != RE_VK_SEMAPHORE_COUNT) {
+			for (uint32_t u32SemaphoreDeleteIndex = u32SemaphoresCreatedSuccessfully + 1U; u32SemaphoreDeleteIndex > 0U; u32SemaphoreDeleteIndex--)
+				CATCH_SIGNAL(vkDestroySemaphore(vk_hDevice, vk_hSemaphores[u32SemaphoreDeleteIndex - 1U], nullptr));
 			return false;
 		}
+
 		VkFenceCreateInfo vk_fenceCreateInfo = {};
 		vk_fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 		vk_fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-		if (!CHECK_VK_RESULT(vkCreateFence(vk_hDevice, &vk_fenceCreateInfo, nullptr, &vk_hFence))) {
-			CATCH_SIGNAL(vkDestroySemaphore(vk_hDevice, vk_hSemaphores[RE_VK_SEMAPHORE_IMAGE_AVAILABLE_INDEX], nullptr));
-			CATCH_SIGNAL(vkDestroySemaphore(vk_hDevice, vk_hSemaphores[RE_VK_SEMAPHORE_RENDERING_FINISHED_INDEX], nullptr));
+		uint32_t u32FencesCreatedSuccessfully = 0U;
+		for (uint32_t u32FenceCreateIndex = 0U; u32FenceCreateIndex < RE_VK_FENCE_COUNT; u32FenceCreateIndex++) {
+			if (!CHECK_VK_RESULT(vkCreateFence(vk_hDevice, &vk_fenceCreateInfo, nullptr, &vk_hFences[u32FenceCreateIndex])))
+				break;
+			u32FencesCreatedSuccessfully++;
+		}
+		if (u32FencesCreatedSuccessfully != RE_VK_FENCE_COUNT) {
+			for (uint32_t u32SemaphoreDeleteIndex = 0U; u32SemaphoreDeleteIndex < RE_VK_SEMAPHORES_PER_FRAME; u32SemaphoreDeleteIndex++) {
+				CATCH_SIGNAL(vkDestroySemaphore(vk_hDevice, vk_hSemaphores[u32SemaphoreDeleteIndex * RE_VK_SEMAPHORES_PER_FRAME + RE_VK_SEMAPHORE_IMAGE_AVAILABLE_INDEX], nullptr));
+				CATCH_SIGNAL(vkDestroySemaphore(vk_hDevice, vk_hSemaphores[u32SemaphoreDeleteIndex * RE_VK_SEMAPHORES_PER_FRAME + RE_VK_SEMAPHORE_RENDERING_FINISHED_INDEX], nullptr));
+			}
+			for (uint32_t u32FenceDeleteIndex = u32FencesCreatedSuccessfully + 1U; u32FenceDeleteIndex > 0U; u32FenceDeleteIndex--)
+				CATCH_SIGNAL(vkDestroyFence(vk_hDevice, vk_hFences[u32FenceDeleteIndex - 1U], nullptr));
 			return false;
 		}
 		return true;
 	}
 	
 	void RenderSystem::destroy_sync_objects() {
-		CATCH_SIGNAL(vkDestroySemaphore(vk_hDevice, vk_hSemaphores[RE_VK_SEMAPHORE_IMAGE_AVAILABLE_INDEX], nullptr));
-		CATCH_SIGNAL(vkDestroySemaphore(vk_hDevice, vk_hSemaphores[RE_VK_SEMAPHORE_RENDERING_FINISHED_INDEX], nullptr));
-		CATCH_SIGNAL(vkDestroyFence(vk_hDevice, vk_hFence, nullptr));
+		for (uint32_t u32SemaphoreDeleteIndex = 0U; u32SemaphoreDeleteIndex < RE_VK_SEMAPHORE_COUNT; u32SemaphoreDeleteIndex++)
+			CATCH_SIGNAL(vkDestroySemaphore(vk_hDevice, vk_hSemaphores[u32SemaphoreDeleteIndex], nullptr));
+		for (uint32_t u32FenceDeleteIndex = 0U; u32FenceDeleteIndex < RE_VK_FENCE_COUNT; u32FenceDeleteIndex++)
+			CATCH_SIGNAL(vkDestroyFence(vk_hDevice, vk_hFences[u32FenceDeleteIndex], nullptr));
 	}
 
 	void RenderSystem::draw_frame() {
-		CATCH_SIGNAL(vkWaitForFences(vk_hDevice, 1U, &vk_hFence, VK_TRUE, std::numeric_limits<uint64_t>::max()));
-		CATCH_SIGNAL(vkResetFences(vk_hDevice, 1U, &vk_hFence));
+		CATCH_SIGNAL(vkWaitForFences(vk_hDevice, 1U, &vk_hFences[bUseOtherFrame], VK_TRUE, std::numeric_limits<uint64_t>::max()));
+		CATCH_SIGNAL(vkResetFences(vk_hDevice, 1U, &vk_hFences[bUseOtherFrame]));
 		uint32_t u32NextSwapchainImageIndex;
 		VkResult vk_nextImageObtainedResult;
-		CATCH_SIGNAL(vk_nextImageObtainedResult = vkAcquireNextImageKHR(vk_hDevice, vk_hSwapchain, std::numeric_limits<uint64_t>::max(), vk_hSemaphores[RE_VK_SEMAPHORE_IMAGE_AVAILABLE_INDEX], VK_NULL_HANDLE, &u32NextSwapchainImageIndex));
+		CATCH_SIGNAL(vk_nextImageObtainedResult = vkAcquireNextImageKHR(vk_hDevice, vk_hSwapchain, std::numeric_limits<uint64_t>::max(), vk_hSemaphores[bUseOtherFrame * RE_VK_SEMAPHORES_PER_FRAME + RE_VK_SEMAPHORE_IMAGE_AVAILABLE_INDEX], VK_NULL_HANDLE, &u32NextSwapchainImageIndex));
 		switch (vk_nextImageObtainedResult) {
 			case VK_SUCCESS:
 				break;
@@ -734,24 +756,30 @@ namespace RE {
 		VkSubmitInfo vk_queueGraphicsSubmitInfo = {};
 		vk_queueGraphicsSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 		vk_queueGraphicsSubmitInfo.waitSemaphoreCount = 1U;
-		vk_queueGraphicsSubmitInfo.pWaitSemaphores = &vk_hSemaphores[RE_VK_SEMAPHORE_IMAGE_AVAILABLE_INDEX];
+		vk_queueGraphicsSubmitInfo.pWaitSemaphores = &vk_hSemaphores[bUseOtherFrame * RE_VK_SEMAPHORES_PER_FRAME + RE_VK_SEMAPHORE_IMAGE_AVAILABLE_INDEX];
 		vk_queueGraphicsSubmitInfo.pWaitDstStageMask = vk_pipelineStageFlags;
 		vk_queueGraphicsSubmitInfo.commandBufferCount = 1U;
 		CATCH_SIGNAL(vk_queueGraphicsSubmitInfo.pCommandBuffers = &vk_phCommandBuffers[u32NextSwapchainImageIndex]);
 		vk_queueGraphicsSubmitInfo.signalSemaphoreCount = 1U;
-		vk_queueGraphicsSubmitInfo.pSignalSemaphores = &vk_hSemaphores[RE_VK_SEMAPHORE_RENDERING_FINISHED_INDEX];
-		if (!CHECK_VK_RESULT(vkQueueSubmit(vk_hQueues[RE_VK_QUEUE_GRAPHICS_INDEX], 1U, &vk_queueGraphicsSubmitInfo, vk_hFence))) {
+		vk_queueGraphicsSubmitInfo.pSignalSemaphores = &vk_hSemaphores[bUseOtherFrame * RE_VK_SEMAPHORES_PER_FRAME + RE_VK_SEMAPHORE_RENDERING_FINISHED_INDEX];
+		if (!CHECK_VK_RESULT(vkQueueSubmit(vk_hQueues[RE_VK_QUEUE_GRAPHICS_INDEX], 1U, &vk_queueGraphicsSubmitInfo, vk_hFences[bUseOtherFrame]))) {
 			RE_FATAL_ERROR("Failed submitting data to the graphics queue in Vulkan");
 			return;
 		}
 		VkPresentInfoKHR vk_queuePresentSubmitInfo = {};
 		vk_queuePresentSubmitInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 		vk_queuePresentSubmitInfo.waitSemaphoreCount = 1U;
-		vk_queuePresentSubmitInfo.pWaitSemaphores = &vk_hSemaphores[RE_VK_SEMAPHORE_RENDERING_FINISHED_INDEX];
+		vk_queuePresentSubmitInfo.pWaitSemaphores = &vk_hSemaphores[bUseOtherFrame * RE_VK_SEMAPHORES_PER_FRAME + RE_VK_SEMAPHORE_RENDERING_FINISHED_INDEX];
 		vk_queuePresentSubmitInfo.swapchainCount = 1U;
 		vk_queuePresentSubmitInfo.pSwapchains = &vk_hSwapchain;
 		vk_queuePresentSubmitInfo.pImageIndices = &u32NextSwapchainImageIndex;
 		CATCH_SIGNAL(vkQueuePresentKHR(vk_hQueues[RE_VK_QUEUE_PRESENT_INDEX], &vk_queuePresentSubmitInfo));
+
+		bUseOtherFrame = !bUseOtherFrame;
+	}
+
+	void RenderSystem::window_resize_event() {
+		CATCH_SIGNAL(recreate_swapchain());
 	}
 
 	void RenderSystem::wait_for_idle_device() {

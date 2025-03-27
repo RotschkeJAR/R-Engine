@@ -21,6 +21,8 @@ namespace RE {
 	void Window::update_window_size(REushort u16NewWidth, REushort u16NewHeight) {
 		size[0] = u16NewWidth;
 		size[1] = u16NewHeight;
+		if (RenderSystem::pInstance)
+			CATCH_SIGNAL(RenderSystem::pInstance->window_resize_event());
 	}
 
 	void Window::show_window(bool bShowWindow) {

@@ -2,32 +2,42 @@
 #include "RE_Window_Win64.hpp"
 #include "RE_Window_X11.hpp"
 
+#include "RE_Input.hpp"
+
 namespace RE {
 
 #define RE_VK_QUEUE_GRAPHICS_INDEX 0U
-#define RE_VK_QUEUE_PRESENT_INDEX 0U
+#define RE_VK_QUEUE_PRESENT_INDEX 1U
+#define RE_VK_QUEUE_TRANSFER_INDEX 2U
+
+#define RE_VK_COMMAND_POOL_GRAPHICS_INDEX 0U
+#define RE_VK_COMMAND_POOL_TRANSFER_INDEX 1U
 
 #define RE_VK_SEMAPHORE_IMAGE_AVAILABLE_INDEX 0U
 #define RE_VK_SEMAPHORE_RENDERING_FINISHED_INDEX 1U
 #define RE_VK_SEMAPHORES_PER_FRAME 2U
 	
 	RenderSystem* RenderSystem::pInstance = nullptr;
+	REvertex vertices[] = {1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+						-1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f,
+						0.0f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f};
 
-	RenderSystem::RenderSystem() : bValid(false), bUseOtherFrame(false), bVsyncEnabled(true) {
+	RenderSystem::RenderSystem() : bValid(false), vk_hSwapchain(VK_NULL_HANDLE), bUseOtherFrame(false), bVsyncEnabled(true) {
 		if (RenderSystem::pInstance) {
 			RE_ERROR("An instance of the render system has already been created. The new one won't be initialized and remains invalid");
 			return;
 		}
 		RenderSystem::pInstance = this;
 		DEFINE_SIGNAL_GUARD(sigGuardConstructorRenderSystem);
-		vk_hSwapchain = VK_NULL_HANDLE;
-		if (!create_surface() || !alloc_physical_device_list())
+		if (!create_surface() || !alloc_physical_device_list()) {
+			RE_ERROR("Failed initializing the render system");
 			return;
-		REint i32DeviceScoreBest = std::numeric_limits<REint>::min();
+		}
+		int32_t i32DeviceScoreBest = std::numeric_limits<int32_t>::min();
 		for (uint32_t i = 0U; i < u32PhysicalDevicesAvailableCount; i++) {
 			VkPhysicalDeviceProperties vk_physicalDeviceProperties;
 			CATCH_SIGNAL(vkGetPhysicalDeviceProperties(vk_phPhysicalDevicesAvailable[i], &vk_physicalDeviceProperties));
-			REint i32CurrentDeviceScore = 0;
+			int32_t i32CurrentDeviceScore = 0;
 			switch (vk_physicalDeviceProperties.deviceType) {
 				case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
 					i32DeviceScoreBest += 1000;
@@ -52,8 +62,10 @@ namespace RE {
 			println(" - ", vk_peSurfaceFormatsAvailable[i].colorSpace);
 		}
 		vk_surfaceFormatSelected = vk_peSurfaceFormatsAvailable[0];
-		if (!create_device() || !create_swapchain() || !create_shaders() || !create_pipeline_layout() || !create_renderpass() || !create_graphics_pipeline() || !create_framebuffers() || !alloc_command_buffers() || !record_command_buffers() || !create_sync_objects())
+		if (!create_device() || !create_swapchain() || !create_shaders() || !create_pipeline_layout() || !create_renderpass() || !create_graphics_pipeline() || !create_framebuffers() || !alloc_command_buffers() || !create_vertex_buffer() || !record_command_buffers() || !create_sync_objects()) {
+			RE_ERROR("Failed initializing the render system");
 			return;
+		}
 		bValid = true;
 	}
 
@@ -62,6 +74,7 @@ namespace RE {
 			return;
 		RenderSystem::pInstance = nullptr;
 		CATCH_SIGNAL(destroy_sync_objects());
+		CATCH_SIGNAL(destroy_vertex_buffer());
 		CATCH_SIGNAL(free_command_buffers());
 		CATCH_SIGNAL(destroy_framebuffers());
 		CATCH_SIGNAL(destroy_graphics_pipeline());
@@ -72,6 +85,56 @@ namespace RE {
 		CATCH_SIGNAL(destroy_surface());
 		CATCH_SIGNAL(destroy_device());
 		CATCH_SIGNAL(free_physical_device_list());
+	}
+
+	bool RenderSystem::create_buffer(VkDeviceSize vk_size, VkBufferUsageFlags vk_usage, VkSharingMode vk_sharingMode, uint32_t u32QueueFamilyIndexCount, const uint32_t* pu32QueueFamilyIndices, VkMemoryPropertyFlags vk_memoryProperties, VkBuffer& vk_rBuffer, VkDeviceMemory& vk_rDeviceMemory) {
+		VkBufferCreateInfo vk_bufferCreateInfo = {};
+		vk_bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+		vk_bufferCreateInfo.size = vk_size;
+		vk_bufferCreateInfo.usage = vk_usage;
+		vk_bufferCreateInfo.sharingMode = vk_sharingMode;
+		switch (vk_sharingMode) {
+			case VK_SHARING_MODE_CONCURRENT:
+				vk_bufferCreateInfo.queueFamilyIndexCount = u32QueueFamilyIndexCount;
+				vk_bufferCreateInfo.pQueueFamilyIndices = pu32QueueFamilyIndices;
+				break;
+			case VK_SHARING_MODE_EXCLUSIVE:
+			default:
+				vk_bufferCreateInfo.queueFamilyIndexCount = 0U;
+				vk_bufferCreateInfo.pQueueFamilyIndices = nullptr;
+				break;
+		}
+		if (!CHECK_VK_RESULT(vkCreateBuffer(vk_hDevice, &vk_bufferCreateInfo, nullptr, &vk_rBuffer))) {
+			RE_ERROR("Failed creating new buffer in Vulkan");
+			return false;
+		}
+		VkMemoryRequirements vk_bufferMemoryRequirements;
+		CATCH_SIGNAL(vkGetBufferMemoryRequirements(vk_hDevice, vk_rBuffer, &vk_bufferMemoryRequirements));
+		VkPhysicalDeviceMemoryProperties vk_physicalDeviceMemoryProperties;
+		CATCH_SIGNAL(vkGetPhysicalDeviceMemoryProperties(vk_hPhysicalDeviceSelected, &vk_physicalDeviceMemoryProperties));
+		std::optional<uint32_t> memoryTypeSelected;
+		for (uint32_t u32MemoryTypeIndex = 0U; u32MemoryTypeIndex < vk_physicalDeviceMemoryProperties.memoryTypeCount; u32MemoryTypeIndex++) {
+			if ((vk_bufferMemoryRequirements.memoryTypeBits & (1U << u32MemoryTypeIndex)) && (vk_physicalDeviceMemoryProperties.memoryTypes[u32MemoryTypeIndex].propertyFlags & vk_memoryProperties)) {
+				memoryTypeSelected = u32MemoryTypeIndex;
+				break;
+			}
+		}
+		if (!memoryTypeSelected.has_value()) {
+			RE_ERROR("The physical Vulkan device doesn't support the required memory type for the recently created buffer");
+			CATCH_SIGNAL(vkDestroyBuffer(vk_hDevice, vk_rBuffer, nullptr));
+			return false;
+		}
+		VkMemoryAllocateInfo vk_bufferMemoryAllocateInfo = {};
+		vk_bufferMemoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+		vk_bufferMemoryAllocateInfo.allocationSize = vk_bufferMemoryRequirements.size;
+		vk_bufferMemoryAllocateInfo.memoryTypeIndex = memoryTypeSelected.value();
+		if (!CHECK_VK_RESULT(vkAllocateMemory(vk_hDevice, &vk_bufferMemoryAllocateInfo, nullptr, &vk_rDeviceMemory))) {
+			RE_ERROR("Failed allocating memory for the recently created buffer in Vulkan");
+			CATCH_SIGNAL(vkDestroyBuffer(vk_hDevice, vk_rBuffer, nullptr));
+			return false;
+		}
+		CATCH_SIGNAL(vkBindBufferMemory(vk_hDevice, vk_rBuffer, vk_rDeviceMemory, 0U));
+		return true;
 	}
 
 	bool RenderSystem::create_surface() {
@@ -174,7 +237,7 @@ namespace RE {
 			CATCH_SIGNAL(vkGetPhysicalDeviceQueueFamilyProperties(vk_hPhysicalDevice, &u32PhysicalDeviceQueueFamilyCount, nullptr));
 			VkQueueFamilyProperties *const vk_pPhysicalDeviceQueueFamilyProperties = new VkQueueFamilyProperties[u32PhysicalDeviceQueueFamilyCount];
 			CATCH_SIGNAL(vkGetPhysicalDeviceQueueFamilyProperties(vk_hPhysicalDevice, &u32PhysicalDeviceQueueFamilyCount, vk_pPhysicalDeviceQueueFamilyProperties));
-			bool bGraphicsQueueExists = false, bPresentQueueExists = false;
+			bool bGraphicsQueueExists = false, bPresentQueueExists = false, bTransferQueueExists = false;
 			for (uint32_t u32PhysicalDeviceQueueFamilyIndex = 0U; u32PhysicalDeviceQueueFamilyIndex < u32PhysicalDeviceQueueFamilyCount; u32PhysicalDeviceQueueFamilyIndex++) {
 				if (!bPresentQueueExists) {
 					VkBool32 surfaceSupportExists;
@@ -184,10 +247,12 @@ namespace RE {
 				}
 				if (!bGraphicsQueueExists && (vk_pPhysicalDeviceQueueFamilyProperties[u32PhysicalDeviceQueueFamilyIndex].queueFlags & VK_QUEUE_GRAPHICS_BIT))
 					bGraphicsQueueExists = true;
-				if (bGraphicsQueueExists && bPresentQueueExists)
+				if (!bTransferQueueExists && (vk_pPhysicalDeviceQueueFamilyProperties[u32PhysicalDeviceQueueFamilyIndex].queueFlags & VK_QUEUE_TRANSFER_BIT))
+					bTransferQueueExists = true;
+				if (bGraphicsQueueExists && bPresentQueueExists && bTransferQueueExists)
 					break;
 			}
-			if (bGraphicsQueueExists && bPresentQueueExists)
+			if (bGraphicsQueueExists && bPresentQueueExists && bTransferQueueExists)
 				suitablePhysicalDevices.push_back(vk_hPhysicalDevice);
 
 			delete[] vk_pPhysicalDeviceExtensionProperties;
@@ -196,7 +261,7 @@ namespace RE {
 		delete[] vk_phTotalPhysicalDevice;
 		u32PhysicalDevicesAvailableCount = suitablePhysicalDevices.size();
 		if (!u32PhysicalDevicesAvailableCount) {
-			RE_FATAL_ERROR("There aren't any physical devices supporting the necessary features in Vulkan");
+			RE_FATAL_ERROR("There aren't any physical Vulkan devices supporting the necessary features");
 			return false;
 		}
 		vk_phPhysicalDevicesAvailable = new VkPhysicalDevice[u32PhysicalDevicesAvailableCount];
@@ -220,33 +285,50 @@ namespace RE {
 		CATCH_SIGNAL(vkGetPhysicalDeviceQueueFamilyProperties(vk_hPhysicalDeviceSelected, &u32PhysicalDeviceQueueFamilyCount, nullptr));
 		VkQueueFamilyProperties *vk_pPhysicalDeviceQueueFamilyProperties = new VkQueueFamilyProperties[u32PhysicalDeviceQueueFamilyCount];
 		CATCH_SIGNAL(vkGetPhysicalDeviceQueueFamilyProperties(vk_hPhysicalDeviceSelected, &u32PhysicalDeviceQueueFamilyCount, vk_pPhysicalDeviceQueueFamilyProperties));
-		std::optional<uint32_t> graphicsQueueIndex, presentQueueIndex;
+		std::optional<uint32_t> graphicsQueueIndex, presentQueueIndex, transferQueueIndex;
 		std::vector<uint32_t> uniqueQueueIndices;
 		for (uint32_t u32PhysicalDeviceQueueFamilyIndex = 0U; u32PhysicalDeviceQueueFamilyIndex < u32PhysicalDeviceQueueFamilyCount; u32PhysicalDeviceQueueFamilyIndex++) {
+			bool bQueueUseful = false;
+			// Get graphics-queue index
+			if (!graphicsQueueIndex.has_value() && (vk_pPhysicalDeviceQueueFamilyProperties[u32PhysicalDeviceQueueFamilyIndex].queueFlags & VK_QUEUE_GRAPHICS_BIT)) {
+				graphicsQueueIndex = u32PhysicalDeviceQueueFamilyIndex;
+				// Check if graphics queue supports presenting too for better performance
+				VkBool32 surfaceSupportExists;
+				CATCH_SIGNAL(vkGetPhysicalDeviceSurfaceSupportKHR(vk_hPhysicalDeviceSelected, u32PhysicalDeviceQueueFamilyIndex, vk_hSurface, &surfaceSupportExists));
+				if (surfaceSupportExists)
+					presentQueueIndex = u32PhysicalDeviceQueueFamilyIndex;
+				bQueueUseful = true;
+			}
+			// Get presenting-queue index
 			if (!presentQueueIndex.has_value()) {
 				VkBool32 surfaceSupportExists;
 				CATCH_SIGNAL(vkGetPhysicalDeviceSurfaceSupportKHR(vk_hPhysicalDeviceSelected, u32PhysicalDeviceQueueFamilyIndex, vk_hSurface, &surfaceSupportExists));
-				if (surfaceSupportExists) {
+				if (surfaceSupportExists)
 					presentQueueIndex = u32PhysicalDeviceQueueFamilyIndex;
-					if (std::find(uniqueQueueIndices.begin(), uniqueQueueIndices.end(), u32PhysicalDeviceQueueFamilyIndex) == uniqueQueueIndices.end())
-						uniqueQueueIndices.push_back(u32PhysicalDeviceQueueFamilyIndex);
-				}
+				bQueueUseful = true;
 			}
-			if (!graphicsQueueIndex.has_value() && (vk_pPhysicalDeviceQueueFamilyProperties[u32PhysicalDeviceQueueFamilyIndex].queueFlags & VK_QUEUE_GRAPHICS_BIT)) {
-				graphicsQueueIndex = u32PhysicalDeviceQueueFamilyIndex;
-				if (std::find(uniqueQueueIndices.begin(), uniqueQueueIndices.end(), u32PhysicalDeviceQueueFamilyIndex) == uniqueQueueIndices.end())
-					uniqueQueueIndices.push_back(u32PhysicalDeviceQueueFamilyIndex);
+			// Get transfer-queue index, but avoid being a graphics queue too
+			if (!transferQueueIndex.has_value() && (vk_pPhysicalDeviceQueueFamilyProperties[u32PhysicalDeviceQueueFamilyIndex].queueFlags & VK_QUEUE_TRANSFER_BIT) && !((vk_pPhysicalDeviceQueueFamilyProperties[u32PhysicalDeviceQueueFamilyIndex].queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0)) {
+				transferQueueIndex = u32PhysicalDeviceQueueFamilyIndex;
+				bQueueUseful = true;
 			}
-			if (graphicsQueueIndex.has_value() && presentQueueIndex.has_value())
+			// Check if current queue index is unique and add it
+			if (bQueueUseful && std::find(uniqueQueueIndices.begin(), uniqueQueueIndices.end(), u32PhysicalDeviceQueueFamilyIndex) == uniqueQueueIndices.end())
+				uniqueQueueIndices.push_back(u32PhysicalDeviceQueueFamilyIndex);
+			if (graphicsQueueIndex.has_value() && presentQueueIndex.has_value() && transferQueueIndex.has_value())
 				break;
 		}
+		// If no transfer-queue found, use graphics-queue instead, which is also a transfer-queue
+		if (!transferQueueIndex.has_value())
+			transferQueueIndex = graphicsQueueIndex.value();
 		const float fQueuePriority = 1.0f;
 		const size_t uniqueQueueIndexCount = uniqueQueueIndices.size();
 		VkDeviceQueueCreateInfo *vk_pDeviceQueueCreateInfos = new VkDeviceQueueCreateInfo[uniqueQueueIndexCount];
 		REuint u32UniqueQueueIndexIndex = 0U;
 		for (uint32_t u32UniqueQueueIndex : uniqueQueueIndices) {
-			vk_pDeviceQueueCreateInfos[u32UniqueQueueIndexIndex] = {};
 			vk_pDeviceQueueCreateInfos[u32UniqueQueueIndexIndex].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+			vk_pDeviceQueueCreateInfos[u32UniqueQueueIndexIndex].pNext = nullptr;
+			vk_pDeviceQueueCreateInfos[u32UniqueQueueIndexIndex].flags = 0;
 			vk_pDeviceQueueCreateInfos[u32UniqueQueueIndexIndex].queueFamilyIndex = u32UniqueQueueIndex;
 			vk_pDeviceQueueCreateInfos[u32UniqueQueueIndexIndex].queueCount = 1U;
 			vk_pDeviceQueueCreateInfos[u32UniqueQueueIndexIndex].pQueuePriorities = &fQueuePriority;
@@ -264,13 +346,17 @@ namespace RE {
 		vk_deviceCreateInfo.pEnabledFeatures = &vk_physicalDeviceFeaturesEnabled;
 		const bool bCreatedDeviceSuccessfully = CHECK_VK_RESULT(vkCreateDevice(vk_hPhysicalDeviceSelected, &vk_deviceCreateInfo, nullptr, &vk_hDevice));
 		DELETE_ARRAY_SAFELY(vk_pDeviceQueueCreateInfos);
-		if (!bCreatedDeviceSuccessfully)
+		if (!bCreatedDeviceSuccessfully) {
+			RE_FATAL_ERROR("Failed creating logical Vulkan device");
 			return false;
+		}
 
 		CATCH_SIGNAL(vkGetDeviceQueue(vk_hDevice, graphicsQueueIndex.value(), 0, &vk_hQueues[RE_VK_QUEUE_GRAPHICS_INDEX]));
 		u32QueueIndices[RE_VK_QUEUE_GRAPHICS_INDEX] = graphicsQueueIndex.value();
 		CATCH_SIGNAL(vkGetDeviceQueue(vk_hDevice, presentQueueIndex.value(), 0, &vk_hQueues[RE_VK_QUEUE_PRESENT_INDEX]));
 		u32QueueIndices[RE_VK_QUEUE_PRESENT_INDEX] = presentQueueIndex.value();
+		CATCH_SIGNAL(vkGetDeviceQueue(vk_hDevice, transferQueueIndex.value(), 0, &vk_hQueues[RE_VK_QUEUE_TRANSFER_INDEX]));
+		u32QueueIndices[RE_VK_QUEUE_TRANSFER_INDEX] = transferQueueIndex.value();
 		return true;
 	}
 	
@@ -279,45 +365,59 @@ namespace RE {
 	}
 
 	bool RenderSystem::create_swapchain() {
-		vk_eSwapchainImageFormat = vk_surfaceFormatSelected.format;
-		VkSwapchainCreateInfoKHR vk_swapchainCreateInfo = {};
-		vk_swapchainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-		vk_swapchainCreateInfo.surface = vk_hSurface;
-		vk_swapchainCreateInfo.minImageCount = std::clamp(vk_surfaceCapabilities.minImageCount + 1U, vk_surfaceCapabilities.minImageCount, vk_surfaceCapabilities.maxImageCount > 0U ? vk_surfaceCapabilities.maxImageCount : std::numeric_limits<uint32_t>::max());
-		vk_swapchainCreateInfo.imageFormat = vk_eSwapchainImageFormat;
-		vk_swapchainCreateInfo.imageColorSpace = vk_surfaceFormatSelected.colorSpace;
-		if (vk_surfaceCapabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
-			vk_swapchainResolution = vk_surfaceCapabilities.currentExtent;
-		else {
-			vk_swapchainResolution.width = std::clamp<REushort>(Window::pInstance->get_size()[0], vk_surfaceCapabilities.minImageExtent.width, vk_surfaceCapabilities.maxImageExtent.width);
-			vk_swapchainResolution.height = std::clamp<REushort>(Window::pInstance->get_size()[1], vk_surfaceCapabilities.minImageExtent.height, vk_surfaceCapabilities.maxImageExtent.height);
-		}
-		vk_swapchainCreateInfo.imageExtent = vk_swapchainResolution;
-		vk_swapchainCreateInfo.imageArrayLayers = 1U;
-		vk_swapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-		uint32_t u32SwapchainRelevantQueueIndices[2] = {u32QueueIndices[RE_VK_QUEUE_GRAPHICS_INDEX], u32QueueIndices[RE_VK_QUEUE_PRESENT_INDEX]};
-		if (u32QueueIndices[RE_VK_QUEUE_GRAPHICS_INDEX] != u32QueueIndices[RE_VK_QUEUE_PRESENT_INDEX]) {
-			vk_swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-			vk_swapchainCreateInfo.queueFamilyIndexCount = 2U;
-			vk_swapchainCreateInfo.pQueueFamilyIndices = u32SwapchainRelevantQueueIndices;
-		} else
-			vk_swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-		vk_swapchainCreateInfo.preTransform = vk_surfaceCapabilities.currentTransform;
-		vk_swapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-		vk_swapchainCreateInfo.presentMode = bVsyncEnabled ? vk_ePresentModeVsync : vk_ePresentModeNoVsync;
-		vk_swapchainCreateInfo.clipped = VK_TRUE;
-		vk_swapchainCreateInfo.oldSwapchain = vk_hSwapchain;
-		if (!CHECK_VK_RESULT(vkCreateSwapchainKHR(vk_hDevice, &vk_swapchainCreateInfo, nullptr, &vk_hSwapchain)))
-			return false;
+		{ // Create actual sweapchain
+			vk_eSwapchainImageFormat = vk_surfaceFormatSelected.format;
+			const uint32_t u32OldSwapchainImageViewCount = u32SwapchainImageCount;
+			const VkSwapchainKHR vk_hOldSwapchain = vk_hSwapchain;
+			VkSwapchainCreateInfoKHR vk_swapchainCreateInfo = {};
+			vk_swapchainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+			vk_swapchainCreateInfo.surface = vk_hSurface;
+			vk_swapchainCreateInfo.minImageCount = std::clamp(vk_surfaceCapabilities.minImageCount + 1U, vk_surfaceCapabilities.minImageCount, vk_surfaceCapabilities.maxImageCount > 0U ? vk_surfaceCapabilities.maxImageCount : std::numeric_limits<uint32_t>::max());
+			vk_swapchainCreateInfo.imageFormat = vk_eSwapchainImageFormat;
+			vk_swapchainCreateInfo.imageColorSpace = vk_surfaceFormatSelected.colorSpace;
+			if (vk_surfaceCapabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
+				vk_swapchainResolution = vk_surfaceCapabilities.currentExtent;
+			else {
+				vk_swapchainResolution.width = std::clamp<REushort>(Window::pInstance->get_size()[0], vk_surfaceCapabilities.minImageExtent.width, vk_surfaceCapabilities.maxImageExtent.width);
+				vk_swapchainResolution.height = std::clamp<REushort>(Window::pInstance->get_size()[1], vk_surfaceCapabilities.minImageExtent.height, vk_surfaceCapabilities.maxImageExtent.height);
+			}
+			vk_swapchainCreateInfo.imageExtent = vk_swapchainResolution;
+			vk_swapchainCreateInfo.imageArrayLayers = 1U;
+			vk_swapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+			const uint32_t u32SwapchainRelevantQueueIndices[2] = {u32QueueIndices[RE_VK_QUEUE_GRAPHICS_INDEX], u32QueueIndices[RE_VK_QUEUE_PRESENT_INDEX]};
+			if (u32QueueIndices[RE_VK_QUEUE_GRAPHICS_INDEX] != u32QueueIndices[RE_VK_QUEUE_PRESENT_INDEX]) {
+				vk_swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+				vk_swapchainCreateInfo.queueFamilyIndexCount = 2U;
+				vk_swapchainCreateInfo.pQueueFamilyIndices = u32SwapchainRelevantQueueIndices;
+			} else
+				vk_swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+			vk_swapchainCreateInfo.preTransform = vk_surfaceCapabilities.currentTransform;
+			vk_swapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+			vk_swapchainCreateInfo.presentMode = bVsyncEnabled ? vk_ePresentModeVsync : vk_ePresentModeNoVsync;
+			vk_swapchainCreateInfo.clipped = VK_TRUE;
+			vk_swapchainCreateInfo.oldSwapchain = vk_hOldSwapchain;
+			if (!CHECK_VK_RESULT(vkCreateSwapchainKHR(vk_hDevice, &vk_swapchainCreateInfo, nullptr, &vk_hSwapchain))) {
+				RE_FATAL_ERROR("Failed creating Vulkan swapchain");
+				return false;
+			}
+			if (vk_hOldSwapchain != VK_NULL_HANDLE) {
+				for (uint32_t u32OldSwapchainImageViewDeleteIndex = 0U; u32OldSwapchainImageViewDeleteIndex < u32OldSwapchainImageViewCount; u32OldSwapchainImageViewDeleteIndex++)
+					CATCH_SIGNAL(vkDestroyImageView(vk_hDevice, vk_pSwapchainImageViews[u32OldSwapchainImageViewDeleteIndex], nullptr));
+				delete[] vk_pSwapchainImages;
+				delete[] vk_pSwapchainImageViews;
+				CATCH_SIGNAL(vkDestroySwapchainKHR(vk_hDevice, vk_hOldSwapchain, nullptr));
+			}
+		} // End of creating actual swapchain
 
 		CATCH_SIGNAL(vkGetSwapchainImagesKHR(vk_hDevice, vk_hSwapchain, &u32SwapchainImageCount, nullptr));
 		vk_pSwapchainImages = new VkImage[u32SwapchainImageCount];
 		CATCH_SIGNAL(vkGetSwapchainImagesKHR(vk_hDevice, vk_hSwapchain, &u32SwapchainImageCount, vk_pSwapchainImages));
-		vk_pSwapchainImageView = new VkImageView[u32SwapchainImageCount];
-		for (uint32_t u32SwapchainImageIndex = 0U; u32SwapchainImageIndex < u32SwapchainImageCount; u32SwapchainImageIndex++) {
+		vk_pSwapchainImageViews = new VkImageView[u32SwapchainImageCount];
+		uint32_t u32SwapchainImageViewsCreated = 0U;
+		while (u32SwapchainImageViewsCreated < u32SwapchainImageCount) {
 			VkImageViewCreateInfo vk_swapchainImageViewCreateInfo = {};
 			vk_swapchainImageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-			vk_swapchainImageViewCreateInfo.image = vk_pSwapchainImages[u32SwapchainImageIndex];
+			vk_swapchainImageViewCreateInfo.image = vk_pSwapchainImages[u32SwapchainImageViewsCreated];
 			vk_swapchainImageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
 			vk_swapchainImageViewCreateInfo.format = vk_eSwapchainImageFormat;
 			vk_swapchainImageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -329,22 +429,29 @@ namespace RE {
 			vk_swapchainImageViewCreateInfo.subresourceRange.levelCount = 1U;
 			vk_swapchainImageViewCreateInfo.subresourceRange.baseArrayLayer = 0U;
 			vk_swapchainImageViewCreateInfo.subresourceRange.layerCount = 1U;
-			if (!CHECK_VK_RESULT(vkCreateImageView(vk_hDevice, &vk_swapchainImageViewCreateInfo, nullptr, &vk_pSwapchainImageView[u32SwapchainImageIndex]))) {
-				DELETE_ARRAY_SAFELY(vk_pSwapchainImages);
-				DELETE_ARRAY_SAFELY(vk_pSwapchainImageView);
-				CATCH_SIGNAL(vkDestroySwapchainKHR(vk_hDevice, vk_hSwapchain, nullptr));
-				vk_hSwapchain = VK_NULL_HANDLE;
-				return false;
+			if (!CHECK_VK_RESULT(vkCreateImageView(vk_hDevice, &vk_swapchainImageViewCreateInfo, nullptr, &vk_pSwapchainImageViews[u32SwapchainImageViewsCreated]))) {
+				RE_FATAL_ERROR(append_to_string("Failed to create Vulkan image view at index ", u32SwapchainImageViewsCreated));
+				break;
 			}
+			u32SwapchainImageViewsCreated++;
+		}
+		if (u32SwapchainImageViewsCreated != u32SwapchainImageCount) {
+			for (uint32_t u32SwapchainImageDeleteIndex = 0U; u32SwapchainImageDeleteIndex < u32SwapchainImageViewsCreated; u32SwapchainImageDeleteIndex++)
+				CATCH_SIGNAL(vkDestroyImageView(vk_hDevice, vk_pSwapchainImageViews[u32SwapchainImageDeleteIndex], nullptr));
+			DELETE_ARRAY_SAFELY(vk_pSwapchainImages);
+			DELETE_ARRAY_SAFELY(vk_pSwapchainImageViews);
+			CATCH_SIGNAL(vkDestroySwapchainKHR(vk_hDevice, vk_hSwapchain, nullptr));
+			vk_hSwapchain = VK_NULL_HANDLE;
+			return false;
 		}
 		return true;
 	}
 	
 	void RenderSystem::destroy_swapchain() {
 		for (uint32_t u32SwapchainImageIndex = 0U; u32SwapchainImageIndex < u32SwapchainImageCount; u32SwapchainImageIndex++)
-			CATCH_SIGNAL(vkDestroyImageView(vk_hDevice, vk_pSwapchainImageView[u32SwapchainImageIndex], nullptr));
+			CATCH_SIGNAL(vkDestroyImageView(vk_hDevice, vk_pSwapchainImageViews[u32SwapchainImageIndex], nullptr));
 		DELETE_ARRAY_SAFELY(vk_pSwapchainImages);
-		DELETE_ARRAY_SAFELY(vk_pSwapchainImageView);
+		DELETE_ARRAY_SAFELY(vk_pSwapchainImageViews);
 		CATCH_SIGNAL(vkDestroySwapchainKHR(vk_hDevice, vk_hSwapchain, nullptr));
 		vk_hSwapchain = VK_NULL_HANDLE;
 	}
@@ -353,10 +460,8 @@ namespace RE {
 		CATCH_SIGNAL(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &vk_surfaceCapabilities));
 		CATCH_SIGNAL(wait_for_idle_device());
 		CATCH_SIGNAL(destroy_framebuffers());
-		CATCH_SIGNAL(destroy_swapchain());
-		CATCH_SIGNAL(create_swapchain());
-		CATCH_SIGNAL(create_framebuffers());
-		CATCH_SIGNAL(record_command_buffers());
+		if (!CATCH_SIGNAL_AND_RETURN(create_swapchain(), bool) || !CATCH_SIGNAL_AND_RETURN(create_framebuffers(), bool) || !CATCH_SIGNAL_AND_RETURN(record_command_buffers(), bool))
+			RE_ERROR("Failed recreating the swapchain");
 	}
 
 	bool RenderSystem::create_shaders() {
@@ -376,8 +481,10 @@ namespace RE {
 		vk_vertexShaderCreateInfo.pCode = reinterpret_cast<const uint32_t*>(pcVertexShaderBinaries);
 		const bool bVertexShaderCreatedSuccessfully = CHECK_VK_RESULT(vkCreateShaderModule(vk_hDevice, &vk_vertexShaderCreateInfo, nullptr, &vk_hVertexShader));
 		delete[] pcVertexShaderBinaries;
-		if (!bVertexShaderCreatedSuccessfully)
+		if (!bVertexShaderCreatedSuccessfully) {
+			RE_FATAL_ERROR("Failed creating Vulkan shader module for the vertex shader");
 			return false;
+		}
 
 		std::ifstream fragmentBinaryFile("shaders/fragment.spv", std::ios::ate | std::ios::binary);
 		if (!fragmentBinaryFile.is_open()) {
@@ -397,6 +504,7 @@ namespace RE {
 		const bool bFragmentShaderCreatedSuccessfully = CHECK_VK_RESULT(vkCreateShaderModule(vk_hDevice, &vk_fragmentShaderCreateInfo, nullptr, &vk_hFragmentShader));
 		delete[] pcFragmentShaderBinaries;
 		if (!bFragmentShaderCreatedSuccessfully) {
+			RE_FATAL_ERROR("Failed creating Vulkan shader module for the fragment shader");
 			CATCH_SIGNAL(vkDestroyShaderModule(vk_hDevice, vk_hVertexShader, nullptr));
 			return false;
 		}
@@ -458,7 +566,10 @@ namespace RE {
 		vk_renderPassCreateInfo.pSubpasses = &vk_subpassDescription;
 		vk_renderPassCreateInfo.dependencyCount = 1U;
 		vk_renderPassCreateInfo.pDependencies = &vk_subpassDependency;
-		return CHECK_VK_RESULT(vkCreateRenderPass(vk_hDevice, &vk_renderPassCreateInfo, nullptr, &vk_hRenderPass));
+		const bool bRenderpassCreatedSuccessfully = CHECK_VK_RESULT(vkCreateRenderPass(vk_hDevice, &vk_renderPassCreateInfo, nullptr, &vk_hRenderPass));
+		if (!bRenderpassCreatedSuccessfully)
+			RE_FATAL_ERROR("Failed creating Vulkan render pass");
+		return bRenderpassCreatedSuccessfully;
 	}
 	
 	void RenderSystem::destroy_renderpass() {
@@ -484,8 +595,25 @@ namespace RE {
 		vk_pipelineDynamicStateCreateInfo.dynamicStateCount = sizeof(vk_dynamicStates) / sizeof(VkDynamicState);
 		vk_pipelineDynamicStateCreateInfo.pDynamicStates = vk_dynamicStates;
 
+		VkVertexInputBindingDescription vk_vertexInputBindingDescription = {};
+		vk_vertexInputBindingDescription.binding = 0;
+		vk_vertexInputBindingDescription.stride = RE_VK_VERTEX_TOTAL_SIZE_BYTES;
+		vk_vertexInputBindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+		VkVertexInputAttributeDescription vk_vertexInputAttributeDescriptions[2];
+		vk_vertexInputAttributeDescriptions[0].location = 0U;
+		vk_vertexInputAttributeDescriptions[0].binding = 0U;
+		vk_vertexInputAttributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+		vk_vertexInputAttributeDescriptions[0].offset = RE_VK_VERTEX_POSITION_OFFSET_BYTES;
+		vk_vertexInputAttributeDescriptions[1].location = 1U;
+		vk_vertexInputAttributeDescriptions[1].binding = 0U;
+		vk_vertexInputAttributeDescriptions[1].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+		vk_vertexInputAttributeDescriptions[1].offset = RE_VK_VERTEX_COLOR_OFFSET_BYTES;
 		VkPipelineVertexInputStateCreateInfo vk_pipelineVertexInputStateCreateInfo = {};
 		vk_pipelineVertexInputStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+		vk_pipelineVertexInputStateCreateInfo.vertexBindingDescriptionCount = 1U;
+		vk_pipelineVertexInputStateCreateInfo.pVertexBindingDescriptions = &vk_vertexInputBindingDescription;
+		vk_pipelineVertexInputStateCreateInfo.vertexAttributeDescriptionCount = 2U;
+		vk_pipelineVertexInputStateCreateInfo.pVertexAttributeDescriptions = (VkVertexInputAttributeDescription*) &vk_vertexInputAttributeDescriptions;
 
 		VkPipelineInputAssemblyStateCreateInfo vk_pipelineInputAssemblyStateCreateInfo = {};
 		vk_pipelineInputAssemblyStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -518,7 +646,7 @@ namespace RE {
 		vk_pipelineRasterizationStateCreateInfo.rasterizerDiscardEnable = VK_FALSE;
 		vk_pipelineRasterizationStateCreateInfo.polygonMode = VK_POLYGON_MODE_FILL;
 		vk_pipelineRasterizationStateCreateInfo.lineWidth = 1.0f;
-		vk_pipelineRasterizationStateCreateInfo.cullMode = VK_CULL_MODE_BACK_BIT;
+		vk_pipelineRasterizationStateCreateInfo.cullMode = VK_CULL_MODE_NONE;
 		vk_pipelineRasterizationStateCreateInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
 		vk_pipelineRasterizationStateCreateInfo.depthBiasEnable = VK_FALSE;
 		vk_pipelineRasterizationStateCreateInfo.depthBiasConstantFactor = 0.0f;
@@ -572,7 +700,10 @@ namespace RE {
 		vk_graphicsPipelineCreateInfo.subpass = 0U;
 		vk_graphicsPipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;
 		vk_graphicsPipelineCreateInfo.basePipelineIndex = -1;
-		return CHECK_VK_RESULT(vkCreateGraphicsPipelines(vk_hDevice, VK_NULL_HANDLE, 1, &vk_graphicsPipelineCreateInfo, nullptr, &vk_hGraphicsPipeline));
+		const bool bGraphicsPipelineCreatedSuccessfully = CHECK_VK_RESULT(vkCreateGraphicsPipelines(vk_hDevice, VK_NULL_HANDLE, 1, &vk_graphicsPipelineCreateInfo, nullptr, &vk_hGraphicsPipeline));
+		if (!bGraphicsPipelineCreatedSuccessfully)
+			RE_FATAL_ERROR("Failed creating Vulkan graphics pipeline");
+		return bGraphicsPipelineCreatedSuccessfully;
 	}
 	
 	void RenderSystem::destroy_graphics_pipeline() {
@@ -581,22 +712,24 @@ namespace RE {
 
 	bool RenderSystem::create_framebuffers() {
 		vk_phSwapchainFramebuffers = new VkFramebuffer[u32SwapchainImageCount];
-		uint32_t u32FramebuffersCreatedSuccessfully = 0U;
-		while (u32FramebuffersCreatedSuccessfully < u32SwapchainImageCount) {
+		uint32_t u32FramebuffersCreated = 0U;
+		while (u32FramebuffersCreated < u32SwapchainImageCount) {
 			VkFramebufferCreateInfo vk_framebufferCreateInfo = {};
 			vk_framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 			vk_framebufferCreateInfo.renderPass = vk_hRenderPass;
 			vk_framebufferCreateInfo.attachmentCount = 1U;
-			vk_framebufferCreateInfo.pAttachments = &vk_pSwapchainImageView[u32FramebuffersCreatedSuccessfully];
+			vk_framebufferCreateInfo.pAttachments = &vk_pSwapchainImageViews[u32FramebuffersCreated];
 			vk_framebufferCreateInfo.width = vk_swapchainResolution.width;
 			vk_framebufferCreateInfo.height = vk_swapchainResolution.height;
 			vk_framebufferCreateInfo.layers = 1U;
-			if (!CHECK_VK_RESULT(vkCreateFramebuffer(vk_hDevice, &vk_framebufferCreateInfo, nullptr, &vk_phSwapchainFramebuffers[u32FramebuffersCreatedSuccessfully])))
+			if (!CHECK_VK_RESULT(vkCreateFramebuffer(vk_hDevice, &vk_framebufferCreateInfo, nullptr, &vk_phSwapchainFramebuffers[u32FramebuffersCreated]))) {
+				RE_FATAL_ERROR(append_to_string("Failed creating Vulkan framebuffer at index ", u32FramebuffersCreated));
 				break;
-			u32FramebuffersCreatedSuccessfully++;
+			}
+			u32FramebuffersCreated++;
 		}
-		if (u32FramebuffersCreatedSuccessfully != u32SwapchainImageCount) {
-			for (uint32_t u32FramebufferDeleteIndex = u32FramebuffersCreatedSuccessfully + 1U; u32FramebufferDeleteIndex > 0U; u32FramebufferDeleteIndex--)
+		if (u32FramebuffersCreated != u32SwapchainImageCount) {
+			for (uint32_t u32FramebufferDeleteIndex = u32FramebuffersCreated + 1U; u32FramebufferDeleteIndex > 0U; u32FramebufferDeleteIndex--)
 				CATCH_SIGNAL(vkDestroyFramebuffer(vk_hDevice, vk_phSwapchainFramebuffers[u32FramebufferDeleteIndex - 1U], nullptr));
 			DELETE_ARRAY_SAFELY(vk_phSwapchainFramebuffers);
 			return false;
@@ -610,41 +743,101 @@ namespace RE {
 		DELETE_ARRAY_SAFELY(vk_phSwapchainFramebuffers);
 	}
 
-	bool RenderSystem::alloc_command_buffers() {
-		VkCommandPoolCreateInfo vk_commandPoolCreateInfo = {};
-		vk_commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-		vk_commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-		vk_commandPoolCreateInfo.queueFamilyIndex = u32QueueIndices[RE_VK_QUEUE_GRAPHICS_INDEX];
-		if (!CHECK_VK_RESULT(vkCreateCommandPool(vk_hDevice, &vk_commandPoolCreateInfo, nullptr, &vk_hCommandPool)))
+	bool RenderSystem::create_vertex_buffer() {
+		if (!CATCH_SIGNAL_AND_RETURN(create_buffer(sizeof(REvertex) * RE_VK_VERTEX_COUNT, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE, 0U, nullptr, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,vk_hVertexStagingBuffer, vk_hVertexStagingBufferMemory), bool)) {
+			RE_FATAL_ERROR("Failed creating vertex staging buffer in Vulkan");
 			return false;
+		}
+		return true;
+	}
+	
+	void RenderSystem::destroy_vertex_buffer() {
+		CATCH_SIGNAL(vkDestroyBuffer(vk_hDevice, vk_hVertexStagingBuffer, nullptr));
+		CATCH_SIGNAL(vkFreeMemory(vk_hDevice, vk_hVertexStagingBufferMemory, nullptr));
+	}
+
+	bool RenderSystem::alloc_command_buffers() {
+		VkCommandPoolCreateInfo vk_commandPoolCreateInfos[RE_VK_COMMAND_POOL_COUNT];
+		uint32_t u32CommandPoolCreateIndex = 0U;
+		while (u32CommandPoolCreateIndex < RE_VK_COMMAND_POOL_COUNT) {
+			vk_commandPoolCreateInfos[u32CommandPoolCreateIndex].sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+			vk_commandPoolCreateInfos[u32CommandPoolCreateIndex].pNext = nullptr;
+			switch (u32CommandPoolCreateIndex) {
+				case RE_VK_COMMAND_POOL_GRAPHICS_INDEX:
+					vk_commandPoolCreateInfos[u32CommandPoolCreateIndex].flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+					vk_commandPoolCreateInfos[u32CommandPoolCreateIndex].queueFamilyIndex = u32QueueIndices[RE_VK_QUEUE_GRAPHICS_INDEX];
+					break;
+				case RE_VK_COMMAND_POOL_TRANSFER_INDEX:
+					//vk_commandPoolCreateInfos[u32CommandPoolCreateIndex].flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+					vk_commandPoolCreateInfos[u32CommandPoolCreateIndex].flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+					vk_commandPoolCreateInfos[u32CommandPoolCreateIndex].queueFamilyIndex = u32QueueIndices[RE_VK_QUEUE_TRANSFER_INDEX];
+					break;
+			}
+			if (!CHECK_VK_RESULT(vkCreateCommandPool(vk_hDevice, &vk_commandPoolCreateInfos[u32CommandPoolCreateIndex], nullptr, &vk_hCommandPools[u32CommandPoolCreateIndex]))) {
+				RE_FATAL_ERROR(append_to_string("Failed creating Vulkan command pool at index ", u32CommandPoolCreateIndex));
+				break;
+			}
+			u32CommandPoolCreateIndex++;
+		}
+		if (u32CommandPoolCreateIndex != RE_VK_COMMAND_POOL_COUNT) {
+			for (uint32_t u32CommandPoolDeleteIndex = u32CommandPoolCreateIndex + 1U; u32CommandPoolDeleteIndex > 0U; u32CommandPoolDeleteIndex--)
+				CATCH_SIGNAL(vkDestroyCommandPool(vk_hDevice, vk_hCommandPools[u32CommandPoolDeleteIndex - 1U], nullptr));
+			return false;
+		}
 		
-		VkCommandBufferAllocateInfo vk_commandBufferAllocInfo = {};
-		vk_commandBufferAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-		vk_commandBufferAllocInfo.commandPool = vk_hCommandPool;
-		vk_commandBufferAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-		vk_commandBufferAllocInfo.commandBufferCount = u32SwapchainImageCount;
-		vk_phCommandBuffers = new VkCommandBuffer[u32SwapchainImageCount];
-		if (!CHECK_VK_RESULT(vkAllocateCommandBuffers(vk_hDevice, &vk_commandBufferAllocInfo, vk_phCommandBuffers))) {
-			CATCH_SIGNAL(vkDestroyCommandPool(vk_hDevice, vk_hCommandPool, nullptr));
+		VkCommandBufferAllocateInfo vk_commandBufferGraphicsAllocInfo = {};
+		vk_commandBufferGraphicsAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		vk_commandBufferGraphicsAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		vk_commandBufferGraphicsAllocInfo.commandPool = vk_hCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_INDEX];
+		vk_commandBufferGraphicsAllocInfo.commandBufferCount = u32SwapchainImageCount;
+		vk_phCommandBuffersGraphics = new VkCommandBuffer[vk_commandBufferGraphicsAllocInfo.commandBufferCount];
+		if (!CHECK_VK_RESULT(vkAllocateCommandBuffers(vk_hDevice, &vk_commandBufferGraphicsAllocInfo, vk_phCommandBuffersGraphics))) {
+			RE_FATAL_ERROR("Failed allocating Vulkan graphics command buffer(s) for the graphics queue");
+			DELETE_ARRAY_SAFELY(vk_phCommandBuffersGraphics);
+			for (uint32_t u32CommandPoolDeleteIndex = 0U; u32CommandPoolDeleteIndex < RE_VK_COMMAND_POOL_COUNT; u32CommandPoolDeleteIndex++)
+				CATCH_SIGNAL(vkDestroyCommandPool(vk_hDevice, vk_hCommandPools[u32CommandPoolDeleteIndex], nullptr));
+			return false;
+		}
+
+		VkCommandBufferAllocateInfo vk_commandBufferTransferAllocInfo = {};
+		vk_commandBufferTransferAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		vk_commandBufferTransferAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		vk_commandBufferTransferAllocInfo.commandPool = vk_hCommandPools[RE_VK_COMMAND_POOL_TRANSFER_INDEX];
+		vk_commandBufferTransferAllocInfo.commandBufferCount = 1U;
+		vk_phCommandBuffersTransfer = new VkCommandBuffer[vk_commandBufferTransferAllocInfo.commandBufferCount];
+		if (!CHECK_VK_RESULT(vkAllocateCommandBuffers(vk_hDevice, &vk_commandBufferTransferAllocInfo, vk_phCommandBuffersTransfer))) {
+			if (u32QueueIndices[RE_VK_QUEUE_GRAPHICS_INDEX] != u32QueueIndices[RE_VK_QUEUE_TRANSFER_INDEX])
+				RE_FATAL_ERROR("Failed allocating Vulkan graphics command buffer(s) for the transfer queue");
+			else
+				RE_FATAL_ERROR("Failed allocating Vulkan transfer command buffer(s) for the graphics queue");
+			DELETE_ARRAY_SAFELY(vk_phCommandBuffersGraphics);
+			DELETE_ARRAY_SAFELY(vk_phCommandBuffersTransfer);
+			for (uint32_t u32CommandPoolDeleteIndex = 0U; u32CommandPoolDeleteIndex < RE_VK_COMMAND_POOL_COUNT; u32CommandPoolDeleteIndex++)
+				CATCH_SIGNAL(vkDestroyCommandPool(vk_hDevice, vk_hCommandPools[u32CommandPoolDeleteIndex], nullptr));
 			return false;
 		}
 		return true;
 	}
 	
 	void RenderSystem::free_command_buffers() {
-		CATCH_SIGNAL(vkDestroyCommandPool(vk_hDevice, vk_hCommandPool, nullptr));
+		DELETE_ARRAY_SAFELY(vk_phCommandBuffersGraphics);
+		DELETE_ARRAY_SAFELY(vk_phCommandBuffersTransfer);
+		CATCH_SIGNAL(vkDestroyCommandPool(vk_hDevice, vk_hCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_INDEX], nullptr));
+		CATCH_SIGNAL(vkDestroyCommandPool(vk_hDevice, vk_hCommandPools[RE_VK_COMMAND_POOL_TRANSFER_INDEX], nullptr));
 	}
 
 	bool RenderSystem::record_command_buffers() {
 		for (uint32_t u32CommandBufferIndex = 0U; u32CommandBufferIndex < u32SwapchainImageCount; u32CommandBufferIndex++) {
-			const VkCommandBuffer vk_hCommandBuffer = vk_phCommandBuffers[u32CommandBufferIndex];
+			const VkCommandBuffer vk_hCommandBuffer = vk_phCommandBuffersGraphics[u32CommandBufferIndex];
 			CATCH_SIGNAL(vkResetCommandBuffer(vk_hCommandBuffer, 0));
 			VkCommandBufferBeginInfo vk_commandBufferBeginInfo = {};
 			vk_commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 			vk_commandBufferBeginInfo.flags = 0U;
 			vk_commandBufferBeginInfo.pInheritanceInfo = nullptr;
-			if (!CHECK_VK_RESULT(vkBeginCommandBuffer(vk_hCommandBuffer, &vk_commandBufferBeginInfo)))
+			if (!CHECK_VK_RESULT(vkBeginCommandBuffer(vk_hCommandBuffer, &vk_commandBufferBeginInfo))) {
+				RE_FATAL_ERROR(append_to_string("Failed to begin recording commands for the Vulkan graphics command buffer at index ", u32CommandBufferIndex));
 				return false;
+			}
 			VkClearValue vk_clearValues;
 			vk_clearValues.color.float32[0] = 0.0f;
 			vk_clearValues.color.float32[1] = 0.0f;
@@ -671,6 +864,9 @@ namespace RE {
 			vk_commandBufferRenderpassBeginInfo.pClearValues = &vk_clearValues;
 			CATCH_SIGNAL(vkCmdBeginRenderPass(vk_hCommandBuffer, &vk_commandBufferRenderpassBeginInfo, VK_SUBPASS_CONTENTS_INLINE));
 			CATCH_SIGNAL(vkCmdBindPipeline(vk_hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hGraphicsPipeline));
+			VkBuffer vk_vertexBuffers[1] = {vk_hVertexStagingBuffer};
+			VkDeviceSize offsets[1] = {0U};
+			CATCH_SIGNAL(vkCmdBindVertexBuffers(vk_hCommandBuffer, 0U, 1U, vk_vertexBuffers, offsets));
 			VkViewport vk_viewport = {};
 			vk_viewport.x = 0.0f;
 			vk_viewport.y = 0.0f;
@@ -678,16 +874,18 @@ namespace RE {
 			vk_viewport.height = vk_swapchainResolution.height;
 			vk_viewport.minDepth = 0.0f;
 			vk_viewport.maxDepth = 1.0f;
-			CATCH_SIGNAL(vkCmdSetViewport(vk_hCommandBuffer, 0, 1, &vk_viewport));
+			CATCH_SIGNAL(vkCmdSetViewport(vk_hCommandBuffer, 0U, 1U, &vk_viewport));
 			VkRect2D vk_scissor = {};
 			vk_scissor.offset.x = 0;
 			vk_scissor.offset.y = 0;
 			vk_scissor.extent = vk_swapchainResolution;
-			CATCH_SIGNAL(vkCmdSetScissor(vk_hCommandBuffer, 0, 1, &vk_scissor));
-			CATCH_SIGNAL(vkCmdDraw(vk_hCommandBuffer, 3, 1, 0, 0));
+			CATCH_SIGNAL(vkCmdSetScissor(vk_hCommandBuffer, 0U, 1U, &vk_scissor));
+			CATCH_SIGNAL(vkCmdDraw(vk_hCommandBuffer, sizeof(vertices) / (sizeof(vertices[0]) * RE_VK_VERTEX_TOTAL_SIZE), 1U, 0U, 0U));
 			CATCH_SIGNAL(vkCmdEndRenderPass(vk_hCommandBuffer));
-			if (!CHECK_VK_RESULT(vkEndCommandBuffer(vk_hCommandBuffer)))
+			if (!CHECK_VK_RESULT(vkEndCommandBuffer(vk_hCommandBuffer))) {
+				RE_FATAL_ERROR(append_to_string("Failed to finish recording the Vulkan graphics command buffer at index ", u32CommandBufferIndex));
 				return false;
+			}
 		}
 		return true;
 	}
@@ -697,8 +895,10 @@ namespace RE {
 		vk_semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 		uint32_t u32SemaphoresCreatedSuccessfully = 0U;
 		for (uint32_t u32SemaphoreCreateIndex = 0U; u32SemaphoreCreateIndex < RE_VK_SEMAPHORE_COUNT; u32SemaphoreCreateIndex++) {
-			if (!CHECK_VK_RESULT(vkCreateSemaphore(vk_hDevice, &vk_semaphoreCreateInfo, nullptr, &vk_hSemaphores[u32SemaphoreCreateIndex])))
+			if (!CHECK_VK_RESULT(vkCreateSemaphore(vk_hDevice, &vk_semaphoreCreateInfo, nullptr, &vk_hSemaphores[u32SemaphoreCreateIndex]))) {
+				RE_FATAL_ERROR(append_to_string("Failed creating Vulkan semaphore at index ", u32SemaphoreCreateIndex));
 				break;
+			}
 			u32SemaphoresCreatedSuccessfully++;
 		}
 		if (u32SemaphoresCreatedSuccessfully != RE_VK_SEMAPHORE_COUNT) {
@@ -712,8 +912,10 @@ namespace RE {
 		vk_fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 		uint32_t u32FencesCreatedSuccessfully = 0U;
 		for (uint32_t u32FenceCreateIndex = 0U; u32FenceCreateIndex < RE_VK_FENCE_COUNT; u32FenceCreateIndex++) {
-			if (!CHECK_VK_RESULT(vkCreateFence(vk_hDevice, &vk_fenceCreateInfo, nullptr, &vk_hFences[u32FenceCreateIndex])))
+			if (!CHECK_VK_RESULT(vkCreateFence(vk_hDevice, &vk_fenceCreateInfo, nullptr, &vk_hFences[u32FenceCreateIndex]))) {
+				RE_FATAL_ERROR(append_to_string("Failed creating Vulkan fence at index ", u32FenceCreateIndex));
 				break;
+			}
 			u32FencesCreatedSuccessfully++;
 		}
 		if (u32FencesCreatedSuccessfully != RE_VK_FENCE_COUNT) {
@@ -738,6 +940,9 @@ namespace RE {
 	void RenderSystem::draw_frame() {
 		CATCH_SIGNAL(vkWaitForFences(vk_hDevice, 1U, &vk_hFences[bUseOtherFrame], VK_TRUE, std::numeric_limits<uint64_t>::max()));
 		CATCH_SIGNAL(vkResetFences(vk_hDevice, 1U, &vk_hFences[bUseOtherFrame]));
+		vertices[14] = (InputMgr::pInstance->get_cursor_x() / static_cast<float>(Window::pInstance->get_size()[0])) * 2.0f - 1.0f;
+		vertices[15] = (InputMgr::pInstance->get_cursor_y() / static_cast<float>(Window::pInstance->get_size()[1])) * 2.0f - 1.0f;
+		upload_to_vertex_buffer(vertices, RE_VK_VERTEX_TOTAL_SIZE * 3U);
 		uint32_t u32NextSwapchainImageIndex;
 		VkResult vk_nextImageObtainedResult;
 		CATCH_SIGNAL(vk_nextImageObtainedResult = vkAcquireNextImageKHR(vk_hDevice, vk_hSwapchain, std::numeric_limits<uint64_t>::max(), vk_hSemaphores[bUseOtherFrame * RE_VK_SEMAPHORES_PER_FRAME + RE_VK_SEMAPHORE_IMAGE_AVAILABLE_INDEX], VK_NULL_HANDLE, &u32NextSwapchainImageIndex));
@@ -759,7 +964,7 @@ namespace RE {
 		vk_queueGraphicsSubmitInfo.pWaitSemaphores = &vk_hSemaphores[bUseOtherFrame * RE_VK_SEMAPHORES_PER_FRAME + RE_VK_SEMAPHORE_IMAGE_AVAILABLE_INDEX];
 		vk_queueGraphicsSubmitInfo.pWaitDstStageMask = vk_pipelineStageFlags;
 		vk_queueGraphicsSubmitInfo.commandBufferCount = 1U;
-		CATCH_SIGNAL(vk_queueGraphicsSubmitInfo.pCommandBuffers = &vk_phCommandBuffers[u32NextSwapchainImageIndex]);
+		CATCH_SIGNAL(vk_queueGraphicsSubmitInfo.pCommandBuffers = &vk_phCommandBuffersGraphics[u32NextSwapchainImageIndex]);
 		vk_queueGraphicsSubmitInfo.signalSemaphoreCount = 1U;
 		vk_queueGraphicsSubmitInfo.pSignalSemaphores = &vk_hSemaphores[bUseOtherFrame * RE_VK_SEMAPHORES_PER_FRAME + RE_VK_SEMAPHORE_RENDERING_FINISHED_INDEX];
 		if (!CHECK_VK_RESULT(vkQueueSubmit(vk_hQueues[RE_VK_QUEUE_GRAPHICS_INDEX], 1U, &vk_queueGraphicsSubmitInfo, vk_hFences[bUseOtherFrame]))) {
@@ -776,6 +981,13 @@ namespace RE {
 		CATCH_SIGNAL(vkQueuePresentKHR(vk_hQueues[RE_VK_QUEUE_PRESENT_INDEX], &vk_queuePresentSubmitInfo));
 
 		bUseOtherFrame = !bUseOtherFrame;
+	}
+
+	void RenderSystem::upload_to_vertex_buffer(const REvertex *const pNewVertexBufferData, const uint32_t u32VertexCount) {
+		void* pData;
+		CATCH_SIGNAL(vkMapMemory(vk_hDevice, vk_hVertexStagingBufferMemory, 0UL, u32VertexCount * RE_VK_VERTEX_TOTAL_SIZE_BYTES, 0, &pData));
+		std::memcpy(pData, pNewVertexBufferData, u32VertexCount * RE_VK_VERTEX_TOTAL_SIZE_BYTES);
+		CATCH_SIGNAL(vkUnmapMemory(vk_hDevice, vk_hVertexStagingBufferMemory));
 	}
 
 	void RenderSystem::window_resize_event() {

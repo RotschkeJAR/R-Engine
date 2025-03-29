@@ -35,6 +35,9 @@ namespace RE {
 			REuint map_input_to_scancode(Input eInput);
 			bool is_down(Input eInput, REuint u32Scancode);
 			bool was_down(Input eInput, REuint u32Scancode);
+			REint get_cursor_x();
+			REint get_cursor_y();
+			Vector2i get_cursor();
 	};
 
 	Input map_scancode_to_input(REuint u32Scancode);

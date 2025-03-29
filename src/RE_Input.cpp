@@ -328,6 +328,18 @@ namespace RE {
 		return process_request(eInput, u32Scancode, true);
 	}
 
+	REint InputMgr::get_cursor_x() {
+		return cursorPosition[0];
+	}
+	
+	REint InputMgr::get_cursor_y() {
+		return cursorPosition[1];
+	}
+	
+	Vector2i InputMgr::get_cursor() {
+		return Vector2i(cursorPosition);
+	}
+
 	Input map_scancode_to_input(REuint u32Scancode) {
 		return InputMgr::pInstance ? InputMgr::pInstance->map_scancode_to_input(u32Scancode) : RE_INPUT_UNKNOWN;
 	}

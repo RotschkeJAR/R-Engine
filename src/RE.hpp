@@ -236,12 +236,19 @@ namespace RE {
 	};
 #define DEFINE_SIGNAL_GUARD_DETAILED(NAME, DETAILS) SignalGuard NAME(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(DETAILS))
 #define DEFINE_SIGNAL_GUARD(NAME) DEFINE_SIGNAL_GUARD_DETAILED(NAME, "\0")
-#define CATCH_SIGNAL_DETAILED(CMD, DETAILS) do { \
-			add_to_stack_trace(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(DETAILS)); \
+#define CATCH_SIGNAL_DETAILED(CMD, DETAILS) ([&](const char *const pcFile, const char *const pcFunc, uint32_t u32Line) { \
+			add_to_stack_trace(pcFile, pcFunc, u32Line, STRIP_QUOTE_MACRO(DETAILS)); \
 			CMD; \
 			remove_from_stack_trace(); \
-		} while (false)
+		}) (__FILE__, __func__, __LINE__)
 #define CATCH_SIGNAL(CMD) CATCH_SIGNAL_DETAILED(CMD, "\0")
+#define CATCH_SIGNAL_AND_RETURN_DETAILED(CMD, RETURN_TYPE, DETAILS) ([&](const char *const pcFile, const char *const pcFunc, uint32_t u32Line) -> RETURN_TYPE { \
+			add_to_stack_trace(pcFile, pcFunc, u32Line, STRIP_QUOTE_MACRO(DETAILS)); \
+			RETURN_TYPE returnValue = CMD; \
+			remove_from_stack_trace(); \
+			return returnValue; \
+		}) (__FILE__, __func__, __LINE__)
+#define CATCH_SIGNAL_AND_RETURN(CMD, RETURN_TYPE) CATCH_SIGNAL_AND_RETURN_DETAILED(CMD, RETURN_TYPE, "\0")
 
 #define DELETE_SAFELY(PTR_REF) CATCH_SIGNAL( do { \
 			if (!PTR_REF) \

@@ -1,20 +1,11 @@
 #version 450 core
 
-layout(location = 0) out vec4 fragColor;
+layout (location = 0) in vec3 inPosition;
+layout (location = 1) in vec4 inColor;
 
-vec2 pos[3] = vec2[] (
-	vec2(0.0, -0.5),
-	vec2(0.5, 0.5),
-	vec2(-0.5, 0.5)
-);
-
-vec4 col[3] = vec4[] (
-	vec4(1.0, 0.0, 0.0, 1.0),
-	vec4(0.0, 0.0, 1.0, 1.0),
-	vec4(0.0, 1.0, 0.0, 1.0)
-);
+layout (location = 0) out vec4 outColor;
 
 void main() {
-	gl_Position = vec4(pos[gl_VertexIndex], 0.0, 1.0);
-	fragColor = col[gl_VertexIndex];
+	gl_Position = vec4(inPosition, 1.0);
+	outColor = inColor;
 }

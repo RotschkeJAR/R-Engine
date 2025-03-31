@@ -1,6 +1,7 @@
 #include "RE_Vulkan.hpp"
 #include "RE_Window_Win64.hpp"
 #include "RE_Window_X11.hpp"
+#include "RE_Main.hpp"
 
 #undef vk_hInstance
 
@@ -1225,7 +1226,10 @@ namespace RE {
 #ifdef RE_OS_WINDOWS
 		ppcExtensionsToLoad[u32ExtensionsToLoadCount - 1U] = VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
 #elif defined RE_OS_LINUX
-		ppcExtensionsToLoad[u32ExtensionsToLoadCount - 1U] = VK_KHR_XLIB_SURFACE_EXTENSION_NAME;
+		if (bUsingWayland)
+			ppcExtensionsToLoad[u32ExtensionsToLoadCount - 1U] = VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME;
+		else
+			ppcExtensionsToLoad[u32ExtensionsToLoadCount - 1U] = VK_KHR_XLIB_SURFACE_EXTENSION_NAME;
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 		uint32_t u32AvailableExtensionsCount = 0U;
 		CATCH_SIGNAL(pfn_vkEnumerateInstanceExtensionProperties(nullptr, &u32AvailableExtensionsCount, nullptr));

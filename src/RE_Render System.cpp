@@ -1,6 +1,8 @@
 #include "RE_Render System.hpp"
 #include "RE_Window_Win64.hpp"
 #include "RE_Window_X11.hpp"
+#include "RE_Window_Wayland.hpp"
+#include "RE_Main.hpp"
 
 #include "RE_Input.hpp"
 
@@ -146,11 +148,20 @@ namespace RE {
 		vk_win32SurfaceCreateInfo.hinstance = Window_Win64::win_hInstance;
 		return CHECK_VK_RESULT(vkCreateWin32SurfaceKHR(RE_VK_INSTANCE, &vk_win32SurfaceCreateInfo, nullptr, &vk_hSurface));
 #elif defined RE_OS_LINUX
-		VkXlibSurfaceCreateInfoKHR vk_x11SurfaceCreateInfo = {};
-		vk_x11SurfaceCreateInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
-		vk_x11SurfaceCreateInfo.dpy = static_cast<Window_X11*>(Window::pInstance)->x11_pDisplay;
-		vk_x11SurfaceCreateInfo.window = static_cast<Window_X11*>(Window::pInstance)->get_xwindow();
-		return CHECK_VK_RESULT(vkCreateXlibSurfaceKHR(RE_VK_INSTANCE, &vk_x11SurfaceCreateInfo, nullptr, &vk_hSurface));
+		if (bUsingWayland) {
+			VkWaylandSurfaceCreateInfoKHR vk_waylandSurfaceCreateInfo = {};
+			vk_waylandSurfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR;
+			vk_waylandSurfaceCreateInfo.display = static_cast<Window_Wayland*>(Window::pInstance)->wl_pDisplay;
+			vk_waylandSurfaceCreateInfo.surface = static_cast<Window_Wayland*>(Window::pInstance)->get_wl_surface();
+			return CHECK_VK_RESULT(PFN_vkCreateWaylandSurfaceKHR(RE_VK_INSTANCE, &vk_waylandSurfaceCreateInfo, nullptr, &vk_hSurface));
+		} else if (bUsingX11) {
+			VkXlibSurfaceCreateInfoKHR vk_x11SurfaceCreateInfo = {};
+			vk_x11SurfaceCreateInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
+			vk_x11SurfaceCreateInfo.dpy = static_cast<Window_X11*>(Window::pInstance)->x11_pDisplay;
+			vk_x11SurfaceCreateInfo.window = static_cast<Window_X11*>(Window::pInstance)->get_xwindow();
+			return CHECK_VK_RESULT(vkCreateXlibSurfaceKHR(RE_VK_INSTANCE, &vk_x11SurfaceCreateInfo, nullptr, &vk_hSurface));
+		} else
+			return false;
 #else
 		return false;
 #endif

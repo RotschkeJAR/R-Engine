@@ -4,7 +4,7 @@ SH           = shaders
 
 CC           = g++
 CFLAG        = -m64 -march=x86-64 -Wall -ffast-math -std=c++17
-LDFLAG       = -l RE -I $(SRC) -I /usr/ -L $(BIN) -l X11
+LDFLAG       = -l RE -I $(SRC) -I /usr/ -L $(BIN) -l X11 -l wayland-client
 
 SC           = glslc
 SFLAG        = --target-env=vulkan1.3 --target-spv=spv1.6 -O

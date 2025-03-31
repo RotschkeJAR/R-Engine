@@ -57,6 +57,15 @@ namespace RE {
 		RE_TERMINAL_COLOR_MAX_ENUM = 0x10
 	};
 
+	enum WindowingSystem {
+		// Windows
+		RE_WINDOWING_SYSTEM_WIN32 = 0x0,
+		// Linux
+		RE_WINDOWING_SYSTEM_X11 = 0x1,
+		RE_WINDOWING_SYSTEM_WAYLAND = 0x2,
+		RE_WINDOWING_SYSTEM_MAX_ENUM = 0x3
+	};
+
 	enum Input {
 		RE_INPUT_UNKNOWN = -0x01,
 		RE_INPUT_SCROLL_UP = 0x00,

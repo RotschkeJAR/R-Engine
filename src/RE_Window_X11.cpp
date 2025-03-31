@@ -7,7 +7,7 @@ namespace RE {
 #ifdef RE_OS_LINUX
 	Window_X11::Window_X11() : x11_hWindow(0), x11_hClose(0), x11_hUTF8(0), x11_hWindowName(0), x11_pSizes(XAllocSizeHints()), x11_pDisplay(XOpenDisplay(nullptr)) {
 		if (!x11_pDisplay) {
-			RE_FATAL_ERROR("Unable to connect to X11 server");
+			RE_ERROR("Unable to connect to X11 server");
 			return;
 		}
 		REint i32DefaultScreen;
@@ -25,7 +25,7 @@ namespace RE {
 		XVisualInfo* x11_availableVisualInfos;
 		CATCH_SIGNAL(x11_availableVisualInfos = XGetVisualInfo(x11_pDisplay, VisualScreenMask | VisualClassMask, &x11_visualTemplate, &i32VisualsCount));
 		if (!i32VisualsCount) {
-			RE_FATAL_ERROR("No visual information available for X11 window creation");
+			RE_ERROR("No visual information available for X11 window creation");
 			return;
 		}
 		x11_visualInfo = x11_availableVisualInfos[0];
@@ -52,12 +52,12 @@ namespace RE {
 
 		CATCH_SIGNAL(x11_hInputMethod = XOpenIM(x11_pDisplay, nullptr, nullptr, nullptr));
 		if (!x11_hInputMethod) {
-			RE_FATAL_ERROR("Failed creating X11 input method");
+			RE_ERROR("Failed creating X11 input method");
 			return;
 		}
 		CATCH_SIGNAL(x11_hInputContext = XCreateIC(x11_hInputMethod, XNInputStyle, XIMPreeditNothing | XIMStatusNothing, XNClientWindow, x11_hWindow, nullptr));
 		if (!x11_hInputContext) {
-			RE_FATAL_ERROR("Failed creating X11 input context");
+			RE_ERROR("Failed creating X11 input context");
 			return;
 		}
 		CATCH_SIGNAL(internal_update_title());

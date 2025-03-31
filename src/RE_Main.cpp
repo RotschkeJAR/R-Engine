@@ -1,6 +1,7 @@
 #include "RE_Internal Header.hpp"
 #include "RE_Window_Win64.hpp"
 #include "RE_Window_X11.hpp"
+#include "RE_Window_Wayland.hpp"
 #include "RE_Renderer.hpp"
 #include "RE_Vulkan.hpp"
 #include "RE_Render System.hpp"
@@ -11,16 +12,48 @@ namespace RE {
 	bool bErrorOccured = false;
 	bool bRunning = false;
 	float fDeltaseconds = 0.0f, fMinDeltatime = -1.0f;
-	
+
+	const bool bWaylandAvailable = std::strlen(std::getenv("WAYLAND_DISPLAY")) > 0;
+	const bool bX11Available = std::strlen(std::getenv("DISPLAY")) > 0;
+
 	void execute() {
 		DEFINE_SIGNAL_GUARD(sigGuardMainLoop);
 		std::setlocale(LC_ALL, "");
-		//SignalCatcher signalCatcher;
 		Window* pWindow;
 #ifdef RE_OS_WINDOWS
 		CATCH_SIGNAL(pWindow = new Window_Win64());
 #elif defined RE_OS_LINUX
-		CATCH_SIGNAL(pWindow = new Window_X11());
+		if (bWaylandAvailable) {
+			CATCH_SIGNAL(pWindow = new Window_Wayland());
+			if (!pWindow->is_valid() || bErrorOccured) {
+				DELETE_SAFELY(pWindow);
+				if (bX11Available) {
+					RE_NOTE("Failed to create Wayland window. Attempting to create in X11");
+					CATCH_SIGNAL(pWindow = new Window_X11());
+					if (!pWindow->is_valid() || bErrorOccured) {
+						RE_FATAL_ERROR("Failed to create window in X11 either");
+						DELETE_SAFELY(pWindow);
+						return;
+					}
+					bUsingX11 = true;
+				} else {
+					RE_FATAL_ERROR("Failed to create Wayland window. No other alternative window managers exist");
+					return;
+				}
+			} else
+				bUsingWayland = true;
+		} else if (bX11Available) {
+			CATCH_SIGNAL(pWindow = new Window_X11());
+			if (!pWindow->is_valid() || bErrorOccured) {
+				RE_FATAL_ERROR("Failed to create X11 window. No other alternative window managers exist");
+				DELETE_SAFELY(pWindow);
+				return;
+			}
+			bUsingX11 = true;
+		} else {
+			RE_FATAL_ERROR("X11 and Wayland are not present on this system. A window cannot be created");
+			return;
+		}
 #else
 # warning The targeted OS is unknown, so the engine will terminate immediatly upon execution
 		RE_ERROR("The OS is unknown. The engine can't initialize");
@@ -70,6 +103,20 @@ namespace RE {
 			return 1.0f / fDeltaseconds;
 		RE_ERROR("FPS rate couldn't be calculated, because the deltatime is still in its default value and would crash the game");
 		return 0.0f;
+	}
+
+	bool can_use_windowing_system(WindowingSystem eWindowingSystem) {
+#ifdef RE_OS_WINDOWS
+		return eWindowingSystem == RE_WINDOWING_SYSTEM_WIN32;
+#elif defined RE_OS_LINUX
+		return (eWindowingSystem == RE_WINDOWING_SYSTEM_X11 && bX11Available) || (eWindowingSystem == RE_WINDOWING_SYSTEM_WAYLAND && bWaylandAvailable);
+#else
+		return false;
+#endif
+	}
+
+	void prioritize_windowing_system(WindowingSystem ePrioritizedWindowingSystem) {
+		if (can_use_windowing_system(ePrioritizedWindowingSystem))
 	}
 
 }

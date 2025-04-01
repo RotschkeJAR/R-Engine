@@ -15,6 +15,7 @@ namespace RE {
 
 	const bool bWaylandAvailable = std::strlen(std::getenv("WAYLAND_DISPLAY")) > 0;
 	const bool bX11Available = std::strlen(std::getenv("DISPLAY")) > 0;
+	WindowingSystem eUsingWindowingSystem = RE_WINDOWING_SYSTEM_MAX_ENUM;
 
 	void execute() {
 		DEFINE_SIGNAL_GUARD(sigGuardMainLoop);
@@ -22,6 +23,7 @@ namespace RE {
 		Window* pWindow;
 #ifdef RE_OS_WINDOWS
 		CATCH_SIGNAL(pWindow = new Window_Win64());
+		eUsingWindowingSystem = RE_WINDOWING_SYSTEM_WIN32;
 #elif defined RE_OS_LINUX
 		if (bWaylandAvailable) {
 			CATCH_SIGNAL(pWindow = new Window_Wayland());
@@ -35,13 +37,13 @@ namespace RE {
 						DELETE_SAFELY(pWindow);
 						return;
 					}
-					bUsingX11 = true;
+					eUsingWindowingSystem = RE_WINDOWING_SYSTEM_X11;
 				} else {
 					RE_FATAL_ERROR("Failed to create Wayland window. No other alternative window managers exist");
 					return;
 				}
 			} else
-				bUsingWayland = true;
+				eUsingWindowingSystem = RE_WINDOWING_SYSTEM_WAYLAND;
 		} else if (bX11Available) {
 			CATCH_SIGNAL(pWindow = new Window_X11());
 			if (!pWindow->is_valid() || bErrorOccured) {
@@ -49,7 +51,7 @@ namespace RE {
 				DELETE_SAFELY(pWindow);
 				return;
 			}
-			bUsingX11 = true;
+			eUsingWindowingSystem = RE_WINDOWING_SYSTEM_X11;
 		} else {
 			RE_FATAL_ERROR("X11 and Wayland are not present on this system. A window cannot be created");
 			return;
@@ -103,20 +105,6 @@ namespace RE {
 			return 1.0f / fDeltaseconds;
 		RE_ERROR("FPS rate couldn't be calculated, because the deltatime is still in its default value and would crash the game");
 		return 0.0f;
-	}
-
-	bool can_use_windowing_system(WindowingSystem eWindowingSystem) {
-#ifdef RE_OS_WINDOWS
-		return eWindowingSystem == RE_WINDOWING_SYSTEM_WIN32;
-#elif defined RE_OS_LINUX
-		return (eWindowingSystem == RE_WINDOWING_SYSTEM_X11 && bX11Available) || (eWindowingSystem == RE_WINDOWING_SYSTEM_WAYLAND && bWaylandAvailable);
-#else
-		return false;
-#endif
-	}
-
-	void prioritize_windowing_system(WindowingSystem ePrioritizedWindowingSystem) {
-		if (can_use_windowing_system(ePrioritizedWindowingSystem))
 	}
 
 }

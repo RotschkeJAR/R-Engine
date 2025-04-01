@@ -5,6 +5,7 @@
 
 namespace RE {
 
+#ifdef RE_OS_LINUX
 	class Window_Wayland : public Window {
 		private:
 			wl_registry *wl_pRegistry;
@@ -23,6 +24,7 @@ namespace RE {
 			~Window_Wayland();
 			wl_surface* get_wl_surface();
 	};
+#endif /* RE_OS_LINUX */
 
 }
 

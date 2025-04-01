@@ -59,9 +59,17 @@ typedef Colormap XColormap;
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 
 namespace RE {
+
+	enum WindowingSystem {
+		// Windows
+		RE_WINDOWING_SYSTEM_WIN32 = 0x0,
+		// Linux
+		RE_WINDOWING_SYSTEM_X11 = 0x1,
+		RE_WINDOWING_SYSTEM_WAYLAND = 0x2,
+
+		RE_WINDOWING_SYSTEM_MAX_ENUM = 0x3
+	};
 	
-
-
 }
 
 #endif /* __RE_EXT_H__ */

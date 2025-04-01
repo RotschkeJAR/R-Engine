@@ -318,6 +318,9 @@ namespace RE {
 			PFN_vkCreateWin32SurfaceKHR pfn_vkCreateWin32SurfaceKHR;
 			PFN_vkGetPhysicalDeviceWin32PresentationSupportKHR pfn_vkGetPhysicalDeviceWin32PresentationSupportKHR;
 #elif defined RE_OS_LINUX
+			// Wayland-Surface
+			PFN_vkCreateWaylandSurfaceKHR pfn_vkCreateWaylandSurfaceKHR;
+			PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR pfn_vkGetPhysicalDeviceWaylandPresentationSupportKHR;
 			// X11-Surface
 			PFN_vkCreateXlibSurfaceKHR pfn_vkCreateXlibSurfaceKHR;
 			PFN_vkGetPhysicalDeviceXlibPresentationSupportKHR pfn_vkGetPhysicalDeviceXlibPresentationSupportKHR;
@@ -618,6 +621,8 @@ namespace RE {
 # define vkCreateWin32SurfaceKHR Vulkan::pInstance->pfn_vkCreateWin32SurfaceKHR
 # define vkGetPhysicalDeviceWin32PresentationSupportKHR Vulkan::pInstance->pfn_vkGetPhysicalDeviceWin32PresentationSupportKHR
 #elif defined RE_OS_LINUX
+# define vkCreateWaylandSurfaceKHR Vulkan::pInstance->pfn_vkCreateWaylandSurfaceKHR
+# define vkGetPhysicalDeviceWaylandPresentationSupportKHR Vulkan::pInstance->pfn_vkGetPhysicalDeviceWaylandPresentationSupportKHR
 # define vkCreateXlibSurfaceKHR Vulkan::pInstance->pfn_vkCreateXlibSurfaceKHR
 # define vkGetPhysicalDeviceXlibPresentationSupportKHR Vulkan::pInstance->pfn_vkGetPhysicalDeviceXlibPresentationSupportKHR
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */

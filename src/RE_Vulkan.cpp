@@ -1226,10 +1226,14 @@ namespace RE {
 #ifdef RE_OS_WINDOWS
 		ppcExtensionsToLoad[u32ExtensionsToLoadCount - 1U] = VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
 #elif defined RE_OS_LINUX
-		if (bUsingWayland)
-			ppcExtensionsToLoad[u32ExtensionsToLoadCount - 1U] = VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME;
-		else
-			ppcExtensionsToLoad[u32ExtensionsToLoadCount - 1U] = VK_KHR_XLIB_SURFACE_EXTENSION_NAME;
+		switch (eUsingWindowingSystem)
+			case RE_WINDOWING_SYSTEM_WAYLAND:
+				ppcExtensionsToLoad[u32ExtensionsToLoadCount - 1U] = VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME;
+				break;
+			case RE_WINDOWING_SYSTEM_X11:
+				ppcExtensionsToLoad[u32ExtensionsToLoadCount - 1U] = VK_KHR_XLIB_SURFACE_EXTENSION_NAME;
+				break;
+		}
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 		uint32_t u32AvailableExtensionsCount = 0U;
 		CATCH_SIGNAL(pfn_vkEnumerateInstanceExtensionProperties(nullptr, &u32AvailableExtensionsCount, nullptr));

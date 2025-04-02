@@ -12,9 +12,6 @@ namespace RE {
 	bool bErrorOccured = false;
 	bool bRunning = false;
 	float fDeltaseconds = 0.0f, fMinDeltatime = -1.0f;
-
-	const bool bWaylandAvailable = std::strlen(std::getenv("WAYLAND_DISPLAY")) > 0;
-	const bool bX11Available = std::strlen(std::getenv("DISPLAY")) > 0;
 	WindowingSystem eUsingWindowingSystem = RE_WINDOWING_SYSTEM_MAX_ENUM;
 
 	void execute() {
@@ -25,36 +22,47 @@ namespace RE {
 		CATCH_SIGNAL(pWindow = new Window_Win64());
 		eUsingWindowingSystem = RE_WINDOWING_SYSTEM_WIN32;
 #elif defined RE_OS_LINUX
-		if (bWaylandAvailable) {
-			CATCH_SIGNAL(pWindow = new Window_Wayland());
-			if (!pWindow->is_valid() || bErrorOccured) {
-				DELETE_SAFELY(pWindow);
-				if (bX11Available) {
-					RE_NOTE("Failed to create Wayland window. Attempting to create in X11");
-					CATCH_SIGNAL(pWindow = new Window_X11());
-					if (!pWindow->is_valid() || bErrorOccured) {
-						RE_FATAL_ERROR("Failed to create window in X11 either");
-						DELETE_SAFELY(pWindow);
+		{
+			const char *const pcSessionType = CATCH_SIGNAL_AND_RETURN(std::getenv("XDG_SESSION_TYPE"), const char*);
+			if (std::strcmp(pcSessionType, "wayland") == 0) {
+				CATCH_SIGNAL(pWindow = new Window_Wayland());
+				if (!pWindow->is_valid() || bErrorOccured) {
+					DELETE_SAFELY(pWindow);
+					if (std::strlen(std::getenv("DISPLAY")) > 0) {
+						RE_NOTE("Failed to create Wayland window. Attempting to create in X11");
+						CATCH_SIGNAL(pWindow = new Window_X11());
+						if (!pWindow->is_valid() || bErrorOccured) {
+							RE_FATAL_ERROR("Failed to create window in X11 either");
+							DELETE_SAFELY(pWindow);
+							return;
+						}
+						eUsingWindowingSystem = RE_WINDOWING_SYSTEM_X11;
+					} else {
+						RE_FATAL_ERROR("Failed to create Wayland window. No other alternative known window managers exist");
 						return;
 					}
+				} else
+					eUsingWindowingSystem = RE_WINDOWING_SYSTEM_WAYLAND;
+			} else if (std::strcmp(pcSessionType, "x11") == 0) {
+				CATCH_SIGNAL(pWindow = new Window_X11());
+				if (!pWindow->is_valid() || bErrorOccured) {
+					DELETE_SAFELY(pWindow);
+					if (std::strlen(std::getenv("WAYLAND_DISPLAY")) > 0) {
+						RE_NOTE("Failed to create X11 window. Attempting to create in Wayland");
+						CATCH_SIGNAL(pWindow = new Window_Wayland());
+						if (!pWindow->is_valid() || bErrorOccured) {
+							RE_FATAL_ERROR("Failed to create window in Wayland either");
+							DELETE_SAFELY(pWindow);
+							return;
+						}
+						eUsingWindowingSystem = RE_WINDOWING_SYSTEM_WAYLAND;
+					} else {
+						RE_FATAL_ERROR("Failed to create X11 window. No other alternative known window managers exist");
+						return;
+					}
+				} else
 					eUsingWindowingSystem = RE_WINDOWING_SYSTEM_X11;
-				} else {
-					RE_FATAL_ERROR("Failed to create Wayland window. No other alternative window managers exist");
-					return;
-				}
-			} else
-				eUsingWindowingSystem = RE_WINDOWING_SYSTEM_WAYLAND;
-		} else if (bX11Available) {
-			CATCH_SIGNAL(pWindow = new Window_X11());
-			if (!pWindow->is_valid() || bErrorOccured) {
-				RE_FATAL_ERROR("Failed to create X11 window. No other alternative window managers exist");
-				DELETE_SAFELY(pWindow);
-				return;
 			}
-			eUsingWindowingSystem = RE_WINDOWING_SYSTEM_X11;
-		} else {
-			RE_FATAL_ERROR("X11 and Wayland are not present on this system. A window cannot be created");
-			return;
 		}
 #else
 # warning The targeted OS is unknown, so the engine will terminate immediatly upon execution
@@ -73,14 +81,12 @@ namespace RE {
 			RenderSystem renderSystem;
 			if (!renderSystem.is_valid() || bErrorOccured)
 				return;
-			//Renderer renderer;
 			std::chrono::high_resolution_clock::time_point currentFrameTime = std::chrono::high_resolution_clock::now(), lastFrameTime;
 			bRunning = true;
 			while (bRunning) {
 				CATCH_SIGNAL(pWindow->window_proc());
 				CATCH_SIGNAL(gameMgr.game_logic_update());
 				CATCH_SIGNAL(renderSystem.draw_frame());
-				//renderer.render();
 				lastFrameTime = currentFrameTime;
 				currentFrameTime = std::chrono::high_resolution_clock::now();
 				fDeltaseconds = std::chrono::duration_cast<std::chrono::duration<float>>(currentFrameTime - lastFrameTime).count();

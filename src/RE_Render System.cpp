@@ -149,18 +149,20 @@ namespace RE {
 		return CHECK_VK_RESULT(vkCreateWin32SurfaceKHR(RE_VK_INSTANCE, &vk_win32SurfaceCreateInfo, nullptr, &vk_hSurface));
 #elif defined RE_OS_LINUX
 		switch (eUsingWindowingSystem) {
-			case RE_WINDOWING_SYSTEM_WAYLAND:
-				VkWaylandSurfaceCreateInfoKHR vk_waylandSurfaceCreateInfo = {};
-				vk_waylandSurfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR;
-				vk_waylandSurfaceCreateInfo.display = static_cast<Window_Wayland*>(Window::pInstance)->wl_pDisplay;
-				vk_waylandSurfaceCreateInfo.surface = static_cast<Window_Wayland*>(Window::pInstance)->get_wl_surface();
-				return CHECK_VK_RESULT(vkCreateWaylandSurfaceKHR(RE_VK_INSTANCE, &vk_waylandSurfaceCreateInfo, nullptr, &vk_hSurface));
-			case RE_WINDOWING_SYSTEM_X11:
-				VkXlibSurfaceCreateInfoKHR vk_x11SurfaceCreateInfo = {};
-				vk_x11SurfaceCreateInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
-				vk_x11SurfaceCreateInfo.dpy = static_cast<Window_X11*>(Window::pInstance)->x11_pDisplay;
-				vk_x11SurfaceCreateInfo.window = static_cast<Window_X11*>(Window::pInstance)->get_xwindow();
-				return CHECK_VK_RESULT(vkCreateXlibSurfaceKHR(RE_VK_INSTANCE, &vk_x11SurfaceCreateInfo, nullptr, &vk_hSurface));
+			case RE_WINDOWING_SYSTEM_WAYLAND: {
+					VkWaylandSurfaceCreateInfoKHR vk_waylandSurfaceCreateInfo = {};
+					vk_waylandSurfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR;
+					vk_waylandSurfaceCreateInfo.display = static_cast<Window_Wayland*>(Window::pInstance)->wl_pDisplay;
+					vk_waylandSurfaceCreateInfo.surface = static_cast<Window_Wayland*>(Window::pInstance)->get_wl_surface();
+					return CHECK_VK_RESULT(vkCreateWaylandSurfaceKHR(RE_VK_INSTANCE, &vk_waylandSurfaceCreateInfo, nullptr, &vk_hSurface));
+				}
+			case RE_WINDOWING_SYSTEM_X11: {
+					VkXlibSurfaceCreateInfoKHR vk_x11SurfaceCreateInfo = {};
+					vk_x11SurfaceCreateInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
+					vk_x11SurfaceCreateInfo.dpy = static_cast<Window_X11*>(Window::pInstance)->x11_pDisplay;
+					vk_x11SurfaceCreateInfo.window = static_cast<Window_X11*>(Window::pInstance)->get_xwindow();
+					return CHECK_VK_RESULT(vkCreateXlibSurfaceKHR(RE_VK_INSTANCE, &vk_x11SurfaceCreateInfo, nullptr, &vk_hSurface));
+				}
 			default:
 				return false;
 		}

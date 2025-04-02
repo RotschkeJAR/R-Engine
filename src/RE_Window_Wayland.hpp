@@ -10,8 +10,8 @@ namespace RE {
 		private:
 			wl_registry *wl_pRegistry;
 			wl_compositor *wl_pCompositor;
-			wl_surface *wl_pWindow;
-
+			wl_surface *wl_pSurface;
+			
 		protected:
 			void internal_window_proc();
 			void internal_show_window();

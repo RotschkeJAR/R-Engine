@@ -5,9 +5,6 @@ namespace RE {
 	
 	extern bool bRunning;
 	extern bool bErrorOccured;
-
-	extern const bool bWaylandAvailable;
-	extern const bool bX11Available;
 	extern WindowingSystem eUsingWindowingSystem;
 
 	float get_deltaseconds();

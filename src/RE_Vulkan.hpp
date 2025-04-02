@@ -5,6 +5,7 @@
 #ifdef RE_OS_WINDOWS
 # define VK_USE_PLATFORM_WIN32_KHR
 #elif defined RE_OS_LINUX
+# define VK_USE_PLATFORM_WAYLAND_KHR
 # define VK_USE_PLATFORM_XLIB_KHR
 #endif
 #define VK_NO_PROTOTYPES

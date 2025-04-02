@@ -809,12 +809,26 @@ namespace RE {
 		if (!pfn_vkGetPhysicalDeviceWin32PresentationSupportKHR)
 			return false;
 #elif defined RE_OS_LINUX
-		pfn_vkCreateXlibSurfaceKHR = reinterpret_cast<PFN_vkCreateXlibSurfaceKHR>(load_func("vkCreateXlibSurfaceKHR"));
-		if (!pfn_vkCreateXlibSurfaceKHR)
-			return false;
-		pfn_vkGetPhysicalDeviceXlibPresentationSupportKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceXlibPresentationSupportKHR>(load_func("vkGetPhysicalDeviceXlibPresentationSupportKHR"));
-		if (!pfn_vkGetPhysicalDeviceXlibPresentationSupportKHR)
-			return false;
+		switch (eUsingWindowingSystem) {
+			case RE_WINDOWING_SYSTEM_WAYLAND:
+				pfn_vkCreateWaylandSurfaceKHR = reinterpret_cast<PFN_vkCreateWaylandSurfaceKHR>(load_func("vkCreateWaylandSurfaceKHR"));
+				if (!pfn_vkCreateWaylandSurfaceKHR)
+					return false;
+				pfn_vkGetPhysicalDeviceWaylandPresentationSupportKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR>(load_func("vkGetPhysicalDeviceWaylandPresentationSupportKHR"));
+				if (!pfn_vkGetPhysicalDeviceWaylandPresentationSupportKHR)
+					return false;
+				break;
+			case RE_WINDOWING_SYSTEM_X11:
+				pfn_vkCreateXlibSurfaceKHR = reinterpret_cast<PFN_vkCreateXlibSurfaceKHR>(load_func("vkCreateXlibSurfaceKHR"));
+				if (!pfn_vkCreateXlibSurfaceKHR)
+					return false;
+				pfn_vkGetPhysicalDeviceXlibPresentationSupportKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceXlibPresentationSupportKHR>(load_func("vkGetPhysicalDeviceXlibPresentationSupportKHR"));
+				if (!pfn_vkGetPhysicalDeviceXlibPresentationSupportKHR)
+					return false;
+				break;
+			default:
+				return false;
+		}
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 		return true;
 	}
@@ -1226,12 +1240,15 @@ namespace RE {
 #ifdef RE_OS_WINDOWS
 		ppcExtensionsToLoad[u32ExtensionsToLoadCount - 1U] = VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
 #elif defined RE_OS_LINUX
-		switch (eUsingWindowingSystem)
+		switch (eUsingWindowingSystem) {
 			case RE_WINDOWING_SYSTEM_WAYLAND:
 				ppcExtensionsToLoad[u32ExtensionsToLoadCount - 1U] = VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME;
 				break;
 			case RE_WINDOWING_SYSTEM_X11:
 				ppcExtensionsToLoad[u32ExtensionsToLoadCount - 1U] = VK_KHR_XLIB_SURFACE_EXTENSION_NAME;
+				break;
+			default:
+				RE_ERROR("Unknown windowing system on Linux selected");
 				break;
 		}
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */

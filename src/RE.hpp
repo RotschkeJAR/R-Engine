@@ -617,6 +617,9 @@ namespace RE {
 	REuint get_next_scene_id();
 	bool is_scene_next(REuint u32SceneId);
 
+	void enable_vsync(bool bEnableVsync);
+	bool is_vsync_enabled();
+
 #ifdef RE_OS_WINDOWS
 	void set_hinstance(HINSTANCE win_hInstance);
 #endif

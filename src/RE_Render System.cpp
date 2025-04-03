@@ -4,6 +4,8 @@
 #include "RE_Window_Wayland.hpp"
 #include "RE_Main.hpp"
 
+#include "RE_Rendering_Buffer.hpp"
+#include "RE_Rendering_Shader.hpp"
 #include "RE_Input.hpp"
 
 namespace RE {
@@ -18,13 +20,53 @@ namespace RE {
 #define RE_VK_SEMAPHORE_IMAGE_AVAILABLE_INDEX 0U
 #define RE_VK_SEMAPHORE_RENDERING_FINISHED_INDEX 1U
 #define RE_VK_SEMAPHORES_PER_FRAME 2U
+
+	// Attributes initialized at beginning and rarely changed
+	VkPhysicalDevice *vk_phPhysicalDevicesAvailable = nullptr;
+	uint32_t u32PhysicalDevicesAvailableCount = 0U;
+	VkDevice vk_hDevice = VK_NULL_HANDLE;
+	VkQueue vk_hQueues[RE_VK_QUEUE_COUNT] = {};
+	uint32_t u32QueueIndices[RE_VK_QUEUE_COUNT] = {};
+	VkSurfaceKHR vk_hSurface = VK_NULL_HANDLE;
+	VkSurfaceCapabilitiesKHR vk_surfaceCapabilities = {};
+	VkSurfaceFormatKHR *vk_peSurfaceFormatsAvailable = nullptr;
+	uint32_t u32SurfaceFormatsAvailableCount = 0U;
+	VkPresentModeKHR vk_ePresentModeVsync = VK_PRESENT_MODE_FIFO_KHR, vk_ePresentModeNoVsync = VK_PRESENT_MODE_FIFO_KHR;
+	VkSwapchainKHR vk_hSwapchain = VK_NULL_HANDLE;
+	VkFormat vk_eSwapchainImageFormat = VK_FORMAT_UNDEFINED;
+	VkExtent2D vk_swapchainResolution = {};
+	VkImage *vk_pSwapchainImages = nullptr;
+	VkImageView *vk_pSwapchainImageViews = nullptr;
+	uint32_t u32SwapchainImageCount = 0U;
+	Rendering_Shader *pVertexShader = nullptr, *pFragmentShader = nullptr;
+	VkPipelineLayout vk_hPipelineLayout = VK_NULL_HANDLE;
+	VkRenderPass vk_hRenderPass = VK_NULL_HANDLE;
+	VkPipeline vk_hGraphicsPipeline = VK_NULL_HANDLE;
+	VkFramebuffer *vk_phSwapchainFramebuffers = nullptr; // size equals swapchain image count
+	Rendering_Buffer *pVertexBuffer = nullptr;
+	VkCommandPool vk_hCommandPools[RE_VK_COMMAND_POOL_COUNT] = {};
+	VkCommandBuffer *vk_phCommandBuffersGraphics = nullptr, *vk_phCommandBuffersTransfer = nullptr;
+	VkSemaphore vk_hSemaphores[RE_VK_SEMAPHORE_COUNT] = {};
+	VkFence vk_hFences[RE_VK_FENCE_COUNT] = {};
+
+	// Configurable settings
+	VkPhysicalDevice vk_hPhysicalDeviceSelected = VK_NULL_HANDLE;
+	VkSurfaceFormatKHR vk_surfaceFormatSelected = {};
+	VkPresentModeKHR vk_ePresentModeSelected = VK_PRESENT_MODE_FIFO_KHR;
+
+	uint8_t u8Booleans = 0U;
+#define COMMAND_BUFFERS_INITIALIZED_INDEX 0
+#define SYNC_OBJECTS_INITIALIZED_INDEX 1
+#define SWAPCHAIN_DIRTY_INDEX 2
+#define USE_OTHER_FRAME_INDEX 3
+#define VSYNC_SETTING_INDEX 4
 	
 	RenderSystem* RenderSystem::pInstance = nullptr;
 	REvertex vertices[] = {1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
 						-1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f,
 						0.0f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f};
 
-	RenderSystem::RenderSystem() : bValid(false), vk_hSwapchain(VK_NULL_HANDLE), bUseOtherFrame(false), bVsyncEnabled(true) {
+	RenderSystem::RenderSystem() : bValid(false) {
 		if (RenderSystem::pInstance) {
 			RE_ERROR("An instance of the render system has already been created. The new one won't be initialized and remains invalid");
 			return;
@@ -89,57 +131,9 @@ namespace RE {
 		CATCH_SIGNAL(free_physical_device_list());
 	}
 
-	bool RenderSystem::create_buffer(VkDeviceSize vk_size, VkBufferUsageFlags vk_usage, VkSharingMode vk_sharingMode, uint32_t u32QueueFamilyIndexCount, const uint32_t* pu32QueueFamilyIndices, VkMemoryPropertyFlags vk_memoryProperties, VkBuffer& vk_rBuffer, VkDeviceMemory& vk_rDeviceMemory) {
-		VkBufferCreateInfo vk_bufferCreateInfo = {};
-		vk_bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-		vk_bufferCreateInfo.size = vk_size;
-		vk_bufferCreateInfo.usage = vk_usage;
-		vk_bufferCreateInfo.sharingMode = vk_sharingMode;
-		switch (vk_sharingMode) {
-			case VK_SHARING_MODE_CONCURRENT:
-				vk_bufferCreateInfo.queueFamilyIndexCount = u32QueueFamilyIndexCount;
-				vk_bufferCreateInfo.pQueueFamilyIndices = pu32QueueFamilyIndices;
-				break;
-			case VK_SHARING_MODE_EXCLUSIVE:
-			default:
-				vk_bufferCreateInfo.queueFamilyIndexCount = 0U;
-				vk_bufferCreateInfo.pQueueFamilyIndices = nullptr;
-				break;
-		}
-		if (!CHECK_VK_RESULT(vkCreateBuffer(vk_hDevice, &vk_bufferCreateInfo, nullptr, &vk_rBuffer))) {
-			RE_ERROR("Failed creating new buffer in Vulkan");
-			return false;
-		}
-		VkMemoryRequirements vk_bufferMemoryRequirements;
-		CATCH_SIGNAL(vkGetBufferMemoryRequirements(vk_hDevice, vk_rBuffer, &vk_bufferMemoryRequirements));
-		VkPhysicalDeviceMemoryProperties vk_physicalDeviceMemoryProperties;
-		CATCH_SIGNAL(vkGetPhysicalDeviceMemoryProperties(vk_hPhysicalDeviceSelected, &vk_physicalDeviceMemoryProperties));
-		std::optional<uint32_t> memoryTypeSelected;
-		for (uint32_t u32MemoryTypeIndex = 0U; u32MemoryTypeIndex < vk_physicalDeviceMemoryProperties.memoryTypeCount; u32MemoryTypeIndex++) {
-			if ((vk_bufferMemoryRequirements.memoryTypeBits & (1U << u32MemoryTypeIndex)) && (vk_physicalDeviceMemoryProperties.memoryTypes[u32MemoryTypeIndex].propertyFlags & vk_memoryProperties)) {
-				memoryTypeSelected = u32MemoryTypeIndex;
-				break;
-			}
-		}
-		if (!memoryTypeSelected.has_value()) {
-			RE_ERROR("The physical Vulkan device doesn't support the required memory type for the recently created buffer");
-			CATCH_SIGNAL(vkDestroyBuffer(vk_hDevice, vk_rBuffer, nullptr));
-			return false;
-		}
-		VkMemoryAllocateInfo vk_bufferMemoryAllocateInfo = {};
-		vk_bufferMemoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-		vk_bufferMemoryAllocateInfo.allocationSize = vk_bufferMemoryRequirements.size;
-		vk_bufferMemoryAllocateInfo.memoryTypeIndex = memoryTypeSelected.value();
-		if (!CHECK_VK_RESULT(vkAllocateMemory(vk_hDevice, &vk_bufferMemoryAllocateInfo, nullptr, &vk_rDeviceMemory))) {
-			RE_ERROR("Failed allocating memory for the recently created buffer in Vulkan");
-			CATCH_SIGNAL(vkDestroyBuffer(vk_hDevice, vk_rBuffer, nullptr));
-			return false;
-		}
-		CATCH_SIGNAL(vkBindBufferMemory(vk_hDevice, vk_rBuffer, vk_rDeviceMemory, 0U));
-		return true;
-	}
-
 	bool RenderSystem::create_surface() {
+		if (vk_hSurface)
+			return false;
 		DEFINE_SIGNAL_GUARD(sigGuardCreateSurface);
 #ifdef RE_OS_WINDOWS
 		VkWin32SurfaceCreateInfoKHR vk_win32SurfaceCreateInfo = {};
@@ -172,11 +166,16 @@ namespace RE {
 	}
 	
 	void RenderSystem::destroy_surface() {
+		if (!vk_hSurface)
+			return;
 		CATCH_SIGNAL(vkDestroySurfaceKHR(RE_VK_INSTANCE, vk_hSurface, nullptr));
 		DELETE_ARRAY_SAFELY(vk_peSurfaceFormatsAvailable);
+		vk_hSurface = VK_NULL_HANDLE;
 	}
 
 	void RenderSystem::fetch_surface_infos() {
+		if (!vk_hSurface)
+			return;
 		CATCH_SIGNAL(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &vk_surfaceCapabilities));
 		CATCH_SIGNAL(vkGetPhysicalDeviceSurfaceFormatsKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &u32SurfaceFormatsAvailableCount, nullptr));
 		vk_peSurfaceFormatsAvailable = new VkSurfaceFormatKHR[u32SurfaceFormatsAvailableCount];
@@ -203,6 +202,8 @@ namespace RE {
 	}
 
 	bool RenderSystem::alloc_physical_device_list() {
+		if (vk_phPhysicalDevicesAvailable)
+			return false;
 		DEFINE_SIGNAL_GUARD(sigGuardAllocPhysicalDeviceList);
 		uint32_t u32TotalPhysicalDeviceCount;
 		CATCH_SIGNAL(vkEnumeratePhysicalDevices(RE_VK_INSTANCE, &u32TotalPhysicalDeviceCount, nullptr));
@@ -289,10 +290,14 @@ namespace RE {
 	}
 
 	void RenderSystem::free_physical_device_list() {
+		if (!vk_phPhysicalDevicesAvailable)
+			return;
 		DELETE_ARRAY_SAFELY(vk_phPhysicalDevicesAvailable);
 	}
 
 	bool RenderSystem::create_device() {
+		if (vk_hDevice)
+			return false;
 		DEFINE_SIGNAL_GUARD(sigGuardCreateDevice);
 		constexpr uint32_t u32PhysicalDeviceExtensionCount = 1U;
 		const char *const pcPhysicalDeviceExtensions[u32PhysicalDeviceExtensionCount] = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
@@ -376,19 +381,26 @@ namespace RE {
 	}
 	
 	void RenderSystem::destroy_device() {
+		if (!vk_hDevice)
+			return;
 		CATCH_SIGNAL(vkDestroyDevice(vk_hDevice, nullptr));
+		vk_hDevice = VK_NULL_HANDLE;
 	}
 
 	bool RenderSystem::create_swapchain() {
 		{ // Create actual sweapchain
-			vk_eSwapchainImageFormat = vk_surfaceFormatSelected.format;
-			const uint32_t u32OldSwapchainImageViewCount = u32SwapchainImageCount;
 			const VkSwapchainKHR vk_hOldSwapchain = vk_hSwapchain;
+			if (vk_hOldSwapchain) {
+				for (uint32_t u32SwapchainImageIndex = 0U; u32SwapchainImageIndex < u32SwapchainImageCount; u32SwapchainImageIndex++)
+					CATCH_SIGNAL(vkDestroyImageView(vk_hDevice, vk_pSwapchainImageViews[u32SwapchainImageIndex], nullptr));
+				DELETE_ARRAY_SAFELY(vk_pSwapchainImages);
+				DELETE_ARRAY_SAFELY(vk_pSwapchainImageViews);
+			}
 			VkSwapchainCreateInfoKHR vk_swapchainCreateInfo = {};
 			vk_swapchainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 			vk_swapchainCreateInfo.surface = vk_hSurface;
 			vk_swapchainCreateInfo.minImageCount = std::clamp(vk_surfaceCapabilities.minImageCount + 1U, vk_surfaceCapabilities.minImageCount, vk_surfaceCapabilities.maxImageCount > 0U ? vk_surfaceCapabilities.maxImageCount : std::numeric_limits<uint32_t>::max());
-			vk_swapchainCreateInfo.imageFormat = vk_eSwapchainImageFormat;
+			vk_swapchainCreateInfo.imageFormat = vk_surfaceFormatSelected.format;
 			vk_swapchainCreateInfo.imageColorSpace = vk_surfaceFormatSelected.colorSpace;
 			if (vk_surfaceCapabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
 				vk_swapchainResolution = vk_surfaceCapabilities.currentExtent;
@@ -408,20 +420,16 @@ namespace RE {
 				vk_swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
 			vk_swapchainCreateInfo.preTransform = vk_surfaceCapabilities.currentTransform;
 			vk_swapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-			vk_swapchainCreateInfo.presentMode = bVsyncEnabled ? vk_ePresentModeVsync : vk_ePresentModeNoVsync;
+			vk_swapchainCreateInfo.presentMode = is_bit_true<uint8_t>(u8Booleans, VSYNC_SETTING_INDEX) ? vk_ePresentModeVsync : vk_ePresentModeNoVsync;
 			vk_swapchainCreateInfo.clipped = VK_TRUE;
 			vk_swapchainCreateInfo.oldSwapchain = vk_hOldSwapchain;
 			if (!CHECK_VK_RESULT(vkCreateSwapchainKHR(vk_hDevice, &vk_swapchainCreateInfo, nullptr, &vk_hSwapchain))) {
 				RE_FATAL_ERROR("Failed creating Vulkan swapchain");
 				return false;
 			}
-			if (vk_hOldSwapchain != VK_NULL_HANDLE) {
-				for (uint32_t u32OldSwapchainImageViewDeleteIndex = 0U; u32OldSwapchainImageViewDeleteIndex < u32OldSwapchainImageViewCount; u32OldSwapchainImageViewDeleteIndex++)
-					CATCH_SIGNAL(vkDestroyImageView(vk_hDevice, vk_pSwapchainImageViews[u32OldSwapchainImageViewDeleteIndex], nullptr));
-				delete[] vk_pSwapchainImages;
-				delete[] vk_pSwapchainImageViews;
+			vk_eSwapchainImageFormat = vk_surfaceFormatSelected.format;
+			if (vk_hOldSwapchain != VK_NULL_HANDLE)
 				CATCH_SIGNAL(vkDestroySwapchainKHR(vk_hDevice, vk_hOldSwapchain, nullptr));
-			}
 		} // End of creating actual swapchain
 
 		CATCH_SIGNAL(vkGetSwapchainImagesKHR(vk_hDevice, vk_hSwapchain, &u32SwapchainImageCount, nullptr));
@@ -463,6 +471,8 @@ namespace RE {
 	}
 	
 	void RenderSystem::destroy_swapchain() {
+		if (!vk_hSwapchain)
+			return;
 		for (uint32_t u32SwapchainImageIndex = 0U; u32SwapchainImageIndex < u32SwapchainImageCount; u32SwapchainImageIndex++)
 			CATCH_SIGNAL(vkDestroyImageView(vk_hDevice, vk_pSwapchainImageViews[u32SwapchainImageIndex], nullptr));
 		DELETE_ARRAY_SAFELY(vk_pSwapchainImages);
@@ -480,58 +490,33 @@ namespace RE {
 	}
 
 	bool RenderSystem::create_shaders() {
-		std::ifstream vertexBinaryFile("shaders/vertex.spv", std::ios::ate | std::ios::binary);
-		if (!vertexBinaryFile.is_open()) {
-			RE_FATAL_ERROR("Failed loading the vertex shader binary file");
+		if (pVertexShader && pFragmentShader)
+			return false;
+		pVertexShader = new Rendering_Shader("shaders/vertex.spv");
+		if (!pVertexShader->is_valid()) {
+			RE_FATAL_ERROR("Failed creating vertex shader");
+			DELETE_SAFELY(pVertexShader);
 			return false;
 		}
-		const size_t vertexBinaryFileSize = vertexBinaryFile.tellg();
-		char *const pcVertexShaderBinaries = new char[vertexBinaryFileSize];
-		vertexBinaryFile.seekg(0);
-		CATCH_SIGNAL(vertexBinaryFile.read(pcVertexShaderBinaries, vertexBinaryFileSize));
-		vertexBinaryFile.close();
-		VkShaderModuleCreateInfo vk_vertexShaderCreateInfo = {};
-		vk_vertexShaderCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-		vk_vertexShaderCreateInfo.codeSize = static_cast<uint32_t>(vertexBinaryFileSize);
-		vk_vertexShaderCreateInfo.pCode = reinterpret_cast<const uint32_t*>(pcVertexShaderBinaries);
-		const bool bVertexShaderCreatedSuccessfully = CHECK_VK_RESULT(vkCreateShaderModule(vk_hDevice, &vk_vertexShaderCreateInfo, nullptr, &vk_hVertexShader));
-		delete[] pcVertexShaderBinaries;
-		if (!bVertexShaderCreatedSuccessfully) {
-			RE_FATAL_ERROR("Failed creating Vulkan shader module for the vertex shader");
-			return false;
-		}
-
-		std::ifstream fragmentBinaryFile("shaders/fragment.spv", std::ios::ate | std::ios::binary);
-		if (!fragmentBinaryFile.is_open()) {
-			RE_FATAL_ERROR("Failed loading the fragment shader binary file");
-			CATCH_SIGNAL(vkDestroyShaderModule(vk_hDevice, vk_hVertexShader, nullptr));
-			return false;
-		}
-		const size_t fragmentBinaryFileSize = fragmentBinaryFile.tellg();
-		char *const pcFragmentShaderBinaries = new char[fragmentBinaryFileSize];
-		fragmentBinaryFile.seekg(0);
-		CATCH_SIGNAL(fragmentBinaryFile.read(pcFragmentShaderBinaries, fragmentBinaryFileSize));
-		fragmentBinaryFile.close();
-		VkShaderModuleCreateInfo vk_fragmentShaderCreateInfo = {};
-		vk_fragmentShaderCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-		vk_fragmentShaderCreateInfo.codeSize = static_cast<uint32_t>(fragmentBinaryFileSize);
-		vk_fragmentShaderCreateInfo.pCode = reinterpret_cast<const uint32_t*>(pcFragmentShaderBinaries);
-		const bool bFragmentShaderCreatedSuccessfully = CHECK_VK_RESULT(vkCreateShaderModule(vk_hDevice, &vk_fragmentShaderCreateInfo, nullptr, &vk_hFragmentShader));
-		delete[] pcFragmentShaderBinaries;
-		if (!bFragmentShaderCreatedSuccessfully) {
-			RE_FATAL_ERROR("Failed creating Vulkan shader module for the fragment shader");
-			CATCH_SIGNAL(vkDestroyShaderModule(vk_hDevice, vk_hVertexShader, nullptr));
+		pFragmentShader = new Rendering_Shader("shaders/fragment.spv");
+		if (!pFragmentShader->is_valid()) {
+			RE_FATAL_ERROR("Failed creating fragment shader");
+			DELETE_SAFELY(pFragmentShader);
 			return false;
 		}
 		return true;
 	}
 	
 	void RenderSystem::destroy_shaders() {
-		CATCH_SIGNAL(vkDestroyShaderModule(vk_hDevice, vk_hVertexShader, nullptr));
-		CATCH_SIGNAL(vkDestroyShaderModule(vk_hDevice, vk_hFragmentShader, nullptr));
+		if (!pVertexShader && !pFragmentShader)
+			return;
+		DELETE_SAFELY(pVertexShader);
+		DELETE_SAFELY(pFragmentShader);
 	}
 
 	bool RenderSystem::create_pipeline_layout() {
+		if (vk_hPipelineLayout)
+			return false;
 		VkPipelineLayoutCreateInfo vk_pipelineLayoutCreateInfo = {};
 		vk_pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 		vk_pipelineLayoutCreateInfo.setLayoutCount = 0U;
@@ -542,7 +527,10 @@ namespace RE {
 	}
 	
 	void RenderSystem::destroy_pipeline_layout() {
+		if (!vk_hPipelineLayout)
+			return;
 		CATCH_SIGNAL(vkDestroyPipelineLayout(vk_hDevice, vk_hPipelineLayout, nullptr));
+		vk_hPipelineLayout = VK_NULL_HANDLE;
 	}
 
 	bool RenderSystem::create_renderpass() {
@@ -588,19 +576,24 @@ namespace RE {
 	}
 	
 	void RenderSystem::destroy_renderpass() {
+		if (!vk_hRenderPass)
+			return;
 		CATCH_SIGNAL(vkDestroyRenderPass(vk_hDevice, vk_hRenderPass, nullptr));
+		vk_hRenderPass = VK_NULL_HANDLE;
 	}
 
 	bool RenderSystem::create_graphics_pipeline() {
+		if (vk_hGraphicsPipeline)
+			return false;
 		VkPipelineShaderStageCreateInfo vk_pipelineVertexShaderStateCreateInfo = {};
 		vk_pipelineVertexShaderStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		vk_pipelineVertexShaderStateCreateInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-		vk_pipelineVertexShaderStateCreateInfo.module = vk_hVertexShader;
+		vk_pipelineVertexShaderStateCreateInfo.module = *pVertexShader;
 		vk_pipelineVertexShaderStateCreateInfo.pName = "main";
 		VkPipelineShaderStageCreateInfo vk_pipelineFragmentShaderStateCreateInfo = {};
 		vk_pipelineFragmentShaderStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		vk_pipelineFragmentShaderStateCreateInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-		vk_pipelineFragmentShaderStateCreateInfo.module = vk_hFragmentShader;
+		vk_pipelineFragmentShaderStateCreateInfo.module = *pFragmentShader;
 		vk_pipelineFragmentShaderStateCreateInfo.pName = "main";
 		VkPipelineShaderStageCreateInfo vk_pipelineShaderStateCreateInfos[2] = {vk_pipelineVertexShaderStateCreateInfo, vk_pipelineFragmentShaderStateCreateInfo};
 
@@ -722,10 +715,15 @@ namespace RE {
 	}
 	
 	void RenderSystem::destroy_graphics_pipeline() {
+		if (!vk_hGraphicsPipeline)
+			return;
 		CATCH_SIGNAL(vkDestroyPipeline(vk_hDevice, vk_hGraphicsPipeline, nullptr));
+		vk_hGraphicsPipeline = VK_NULL_HANDLE;
 	}
 
 	bool RenderSystem::create_framebuffers() {
+		if (vk_phSwapchainFramebuffers)
+			return false;
 		vk_phSwapchainFramebuffers = new VkFramebuffer[u32SwapchainImageCount];
 		uint32_t u32FramebuffersCreated = 0U;
 		while (u32FramebuffersCreated < u32SwapchainImageCount) {
@@ -753,25 +751,32 @@ namespace RE {
 	}
 	
 	void RenderSystem::destroy_framebuffers() {
+		if (!vk_phSwapchainFramebuffers)
+			return;
 		for (uint32_t u32FramebufferIndex = 0U; u32FramebufferIndex < u32SwapchainImageCount; u32FramebufferIndex++)
 			CATCH_SIGNAL_DETAILED(vkDestroyFramebuffer(vk_hDevice, vk_phSwapchainFramebuffers[u32FramebufferIndex], nullptr), append_to_string("Framebuffer index: ", u32FramebufferIndex).c_str());
 		DELETE_ARRAY_SAFELY(vk_phSwapchainFramebuffers);
 	}
 
 	bool RenderSystem::create_vertex_buffer() {
-		if (!CATCH_SIGNAL_AND_RETURN(create_buffer(sizeof(REvertex) * RE_VK_VERTEX_COUNT, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE, 0U, nullptr, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,vk_hVertexStagingBuffer, vk_hVertexStagingBufferMemory), bool)) {
+		pVertexBuffer = new Rendering_Buffer(sizeof(REvertex) * RE_VK_VERTEX_COUNT, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE, 0U, nullptr, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+		if (!pVertexBuffer->is_valid()) {
 			RE_FATAL_ERROR("Failed creating vertex staging buffer in Vulkan");
+			DELETE_SAFELY(pVertexBuffer);
 			return false;
 		}
 		return true;
 	}
 	
 	void RenderSystem::destroy_vertex_buffer() {
-		CATCH_SIGNAL(vkDestroyBuffer(vk_hDevice, vk_hVertexStagingBuffer, nullptr));
-		CATCH_SIGNAL(vkFreeMemory(vk_hDevice, vk_hVertexStagingBufferMemory, nullptr));
+		if (!pVertexBuffer)
+			return;
+		DELETE_SAFELY(pVertexBuffer);
 	}
 
 	bool RenderSystem::alloc_command_buffers() {
+		if (is_bit_true<uint8_t>(u8Booleans, COMMAND_BUFFERS_INITIALIZED_INDEX))
+			return false;
 		VkCommandPoolCreateInfo vk_commandPoolCreateInfos[RE_VK_COMMAND_POOL_COUNT];
 		uint32_t u32CommandPoolCreateIndex = 0U;
 		while (u32CommandPoolCreateIndex < RE_VK_COMMAND_POOL_COUNT) {
@@ -831,17 +836,23 @@ namespace RE {
 				CATCH_SIGNAL(vkDestroyCommandPool(vk_hDevice, vk_hCommandPools[u32CommandPoolDeleteIndex], nullptr));
 			return false;
 		}
+		set_bit<uint8_t>(u8Booleans, COMMAND_BUFFERS_INITIALIZED_INDEX, true);
 		return true;
 	}
 	
 	void RenderSystem::free_command_buffers() {
+		if (!is_bit_true<uint8_t>(u8Booleans, COMMAND_BUFFERS_INITIALIZED_INDEX))
+			return;
 		DELETE_ARRAY_SAFELY(vk_phCommandBuffersGraphics);
 		DELETE_ARRAY_SAFELY(vk_phCommandBuffersTransfer);
 		CATCH_SIGNAL(vkDestroyCommandPool(vk_hDevice, vk_hCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_INDEX], nullptr));
 		CATCH_SIGNAL(vkDestroyCommandPool(vk_hDevice, vk_hCommandPools[RE_VK_COMMAND_POOL_TRANSFER_INDEX], nullptr));
+		set_bit<uint8_t>(u8Booleans, COMMAND_BUFFERS_INITIALIZED_INDEX, false);
 	}
 
 	bool RenderSystem::record_command_buffers() {
+		if (!is_bit_true<uint8_t>(u8Booleans, COMMAND_BUFFERS_INITIALIZED_INDEX))
+			return false;
 		for (uint32_t u32CommandBufferIndex = 0U; u32CommandBufferIndex < u32SwapchainImageCount; u32CommandBufferIndex++) {
 			const VkCommandBuffer vk_hCommandBuffer = vk_phCommandBuffersGraphics[u32CommandBufferIndex];
 			CATCH_SIGNAL(vkResetCommandBuffer(vk_hCommandBuffer, 0));
@@ -879,7 +890,7 @@ namespace RE {
 			vk_commandBufferRenderpassBeginInfo.pClearValues = &vk_clearValues;
 			CATCH_SIGNAL(vkCmdBeginRenderPass(vk_hCommandBuffer, &vk_commandBufferRenderpassBeginInfo, VK_SUBPASS_CONTENTS_INLINE));
 			CATCH_SIGNAL(vkCmdBindPipeline(vk_hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hGraphicsPipeline));
-			VkBuffer vk_vertexBuffers[1] = {vk_hVertexStagingBuffer};
+			VkBuffer vk_vertexBuffers[1] = {*pVertexBuffer};
 			VkDeviceSize offsets[1] = {0U};
 			CATCH_SIGNAL(vkCmdBindVertexBuffers(vk_hCommandBuffer, 0U, 1U, vk_vertexBuffers, offsets));
 			VkViewport vk_viewport = {};
@@ -906,6 +917,8 @@ namespace RE {
 	}
 
 	bool RenderSystem::create_sync_objects() {
+		if (is_bit_true<uint8_t>(u8Booleans, SYNC_OBJECTS_INITIALIZED_INDEX))
+			return false;
 		VkSemaphoreCreateInfo vk_semaphoreCreateInfo = {};
 		vk_semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 		uint32_t u32SemaphoresCreatedSuccessfully = 0U;
@@ -942,25 +955,33 @@ namespace RE {
 				CATCH_SIGNAL(vkDestroyFence(vk_hDevice, vk_hFences[u32FenceDeleteIndex - 1U], nullptr));
 			return false;
 		}
+		set_bit<uint8_t>(u8Booleans, SYNC_OBJECTS_INITIALIZED_INDEX, true);
 		return true;
 	}
 	
 	void RenderSystem::destroy_sync_objects() {
+		if (!is_bit_true<uint8_t>(u8Booleans, SYNC_OBJECTS_INITIALIZED_INDEX))
+			return;
 		for (uint32_t u32SemaphoreDeleteIndex = 0U; u32SemaphoreDeleteIndex < RE_VK_SEMAPHORE_COUNT; u32SemaphoreDeleteIndex++)
 			CATCH_SIGNAL(vkDestroySemaphore(vk_hDevice, vk_hSemaphores[u32SemaphoreDeleteIndex], nullptr));
 		for (uint32_t u32FenceDeleteIndex = 0U; u32FenceDeleteIndex < RE_VK_FENCE_COUNT; u32FenceDeleteIndex++)
 			CATCH_SIGNAL(vkDestroyFence(vk_hDevice, vk_hFences[u32FenceDeleteIndex], nullptr));
+		set_bit<uint8_t>(u8Booleans, SYNC_OBJECTS_INITIALIZED_INDEX, false);
 	}
 
 	void RenderSystem::draw_frame() {
-		CATCH_SIGNAL(vkWaitForFences(vk_hDevice, 1U, &vk_hFences[bUseOtherFrame], VK_TRUE, std::numeric_limits<uint64_t>::max()));
-		CATCH_SIGNAL(vkResetFences(vk_hDevice, 1U, &vk_hFences[bUseOtherFrame]));
+		CATCH_SIGNAL(vkWaitForFences(vk_hDevice, 1U, &vk_hFences[is_bit_true<uint8_t>(u8Booleans, USE_OTHER_FRAME_INDEX)], VK_TRUE, std::numeric_limits<uint64_t>::max()));
+		CATCH_SIGNAL(vkResetFences(vk_hDevice, 1U, &vk_hFences[is_bit_true<uint8_t>(u8Booleans, USE_OTHER_FRAME_INDEX)]));
 		vertices[14] = (InputMgr::pInstance->get_cursor_x() / static_cast<float>(Window::pInstance->get_size()[0])) * 2.0f - 1.0f;
 		vertices[15] = (InputMgr::pInstance->get_cursor_y() / static_cast<float>(Window::pInstance->get_size()[1])) * 2.0f - 1.0f;
 		upload_to_vertex_buffer(vertices, RE_VK_VERTEX_TOTAL_SIZE * 3U);
+		if (is_bit_true<uint8_t>(u8Booleans, SWAPCHAIN_DIRTY_INDEX)) {
+			recreate_swapchain();
+			set_bit<uint8_t>(u8Booleans, SWAPCHAIN_DIRTY_INDEX, false);
+		}
 		uint32_t u32NextSwapchainImageIndex;
 		VkResult vk_nextImageObtainedResult;
-		CATCH_SIGNAL(vk_nextImageObtainedResult = vkAcquireNextImageKHR(vk_hDevice, vk_hSwapchain, std::numeric_limits<uint64_t>::max(), vk_hSemaphores[bUseOtherFrame * RE_VK_SEMAPHORES_PER_FRAME + RE_VK_SEMAPHORE_IMAGE_AVAILABLE_INDEX], VK_NULL_HANDLE, &u32NextSwapchainImageIndex));
+		CATCH_SIGNAL(vk_nextImageObtainedResult = vkAcquireNextImageKHR(vk_hDevice, vk_hSwapchain, std::numeric_limits<uint64_t>::max(), vk_hSemaphores[is_bit_true<uint8_t>(u8Booleans, USE_OTHER_FRAME_INDEX) * RE_VK_SEMAPHORES_PER_FRAME + RE_VK_SEMAPHORE_IMAGE_AVAILABLE_INDEX], VK_NULL_HANDLE, &u32NextSwapchainImageIndex));
 		switch (vk_nextImageObtainedResult) {
 			case VK_SUCCESS:
 				break;
@@ -976,33 +997,33 @@ namespace RE {
 		VkSubmitInfo vk_queueGraphicsSubmitInfo = {};
 		vk_queueGraphicsSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 		vk_queueGraphicsSubmitInfo.waitSemaphoreCount = 1U;
-		vk_queueGraphicsSubmitInfo.pWaitSemaphores = &vk_hSemaphores[bUseOtherFrame * RE_VK_SEMAPHORES_PER_FRAME + RE_VK_SEMAPHORE_IMAGE_AVAILABLE_INDEX];
+		vk_queueGraphicsSubmitInfo.pWaitSemaphores = &vk_hSemaphores[is_bit_true<uint8_t>(u8Booleans, USE_OTHER_FRAME_INDEX) * RE_VK_SEMAPHORES_PER_FRAME + RE_VK_SEMAPHORE_IMAGE_AVAILABLE_INDEX];
 		vk_queueGraphicsSubmitInfo.pWaitDstStageMask = vk_pipelineStageFlags;
 		vk_queueGraphicsSubmitInfo.commandBufferCount = 1U;
 		CATCH_SIGNAL(vk_queueGraphicsSubmitInfo.pCommandBuffers = &vk_phCommandBuffersGraphics[u32NextSwapchainImageIndex]);
 		vk_queueGraphicsSubmitInfo.signalSemaphoreCount = 1U;
-		vk_queueGraphicsSubmitInfo.pSignalSemaphores = &vk_hSemaphores[bUseOtherFrame * RE_VK_SEMAPHORES_PER_FRAME + RE_VK_SEMAPHORE_RENDERING_FINISHED_INDEX];
-		if (!CHECK_VK_RESULT(vkQueueSubmit(vk_hQueues[RE_VK_QUEUE_GRAPHICS_INDEX], 1U, &vk_queueGraphicsSubmitInfo, vk_hFences[bUseOtherFrame]))) {
+		vk_queueGraphicsSubmitInfo.pSignalSemaphores = &vk_hSemaphores[is_bit_true<uint8_t>(u8Booleans, USE_OTHER_FRAME_INDEX) * RE_VK_SEMAPHORES_PER_FRAME + RE_VK_SEMAPHORE_RENDERING_FINISHED_INDEX];
+		if (!CHECK_VK_RESULT(vkQueueSubmit(vk_hQueues[RE_VK_QUEUE_GRAPHICS_INDEX], 1U, &vk_queueGraphicsSubmitInfo, vk_hFences[is_bit_true<uint8_t>(u8Booleans, USE_OTHER_FRAME_INDEX)]))) {
 			RE_FATAL_ERROR("Failed submitting data to the graphics queue in Vulkan");
 			return;
 		}
 		VkPresentInfoKHR vk_queuePresentSubmitInfo = {};
 		vk_queuePresentSubmitInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 		vk_queuePresentSubmitInfo.waitSemaphoreCount = 1U;
-		vk_queuePresentSubmitInfo.pWaitSemaphores = &vk_hSemaphores[bUseOtherFrame * RE_VK_SEMAPHORES_PER_FRAME + RE_VK_SEMAPHORE_RENDERING_FINISHED_INDEX];
+		vk_queuePresentSubmitInfo.pWaitSemaphores = &vk_hSemaphores[is_bit_true<uint8_t>(u8Booleans, USE_OTHER_FRAME_INDEX) * RE_VK_SEMAPHORES_PER_FRAME + RE_VK_SEMAPHORE_RENDERING_FINISHED_INDEX];
 		vk_queuePresentSubmitInfo.swapchainCount = 1U;
 		vk_queuePresentSubmitInfo.pSwapchains = &vk_hSwapchain;
 		vk_queuePresentSubmitInfo.pImageIndices = &u32NextSwapchainImageIndex;
 		CATCH_SIGNAL(vkQueuePresentKHR(vk_hQueues[RE_VK_QUEUE_PRESENT_INDEX], &vk_queuePresentSubmitInfo));
 
-		bUseOtherFrame = !bUseOtherFrame;
+		set_bit<uint8_t>(u8Booleans, USE_OTHER_FRAME_INDEX, !is_bit_true<uint8_t>(u8Booleans, USE_OTHER_FRAME_INDEX));
 	}
 
 	void RenderSystem::upload_to_vertex_buffer(const REvertex *const pNewVertexBufferData, const uint32_t u32VertexCount) {
 		void* pData;
-		CATCH_SIGNAL(vkMapMemory(vk_hDevice, vk_hVertexStagingBufferMemory, 0UL, u32VertexCount * RE_VK_VERTEX_TOTAL_SIZE_BYTES, 0, &pData));
+		CATCH_SIGNAL(vkMapMemory(vk_hDevice, *pVertexBuffer, 0UL, u32VertexCount * RE_VK_VERTEX_TOTAL_SIZE_BYTES, 0, &pData));
 		std::memcpy(pData, pNewVertexBufferData, u32VertexCount * RE_VK_VERTEX_TOTAL_SIZE_BYTES);
-		CATCH_SIGNAL(vkUnmapMemory(vk_hDevice, vk_hVertexStagingBufferMemory));
+		CATCH_SIGNAL(vkUnmapMemory(vk_hDevice, *pVertexBuffer));
 	}
 
 	void RenderSystem::window_resize_event() {
@@ -1015,6 +1036,24 @@ namespace RE {
 
 	bool RenderSystem::is_valid() {
 		return bValid;
+	}
+
+	void enable_vsync(bool bEnableVsync) {
+		if (is_bit_true<uint8_t>(u8Booleans, VSYNC_SETTING_INDEX) != bEnableVsync)
+			set_bit<uint8_t>(u8Booleans, SWAPCHAIN_DIRTY_INDEX, true);
+		set_bit<uint8_t>(u8Booleans, VSYNC_SETTING_INDEX, bEnableVsync);
+	}
+
+	bool is_vsync_enabled() {
+		return is_bit_true<uint8_t>(u8Booleans, VSYNC_SETTING_INDEX);
+	}
+
+	VkPhysicalDevice get_vulkan_physical_device() {
+		return vk_hPhysicalDeviceSelected;
+	}
+
+	VkDevice get_vulkan_device() {
+		return vk_hDevice;
 	}
 
 }

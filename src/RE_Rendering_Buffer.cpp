@@ -1,0 +1,83 @@
+#include "RE_Rendering_Buffer.hpp"
+#include "RE_Render System.hpp"
+
+namespace RE {
+	
+	Rendering_Buffer::Rendering_Buffer(VkDeviceSize vk_bufferSize, VkBufferUsageFlags vk_bufferUsage, VkSharingMode vk_bufferSharingMode, uint32_t u32QueueFamilyIndexCount, const uint32_t* pu32QueueFamilyIndices, VkMemoryPropertyFlags vk_memoryProperties) : bValid(false), vk_hBuffer(VK_NULL_HANDLE), vk_hBufferMemory(VK_NULL_HANDLE) {
+		VkBufferCreateInfo vk_bufferCreateInfo = {};
+		vk_bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+		vk_bufferCreateInfo.size = vk_bufferSize;
+		vk_bufferCreateInfo.usage = vk_bufferUsage;
+		vk_bufferCreateInfo.sharingMode = vk_bufferSharingMode;
+		switch (vk_bufferSharingMode) {
+			case VK_SHARING_MODE_CONCURRENT:
+				vk_bufferCreateInfo.queueFamilyIndexCount = u32QueueFamilyIndexCount;
+				vk_bufferCreateInfo.pQueueFamilyIndices = pu32QueueFamilyIndices;
+				break;
+			case VK_SHARING_MODE_EXCLUSIVE:
+			default:
+				vk_bufferCreateInfo.queueFamilyIndexCount = 0U;
+				vk_bufferCreateInfo.pQueueFamilyIndices = nullptr;
+				break;
+		}
+		if (!CHECK_VK_RESULT(vkCreateBuffer(get_vulkan_device(), &vk_bufferCreateInfo, nullptr, &vk_hBuffer))) {
+			RE_ERROR("Failed creating new buffer in Vulkan");
+			return;
+		}
+		VkMemoryRequirements vk_bufferMemoryRequirements = {};
+		CATCH_SIGNAL(vkGetBufferMemoryRequirements(get_vulkan_device(), vk_hBuffer, &vk_bufferMemoryRequirements));
+		VkPhysicalDeviceMemoryProperties vk_physicalDeviceMemoryProperties = {};
+		CATCH_SIGNAL(vkGetPhysicalDeviceMemoryProperties(get_vulkan_physical_device(), &vk_physicalDeviceMemoryProperties));
+		std::optional<uint32_t> memoryTypeSelected;
+		for (uint32_t u32MemoryTypeIndex = 0U; u32MemoryTypeIndex < vk_physicalDeviceMemoryProperties.memoryTypeCount; u32MemoryTypeIndex++) {
+			if ((vk_bufferMemoryRequirements.memoryTypeBits & (1U << u32MemoryTypeIndex)) && (vk_physicalDeviceMemoryProperties.memoryTypes[u32MemoryTypeIndex].propertyFlags & vk_memoryProperties)) {
+				memoryTypeSelected = u32MemoryTypeIndex;
+				break;
+			}
+		}
+		if (!memoryTypeSelected.has_value()) {
+			RE_ERROR("The physical Vulkan device doesn't support the required memory type for the recently created buffer");
+			CATCH_SIGNAL(vkDestroyBuffer(get_vulkan_device(), vk_hBuffer, nullptr));
+			return;
+		}
+		VkMemoryAllocateInfo vk_bufferMemoryAllocateInfo = {};
+		vk_bufferMemoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+		vk_bufferMemoryAllocateInfo.allocationSize = vk_bufferMemoryRequirements.size;
+		vk_bufferMemoryAllocateInfo.memoryTypeIndex = memoryTypeSelected.value();
+		if (!CHECK_VK_RESULT(vkAllocateMemory(get_vulkan_device(), &vk_bufferMemoryAllocateInfo, nullptr, &vk_hBufferMemory))) {
+			RE_ERROR("Failed allocating memory for the recently created buffer in Vulkan");
+			CATCH_SIGNAL(vkDestroyBuffer(get_vulkan_device(), vk_hBuffer, nullptr));
+			return;
+		}
+		CATCH_SIGNAL(vkBindBufferMemory(get_vulkan_device(), vk_hBuffer, vk_hBufferMemory, 0U));
+		bValid = true;
+	}
+
+	Rendering_Buffer::~Rendering_Buffer() {
+		if (!bValid)
+			return;
+		CATCH_SIGNAL(vkDestroyBuffer(get_vulkan_device(), vk_hBuffer, nullptr));
+		CATCH_SIGNAL(vkFreeMemory(get_vulkan_device(), vk_hBufferMemory, nullptr));
+	}
+
+	VkBuffer Rendering_Buffer::get_buffer() const {
+		return vk_hBuffer;
+	}
+	
+	VkDeviceMemory Rendering_Buffer::get_memory() const {
+		return vk_hBufferMemory;
+	}
+
+	bool Rendering_Buffer::is_valid() const {
+		return bValid;
+	}
+
+	Rendering_Buffer::operator VkBuffer() const {
+		return this->get_buffer();
+	}
+	
+	Rendering_Buffer::operator VkDeviceMemory() const {
+		return this->get_memory();
+	}
+
+}

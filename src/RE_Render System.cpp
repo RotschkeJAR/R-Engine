@@ -106,10 +106,12 @@ namespace RE {
 			switch (vk_pSurfaceFormatsAvailable[i].format) {
 				case VK_FORMAT_R8G8B8A8_UNORM:
 				case VK_FORMAT_B8G8R8A8_UNORM:
+				case VK_FORMAT_A8B8G8R8_UNORM_PACK32:
 					i16CurrentSurfaceFormatScore += 500;
 					break;
 				case VK_FORMAT_R8G8B8A8_SRGB:
 				case VK_FORMAT_B8G8R8A8_SRGB:
+				case VK_FORMAT_A8B8G8R8_SRGB_PACK32:
 					i16CurrentSurfaceFormatScore += 1000;
 					break;
 				default:

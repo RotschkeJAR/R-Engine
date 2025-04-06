@@ -104,23 +104,19 @@ namespace RE {
 		for (uint32_t i = 0U; i < u32SurfaceFormatsAvailableCount; i++) {
 			int16_t i16CurrentSurfaceFormatScore = 0;
 			switch (vk_pSurfaceFormatsAvailable[i].format) {
-				case VK_FORMAT_R8G8B8_UNORM:
-				case VK_FORMAT_B8G8R8_UNORM:
+				case VK_FORMAT_R8G8B8A8_UNORM:
+				case VK_FORMAT_B8G8R8A8_UNORM:
 					i16CurrentSurfaceFormatScore += 500;
 					break;
-				case VK_FORMAT_R8G8B8_SRGB:
-				case VK_FORMAT_B8G8R8_SRGB:
+				case VK_FORMAT_R8G8B8A8_SRGB:
+				case VK_FORMAT_B8G8R8A8_SRGB:
 					i16CurrentSurfaceFormatScore += 1000;
 					break;
 				default:
-					i16CurrentSurfaceFormatScore -= 1000;
+					i16CurrentSurfaceFormatScore -= 2000;
 					break;
 			}
-#ifdef VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
-			i16CurrentSurfaceFormatScore += (vk_pSurfaceFormatsAvailable[i].colorSpace != VK_COLOR_SPACE_SRGB_NONLINEAR_KHR ? -1 : 1) * 1000;
-#elif defined VK_COLORSPACE_SRGB_NONLINEAR_KHR
-			i16CurrentSurfaceFormatScore += (vk_pSurfaceFormatsAvailable[i].colorSpace != VK_COLORSPACE_SRGB_NONLINEAR_KHR ? -1 : 1) * 1000;
-#endif
+			i16CurrentSurfaceFormatScore += (vk_pSurfaceFormatsAvailable[i].colorSpace != VK_COLOR_SPACE_SRGB_NONLINEAR_KHR ? -1 : 1) * 5000;
 			if (i16BestSurfaceFormatScore < i16CurrentSurfaceFormatScore) {
 				i16BestSurfaceFormatScore = i16CurrentSurfaceFormatScore;
 				vk_surfaceFormatSelected = vk_pSurfaceFormatsAvailable[i];

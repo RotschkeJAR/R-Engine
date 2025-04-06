@@ -29,7 +29,7 @@ namespace RE {
 	uint32_t u32QueueIndices[RE_VK_QUEUE_COUNT] = {};
 	VkSurfaceKHR vk_hSurface = VK_NULL_HANDLE;
 	VkSurfaceCapabilitiesKHR vk_surfaceCapabilities = {};
-	VkSurfaceFormatKHR *vk_peSurfaceFormatsAvailable = nullptr;
+	VkSurfaceFormatKHR *vk_pSurfaceFormatsAvailable = nullptr;
 	uint32_t u32SurfaceFormatsAvailableCount = 0U;
 	VkPresentModeKHR vk_ePresentModeVsync = VK_PRESENT_MODE_FIFO_KHR, vk_ePresentModeNoVsync = VK_PRESENT_MODE_FIFO_KHR;
 	VkSwapchainKHR vk_hSwapchain = VK_NULL_HANDLE;
@@ -77,35 +77,57 @@ namespace RE {
 			RE_ERROR("Failed initializing the render system");
 			return;
 		}
-		int32_t i32DeviceScoreBest = std::numeric_limits<int32_t>::min();
+		int16_t i16BestDeviceScore = std::numeric_limits<int16_t>::min();
 		for (uint32_t i = 0U; i < u32PhysicalDevicesAvailableCount; i++) {
 			VkPhysicalDeviceProperties vk_physicalDeviceProperties;
 			CATCH_SIGNAL(vkGetPhysicalDeviceProperties(vk_phPhysicalDevicesAvailable[i], &vk_physicalDeviceProperties));
-			int32_t i32CurrentDeviceScore = 0;
+			int16_t i16CurrentDeviceScore = 0;
 			switch (vk_physicalDeviceProperties.deviceType) {
 				case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
-					i32DeviceScoreBest += 1000;
+					i16CurrentDeviceScore += 1000;
 					break;
 				case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
-					i32DeviceScoreBest += 500;
+					i16CurrentDeviceScore += 500;
 					break;
 				default:
-					i32DeviceScoreBest -= 1000;
+					i16CurrentDeviceScore -= 1000;
 					break;
 			}
-			i32DeviceScoreBest += vk_physicalDeviceProperties.limits.maxImageDimension2D;
-			if (i32DeviceScoreBest < i32CurrentDeviceScore) {
-				i32DeviceScoreBest = i32CurrentDeviceScore;
+			i16CurrentDeviceScore += vk_physicalDeviceProperties.limits.maxImageDimension2D;
+			if (i16BestDeviceScore < i16CurrentDeviceScore) {
+				i16BestDeviceScore = i16CurrentDeviceScore;
 				vk_hPhysicalDeviceSelected = vk_phPhysicalDevicesAvailable[i];
 			}
 		}
 		CATCH_SIGNAL(fetch_surface_infos());
-		PRINT_LN(u32SurfaceFormatsAvailableCount);
+		int16_t i16BestSurfaceFormatScore = std::numeric_limits<int16_t>::min();
 		for (uint32_t i = 0U; i < u32SurfaceFormatsAvailableCount; i++) {
-			PRINT(vk_peSurfaceFormatsAvailable[i].format);
-			println(" - ", vk_peSurfaceFormatsAvailable[i].colorSpace);
+			int16_t i16CurrentSurfaceFormatScore = 0;
+			switch (vk_pSurfaceFormatsAvailable[i].format) {
+				case VK_FORMAT_R8G8B8_UNORM:
+				case VK_FORMAT_B8G8R8_UNORM:
+					i16CurrentSurfaceFormatScore += 500;
+					break;
+				case VK_FORMAT_R8G8B8_SRGB:
+				case VK_FORMAT_B8G8R8_SRGB:
+					i16CurrentSurfaceFormatScore += 1000;
+					break;
+				default:
+					i16CurrentSurfaceFormatScore -= 1000;
+					break;
+			}
+#ifdef VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
+			i16CurrentSurfaceFormatScore += (vk_pSurfaceFormatsAvailable[i].colorSpace != VK_COLOR_SPACE_SRGB_NONLINEAR_KHR ? -1 : 1) * 1000;
+#elif defined VK_COLORSPACE_SRGB_NONLINEAR_KHR
+			i16CurrentSurfaceFormatScore += (vk_pSurfaceFormatsAvailable[i].colorSpace != VK_COLORSPACE_SRGB_NONLINEAR_KHR ? -1 : 1) * 1000;
+#endif
+			if (i16BestSurfaceFormatScore < i16CurrentSurfaceFormatScore) {
+				i16BestSurfaceFormatScore = i16CurrentSurfaceFormatScore;
+				vk_surfaceFormatSelected = vk_pSurfaceFormatsAvailable[i];
+			}
 		}
-		vk_surfaceFormatSelected = vk_peSurfaceFormatsAvailable[0];
+		if (i16BestSurfaceFormatScore < 0)
+			vk_surfaceFormatSelected = vk_pSurfaceFormatsAvailable[0];
 		if (!create_device() || !create_swapchain() || !create_shaders() || !create_pipeline_layout() || !create_renderpass() || !create_graphics_pipeline() || !create_framebuffers() || !alloc_command_buffers() || !create_vertex_buffer() || !record_command_buffers() || !create_sync_objects()) {
 			RE_ERROR("Failed initializing the render system");
 			return;
@@ -169,7 +191,7 @@ namespace RE {
 		if (!vk_hSurface)
 			return;
 		CATCH_SIGNAL(vkDestroySurfaceKHR(RE_VK_INSTANCE, vk_hSurface, nullptr));
-		DELETE_ARRAY_SAFELY(vk_peSurfaceFormatsAvailable);
+		DELETE_ARRAY_SAFELY(vk_pSurfaceFormatsAvailable);
 		vk_hSurface = VK_NULL_HANDLE;
 	}
 
@@ -178,8 +200,8 @@ namespace RE {
 			return;
 		CATCH_SIGNAL(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &vk_surfaceCapabilities));
 		CATCH_SIGNAL(vkGetPhysicalDeviceSurfaceFormatsKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &u32SurfaceFormatsAvailableCount, nullptr));
-		vk_peSurfaceFormatsAvailable = new VkSurfaceFormatKHR[u32SurfaceFormatsAvailableCount];
-		CATCH_SIGNAL(vkGetPhysicalDeviceSurfaceFormatsKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &u32SurfaceFormatsAvailableCount, vk_peSurfaceFormatsAvailable));
+		vk_pSurfaceFormatsAvailable = new VkSurfaceFormatKHR[u32SurfaceFormatsAvailableCount];
+		CATCH_SIGNAL(vkGetPhysicalDeviceSurfaceFormatsKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &u32SurfaceFormatsAvailableCount, vk_pSurfaceFormatsAvailable));
 		uint32_t u32PresentModesCount;
 		CATCH_SIGNAL(vkGetPhysicalDeviceSurfacePresentModesKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &u32PresentModesCount, nullptr));
 		VkPresentModeKHR *const vk_peAllPresentModes = new VkPresentModeKHR[u32PresentModesCount];

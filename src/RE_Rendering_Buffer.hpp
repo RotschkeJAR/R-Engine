@@ -7,7 +7,6 @@ namespace RE {
 	
 	class Rendering_Buffer {
 		private:
-			bool bValid;
 			VkBuffer vk_hBuffer;
 			VkDeviceMemory vk_hBufferMemory;
 

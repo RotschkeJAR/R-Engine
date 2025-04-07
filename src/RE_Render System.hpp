@@ -24,6 +24,13 @@ namespace RE {
 #define RE_VK_VERTEX_COLOR_OFFSET_BYTES (RE_VK_VERTEX_COLOR_OFFSET * sizeof(REvertex))
 #define RE_VK_VERTEX_TOTAL_SIZE 7U
 #define RE_VK_VERTEX_TOTAL_SIZE_BYTES (RE_VK_VERTEX_TOTAL_SIZE * sizeof(REvertex))
+
+	// Attributes initialized at beginning and rarely changed
+	extern VkDevice vk_hDevice;
+	extern VkFormat vk_eSwapchainImageFormat;
+
+	// Configurable settings
+	extern VkPhysicalDevice vk_hPhysicalDeviceSelected;
 	
 	class RenderSystem {
 		private:
@@ -71,9 +78,6 @@ namespace RE {
 
 	void enable_vsync(bool bEnableVsync);
 	bool is_vsync_enabled();
-
-	VkPhysicalDevice get_vulkan_physical_device();
-	VkDevice get_vulkan_device();
 
 }
 

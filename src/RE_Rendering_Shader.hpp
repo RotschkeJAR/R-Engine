@@ -7,7 +7,6 @@ namespace RE {
 	
 	class Rendering_Shader {
 		private:
-			bool bValid;
 			VkShaderModule vk_hShader;
 
 		public:

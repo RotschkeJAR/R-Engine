@@ -3,7 +3,7 @@
 
 namespace RE {
 	
-	Rendering_Buffer::Rendering_Buffer(VkDeviceSize vk_bufferSize, VkBufferUsageFlags vk_bufferUsage, VkSharingMode vk_bufferSharingMode, uint32_t u32QueueFamilyIndexCount, const uint32_t* pu32QueueFamilyIndices, VkMemoryPropertyFlags vk_memoryProperties) : bValid(false), vk_hBuffer(VK_NULL_HANDLE), vk_hBufferMemory(VK_NULL_HANDLE) {
+	Rendering_Buffer::Rendering_Buffer(VkDeviceSize vk_bufferSize, VkBufferUsageFlags vk_bufferUsage, VkSharingMode vk_bufferSharingMode, uint32_t u32QueueFamilyIndexCount, const uint32_t* pu32QueueFamilyIndices, VkMemoryPropertyFlags vk_memoryProperties) : vk_hBuffer(VK_NULL_HANDLE), vk_hBufferMemory(VK_NULL_HANDLE) {
 		VkBufferCreateInfo vk_bufferCreateInfo = {};
 		vk_bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 		vk_bufferCreateInfo.size = vk_bufferSize;
@@ -20,14 +20,15 @@ namespace RE {
 				vk_bufferCreateInfo.pQueueFamilyIndices = nullptr;
 				break;
 		}
-		if (!CHECK_VK_RESULT(vkCreateBuffer(get_vulkan_device(), &vk_bufferCreateInfo, nullptr, &vk_hBuffer))) {
+		if (!CHECK_VK_RESULT(vkCreateBuffer(vk_hDevice, &vk_bufferCreateInfo, nullptr, &vk_hBuffer))) {
+			vk_hBuffer = VK_NULL_HANDLE;
 			RE_ERROR("Failed creating new buffer in Vulkan");
 			return;
 		}
 		VkMemoryRequirements vk_bufferMemoryRequirements = {};
-		CATCH_SIGNAL(vkGetBufferMemoryRequirements(get_vulkan_device(), vk_hBuffer, &vk_bufferMemoryRequirements));
+		CATCH_SIGNAL(vkGetBufferMemoryRequirements(vk_hDevice, vk_hBuffer, &vk_bufferMemoryRequirements));
 		VkPhysicalDeviceMemoryProperties vk_physicalDeviceMemoryProperties = {};
-		CATCH_SIGNAL(vkGetPhysicalDeviceMemoryProperties(get_vulkan_physical_device(), &vk_physicalDeviceMemoryProperties));
+		CATCH_SIGNAL(vkGetPhysicalDeviceMemoryProperties(vk_hPhysicalDeviceSelected, &vk_physicalDeviceMemoryProperties));
 		std::optional<uint32_t> memoryTypeSelected;
 		for (uint32_t u32MemoryTypeIndex = 0U; u32MemoryTypeIndex < vk_physicalDeviceMemoryProperties.memoryTypeCount; u32MemoryTypeIndex++) {
 			if ((vk_bufferMemoryRequirements.memoryTypeBits & (1U << u32MemoryTypeIndex)) && (vk_physicalDeviceMemoryProperties.memoryTypes[u32MemoryTypeIndex].propertyFlags & vk_memoryProperties)) {
@@ -37,27 +38,29 @@ namespace RE {
 		}
 		if (!memoryTypeSelected.has_value()) {
 			RE_ERROR("The physical Vulkan device doesn't support the required memory type for the recently created buffer");
-			CATCH_SIGNAL(vkDestroyBuffer(get_vulkan_device(), vk_hBuffer, nullptr));
+			CATCH_SIGNAL(vkDestroyBuffer(vk_hDevice, vk_hBuffer, nullptr));
+			vk_hBuffer = VK_NULL_HANDLE;
 			return;
 		}
 		VkMemoryAllocateInfo vk_bufferMemoryAllocateInfo = {};
 		vk_bufferMemoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 		vk_bufferMemoryAllocateInfo.allocationSize = vk_bufferMemoryRequirements.size;
 		vk_bufferMemoryAllocateInfo.memoryTypeIndex = memoryTypeSelected.value();
-		if (!CHECK_VK_RESULT(vkAllocateMemory(get_vulkan_device(), &vk_bufferMemoryAllocateInfo, nullptr, &vk_hBufferMemory))) {
+		if (!CHECK_VK_RESULT(vkAllocateMemory(vk_hDevice, &vk_bufferMemoryAllocateInfo, nullptr, &vk_hBufferMemory))) {
 			RE_ERROR("Failed allocating memory for the recently created buffer in Vulkan");
-			CATCH_SIGNAL(vkDestroyBuffer(get_vulkan_device(), vk_hBuffer, nullptr));
+			vk_hBufferMemory = VK_NULL_HANDLE;
+			CATCH_SIGNAL(vkDestroyBuffer(vk_hDevice, vk_hBuffer, nullptr));
+			vk_hBuffer = VK_NULL_HANDLE;
 			return;
 		}
-		CATCH_SIGNAL(vkBindBufferMemory(get_vulkan_device(), vk_hBuffer, vk_hBufferMemory, 0U));
-		bValid = true;
+		CATCH_SIGNAL(vkBindBufferMemory(vk_hDevice, vk_hBuffer, vk_hBufferMemory, 0U));
 	}
 
 	Rendering_Buffer::~Rendering_Buffer() {
-		if (!bValid)
+		if (!is_valid())
 			return;
-		CATCH_SIGNAL(vkDestroyBuffer(get_vulkan_device(), vk_hBuffer, nullptr));
-		CATCH_SIGNAL(vkFreeMemory(get_vulkan_device(), vk_hBufferMemory, nullptr));
+		CATCH_SIGNAL(vkDestroyBuffer(vk_hDevice, vk_hBuffer, nullptr));
+		CATCH_SIGNAL(vkFreeMemory(vk_hDevice, vk_hBufferMemory, nullptr));
 	}
 
 	VkBuffer Rendering_Buffer::get_buffer() const {
@@ -69,7 +72,7 @@ namespace RE {
 	}
 
 	bool Rendering_Buffer::is_valid() const {
-		return bValid;
+		return vk_hBuffer != VK_NULL_HANDLE && vk_hBufferMemory != VK_NULL_HANDLE;
 	}
 
 	Rendering_Buffer::operator VkBuffer() const {

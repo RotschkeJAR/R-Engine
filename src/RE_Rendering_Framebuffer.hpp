@@ -2,7 +2,7 @@
 #define __RE_RENDERING_FRAMEBUFFER_H__
 
 #include "RE_Vulkan.hpp"
-#include "RE_Rendering_RenderPass.hpp"
+#include "RE_Rendering_Render Pass.hpp"
 
 namespace RE {
 	

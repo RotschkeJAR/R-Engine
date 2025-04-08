@@ -52,11 +52,11 @@ namespace RE {
 	}
 
 	void Rendering_Fence::wait_for_fence() {
-		CATCH_SIGNAL(vkWaitForFences(vk_hDevice, 1U, &vk_currentFence, VK_TRUE, std::numeric_limits<uint64_t>::max()));
+		CATCH_SIGNAL(vkWaitForFences(vk_hDevice, 1U, &vk_hFence, VK_TRUE, std::numeric_limits<uint64_t>::max()));
 	}
 	
 	void Rendering_Fence::reset_fence() {
-		CATCH_SIGNAL(vkResetFences(vk_hDevice, 1U, &vk_currentFence));
+		CATCH_SIGNAL(vkResetFences(vk_hDevice, 1U, &vk_hFence));
 	}
 	
 	void Rendering_Fence::wait_for_and_reset_fence() {

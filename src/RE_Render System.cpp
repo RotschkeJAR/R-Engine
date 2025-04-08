@@ -46,7 +46,7 @@ namespace RE {
 	Rendering_PipelineLayout *pPipelineLayout = nullptr;
 	Rendering_RenderPass *pRenderPass = nullptr;
 	VkPipeline vk_hGraphicsPipeline = VK_NULL_HANDLE;
-	Rendering_Framebuffer *pSwapchainFramebuffers = nullptr; // size equals swapchain image count
+	Rendering_Framebuffer **ppSwapchainFramebuffers = nullptr; // size equals swapchain image count
 	Rendering_Buffer *pVertexBuffer = nullptr;
 	VkCommandPool vk_hCommandPools[RE_VK_COMMAND_POOL_COUNT] = {};
 	VkCommandBuffer *vk_phCommandBuffersGraphics = nullptr, *vk_phCommandBuffersTransfer = nullptr;
@@ -706,13 +706,13 @@ namespace RE {
 	}
 
 	bool RenderSystem::create_framebuffers() {
-		if (pSwapchainFramebuffers)
+		if (ppSwapchainFramebuffers)
 			return false;
-		pSwapchainFramebuffers = new VkFramebuffer[u32SwapchainImageCount];
+		ppSwapchainFramebuffers = new Rendering_Framebuffer*[u32SwapchainImageCount];
 		for (uint32_t u32FramebufferCreateIndex = 0U; u32FramebufferCreateIndex < u32SwapchainImageCount; u32FramebufferCreateIndex++) {
-			DEFINE_SIGNAL_GUARD_DETAILED(sigGuardFramebufferCreate, append_to_string("Index: ", u32FramebufferCreateIndex));
-			pSwapchainFramebuffers[u32FramebufferCreateIndex] = new Rendering_Framebuffer(pRenderPass, 1U, vk_pSwapchainImageViews[u32FramebufferCreateIndex], vk_swapchainResolution.width, vk_swapchainResolution.height);
-			if (!pSwapchainFramebuffers[u32FramebufferCreateIndex]->is_valid()) {
+			DEFINE_SIGNAL_GUARD_DETAILED(sigGuardFramebufferCreate, append_to_string("Index: ", u32FramebufferCreateIndex).c_str());
+			ppSwapchainFramebuffers[u32FramebufferCreateIndex] = new Rendering_Framebuffer(pRenderPass, 1U, &vk_pSwapchainImageViews[u32FramebufferCreateIndex], vk_swapchainResolution.width, vk_swapchainResolution.height);
+			if (!ppSwapchainFramebuffers[u32FramebufferCreateIndex]->is_valid()) {
 				destroy_framebuffers();
 				return false;
 			}
@@ -721,13 +721,13 @@ namespace RE {
 	}
 	
 	void RenderSystem::destroy_framebuffers() {
-		if (!pSwapchainFramebuffers)
+		if (!ppSwapchainFramebuffers)
 			return;
 		for (uint32_t u32FramebufferDeleteIndex = 0U; u32FramebufferDeleteIndex < u32SwapchainImageCount; u32FramebufferDeleteIndex++) {
 			DEFINE_SIGNAL_GUARD_DETAILED(sigGuardFramebufferDestroy, append_to_string("Index: ", u32FramebufferDeleteIndex).c_str());
-			DELETE_SAFELY(pSwapchainFramebuffers);
+			DELETE_SAFELY(ppSwapchainFramebuffers[u32FramebufferDeleteIndex]);
 		}
-		DELETE_ARRAY_SAFELY(pSwapchainFramebuffers);
+		DELETE_ARRAY_SAFELY(ppSwapchainFramebuffers);
 	}
 
 	bool RenderSystem::create_vertex_buffer() {
@@ -854,7 +854,7 @@ namespace RE {
 			VkRenderPassBeginInfo vk_commandBufferRenderpassBeginInfo = {};
 			vk_commandBufferRenderpassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 			vk_commandBufferRenderpassBeginInfo.renderPass = *pRenderPass;
-			CATCH_SIGNAL(vk_commandBufferRenderpassBeginInfo.framebuffer = vk_phSwapchainFramebuffers[u32CommandBufferIndex]);
+			CATCH_SIGNAL(vk_commandBufferRenderpassBeginInfo.framebuffer = *ppSwapchainFramebuffers[u32CommandBufferIndex]);
 			vk_commandBufferRenderpassBeginInfo.renderArea.offset.x = 0;
 			vk_commandBufferRenderpassBeginInfo.renderArea.offset.y = 0;
 			vk_commandBufferRenderpassBeginInfo.renderArea.extent = vk_swapchainResolution;

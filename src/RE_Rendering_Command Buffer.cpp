@@ -54,8 +54,38 @@ namespace RE {
 		CATCH_SIGNAL(vkFreeCommandBuffers(vk_hDevice, vk_hCommandPool, 1U, &vk_hCommandBuffer));
 	}
 
-	void Rendering_CommandBuffer::reset_command_buffer(const VkCommandBufferResetFlags vk_eCommandBufferResetFlags) {
+	void Rendering_CommandBuffer::reset_command_buffer(const VkCommandBufferResetFlags vk_eCommandBufferResetFlags) const {
 		CATCH_SIGNAL(vkResetCommandBuffer(vk_hCommandBuffer, vk_eCommandBufferResetFlags));
+	}
+
+	bool Rendering_CommandBuffer::begin_recording_command_buffer(const VkCommandBufferUsageFlags vk_eCommandBufferUsageFlags) const {
+		VkCommandBufferBeginInfo vk_commandBufferBeginInfo = {};
+		vk_commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		vk_commandBufferBeginInfo.flags = vk_eCommandBufferUsageFlags;
+		if (!CHECK_VK_RESULT(vkBeginCommandBuffer(vk_hCommandBuffer, &vk_commandBufferBeginInfo))) {
+			RE_ERROR("Failed to begin recording commands in Vulkan command buffer");
+			return false;
+		}
+		return true;
+	}
+
+	bool Rendering_CommandBuffer::end_recording_command_buffer() const {
+		const bool bResult = CATCH_SIGNAL_AND_RETURN(CHECK_VK_RESULT(vkEndCommandBuffer(vk_hCommandBuffer)), bool);
+		if (!bResult)
+			RE_ERROR("Failed to finish recording Vulkan command buffer");
+		return bResult;
+	}
+
+	void Rendering_CommandBuffer::cmd_end_renderpass() const {
+		CATCH_SIGNAL(vkCmdEndRenderPass(vk_hCommandBuffer));
+	}
+
+	void Rendering_CommandBuffer::cmd_bind_graphics_pipeline(const Rendering_GraphicsPipeline *pGraphicsPipeline) const {
+		CATCH_SIGNAL(vkCmdBindPipeline(vk_hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *pGraphicsPipeline));
+	}
+
+	void Rendering_CommandBuffer::cmd_draw(const uint32_t u32VertexCount, const uint32_t u32InstanceCount, const uint32_t u32FirstVertex, const uint32_t u32FirstInstance) const {
+		CATCH_SIGNAL(vkCmdDraw(vk_hCommandBuffer, u32VertexCount, u32InstanceCount, u32FirstVertex, u32FirstInstance));
 	}
 
 	VkCommandBuffer Rendering_CommandBuffer::get_command_buffer() const {

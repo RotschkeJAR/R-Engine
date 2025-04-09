@@ -2,6 +2,8 @@
 #define __RE_RENDERING_COMMAND_BUFFER_H__
 
 #include "RE_Vulkan.hpp"
+#include "RE_Rendering_Render Pass.hpp"
+#include "RE_Rendering_Pipeline.hpp"
 
 namespace RE {
 	
@@ -30,7 +32,12 @@ namespace RE {
 			Rendering_CommandBuffer(const Rendering_CommandPool *pCommandPool);
 			Rendering_CommandBuffer(const VkCommandBufferLevel vk_eCommandBufferLevel, const Rendering_CommandPool *pCommandPool);
 			~Rendering_CommandBuffer();
-			void reset_command_buffer(const VkCommandBufferResetFlags vk_eCommandBufferResetFlags);
+			void reset_command_buffer(const VkCommandBufferResetFlags vk_eCommandBufferResetFlags) const;
+			bool begin_recording_command_buffer(const VkCommandBufferUsageFlags vk_eCommandBufferUsageFlags) const;
+			bool end_recording_command_buffer() const;
+			void cmd_end_renderpass() const;
+			void cmd_bind_graphics_pipeline(const Rendering_GraphicsPipeline *pGraphicsPipeline) const;
+			void cmd_draw(const uint32_t u32VertexCount, const uint32_t u32InstanceCount, const uint32_t u32FirstVertex, const uint32_t u32FirstInstance) const;
 			VkCommandBuffer get_command_buffer() const;
 			bool is_valid() const;
 

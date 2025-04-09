@@ -51,20 +51,20 @@ namespace RE {
 		CATCH_SIGNAL(vkDestroyFence(vk_hDevice, vk_hFence, nullptr));
 	}
 
-	void Rendering_Fence::wait_for_fence() {
+	void Rendering_Fence::wait_for_fence() const {
 		CATCH_SIGNAL(vkWaitForFences(vk_hDevice, 1U, &vk_hFence, VK_TRUE, std::numeric_limits<uint64_t>::max()));
 	}
 	
-	void Rendering_Fence::reset_fence() {
+	void Rendering_Fence::reset_fence() const {
 		CATCH_SIGNAL(vkResetFences(vk_hDevice, 1U, &vk_hFence));
 	}
 	
-	void Rendering_Fence::wait_for_and_reset_fence() {
+	void Rendering_Fence::wait_for_and_reset_fence() const {
 		wait_for_fence();
 		reset_fence();
 	}
 	
-	bool Rendering_Fence::is_fence_signaled() {
+	bool Rendering_Fence::is_fence_signaled() const {
 		const VkResult vk_eFenceState = CATCH_SIGNAL_AND_RETURN(vkGetFenceStatus(vk_hDevice, vk_hFence), VkResult);
 		switch (vk_eFenceState) {
 			case VK_SUCCESS:

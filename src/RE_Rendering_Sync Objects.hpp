@@ -26,10 +26,10 @@ namespace RE {
 			Rendering_Fence();
 			Rendering_Fence(VkFenceCreateFlagBits vk_eFenceCreateFlags);
 			~Rendering_Fence();
-			void wait_for_fence();
-			void reset_fence();
-			void wait_for_and_reset_fence();
-			bool is_fence_signaled();
+			void wait_for_fence() const;
+			void reset_fence() const;
+			void wait_for_and_reset_fence() const;
+			bool is_fence_signaled() const;
 			VkFence get_fence() const;
 			bool is_valid() const;
 

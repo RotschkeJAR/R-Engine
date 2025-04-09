@@ -702,13 +702,11 @@ namespace RE {
 		if (!is_bit_true<uint8_t>(u8Booleans, COMMAND_BUFFERS_INITIALIZED_INDEX))
 			return false;
 		for (uint32_t u32CommandBufferIndex = 0U; u32CommandBufferIndex < u32SwapchainImageCount; u32CommandBufferIndex++) {
-			const VkCommandBuffer vk_hCommandBuffer = ppCommandBuffersGraphics[u32CommandBufferIndex]->get_command_buffer();
-			CATCH_SIGNAL(ppCommandBuffersGraphics[u32CommandBufferIndex]->reset_command_buffer(0));
-			VkCommandBufferBeginInfo vk_commandBufferBeginInfo = {};
-			vk_commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-			vk_commandBufferBeginInfo.flags = 0U;
-			vk_commandBufferBeginInfo.pInheritanceInfo = nullptr;
-			if (!CHECK_VK_RESULT(vkBeginCommandBuffer(vk_hCommandBuffer, &vk_commandBufferBeginInfo))) {
+			DEFINE_SIGNAL_GUARD_DETAILED(sigGuardCommandBufferRecord, append_to_string("Index: ", u32CommandBufferIndex).c_str());
+			Rendering_CommandBuffer &commandBuffer = *ppCommandBuffersGraphics[u32CommandBufferIndex];
+			const VkCommandBuffer vk_hCommandBuffer = commandBuffer.get_command_buffer();
+			ppCommandBuffersGraphics[u32CommandBufferIndex]->reset_command_buffer(0);
+			if (!commandBuffer.begin_recording_command_buffer(0)) {
 				RE_FATAL_ERROR(append_to_string("Failed to begin recording commands for the Vulkan graphics command buffer at index ", u32CommandBufferIndex));
 				return false;
 			}
@@ -730,17 +728,17 @@ namespace RE {
 			VkRenderPassBeginInfo vk_commandBufferRenderpassBeginInfo = {};
 			vk_commandBufferRenderpassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 			vk_commandBufferRenderpassBeginInfo.renderPass = *pRenderPass;
-			CATCH_SIGNAL(vk_commandBufferRenderpassBeginInfo.framebuffer = *ppSwapchainFramebuffers[u32CommandBufferIndex]);
+			vk_commandBufferRenderpassBeginInfo.framebuffer = *ppSwapchainFramebuffers[u32CommandBufferIndex];
 			vk_commandBufferRenderpassBeginInfo.renderArea.offset.x = 0;
 			vk_commandBufferRenderpassBeginInfo.renderArea.offset.y = 0;
 			vk_commandBufferRenderpassBeginInfo.renderArea.extent = vk_swapchainResolution;
 			vk_commandBufferRenderpassBeginInfo.clearValueCount = 1U;
 			vk_commandBufferRenderpassBeginInfo.pClearValues = &vk_clearValues;
-			CATCH_SIGNAL(vkCmdBeginRenderPass(vk_hCommandBuffer, &vk_commandBufferRenderpassBeginInfo, VK_SUBPASS_CONTENTS_INLINE));
-			CATCH_SIGNAL(vkCmdBindPipeline(vk_hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *pGraphicsPipeline));
+			vkCmdBeginRenderPass(vk_hCommandBuffer, &vk_commandBufferRenderpassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+			commandBuffer.cmd_bind_graphics_pipeline(pGraphicsPipeline);
 			VkBuffer vk_vertexBuffers[1] = {*pVertexBuffer};
 			VkDeviceSize offsets[1] = {0U};
-			CATCH_SIGNAL(vkCmdBindVertexBuffers(vk_hCommandBuffer, 0U, 1U, vk_vertexBuffers, offsets));
+			vkCmdBindVertexBuffers(vk_hCommandBuffer, 0U, 1U, vk_vertexBuffers, offsets);
 			VkViewport vk_viewport = {};
 			vk_viewport.x = 0.0f;
 			vk_viewport.y = 0.0f;
@@ -748,15 +746,15 @@ namespace RE {
 			vk_viewport.height = vk_swapchainResolution.height;
 			vk_viewport.minDepth = 0.0f;
 			vk_viewport.maxDepth = 1.0f;
-			CATCH_SIGNAL(vkCmdSetViewport(vk_hCommandBuffer, 0U, 1U, &vk_viewport));
+			vkCmdSetViewport(vk_hCommandBuffer, 0U, 1U, &vk_viewport);
 			VkRect2D vk_scissor = {};
 			vk_scissor.offset.x = 0;
 			vk_scissor.offset.y = 0;
 			vk_scissor.extent = vk_swapchainResolution;
-			CATCH_SIGNAL(vkCmdSetScissor(vk_hCommandBuffer, 0U, 1U, &vk_scissor));
-			CATCH_SIGNAL(vkCmdDraw(vk_hCommandBuffer, sizeof(vertices) / (sizeof(vertices[0]) * RE_VK_VERTEX_TOTAL_SIZE), 1U, 0U, 0U));
-			CATCH_SIGNAL(vkCmdEndRenderPass(vk_hCommandBuffer));
-			if (!CHECK_VK_RESULT(vkEndCommandBuffer(vk_hCommandBuffer))) {
+			vkCmdSetScissor(vk_hCommandBuffer, 0U, 1U, &vk_scissor);
+			commandBuffer.cmd_draw(sizeof(vertices) / (sizeof(vertices[0]) * RE_VK_VERTEX_TOTAL_SIZE), 1U, 0U, 0U);
+			commandBuffer.cmd_end_renderpass();
+			if (!commandBuffer.end_recording_command_buffer()) {
 				RE_FATAL_ERROR(append_to_string("Failed to finish recording the Vulkan graphics command buffer at index ", u32CommandBufferIndex));
 				return false;
 			}

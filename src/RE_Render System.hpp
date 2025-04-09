@@ -28,6 +28,7 @@ namespace RE {
 	// Attributes initialized at beginning and rarely changed
 	extern VkDevice vk_hDevice;
 	extern VkFormat vk_eSwapchainImageFormat;
+	extern VkExtent2D vk_swapchainResolution;
 
 	// Configurable settings
 	extern VkPhysicalDevice vk_hPhysicalDeviceSelected;
@@ -72,12 +73,13 @@ namespace RE {
 			void draw_frame();
 			void upload_to_vertex_buffer(const REvertex *const pNewVertexBufferData, const uint32_t u32VertexCount);
 			void window_resize_event();
-			void wait_for_idle_device();
 			bool is_valid();
 	};
 
 	void enable_vsync(bool bEnableVsync);
 	bool is_vsync_enabled();
+
+#define WAIT_FOR_IDLE_VULKAN_DEVICE() CATCH_SIGNAL(vkDeviceWaitIdle(vk_hDevice))
 
 }
 

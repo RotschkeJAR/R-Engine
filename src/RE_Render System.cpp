@@ -10,6 +10,8 @@
 #include "RE_Rendering_Render Pass.hpp"
 #include "RE_Rendering_Sync Objects.hpp"
 #include "RE_Rendering_Framebuffer.hpp"
+#include "RE_Rendering_Pipeline.hpp"
+#include "RE_Rendering_Command Buffer.hpp"
 #include "RE_Input.hpp"
 
 namespace RE {
@@ -20,6 +22,8 @@ namespace RE {
 
 #define RE_VK_COMMAND_POOL_GRAPHICS_INDEX 0U
 #define RE_VK_COMMAND_POOL_TRANSFER_INDEX 1U
+
+#define RE_VK_COMMAND_BUFFER_TRANSFER_COUNT 1U
 
 #define RE_VK_SEMAPHORE_IMAGE_AVAILABLE_INDEX 0U
 #define RE_VK_SEMAPHORE_RENDERING_FINISHED_INDEX 1U
@@ -45,11 +49,11 @@ namespace RE {
 	Rendering_Shader *pVertexShader = nullptr, *pFragmentShader = nullptr;
 	Rendering_PipelineLayout *pPipelineLayout = nullptr;
 	Rendering_RenderPass *pRenderPass = nullptr;
-	VkPipeline vk_hGraphicsPipeline = VK_NULL_HANDLE;
+	Rendering_GraphicsPipeline *pGraphicsPipeline = nullptr;
 	Rendering_Framebuffer **ppSwapchainFramebuffers = nullptr; // size equals swapchain image count
 	Rendering_Buffer *pVertexBuffer = nullptr;
-	VkCommandPool vk_hCommandPools[RE_VK_COMMAND_POOL_COUNT] = {};
-	VkCommandBuffer *vk_phCommandBuffersGraphics = nullptr, *vk_phCommandBuffersTransfer = nullptr;
+	Rendering_CommandPool *pCommandPools[RE_VK_COMMAND_POOL_COUNT] = {};
+	Rendering_CommandBuffer **ppCommandBuffersGraphics = nullptr, **ppCommandBuffersTransfer = nullptr;
 	Rendering_Semaphore *pSemaphores[RE_VK_SEMAPHORE_COUNT] = {};
 	Rendering_Fence *pFences[RE_VK_FENCE_COUNT] = {};
 
@@ -505,7 +509,7 @@ namespace RE {
 
 	void RenderSystem::recreate_swapchain() {
 		CATCH_SIGNAL(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &vk_surfaceCapabilities));
-		CATCH_SIGNAL(wait_for_idle_device());
+		WAIT_FOR_IDLE_VULKAN_DEVICE();
 		CATCH_SIGNAL(destroy_framebuffers());
 		if (!CATCH_SIGNAL_AND_RETURN(create_swapchain(), bool) || !CATCH_SIGNAL_AND_RETURN(create_framebuffers(), bool) || !CATCH_SIGNAL_AND_RETURN(record_command_buffers(), bool))
 			RE_ERROR("Failed recreating the swapchain");
@@ -567,26 +571,8 @@ namespace RE {
 	}
 
 	bool RenderSystem::create_graphics_pipeline() {
-		if (vk_hGraphicsPipeline)
+		if (pGraphicsPipeline)
 			return false;
-		VkPipelineShaderStageCreateInfo vk_pipelineVertexShaderStateCreateInfo = {};
-		vk_pipelineVertexShaderStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		vk_pipelineVertexShaderStateCreateInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-		vk_pipelineVertexShaderStateCreateInfo.module = *pVertexShader;
-		vk_pipelineVertexShaderStateCreateInfo.pName = "main";
-		VkPipelineShaderStageCreateInfo vk_pipelineFragmentShaderStateCreateInfo = {};
-		vk_pipelineFragmentShaderStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		vk_pipelineFragmentShaderStateCreateInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-		vk_pipelineFragmentShaderStateCreateInfo.module = *pFragmentShader;
-		vk_pipelineFragmentShaderStateCreateInfo.pName = "main";
-		VkPipelineShaderStageCreateInfo vk_pipelineShaderStateCreateInfos[2] = {vk_pipelineVertexShaderStateCreateInfo, vk_pipelineFragmentShaderStateCreateInfo};
-
-		VkDynamicState vk_dynamicStates[2] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
-		VkPipelineDynamicStateCreateInfo vk_pipelineDynamicStateCreateInfo = {};
-		vk_pipelineDynamicStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-		vk_pipelineDynamicStateCreateInfo.dynamicStateCount = sizeof(vk_dynamicStates) / sizeof(VkDynamicState);
-		vk_pipelineDynamicStateCreateInfo.pDynamicStates = vk_dynamicStates;
-
 		VkVertexInputBindingDescription vk_vertexInputBindingDescription = {};
 		vk_vertexInputBindingDescription.binding = 0;
 		vk_vertexInputBindingDescription.stride = RE_VK_VERTEX_TOTAL_SIZE_BYTES;
@@ -600,109 +586,17 @@ namespace RE {
 		vk_vertexInputAttributeDescriptions[1].binding = 0U;
 		vk_vertexInputAttributeDescriptions[1].format = VK_FORMAT_R32G32B32A32_SFLOAT;
 		vk_vertexInputAttributeDescriptions[1].offset = RE_VK_VERTEX_COLOR_OFFSET_BYTES;
-		VkPipelineVertexInputStateCreateInfo vk_pipelineVertexInputStateCreateInfo = {};
-		vk_pipelineVertexInputStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-		vk_pipelineVertexInputStateCreateInfo.vertexBindingDescriptionCount = 1U;
-		vk_pipelineVertexInputStateCreateInfo.pVertexBindingDescriptions = &vk_vertexInputBindingDescription;
-		vk_pipelineVertexInputStateCreateInfo.vertexAttributeDescriptionCount = 2U;
-		vk_pipelineVertexInputStateCreateInfo.pVertexAttributeDescriptions = (VkVertexInputAttributeDescription*) &vk_vertexInputAttributeDescriptions;
-
-		VkPipelineInputAssemblyStateCreateInfo vk_pipelineInputAssemblyStateCreateInfo = {};
-		vk_pipelineInputAssemblyStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-		vk_pipelineInputAssemblyStateCreateInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-		vk_pipelineInputAssemblyStateCreateInfo.primitiveRestartEnable = VK_FALSE;
-
-		VkViewport vk_viewport = {};
-		vk_viewport.x = 0.0f;
-		vk_viewport.y = 0.0f;
-		vk_viewport.width = vk_swapchainResolution.width;
-		vk_viewport.height = vk_swapchainResolution.height;
-		vk_viewport.minDepth = 0.0f;
-		vk_viewport.maxDepth = 1.0f;
-
-		VkRect2D vk_scissor = {};
-		vk_scissor.offset.x = 0.0f;
-		vk_scissor.offset.y = 0.0f;
-		vk_scissor.extent = vk_swapchainResolution;
-
-		VkPipelineViewportStateCreateInfo vk_pipelineViewportStateCreateInfo = {};
-		vk_pipelineViewportStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-		vk_pipelineViewportStateCreateInfo.viewportCount = 1U;
-		vk_pipelineViewportStateCreateInfo.pViewports = &vk_viewport;
-		vk_pipelineViewportStateCreateInfo.scissorCount = 1U;
-		vk_pipelineViewportStateCreateInfo.pScissors = &vk_scissor;
-
-		VkPipelineRasterizationStateCreateInfo vk_pipelineRasterizationStateCreateInfo = {};
-		vk_pipelineRasterizationStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-		vk_pipelineRasterizationStateCreateInfo.depthClampEnable = VK_FALSE;
-		vk_pipelineRasterizationStateCreateInfo.rasterizerDiscardEnable = VK_FALSE;
-		vk_pipelineRasterizationStateCreateInfo.polygonMode = VK_POLYGON_MODE_FILL;
-		vk_pipelineRasterizationStateCreateInfo.lineWidth = 1.0f;
-		vk_pipelineRasterizationStateCreateInfo.cullMode = VK_CULL_MODE_NONE;
-		vk_pipelineRasterizationStateCreateInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
-		vk_pipelineRasterizationStateCreateInfo.depthBiasEnable = VK_FALSE;
-		vk_pipelineRasterizationStateCreateInfo.depthBiasConstantFactor = 0.0f;
-		vk_pipelineRasterizationStateCreateInfo.depthBiasClamp = 0.0f;
-		vk_pipelineRasterizationStateCreateInfo.depthBiasSlopeFactor = 0.0f;
-
-		VkPipelineMultisampleStateCreateInfo vk_pipelineMultisampleStateCreateInfo = {};
-		vk_pipelineMultisampleStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-		vk_pipelineMultisampleStateCreateInfo.sampleShadingEnable = VK_FALSE;
-		vk_pipelineMultisampleStateCreateInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-		vk_pipelineMultisampleStateCreateInfo.minSampleShading = 1.0f;
-		vk_pipelineMultisampleStateCreateInfo.pSampleMask = nullptr;
-		vk_pipelineMultisampleStateCreateInfo.alphaToCoverageEnable = VK_FALSE;
-		vk_pipelineMultisampleStateCreateInfo.alphaToOneEnable = VK_FALSE;
-
-		VkPipelineColorBlendAttachmentState vk_pipelineColorBlendAttachmentState = {};
-		vk_pipelineColorBlendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-		vk_pipelineColorBlendAttachmentState.blendEnable = VK_TRUE;
-		vk_pipelineColorBlendAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-		vk_pipelineColorBlendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-		vk_pipelineColorBlendAttachmentState.colorBlendOp = VK_BLEND_OP_ADD;
-		vk_pipelineColorBlendAttachmentState.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-		vk_pipelineColorBlendAttachmentState.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-		vk_pipelineColorBlendAttachmentState.alphaBlendOp = VK_BLEND_OP_ADD;
-
-		VkPipelineColorBlendStateCreateInfo vk_pipelineColorBlendStateCreateInfo = {};
-		vk_pipelineColorBlendStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-		vk_pipelineColorBlendStateCreateInfo.logicOpEnable = VK_FALSE;
-		vk_pipelineColorBlendStateCreateInfo.logicOp = VK_LOGIC_OP_COPY;
-		vk_pipelineColorBlendStateCreateInfo.attachmentCount = 1U;
-		vk_pipelineColorBlendStateCreateInfo.pAttachments = &vk_pipelineColorBlendAttachmentState;
-		vk_pipelineColorBlendStateCreateInfo.blendConstants[0] = 0.0f;
-		vk_pipelineColorBlendStateCreateInfo.blendConstants[1] = 0.0f;
-		vk_pipelineColorBlendStateCreateInfo.blendConstants[2] = 0.0f;
-		vk_pipelineColorBlendStateCreateInfo.blendConstants[3] = 0.0f;
-
-		VkGraphicsPipelineCreateInfo vk_graphicsPipelineCreateInfo = {};
-		vk_graphicsPipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-		vk_graphicsPipelineCreateInfo.stageCount = sizeof(vk_pipelineShaderStateCreateInfos) / sizeof(VkPipelineShaderStageCreateInfo);
-		vk_graphicsPipelineCreateInfo.pStages = vk_pipelineShaderStateCreateInfos;
-		vk_graphicsPipelineCreateInfo.pVertexInputState = &vk_pipelineVertexInputStateCreateInfo;
-		vk_graphicsPipelineCreateInfo.pInputAssemblyState = &vk_pipelineInputAssemblyStateCreateInfo;
-		vk_graphicsPipelineCreateInfo.pViewportState = &vk_pipelineViewportStateCreateInfo;
-		vk_graphicsPipelineCreateInfo.pRasterizationState = &vk_pipelineRasterizationStateCreateInfo;
-		vk_graphicsPipelineCreateInfo.pMultisampleState = &vk_pipelineMultisampleStateCreateInfo;
-		vk_graphicsPipelineCreateInfo.pDepthStencilState = nullptr;
-		vk_graphicsPipelineCreateInfo.pColorBlendState = &vk_pipelineColorBlendStateCreateInfo;
-		vk_graphicsPipelineCreateInfo.pDynamicState = &vk_pipelineDynamicStateCreateInfo;
-		vk_graphicsPipelineCreateInfo.layout = *pPipelineLayout;
-		vk_graphicsPipelineCreateInfo.renderPass = *pRenderPass;
-		vk_graphicsPipelineCreateInfo.subpass = 0U;
-		vk_graphicsPipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;
-		vk_graphicsPipelineCreateInfo.basePipelineIndex = -1;
-		const bool bGraphicsPipelineCreatedSuccessfully = CHECK_VK_RESULT(vkCreateGraphicsPipelines(vk_hDevice, VK_NULL_HANDLE, 1, &vk_graphicsPipelineCreateInfo, nullptr, &vk_hGraphicsPipeline));
-		if (!bGraphicsPipelineCreatedSuccessfully)
+		CATCH_SIGNAL(pGraphicsPipeline = new Rendering_GraphicsPipeline(pVertexShader, pFragmentShader, 1U, &vk_vertexInputBindingDescription, 2U, vk_vertexInputAttributeDescriptions, pPipelineLayout, pRenderPass));
+		if (!pGraphicsPipeline->is_valid()) {
 			RE_FATAL_ERROR("Failed creating Vulkan graphics pipeline");
-		return bGraphicsPipelineCreatedSuccessfully;
+			DELETE_SAFELY(pGraphicsPipeline);
+			return false;
+		}
+		return true;
 	}
 	
 	void RenderSystem::destroy_graphics_pipeline() {
-		if (!vk_hGraphicsPipeline)
-			return;
-		CATCH_SIGNAL(vkDestroyPipeline(vk_hDevice, vk_hGraphicsPipeline, nullptr));
-		vk_hGraphicsPipeline = VK_NULL_HANDLE;
+		DELETE_SAFELY(pGraphicsPipeline);
 	}
 
 	bool RenderSystem::create_framebuffers() {
@@ -741,71 +635,51 @@ namespace RE {
 	}
 	
 	void RenderSystem::destroy_vertex_buffer() {
-		if (!pVertexBuffer)
-			return;
 		DELETE_SAFELY(pVertexBuffer);
 	}
 
 	bool RenderSystem::alloc_command_buffers() {
 		if (is_bit_true<uint8_t>(u8Booleans, COMMAND_BUFFERS_INITIALIZED_INDEX))
 			return false;
-		VkCommandPoolCreateInfo vk_commandPoolCreateInfos[RE_VK_COMMAND_POOL_COUNT];
-		uint32_t u32CommandPoolCreateIndex = 0U;
-		while (u32CommandPoolCreateIndex < RE_VK_COMMAND_POOL_COUNT) {
-			vk_commandPoolCreateInfos[u32CommandPoolCreateIndex].sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-			vk_commandPoolCreateInfos[u32CommandPoolCreateIndex].pNext = nullptr;
+		for (uint32_t u32CommandPoolCreateIndex = 0U; u32CommandPoolCreateIndex < RE_VK_COMMAND_POOL_COUNT; u32CommandPoolCreateIndex++) {
 			switch (u32CommandPoolCreateIndex) {
 				case RE_VK_COMMAND_POOL_GRAPHICS_INDEX:
-					vk_commandPoolCreateInfos[u32CommandPoolCreateIndex].flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-					vk_commandPoolCreateInfos[u32CommandPoolCreateIndex].queueFamilyIndex = u32QueueIndices[RE_VK_QUEUE_GRAPHICS_INDEX];
+					pCommandPools[u32CommandPoolCreateIndex] = new Rendering_CommandPool(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, u32QueueIndices[RE_VK_QUEUE_GRAPHICS_INDEX]);
 					break;
 				case RE_VK_COMMAND_POOL_TRANSFER_INDEX:
-					//vk_commandPoolCreateInfos[u32CommandPoolCreateIndex].flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
-					vk_commandPoolCreateInfos[u32CommandPoolCreateIndex].flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-					vk_commandPoolCreateInfos[u32CommandPoolCreateIndex].queueFamilyIndex = u32QueueIndices[RE_VK_QUEUE_TRANSFER_INDEX];
+					//pCommandPools[u32CommandPoolCreateIndex] = new Rendering_CommandPool(VK_COMMAND_POOL_CREATE_TRANSIENT_BIT, u32QueueIndices[RE_VK_QUEUE_TRANSFER_INDEX]);
+					pCommandPools[u32CommandPoolCreateIndex] = new Rendering_CommandPool(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, u32QueueIndices[RE_VK_QUEUE_TRANSFER_INDEX]);
 					break;
 			}
-			if (!CHECK_VK_RESULT(vkCreateCommandPool(vk_hDevice, &vk_commandPoolCreateInfos[u32CommandPoolCreateIndex], nullptr, &vk_hCommandPools[u32CommandPoolCreateIndex]))) {
+			if (!pCommandPools[u32CommandPoolCreateIndex]->is_valid()) {
 				RE_FATAL_ERROR(append_to_string("Failed creating Vulkan command pool at index ", u32CommandPoolCreateIndex));
-				break;
+				free_command_buffers();
+				return false;
 			}
-			u32CommandPoolCreateIndex++;
-		}
-		if (u32CommandPoolCreateIndex != RE_VK_COMMAND_POOL_COUNT) {
-			for (uint32_t u32CommandPoolDeleteIndex = u32CommandPoolCreateIndex + 1U; u32CommandPoolDeleteIndex > 0U; u32CommandPoolDeleteIndex--)
-				CATCH_SIGNAL(vkDestroyCommandPool(vk_hDevice, vk_hCommandPools[u32CommandPoolDeleteIndex - 1U], nullptr));
-			return false;
 		}
 		
-		VkCommandBufferAllocateInfo vk_commandBufferGraphicsAllocInfo = {};
-		vk_commandBufferGraphicsAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-		vk_commandBufferGraphicsAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-		vk_commandBufferGraphicsAllocInfo.commandPool = vk_hCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_INDEX];
-		vk_commandBufferGraphicsAllocInfo.commandBufferCount = u32SwapchainImageCount;
-		vk_phCommandBuffersGraphics = new VkCommandBuffer[vk_commandBufferGraphicsAllocInfo.commandBufferCount];
-		if (!CHECK_VK_RESULT(vkAllocateCommandBuffers(vk_hDevice, &vk_commandBufferGraphicsAllocInfo, vk_phCommandBuffersGraphics))) {
+		ppCommandBuffersGraphics = new Rendering_CommandBuffer*[u32SwapchainImageCount];
+		if (!CATCH_SIGNAL_AND_RETURN(alloc_vk_command_buffers(VK_COMMAND_BUFFER_LEVEL_PRIMARY, pCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_INDEX], u32SwapchainImageCount, ppCommandBuffersGraphics), bool)) {
 			RE_FATAL_ERROR("Failed allocating Vulkan graphics command buffer(s) for the graphics queue");
-			DELETE_ARRAY_SAFELY(vk_phCommandBuffersGraphics);
+			free_vk_command_buffers(pCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_INDEX], u32SwapchainImageCount, ppCommandBuffersGraphics);
+			DELETE_ARRAY_SAFELY(ppCommandBuffersGraphics);
 			for (uint32_t u32CommandPoolDeleteIndex = 0U; u32CommandPoolDeleteIndex < RE_VK_COMMAND_POOL_COUNT; u32CommandPoolDeleteIndex++)
-				CATCH_SIGNAL(vkDestroyCommandPool(vk_hDevice, vk_hCommandPools[u32CommandPoolDeleteIndex], nullptr));
+				DELETE_SAFELY(pCommandPools[u32CommandPoolDeleteIndex]);
 			return false;
 		}
 
-		VkCommandBufferAllocateInfo vk_commandBufferTransferAllocInfo = {};
-		vk_commandBufferTransferAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-		vk_commandBufferTransferAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-		vk_commandBufferTransferAllocInfo.commandPool = vk_hCommandPools[RE_VK_COMMAND_POOL_TRANSFER_INDEX];
-		vk_commandBufferTransferAllocInfo.commandBufferCount = 1U;
-		vk_phCommandBuffersTransfer = new VkCommandBuffer[vk_commandBufferTransferAllocInfo.commandBufferCount];
-		if (!CHECK_VK_RESULT(vkAllocateCommandBuffers(vk_hDevice, &vk_commandBufferTransferAllocInfo, vk_phCommandBuffersTransfer))) {
+		ppCommandBuffersTransfer = new Rendering_CommandBuffer*[RE_VK_COMMAND_BUFFER_TRANSFER_COUNT];
+		if (!CATCH_SIGNAL_AND_RETURN(alloc_vk_command_buffers(VK_COMMAND_BUFFER_LEVEL_PRIMARY, pCommandPools[RE_VK_COMMAND_POOL_TRANSFER_INDEX], RE_VK_COMMAND_BUFFER_TRANSFER_COUNT, ppCommandBuffersTransfer), bool)) {
 			if (u32QueueIndices[RE_VK_QUEUE_GRAPHICS_INDEX] != u32QueueIndices[RE_VK_QUEUE_TRANSFER_INDEX])
-				RE_FATAL_ERROR("Failed allocating Vulkan graphics command buffer(s) for the transfer queue");
+				RE_FATAL_ERROR("Failed allocating Vulkan transfer command buffer(s) for the transfer queue");
 			else
 				RE_FATAL_ERROR("Failed allocating Vulkan transfer command buffer(s) for the graphics queue");
-			DELETE_ARRAY_SAFELY(vk_phCommandBuffersGraphics);
-			DELETE_ARRAY_SAFELY(vk_phCommandBuffersTransfer);
+			free_vk_command_buffers(pCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_INDEX], u32SwapchainImageCount, ppCommandBuffersGraphics);
+			DELETE_ARRAY_SAFELY(ppCommandBuffersGraphics);
+			free_vk_command_buffers(pCommandPools[RE_VK_COMMAND_POOL_TRANSFER_INDEX], RE_VK_COMMAND_BUFFER_TRANSFER_COUNT, ppCommandBuffersTransfer);
+			DELETE_ARRAY_SAFELY(ppCommandBuffersTransfer);
 			for (uint32_t u32CommandPoolDeleteIndex = 0U; u32CommandPoolDeleteIndex < RE_VK_COMMAND_POOL_COUNT; u32CommandPoolDeleteIndex++)
-				CATCH_SIGNAL(vkDestroyCommandPool(vk_hDevice, vk_hCommandPools[u32CommandPoolDeleteIndex], nullptr));
+				DELETE_SAFELY(pCommandPools[u32CommandPoolDeleteIndex]);
 			return false;
 		}
 		set_bit<uint8_t>(u8Booleans, COMMAND_BUFFERS_INITIALIZED_INDEX, true);
@@ -815,10 +689,12 @@ namespace RE {
 	void RenderSystem::free_command_buffers() {
 		if (!is_bit_true<uint8_t>(u8Booleans, COMMAND_BUFFERS_INITIALIZED_INDEX))
 			return;
-		DELETE_ARRAY_SAFELY(vk_phCommandBuffersGraphics);
-		DELETE_ARRAY_SAFELY(vk_phCommandBuffersTransfer);
-		CATCH_SIGNAL(vkDestroyCommandPool(vk_hDevice, vk_hCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_INDEX], nullptr));
-		CATCH_SIGNAL(vkDestroyCommandPool(vk_hDevice, vk_hCommandPools[RE_VK_COMMAND_POOL_TRANSFER_INDEX], nullptr));
+		free_vk_command_buffers(pCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_INDEX], u32SwapchainImageCount, ppCommandBuffersGraphics);
+		DELETE_ARRAY_SAFELY(ppCommandBuffersGraphics);
+		free_vk_command_buffers(pCommandPools[RE_VK_COMMAND_POOL_TRANSFER_INDEX], RE_VK_COMMAND_BUFFER_TRANSFER_COUNT, ppCommandBuffersTransfer);
+		DELETE_ARRAY_SAFELY(ppCommandBuffersTransfer);
+		for (uint32_t u32CommandPoolDeleteIndex = 0U; u32CommandPoolDeleteIndex < RE_VK_COMMAND_POOL_COUNT; u32CommandPoolDeleteIndex++)
+			DELETE_SAFELY(pCommandPools[u32CommandPoolDeleteIndex]);
 		set_bit<uint8_t>(u8Booleans, COMMAND_BUFFERS_INITIALIZED_INDEX, false);
 	}
 
@@ -826,8 +702,8 @@ namespace RE {
 		if (!is_bit_true<uint8_t>(u8Booleans, COMMAND_BUFFERS_INITIALIZED_INDEX))
 			return false;
 		for (uint32_t u32CommandBufferIndex = 0U; u32CommandBufferIndex < u32SwapchainImageCount; u32CommandBufferIndex++) {
-			const VkCommandBuffer vk_hCommandBuffer = vk_phCommandBuffersGraphics[u32CommandBufferIndex];
-			CATCH_SIGNAL(vkResetCommandBuffer(vk_hCommandBuffer, 0));
+			const VkCommandBuffer vk_hCommandBuffer = ppCommandBuffersGraphics[u32CommandBufferIndex]->get_command_buffer();
+			CATCH_SIGNAL(ppCommandBuffersGraphics[u32CommandBufferIndex]->reset_command_buffer(0));
 			VkCommandBufferBeginInfo vk_commandBufferBeginInfo = {};
 			vk_commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 			vk_commandBufferBeginInfo.flags = 0U;
@@ -861,7 +737,7 @@ namespace RE {
 			vk_commandBufferRenderpassBeginInfo.clearValueCount = 1U;
 			vk_commandBufferRenderpassBeginInfo.pClearValues = &vk_clearValues;
 			CATCH_SIGNAL(vkCmdBeginRenderPass(vk_hCommandBuffer, &vk_commandBufferRenderpassBeginInfo, VK_SUBPASS_CONTENTS_INLINE));
-			CATCH_SIGNAL(vkCmdBindPipeline(vk_hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hGraphicsPipeline));
+			CATCH_SIGNAL(vkCmdBindPipeline(vk_hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *pGraphicsPipeline));
 			VkBuffer vk_vertexBuffers[1] = {*pVertexBuffer};
 			VkDeviceSize offsets[1] = {0U};
 			CATCH_SIGNAL(vkCmdBindVertexBuffers(vk_hCommandBuffer, 0U, 1U, vk_vertexBuffers, offsets));
@@ -953,13 +829,14 @@ namespace RE {
 				return;
 		}
 		VkPipelineStageFlags vk_pipelineStageFlags[1] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+		VkCommandBuffer vk_graphicsCommandBuffersToSubmit[1] = {ppCommandBuffersGraphics[u32NextSwapchainImageIndex]->get_command_buffer()};
 		VkSubmitInfo vk_queueGraphicsSubmitInfo = {};
 		vk_queueGraphicsSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 		vk_queueGraphicsSubmitInfo.waitSemaphoreCount = 1U;
 		vk_queueGraphicsSubmitInfo.pWaitSemaphores = &vk_waitForImageAvailableSemaphore;
 		vk_queueGraphicsSubmitInfo.pWaitDstStageMask = vk_pipelineStageFlags;
 		vk_queueGraphicsSubmitInfo.commandBufferCount = 1U;
-		CATCH_SIGNAL(vk_queueGraphicsSubmitInfo.pCommandBuffers = &vk_phCommandBuffersGraphics[u32NextSwapchainImageIndex]);
+		vk_queueGraphicsSubmitInfo.pCommandBuffers = vk_graphicsCommandBuffersToSubmit;
 		vk_queueGraphicsSubmitInfo.signalSemaphoreCount = 1U;
 		vk_queueGraphicsSubmitInfo.pSignalSemaphores = &vk_waitForRenderingFinishedSemaphore;
 		if (!CHECK_VK_RESULT(vkQueueSubmit(vk_hQueues[RE_VK_QUEUE_GRAPHICS_INDEX], 1U, &vk_queueGraphicsSubmitInfo, vk_currentFence))) {
@@ -987,10 +864,6 @@ namespace RE {
 
 	void RenderSystem::window_resize_event() {
 		CATCH_SIGNAL(recreate_swapchain());
-	}
-
-	void RenderSystem::wait_for_idle_device() {
-		CATCH_SIGNAL(vkDeviceWaitIdle(vk_hDevice));
 	}
 
 	bool RenderSystem::is_valid() {

@@ -95,7 +95,7 @@ namespace RE {
 			}
 			pWindow->show_window(false);
 			CATCH_SIGNAL(gameMgr.last_game_logic_update());
-			CATCH_SIGNAL(renderSystem.wait_for_idle_device());
+			WAIT_FOR_IDLE_VULKAN_DEVICE();
 			fDeltaseconds = 0.0f;
 		}
 		CATCH_SIGNAL(delete pWindow);

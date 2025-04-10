@@ -76,12 +76,77 @@ namespace RE {
 		return bResult;
 	}
 
+	void Rendering_CommandBuffer::cmd_begin_renderpass(const VkRenderPassBeginInfo vk_commandBufferRenderpassBeginInfo, const VkSubpassContents vk_eSubpassContents) const {
+		CATCH_SIGNAL(vkCmdBeginRenderPass(vk_hCommandBuffer, &vk_commandBufferRenderpassBeginInfo, vk_eSubpassContents));
+	}
+
+	void Rendering_CommandBuffer::cmd_begin_renderpass(const float fClearColor[4], const int32_t i32ClearColor[4], const uint32_t u32ClearColor[4], const float fClearDepth, const uint32_t u32ClearStencil, const Rendering_RenderPass *pRenderPass, const Rendering_Framebuffer *pFramebuffer, const VkRect2D vk_renderArea, const VkSubpassContents vk_eSubpassContents) const {
+		VkClearValue vk_clearValues;
+		for (uint8_t u8ColorChannelIndex = 0U; u8ColorChannelIndex < 4U; u8ColorChannelIndex++) {
+			vk_clearValues.color.float32[u8ColorChannelIndex] = fClearColor[u8ColorChannelIndex];
+			vk_clearValues.color.int32[u8ColorChannelIndex] = i32ClearColor[u8ColorChannelIndex];
+			vk_clearValues.color.uint32[u8ColorChannelIndex] = u32ClearColor[u8ColorChannelIndex];
+		}
+		vk_clearValues.depthStencil.depth = fClearDepth;
+		vk_clearValues.depthStencil.stencil = u32ClearStencil;
+		VkRenderPassBeginInfo vk_commandBufferRenderpassBeginInfo = {};
+		vk_commandBufferRenderpassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		vk_commandBufferRenderpassBeginInfo.renderPass = *pRenderPass;
+		vk_commandBufferRenderpassBeginInfo.framebuffer = *pFramebuffer;
+		vk_commandBufferRenderpassBeginInfo.renderArea = vk_renderArea;
+		vk_commandBufferRenderpassBeginInfo.clearValueCount = 1U;
+		vk_commandBufferRenderpassBeginInfo.pClearValues = &vk_clearValues;
+		CATCH_SIGNAL(this->cmd_begin_renderpass(vk_commandBufferRenderpassBeginInfo, vk_eSubpassContents));
+	}
+
 	void Rendering_CommandBuffer::cmd_end_renderpass() const {
 		CATCH_SIGNAL(vkCmdEndRenderPass(vk_hCommandBuffer));
 	}
 
 	void Rendering_CommandBuffer::cmd_bind_graphics_pipeline(const Rendering_GraphicsPipeline *pGraphicsPipeline) const {
 		CATCH_SIGNAL(vkCmdBindPipeline(vk_hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *pGraphicsPipeline));
+	}
+
+	void Rendering_CommandBuffer::cmd_bind_vertex_buffer(const Rendering_Buffer *pVertexBuffer) const {
+		VkBuffer vk_vertexBuffers[1] = {*pVertexBuffer};
+		VkDeviceSize offsets[1] = {0U};
+		CATCH_SIGNAL(vkCmdBindVertexBuffers(vk_hCommandBuffer, 0U, 1U, vk_vertexBuffers, offsets));
+	}
+
+	void Rendering_CommandBuffer::cmd_set_viewport(const VkViewport vk_viewport) const {
+		CATCH_SIGNAL(vkCmdSetViewport(vk_hCommandBuffer, 0U, 1U, &vk_viewport));
+	}
+
+	void Rendering_CommandBuffer::cmd_set_viewport(const float fX, const float fY, const float fWidth, const float fHeight, const float fMinDepth, const float fMaxDepth) const {
+		VkViewport vk_viewport = {};
+		vk_viewport.x = fX;
+		vk_viewport.y = fY;
+		vk_viewport.width = fWidth;
+		vk_viewport.height = fHeight;
+		vk_viewport.minDepth = fMinDepth;
+		vk_viewport.maxDepth = fMaxDepth;
+		CATCH_SIGNAL(this->cmd_set_viewport(vk_viewport));
+	}
+
+	void Rendering_CommandBuffer::cmd_set_scissor(const VkRect2D vk_scissorRect) const {
+		CATCH_SIGNAL(vkCmdSetScissor(vk_hCommandBuffer, 0U, 1U, &vk_scissorRect));
+	}
+
+	void Rendering_CommandBuffer::cmd_set_scissor(const VkOffset2D vk_scissorOffset, const VkExtent2D vk_scissorExtent) const {
+		VkRect2D vk_scissorRect = {};
+		vk_scissorRect.offset = vk_scissorOffset;
+		vk_scissorRect.extent = vk_scissorExtent;
+		CATCH_SIGNAL(this->cmd_set_scissor(vk_scissorRect));
+	}
+	
+	void Rendering_CommandBuffer::cmd_set_scissor(const int32_t i32X, const int32_t i32Y, const uint32_t u32Width, const uint32_t u32Height) const {
+		VkOffset2D vk_scissorOffset = {};
+		vk_scissorOffset.x = i32X;
+		vk_scissorOffset.y = i32Y;
+		VkExtent2D vk_scissorExtent = {};
+		vk_scissorExtent.width = u32Width;
+		vk_scissorExtent.height = u32Height;
+		CATCH_SIGNAL(this->cmd_set_scissor(vk_scissorOffset, vk_scissorExtent));
 	}
 
 	void Rendering_CommandBuffer::cmd_draw(const uint32_t u32VertexCount, const uint32_t u32InstanceCount, const uint32_t u32FirstVertex, const uint32_t u32FirstInstance) const {

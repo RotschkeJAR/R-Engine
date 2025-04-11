@@ -12,7 +12,7 @@ namespace RE {
 
 	}
 
-	void Renderer::render() {
+	void Renderer::prepare_render() {
 		
 	}
 

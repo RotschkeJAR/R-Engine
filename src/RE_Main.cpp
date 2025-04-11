@@ -81,11 +81,15 @@ namespace RE {
 			RenderSystem renderSystem;
 			if (!renderSystem.is_valid() || bErrorOccured)
 				return;
+			Renderer renderer;
+			if (!renderer.is_valid() || bErrorOccured)
+				return;
 			std::chrono::high_resolution_clock::time_point currentFrameTime = std::chrono::high_resolution_clock::now(), lastFrameTime;
 			bRunning = true;
 			while (bRunning) {
 				CATCH_SIGNAL(pWindow->window_proc());
 				CATCH_SIGNAL(gameMgr.game_logic_update());
+				CATCH_SIGNAL(renderer.prepare_render());
 				CATCH_SIGNAL(renderSystem.draw_frame());
 				lastFrameTime = currentFrameTime;
 				currentFrameTime = std::chrono::high_resolution_clock::now();

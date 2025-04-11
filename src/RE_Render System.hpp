@@ -2,33 +2,26 @@
 #define __RE_RENDER_SYSTEM_H__
 
 #include "RE_Vulkan.hpp"
+#include "RE_Rendering_Command Buffer.hpp"
+#include "RE_Rendering_Queue.hpp"
 
 namespace RE {
 
 #define RE_VK_QUEUE_COUNT 3U
-#define RE_VK_COMMAND_POOL_COUNT 2U
-#define RE_VK_COMMAND_BUFFER_COUNT 1U
-#define RE_VK_SEMAPHORE_COUNT 4U
-#define RE_VK_FENCE_COUNT 2U
+#define RE_VK_QUEUE_GRAPHICS_INDEX 0U
+#define RE_VK_QUEUE_PRESENT_INDEX 1U
+#define RE_VK_QUEUE_TRANSFER_INDEX 2U
 
-	typedef float REvertex;
-#define RE_VK_RENDERABLE_OBJECTS_COUNT 1000U
-#define RE_VK_VERTEX_COUNT (RE_VK_RENDERABLE_OBJECTS_COUNT * 4U)
-#define RE_VK_VERTEX_POSITION_SIZE 3U
-#define RE_VK_VERTEX_POSITION_SIZE_BYTES (RE_VK_VERTEX_POSITION_SIZE * sizeof(REvertex))
-#define RE_VK_VERTEX_POSITION_OFFSET 0U
-#define RE_VK_VERTEX_POSITION_OFFSET_BYTES (RE_VK_VERTEX_POSITION_OFFSET * sizeof(REvertex))
-#define RE_VK_VERTEX_COLOR_SIZE 4U
-#define RE_VK_VERTEX_COLOR_SIZE_BYTES (RE_VK_VERTEX_COLOR_SIZE * sizeof(REvertex))
-#define RE_VK_VERTEX_COLOR_OFFSET RE_VK_VERTEX_POSITION_SIZE
-#define RE_VK_VERTEX_COLOR_OFFSET_BYTES (RE_VK_VERTEX_COLOR_OFFSET * sizeof(REvertex))
-#define RE_VK_VERTEX_TOTAL_SIZE 7U
-#define RE_VK_VERTEX_TOTAL_SIZE_BYTES (RE_VK_VERTEX_TOTAL_SIZE * sizeof(REvertex))
+#define RE_VK_COMMAND_POOL_COUNT 2U
+#define RE_VK_COMMAND_POOL_GRAPHICS_INDEX 0U
+#define RE_VK_COMMAND_POOL_TRANSFER_INDEX 1U
 
 	// Attributes initialized at beginning and rarely changed
 	extern VkDevice vk_hDevice;
+	extern Rendering_Queue *pDeviceQueues[RE_VK_QUEUE_COUNT];
 	extern VkFormat vk_eSwapchainImageFormat;
 	extern VkExtent2D vk_swapchainResolution;
+	extern Rendering_CommandPool *pCommandPools[RE_VK_COMMAND_POOL_COUNT];
 
 	// Configurable settings
 	extern VkPhysicalDevice vk_hPhysicalDeviceSelected;
@@ -71,7 +64,7 @@ namespace RE {
 			RenderSystem();
 			~RenderSystem();
 			void draw_frame();
-			void upload_to_vertex_buffer(const REvertex *const pNewVertexBufferData, const uint32_t u32VertexCount);
+			void upload_to_vertex_buffer();
 			void window_resize_event();
 			bool is_valid();
 	};

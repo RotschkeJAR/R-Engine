@@ -296,6 +296,19 @@ namespace RE {
 	}
 
 	template <typename T>
+	std::string array_to_string(T arrayToPrint[], const uint32_t u32ArrayLength) {
+		std::stringstream ss("");
+		ss << '{';
+		for (uint32_t u32Index = 0U; u32Index < u32ArrayLength; u32Index++) {
+			if (u32Index)
+				ss << ", ";
+			ss << arrayToPrint[u32Index];
+		}
+		ss << '}';
+		return std::string(ss.str());
+	}
+
+	template <typename T>
 	std::string hexadecimal_to_string(T number, bool bCutZeros) {
 		DEFINE_SIGNAL_GUARD(sigGuardHexadecimalToString);
 		std::stringstream ss("");

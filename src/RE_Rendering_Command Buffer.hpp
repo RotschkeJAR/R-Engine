@@ -31,7 +31,7 @@ namespace RE {
 			const VkCommandPool vk_hCommandPool;
 
 			Rendering_CommandBuffer() = delete;
-			Rendering_CommandBuffer(const Rendering_CommandPool *pCommandPool);
+			Rendering_CommandBuffer(const Rendering_CommandPool *pCommandPool); // does not initialize the Vulkan command buffer
 			Rendering_CommandBuffer(const VkCommandBufferLevel vk_eCommandBufferLevel, const Rendering_CommandPool *pCommandPool);
 			~Rendering_CommandBuffer();
 
@@ -42,13 +42,16 @@ namespace RE {
 			void cmd_begin_renderpass(const float fClearColor[4], const int32_t i32ClearColor[4], const uint32_t u32ClearColor[4], const float fClearDepth, const uint32_t u32ClearStencil, const Rendering_RenderPass *pRenderPass, const Rendering_Framebuffer *pFramebuffer, const VkRect2D vk_renderArea, const VkSubpassContents vk_eSubpassContents) const;
 			void cmd_end_renderpass() const;
 			void cmd_bind_graphics_pipeline(const Rendering_GraphicsPipeline *pGraphicsPipeline) const;
+			void cmd_bind_index_buffer(const Rendering_Buffer *pIndexBuffer, const VkIndexType vk_eIndexDatatype) const;
 			void cmd_bind_vertex_buffer(const Rendering_Buffer *pVertexBuffer) const;
+			void cmd_copy_buffer(const Rendering_Buffer *pSrcBuffer, const Rendering_Buffer *pDstBuffer, const VkDeviceSize vk_bufferSize) const;
 			void cmd_set_viewport(const VkViewport vk_viewport) const;
 			void cmd_set_viewport(const float fX, const float fY, const float fWidth, const float fHeight, const float fMinDepth, const float fMaxDepth) const;
 			void cmd_set_scissor(const VkRect2D vk_scissorRect) const;
 			void cmd_set_scissor(const VkOffset2D vk_scissorOffset, const VkExtent2D vk_scissorExtent) const;
 			void cmd_set_scissor(const int32_t i32X, const int32_t i32Y, const uint32_t u32Width, const uint32_t u32Height) const;
 			void cmd_draw(const uint32_t u32VertexCount, const uint32_t u32InstanceCount, const uint32_t u32FirstVertex, const uint32_t u32FirstInstance) const;
+			void cmd_execute(const Rendering_CommandBuffer *pCommandBuffer) const;
 
 			VkCommandBuffer get_command_buffer() const;
 			bool is_valid() const;

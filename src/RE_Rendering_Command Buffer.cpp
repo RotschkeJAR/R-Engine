@@ -107,10 +107,22 @@ namespace RE {
 		CATCH_SIGNAL(vkCmdBindPipeline(vk_hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *pGraphicsPipeline));
 	}
 
+	void Rendering_CommandBuffer::cmd_bind_index_buffer(const Rendering_Buffer *pIndexBuffer, const VkIndexType vk_eIndexDatatype) const {
+		CATCH_SIGNAL(vkCmdBindIndexBuffer(vk_hCommandBuffer, *pIndexBuffer, 0U, vk_eIndexDatatype));
+	}
+
 	void Rendering_CommandBuffer::cmd_bind_vertex_buffer(const Rendering_Buffer *pVertexBuffer) const {
 		VkBuffer vk_vertexBuffers[1] = {*pVertexBuffer};
 		VkDeviceSize offsets[1] = {0U};
 		CATCH_SIGNAL(vkCmdBindVertexBuffers(vk_hCommandBuffer, 0U, 1U, vk_vertexBuffers, offsets));
+	}
+
+	void Rendering_CommandBuffer::cmd_copy_buffer(const Rendering_Buffer *pSrcBuffer, const Rendering_Buffer *pDstBuffer, const VkDeviceSize vk_bufferSize) const {
+		VkBufferCopy vk_bufferCopy = {};
+		vk_bufferCopy.srcOffset = 0UL;
+		vk_bufferCopy.dstOffset = 0UL;
+		vk_bufferCopy.size = vk_bufferSize;
+		CATCH_SIGNAL(vkCmdCopyBuffer(vk_hCommandBuffer, *pSrcBuffer, *pDstBuffer, 1U, &vk_bufferCopy));
 	}
 
 	void Rendering_CommandBuffer::cmd_set_viewport(const VkViewport vk_viewport) const {
@@ -151,6 +163,11 @@ namespace RE {
 
 	void Rendering_CommandBuffer::cmd_draw(const uint32_t u32VertexCount, const uint32_t u32InstanceCount, const uint32_t u32FirstVertex, const uint32_t u32FirstInstance) const {
 		CATCH_SIGNAL(vkCmdDraw(vk_hCommandBuffer, u32VertexCount, u32InstanceCount, u32FirstVertex, u32FirstInstance));
+	}
+
+	void Rendering_CommandBuffer::cmd_execute(const Rendering_CommandBuffer *pCommandBuffer) const {
+		VkCommandBuffer vk_hCommandBuffers[1] = {*pCommandBuffer};
+		CATCH_SIGNAL(vkCmdExecuteCommands(vk_hCommandBuffer, 1U, vk_hCommandBuffers));
 	}
 
 	VkCommandBuffer Rendering_CommandBuffer::get_command_buffer() const {

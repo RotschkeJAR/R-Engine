@@ -3,10 +3,10 @@
 
 namespace RE {
 	
-	Rendering_Buffer::Rendering_Buffer(VkDeviceSize vk_bufferSize, VkBufferUsageFlags vk_bufferUsage, VkSharingMode vk_bufferSharingMode, uint32_t u32QueueFamilyIndexCount, const uint32_t* pu32QueueFamilyIndices, VkMemoryPropertyFlags vk_memoryProperties) : vk_hBuffer(VK_NULL_HANDLE), vk_hBufferMemory(VK_NULL_HANDLE) {
+	Rendering_Buffer::Rendering_Buffer(const VkDeviceSize vk_bufferSizeInBytes, const VkBufferUsageFlags vk_bufferUsage, const VkSharingMode vk_bufferSharingMode, const uint32_t u32QueueFamilyIndexCount, const uint32_t* pu32QueueFamilyIndices, const VkMemoryPropertyFlags vk_memoryProperties) : vk_hBuffer(VK_NULL_HANDLE), vk_hBufferMemory(VK_NULL_HANDLE), vk_bufferSizeInBytes(vk_bufferSizeInBytes) {
 		VkBufferCreateInfo vk_bufferCreateInfo = {};
 		vk_bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-		vk_bufferCreateInfo.size = vk_bufferSize;
+		vk_bufferCreateInfo.size = vk_bufferSizeInBytes;
 		vk_bufferCreateInfo.usage = vk_bufferUsage;
 		vk_bufferCreateInfo.sharingMode = vk_bufferSharingMode;
 		switch (vk_bufferSharingMode) {
@@ -61,6 +61,13 @@ namespace RE {
 			return;
 		CATCH_SIGNAL(vkDestroyBuffer(vk_hDevice, vk_hBuffer, nullptr));
 		CATCH_SIGNAL(vkFreeMemory(vk_hDevice, vk_hBufferMemory, nullptr));
+	}
+
+	void Rendering_Buffer::upload_data(const void *const pData, const VkDeviceSize vk_uploadSizeInBytes) const {
+		void* pBufferMemory;
+		CATCH_SIGNAL(vkMapMemory(vk_hDevice, vk_hBufferMemory, 0UL, vk_uploadSizeInBytes, 0, &pBufferMemory));
+		CATCH_SIGNAL(std::memcpy(pBufferMemory, pData, vk_uploadSizeInBytes));
+		CATCH_SIGNAL(vkUnmapMemory(vk_hDevice, vk_hBufferMemory));
 	}
 
 	VkBuffer Rendering_Buffer::get_buffer() const {

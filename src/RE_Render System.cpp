@@ -4,37 +4,56 @@
 #include "RE_Window_Wayland.hpp"
 #include "RE_Main.hpp"
 
-#include "RE_Rendering_Buffer.hpp"
 #include "RE_Rendering_Shader.hpp"
+#include "RE_Rendering_Buffer.hpp"
 #include "RE_Rendering_Pipeline Layout.hpp"
 #include "RE_Rendering_Render Pass.hpp"
-#include "RE_Rendering_Sync Objects.hpp"
-#include "RE_Rendering_Framebuffer.hpp"
 #include "RE_Rendering_Pipeline.hpp"
-#include "RE_Rendering_Command Buffer.hpp"
+#include "RE_Rendering_Framebuffer.hpp"
+#include "RE_Rendering_Sync Objects.hpp"
+#include "RE_Rendering_Queue.hpp"
 #include "RE_Input.hpp"
 
 namespace RE {
 
-#define RE_VK_QUEUE_GRAPHICS_INDEX 0U
-#define RE_VK_QUEUE_PRESENT_INDEX 1U
-#define RE_VK_QUEUE_TRANSFER_INDEX 2U
+	static void println_vkbool32(const char* pcName, VkBool32 vk_bState) {
+		print("\t\t\t", pcName, ": ");
+		if (vk_bState)
+			println_colored("true", RE_TERMINAL_COLOR_GREEN, false, false);
+		else
+			println_colored("false", RE_TERMINAL_COLOR_RED, false, false);
+	}
 
-#define RE_VK_COMMAND_POOL_GRAPHICS_INDEX 0U
-#define RE_VK_COMMAND_POOL_TRANSFER_INDEX 1U
-
+#define RE_VK_COMMAND_BUFFER_COUNT 1U
 #define RE_VK_COMMAND_BUFFER_TRANSFER_COUNT 1U
 
+#define RE_VK_SEMAPHORE_COUNT 4U
 #define RE_VK_SEMAPHORE_IMAGE_AVAILABLE_INDEX 0U
 #define RE_VK_SEMAPHORE_RENDERING_FINISHED_INDEX 1U
 #define RE_VK_SEMAPHORES_PER_FRAME 2U
+
+#define RE_VK_FENCE_COUNT 2U
+
+
+	typedef float REvertex;
+#define RE_VK_RENDERABLE_OBJECTS_COUNT 1000U
+#define RE_VK_VERTEX_COUNT (RE_VK_RENDERABLE_OBJECTS_COUNT * 4U)
+#define RE_VK_VERTEX_POSITION_SIZE 3U
+#define RE_VK_VERTEX_POSITION_SIZE_BYTES (RE_VK_VERTEX_POSITION_SIZE * sizeof(REvertex))
+#define RE_VK_VERTEX_POSITION_OFFSET 0U
+#define RE_VK_VERTEX_POSITION_OFFSET_BYTES (RE_VK_VERTEX_POSITION_OFFSET * sizeof(REvertex))
+#define RE_VK_VERTEX_COLOR_SIZE 4U
+#define RE_VK_VERTEX_COLOR_SIZE_BYTES (RE_VK_VERTEX_COLOR_SIZE * sizeof(REvertex))
+#define RE_VK_VERTEX_COLOR_OFFSET RE_VK_VERTEX_POSITION_SIZE
+#define RE_VK_VERTEX_COLOR_OFFSET_BYTES (RE_VK_VERTEX_COLOR_OFFSET * sizeof(REvertex))
+#define RE_VK_VERTEX_TOTAL_SIZE 7U
+#define RE_VK_VERTEX_TOTAL_SIZE_BYTES (RE_VK_VERTEX_TOTAL_SIZE * sizeof(REvertex))
 
 	// Attributes initialized at beginning and rarely changed
 	VkPhysicalDevice *vk_phPhysicalDevicesAvailable = nullptr;
 	uint32_t u32PhysicalDevicesAvailableCount = 0U;
 	VkDevice vk_hDevice = VK_NULL_HANDLE;
-	VkQueue vk_hQueues[RE_VK_QUEUE_COUNT] = {};
-	uint32_t u32QueueIndices[RE_VK_QUEUE_COUNT] = {};
+	Rendering_Queue *pDeviceQueues[RE_VK_QUEUE_COUNT] = {};
 	VkSurfaceKHR vk_hSurface = VK_NULL_HANDLE;
 	VkSurfaceCapabilitiesKHR vk_surfaceCapabilities = {};
 	VkSurfaceFormatKHR *vk_pSurfaceFormatsAvailable = nullptr;
@@ -239,6 +258,7 @@ namespace RE {
 			RE_FATAL_ERROR("There aren't any devices supporting Vulkan");
 			return false;
 		}
+		PRINT_LN("Available GPUs:");
 		VkPhysicalDevice *const vk_phTotalPhysicalDevice = new VkPhysicalDevice[u32TotalPhysicalDeviceCount];
 		CATCH_SIGNAL(vkEnumeratePhysicalDevices(RE_VK_INSTANCE, &u32TotalPhysicalDeviceCount, vk_phTotalPhysicalDevice));
 		std::vector<VkPhysicalDevice> suitablePhysicalDevices;
@@ -299,6 +319,204 @@ namespace RE {
 			if (bGraphicsQueueExists && bPresentQueueExists && bTransferQueueExists)
 				suitablePhysicalDevices.push_back(vk_hPhysicalDevice);
 
+			{ // Prints information about physical device to console
+				VkPhysicalDeviceProperties vk_physicalDeviceProperties;
+				CATCH_SIGNAL(vkGetPhysicalDeviceProperties(vk_hPhysicalDevice, &vk_physicalDeviceProperties));
+				print("\t", vk_physicalDeviceProperties.deviceName, " [", VK_VERSION_MAJOR(vk_physicalDeviceProperties.driverVersion), '.', VK_VERSION_MINOR(vk_physicalDeviceProperties.driverVersion), '.', VK_VERSION_PATCH(vk_physicalDeviceProperties.driverVersion), "] (");
+				switch (vk_physicalDeviceProperties.deviceType) {
+					case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
+						print("integrated GPU");
+						break;
+					case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
+						print("discrete GPU");
+						break;
+					case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU:
+						print("virtual GPU");
+						break;
+					case VK_PHYSICAL_DEVICE_TYPE_CPU:
+						print("CPU");
+						break;
+					default:
+						print("unknown device type");
+						break;
+				}
+				println(") supporting Vulkan ", VK_VERSION_MAJOR(vk_physicalDeviceProperties.apiVersion), '.', VK_VERSION_MINOR(vk_physicalDeviceProperties.apiVersion), '.', VK_VERSION_PATCH(vk_physicalDeviceProperties.apiVersion));
+				println("\t\tAvailable device extensions:");
+				for (uint32_t u32PhysicalDeviceExtensionIndex = 0U; u32PhysicalDeviceExtensionIndex < u32PhysicalDeviceExtensionCount; u32PhysicalDeviceExtensionIndex++)
+					println("\t\t\t", vk_pPhysicalDeviceExtensionProperties[u32PhysicalDeviceExtensionIndex].extensionName, " (", VK_VERSION_MAJOR(vk_pPhysicalDeviceExtensionProperties[u32PhysicalDeviceExtensionIndex].specVersion), '.', VK_VERSION_MINOR(vk_pPhysicalDeviceExtensionProperties[u32PhysicalDeviceExtensionIndex].specVersion), '.', VK_VERSION_PATCH(vk_pPhysicalDeviceExtensionProperties[u32PhysicalDeviceExtensionIndex].specVersion), ")");
+				uint32_t u32PhysicalDeviceLayerCount;
+				CATCH_SIGNAL(vkEnumerateDeviceLayerProperties(vk_hPhysicalDevice, &u32PhysicalDeviceLayerCount, nullptr));
+				VkLayerProperties *vk_pPhysicalDeviceLayerProperties = new VkLayerProperties[u32PhysicalDeviceLayerCount];
+				CATCH_SIGNAL(vkEnumerateDeviceLayerProperties(vk_hPhysicalDevice, &u32PhysicalDeviceLayerCount, vk_pPhysicalDeviceLayerProperties));
+				println("\t\tVulkan layers present on the device:");
+				for (uint32_t u32PhysicalDeviceLayerIndex = 0U; u32PhysicalDeviceLayerIndex < u32PhysicalDeviceLayerCount; u32PhysicalDeviceLayerIndex++)
+					println("\t\t\t", vk_pPhysicalDeviceLayerProperties[u32PhysicalDeviceLayerIndex].layerName, " (", VK_VERSION_MAJOR(vk_pPhysicalDeviceLayerProperties[u32PhysicalDeviceLayerIndex].implementationVersion), '.', VK_VERSION_MINOR(vk_pPhysicalDeviceLayerProperties[u32PhysicalDeviceLayerIndex].implementationVersion), '.', VK_VERSION_PATCH(vk_pPhysicalDeviceLayerProperties[u32PhysicalDeviceLayerIndex].implementationVersion), "): ", vk_pPhysicalDeviceLayerProperties[u32PhysicalDeviceLayerIndex].description);
+				VkPhysicalDeviceFeatures vk_physicalDeviceFeaturesAvailable;
+				CATCH_SIGNAL(vkGetPhysicalDeviceFeatures(vk_hPhysicalDevice, &vk_physicalDeviceFeaturesAvailable));
+				println("\t\tFeatures supported by the GPU device:");
+				println_vkbool32("robustBufferAccess", vk_physicalDeviceFeaturesAvailable.robustBufferAccess);
+				println_vkbool32("fullDrawIndexUint32", vk_physicalDeviceFeaturesAvailable.fullDrawIndexUint32);
+				println_vkbool32("imageCubeArray", vk_physicalDeviceFeaturesAvailable.imageCubeArray);
+				println_vkbool32("independentBlend", vk_physicalDeviceFeaturesAvailable.independentBlend);
+				println_vkbool32("geometryShader", vk_physicalDeviceFeaturesAvailable.geometryShader);
+				println_vkbool32("tessellationShader", vk_physicalDeviceFeaturesAvailable.tessellationShader);
+				println_vkbool32("sampleRateShading", vk_physicalDeviceFeaturesAvailable.sampleRateShading);
+				println_vkbool32("dualSrcBlend", vk_physicalDeviceFeaturesAvailable.dualSrcBlend);
+				println_vkbool32("logicOp", vk_physicalDeviceFeaturesAvailable.logicOp);
+				println_vkbool32("multiDrawIndirect", vk_physicalDeviceFeaturesAvailable.multiDrawIndirect);
+				println_vkbool32("drawIndirectFirstInstance", vk_physicalDeviceFeaturesAvailable.drawIndirectFirstInstance);
+				println_vkbool32("depthClamp", vk_physicalDeviceFeaturesAvailable.depthClamp);
+				println_vkbool32("depthBiasClamp", vk_physicalDeviceFeaturesAvailable.depthBiasClamp);
+				println_vkbool32("fillModeNonSolid", vk_physicalDeviceFeaturesAvailable.fillModeNonSolid);
+				println_vkbool32("depthBounds", vk_physicalDeviceFeaturesAvailable.depthBounds);
+				println_vkbool32("wideLines", vk_physicalDeviceFeaturesAvailable.wideLines);
+				println_vkbool32("largePoints", vk_physicalDeviceFeaturesAvailable.largePoints);
+				println_vkbool32("alphaToOne", vk_physicalDeviceFeaturesAvailable.alphaToOne);
+				println_vkbool32("multiViewport", vk_physicalDeviceFeaturesAvailable.multiViewport);
+				println_vkbool32("samplerAnisotropy", vk_physicalDeviceFeaturesAvailable.samplerAnisotropy);
+				println_vkbool32("textureCompressionETC2", vk_physicalDeviceFeaturesAvailable.textureCompressionETC2);
+				println_vkbool32("textureCompressionASTC_LDR", vk_physicalDeviceFeaturesAvailable.textureCompressionASTC_LDR);
+				println_vkbool32("textureCompressionBC", vk_physicalDeviceFeaturesAvailable.textureCompressionBC);
+				println_vkbool32("occlusionQueryPrecise", vk_physicalDeviceFeaturesAvailable.occlusionQueryPrecise);
+				println_vkbool32("pipelineStatisticsQuery", vk_physicalDeviceFeaturesAvailable.pipelineStatisticsQuery);
+				println_vkbool32("vertexPipelineStoresAndAtomics", vk_physicalDeviceFeaturesAvailable.vertexPipelineStoresAndAtomics);
+				println_vkbool32("fragmentStoresAndAtomics", vk_physicalDeviceFeaturesAvailable.fragmentStoresAndAtomics);
+				println_vkbool32("shaderTessellationAndGeometryPointSize", vk_physicalDeviceFeaturesAvailable.shaderTessellationAndGeometryPointSize);
+				println_vkbool32("shaderImageGatherExtended", vk_physicalDeviceFeaturesAvailable.shaderImageGatherExtended);
+				println_vkbool32("shaderStorageImageExtendedFormats", vk_physicalDeviceFeaturesAvailable.shaderStorageImageExtendedFormats);
+				println_vkbool32("shaderStorageImageMultisample", vk_physicalDeviceFeaturesAvailable.shaderStorageImageMultisample);
+				println_vkbool32("shaderStorageImageReadWithoutFormat", vk_physicalDeviceFeaturesAvailable.shaderStorageImageReadWithoutFormat);
+				println_vkbool32("shaderStorageImageWriteWithoutFormat", vk_physicalDeviceFeaturesAvailable.shaderStorageImageWriteWithoutFormat);
+				println_vkbool32("shaderUniformBufferArrayDynamicIndexing", vk_physicalDeviceFeaturesAvailable.shaderUniformBufferArrayDynamicIndexing);
+				println_vkbool32("shaderSampledImageArrayDynamicIndexing", vk_physicalDeviceFeaturesAvailable.shaderSampledImageArrayDynamicIndexing);
+				println_vkbool32("shaderStorageBufferArrayDynamicIndexing", vk_physicalDeviceFeaturesAvailable.shaderStorageBufferArrayDynamicIndexing);
+				println_vkbool32("shaderStorageImageArrayDynamicIndexing", vk_physicalDeviceFeaturesAvailable.shaderStorageImageArrayDynamicIndexing);
+				println_vkbool32("shaderClipDistance", vk_physicalDeviceFeaturesAvailable.shaderClipDistance);
+				println_vkbool32("shaderCullDistance", vk_physicalDeviceFeaturesAvailable.shaderCullDistance);
+				println_vkbool32("shaderFloat64", vk_physicalDeviceFeaturesAvailable.shaderFloat64);
+				println_vkbool32("shaderInt64", vk_physicalDeviceFeaturesAvailable.shaderInt64);
+				println_vkbool32("shaderInt16", vk_physicalDeviceFeaturesAvailable.shaderInt16);
+				println_vkbool32("shaderResourceResidency", vk_physicalDeviceFeaturesAvailable.shaderResourceResidency);
+				println_vkbool32("shaderResourceMinLod", vk_physicalDeviceFeaturesAvailable.shaderResourceMinLod);
+				println_vkbool32("sparseBinding", vk_physicalDeviceFeaturesAvailable.sparseBinding);
+				println_vkbool32("sparseResidencyBuffer", vk_physicalDeviceFeaturesAvailable.sparseResidencyBuffer);
+				println_vkbool32("sparseResidencyImage2D", vk_physicalDeviceFeaturesAvailable.sparseResidencyImage2D);
+				println_vkbool32("sparseResidencyImage3D", vk_physicalDeviceFeaturesAvailable.sparseResidencyImage3D);
+				println_vkbool32("sparseResidency2Samples", vk_physicalDeviceFeaturesAvailable.sparseResidency2Samples);
+				println_vkbool32("sparseResidency4Samples", vk_physicalDeviceFeaturesAvailable.sparseResidency4Samples);
+				println_vkbool32("sparseResidency8Samples", vk_physicalDeviceFeaturesAvailable.sparseResidency8Samples);
+				println_vkbool32("sparseResidency16Samples", vk_physicalDeviceFeaturesAvailable.sparseResidency16Samples);
+				println_vkbool32("sparseResidencyAliased", vk_physicalDeviceFeaturesAvailable.sparseResidencyAliased);
+				println_vkbool32("variableMultisampleRate", vk_physicalDeviceFeaturesAvailable.variableMultisampleRate);
+				println_vkbool32("inheritedQueries", vk_physicalDeviceFeaturesAvailable.inheritedQueries);
+				println("\t\tGPU limits:");
+				println("\t\t\tmaxImageDimension1D: ", vk_physicalDeviceProperties.limits.maxImageDimension1D);
+				println("\t\t\tmaxImageDimension2D: ", vk_physicalDeviceProperties.limits.maxImageDimension2D);
+				println("\t\t\tmaxImageDimension3D: ", vk_physicalDeviceProperties.limits.maxImageDimension3D);
+				println("\t\t\tmaxImageDimensionCube: ", vk_physicalDeviceProperties.limits.maxImageDimensionCube);
+				println("\t\t\tmaxImageArrayLayers: ", vk_physicalDeviceProperties.limits.maxImageArrayLayers);
+				println("\t\t\tmaxTexelBufferElements: ", vk_physicalDeviceProperties.limits.maxTexelBufferElements);
+				println("\t\t\tmaxUniformBufferRange: ", vk_physicalDeviceProperties.limits.maxUniformBufferRange);
+				println("\t\t\tmaxStorageBufferRange: ", vk_physicalDeviceProperties.limits.maxStorageBufferRange);
+				println("\t\t\tmaxPushConstantsSize: ", vk_physicalDeviceProperties.limits.maxPushConstantsSize);
+				println("\t\t\tmaxMemoryAllocationCount: ", vk_physicalDeviceProperties.limits.maxMemoryAllocationCount);
+				println("\t\t\tmaxSamplerAllocationCount: ", vk_physicalDeviceProperties.limits.maxSamplerAllocationCount);
+				println("\t\t\tbufferImageGranularity: ", vk_physicalDeviceProperties.limits.bufferImageGranularity);
+				println("\t\t\tsparseAddressSpaceSize: ", vk_physicalDeviceProperties.limits.sparseAddressSpaceSize);
+				println("\t\t\tmaxBoundDescriptorSets: ", vk_physicalDeviceProperties.limits.maxBoundDescriptorSets);
+				println("\t\t\tmaxPerStageDescriptorSamplers: ", vk_physicalDeviceProperties.limits.maxPerStageDescriptorSamplers);
+				println("\t\t\tmaxPerStageDescriptorUniformBuffers: ", vk_physicalDeviceProperties.limits.maxPerStageDescriptorUniformBuffers);
+				println("\t\t\tmaxPerStageDescriptorStorageBuffers: ", vk_physicalDeviceProperties.limits.maxPerStageDescriptorStorageBuffers);
+				println("\t\t\tmaxPerStageDescriptorSampledImages: ", vk_physicalDeviceProperties.limits.maxPerStageDescriptorSampledImages);
+				println("\t\t\tmaxPerStageDescriptorStorageImages: ", vk_physicalDeviceProperties.limits.maxPerStageDescriptorStorageImages);
+				println("\t\t\tmaxPerStageDescriptorInputAttachments: ", vk_physicalDeviceProperties.limits.maxPerStageDescriptorInputAttachments);
+				println("\t\t\tmaxPerStageResources: ", vk_physicalDeviceProperties.limits.maxPerStageResources);
+				println("\t\t\tmaxDescriptorSetSamplers: ", vk_physicalDeviceProperties.limits.maxDescriptorSetSamplers);
+				println("\t\t\tmaxDescriptorSetUniformBuffers: ", vk_physicalDeviceProperties.limits.maxDescriptorSetUniformBuffers);
+				println("\t\t\tmaxDescriptorSetUniformBuffersDynamic: ", vk_physicalDeviceProperties.limits.maxDescriptorSetUniformBuffersDynamic);
+				println("\t\t\tmaxDescriptorSetStorageBuffers: ", vk_physicalDeviceProperties.limits.maxDescriptorSetStorageBuffers);
+				println("\t\t\tmaxDescriptorSetStorageBuffersDynamic: ", vk_physicalDeviceProperties.limits.maxDescriptorSetStorageBuffersDynamic);
+				println("\t\t\tmaxDescriptorSetSampledImages: ", vk_physicalDeviceProperties.limits.maxDescriptorSetSampledImages);
+				println("\t\t\tmaxDescriptorSetStorageImages: ", vk_physicalDeviceProperties.limits.maxDescriptorSetStorageImages);
+				println("\t\t\tmaxDescriptorSetInputAttachments: ", vk_physicalDeviceProperties.limits.maxDescriptorSetInputAttachments);
+				println("\t\t\tmaxVertexInputAttributes: ", vk_physicalDeviceProperties.limits.maxVertexInputAttributes);
+				println("\t\t\tmaxVertexInputBindings: ", vk_physicalDeviceProperties.limits.maxVertexInputBindings);
+				println("\t\t\tmaxVertexInputAttributeOffset: ", vk_physicalDeviceProperties.limits.maxVertexInputAttributeOffset);
+				println("\t\t\tmaxVertexInputBindingStride: ", vk_physicalDeviceProperties.limits.maxVertexInputBindingStride);
+				println("\t\t\tmaxVertexOutputComponents: ", vk_physicalDeviceProperties.limits.maxVertexOutputComponents);
+				println("\t\t\tmaxTessellationGenerationLevel: ", vk_physicalDeviceProperties.limits.maxTessellationGenerationLevel);
+				println("\t\t\tmaxTessellationPatchSize: ", vk_physicalDeviceProperties.limits.maxTessellationPatchSize);
+				println("\t\t\tmaxTessellationControlPerVertexInputComponents: ", vk_physicalDeviceProperties.limits.maxTessellationControlPerVertexInputComponents);
+				println("\t\t\tmaxTessellationControlPerVertexOutputComponents: ", vk_physicalDeviceProperties.limits.maxTessellationControlPerVertexOutputComponents);
+				println("\t\t\tmaxTessellationControlPerPatchOutputComponents: ", vk_physicalDeviceProperties.limits.maxTessellationControlPerPatchOutputComponents);
+				println("\t\t\tmaxTessellationControlTotalOutputComponents: ", vk_physicalDeviceProperties.limits.maxTessellationControlTotalOutputComponents);
+				println("\t\t\tmaxTessellationEvaluationInputComponents: ", vk_physicalDeviceProperties.limits.maxTessellationEvaluationInputComponents);
+				println("\t\t\tmaxTessellationEvaluationOutputComponents: ", vk_physicalDeviceProperties.limits.maxTessellationEvaluationOutputComponents);
+				println("\t\t\tmaxGeometryShaderInvocations: ", vk_physicalDeviceProperties.limits.maxGeometryShaderInvocations);
+				println("\t\t\tmaxGeometryInputComponents: ", vk_physicalDeviceProperties.limits.maxGeometryInputComponents);
+				println("\t\t\tmaxGeometryOutputComponents: ", vk_physicalDeviceProperties.limits.maxGeometryOutputComponents);
+				println("\t\t\tmaxGeometryOutputVertices: ", vk_physicalDeviceProperties.limits.maxGeometryOutputVertices);
+				println("\t\t\tmaxGeometryTotalOutputComponents: ", vk_physicalDeviceProperties.limits.maxGeometryTotalOutputComponents);
+				println("\t\t\tmaxFragmentInputComponents: ", vk_physicalDeviceProperties.limits.maxFragmentInputComponents);
+				println("\t\t\tmaxFragmentOutputAttachments: ", vk_physicalDeviceProperties.limits.maxFragmentOutputAttachments);
+				println("\t\t\tmaxFragmentDualSrcAttachments: ", vk_physicalDeviceProperties.limits.maxFragmentDualSrcAttachments);
+				println("\t\t\tmaxFragmentCombinedOutputResources: ", vk_physicalDeviceProperties.limits.maxFragmentCombinedOutputResources);
+				println("\t\t\tmaxComputeSharedMemorySize: ", vk_physicalDeviceProperties.limits.maxComputeSharedMemorySize);
+				println("\t\t\tmaxComputeWorkGroupCount: ", array_to_string(vk_physicalDeviceProperties.limits.maxComputeWorkGroupCount, sizeof(vk_physicalDeviceProperties.limits.maxComputeWorkGroupCount) / sizeof(vk_physicalDeviceProperties.limits.maxComputeWorkGroupCount[0])));
+				println("\t\t\tmaxComputeWorkGroupInvocations: ", vk_physicalDeviceProperties.limits.maxComputeWorkGroupInvocations);
+				println("\t\t\tmaxComputeWorkGroupSize: ", array_to_string(vk_physicalDeviceProperties.limits.maxComputeWorkGroupSize, sizeof(vk_physicalDeviceProperties.limits.maxComputeWorkGroupSize) / sizeof(vk_physicalDeviceProperties.limits.maxComputeWorkGroupSize[0])));
+				println("\t\t\tsubPixelPrecisionBits: ", vk_physicalDeviceProperties.limits.subPixelPrecisionBits);
+				println("\t\t\tsubTexelPrecisionBits: ", vk_physicalDeviceProperties.limits.subTexelPrecisionBits);
+				println("\t\t\tmipmapPrecisionBits: ", vk_physicalDeviceProperties.limits.mipmapPrecisionBits);
+				println("\t\t\tmaxDrawIndexedIndexValue: ", vk_physicalDeviceProperties.limits.maxDrawIndexedIndexValue);
+				println("\t\t\tmaxDrawIndirectCount: ", vk_physicalDeviceProperties.limits.maxDrawIndirectCount);
+				println("\t\t\tmaxSamplerLodBias: ", vk_physicalDeviceProperties.limits.maxSamplerLodBias);
+				println("\t\t\tmaxSamplerAnisotropy: ", vk_physicalDeviceProperties.limits.maxSamplerAnisotropy);
+				println("\t\t\tmaxViewports: ", vk_physicalDeviceProperties.limits.maxViewports);
+				println("\t\t\tmaxViewportDimensions: ", array_to_string(vk_physicalDeviceProperties.limits.maxViewportDimensions, sizeof(vk_physicalDeviceProperties.limits.maxViewportDimensions) / sizeof(vk_physicalDeviceProperties.limits.maxViewportDimensions[0])));
+				println("\t\t\tviewportBoundsRange: ", array_to_string(vk_physicalDeviceProperties.limits.viewportBoundsRange, sizeof(vk_physicalDeviceProperties.limits.viewportBoundsRange) / sizeof(vk_physicalDeviceProperties.limits.viewportBoundsRange[0])));
+				println("\t\t\tviewportSubPixelBits: ", vk_physicalDeviceProperties.limits.viewportSubPixelBits);
+				println("\t\t\tminMemoryMapAlignment: ", vk_physicalDeviceProperties.limits.minMemoryMapAlignment);
+				println("\t\t\tminTexelBufferOffsetAlignment: ", vk_physicalDeviceProperties.limits.minTexelBufferOffsetAlignment);
+				println("\t\t\tminUniformBufferOffsetAlignment: ", vk_physicalDeviceProperties.limits.minUniformBufferOffsetAlignment);
+				println("\t\t\tminStorageBufferOffsetAlignment: ", vk_physicalDeviceProperties.limits.minStorageBufferOffsetAlignment);
+				println("\t\t\tminTexelOffset: ", vk_physicalDeviceProperties.limits.minTexelOffset);
+				println("\t\t\tmaxTexelOffset: ", vk_physicalDeviceProperties.limits.maxTexelOffset);
+				println("\t\t\tminTexelGatherOffset: ", vk_physicalDeviceProperties.limits.minTexelGatherOffset);
+				println("\t\t\tmaxTexelGatherOffset: ", vk_physicalDeviceProperties.limits.maxTexelGatherOffset);
+				println("\t\t\tminInterpolationOffset: ", vk_physicalDeviceProperties.limits.minInterpolationOffset);
+				println("\t\t\tmaxInterpolationOffset: ", vk_physicalDeviceProperties.limits.maxInterpolationOffset);
+				println("\t\t\tsubPixelInterpolationOffsetBits: ", vk_physicalDeviceProperties.limits.subPixelInterpolationOffsetBits);
+				println("\t\t\tmaxFramebufferWidth: ", vk_physicalDeviceProperties.limits.maxFramebufferWidth);
+				println("\t\t\tmaxFramebufferHeight: ", vk_physicalDeviceProperties.limits.maxFramebufferHeight);
+				println("\t\t\tmaxFramebufferLayers: ", vk_physicalDeviceProperties.limits.maxFramebufferLayers);
+				println("\t\t\tframebufferColorSampleCounts: ", bitmask_to_string(vk_physicalDeviceProperties.limits.framebufferColorSampleCounts, true));
+				println("\t\t\tframebufferDepthSampleCounts: ", bitmask_to_string(vk_physicalDeviceProperties.limits.framebufferDepthSampleCounts, true));
+				println("\t\t\tframebufferStencilSampleCounts: ", bitmask_to_string(vk_physicalDeviceProperties.limits.framebufferStencilSampleCounts, true));
+				println("\t\t\tframebufferNoAttachmentsSampleCounts: ", bitmask_to_string(vk_physicalDeviceProperties.limits.framebufferNoAttachmentsSampleCounts, true));
+				println("\t\t\tmaxColorAttachments: ", vk_physicalDeviceProperties.limits.maxColorAttachments);
+				println("\t\t\tsampledImageColorSampleCounts: ", bitmask_to_string(vk_physicalDeviceProperties.limits.sampledImageColorSampleCounts, true));
+				println("\t\t\tsampledImageIntegerSampleCounts: ", bitmask_to_string(vk_physicalDeviceProperties.limits.sampledImageIntegerSampleCounts, true));
+				println("\t\t\tsampledImageDepthSampleCounts: ", bitmask_to_string(vk_physicalDeviceProperties.limits.sampledImageDepthSampleCounts, true));
+				println("\t\t\tsampledImageStencilSampleCounts: ", bitmask_to_string(vk_physicalDeviceProperties.limits.sampledImageStencilSampleCounts, true));
+				println("\t\t\tstorageImageSampleCounts: ", bitmask_to_string(vk_physicalDeviceProperties.limits.storageImageSampleCounts, true));
+				println("\t\t\tmaxSampleMaskWords: ", vk_physicalDeviceProperties.limits.maxSampleMaskWords);
+				println_vkbool32("timestampComputeAndGraphics: ", vk_physicalDeviceProperties.limits.timestampComputeAndGraphics);
+				println("\t\t\ttimestampPeriod: ", vk_physicalDeviceProperties.limits.timestampPeriod);
+				println("\t\t\tmaxClipDistances: ", vk_physicalDeviceProperties.limits.maxClipDistances);
+				println("\t\t\tmaxCullDistances: ", vk_physicalDeviceProperties.limits.maxCullDistances);
+				println("\t\t\tmaxCombinedClipAndCullDistances: ", vk_physicalDeviceProperties.limits.maxCombinedClipAndCullDistances);
+				println("\t\t\tdiscreteQueuePriorities: ", vk_physicalDeviceProperties.limits.discreteQueuePriorities);
+				println("\t\t\tpointSizeRange: ", array_to_string(vk_physicalDeviceProperties.limits.pointSizeRange, sizeof(vk_physicalDeviceProperties.limits.pointSizeRange) / sizeof(vk_physicalDeviceProperties.limits.pointSizeRange[0])));
+				println("\t\t\tlineWidthRange: ", array_to_string(vk_physicalDeviceProperties.limits.lineWidthRange, sizeof(vk_physicalDeviceProperties.limits.lineWidthRange) / sizeof(vk_physicalDeviceProperties.limits.lineWidthRange[0])));
+				println("\t\t\tpointSizeGranularity: ", vk_physicalDeviceProperties.limits.pointSizeGranularity);
+				println("\t\t\tlineWidthGranularity: ", vk_physicalDeviceProperties.limits.lineWidthGranularity);
+				println_vkbool32("strictLines: ", vk_physicalDeviceProperties.limits.strictLines);
+				println_vkbool32("standardSampleLocations: ", vk_physicalDeviceProperties.limits.standardSampleLocations);
+				println("\t\t\toptimalBufferCopyOffsetAlignment: ", vk_physicalDeviceProperties.limits.optimalBufferCopyOffsetAlignment);
+				println("\t\t\toptimalBufferCopyRowPitchAlignment: ", vk_physicalDeviceProperties.limits.optimalBufferCopyRowPitchAlignment);
+				println("\t\t\tnonCoherentAtomSize: ", vk_physicalDeviceProperties.limits.nonCoherentAtomSize);
+			} // End of printing information about physical device to console
 			delete[] vk_pPhysicalDeviceExtensionProperties;
 			delete[] vk_pPhysicalDeviceQueueFamilyProperties;
 		}
@@ -397,18 +615,21 @@ namespace RE {
 			return false;
 		}
 
+		VkQueue vk_hQueues[RE_VK_QUEUE_COUNT];
 		CATCH_SIGNAL(vkGetDeviceQueue(vk_hDevice, graphicsQueueIndex.value(), 0, &vk_hQueues[RE_VK_QUEUE_GRAPHICS_INDEX]));
-		u32QueueIndices[RE_VK_QUEUE_GRAPHICS_INDEX] = graphicsQueueIndex.value();
+		pDeviceQueues[RE_VK_QUEUE_GRAPHICS_INDEX] = new Rendering_Queue(vk_hQueues[RE_VK_QUEUE_GRAPHICS_INDEX], graphicsQueueIndex.value());
 		CATCH_SIGNAL(vkGetDeviceQueue(vk_hDevice, presentQueueIndex.value(), 0, &vk_hQueues[RE_VK_QUEUE_PRESENT_INDEX]));
-		u32QueueIndices[RE_VK_QUEUE_PRESENT_INDEX] = presentQueueIndex.value();
+		pDeviceQueues[RE_VK_QUEUE_PRESENT_INDEX] = new Rendering_Queue(vk_hQueues[RE_VK_QUEUE_PRESENT_INDEX], presentQueueIndex.value());
 		CATCH_SIGNAL(vkGetDeviceQueue(vk_hDevice, transferQueueIndex.value(), 0, &vk_hQueues[RE_VK_QUEUE_TRANSFER_INDEX]));
-		u32QueueIndices[RE_VK_QUEUE_TRANSFER_INDEX] = transferQueueIndex.value();
+		pDeviceQueues[RE_VK_QUEUE_TRANSFER_INDEX] = new Rendering_Queue(vk_hQueues[RE_VK_QUEUE_TRANSFER_INDEX], transferQueueIndex.value());
 		return true;
 	}
 	
 	void RenderSystem::destroy_device() {
 		if (!vk_hDevice)
 			return;
+		for (uint8_t u8QueueIndex = 0U; u8QueueIndex < RE_VK_QUEUE_COUNT; u8QueueIndex++)
+			DELETE_SAFELY(pDeviceQueues[u8QueueIndex]);
 		CATCH_SIGNAL(vkDestroyDevice(vk_hDevice, nullptr));
 		vk_hDevice = VK_NULL_HANDLE;
 	}
@@ -437,8 +658,8 @@ namespace RE {
 			vk_swapchainCreateInfo.imageExtent = vk_swapchainResolution;
 			vk_swapchainCreateInfo.imageArrayLayers = 1U;
 			vk_swapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-			const uint32_t u32SwapchainRelevantQueueIndices[2] = {u32QueueIndices[RE_VK_QUEUE_GRAPHICS_INDEX], u32QueueIndices[RE_VK_QUEUE_PRESENT_INDEX]};
-			if (u32QueueIndices[RE_VK_QUEUE_GRAPHICS_INDEX] != u32QueueIndices[RE_VK_QUEUE_PRESENT_INDEX]) {
+			const uint32_t u32SwapchainRelevantQueueIndices[2] = {pDeviceQueues[RE_VK_QUEUE_GRAPHICS_INDEX]->u32QueueIndex, pDeviceQueues[RE_VK_QUEUE_PRESENT_INDEX]->u32QueueIndex};
+			if (pDeviceQueues[RE_VK_QUEUE_GRAPHICS_INDEX]->u32QueueIndex != pDeviceQueues[RE_VK_QUEUE_PRESENT_INDEX]->u32QueueIndex) {
 				vk_swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
 				vk_swapchainCreateInfo.queueFamilyIndexCount = 2U;
 				vk_swapchainCreateInfo.pQueueFamilyIndices = u32SwapchainRelevantQueueIndices;
@@ -625,7 +846,7 @@ namespace RE {
 	}
 
 	bool RenderSystem::create_vertex_buffer() {
-		pVertexBuffer = new Rendering_Buffer(sizeof(REvertex) * RE_VK_VERTEX_COUNT, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE, 0U, nullptr, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+		pVertexBuffer = new Rendering_Buffer(sizeof(vertices[0]) * RE_VK_VERTEX_COUNT, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE, 0U, nullptr, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 		if (!pVertexBuffer->is_valid()) {
 			RE_FATAL_ERROR("Failed creating vertex staging buffer in Vulkan");
 			DELETE_SAFELY(pVertexBuffer);
@@ -644,11 +865,11 @@ namespace RE {
 		for (uint32_t u32CommandPoolCreateIndex = 0U; u32CommandPoolCreateIndex < RE_VK_COMMAND_POOL_COUNT; u32CommandPoolCreateIndex++) {
 			switch (u32CommandPoolCreateIndex) {
 				case RE_VK_COMMAND_POOL_GRAPHICS_INDEX:
-					pCommandPools[u32CommandPoolCreateIndex] = new Rendering_CommandPool(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, u32QueueIndices[RE_VK_QUEUE_GRAPHICS_INDEX]);
+					pCommandPools[u32CommandPoolCreateIndex] = new Rendering_CommandPool(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, pDeviceQueues[RE_VK_QUEUE_GRAPHICS_INDEX]->u32QueueIndex);
 					break;
 				case RE_VK_COMMAND_POOL_TRANSFER_INDEX:
-					//pCommandPools[u32CommandPoolCreateIndex] = new Rendering_CommandPool(VK_COMMAND_POOL_CREATE_TRANSIENT_BIT, u32QueueIndices[RE_VK_QUEUE_TRANSFER_INDEX]);
-					pCommandPools[u32CommandPoolCreateIndex] = new Rendering_CommandPool(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, u32QueueIndices[RE_VK_QUEUE_TRANSFER_INDEX]);
+					//pCommandPools[u32CommandPoolCreateIndex] = new Rendering_CommandPool(VK_COMMAND_POOL_CREATE_TRANSIENT_BIT, pDeviceQueues[RE_VK_QUEUE_TRANSFER_INDEX]->u32QueueIndex);
+					pCommandPools[u32CommandPoolCreateIndex] = new Rendering_CommandPool(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, pDeviceQueues[RE_VK_QUEUE_TRANSFER_INDEX]->u32QueueIndex);
 					break;
 			}
 			if (!pCommandPools[u32CommandPoolCreateIndex]->is_valid()) {
@@ -670,7 +891,7 @@ namespace RE {
 
 		ppCommandBuffersTransfer = new Rendering_CommandBuffer*[RE_VK_COMMAND_BUFFER_TRANSFER_COUNT];
 		if (!CATCH_SIGNAL_AND_RETURN(alloc_vk_command_buffers(VK_COMMAND_BUFFER_LEVEL_PRIMARY, pCommandPools[RE_VK_COMMAND_POOL_TRANSFER_INDEX], RE_VK_COMMAND_BUFFER_TRANSFER_COUNT, ppCommandBuffersTransfer), bool)) {
-			if (u32QueueIndices[RE_VK_QUEUE_GRAPHICS_INDEX] != u32QueueIndices[RE_VK_QUEUE_TRANSFER_INDEX])
+			if (pDeviceQueues[RE_VK_QUEUE_GRAPHICS_INDEX]->u32QueueIndex != pDeviceQueues[RE_VK_QUEUE_TRANSFER_INDEX]->u32QueueIndex)
 				RE_FATAL_ERROR("Failed allocating Vulkan transfer command buffer(s) for the transfer queue");
 			else
 				RE_FATAL_ERROR("Failed allocating Vulkan transfer command buffer(s) for the graphics queue");
@@ -768,11 +989,10 @@ namespace RE {
 		Rendering_Fence *pCurrentFence = pFences[is_bit_true<uint8_t>(u8Booleans, USE_OTHER_FRAME_INDEX)];
 		VkSemaphore vk_waitForImageAvailableSemaphore = pSemaphores[is_bit_true<uint8_t>(u8Booleans, USE_OTHER_FRAME_INDEX) * RE_VK_SEMAPHORES_PER_FRAME + RE_VK_SEMAPHORE_IMAGE_AVAILABLE_INDEX]->get_semaphore();
 		VkSemaphore vk_waitForRenderingFinishedSemaphore = pSemaphores[is_bit_true<uint8_t>(u8Booleans, USE_OTHER_FRAME_INDEX) * RE_VK_SEMAPHORES_PER_FRAME + RE_VK_SEMAPHORE_RENDERING_FINISHED_INDEX]->get_semaphore();
-		VkFence vk_currentFence = pCurrentFence->get_fence();
 		CATCH_SIGNAL(pCurrentFence->wait_for_and_reset_fence());
 		vertices[14] = (InputMgr::pInstance->get_cursor_x() / static_cast<float>(Window::pInstance->get_size()[0])) * 2.0f - 1.0f;
 		vertices[15] = (InputMgr::pInstance->get_cursor_y() / static_cast<float>(Window::pInstance->get_size()[1])) * 2.0f - 1.0f;
-		upload_to_vertex_buffer(vertices, RE_VK_VERTEX_TOTAL_SIZE * 3U);
+		upload_to_vertex_buffer();
 		if (is_bit_true<uint8_t>(u8Booleans, SWAPCHAIN_DIRTY_INDEX)) {
 			recreate_swapchain();
 			set_bit<uint8_t>(u8Booleans, SWAPCHAIN_DIRTY_INDEX, false);
@@ -793,36 +1013,14 @@ namespace RE {
 		}
 		VkPipelineStageFlags vk_pipelineStageFlags[1] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
 		VkCommandBuffer vk_graphicsCommandBuffersToSubmit[1] = {ppCommandBuffersGraphics[u32NextSwapchainImageIndex]->get_command_buffer()};
-		VkSubmitInfo vk_queueGraphicsSubmitInfo = {};
-		vk_queueGraphicsSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-		vk_queueGraphicsSubmitInfo.waitSemaphoreCount = 1U;
-		vk_queueGraphicsSubmitInfo.pWaitSemaphores = &vk_waitForImageAvailableSemaphore;
-		vk_queueGraphicsSubmitInfo.pWaitDstStageMask = vk_pipelineStageFlags;
-		vk_queueGraphicsSubmitInfo.commandBufferCount = 1U;
-		vk_queueGraphicsSubmitInfo.pCommandBuffers = vk_graphicsCommandBuffersToSubmit;
-		vk_queueGraphicsSubmitInfo.signalSemaphoreCount = 1U;
-		vk_queueGraphicsSubmitInfo.pSignalSemaphores = &vk_waitForRenderingFinishedSemaphore;
-		if (!CHECK_VK_RESULT(vkQueueSubmit(vk_hQueues[RE_VK_QUEUE_GRAPHICS_INDEX], 1U, &vk_queueGraphicsSubmitInfo, vk_currentFence))) {
-			RE_FATAL_ERROR("Failed submitting data to the graphics queue in Vulkan");
-			return;
-		}
-		VkPresentInfoKHR vk_queuePresentSubmitInfo = {};
-		vk_queuePresentSubmitInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-		vk_queuePresentSubmitInfo.waitSemaphoreCount = 1U;
-		vk_queuePresentSubmitInfo.pWaitSemaphores = &vk_waitForRenderingFinishedSemaphore;
-		vk_queuePresentSubmitInfo.swapchainCount = 1U;
-		vk_queuePresentSubmitInfo.pSwapchains = &vk_hSwapchain;
-		vk_queuePresentSubmitInfo.pImageIndices = &u32NextSwapchainImageIndex;
-		CATCH_SIGNAL(vkQueuePresentKHR(vk_hQueues[RE_VK_QUEUE_PRESENT_INDEX], &vk_queuePresentSubmitInfo));
+		pDeviceQueues[RE_VK_QUEUE_GRAPHICS_INDEX]->submit_to_queue(1U, &vk_waitForImageAvailableSemaphore, vk_pipelineStageFlags, 1U, vk_graphicsCommandBuffersToSubmit, 1U, &vk_waitForRenderingFinishedSemaphore, *pCurrentFence);
+		pDeviceQueues[RE_VK_QUEUE_PRESENT_INDEX]->submit_to_present_queue(1U, &vk_waitForRenderingFinishedSemaphore, 1U, &vk_hSwapchain, &u32NextSwapchainImageIndex);
 
 		set_bit<uint8_t>(u8Booleans, USE_OTHER_FRAME_INDEX, !is_bit_true<uint8_t>(u8Booleans, USE_OTHER_FRAME_INDEX));
 	}
 
-	void RenderSystem::upload_to_vertex_buffer(const REvertex *const pNewVertexBufferData, const uint32_t u32VertexCount) {
-		void* pData;
-		CATCH_SIGNAL(vkMapMemory(vk_hDevice, *pVertexBuffer, 0UL, u32VertexCount * RE_VK_VERTEX_TOTAL_SIZE_BYTES, 0, &pData));
-		std::memcpy(pData, pNewVertexBufferData, u32VertexCount * RE_VK_VERTEX_TOTAL_SIZE_BYTES);
-		CATCH_SIGNAL(vkUnmapMemory(vk_hDevice, *pVertexBuffer));
+	void RenderSystem::upload_to_vertex_buffer() {
+		pVertexBuffer->upload_data(vertices, RE_VK_VERTEX_TOTAL_SIZE_BYTES * 3U);
 	}
 
 	void RenderSystem::window_resize_event() {

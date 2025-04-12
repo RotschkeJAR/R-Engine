@@ -66,6 +66,10 @@ namespace RE {
 		delete[] vk_phSemaphoresToWaitFor;
 	}
 
+	void Rendering_Queue::wait_for_idle_queue() const {
+		CATCH_SIGNAL(vkQueueWaitIdle(vk_hQueue));
+	}
+
 	VkQueue Rendering_Queue::get_queue() const {
 		return vk_hQueue;
 	}

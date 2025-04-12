@@ -348,9 +348,10 @@ namespace RE {
 				CATCH_SIGNAL(vkEnumerateDeviceLayerProperties(vk_hPhysicalDevice, &u32PhysicalDeviceLayerCount, nullptr));
 				VkLayerProperties *vk_pPhysicalDeviceLayerProperties = new VkLayerProperties[u32PhysicalDeviceLayerCount];
 				CATCH_SIGNAL(vkEnumerateDeviceLayerProperties(vk_hPhysicalDevice, &u32PhysicalDeviceLayerCount, vk_pPhysicalDeviceLayerProperties));
-				println("\t\tVulkan layers present on the device:");
+				println("\t\tVulkan layers present on the device (deprecated):");
 				for (uint32_t u32PhysicalDeviceLayerIndex = 0U; u32PhysicalDeviceLayerIndex < u32PhysicalDeviceLayerCount; u32PhysicalDeviceLayerIndex++)
 					println("\t\t\t", vk_pPhysicalDeviceLayerProperties[u32PhysicalDeviceLayerIndex].layerName, " (", VK_VERSION_MAJOR(vk_pPhysicalDeviceLayerProperties[u32PhysicalDeviceLayerIndex].implementationVersion), '.', VK_VERSION_MINOR(vk_pPhysicalDeviceLayerProperties[u32PhysicalDeviceLayerIndex].implementationVersion), '.', VK_VERSION_PATCH(vk_pPhysicalDeviceLayerProperties[u32PhysicalDeviceLayerIndex].implementationVersion), "): ", vk_pPhysicalDeviceLayerProperties[u32PhysicalDeviceLayerIndex].description);
+				delete[] vk_pPhysicalDeviceLayerProperties;
 				VkPhysicalDeviceFeatures vk_physicalDeviceFeaturesAvailable;
 				CATCH_SIGNAL(vkGetPhysicalDeviceFeatures(vk_hPhysicalDevice, &vk_physicalDeviceFeaturesAvailable));
 				println("\t\tFeatures supported by the GPU device:");

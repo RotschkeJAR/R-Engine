@@ -21,6 +21,7 @@ namespace RE {
 			void submit_to_present_queue(const VkPresentInfoKHR *vk_pPresentInfo) const;
 			void submit_to_present_queue(const uint32_t u32SemaphoresToWaitForCount, const VkSemaphore *vk_phSemaphoresToWaitFor, const uint32_t u32SwapchainCount, const VkSwapchainKHR *vk_phSwapchains, const uint32_t *pu32SwapchainImageIndices) const;
 			void submit_to_present_queue(const uint32_t u32SemaphoresToWaitForCount, const Rendering_Semaphore *pSemaphoresToWaitFor, const uint32_t u32SwapchainCount, const VkSwapchainKHR *vk_phSwapchains, const uint32_t *pu32SwapchainImageIndices) const;
+			void wait_for_idle_queue() const;
 			VkQueue get_queue() const;
 			bool is_valid() const;
 

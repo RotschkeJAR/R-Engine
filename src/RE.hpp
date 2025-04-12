@@ -189,6 +189,8 @@ namespace RE {
 
 	template <class... T>
 	void print(T... content) {
+		if constexpr (sizeof...(content) == 0)
+			return;
 		([&]() {
 			if constexpr (std::is_same_v<T, REubyte>)
 				std::cout << static_cast<REushort>(content);

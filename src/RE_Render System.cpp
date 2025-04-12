@@ -265,63 +265,29 @@ namespace RE {
 		for (uint32_t u32PhysicalDeviceIndex = 0U; u32PhysicalDeviceIndex < u32TotalPhysicalDeviceCount; u32PhysicalDeviceIndex++) {
 			const VkPhysicalDevice vk_hPhysicalDevice = vk_phTotalPhysicalDevice[u32PhysicalDeviceIndex];
 
-			// Check if there are surface formats defined
-			uint32_t u32PhysicalDeviceSurfaceFormatCount;
-			CATCH_SIGNAL(vkGetPhysicalDeviceSurfaceFormatsKHR(vk_hPhysicalDevice, vk_hSurface, &u32PhysicalDeviceSurfaceFormatCount, nullptr));
-			if (!u32PhysicalDeviceSurfaceFormatCount)
-				continue;
+			// Fetch general information about the GPU
+			VkPhysicalDeviceProperties vk_physicalDeviceProperties;
+			CATCH_SIGNAL(vkGetPhysicalDeviceProperties(vk_hPhysicalDevice, &vk_physicalDeviceProperties));
 
-			// Check if there are present modes defined
-			uint32_t u32PhysicalDevicePresentModeCount;
-			CATCH_SIGNAL(vkGetPhysicalDeviceSurfacePresentModesKHR(vk_hPhysicalDevice, vk_hSurface, &u32PhysicalDevicePresentModeCount, nullptr));
-			if (!u32PhysicalDevicePresentModeCount)
-				continue;
-
-			// Check if the required extensions exist
+			// Fetch extensions-data about the GPU
 			uint32_t u32PhysicalDeviceExtensionCount;
 			CATCH_SIGNAL(vkEnumerateDeviceExtensionProperties(vk_hPhysicalDevice, nullptr, &u32PhysicalDeviceExtensionCount, nullptr));
-			if (!u32PhysicalDeviceExtensionCount)
-				continue;
 			VkExtensionProperties *const vk_pPhysicalDeviceExtensionProperties = new VkExtensionProperties[u32PhysicalDeviceExtensionCount];
 			CATCH_SIGNAL(vkEnumerateDeviceExtensionProperties(vk_hPhysicalDevice, nullptr, &u32PhysicalDeviceExtensionCount, vk_pPhysicalDeviceExtensionProperties));
-			bool bSwapchainExtists = false;
-			for (uint32_t u32PhysicalDeviceExtensionIndex = 0U; u32PhysicalDeviceExtensionIndex < u32PhysicalDeviceExtensionCount; u32PhysicalDeviceExtensionIndex++) {
-				if (!bSwapchainExtists && std::strcmp(vk_pPhysicalDeviceExtensionProperties[u32PhysicalDeviceExtensionIndex].extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME) == 0)
-					bSwapchainExtists = true;
-				if (bSwapchainExtists)
-					break;
-			}
-			if (!bSwapchainExtists) {
-				delete[] vk_pPhysicalDeviceExtensionProperties;
-				continue;
-			}
 
-			// Check if required queues exist
+			// Fetch queue-data about the GPU
 			uint32_t u32PhysicalDeviceQueueFamilyCount;
 			CATCH_SIGNAL(vkGetPhysicalDeviceQueueFamilyProperties(vk_hPhysicalDevice, &u32PhysicalDeviceQueueFamilyCount, nullptr));
 			VkQueueFamilyProperties *const vk_pPhysicalDeviceQueueFamilyProperties = new VkQueueFamilyProperties[u32PhysicalDeviceQueueFamilyCount];
 			CATCH_SIGNAL(vkGetPhysicalDeviceQueueFamilyProperties(vk_hPhysicalDevice, &u32PhysicalDeviceQueueFamilyCount, vk_pPhysicalDeviceQueueFamilyProperties));
-			bool bGraphicsQueueExists = false, bPresentQueueExists = false, bTransferQueueExists = false;
-			for (uint32_t u32PhysicalDeviceQueueFamilyIndex = 0U; u32PhysicalDeviceQueueFamilyIndex < u32PhysicalDeviceQueueFamilyCount; u32PhysicalDeviceQueueFamilyIndex++) {
-				if (!bPresentQueueExists) {
-					VkBool32 surfaceSupportExists;
-					CATCH_SIGNAL(vkGetPhysicalDeviceSurfaceSupportKHR(vk_hPhysicalDevice, u32PhysicalDeviceQueueFamilyIndex, vk_hSurface, &surfaceSupportExists));
-					if (surfaceSupportExists)
-						bPresentQueueExists = true;
-				}
-				if (!bGraphicsQueueExists && (vk_pPhysicalDeviceQueueFamilyProperties[u32PhysicalDeviceQueueFamilyIndex].queueFlags & VK_QUEUE_GRAPHICS_BIT))
-					bGraphicsQueueExists = true;
-				if (!bTransferQueueExists && (vk_pPhysicalDeviceQueueFamilyProperties[u32PhysicalDeviceQueueFamilyIndex].queueFlags & VK_QUEUE_TRANSFER_BIT))
-					bTransferQueueExists = true;
-				if (bGraphicsQueueExists && bPresentQueueExists && bTransferQueueExists)
-					break;
-			}
-			if (bGraphicsQueueExists && bPresentQueueExists && bTransferQueueExists)
-				suitablePhysicalDevices.push_back(vk_hPhysicalDevice);
+
+#define DISCARD_DEVICE() ([&]() { \
+			delete[] vk_pPhysicalDeviceExtensionProperties; \
+			delete[] vk_pPhysicalDeviceQueueFamilyProperties; \
+			println_colored(append_to_string("\tPhysical Vulkan device ", vk_physicalDeviceProperties.deviceName, " has been discarded!").c_str(), RE_TERMINAL_COLOR_RED, false, true); \
+		}) ()
 
 			{ // Prints information about physical device to console
-				VkPhysicalDeviceProperties vk_physicalDeviceProperties;
-				CATCH_SIGNAL(vkGetPhysicalDeviceProperties(vk_hPhysicalDevice, &vk_physicalDeviceProperties));
 				print("\t", vk_physicalDeviceProperties.deviceName, " [", VK_VERSION_MAJOR(vk_physicalDeviceProperties.driverVersion), '.', VK_VERSION_MINOR(vk_physicalDeviceProperties.driverVersion), '.', VK_VERSION_PATCH(vk_physicalDeviceProperties.driverVersion), "] (");
 				switch (vk_physicalDeviceProperties.deviceType) {
 					case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
@@ -352,6 +318,44 @@ namespace RE {
 				for (uint32_t u32PhysicalDeviceLayerIndex = 0U; u32PhysicalDeviceLayerIndex < u32PhysicalDeviceLayerCount; u32PhysicalDeviceLayerIndex++)
 					println("\t\t\t", vk_pPhysicalDeviceLayerProperties[u32PhysicalDeviceLayerIndex].layerName, " (", VK_VERSION_MAJOR(vk_pPhysicalDeviceLayerProperties[u32PhysicalDeviceLayerIndex].implementationVersion), '.', VK_VERSION_MINOR(vk_pPhysicalDeviceLayerProperties[u32PhysicalDeviceLayerIndex].implementationVersion), '.', VK_VERSION_PATCH(vk_pPhysicalDeviceLayerProperties[u32PhysicalDeviceLayerIndex].implementationVersion), "): ", vk_pPhysicalDeviceLayerProperties[u32PhysicalDeviceLayerIndex].description);
 				delete[] vk_pPhysicalDeviceLayerProperties;
+				println("\t\tQueues available on the GPU:");
+				for (uint32_t u32PhysicalDeviceQueueFamilyIndex = 0U; u32PhysicalDeviceQueueFamilyIndex < u32PhysicalDeviceQueueFamilyCount; u32PhysicalDeviceQueueFamilyIndex++) {
+					print("\t\t\t", u32PhysicalDeviceQueueFamilyIndex, ": ");
+					bool bMultiPurposeQueue = false;
+#define PRINT_COMMA() bMultiPurposeQueue ? print(", ") : print(), bMultiPurposeQueue = true
+					if (vk_pPhysicalDeviceQueueFamilyProperties[u32PhysicalDeviceQueueFamilyIndex].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+						PRINT_COMMA();
+						print("graphics");
+					}
+					if (vk_pPhysicalDeviceQueueFamilyProperties[u32PhysicalDeviceQueueFamilyIndex].queueFlags & VK_QUEUE_COMPUTE_BIT) {
+						PRINT_COMMA();
+						print("compute");
+					}
+					if (vk_pPhysicalDeviceQueueFamilyProperties[u32PhysicalDeviceQueueFamilyIndex].queueFlags & VK_QUEUE_TRANSFER_BIT) {
+						PRINT_COMMA();
+						print("transfer");
+					}
+					if (vk_pPhysicalDeviceQueueFamilyProperties[u32PhysicalDeviceQueueFamilyIndex].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT) {
+						PRINT_COMMA();
+						print("sparse binding");
+					}
+					if (vk_pPhysicalDeviceQueueFamilyProperties[u32PhysicalDeviceQueueFamilyIndex].queueFlags & VK_QUEUE_VIDEO_DECODE_BIT_KHR) {
+						PRINT_COMMA();
+						print("video decoding (extension)");
+					}
+					if (vk_pPhysicalDeviceQueueFamilyProperties[u32PhysicalDeviceQueueFamilyIndex].queueFlags & VK_QUEUE_VIDEO_ENCODE_BIT_KHR) {
+						PRINT_COMMA();
+						print("video encoding (extension)");
+					}
+					if (vk_pPhysicalDeviceQueueFamilyProperties[u32PhysicalDeviceQueueFamilyIndex].queueFlags & VK_QUEUE_OPTICAL_FLOW_BIT_NV) {
+						PRINT_COMMA();
+						print("optical flow (NVIDIA extension)");
+					}
+					if (vk_pPhysicalDeviceQueueFamilyProperties[u32PhysicalDeviceQueueFamilyIndex].queueFlags & VK_QUEUE_PROTECTED_BIT)
+						bMultiPurposeQueue ? print("; (protected queue)") : print("(protected queue)");
+#undef PRINT_COMMA
+					println();
+				}
 				VkPhysicalDeviceFeatures vk_physicalDeviceFeaturesAvailable;
 				CATCH_SIGNAL(vkGetPhysicalDeviceFeatures(vk_hPhysicalDevice, &vk_physicalDeviceFeaturesAvailable));
 				println("\t\tFeatures supported by the GPU device:");
@@ -518,8 +522,66 @@ namespace RE {
 				println("\t\t\toptimalBufferCopyRowPitchAlignment: ", vk_physicalDeviceProperties.limits.optimalBufferCopyRowPitchAlignment);
 				println("\t\t\tnonCoherentAtomSize: ", vk_physicalDeviceProperties.limits.nonCoherentAtomSize);
 			} // End of printing information about physical device to console
+
+			// Check if there are surface formats defined
+			uint32_t u32PhysicalDeviceSurfaceFormatCount;
+			CATCH_SIGNAL(vkGetPhysicalDeviceSurfaceFormatsKHR(vk_hPhysicalDevice, vk_hSurface, &u32PhysicalDeviceSurfaceFormatCount, nullptr));
+			if (!u32PhysicalDeviceSurfaceFormatCount) {
+				DISCARD_DEVICE();
+				continue;
+			}
+
+			// Check if there are present modes defined
+			uint32_t u32PhysicalDevicePresentModeCount;
+			CATCH_SIGNAL(vkGetPhysicalDeviceSurfacePresentModesKHR(vk_hPhysicalDevice, vk_hSurface, &u32PhysicalDevicePresentModeCount, nullptr));
+			if (!u32PhysicalDevicePresentModeCount) {
+				DISCARD_DEVICE();
+				continue;
+			}
+
+			// Check if the required extensions exist
+			if (!u32PhysicalDeviceExtensionCount) {
+				DISCARD_DEVICE();
+				continue;
+			}
+			bool bSwapchainExtists = false;
+			for (uint32_t u32PhysicalDeviceExtensionIndex = 0U; u32PhysicalDeviceExtensionIndex < u32PhysicalDeviceExtensionCount; u32PhysicalDeviceExtensionIndex++) {
+				if (!bSwapchainExtists && std::strcmp(vk_pPhysicalDeviceExtensionProperties[u32PhysicalDeviceExtensionIndex].extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME) == 0)
+					bSwapchainExtists = true;
+				if (bSwapchainExtists)
+					break;
+			}
+			if (!bSwapchainExtists) {
+				DISCARD_DEVICE();
+				continue;
+			}
+
+			// Check if required queues exist
+			if (!u32PhysicalDeviceQueueFamilyCount) {
+				DISCARD_DEVICE();
+				continue;
+			}
+			bool bGraphicsQueueExists = false, bPresentQueueExists = false, bTransferQueueExists = false;
+			for (uint32_t u32PhysicalDeviceQueueFamilyIndex = 0U; u32PhysicalDeviceQueueFamilyIndex < u32PhysicalDeviceQueueFamilyCount; u32PhysicalDeviceQueueFamilyIndex++) {
+				if (!bPresentQueueExists) {
+					VkBool32 surfaceSupportExists;
+					CATCH_SIGNAL(vkGetPhysicalDeviceSurfaceSupportKHR(vk_hPhysicalDevice, u32PhysicalDeviceQueueFamilyIndex, vk_hSurface, &surfaceSupportExists));
+					if (surfaceSupportExists)
+						bPresentQueueExists = true;
+				}
+				if (!bGraphicsQueueExists && (vk_pPhysicalDeviceQueueFamilyProperties[u32PhysicalDeviceQueueFamilyIndex].queueFlags & VK_QUEUE_GRAPHICS_BIT))
+					bGraphicsQueueExists = true;
+				if (!bTransferQueueExists && (vk_pPhysicalDeviceQueueFamilyProperties[u32PhysicalDeviceQueueFamilyIndex].queueFlags & VK_QUEUE_TRANSFER_BIT))
+					bTransferQueueExists = true;
+				if (bGraphicsQueueExists && bPresentQueueExists && bTransferQueueExists)
+					break;
+			}
+			if (bGraphicsQueueExists && bPresentQueueExists && bTransferQueueExists)
+				suitablePhysicalDevices.push_back(vk_hPhysicalDevice);
+
 			delete[] vk_pPhysicalDeviceExtensionProperties;
 			delete[] vk_pPhysicalDeviceQueueFamilyProperties;
+#undef DISCARD_DEVICE
 		}
 		delete[] vk_phTotalPhysicalDevice;
 		u32PhysicalDevicesAvailableCount = suitablePhysicalDevices.size();
@@ -586,7 +648,7 @@ namespace RE {
 		// If no transfer-queue found, use graphics-queue instead, which is also a transfer-queue
 		if (!transferQueueIndex.has_value())
 			transferQueueIndex = graphicsQueueIndex.value();
-		const float fQueuePriority = 1.0f;
+		constexpr float fQueuePriority = 1.0f;
 		const size_t uniqueQueueIndexCount = uniqueQueueIndices.size();
 		VkDeviceQueueCreateInfo *vk_pDeviceQueueCreateInfos = new VkDeviceQueueCreateInfo[uniqueQueueIndexCount];
 		REuint u32UniqueQueueIndexIndex = 0U;

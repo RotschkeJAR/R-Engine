@@ -4,7 +4,9 @@
 
 namespace RE {
 	
-	Renderer::Renderer() : bValid(false) {}
+	Renderer::Renderer() : bValid(false) {
+		bValid = true;
+	}
 	Renderer::~Renderer() {}
 
 	void Renderer::render() {

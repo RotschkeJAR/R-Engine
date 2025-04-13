@@ -8,7 +8,7 @@
 
 namespace RE {
 
-	class Rendering_GraphicsPipeline {
+	class Rendering_GraphicsPipeline final {
 		private:
 			VkPipeline vk_hGraphicsPipeline;
 

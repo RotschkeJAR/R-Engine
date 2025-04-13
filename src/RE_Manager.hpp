@@ -5,7 +5,7 @@
 
 namespace RE {
 
-	class Manager {
+	class Manager final {
 		private:
 			bool should_update_object(GameObject* pGameObject);
 			void start_proc();

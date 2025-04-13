@@ -6,7 +6,7 @@
 
 namespace RE {
 	
-	class Rendering_Framebuffer {
+	class Rendering_Framebuffer final {
 		private:
 			VkFramebuffer vk_hFramebuffer;
 

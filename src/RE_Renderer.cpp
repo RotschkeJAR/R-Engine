@@ -4,19 +4,27 @@
 
 namespace RE {
 	
-	Renderer::Renderer() {
-		bValid = true;
+	Renderer::Renderer() : bValid(false) {}
+	Renderer::~Renderer() {}
+
+	void Renderer::render() {
+
 	}
 
-	Renderer::~Renderer() {
+	bool Renderer::is_valid() const {
+		return bValid;
+	}
+
+
+
+	SubRenderer::SubRenderer() : bValid(false) {}
+	SubRenderer::~SubRenderer() {}
+
+	void SubRenderer::render() {
 
 	}
 
-	void Renderer::prepare_render() {
-		
-	}
-
-	bool Renderer::is_valid() {
+	bool SubRenderer::is_valid() const {
 		return bValid;
 	}
 

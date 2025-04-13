@@ -9,7 +9,7 @@
 
 namespace RE {
 	
-	class Rendering_CommandPool {
+	class Rendering_CommandPool final {
 		private:
 			VkCommandPool vk_hCommandPool;
 

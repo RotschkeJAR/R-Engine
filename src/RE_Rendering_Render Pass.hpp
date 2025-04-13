@@ -5,7 +5,7 @@
 
 namespace RE {
 	
-	class Rendering_RenderPass {
+	class Rendering_RenderPass final {
 		private:
 			VkRenderPass vk_hRenderPass;
 

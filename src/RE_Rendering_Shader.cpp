@@ -18,6 +18,7 @@ namespace RE {
 		vk_shaderCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 		vk_shaderCreateInfo.codeSize = static_cast<uint32_t>(shaderBinaryFileSize);
 		vk_shaderCreateInfo.pCode = reinterpret_cast<const uint32_t*>(pcShaderBinaries);
+
 		const bool bShaderCreatedSuccessfully = CHECK_VK_RESULT(vkCreateShaderModule(vk_hDevice, &vk_shaderCreateInfo, nullptr, &vk_hShader));
 		delete[] pcShaderBinaries;
 		if (!bShaderCreatedSuccessfully) {

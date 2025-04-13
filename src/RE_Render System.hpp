@@ -21,12 +21,13 @@ namespace RE {
 	extern Rendering_Queue *pDeviceQueues[RE_VK_QUEUE_COUNT];
 	extern VkFormat vk_eSwapchainImageFormat;
 	extern VkExtent2D vk_swapchainResolution;
+	extern VkImageView *vk_pSwapchainImageViews;
 	extern Rendering_CommandPool *pCommandPools[RE_VK_COMMAND_POOL_COUNT];
 
 	// Configurable settings
 	extern VkPhysicalDevice vk_hPhysicalDeviceSelected;
 	
-	class RenderSystem {
+	class RenderSystem final {
 		private:
 			bool bValid;
 
@@ -40,31 +41,13 @@ namespace RE {
 			bool create_swapchain();
 			void destroy_swapchain();
 			void recreate_swapchain();
-			bool create_shaders();
-			void destroy_shaders();
-			bool create_pipeline_layout();
-			void destroy_pipeline_layout();
-			bool create_renderpass();
-			void destroy_renderpass();
-			bool create_graphics_pipeline();
-			void destroy_graphics_pipeline();
-			bool create_framebuffers();
-			void destroy_framebuffers();
-			bool create_vertex_buffer();
-			void destroy_vertex_buffer();
-			bool alloc_command_buffers();
-			void free_command_buffers();
-			bool record_command_buffers();
-			bool create_sync_objects();
-			void destroy_sync_objects();
 
 		public:
 			static RenderSystem* pInstance;
 
 			RenderSystem();
 			~RenderSystem();
-			void draw_frame();
-			void upload_to_vertex_buffer();
+			void refresh();
 			void window_resize_event();
 			bool is_valid();
 	};

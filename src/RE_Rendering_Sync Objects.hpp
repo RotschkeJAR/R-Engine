@@ -5,7 +5,7 @@
 
 namespace RE {
 	
-	class Rendering_Semaphore {
+	class Rendering_Semaphore final {
 		private:
 			VkSemaphore vk_hSemaphore;
 
@@ -18,7 +18,7 @@ namespace RE {
 			operator VkSemaphore() const;
 	};
 
-	class Rendering_Fence {
+	class Rendering_Fence final {
 		private:
 			VkFence vk_hFence;
 

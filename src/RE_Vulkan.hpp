@@ -15,7 +15,7 @@
 
 namespace RE {
 	
-	class Vulkan {
+	class Vulkan final {
 		private:
 			bool bValid;
 #ifdef RE_OS_WINDOWS

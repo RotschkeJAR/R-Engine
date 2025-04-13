@@ -5,7 +5,7 @@
 
 namespace RE {
 	
-	class Rendering_Shader {
+	class Rendering_Shader final {
 		private:
 			VkShaderModule vk_hShader;
 

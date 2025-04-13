@@ -5,7 +5,7 @@
 
 namespace RE {
 	
-	class Rendering_Buffer {
+	class Rendering_Buffer final {
 		private:
 			VkBuffer vk_hBuffer;
 			VkDeviceMemory vk_hBufferMemory;

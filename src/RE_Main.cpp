@@ -17,6 +17,8 @@ namespace RE {
 	void execute() {
 		DEFINE_SIGNAL_GUARD(sigGuardMainLoop);
 		std::setlocale(LC_ALL, "");
+
+		// Create window
 		Window* pWindow;
 #ifdef RE_OS_WINDOWS
 		CATCH_SIGNAL(pWindow = new Window_Win64());
@@ -73,6 +75,7 @@ namespace RE {
 			CATCH_SIGNAL(delete pWindow);
 			return;
 		}
+
 		{
 			Manager gameMgr;
 			Vulkan vulkan;
@@ -86,17 +89,21 @@ namespace RE {
 				return;
 			std::chrono::high_resolution_clock::time_point currentFrameTime = std::chrono::high_resolution_clock::now(), lastFrameTime;
 			bRunning = true;
+
+			// Game loop
 			while (bRunning) {
 				CATCH_SIGNAL(pWindow->window_proc());
 				CATCH_SIGNAL(gameMgr.game_logic_update());
-				CATCH_SIGNAL(renderer.prepare_render());
-				CATCH_SIGNAL(renderSystem.draw_frame());
+				CATCH_SIGNAL(renderSystem.refresh());
+				CATCH_SIGNAL(renderer.render());
 				lastFrameTime = currentFrameTime;
 				currentFrameTime = std::chrono::high_resolution_clock::now();
 				fDeltaseconds = std::chrono::duration_cast<std::chrono::duration<float>>(currentFrameTime - lastFrameTime).count();
 				CATCH_SIGNAL(pWindow->show_window(true));
 				bRunning = !pWindow->should_close() && gameMgr.is_game_valid() && !bErrorOccured;
 			}
+
+			// Termination
 			pWindow->show_window(false);
 			CATCH_SIGNAL(gameMgr.last_game_logic_update());
 			WAIT_FOR_IDLE_VULKAN_DEVICE();

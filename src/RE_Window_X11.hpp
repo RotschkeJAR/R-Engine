@@ -6,7 +6,7 @@
 namespace RE {
 	
 #ifdef RE_OS_LINUX
-	class Window_X11 : public Window {
+	class Window_X11 final : public Window {
 		private:
 			XWindow x11_hWindow;
 			XAtom x11_hClose;

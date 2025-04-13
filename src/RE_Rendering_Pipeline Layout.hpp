@@ -5,7 +5,7 @@
 
 namespace RE {
 	
-	class Rendering_PipelineLayout {
+	class Rendering_PipelineLayout final {
 		private:
 			VkPipelineLayout vk_hPipelineLayout;
 

@@ -7,7 +7,7 @@
 
 namespace RE {
 	
-	class Rendering_Queue {
+	class Rendering_Queue final {
 		public:
 			const VkQueue vk_hQueue;
 			const uint32_t u32QueueIndex;

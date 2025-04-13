@@ -19,21 +19,26 @@ namespace RE {
 #define RE_VK_VERTEX_TOTAL_SIZE 7U
 #define RE_VK_VERTEX_TOTAL_SIZE_BYTES (RE_VK_VERTEX_TOTAL_SIZE * sizeof(REvertex))
 	
-	class Renderer {
+	class Renderer final {
 		private:
-			/* Rendering_Shader vertexShader, fragmentShader;
-			Rendering_RenderPass renderPass;
-			Rendering_PipelineLayout pipelineLayout;
-			Rendering_GraphicsPipeline graphicsPipeline;
-			Rendering_Buffer vertexBuffer, indexBuffer;
-			Rendering_CommandBuffer cmdBuffer; */
 			bool bValid;
 
 		public:
 			Renderer();
 			~Renderer();
-			void prepare_render();
-			bool is_valid();
+			void render();
+			bool is_valid() const;
+	};
+
+	class SubRenderer {
+		protected:
+			bool bValid;
+
+		public:
+			SubRenderer();
+			~SubRenderer();
+			void render();
+			bool is_valid() const;
 	};
 
 }

@@ -6,7 +6,7 @@
 namespace RE {
 
 #ifdef RE_OS_LINUX
-	class Window_Wayland : public Window {
+	class Window_Wayland final : public Window {
 		private:
 			wl_registry *wl_pRegistry;
 			wl_compositor *wl_pCompositor;

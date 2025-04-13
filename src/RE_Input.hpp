@@ -9,7 +9,7 @@ namespace RE {
 #define MAXIMUM_PHYSICAL_KEYS 150
 #define KEY_BUFFER_SIZE (MAXIMUM_PHYSICAL_KEYS / 8 + (MAXIMUM_PHYSICAL_KEYS % 8 > 0 ? 1 : 0))
 	
-	class InputMgr {
+	class InputMgr final {
 		private:
 			REuint u32Scancodes[MAXIMUM_PHYSICAL_KEYS];
 			Input eInputs[MAXIMUM_PHYSICAL_KEYS];

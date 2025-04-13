@@ -223,7 +223,7 @@ namespace RE {
 	void make_errors_always_fatal(bool bEnable);
 	void show_message_box_on_error(bool bEnable);
 	
-	class SignalCatcher {
+	class SignalCatcher final {
 		public:
 			SignalCatcher();
 			~SignalCatcher();
@@ -231,7 +231,7 @@ namespace RE {
 
 	void add_to_stack_trace(const char* pcFile, const char* pcMethod, REuint u32Line, const char* pcDetails);
 	void remove_from_stack_trace();
-	class SignalGuard {
+	class SignalGuard final {
 		public:
 			SignalGuard(const char* pcFile, const char* pcFunc, REuint u32Line, const char* pcDetails);
 			~SignalGuard();
@@ -412,7 +412,7 @@ namespace RE {
 	}
 
 	template <typename T, REuint u32Dimensions>
-	class Vector {
+	class Vector final {
 		static_assert(u32Dimensions != 0U, "A vector-template has zero dimensions");
 
 		public:

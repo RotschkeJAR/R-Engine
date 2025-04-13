@@ -6,7 +6,7 @@
 namespace RE {
 	
 #ifdef RE_OS_WINDOWS
-	class Window_Win64 : public Window {
+	class Window_Win64 final : public Window {
 		private:
 			HWND win_hWindow;
 			HCURSOR win_hCursor;

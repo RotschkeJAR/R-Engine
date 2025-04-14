@@ -1,9 +1,9 @@
-#include "RE_Rendering_Render Pass.hpp"
+#include "RE_Vulkan_Render Pass.hpp"
 #include "RE_Render System.hpp"
 
 namespace RE {
 	
-	Rendering_RenderPass::Rendering_RenderPass() : vk_hRenderPass(VK_NULL_HANDLE) {
+	Vulkan_RenderPass::Vulkan_RenderPass() : vk_hRenderPass(VK_NULL_HANDLE) {
 		VkAttachmentDescription vk_colorAttachment = {};
 		vk_colorAttachment.format = vk_eSwapchainImageFormat;
 		vk_colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -43,21 +43,21 @@ namespace RE {
 			vk_hRenderPass = VK_NULL_HANDLE;
 	}
 
-	Rendering_RenderPass::~Rendering_RenderPass() {
+	Vulkan_RenderPass::~Vulkan_RenderPass() {
 		if (!is_valid())
 			return;
 		CATCH_SIGNAL(vkDestroyRenderPass(vk_hDevice, vk_hRenderPass, nullptr));
 	}
 
-	VkRenderPass Rendering_RenderPass::get_render_pass() const {
+	VkRenderPass Vulkan_RenderPass::get_render_pass() const {
 		return vk_hRenderPass;
 	}
 
-	bool Rendering_RenderPass::is_valid() const {
+	bool Vulkan_RenderPass::is_valid() const {
 		return vk_hRenderPass != VK_NULL_HANDLE;
 	}
 
-	Rendering_RenderPass::operator VkRenderPass() const {
+	Vulkan_RenderPass::operator VkRenderPass() const {
 		return this->get_render_pass();
 	}
 

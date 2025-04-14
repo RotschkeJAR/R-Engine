@@ -1,9 +1,9 @@
-#include "RE_Rendering_Command Buffer.hpp"
+#include "RE_Vulkan_Command Buffer.hpp"
 #include "RE_Render System.hpp"
 
 namespace RE {
 	
-	Rendering_CommandPool::Rendering_CommandPool(const VkCommandPoolCreateFlagBits vk_eCommandPoolCreateFlags, const uint32_t u32QueueFamilyIndex) : vk_hCommandPool(VK_NULL_HANDLE) {
+	Vulkan_CommandPool::Vulkan_CommandPool(const VkCommandPoolCreateFlagBits vk_eCommandPoolCreateFlags, const uint32_t u32QueueFamilyIndex) : vk_hCommandPool(VK_NULL_HANDLE) {
 		VkCommandPoolCreateInfo vk_commandPoolCreateInfo = {};
 		vk_commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 		vk_commandPoolCreateInfo.flags = vk_eCommandPoolCreateFlags;
@@ -14,29 +14,29 @@ namespace RE {
 		}
 	}
 
-	Rendering_CommandPool::~Rendering_CommandPool() {
+	Vulkan_CommandPool::~Vulkan_CommandPool() {
 		if (!is_valid())
 			return;
 		CATCH_SIGNAL(vkDestroyCommandPool(vk_hDevice, vk_hCommandPool, nullptr));
 	}
 
-	VkCommandPool Rendering_CommandPool::get_command_pool() const {
+	VkCommandPool Vulkan_CommandPool::get_command_pool() const {
 		return vk_hCommandPool;
 	}
 
-	bool  Rendering_CommandPool::is_valid() const {
+	bool  Vulkan_CommandPool::is_valid() const {
 		return vk_hCommandPool != VK_NULL_HANDLE;
 	}
 
-	Rendering_CommandPool::operator VkCommandPool() const {
+	Vulkan_CommandPool::operator VkCommandPool() const {
 		return this->vk_hCommandPool;
 	}
 
 
 	
-	Rendering_CommandBuffer::Rendering_CommandBuffer(const Rendering_CommandPool *pCommandPool) : vk_hCommandBuffer(VK_NULL_HANDLE), vk_hCommandPool(*pCommandPool) {}
+	Vulkan_CommandBuffer::Vulkan_CommandBuffer(const Vulkan_CommandPool *pCommandPool) : vk_hCommandBuffer(VK_NULL_HANDLE), vk_hCommandPool(*pCommandPool) {}
 
-	Rendering_CommandBuffer::Rendering_CommandBuffer(const VkCommandBufferLevel vk_eCommandBufferLevel, const Rendering_CommandPool *pCommandPool) : vk_hCommandBuffer(VK_NULL_HANDLE), vk_hCommandPool(*pCommandPool) {
+	Vulkan_CommandBuffer::Vulkan_CommandBuffer(const VkCommandBufferLevel vk_eCommandBufferLevel, const Vulkan_CommandPool *pCommandPool) : vk_hCommandBuffer(VK_NULL_HANDLE), vk_hCommandPool(*pCommandPool) {
 		VkCommandBufferAllocateInfo vk_commandBufferAllocInfo = {};
 		vk_commandBufferAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 		vk_commandBufferAllocInfo.level = vk_eCommandBufferLevel;
@@ -48,17 +48,17 @@ namespace RE {
 		}
 	}
 
-	Rendering_CommandBuffer::~Rendering_CommandBuffer() {
+	Vulkan_CommandBuffer::~Vulkan_CommandBuffer() {
 		if (!is_valid())
 			return;
 		CATCH_SIGNAL(vkFreeCommandBuffers(vk_hDevice, vk_hCommandPool, 1U, &vk_hCommandBuffer));
 	}
 
-	void Rendering_CommandBuffer::reset_command_buffer(const VkCommandBufferResetFlags vk_eCommandBufferResetFlags) const {
+	void Vulkan_CommandBuffer::reset_command_buffer(const VkCommandBufferResetFlags vk_eCommandBufferResetFlags) const {
 		CATCH_SIGNAL(vkResetCommandBuffer(vk_hCommandBuffer, vk_eCommandBufferResetFlags));
 	}
 
-	bool Rendering_CommandBuffer::begin_recording_command_buffer(const VkCommandBufferUsageFlags vk_eCommandBufferUsageFlags) const {
+	bool Vulkan_CommandBuffer::begin_recording_command_buffer(const VkCommandBufferUsageFlags vk_eCommandBufferUsageFlags) const {
 		VkCommandBufferBeginInfo vk_commandBufferBeginInfo = {};
 		vk_commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 		vk_commandBufferBeginInfo.flags = vk_eCommandBufferUsageFlags;
@@ -69,18 +69,18 @@ namespace RE {
 		return true;
 	}
 
-	bool Rendering_CommandBuffer::end_recording_command_buffer() const {
+	bool Vulkan_CommandBuffer::end_recording_command_buffer() const {
 		const bool bResult = CATCH_SIGNAL_AND_RETURN(CHECK_VK_RESULT(vkEndCommandBuffer(vk_hCommandBuffer)), bool);
 		if (!bResult)
 			RE_ERROR("Failed to finish recording Vulkan command buffer");
 		return bResult;
 	}
 
-	void Rendering_CommandBuffer::cmd_begin_renderpass(const VkRenderPassBeginInfo vk_commandBufferRenderpassBeginInfo, const VkSubpassContents vk_eSubpassContents) const {
+	void Vulkan_CommandBuffer::cmd_begin_renderpass(const VkRenderPassBeginInfo vk_commandBufferRenderpassBeginInfo, const VkSubpassContents vk_eSubpassContents) const {
 		CATCH_SIGNAL(vkCmdBeginRenderPass(vk_hCommandBuffer, &vk_commandBufferRenderpassBeginInfo, vk_eSubpassContents));
 	}
 
-	void Rendering_CommandBuffer::cmd_begin_renderpass(const float fClearColor[4], const int32_t i32ClearColor[4], const uint32_t u32ClearColor[4], const float fClearDepth, const uint32_t u32ClearStencil, const Rendering_RenderPass *pRenderPass, const Rendering_Framebuffer *pFramebuffer, const VkRect2D vk_renderArea, const VkSubpassContents vk_eSubpassContents) const {
+	void Vulkan_CommandBuffer::cmd_begin_renderpass(const float fClearColor[4], const int32_t i32ClearColor[4], const uint32_t u32ClearColor[4], const float fClearDepth, const uint32_t u32ClearStencil, const Vulkan_RenderPass *pRenderPass, const Vulkan_Framebuffer *pFramebuffer, const VkRect2D vk_renderArea, const VkSubpassContents vk_eSubpassContents) const {
 		VkClearValue vk_clearValues;
 		for (uint8_t u8ColorChannelIndex = 0U; u8ColorChannelIndex < 4U; u8ColorChannelIndex++) {
 			vk_clearValues.color.float32[u8ColorChannelIndex] = fClearColor[u8ColorChannelIndex];
@@ -99,37 +99,61 @@ namespace RE {
 		CATCH_SIGNAL(this->cmd_begin_renderpass(vk_commandBufferRenderpassBeginInfo, vk_eSubpassContents));
 	}
 
-	void Rendering_CommandBuffer::cmd_end_renderpass() const {
+	void Vulkan_CommandBuffer::cmd_end_renderpass() const {
 		CATCH_SIGNAL(vkCmdEndRenderPass(vk_hCommandBuffer));
 	}
 
-	void Rendering_CommandBuffer::cmd_bind_graphics_pipeline(const Rendering_GraphicsPipeline *pGraphicsPipeline) const {
-		CATCH_SIGNAL(vkCmdBindPipeline(vk_hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *pGraphicsPipeline));
+	void Vulkan_CommandBuffer::cmd_bind_pipeline(const VkPipelineBindPoint vk_ePipelineBindPoint, const VkPipeline vk_pipeline) const {
+		CATCH_SIGNAL(vkCmdBindPipeline(vk_hCommandBuffer, vk_ePipelineBindPoint, vk_pipeline));
 	}
 
-	void Rendering_CommandBuffer::cmd_bind_index_buffer(const Rendering_Buffer *pIndexBuffer, const VkIndexType vk_eIndexDatatype) const {
-		CATCH_SIGNAL(vkCmdBindIndexBuffer(vk_hCommandBuffer, *pIndexBuffer, 0U, vk_eIndexDatatype));
+	void Vulkan_CommandBuffer::cmd_bind_graphics_pipeline(const Vulkan_GraphicsPipeline *pGraphicsPipeline) const {
+		CATCH_SIGNAL(cmd_bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, *pGraphicsPipeline));
 	}
 
-	void Rendering_CommandBuffer::cmd_bind_vertex_buffer(const Rendering_Buffer *pVertexBuffer) const {
+	void Vulkan_CommandBuffer::cmd_bind_index_buffer(const VkBuffer vk_indexBuffer, const VkIndexType vk_eIndexDatatype) const {
+		CATCH_SIGNAL(vkCmdBindIndexBuffer(vk_hCommandBuffer, vk_indexBuffer, 0U, vk_eIndexDatatype));
+	}
+
+	void Vulkan_CommandBuffer::cmd_bind_index_buffer(const Vulkan_Buffer *pIndexBuffer, const VkIndexType vk_eIndexDatatype) const {
+		CATCH_SIGNAL(cmd_bind_index_buffer(*pIndexBuffer, vk_eIndexDatatype));
+	}
+
+	void Vulkan_CommandBuffer::cmd_bind_vertex_buffer(const VkBuffer *vk_pVertexBuffers, const VkDeviceSize *vk_pOffsets) const {
+		CATCH_SIGNAL(vkCmdBindVertexBuffers(vk_hCommandBuffer, 0U, 1U, vk_pVertexBuffers, vk_pOffsets));
+	}
+
+	void Vulkan_CommandBuffer::cmd_bind_vertex_buffer(const Vulkan_Buffer *pVertexBuffer, const VkDeviceSize vk_offset) const {
 		VkBuffer vk_vertexBuffers[1] = {*pVertexBuffer};
-		VkDeviceSize offsets[1] = {0U};
-		CATCH_SIGNAL(vkCmdBindVertexBuffers(vk_hCommandBuffer, 0U, 1U, vk_vertexBuffers, offsets));
+		VkDeviceSize vk_offsets[1] = {vk_offset};
+		CATCH_SIGNAL(cmd_bind_vertex_buffer(vk_vertexBuffers, vk_offsets));
 	}
 
-	void Rendering_CommandBuffer::cmd_copy_buffer(const Rendering_Buffer *pSrcBuffer, const Rendering_Buffer *pDstBuffer, const VkDeviceSize vk_bufferSize) const {
+	void Vulkan_CommandBuffer::cmd_copy_buffer(const VkBuffer vk_srcBuffer, const VkDeviceSize vk_srcOffset, const VkBuffer dstBuffer, const VkDeviceSize vk_dstOffset, const VkDeviceSize vk_bufferSize) const {
 		VkBufferCopy vk_bufferCopy = {};
-		vk_bufferCopy.srcOffset = 0UL;
-		vk_bufferCopy.dstOffset = 0UL;
+		vk_bufferCopy.srcOffset = vk_srcOffset;
+		vk_bufferCopy.dstOffset = vk_dstOffset;
 		vk_bufferCopy.size = vk_bufferSize;
-		CATCH_SIGNAL(vkCmdCopyBuffer(vk_hCommandBuffer, *pSrcBuffer, *pDstBuffer, 1U, &vk_bufferCopy));
+		CATCH_SIGNAL(vkCmdCopyBuffer(vk_hCommandBuffer, vk_srcBuffer, dstBuffer, 1U, &vk_bufferCopy));
 	}
 
-	void Rendering_CommandBuffer::cmd_set_viewport(const VkViewport vk_viewport) const {
+	void Vulkan_CommandBuffer::cmd_copy_buffer(const VkBuffer vk_srcBuffer, const VkBuffer dstBuffer, const VkDeviceSize vk_bufferSize) const {
+		CATCH_SIGNAL(cmd_copy_buffer(vk_srcBuffer, 0UL, dstBuffer, 0UL, vk_bufferSize));
+	}
+
+	void Vulkan_CommandBuffer::cmd_copy_buffer(const Vulkan_Buffer *pSrcBuffer, const VkDeviceSize vk_srcOffset, const Vulkan_Buffer *pDstBuffer, const VkDeviceSize vk_dstOffset, const VkDeviceSize vk_bufferSize) const {
+		CATCH_SIGNAL(cmd_copy_buffer(*pSrcBuffer, vk_srcOffset, *pDstBuffer, vk_dstOffset, vk_bufferSize));
+	}
+	
+	void Vulkan_CommandBuffer::cmd_copy_buffer(const Vulkan_Buffer *pSrcBuffer, const Vulkan_Buffer *pDstBuffer, const VkDeviceSize vk_bufferSize) const {
+		CATCH_SIGNAL(cmd_copy_buffer(*pSrcBuffer, 0UL, *pDstBuffer, 0UL, vk_bufferSize));
+	}
+
+	void Vulkan_CommandBuffer::cmd_set_viewport(const VkViewport vk_viewport) const {
 		CATCH_SIGNAL(vkCmdSetViewport(vk_hCommandBuffer, 0U, 1U, &vk_viewport));
 	}
 
-	void Rendering_CommandBuffer::cmd_set_viewport(const float fX, const float fY, const float fWidth, const float fHeight, const float fMinDepth, const float fMaxDepth) const {
+	void Vulkan_CommandBuffer::cmd_set_viewport(const float fX, const float fY, const float fWidth, const float fHeight, const float fMinDepth, const float fMaxDepth) const {
 		VkViewport vk_viewport = {};
 		vk_viewport.x = fX;
 		vk_viewport.y = fY;
@@ -140,18 +164,18 @@ namespace RE {
 		CATCH_SIGNAL(this->cmd_set_viewport(vk_viewport));
 	}
 
-	void Rendering_CommandBuffer::cmd_set_scissor(const VkRect2D vk_scissorRect) const {
+	void Vulkan_CommandBuffer::cmd_set_scissor(const VkRect2D vk_scissorRect) const {
 		CATCH_SIGNAL(vkCmdSetScissor(vk_hCommandBuffer, 0U, 1U, &vk_scissorRect));
 	}
 
-	void Rendering_CommandBuffer::cmd_set_scissor(const VkOffset2D vk_scissorOffset, const VkExtent2D vk_scissorExtent) const {
+	void Vulkan_CommandBuffer::cmd_set_scissor(const VkOffset2D vk_scissorOffset, const VkExtent2D vk_scissorExtent) const {
 		VkRect2D vk_scissorRect = {};
 		vk_scissorRect.offset = vk_scissorOffset;
 		vk_scissorRect.extent = vk_scissorExtent;
 		CATCH_SIGNAL(this->cmd_set_scissor(vk_scissorRect));
 	}
 	
-	void Rendering_CommandBuffer::cmd_set_scissor(const int32_t i32X, const int32_t i32Y, const uint32_t u32Width, const uint32_t u32Height) const {
+	void Vulkan_CommandBuffer::cmd_set_scissor(const int32_t i32X, const int32_t i32Y, const uint32_t u32Width, const uint32_t u32Height) const {
 		VkOffset2D vk_scissorOffset = {};
 		vk_scissorOffset.x = i32X;
 		vk_scissorOffset.y = i32Y;
@@ -161,32 +185,32 @@ namespace RE {
 		CATCH_SIGNAL(this->cmd_set_scissor(vk_scissorOffset, vk_scissorExtent));
 	}
 
-	void Rendering_CommandBuffer::cmd_draw(const uint32_t u32VertexCount, const uint32_t u32InstanceCount, const uint32_t u32FirstVertex, const uint32_t u32FirstInstance) const {
+	void Vulkan_CommandBuffer::cmd_draw(const uint32_t u32VertexCount, const uint32_t u32InstanceCount, const uint32_t u32FirstVertex, const uint32_t u32FirstInstance) const {
 		CATCH_SIGNAL(vkCmdDraw(vk_hCommandBuffer, u32VertexCount, u32InstanceCount, u32FirstVertex, u32FirstInstance));
 	}
 
-	void Rendering_CommandBuffer::cmd_execute(const Rendering_CommandBuffer *pCommandBuffer) const {
+	void Vulkan_CommandBuffer::cmd_execute(const Vulkan_CommandBuffer *pCommandBuffer) const {
 		VkCommandBuffer vk_hCommandBuffers[1] = {*pCommandBuffer};
 		CATCH_SIGNAL(vkCmdExecuteCommands(vk_hCommandBuffer, 1U, vk_hCommandBuffers));
 	}
 
-	VkCommandBuffer Rendering_CommandBuffer::get_command_buffer() const {
+	VkCommandBuffer Vulkan_CommandBuffer::get_command_buffer() const {
 		return vk_hCommandBuffer;
 	}
 
-	bool Rendering_CommandBuffer::is_valid() const {
+	bool Vulkan_CommandBuffer::is_valid() const {
 		return vk_hCommandBuffer != VK_NULL_HANDLE;
 	}
 
-	Rendering_CommandBuffer::operator VkCommandBuffer() const {
+	Vulkan_CommandBuffer::operator VkCommandBuffer() const {
 		return this->vk_hCommandBuffer;
 	}
 
 
 
-	bool alloc_vk_command_buffers(const VkCommandBufferLevel vk_eCommandBufferLevel, const Rendering_CommandPool *pCommandPool, const uint32_t u32CommandBufferCount, Rendering_CommandBuffer **ppCommandBuffers) {
+	bool alloc_vk_command_buffers(const VkCommandBufferLevel vk_eCommandBufferLevel, const Vulkan_CommandPool *pCommandPool, const uint32_t u32CommandBufferCount, Vulkan_CommandBuffer **ppCommandBuffers) {
 		for (uint32_t i = 0U; i < u32CommandBufferCount; i++)
-			ppCommandBuffers[i] = new Rendering_CommandBuffer(pCommandPool);
+			ppCommandBuffers[i] = new Vulkan_CommandBuffer(pCommandPool);
 		VkCommandBufferAllocateInfo vk_commandBufferAllocInfo = {};
 		vk_commandBufferAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 		vk_commandBufferAllocInfo.level = vk_eCommandBufferLevel;
@@ -204,7 +228,7 @@ namespace RE {
 		return true;
 	}
 
-	void free_vk_command_buffers(const Rendering_CommandPool *pCommandPool, const uint32_t u32CommandBufferCount, Rendering_CommandBuffer **ppCommandBuffers) {
+	void free_vk_command_buffers(const Vulkan_CommandPool *pCommandPool, const uint32_t u32CommandBufferCount, Vulkan_CommandBuffer **ppCommandBuffers) {
 		VkCommandBuffer *vk_phCommandBuffers = new VkCommandBuffer[u32CommandBufferCount];
 		for (uint32_t u32CommandBufferIndex = 0U; u32CommandBufferIndex < u32CommandBufferCount; u32CommandBufferIndex++)
 			vk_phCommandBuffers[u32CommandBufferIndex] = ppCommandBuffers[u32CommandBufferIndex]->get_command_buffer();

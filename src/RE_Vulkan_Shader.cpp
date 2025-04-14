@@ -1,9 +1,9 @@
-#include "RE_Rendering_Shader.hpp"
+#include "RE_Vulkan_Shader.hpp"
 #include "RE_Render System.hpp"
 
 namespace RE {
 	
-	Rendering_Shader::Rendering_Shader(const char *const pcShaderBinaryFileSource) : vk_hShader(VK_NULL_HANDLE) {
+	Vulkan_Shader::Vulkan_Shader(const char *const pcShaderBinaryFileSource) : vk_hShader(VK_NULL_HANDLE) {
 		std::ifstream shaderBinaryFile(pcShaderBinaryFileSource, std::ios::ate | std::ios::binary);
 		if (!shaderBinaryFile.is_open()) {
 			RE_FATAL_ERROR(append_to_string("Failed opening the shader binary file \"", pcShaderBinaryFileSource, "\""));
@@ -28,21 +28,21 @@ namespace RE {
 		}
 	}
 
-	Rendering_Shader::~Rendering_Shader() {
+	Vulkan_Shader::~Vulkan_Shader() {
 		if (!is_valid())
 			return;
 		CATCH_SIGNAL(vkDestroyShaderModule(vk_hDevice, vk_hShader, nullptr));
 	}
 
-	VkShaderModule Rendering_Shader::get_shader() const {
+	VkShaderModule Vulkan_Shader::get_shader() const {
 		return vk_hShader;
 	}
 	
-	bool Rendering_Shader::is_valid() const {
+	bool Vulkan_Shader::is_valid() const {
 		return vk_hShader != VK_NULL_HANDLE;
 	}
 
-	Rendering_Shader::operator VkShaderModule() const {
+	Vulkan_Shader::operator VkShaderModule() const {
 		return this->get_shader();
 	}
 

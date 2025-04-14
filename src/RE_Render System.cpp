@@ -4,16 +4,6 @@
 #include "RE_Window_Wayland.hpp"
 #include "RE_Main.hpp"
 
-#include "RE_Rendering_Shader.hpp"
-#include "RE_Rendering_Buffer.hpp"
-#include "RE_Rendering_Pipeline Layout.hpp"
-#include "RE_Rendering_Render Pass.hpp"
-#include "RE_Rendering_Pipeline.hpp"
-#include "RE_Rendering_Framebuffer.hpp"
-#include "RE_Rendering_Sync Objects.hpp"
-#include "RE_Rendering_Queue.hpp"
-#include "RE_Input.hpp"
-
 namespace RE {
 
 	static void println_vkbool32(const char* pcName, VkBool32 vk_bState) {
@@ -28,7 +18,7 @@ namespace RE {
 	VkPhysicalDevice *vk_phPhysicalDevicesAvailable = nullptr;
 	uint32_t u32PhysicalDevicesAvailableCount = 0U;
 	VkDevice vk_hDevice = VK_NULL_HANDLE;
-	Rendering_Queue *pDeviceQueues[RE_VK_QUEUE_COUNT] = {};
+	Vulkan_Queue *pDeviceQueues[RE_VK_QUEUE_COUNT] = {};
 	VkSurfaceKHR vk_hSurface = VK_NULL_HANDLE;
 	VkSurfaceCapabilitiesKHR vk_surfaceCapabilities = {};
 	VkSurfaceFormatKHR *vk_pSurfaceFormatsAvailable = nullptr;
@@ -40,8 +30,7 @@ namespace RE {
 	VkImage *vk_pSwapchainImages = nullptr;
 	VkImageView *vk_pSwapchainImageViews = nullptr;
 	uint32_t u32SwapchainImageCount = 0U;
-	Rendering_Framebuffer **ppSwapchainFramebuffers = nullptr; // size equals swapchain image count
-	Rendering_CommandPool *pCommandPools[RE_VK_COMMAND_POOL_COUNT] = {};
+	Vulkan_CommandPool *pCommandPools[RE_VK_COMMAND_POOL_COUNT] = {};
 
 	// Configurable settings
 	VkPhysicalDevice vk_hPhysicalDeviceSelected = VK_NULL_HANDLE;
@@ -628,17 +617,22 @@ namespace RE {
 
 		VkQueue vk_hQueues[RE_VK_QUEUE_COUNT];
 		CATCH_SIGNAL(vkGetDeviceQueue(vk_hDevice, graphicsQueueIndex.value(), 0, &vk_hQueues[RE_VK_QUEUE_GRAPHICS_INDEX]));
-		pDeviceQueues[RE_VK_QUEUE_GRAPHICS_INDEX] = new Rendering_Queue(vk_hQueues[RE_VK_QUEUE_GRAPHICS_INDEX], graphicsQueueIndex.value());
+		pDeviceQueues[RE_VK_QUEUE_GRAPHICS_INDEX] = new Vulkan_Queue(vk_hQueues[RE_VK_QUEUE_GRAPHICS_INDEX], graphicsQueueIndex.value());
 		CATCH_SIGNAL(vkGetDeviceQueue(vk_hDevice, presentQueueIndex.value(), 0, &vk_hQueues[RE_VK_QUEUE_PRESENT_INDEX]));
-		pDeviceQueues[RE_VK_QUEUE_PRESENT_INDEX] = new Rendering_Queue(vk_hQueues[RE_VK_QUEUE_PRESENT_INDEX], presentQueueIndex.value());
+		pDeviceQueues[RE_VK_QUEUE_PRESENT_INDEX] = new Vulkan_Queue(vk_hQueues[RE_VK_QUEUE_PRESENT_INDEX], presentQueueIndex.value());
 		CATCH_SIGNAL(vkGetDeviceQueue(vk_hDevice, transferQueueIndex.value(), 0, &vk_hQueues[RE_VK_QUEUE_TRANSFER_INDEX]));
-		pDeviceQueues[RE_VK_QUEUE_TRANSFER_INDEX] = new Rendering_Queue(vk_hQueues[RE_VK_QUEUE_TRANSFER_INDEX], transferQueueIndex.value());
+		pDeviceQueues[RE_VK_QUEUE_TRANSFER_INDEX] = new Vulkan_Queue(vk_hQueues[RE_VK_QUEUE_TRANSFER_INDEX], transferQueueIndex.value());
+
+		pCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_INDEX] = new Vulkan_CommandPool(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, graphicsQueueIndex.value());
+		pCommandPools[RE_VK_COMMAND_POOL_TRANSFER_INDEX] = new Vulkan_CommandPool(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, transferQueueIndex.value());
 		return true;
 	}
 	
 	void RenderSystem::destroy_device() {
 		if (!vk_hDevice)
 			return;
+		for (uint8_t u8CommandPoolIndex = 0U; u8CommandPoolIndex < RE_VK_COMMAND_POOL_COUNT; u8CommandPoolIndex++)
+			DELETE_SAFELY(pCommandPools[u8CommandPoolIndex]);
 		for (uint8_t u8QueueIndex = 0U; u8QueueIndex < RE_VK_QUEUE_COUNT; u8QueueIndex++)
 			DELETE_SAFELY(pDeviceQueues[u8QueueIndex]);
 		CATCH_SIGNAL(vkDestroyDevice(vk_hDevice, nullptr));

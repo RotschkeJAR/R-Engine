@@ -1,31 +1,31 @@
-#ifndef __RE_RENDERING_SYNC_OBJECTS_H__
-#define __RE_RENDERING_SYNC_OBJECTS_H__
+#ifndef __RE_VULKAN_SYNC_OBJECTS_H__
+#define __RE_VULKAN_SYNC_OBJECTS_H__
 
 #include "RE_Vulkan.hpp"
 
 namespace RE {
 	
-	class Rendering_Semaphore final {
+	class Vulkan_Semaphore final {
 		private:
 			VkSemaphore vk_hSemaphore;
 
 		public:
-			Rendering_Semaphore();
-			~Rendering_Semaphore();
+			Vulkan_Semaphore();
+			~Vulkan_Semaphore();
 			VkSemaphore get_semaphore() const;
 			bool is_valid() const;
 
 			operator VkSemaphore() const;
 	};
 
-	class Rendering_Fence final {
+	class Vulkan_Fence final {
 		private:
 			VkFence vk_hFence;
 
 		public:
-			Rendering_Fence();
-			Rendering_Fence(VkFenceCreateFlagBits vk_eFenceCreateFlags);
-			~Rendering_Fence();
+			Vulkan_Fence();
+			Vulkan_Fence(VkFenceCreateFlagBits vk_eFenceCreateFlags);
+			~Vulkan_Fence();
 			void wait_for_fence() const;
 			void reset_fence() const;
 			void wait_for_and_reset_fence() const;
@@ -38,4 +38,4 @@ namespace RE {
 
 }
 
-#endif /* __RE_RENDERING_SYNC_OBJECTS_H__ */
+#endif /* __RE_VULKAN_SYNC_OBJECTS_H__ */

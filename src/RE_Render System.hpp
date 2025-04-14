@@ -2,8 +2,8 @@
 #define __RE_RENDER_SYSTEM_H__
 
 #include "RE_Vulkan.hpp"
-#include "RE_Rendering_Command Buffer.hpp"
-#include "RE_Rendering_Queue.hpp"
+#include "RE_Vulkan_Command Buffer.hpp"
+#include "RE_Vulkan_Queue.hpp"
 
 namespace RE {
 
@@ -18,11 +18,11 @@ namespace RE {
 
 	// Attributes initialized at beginning and rarely changed
 	extern VkDevice vk_hDevice;
-	extern Rendering_Queue *pDeviceQueues[RE_VK_QUEUE_COUNT];
+	extern Vulkan_Queue *pDeviceQueues[RE_VK_QUEUE_COUNT];
 	extern VkFormat vk_eSwapchainImageFormat;
 	extern VkExtent2D vk_swapchainResolution;
 	extern VkImageView *vk_pSwapchainImageViews;
-	extern Rendering_CommandPool *pCommandPools[RE_VK_COMMAND_POOL_COUNT];
+	extern Vulkan_CommandPool *pCommandPools[RE_VK_COMMAND_POOL_COUNT];
 
 	// Configurable settings
 	extern VkPhysicalDevice vk_hPhysicalDeviceSelected;

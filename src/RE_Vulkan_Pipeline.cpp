@@ -1,9 +1,9 @@
-#include "RE_Rendering_Pipeline.hpp"
+#include "RE_Vulkan_Pipeline.hpp"
 #include "RE_Render System.hpp"
 
 namespace RE {
 	
-	Rendering_GraphicsPipeline::Rendering_GraphicsPipeline(const Rendering_Shader *pVertexShader, const Rendering_Shader *pFragmentShader, const uint32_t u32VertexInputBindingDescritpionCount, const VkVertexInputBindingDescription *vk_pVertexInputBindingDescritpions, const uint32_t u32VertexInputAttributeDescritpionCount, const VkVertexInputAttributeDescription *vk_pVertexInputAttributeDescritpions, const Rendering_PipelineLayout *pPipelineLayout, const Rendering_RenderPass *pRenderPass) : vk_hGraphicsPipeline(VK_NULL_HANDLE) {
+	Vulkan_GraphicsPipeline::Vulkan_GraphicsPipeline(const Vulkan_Shader *pVertexShader, const Vulkan_Shader *pFragmentShader, const uint32_t u32VertexInputBindingDescritpionCount, const VkVertexInputBindingDescription *vk_pVertexInputBindingDescritpions, const uint32_t u32VertexInputAttributeDescritpionCount, const VkVertexInputAttributeDescription *vk_pVertexInputAttributeDescritpions, const Vulkan_PipelineLayout *pPipelineLayout, const Vulkan_RenderPass *pRenderPass) : vk_hGraphicsPipeline(VK_NULL_HANDLE) {
 		VkPipelineShaderStageCreateInfo vk_pipelineVertexShaderStateCreateInfo = {};
 		vk_pipelineVertexShaderStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		vk_pipelineVertexShaderStateCreateInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
@@ -120,21 +120,21 @@ namespace RE {
 		}
 	}
 
-	Rendering_GraphicsPipeline::~Rendering_GraphicsPipeline() {
+	Vulkan_GraphicsPipeline::~Vulkan_GraphicsPipeline() {
 		if (!is_valid())
 			return;
 		CATCH_SIGNAL(vkDestroyPipeline(vk_hDevice, vk_hGraphicsPipeline, nullptr));
 	}
 
-	VkPipeline Rendering_GraphicsPipeline::get_graphics_pipeline() const {
+	VkPipeline Vulkan_GraphicsPipeline::get_graphics_pipeline() const {
 		return vk_hGraphicsPipeline;
 	}
 	
-	bool Rendering_GraphicsPipeline::is_valid() const {
+	bool Vulkan_GraphicsPipeline::is_valid() const {
 		return vk_hGraphicsPipeline != VK_NULL_HANDLE;
 	}
 
-	Rendering_GraphicsPipeline::operator VkPipeline() const {
+	Vulkan_GraphicsPipeline::operator VkPipeline() const {
 		return this->vk_hGraphicsPipeline;
 	}
 

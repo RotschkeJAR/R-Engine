@@ -1,9 +1,9 @@
-#include "RE_Rendering_Framebuffer.hpp"
+#include "RE_Vulkan_Framebuffer.hpp"
 #include "RE_Render System.hpp"
 
 namespace RE {
 	
-	Rendering_Framebuffer::Rendering_Framebuffer(const Rendering_RenderPass *pRenderPass, const uint32_t u32ImageViewAttachmentCount, const VkImageView *vk_pImageViewAttachments, const uint32_t u32Width, const uint32_t u32Height) : vk_hFramebuffer(VK_NULL_HANDLE) {
+	Vulkan_Framebuffer::Vulkan_Framebuffer(const Vulkan_RenderPass *pRenderPass, const uint32_t u32ImageViewAttachmentCount, const VkImageView *vk_pImageViewAttachments, const uint32_t u32Width, const uint32_t u32Height) : vk_hFramebuffer(VK_NULL_HANDLE) {
 		VkFramebufferCreateInfo vk_framebufferCreateInfo = {};
 		vk_framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 		vk_framebufferCreateInfo.renderPass = *pRenderPass;
@@ -18,21 +18,21 @@ namespace RE {
 		}
 	}
 	
-	Rendering_Framebuffer::~Rendering_Framebuffer() {
+	Vulkan_Framebuffer::~Vulkan_Framebuffer() {
 		if (!is_valid())
 			return;
 		CATCH_SIGNAL(vkDestroyFramebuffer(vk_hDevice, vk_hFramebuffer, nullptr));
 	}
 	
-	VkFramebuffer Rendering_Framebuffer::get_frmebuffer() const {
+	VkFramebuffer Vulkan_Framebuffer::get_frmebuffer() const {
 		return vk_hFramebuffer;
 	}
 	
-	bool Rendering_Framebuffer::is_valid() const {
+	bool Vulkan_Framebuffer::is_valid() const {
 		return vk_hFramebuffer != VK_NULL_HANDLE;
 	}
 
-	Rendering_Framebuffer::operator VkFramebuffer() const {
+	Vulkan_Framebuffer::operator VkFramebuffer() const {
 		return this->vk_hFramebuffer;
 	}
 

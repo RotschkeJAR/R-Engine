@@ -1,7 +1,5 @@
 #include "RE_Render System.hpp"
-#include "RE_Window_Win64.hpp"
-#include "RE_Window_X11.hpp"
-#include "RE_Window_Wayland.hpp"
+#include "RE_Window.hpp"
 #include "RE_Main.hpp"
 
 namespace RE {

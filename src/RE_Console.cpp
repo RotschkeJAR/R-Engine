@@ -1,7 +1,7 @@
 #include "RE_Internal Header.hpp"
 #include "RE_Console.hpp"
 #include "RE_Main.hpp"
-#include "RE_Window_Win64.hpp"
+#include "RE_Window.hpp"
 
 namespace RE {
 

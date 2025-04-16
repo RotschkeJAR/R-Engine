@@ -1,25 +1,24 @@
-#include "RE_Vulkan_Buffer.hpp"
+#include "RE_Vulkan.hpp"
 #include "RE_Render System.hpp"
 
 namespace RE {
 	
-	Vulkan_Buffer::Vulkan_Buffer(const VkDeviceSize vk_bufferSizeInBytes, const VkBufferUsageFlags vk_bufferUsage, const VkSharingMode vk_bufferSharingMode, const uint32_t u32QueueFamilyIndexCount, const uint32_t* pu32QueueFamilyIndices, const VkMemoryPropertyFlags vk_memoryProperties) : vk_hBuffer(VK_NULL_HANDLE), vk_hBufferMemory(VK_NULL_HANDLE), vk_bufferSizeInBytes(vk_bufferSizeInBytes) {
+	Vulkan_Buffer::Vulkan_Buffer(const VkDeviceSize vk_bufferSizeInBytes, const VkBufferUsageFlags vk_bufferUsage, const uint32_t *pu32BufferQueueTypeIndices, const uint32_t u32QueueTypeCount, const VkMemoryPropertyFlags vk_memoryProperties) : vk_hBuffer(VK_NULL_HANDLE), vk_hBufferMemory(VK_NULL_HANDLE), vk_bufferSizeInBytes(vk_bufferSizeInBytes) {
+		std::vector<uint32_t> queueTypeIndices;
+		if (u32QueueTypeCount > 1U)
+			for (uint32_t u32QueueFamilyIndex = 0U; u32QueueFamilyIndex < u32QueueTypeCount; u32QueueFamilyIndex++)
+				if (std::find(queueTypeIndices.begin(), queueTypeIndices.end(), pDeviceQueues[pu32BufferQueueTypeIndices[u32QueueFamilyIndex]]->u32QueueIndex) == queueTypeIndices.end())
+					queueTypeIndices.push_back(pDeviceQueues[pu32BufferQueueTypeIndices[u32QueueFamilyIndex]]->u32QueueIndex);
 		VkBufferCreateInfo vk_bufferCreateInfo = {};
 		vk_bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 		vk_bufferCreateInfo.size = vk_bufferSizeInBytes;
 		vk_bufferCreateInfo.usage = vk_bufferUsage;
-		vk_bufferCreateInfo.sharingMode = vk_bufferSharingMode;
-		switch (vk_bufferSharingMode) {
-			case VK_SHARING_MODE_CONCURRENT:
-				vk_bufferCreateInfo.queueFamilyIndexCount = u32QueueFamilyIndexCount;
-				vk_bufferCreateInfo.pQueueFamilyIndices = pu32QueueFamilyIndices;
-				break;
-			case VK_SHARING_MODE_EXCLUSIVE:
-			default:
-				vk_bufferCreateInfo.queueFamilyIndexCount = 0U;
-				vk_bufferCreateInfo.pQueueFamilyIndices = nullptr;
-				break;
-		}
+		if (u32QueueTypeCount > 1U) {
+			vk_bufferCreateInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
+			vk_bufferCreateInfo.queueFamilyIndexCount = queueTypeIndices.size();
+			vk_bufferCreateInfo.pQueueFamilyIndices = queueTypeIndices.data();
+		} else
+			vk_bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		if (!CHECK_VK_RESULT(vkCreateBuffer(vk_hDevice, &vk_bufferCreateInfo, nullptr, &vk_hBuffer))) {
 			vk_hBuffer = VK_NULL_HANDLE;
 			RE_ERROR("Failed creating new buffer in Vulkan");
@@ -63,11 +62,19 @@ namespace RE {
 		CATCH_SIGNAL(vkFreeMemory(vk_hDevice, vk_hBufferMemory, nullptr));
 	}
 
-	void Vulkan_Buffer::upload_data(const void *const pData, const VkDeviceSize vk_uploadSizeInBytes) const {
-		void* pBufferMemory;
-		CATCH_SIGNAL(vkMapMemory(vk_hDevice, vk_hBufferMemory, 0UL, vk_uploadSizeInBytes, 0, &pBufferMemory));
-		CATCH_SIGNAL(std::memcpy(pBufferMemory, pData, vk_uploadSizeInBytes));
+	void Vulkan_Buffer::map_memory(void** ppData, const VkDeviceSize vk_offsetBytes, const VkDeviceSize vk_memoryBytes) const {
+		CATCH_SIGNAL(vkMapMemory(vk_hDevice, vk_hBufferMemory, vk_offsetBytes, vk_memoryBytes, 0, ppData));
+	}
+	
+	void Vulkan_Buffer::unmap_memory() const {
 		CATCH_SIGNAL(vkUnmapMemory(vk_hDevice, vk_hBufferMemory));
+	}
+
+	void Vulkan_Buffer::upload_data(const void *pData, const VkDeviceSize vk_offsetBytes, const VkDeviceSize vk_uploadBytes) const {
+		void* pBufferMemory;
+		CATCH_SIGNAL(map_memory(&pBufferMemory, vk_offsetBytes, vk_uploadBytes));
+		CATCH_SIGNAL(std::memcpy(pBufferMemory, pData, vk_uploadBytes));
+		CATCH_SIGNAL(unmap_memory());
 	}
 
 	VkBuffer Vulkan_Buffer::get_buffer() const {

@@ -1,4 +1,4 @@
-#include "RE_Vulkan_Command Buffer.hpp"
+#include "RE_Vulkan.hpp"
 #include "RE_Render System.hpp"
 
 namespace RE {
@@ -35,7 +35,6 @@ namespace RE {
 
 	
 	Vulkan_CommandBuffer::Vulkan_CommandBuffer(const Vulkan_CommandPool *pCommandPool) : vk_hCommandBuffer(VK_NULL_HANDLE), vk_hCommandPool(*pCommandPool) {}
-
 	Vulkan_CommandBuffer::Vulkan_CommandBuffer(const VkCommandBufferLevel vk_eCommandBufferLevel, const Vulkan_CommandPool *pCommandPool) : vk_hCommandBuffer(VK_NULL_HANDLE), vk_hCommandPool(*pCommandPool) {
 		VkCommandBufferAllocateInfo vk_commandBufferAllocInfo = {};
 		vk_commandBufferAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -70,7 +69,7 @@ namespace RE {
 	}
 
 	bool Vulkan_CommandBuffer::end_recording_command_buffer() const {
-		const bool bResult = CATCH_SIGNAL_AND_RETURN(CHECK_VK_RESULT(vkEndCommandBuffer(vk_hCommandBuffer)), bool);
+		const bool bResult = CHECK_VK_RESULT(vkEndCommandBuffer(vk_hCommandBuffer));
 		if (!bResult)
 			RE_ERROR("Failed to finish recording Vulkan command buffer");
 		return bResult;
@@ -189,9 +188,26 @@ namespace RE {
 		CATCH_SIGNAL(vkCmdDraw(vk_hCommandBuffer, u32VertexCount, u32InstanceCount, u32FirstVertex, u32FirstInstance));
 	}
 
+	void Vulkan_CommandBuffer::cmd_execute(const uint32_t u32CommandBufferCount, const VkCommandBuffer *vk_pCommandBuffers) const {
+		CATCH_SIGNAL(vkCmdExecuteCommands(vk_hCommandBuffer, u32CommandBufferCount, vk_pCommandBuffers));
+	}
+	
+	void Vulkan_CommandBuffer::cmd_execute(const VkCommandBuffer vk_commandBuffer) const {
+		VkCommandBuffer vk_commandBuffers[] = {vk_commandBuffer};
+		CATCH_SIGNAL(cmd_execute(1U, vk_commandBuffers));
+	}
+
+	void Vulkan_CommandBuffer::cmd_execute(const uint32_t u32CommandBufferCount, const Vulkan_CommandBuffer *pCommandBuffer) const {
+		VkCommandBuffer *vk_phCommandBuffers = new VkCommandBuffer[u32CommandBufferCount];
+		for (uint32_t u32CommandBufferIndex = 0U; u32CommandBufferIndex < u32CommandBufferCount; u32CommandBufferIndex++)
+			vk_phCommandBuffers[u32CommandBufferIndex] = pCommandBuffer[u32CommandBufferIndex].get_command_buffer();
+		CATCH_SIGNAL(cmd_execute(u32CommandBufferCount, vk_phCommandBuffers));
+		delete[] vk_phCommandBuffers;
+	}
+
 	void Vulkan_CommandBuffer::cmd_execute(const Vulkan_CommandBuffer *pCommandBuffer) const {
 		VkCommandBuffer vk_hCommandBuffers[1] = {*pCommandBuffer};
-		CATCH_SIGNAL(vkCmdExecuteCommands(vk_hCommandBuffer, 1U, vk_hCommandBuffers));
+		CATCH_SIGNAL(cmd_execute(1U, vk_hCommandBuffers));
 	}
 
 	VkCommandBuffer Vulkan_CommandBuffer::get_command_buffer() const {

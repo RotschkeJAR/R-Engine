@@ -35,6 +35,74 @@ namespace RE {
 		friend class InputMgr;
 	};
 
+#ifdef RE_OS_WINDOWS
+	class Window_Win64 final : public Window {
+		private:
+			HWND win_hWindow;
+			HCURSOR win_hCursor;
+
+			Vector2i get_adjusted_window_size(Vector<REushort, 2> size);
+
+		protected:
+			void internal_window_proc();
+			void internal_show_window();
+			void internal_update_title();
+
+		public:
+			const HKL win_keyboardLayout;
+			static HINSTANCE win_hInstance;
+			
+			Window_Win64();
+			~Window_Win64();
+			HWND get_hwindow();
+
+		friend LRESULT CALLBACK windows_window_proc(HWND win_hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	};
+
+	void set_hinstance(HINSTANCE win_hInstance);
+#elif (defined RE_OS_LINUX)
+	class Window_X11 final : public Window {
+		private:
+			XWindow x11_hWindow;
+			XAtom x11_hClose;
+			XAtom x11_hUTF8, x11_hWindowName;
+			XInputMethod x11_hInputMethod;
+			XInputContext x11_hInputContext;
+			XSizeHints* x11_pSizes;
+
+		protected:
+			void internal_window_proc();
+			void internal_show_window();
+			void internal_update_title();
+
+		public:
+			XDisplay* const x11_pDisplay;
+			
+			Window_X11();
+			~Window_X11();
+			XWindow get_xwindow();
+	};
+
+	class Window_Wayland final : public Window {
+		private:
+			wl_registry *wl_pRegistry;
+			wl_compositor *wl_pCompositor;
+			wl_surface *wl_pSurface;
+			
+		protected:
+			void internal_window_proc();
+			void internal_show_window();
+			void internal_update_title();
+
+		public:
+			wl_display *const wl_pDisplay;
+
+			Window_Wayland();
+			~Window_Wayland();
+			wl_surface* get_wl_surface();
+	};
+#endif /* RE_OS_WINDOWS, RE_OS_LINUX */
+
 }
 
 #endif /* __RE_WINDOW_H__ */

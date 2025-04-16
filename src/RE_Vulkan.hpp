@@ -632,6 +632,212 @@ namespace RE {
 
 #define VK_KHR_VALIDATION_LAYER_NAME "VK_LAYER_KHRONOS_validation"
 
+
+	class Vulkan_Buffer final {
+		private:
+			VkBuffer vk_hBuffer;
+			VkDeviceMemory vk_hBufferMemory;
+
+		public:
+			const VkDeviceSize vk_bufferSizeInBytes;
+
+			Vulkan_Buffer() = delete;
+			Vulkan_Buffer(const VkDeviceSize vk_bufferSizeInBytes, const VkBufferUsageFlags vk_bufferUsage, const uint32_t *pu32BufferQueueTypeIndices, const uint32_t u32QueueTypeCount, const VkMemoryPropertyFlags vk_memoryProperties);
+			~Vulkan_Buffer();
+			void map_memory(void** ppData, const VkDeviceSize vk_offsetBytes, const VkDeviceSize vk_memoryBytes) const;
+			void unmap_memory() const;
+			void upload_data(const void *pData, const VkDeviceSize vk_offsetBytes, const VkDeviceSize vk_uploadBytes) const;
+			VkBuffer get_buffer() const;
+			VkDeviceMemory get_memory() const;
+			bool is_valid() const;
+
+			operator VkBuffer() const;
+			operator VkDeviceMemory() const;
+	};
+
+	class Vulkan_Shader final {
+		private:
+			VkShaderModule vk_hShader;
+
+		public:
+			Vulkan_Shader() = delete;
+			Vulkan_Shader(const char *const pcShaderBinaryFileSource);
+			~Vulkan_Shader();
+			VkShaderModule get_shader() const;
+			bool is_valid() const;
+
+			operator VkShaderModule() const;
+	};
+
+	class Vulkan_RenderPass final {
+		private:
+			VkRenderPass vk_hRenderPass;
+
+		public:
+			Vulkan_RenderPass();
+			~Vulkan_RenderPass();
+			VkRenderPass get_render_pass() const;
+			bool is_valid() const;
+
+			operator VkRenderPass() const;
+	};
+
+	class Vulkan_PipelineLayout final {
+		private:
+			VkPipelineLayout vk_hPipelineLayout;
+
+		public:
+			Vulkan_PipelineLayout();
+			~Vulkan_PipelineLayout();
+			VkPipelineLayout get_pipeline_layout() const;
+			bool is_valid() const;
+
+			operator VkPipelineLayout() const;
+	};
+
+	class Vulkan_GraphicsPipeline final {
+		private:
+			VkPipeline vk_hGraphicsPipeline;
+
+		public:
+			Vulkan_GraphicsPipeline() = delete;
+			Vulkan_GraphicsPipeline(const Vulkan_Shader *pVertexShader, const Vulkan_Shader *pFragmentShader, const uint32_t u32VertexInputBindingDescritpionCount, const VkVertexInputBindingDescription *vk_pVertexInputBindingDescritpions, const uint32_t u32VertexInputAttributeDescritpionCount, const VkVertexInputAttributeDescription *vk_pVertexInputAttributeDescritpions, const Vulkan_PipelineLayout *pPipelineLayout, const Vulkan_RenderPass *pRenderPass);
+			~Vulkan_GraphicsPipeline();
+			VkPipeline get_graphics_pipeline() const;
+			bool is_valid() const;
+
+			operator VkPipeline() const;
+	};
+
+	class Vulkan_Framebuffer final {
+		private:
+			VkFramebuffer vk_hFramebuffer;
+
+		public:
+			Vulkan_Framebuffer() = delete;
+			Vulkan_Framebuffer(const Vulkan_RenderPass *pRenderPass, const uint32_t u32ImageViewAttachmentCount, const VkImageView *vk_pImageViewAttachments, const uint32_t u32Width, const uint32_t u32Height);
+			~Vulkan_Framebuffer();
+			VkFramebuffer get_frmebuffer() const;
+			bool is_valid() const;
+
+			operator VkFramebuffer() const;
+	};
+
+	class Vulkan_CommandPool final {
+		private:
+			VkCommandPool vk_hCommandPool;
+
+		public:
+			Vulkan_CommandPool() = delete;
+			Vulkan_CommandPool(const VkCommandPoolCreateFlagBits vk_eCommandPoolCreateFlags, const uint32_t u32QueueFamilyIndex);
+			~Vulkan_CommandPool();
+			VkCommandPool get_command_pool() const;
+			bool is_valid() const;
+
+			operator VkCommandPool() const;
+	};
+
+	class Vulkan_CommandBuffer final {
+		private:
+			VkCommandBuffer vk_hCommandBuffer;
+
+		public:
+			const VkCommandPool vk_hCommandPool;
+
+			Vulkan_CommandBuffer() = delete;
+			Vulkan_CommandBuffer(const Vulkan_CommandPool *pCommandPool); // does not initialize the Vulkan command buffer
+			Vulkan_CommandBuffer(const VkCommandBufferLevel vk_eCommandBufferLevel, const Vulkan_CommandPool *pCommandPool);
+			~Vulkan_CommandBuffer();
+
+			void reset_command_buffer(const VkCommandBufferResetFlags vk_eCommandBufferResetFlags) const;
+			bool begin_recording_command_buffer(const VkCommandBufferUsageFlags vk_eCommandBufferUsageFlags) const;
+			bool end_recording_command_buffer() const;
+			void cmd_begin_renderpass(const VkRenderPassBeginInfo vk_commandBufferRenderpassBeginInfo, const VkSubpassContents vk_eSubpassContents) const;
+			void cmd_begin_renderpass(const float fClearColor[4], const int32_t i32ClearColor[4], const uint32_t u32ClearColor[4], const float fClearDepth, const uint32_t u32ClearStencil, const Vulkan_RenderPass *pRenderPass, const Vulkan_Framebuffer *pFramebuffer, const VkRect2D vk_renderArea, const VkSubpassContents vk_eSubpassContents) const;
+			void cmd_end_renderpass() const;
+			void cmd_bind_pipeline(const VkPipelineBindPoint vk_ePipelineBindPoint, const VkPipeline vk_pipeline) const;
+			void cmd_bind_graphics_pipeline(const Vulkan_GraphicsPipeline *pGraphicsPipeline) const;
+			void cmd_bind_index_buffer(const VkBuffer vk_indexBuffer, const VkIndexType vk_eIndexDatatype) const;
+			void cmd_bind_index_buffer(const Vulkan_Buffer *pIndexBuffer, const VkIndexType vk_eIndexDatatype) const;
+			void cmd_bind_vertex_buffer(const VkBuffer *vk_pVertexBuffers, const VkDeviceSize *vk_pOffsets) const;
+			void cmd_bind_vertex_buffer(const Vulkan_Buffer *pVertexBuffer, const VkDeviceSize vk_offset) const;
+			void cmd_copy_buffer(const VkBuffer vk_srcBuffer, const VkDeviceSize vk_srcOffset, const VkBuffer dstBuffer, const VkDeviceSize vk_dstOffset, const VkDeviceSize vk_bufferSize) const;
+			void cmd_copy_buffer(const VkBuffer vk_srcBuffer, const VkBuffer dstBuffer, const VkDeviceSize vk_bufferSize) const;
+			void cmd_copy_buffer(const Vulkan_Buffer *pSrcBuffer, const VkDeviceSize vk_srcOffset, const Vulkan_Buffer *pDstBuffer, const VkDeviceSize vk_dstOffset, const VkDeviceSize vk_bufferSize) const;
+			void cmd_copy_buffer(const Vulkan_Buffer *pSrcBuffer, const Vulkan_Buffer *pDstBuffer, const VkDeviceSize vk_bufferSize) const;
+			void cmd_set_viewport(const VkViewport vk_viewport) const;
+			void cmd_set_viewport(const float fX, const float fY, const float fWidth, const float fHeight, const float fMinDepth, const float fMaxDepth) const;
+			void cmd_set_scissor(const VkRect2D vk_scissorRect) const;
+			void cmd_set_scissor(const VkOffset2D vk_scissorOffset, const VkExtent2D vk_scissorExtent) const;
+			void cmd_set_scissor(const int32_t i32X, const int32_t i32Y, const uint32_t u32Width, const uint32_t u32Height) const;
+			void cmd_draw(const uint32_t u32VertexCount, const uint32_t u32InstanceCount, const uint32_t u32FirstVertex, const uint32_t u32FirstInstance) const;
+			void cmd_execute(const uint32_t u32CommandBufferCount, const VkCommandBuffer *vk_pCommandBuffers) const;
+			void cmd_execute(const VkCommandBuffer vk_commandBuffer) const;
+			void cmd_execute(const uint32_t u32CommandBufferCount, const Vulkan_CommandBuffer *pCommandBuffers) const;
+			void cmd_execute(const Vulkan_CommandBuffer *pCommandBuffer) const;
+
+			VkCommandBuffer get_command_buffer() const;
+			bool is_valid() const;
+
+			operator VkCommandBuffer() const;
+
+		friend bool alloc_vk_command_buffers(const VkCommandBufferLevel vk_eCommandBufferLevel, const Vulkan_CommandPool *pCommandPool, const uint32_t u32CommandBufferCount, Vulkan_CommandBuffer **ppCommandBuffers);
+	};
+	bool alloc_vk_command_buffers(const VkCommandBufferLevel vk_eCommandBufferLevel, const Vulkan_CommandPool *pCommandPool, const uint32_t u32CommandBufferCount, Vulkan_CommandBuffer **ppCommandBuffers);
+	void free_vk_command_buffers(const Vulkan_CommandPool *pCommandPool, const uint32_t u32CommandBufferCount, Vulkan_CommandBuffer **ppCommandBuffers);
+
+	class Vulkan_Semaphore final {
+		private:
+			VkSemaphore vk_hSemaphore;
+
+		public:
+			Vulkan_Semaphore();
+			~Vulkan_Semaphore();
+			VkSemaphore get_semaphore() const;
+			bool is_valid() const;
+
+			operator VkSemaphore() const;
+	};
+
+	class Vulkan_Fence final {
+		private:
+			VkFence vk_hFence;
+
+		public:
+			Vulkan_Fence();
+			Vulkan_Fence(VkFenceCreateFlagBits vk_eFenceCreateFlags);
+			~Vulkan_Fence();
+			void wait_for_fence() const;
+			void reset_fence() const;
+			void wait_for_and_reset_fence() const;
+			bool is_fence_signaled() const;
+			VkFence get_fence() const;
+			bool is_valid() const;
+
+			operator VkFence() const;
+	};
+
+	class Vulkan_Queue final {
+		public:
+			const VkQueue vk_hQueue;
+			const uint32_t u32QueueIndex;
+
+			Vulkan_Queue() = delete;
+			Vulkan_Queue(const VkQueue vk_hQueue, const uint32_t u32QueueIndex);
+			~Vulkan_Queue();
+			bool submit_to_queue(const VkSubmitInfo *vk_pSubmitInfo, const VkFence vk_hFence) const;
+			bool submit_to_queue(const uint32_t u32SemaphoresToWaitForCount, const VkSemaphore *vk_phSemaphoresToWaitFor, const VkPipelineStageFlags *vk_pePipelineStageFlags, const uint32_t u32CommandBufferCount, const VkCommandBuffer *vk_phCommandBuffers, const uint32_t u32SemaphoresToSignalCount, const VkSemaphore *vk_phSemaphoresToSignal, const VkFence vk_hFence) const;
+			bool submit_to_queue(const uint32_t u32SemaphoresToWaitForCount, const Vulkan_Semaphore *pSemaphoresToWaitFor, const VkPipelineStageFlags *vk_pePipelineStageFlags, const uint32_t u32CommandBufferCount, const Vulkan_CommandBuffer *pCommandBuffers, const uint32_t u32SemaphoresToSignalCount, const Vulkan_Semaphore *pSemaphoresToSignal, const Vulkan_Fence *pFence) const;
+			void submit_to_present_queue(const VkPresentInfoKHR *vk_pPresentInfo) const;
+			void submit_to_present_queue(const uint32_t u32SemaphoresToWaitForCount, const VkSemaphore *vk_phSemaphoresToWaitFor, const uint32_t u32SwapchainCount, const VkSwapchainKHR *vk_phSwapchains, const uint32_t *pu32SwapchainImageIndices) const;
+			void submit_to_present_queue(const uint32_t u32SemaphoresToWaitForCount, const Vulkan_Semaphore *pSemaphoresToWaitFor, const uint32_t u32SwapchainCount, const VkSwapchainKHR *vk_phSwapchains, const uint32_t *pu32SwapchainImageIndices) const;
+			void wait_for_idle_queue() const;
+			VkQueue get_queue() const;
+			bool is_valid() const;
+
+			operator VkQueue() const;
+	};
+
 }
 
 #endif /* __RE_VULKAN_H__ */

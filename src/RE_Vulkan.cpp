@@ -1,6 +1,5 @@
 #include "RE_Vulkan.hpp"
-#include "RE_Window_Win64.hpp"
-#include "RE_Window_X11.hpp"
+#include "RE_Window.hpp"
 #include "RE_Main.hpp"
 
 #undef vk_hInstance

@@ -2,8 +2,6 @@
 #define __RE_RENDER_SYSTEM_H__
 
 #include "RE_Vulkan.hpp"
-#include "RE_Vulkan_Command Buffer.hpp"
-#include "RE_Vulkan_Queue.hpp"
 
 namespace RE {
 

@@ -1,4 +1,4 @@
-#include "RE_Window_Wayland.hpp"
+#include "RE_Window.hpp"
 
 namespace RE {
 

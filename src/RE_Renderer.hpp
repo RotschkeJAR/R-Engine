@@ -2,7 +2,6 @@
 #define __RE_RENDERER_H__
 
 #include "RE_Vulkan.hpp"
-#include "RE_Vulkan_Command Buffer.hpp"
 
 namespace RE {
 
@@ -20,22 +19,6 @@ namespace RE {
 #define RE_VK_VERTEX_TOTAL_SIZE 7U
 #define RE_VK_VERTEX_TOTAL_SIZE_BYTES (RE_VK_VERTEX_TOTAL_SIZE * sizeof(REvertex))
 
-	class SubRenderer;
-	
-	class Renderer final {
-		private:
-			Vulkan_CommandBuffer primaryCommandBuffer;
-			std::vector<SubRenderer*> subRenderers;
-			bool bValid;
-
-		public:
-			Renderer();
-			~Renderer();
-			void render();
-			void window_resize_event();
-			bool is_valid() const;
-	};
-
 	class SubRenderer {
 		protected:
 			Vulkan_CommandBuffer secondaryCommandBuffer;
@@ -44,8 +27,42 @@ namespace RE {
 		public:
 			SubRenderer();
 			~SubRenderer();
+			virtual void record_command_buffer(const Vulkan_CommandBuffer& commandBuffer) = 0;
+			virtual void record_secondary_command_buffer() = 0;
 			virtual void render() = 0;
 			virtual void window_resize_event() = 0;
+			const Vulkan_CommandBuffer* get_vulkan_command_buffer_ptr() const;
+			VkCommandBuffer get_actual_command_buffer() const;
+			bool is_valid() const;
+
+			operator const Vulkan_CommandBuffer*() const;
+			operator VkCommandBuffer() const;
+	};
+
+
+	class Renderer_GameObject final : public SubRenderer {
+		public:
+			Renderer_GameObject();
+			~Renderer_GameObject();
+			void record_command_buffer(const Vulkan_CommandBuffer& commandBuffer);
+			void record_secondary_command_buffer();
+			void render();
+			void window_resize_event();
+	};
+	
+	class Renderer final {
+		private:
+			Vulkan_CommandBuffer primaryCommandBuffer;
+			Renderer_GameObject gameObjectRenderer;
+			bool bValid;
+
+		public:
+			const Vulkan_Buffer rectangleIndexBuffer;
+
+			Renderer();
+			~Renderer();
+			void render();
+			void window_resize_event();
 			bool is_valid() const;
 	};
 

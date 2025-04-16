@@ -1,4 +1,4 @@
-#include "RE_Vulkan_Queue.hpp"
+#include "RE_Vulkan.hpp"
 
 namespace RE {
 	
@@ -35,7 +35,7 @@ namespace RE {
 		for (uint32_t u32SemaphoresToSignalIndex = 0U; u32SemaphoresToSignalIndex < u32SemaphoresToSignalCount; u32SemaphoresToSignalIndex++)
 			vk_phSemaphoresToSignal[u32SemaphoresToSignalIndex] = pSemaphoresToSignal[u32SemaphoresToSignalIndex].get_semaphore();
 
-		const bool bSuccessResult = CATCH_SIGNAL_AND_RETURN(submit_to_queue(u32SemaphoresToWaitForCount, vk_phSemaphoresToWaitFor, vk_pePipelineStageFlags, u32CommandBufferCount, vk_phCommandBuffers, u32SemaphoresToSignalCount, vk_phSemaphoresToSignal, pFence->get_fence()), bool);
+		const bool bSuccessResult = CATCH_SIGNAL_AND_RETURN(submit_to_queue(u32SemaphoresToWaitForCount, vk_phSemaphoresToWaitFor, vk_pePipelineStageFlags, u32CommandBufferCount, vk_phCommandBuffers, u32SemaphoresToSignalCount, vk_phSemaphoresToSignal, pFence ? pFence->get_fence() : VK_NULL_HANDLE), bool);
 		delete[] vk_phSemaphoresToWaitFor;
 		delete[] vk_phCommandBuffers;
 		delete[] vk_phSemaphoresToSignal;

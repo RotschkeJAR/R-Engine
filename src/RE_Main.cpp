@@ -102,7 +102,7 @@ namespace RE {
 			}
 
 			// Termination
-			pWindow->show_window(false);
+			CATCH_SIGNAL(pWindow->show_window(false));
 			CATCH_SIGNAL(gameMgr.last_game_logic_update());
 			WAIT_FOR_IDLE_VULKAN_DEVICE();
 			fDeltaseconds = 0.0f;

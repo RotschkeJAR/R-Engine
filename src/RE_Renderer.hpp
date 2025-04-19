@@ -5,19 +5,7 @@
 
 namespace RE {
 
-	typedef float REvertex;
 #define RE_VK_RENDERABLE_OBJECTS_COUNT 1000U
-#define RE_VK_VERTEX_COUNT (RE_VK_RENDERABLE_OBJECTS_COUNT * 4U)
-#define RE_VK_VERTEX_POSITION_SIZE 3U
-#define RE_VK_VERTEX_POSITION_SIZE_BYTES (RE_VK_VERTEX_POSITION_SIZE * sizeof(REvertex))
-#define RE_VK_VERTEX_POSITION_OFFSET 0U
-#define RE_VK_VERTEX_POSITION_OFFSET_BYTES (RE_VK_VERTEX_POSITION_OFFSET * sizeof(REvertex))
-#define RE_VK_VERTEX_COLOR_SIZE 4U
-#define RE_VK_VERTEX_COLOR_SIZE_BYTES (RE_VK_VERTEX_COLOR_SIZE * sizeof(REvertex))
-#define RE_VK_VERTEX_COLOR_OFFSET RE_VK_VERTEX_POSITION_SIZE
-#define RE_VK_VERTEX_COLOR_OFFSET_BYTES (RE_VK_VERTEX_COLOR_OFFSET * sizeof(REvertex))
-#define RE_VK_VERTEX_TOTAL_SIZE 7U
-#define RE_VK_VERTEX_TOTAL_SIZE_BYTES (RE_VK_VERTEX_TOTAL_SIZE * sizeof(REvertex))
 
 	class SubRenderer {
 		protected:
@@ -41,8 +29,15 @@ namespace RE {
 
 
 	class Renderer_GameObject final : public SubRenderer {
+		private:
+			Vulkan_Shader gameObjectsVertexShader;
+			Vulkan_Shader gameObjectsFragmentShader;
+			Vulkan_PipelineLayout gameObjectsPipelineLayout;
+			Vulkan_GraphicsPipeline gameObjectsGraphicsPipeline;
+			Vulkan_Buffer gameObjectVertexBuffer;
+
 		public:
-			Renderer_GameObject();
+			Renderer_GameObject(const Vulkan_RenderPass *pRenderPass);
 			~Renderer_GameObject();
 			void record_command_buffer(const Vulkan_CommandBuffer& commandBuffer);
 			void record_secondary_command_buffer();
@@ -51,13 +46,24 @@ namespace RE {
 	};
 	
 	class Renderer final {
+		public:
+			const Vulkan_RenderPass renderPass;
+
 		private:
-			Vulkan_CommandBuffer primaryCommandBuffer;
+			const Vulkan_CommandBuffer **ppPrimaryCommandBuffer;
 			Renderer_GameObject gameObjectRenderer;
 			bool bValid;
 
+			void create_framebuffers();
+			void destroy_framebuffers();
+			void record_command_buffers();
+
 		public:
 			const Vulkan_Buffer rectangleIndexBuffer;
+			const Vulkan_Semaphore semaphoreAcquireSwapchainImage, semaphoreRenderFinished;
+			const Vulkan_Fence renderFence;
+			const Vulkan_Framebuffer **ppFramebuffers;
+			static Renderer *pInstance;
 
 			Renderer();
 			~Renderer();

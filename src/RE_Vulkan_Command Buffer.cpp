@@ -184,8 +184,12 @@ namespace RE {
 		CATCH_SIGNAL(this->cmd_set_scissor(vk_scissorOffset, vk_scissorExtent));
 	}
 
-	void Vulkan_CommandBuffer::cmd_draw(const uint32_t u32VertexCount, const uint32_t u32InstanceCount, const uint32_t u32FirstVertex, const uint32_t u32FirstInstance) const {
-		CATCH_SIGNAL(vkCmdDraw(vk_hCommandBuffer, u32VertexCount, u32InstanceCount, u32FirstVertex, u32FirstInstance));
+	void Vulkan_CommandBuffer::cmd_draw(const uint32_t u32VerticesToDrawCount, const uint32_t u32InstanceCount, const uint32_t u32FirstVertex, const uint32_t u32FirstInstance) const {
+		CATCH_SIGNAL(vkCmdDraw(vk_hCommandBuffer, u32VerticesToDrawCount, u32InstanceCount, u32FirstVertex, u32FirstInstance));
+	}
+
+	void Vulkan_CommandBuffer::cmd_draw_indexed(const uint32_t u32IndicesToDrawCount, const uint32_t u32InstanceCount, const uint32_t u32FirstIndex, const uint32_t u32VertexOffset, const uint32_t u32FirstInstance) const {
+		CATCH_SIGNAL(vkCmdDrawIndexed(vk_hCommandBuffer, u32IndicesToDrawCount, u32InstanceCount, u32FirstIndex, u32VertexOffset, u32FirstInstance));
 	}
 
 	void Vulkan_CommandBuffer::cmd_execute(const uint32_t u32CommandBufferCount, const VkCommandBuffer *vk_pCommandBuffers) const {

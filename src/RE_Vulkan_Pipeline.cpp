@@ -7,12 +7,12 @@ namespace RE {
 		VkPipelineShaderStageCreateInfo vk_pipelineVertexShaderStateCreateInfo = {};
 		vk_pipelineVertexShaderStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		vk_pipelineVertexShaderStateCreateInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-		vk_pipelineVertexShaderStateCreateInfo.module = *pVertexShader;
+		CATCH_SIGNAL(vk_pipelineVertexShaderStateCreateInfo.module = *pVertexShader);
 		vk_pipelineVertexShaderStateCreateInfo.pName = "main";
 		VkPipelineShaderStageCreateInfo vk_pipelineFragmentShaderStateCreateInfo = {};
 		vk_pipelineFragmentShaderStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		vk_pipelineFragmentShaderStateCreateInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-		vk_pipelineFragmentShaderStateCreateInfo.module = *pFragmentShader;
+		CATCH_SIGNAL(vk_pipelineFragmentShaderStateCreateInfo.module = *pFragmentShader);
 		vk_pipelineFragmentShaderStateCreateInfo.pName = "main";
 		VkPipelineShaderStageCreateInfo vk_pipelineShaderStageCreateInfos[2] = {vk_pipelineVertexShaderStateCreateInfo, vk_pipelineFragmentShaderStateCreateInfo};
 
@@ -109,8 +109,8 @@ namespace RE {
 		vk_graphicsPipelineCreateInfo.pDepthStencilState = nullptr;
 		vk_graphicsPipelineCreateInfo.pColorBlendState = &vk_pipelineColorBlendStateCreateInfo;
 		vk_graphicsPipelineCreateInfo.pDynamicState = &vk_pipelineDynamicStateCreateInfo;
-		vk_graphicsPipelineCreateInfo.layout = *pPipelineLayout;
-		vk_graphicsPipelineCreateInfo.renderPass = *pRenderPass;
+		CATCH_SIGNAL(vk_graphicsPipelineCreateInfo.layout = *pPipelineLayout);
+		CATCH_SIGNAL(vk_graphicsPipelineCreateInfo.renderPass = *pRenderPass);
 		vk_graphicsPipelineCreateInfo.subpass = 0U;
 		vk_graphicsPipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;
 		vk_graphicsPipelineCreateInfo.basePipelineIndex = -1;

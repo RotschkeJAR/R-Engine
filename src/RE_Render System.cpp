@@ -1,4 +1,5 @@
 #include "RE_Render System.hpp"
+#include "RE_Renderer.hpp"
 #include "RE_Window.hpp"
 #include "RE_Main.hpp"
 
@@ -26,7 +27,7 @@ namespace RE {
 	VkFormat vk_eSwapchainImageFormat = VK_FORMAT_UNDEFINED;
 	VkExtent2D vk_swapchainResolution = {};
 	VkImage *vk_pSwapchainImages = nullptr;
-	VkImageView *vk_pSwapchainImageViews = nullptr;
+	VkImageView *vk_phSwapchainImageViews = nullptr;
 	uint32_t u32SwapchainImageCount = 0U;
 	Vulkan_CommandPool *pCommandPools[RE_VK_COMMAND_POOL_COUNT] = {};
 
@@ -35,12 +36,9 @@ namespace RE {
 	VkSurfaceFormatKHR vk_surfaceFormatSelected = {};
 	VkPresentModeKHR vk_ePresentModeSelected = VK_PRESENT_MODE_FIFO_KHR;
 
-	uint8_t u8Booleans = 0U;
-#define COMMAND_BUFFERS_INITIALIZED_INDEX 0
-#define SYNC_OBJECTS_INITIALIZED_INDEX 1
-#define SWAPCHAIN_DIRTY_INDEX 2
-#define USE_OTHER_FRAME_INDEX 3
-#define VSYNC_SETTING_INDEX 4
+	uint8_t u8RenderSystemFlags = 0U;
+#define SWAPCHAIN_DIRTY_INDEX 0
+#define VSYNC_SETTING_INDEX 1
 	
 	RenderSystem* RenderSystem::pInstance = nullptr;
 
@@ -642,9 +640,9 @@ namespace RE {
 			const VkSwapchainKHR vk_hOldSwapchain = vk_hSwapchain;
 			if (vk_hOldSwapchain) {
 				for (uint32_t u32SwapchainImageIndex = 0U; u32SwapchainImageIndex < u32SwapchainImageCount; u32SwapchainImageIndex++)
-					CATCH_SIGNAL(vkDestroyImageView(vk_hDevice, vk_pSwapchainImageViews[u32SwapchainImageIndex], nullptr));
+					CATCH_SIGNAL(vkDestroyImageView(vk_hDevice, vk_phSwapchainImageViews[u32SwapchainImageIndex], nullptr));
 				DELETE_ARRAY_SAFELY(vk_pSwapchainImages);
-				DELETE_ARRAY_SAFELY(vk_pSwapchainImageViews);
+				DELETE_ARRAY_SAFELY(vk_phSwapchainImageViews);
 			}
 			VkSwapchainCreateInfoKHR vk_swapchainCreateInfo = {};
 			vk_swapchainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -670,7 +668,7 @@ namespace RE {
 				vk_swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
 			vk_swapchainCreateInfo.preTransform = vk_surfaceCapabilities.currentTransform;
 			vk_swapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-			vk_swapchainCreateInfo.presentMode = is_bit_true<uint8_t>(u8Booleans, VSYNC_SETTING_INDEX) ? vk_ePresentModeVsync : vk_ePresentModeNoVsync;
+			vk_swapchainCreateInfo.presentMode = is_bit_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_INDEX) ? vk_ePresentModeVsync : vk_ePresentModeNoVsync;
 			vk_swapchainCreateInfo.clipped = VK_TRUE;
 			vk_swapchainCreateInfo.oldSwapchain = vk_hOldSwapchain;
 			if (!CHECK_VK_RESULT(vkCreateSwapchainKHR(vk_hDevice, &vk_swapchainCreateInfo, nullptr, &vk_hSwapchain))) {
@@ -685,7 +683,7 @@ namespace RE {
 		CATCH_SIGNAL(vkGetSwapchainImagesKHR(vk_hDevice, vk_hSwapchain, &u32SwapchainImageCount, nullptr));
 		vk_pSwapchainImages = new VkImage[u32SwapchainImageCount];
 		CATCH_SIGNAL(vkGetSwapchainImagesKHR(vk_hDevice, vk_hSwapchain, &u32SwapchainImageCount, vk_pSwapchainImages));
-		vk_pSwapchainImageViews = new VkImageView[u32SwapchainImageCount];
+		vk_phSwapchainImageViews = new VkImageView[u32SwapchainImageCount];
 		uint32_t u32SwapchainImageViewsCreated = 0U;
 		while (u32SwapchainImageViewsCreated < u32SwapchainImageCount) {
 			VkImageViewCreateInfo vk_swapchainImageViewCreateInfo = {};
@@ -702,7 +700,7 @@ namespace RE {
 			vk_swapchainImageViewCreateInfo.subresourceRange.levelCount = 1U;
 			vk_swapchainImageViewCreateInfo.subresourceRange.baseArrayLayer = 0U;
 			vk_swapchainImageViewCreateInfo.subresourceRange.layerCount = 1U;
-			if (!CHECK_VK_RESULT(vkCreateImageView(vk_hDevice, &vk_swapchainImageViewCreateInfo, nullptr, &vk_pSwapchainImageViews[u32SwapchainImageViewsCreated]))) {
+			if (!CHECK_VK_RESULT(vkCreateImageView(vk_hDevice, &vk_swapchainImageViewCreateInfo, nullptr, &vk_phSwapchainImageViews[u32SwapchainImageViewsCreated]))) {
 				RE_FATAL_ERROR(append_to_string("Failed to create Vulkan image view at index ", u32SwapchainImageViewsCreated));
 				break;
 			}
@@ -710,9 +708,9 @@ namespace RE {
 		}
 		if (u32SwapchainImageViewsCreated != u32SwapchainImageCount) {
 			for (uint32_t u32SwapchainImageDeleteIndex = 0U; u32SwapchainImageDeleteIndex < u32SwapchainImageViewsCreated; u32SwapchainImageDeleteIndex++)
-				CATCH_SIGNAL(vkDestroyImageView(vk_hDevice, vk_pSwapchainImageViews[u32SwapchainImageDeleteIndex], nullptr));
+				CATCH_SIGNAL(vkDestroyImageView(vk_hDevice, vk_phSwapchainImageViews[u32SwapchainImageDeleteIndex], nullptr));
 			DELETE_ARRAY_SAFELY(vk_pSwapchainImages);
-			DELETE_ARRAY_SAFELY(vk_pSwapchainImageViews);
+			DELETE_ARRAY_SAFELY(vk_phSwapchainImageViews);
 			CATCH_SIGNAL(vkDestroySwapchainKHR(vk_hDevice, vk_hSwapchain, nullptr));
 			vk_hSwapchain = VK_NULL_HANDLE;
 			return false;
@@ -724,9 +722,9 @@ namespace RE {
 		if (!vk_hSwapchain)
 			return;
 		for (uint32_t u32SwapchainImageIndex = 0U; u32SwapchainImageIndex < u32SwapchainImageCount; u32SwapchainImageIndex++)
-			CATCH_SIGNAL(vkDestroyImageView(vk_hDevice, vk_pSwapchainImageViews[u32SwapchainImageIndex], nullptr));
+			CATCH_SIGNAL(vkDestroyImageView(vk_hDevice, vk_phSwapchainImageViews[u32SwapchainImageIndex], nullptr));
 		DELETE_ARRAY_SAFELY(vk_pSwapchainImages);
-		DELETE_ARRAY_SAFELY(vk_pSwapchainImageViews);
+		DELETE_ARRAY_SAFELY(vk_phSwapchainImageViews);
 		CATCH_SIGNAL(vkDestroySwapchainKHR(vk_hDevice, vk_hSwapchain, nullptr));
 		vk_hSwapchain = VK_NULL_HANDLE;
 	}
@@ -739,14 +737,20 @@ namespace RE {
 	}
 
 	void RenderSystem::refresh() {
-		if (is_bit_true<uint8_t>(u8Booleans, SWAPCHAIN_DIRTY_INDEX)) {
+		if (is_bit_true<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_INDEX)) {
+			CATCH_SIGNAL(Renderer::pInstance->renderFence.wait_for_fence());
 			CATCH_SIGNAL(recreate_swapchain());
-			set_bit<uint8_t>(u8Booleans, SWAPCHAIN_DIRTY_INDEX, false);
+			CATCH_SIGNAL(Renderer::pInstance->window_resize_event());
+			set_bit<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_INDEX, false);
 		}
 	}
 
+	void RenderSystem::get_next_swapchain_image(const Vulkan_Semaphore *pSemaphoreWaitForSwapchainImageAcquired, uint32_t *pu32NextSwapchainImageIndex) {
+		CATCH_SIGNAL(vkAcquireNextImageKHR(vk_hDevice, vk_hSwapchain, UINT64_MAX, *pSemaphoreWaitForSwapchainImageAcquired, VK_NULL_HANDLE, pu32NextSwapchainImageIndex));
+	}
+
 	void RenderSystem::window_resize_event() {
-		set_bit<uint8_t>(u8Booleans, SWAPCHAIN_DIRTY_INDEX, true);
+		set_bit<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_INDEX, true);
 	}
 
 	bool RenderSystem::is_valid() {
@@ -754,13 +758,13 @@ namespace RE {
 	}
 
 	void enable_vsync(bool bEnableVsync) {
-		if (is_bit_true<uint8_t>(u8Booleans, VSYNC_SETTING_INDEX) != bEnableVsync)
-			set_bit<uint8_t>(u8Booleans, SWAPCHAIN_DIRTY_INDEX, true);
-		set_bit<uint8_t>(u8Booleans, VSYNC_SETTING_INDEX, bEnableVsync);
+		if (is_bit_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_INDEX) != bEnableVsync)
+			set_bit<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_INDEX, true);
+		set_bit<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_INDEX, bEnableVsync);
 	}
 
 	bool is_vsync_enabled() {
-		return is_bit_true<uint8_t>(u8Booleans, VSYNC_SETTING_INDEX);
+		return is_bit_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_INDEX);
 	}
 
 }

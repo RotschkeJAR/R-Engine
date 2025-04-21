@@ -45,7 +45,10 @@ class Objy : public GameObject {
 		RandomNumberGenerator rng;
 		REulong hits, misses;
 
-		Objy() : GameObject(0, 1), hits(0UL), misses(0UL) {}
+		Objy() : GameObject(0, 1), hits(0UL), misses(0UL) {
+			transform.scale[0] = 0.1f;
+			transform.scale[1] = 0.1f;
+		}
 		~Objy() {}
 		void start(Scene* pStartingScene) {
 			PRINT_LN("start objy");
@@ -56,6 +59,8 @@ class Objy : public GameObject {
 				hits++;
 			else
 				misses++;
+			transform.position[0] = (get_cursor_normal_position_x() * 2.0f) - 1.0f;
+			transform.position[1] = (get_cursor_normal_position_y() * 2.0f) - 1.0f;
 		}
 		void end(Scene* pEndingScene) {
 			PRINT_LN(append_to_string(hits, ", ", misses).c_str());

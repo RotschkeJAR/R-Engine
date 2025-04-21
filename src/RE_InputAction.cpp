@@ -8,7 +8,7 @@ namespace RE {
 	InputAction::InputAction(REuint u32KeyScancode) : u32KeyScancode(u32KeyScancode), eInput(map_scancode_to_input(u32KeyScancode)) {}
 	InputAction::~InputAction() {
 		if (is_updating())
-			InputMgr::pInstance->pUpdateInputObject = nullptr;
+			pUpdateInputObject = nullptr;
 	}
 
 	bool InputAction::is_scroll_wheel() {
@@ -25,20 +25,20 @@ namespace RE {
 
 	void InputAction::update_input() {
 		if (can_update())
-			InputMgr::pInstance->pUpdateInputObject = this;
+			pUpdateInputObject = this;
 	}
 
 	bool InputAction::is_updating() {
-		return InputMgr::pInstance && InputMgr::pInstance->pUpdateInputObject == this;
+		return pUpdateInputObject == this;
 	}
 
 	void InputAction::cancel_update() {
 		if (is_updating())
-			InputMgr::pInstance->pUpdateInputObject = nullptr;
+			pUpdateInputObject = nullptr;
 	}
 
 	bool InputAction::can_update() {
-		return InputMgr::pInstance && !InputMgr::pInstance->pUpdateInputObject;
+		return !pUpdateInputObject;
 	}
 
 	void InputAction::change_input(Input eNewInput) {

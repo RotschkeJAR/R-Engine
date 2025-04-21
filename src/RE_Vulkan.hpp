@@ -754,6 +754,7 @@ namespace RE {
 			bool end_recording_command_buffer() const;
 			void cmd_begin_renderpass(const VkRenderPassBeginInfo vk_commandBufferRenderpassBeginInfo, const VkSubpassContents vk_eSubpassContents) const;
 			void cmd_begin_renderpass(const float fClearColor[4], const int32_t i32ClearColor[4], const uint32_t u32ClearColor[4], const float fClearDepth, const uint32_t u32ClearStencil, const Vulkan_RenderPass *pRenderPass, const Vulkan_Framebuffer *pFramebuffer, const VkRect2D vk_renderArea, const VkSubpassContents vk_eSubpassContents) const;
+			void cmd_next_subpass(const VkSubpassContents vk_eSubpassContents) const;
 			void cmd_end_renderpass() const;
 			void cmd_bind_pipeline(const VkPipelineBindPoint vk_ePipelineBindPoint, const VkPipeline vk_pipeline) const;
 			void cmd_bind_graphics_pipeline(const Vulkan_GraphicsPipeline *pGraphicsPipeline) const;

@@ -421,6 +421,12 @@ namespace RE {
 			Vector() {
 				fill(static_cast<T>(0.0));
 			}
+			Vector(Vector &copy) {
+				if (u32Dimensions != copy.get_dimensions())
+					WARNING(append_to_string("The coordinates of this vector with ", u32Dimensions, " dimensions were copied from a vector with ", copy.get_dimensions(), " dimensions").c_str());
+				for (uint32_t u32CoordinateIndex = 0U; u32CoordinateIndex < copy.get_dimensions() && u32CoordinateIndex < u32Dimensions; u32CoordinateIndex++)
+					coords[u32CoordinateIndex] = copy.coords[u32CoordinateIndex];
+			}
 			template <typename... V>
 			Vector(V... values) {
 				fill(static_cast<T>(0.0));
@@ -567,10 +573,21 @@ namespace RE {
 			virtual void end();
 	};
 
+	class Transform final {
+		public:
+			Vector3f position, scale;
+
+			Transform();
+			Transform(const Vector3f &positionCopy);
+			Transform(const Vector3f &positionCopy, const Vector3f &scaleCopy);
+			~Transform();
+	};
+
 	class GameObject {
 		public:
 			const REuint u32OwnId;
 			const REuint u32SceneParentId;
+			Transform transform;
 
 			GameObject() = delete;
 			GameObject(REuint u32OwnId, REuint u32SceneParentId);
@@ -610,6 +627,11 @@ namespace RE {
 			bool has_valid_input_values();
 	};
 
+	int32_t get_cursor_position_x();
+	int32_t get_cursor_position_y();
+	float get_cursor_normal_position_x();
+	float get_cursor_normal_position_y();
+
 	Input map_scancode_to_input(REuint u32Scancode);
 	REuint map_input_to_scancode(Input eInput);
 
@@ -623,7 +645,7 @@ namespace RE {
 			GAME_OBJECT_POINTER = nullptr; \
 		} while (false) )
 	
-	void set_next_scene(Scene* pNextScene);
+	void set_next_scene(Scene* pNextSceneParam);
 	bool is_next_scene_set();
 	Scene* get_current_scene();
 	REuint get_current_scene_id();

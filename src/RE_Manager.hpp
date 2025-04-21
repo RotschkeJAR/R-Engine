@@ -5,6 +5,9 @@
 
 namespace RE {
 
+	extern Scene *pCurrentScene, *pNextScene;
+	extern std::vector<GameObject*> gameObjects, deletableGameObjects, newGameObjects;
+
 	class Manager final {
 		private:
 			bool should_update_object(GameObject* pGameObject);
@@ -15,8 +18,6 @@ namespace RE {
 			void add_proc();
 
 		public:
-			static Scene *pCurrentScene, *pNextScene;
-			static std::vector<GameObject*> gameObjects, deletableGameObjects, newGameObjects;
 			static Manager *pInstance;
 
 			Manager();

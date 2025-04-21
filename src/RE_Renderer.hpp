@@ -5,7 +5,7 @@
 
 namespace RE {
 
-#define RE_VK_RENDERABLE_OBJECTS_COUNT 1000U
+#define RE_VK_RENDERABLE_RECTANGLES_COUNT 16384U
 
 	class SubRenderer {
 		protected:
@@ -18,7 +18,6 @@ namespace RE {
 			virtual void record_command_buffer(const Vulkan_CommandBuffer& commandBuffer) = 0;
 			virtual void record_secondary_command_buffer() = 0;
 			virtual void render() = 0;
-			virtual void window_resize_event() = 0;
 			const Vulkan_CommandBuffer* get_vulkan_command_buffer_ptr() const;
 			VkCommandBuffer get_actual_command_buffer() const;
 			bool is_valid() const;
@@ -34,15 +33,19 @@ namespace RE {
 			Vulkan_Shader gameObjectsFragmentShader;
 			Vulkan_PipelineLayout gameObjectsPipelineLayout;
 			Vulkan_GraphicsPipeline gameObjectsGraphicsPipeline;
-			Vulkan_Buffer gameObjectVertexBuffer;
+			Vulkan_Buffer gameObjectVertexBuffer, gameObjectVertexStagingBuffer;
+			Vulkan_CommandBuffer vertexBufferTransferCommandBuffer;
+			float *pVertices;
+			uint32_t u32GameObjectsToRender;
 
 		public:
+			const Vulkan_Semaphore semaphoreWaitForVertexBufferTransfer;
+
 			Renderer_GameObject(const Vulkan_RenderPass *pRenderPass);
 			~Renderer_GameObject();
 			void record_command_buffer(const Vulkan_CommandBuffer& commandBuffer);
 			void record_secondary_command_buffer();
 			void render();
-			void window_resize_event();
 	};
 	
 	class Renderer final {
@@ -51,6 +54,7 @@ namespace RE {
 
 		private:
 			const Vulkan_CommandBuffer **ppPrimaryCommandBuffer;
+			VkSemaphore vk_semaphoresToWaitForBeforeRendering[2];
 			Renderer_GameObject gameObjectRenderer;
 			bool bValid;
 

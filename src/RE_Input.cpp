@@ -1,4 +1,5 @@
 #include "RE_Input.hpp"
+#include "RE_Window.hpp"
 
 namespace RE {
 
@@ -7,9 +8,16 @@ namespace RE {
 		Input eInput;
 	};
 
+	REuint u32Scancodes[MAXIMUM_PHYSICAL_KEYS] = {};
+	Input eInputs[MAXIMUM_PHYSICAL_KEYS] = {};
+	REubyte u8KeyBuffer[KEY_BUFFER_SIZE] = {}, u8PrevKeyBuffer[KEY_BUFFER_SIZE] = {}; // Keyboard
+	REubyte u8NumberOfKeys = 0U;
+	REubyte u8SpecialInputBuffer = 0U, u8PrevSpecialInputBuffer = 0U; // Scrolling and mouse buttons
+	Vector2i cursorPosition, prevCursorPosition;
+	InputAction *pUpdateInputObject = nullptr;
 	InputMgr *InputMgr::pInstance = nullptr;
 
-	InputMgr::InputMgr() : u8NumberOfKeys(0U), u8SpecialInputBuffer(0U), u8PrevSpecialInputBuffer(0U), pUpdateInputObject(nullptr) {
+	InputMgr::InputMgr() {
 		if (pInstance) {
 			RE_FATAL_ERROR("An instance of the class \"InputMgr\" has already been constructed");
 			return;
@@ -338,6 +346,22 @@ namespace RE {
 	
 	Vector2i InputMgr::get_cursor() {
 		return Vector2i(cursorPosition);
+	}
+
+	int32_t get_cursor_position_x() {
+		return cursorPosition[0];
+	}
+
+	int32_t get_cursor_position_y() {
+		return cursorPosition[1];
+	}
+
+	float get_cursor_normal_position_x() {
+		return cursorPosition[0] / static_cast<float>(Window::pInstance->get_size()[0]);
+	}
+
+	float get_cursor_normal_position_y() {
+		return cursorPosition[1] / static_cast<float>(Window::pInstance->get_size()[1]);
 	}
 
 	Input map_scancode_to_input(REuint u32Scancode) {

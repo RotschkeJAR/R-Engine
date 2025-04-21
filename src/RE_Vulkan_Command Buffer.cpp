@@ -102,6 +102,10 @@ namespace RE {
 		CATCH_SIGNAL(vkCmdEndRenderPass(vk_hCommandBuffer));
 	}
 
+	void Vulkan_CommandBuffer::cmd_next_subpass(const VkSubpassContents vk_eSubpassContents) const {
+		CATCH_SIGNAL(vkCmdNextSubpass(vk_hCommandBuffer, vk_eSubpassContents));
+	}
+
 	void Vulkan_CommandBuffer::cmd_bind_pipeline(const VkPipelineBindPoint vk_ePipelineBindPoint, const VkPipeline vk_pipeline) const {
 		CATCH_SIGNAL(vkCmdBindPipeline(vk_hCommandBuffer, vk_ePipelineBindPoint, vk_pipeline));
 	}

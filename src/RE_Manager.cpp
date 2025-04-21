@@ -3,8 +3,8 @@
 
 namespace RE {
 
-	Scene *Manager::pCurrentScene = nullptr, *Manager::pNextScene = nullptr;
-	std::vector<GameObject*> Manager::gameObjects, Manager::deletableGameObjects, Manager::newGameObjects;
+	Scene *pCurrentScene = nullptr, *pNextScene = nullptr;
+	std::vector<GameObject*> gameObjects, deletableGameObjects, newGameObjects;
 	Manager *Manager::pInstance = nullptr;
 	
 	Manager::Manager() {
@@ -12,7 +12,7 @@ namespace RE {
 			RE_FATAL_ERROR("Another instance of the class \"Manager\" has been constructed");
 			return;
 		}
-		Manager::pInstance = this;
+		pInstance = this;
 	}
 
 	Manager::~Manager() {
@@ -95,45 +95,42 @@ namespace RE {
 	}
 
 	void mark_delete(GameObject* pGameObject) {
-		std::vector<GameObject*>::iterator iteratorGameObject = std::find(std::begin(Manager::gameObjects), std::end(Manager::gameObjects), pGameObject);
-		if (iteratorGameObject == std::end(Manager::gameObjects)) {
-			if (Manager::pInstance) {
-				iteratorGameObject = std::find(std::begin(Manager::pInstance->newGameObjects), std::end(Manager::pInstance->newGameObjects), pGameObject);
-				if (iteratorGameObject != std::end(Manager::pInstance->newGameObjects)) {
-					Manager::pInstance->newGameObjects.erase(iteratorGameObject);
-					return;
-				}
+		std::vector<GameObject*>::iterator iteratorGameObject = std::find(std::begin(gameObjects), std::end(gameObjects), pGameObject);
+		if (iteratorGameObject == std::end(gameObjects)) {
+			iteratorGameObject = std::find(std::begin(newGameObjects), std::end(newGameObjects), pGameObject);
+			if (iteratorGameObject != std::end(newGameObjects)) {
+				newGameObjects.erase(iteratorGameObject);
+				return;
 			}
 			RE_NOTE(append_to_string("The memory address ", pGameObject, " doesn't point to a game object, that has to be deleted, or is not listed. In case it's been constructed before the main-function had been started executing, it will always be discarded"));
 			return;
 		} else if (Manager::pInstance)
-			Manager::pInstance->deletableGameObjects.push_back(pGameObject);
+			deletableGameObjects.push_back(pGameObject);
 		else
-			CATCH_SIGNAL(delete pGameObject);
+			DELETE_SAFELY(pGameObject);
 	}
 
-	void set_next_scene(Scene* pNextScene) {
-		DEFINE_SIGNAL_GUARD(sigGuardSetNextSceneFunc);
-		if (!pNextScene)
+	void set_next_scene(Scene* pNextSceneParam) {
+		if (!pNextSceneParam)
 			return;
-		else if (!pNextScene->u32Id) {
+		else if (CATCH_SIGNAL_AND_RETURN(!pNextSceneParam->u32Id, bool)) {
 			RE_WARNING("A scene has been set for becoming the next one, but its ID is zero and has been therefore discarded");
 			return;
 		}
-		Manager::pNextScene = pNextScene;
+		pNextScene = pNextSceneParam;
 	}
 
 	bool is_next_scene_set() {
-		return Manager::pCurrentScene != Manager::pNextScene && Manager::pNextScene;
+		return pCurrentScene != pNextScene && pNextScene;
 	}
 
 	Scene* get_current_scene() {
-		return Manager::pCurrentScene;
+		return pCurrentScene;
 	}
 
 	REuint get_current_scene_id() {
 		Scene* pCurrentScene = get_current_scene();
-		return pCurrentScene ? pCurrentScene->u32Id : 0U;
+		return pCurrentScene ? CATCH_SIGNAL_AND_RETURN(pCurrentScene->u32Id, uint32_t) : 0U;
 	}
 
 	bool is_scene_current(REuint u32SceneId) {
@@ -141,12 +138,12 @@ namespace RE {
 	}
 
 	Scene* get_next_scene() {
-		return Manager::pNextScene;
+		return pNextScene;
 	}
 
 	REuint get_next_scene_id() {
 		Scene* pNextScene = get_next_scene();
-		return pNextScene ? pNextScene->u32Id : 0U;
+		return pNextScene ? CATCH_SIGNAL_AND_RETURN(pNextScene->u32Id, uint32_t) : 0U;
 	}
 
 	bool is_scene_next(REuint u32SceneId) {

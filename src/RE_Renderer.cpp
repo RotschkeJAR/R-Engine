@@ -5,7 +5,7 @@
 namespace RE {
 
 	typedef uint16_t REindex_t;
-#define RE_VK_INDEX_BUFFER_SIZE RE_VK_RENDERABLE_OBJECTS_COUNT * 6U
+#define RE_VK_INDEX_BUFFER_SIZE RE_VK_RENDERABLE_RECTANGLES_COUNT * 6U
 #define RE_VK_INDEX_BUFFER_BYTES RE_VK_INDEX_BUFFER_SIZE * sizeof(REindex_t)
 
 	SubRenderer::SubRenderer() : secondaryCommandBuffer(VK_COMMAND_BUFFER_LEVEL_SECONDARY, pCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_INDEX]), bValid(false) {}
@@ -50,7 +50,7 @@ namespace RE {
 		constexpr uint32_t u32IndexStagingBufferQueueTypes[] = {RE_VK_QUEUE_TRANSFER_INDEX};
 		const Vulkan_Buffer indexStagingBuffer(RE_VK_INDEX_BUFFER_BYTES, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, u32IndexStagingBufferQueueTypes, sizeof(u32IndexStagingBufferQueueTypes) / sizeof(u32IndexStagingBufferQueueTypes[0]), VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 		REindex_t indices[RE_VK_INDEX_BUFFER_SIZE];
-		for (uint32_t u32IndicesGameObjectIndex = 0U; u32IndicesGameObjectIndex < RE_VK_RENDERABLE_OBJECTS_COUNT; u32IndicesGameObjectIndex++) {
+		for (uint32_t u32IndicesGameObjectIndex = 0U; u32IndicesGameObjectIndex < RE_VK_RENDERABLE_RECTANGLES_COUNT; u32IndicesGameObjectIndex++) {
 			indices[u32IndicesGameObjectIndex * 6U + 0U] = u32IndicesGameObjectIndex * 4U + 0U;
 			indices[u32IndicesGameObjectIndex * 6U + 1U] = u32IndicesGameObjectIndex * 4U + 1U;
 			indices[u32IndicesGameObjectIndex * 6U + 2U] = u32IndicesGameObjectIndex * 4U + 2U;
@@ -67,6 +67,9 @@ namespace RE {
 		Vulkan_Fence indexBufferTransferFence;
 		VkPipelineStageFlags vk_ePipelineStagesToWaitFor[] = {VK_PIPELINE_STAGE_NONE};
 		CATCH_SIGNAL(pDeviceQueues[RE_VK_QUEUE_TRANSFER_INDEX]->submit_to_queue(0U, nullptr, vk_ePipelineStagesToWaitFor, 1U, &indexBufferTransferCommandBuffer, 0U, nullptr, &indexBufferTransferFence));
+
+		vk_semaphoresToWaitForBeforeRendering[0] = semaphoreAcquireSwapchainImage;
+		vk_semaphoresToWaitForBeforeRendering[1] = gameObjectRenderer.semaphoreWaitForVertexBufferTransfer;
 
 		CATCH_SIGNAL(create_framebuffers());
 
@@ -124,8 +127,13 @@ namespace RE {
 		CATCH_SIGNAL(renderFence.wait_for_and_reset_fence());
 		uint32_t u32NextSwapchainImageIndex;
 		CATCH_SIGNAL(RenderSystem::pInstance->get_next_swapchain_image(&semaphoreAcquireSwapchainImage, &u32NextSwapchainImageIndex));
-		VkPipelineStageFlags vk_ePipelinesStagesToWaitFor[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-		CATCH_SIGNAL(pDeviceQueues[RE_VK_QUEUE_GRAPHICS_INDEX]->submit_to_queue(1U, &semaphoreAcquireSwapchainImage, vk_ePipelinesStagesToWaitFor, 1U, ppPrimaryCommandBuffer[u32NextSwapchainImageIndex], 1U, &semaphoreRenderFinished, &renderFence));
+		CATCH_SIGNAL(gameObjectRenderer.render());
+		CATCH_SIGNAL(record_command_buffers());
+		VkPipelineStageFlags vk_ePipelinesStagesToWaitFor[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT};
+		VkCommandBuffer commandBuffersForRendering[] = {ppPrimaryCommandBuffer[u32NextSwapchainImageIndex]->get_command_buffer()};
+		VkSemaphore vk_semaphoresToSognalAfterRendering[] = {semaphoreRenderFinished.get_semaphore()};
+		VkFence vk_fenceToSignal = renderFence.get_fence();
+		CATCH_SIGNAL(pDeviceQueues[RE_VK_QUEUE_GRAPHICS_INDEX]->submit_to_queue(2U, vk_semaphoresToWaitForBeforeRendering, vk_ePipelinesStagesToWaitFor, 1U, commandBuffersForRendering, 1U, vk_semaphoresToSognalAfterRendering, vk_fenceToSignal));
 		CATCH_SIGNAL(pDeviceQueues[RE_VK_QUEUE_PRESENT_INDEX]->submit_to_present_queue(1U, &semaphoreRenderFinished, 1U, &vk_hSwapchain, &u32NextSwapchainImageIndex));
 	}
 
@@ -134,7 +142,6 @@ namespace RE {
 		CATCH_SIGNAL(destroy_framebuffers());
 		CATCH_SIGNAL(create_framebuffers());
 		CATCH_SIGNAL(record_command_buffers());
-		CATCH_SIGNAL(gameObjectRenderer.window_resize_event());
 	}
 
 	bool Renderer::is_valid() const {

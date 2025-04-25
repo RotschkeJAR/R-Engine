@@ -3,8 +3,8 @@ BIN          = bin
 SH           = shaders
 
 CC           = g++
-CFLAG        = -m64 -march=x86-64 -pedantic-errors -Wall -ffast-math -std=c++17
-LDFLAG       = -l RE -I $(SRC) -I /usr/ -L $(BIN) -l X11 -l wayland-client
+CFLAG        = -m64 -march=x86-64 -pedantic-errors -Wall -ffast-math -std=c++20
+LDFLAG       = -lRE -I$(SRC) -I/usr/ -L$(BIN) -lX11 -lwayland-client
 
 SC           = glslc
 SFLAG        = --target-env=vulkan1.3 --target-spv=spv1.6 -O

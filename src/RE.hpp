@@ -322,7 +322,7 @@ namespace RE {
 		constexpr REint i32HexadecimalDigits = sizeof(T) * 8 / 4;
 		bool bNumbersPresent = !bCutZeros;
 		for (REint i32Digit = i32HexadecimalDigits - 1U; i32Digit >= 0; i32Digit--) {
-			T base = std::pow(16, static_cast<T>(i32Digit));
+			T base = std::pow<T>(16, static_cast<T>(i32Digit));
 			REuint u32HexadecimalCharacterIndex = static_cast<REuint>(number / base);
 			number -= base * u32HexadecimalCharacterIndex;
 			if (u32HexadecimalCharacterIndex || bNumbersPresent) {
@@ -421,11 +421,12 @@ namespace RE {
 			Vector() {
 				fill(static_cast<T>(0.0));
 			}
-			Vector(Vector &copy) {
-				if (u32Dimensions != copy.get_dimensions())
-					WARNING(append_to_string("The coordinates of this vector with ", u32Dimensions, " dimensions were copied from a vector with ", copy.get_dimensions(), " dimensions").c_str());
-				for (uint32_t u32CoordinateIndex = 0U; u32CoordinateIndex < copy.get_dimensions() && u32CoordinateIndex < u32Dimensions; u32CoordinateIndex++)
-					coords[u32CoordinateIndex] = copy.coords[u32CoordinateIndex];
+			template <typename P, uint32_t u32CopyDimensions>
+			Vector(Vector<P, u32CopyDimensions> &copyVector) {
+				if (u32Dimensions != copyVector.get_dimensions())
+					WARNING(append_to_string("The coordinates of this vector with ", u32Dimensions, " dimensions were copied from a vector with ", copyVector.get_dimensions(), " dimensions").c_str());
+				for (uint32_t u32CoordinateIndex = 0U; u32CoordinateIndex < copyVector.get_dimensions() && u32CoordinateIndex < u32Dimensions; u32CoordinateIndex++)
+					coords[u32CoordinateIndex] = copyVector.coords[u32CoordinateIndex];
 			}
 			template <typename... V>
 			Vector(V... values) {
@@ -462,7 +463,7 @@ namespace RE {
 				std::fill(std::begin(coords), std::end(coords), value);
 			}
 
-			void copy_from(const Vector& copyVector) {
+			void copy_from(const Vector &copyVector) {
 				if (u32Dimensions != copyVector.get_dimensions()) {
 					WARNING(append_to_string("Tried to copy values from one vector (", copyVector.get_dimensions(), ") to another (", u32Dimensions, "). This process has been terminated").c_str());
 					return;
@@ -471,7 +472,7 @@ namespace RE {
 					coords[u32Index] = copyVector[u32Index];
 			}
 
-			bool equals(Vector& compareVector) const {
+			bool equals(const Vector &compareVector) const {
 				if (u32Dimensions != compareVector.get_dimensions())
 					return false;
 				for (REuint u32Index = 0U; u32Index < u32Dimensions; u32Index++)
@@ -496,19 +497,19 @@ namespace RE {
 				return coords[index];
 			}
 
-			void operator =(const Vector& copyVector) {
+			void operator =(const Vector &copyVector) {
 				copy_from(copyVector);
 			}
 
-			bool operator ==(const Vector& compareVector) const {
+			bool operator ==(const Vector &compareVector) const {
 				return equals(compareVector);
 			}
 
-			bool operator !=(const Vector& compareVector) const {
+			bool operator !=(const Vector &compareVector) const {
 				return !equals(compareVector);
 			}
 
-			friend std::ostream& operator <<(std::ostream& stream, const Vector& vector) {
+			friend std::ostream& operator <<(std::ostream &stream, const Vector &vector) {
 				stream << "(";
 				for (REuint i = 0U; i < vector.get_dimensions(); i++) {
 					if (i != 0U)
@@ -531,6 +532,22 @@ namespace RE {
 	typedef Vector<REuint, 2U> Vector2u;
 	typedef Vector<REuint, 3U> Vector3u;
 	typedef Vector<REuint, 4U> Vector4u;
+
+	class Color final {
+		private:
+			float channels[4];
+
+		public:
+			Color();
+			~Color();
+			void copy_from(const Color &copyColor);
+			bool equals(const Color &compareColor) const;
+
+			float operator [](const uint32_t u32ChannelIndex) const;
+			void operator =(const Color &copyColor);
+			bool operator ==(const Color &compareColor) const;
+			bool operator !=(const Color &compareColor) const;
+	};
 
 	class RandomNumberGenerator {
 		private:
@@ -580,7 +597,23 @@ namespace RE {
 			Transform();
 			Transform(const Vector3f &positionCopy);
 			Transform(const Vector3f &positionCopy, const Vector3f &scaleCopy);
+			Transform(const Transform &copyTransform);
 			~Transform();
+			void reset_position();
+			void copy_from(const Transform &copyTransform);
+			bool equals(const Transform &compareTransform) const;
+
+			void operator =(const Transform &copyTransform);
+			bool operator ==(const Transform &compareTransform) const;
+			bool operator !=(const Transform &compareTransform) const;
+	};
+
+	class SpriteRenderer final {
+		public:
+			Color color;
+
+			SpriteRenderer();
+			~SpriteRenderer();
 	};
 
 	class GameObject {
@@ -588,6 +621,7 @@ namespace RE {
 			const REuint u32OwnId;
 			const REuint u32SceneParentId;
 			Transform transform;
+			SpriteRenderer spriteRenderer;
 
 			GameObject() = delete;
 			GameObject(REuint u32OwnId, REuint u32SceneParentId);

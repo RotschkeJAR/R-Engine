@@ -3,7 +3,7 @@ BIN          = bin
 SH           = shaders
 
 CC           = g++
-CFLAG        = -m64 -march=x86-64 -Wall -ffast-math -std=c++17
+CFLAG        = -m64 -march=x86-64 -pedantic-errors -Wall -ffast-math -std=c++17
 LDFLAG       = -l RE -I $(SRC) -I /usr/ -L $(BIN) -l X11 -l wayland-client
 
 SC           = glslc

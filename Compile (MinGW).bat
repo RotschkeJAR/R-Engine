@@ -4,7 +4,7 @@ set SRC=src
 set BIN=bin\MinGW
 
 set CC=g++
-set CFLAG=-std=c++17 -Wall -march=x86-64 -m64 -ffast-math -O2 -I"C:\VulkanSDK\1.4.304.0\Include"
+set CFLAG=-std=c++20 -pedantic-errors -Wall -march=x86-64 -m64 -ffast-math -O2 -I"C:\VulkanSDK\Include"
 set LDFLAG=-lRE -lgdi32 -luser32 -I%SRC% -L%BIN% -static-libgcc -static-libstdc++
 
 %CC% %CFLAG% -c %SRC%\*.cpp

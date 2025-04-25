@@ -87,7 +87,7 @@ class First : public Scene {
 		void end() {}
 };
 
-int main() {
+int main_func() {
 	show_message_box_on_error(false);
 	SignalCatcher sigCatcher;
 	First first;
@@ -103,6 +103,10 @@ int main() {
 #ifdef RE_OS_WINDOWS
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pwcCmdLine, int i32CmdShow) {
 	set_hinstance(hInstance);
-	return main();
+	return main_func();
 }
 #endif
+
+int main() {
+	return main_func();
+}

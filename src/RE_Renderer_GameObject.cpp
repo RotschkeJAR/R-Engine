@@ -103,10 +103,10 @@ namespace RE {
 						pVertices[u32OffsetInVertices + 2U] = pObject->transform.position[2];
 						break;
 				}
-				pVertices[u32OffsetInVertices + 3U] = 1.0f;
-				pVertices[u32OffsetInVertices + 4U] = 0.0f;
-				pVertices[u32OffsetInVertices + 5U] = 0.0f;
-				pVertices[u32OffsetInVertices + 6U] = 1.0f;
+				pVertices[u32OffsetInVertices + 3U] = pObject->spriteRenderer.color[0];
+				pVertices[u32OffsetInVertices + 4U] = pObject->spriteRenderer.color[1];
+				pVertices[u32OffsetInVertices + 5U] = pObject->spriteRenderer.color[2];
+				pVertices[u32OffsetInVertices + 6U] = pObject->spriteRenderer.color[3];
 			}
 			u32GameObjectsToRender++;
 		}

@@ -740,7 +740,6 @@ namespace RE {
 		if (is_bit_true<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_INDEX)) {
 			CATCH_SIGNAL(Renderer::pInstance->renderFence.wait_for_fence());
 			CATCH_SIGNAL(recreate_swapchain());
-			PRINT_LN(append_to_string(vk_surfaceCapabilities.maxImageExtent.width, ", ", vk_surfaceCapabilities.maxImageExtent.height).c_str());
 			CATCH_SIGNAL(Renderer::pInstance->window_resize_event());
 			set_bit<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_INDEX, false);
 		}

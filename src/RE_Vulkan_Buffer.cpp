@@ -13,7 +13,7 @@ namespace RE {
 		vk_bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 		vk_bufferCreateInfo.size = vk_bufferSizeInBytes;
 		vk_bufferCreateInfo.usage = vk_bufferUsage;
-		if (u32QueueTypeCount > 1U) {
+		if (queueTypeIndices.size() > 1U) {
 			vk_bufferCreateInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
 			vk_bufferCreateInfo.queueFamilyIndexCount = queueTypeIndices.size();
 			vk_bufferCreateInfo.pQueueFamilyIndices = queueTypeIndices.data();

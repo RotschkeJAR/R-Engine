@@ -43,7 +43,7 @@ Clonus* clonus = nullptr;
 class Objy : public GameObject {
 	public:
 		RandomNumberGenerator rng;
-		REulong hits, misses;
+		uint64_t hits, misses;
 
 		Objy() : GameObject(0, 1), hits(0UL), misses(0UL) {
 			transform.scale[0] = 0.1f;

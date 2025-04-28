@@ -11,15 +11,15 @@ namespace RE {
 			rng.seed(time(nullptr));
 		}
 	}
-	RandomNumberGenerator::RandomNumberGenerator(REuint u32Seed) : rng(u32Seed) {}
+	RandomNumberGenerator::RandomNumberGenerator(uint32_t u32Seed) : rng(u32Seed) {}
 	RandomNumberGenerator::~RandomNumberGenerator() {}
 
-	void RandomNumberGenerator::set_seed(REuint newSeed) {
+	void RandomNumberGenerator::set_seed(uint32_t newSeed) {
 		rng.seed(newSeed);
 	}
 
 	bool RandomNumberGenerator::random_bool() {
-		return static_cast<bool>(random<REushort>() & 1U);
+		return static_cast<bool>(random<uint16_t>() & 1U);
 	}
 
 	bool RandomNumberGenerator::random_bool(float fChance) {
@@ -27,7 +27,7 @@ namespace RE {
 	}
 
 	float RandomNumberGenerator::random_percentage() {
-		return static_cast<float>(random<REuint>()) / std::numeric_limits<REuint>::max();
+		return static_cast<float>(random<uint32_t>()) / std::numeric_limits<uint32_t>::max();
 	}
 
 }

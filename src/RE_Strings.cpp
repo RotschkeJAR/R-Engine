@@ -6,10 +6,10 @@ namespace RE {
 		return std::strlen(pcString) == 0;
 	}
 
-	REuint get_line_count(const char* pcString) {
+	uint32_t get_line_count(const char* pcString) {
 		if (is_string_empty(pcString))
 			return 0;
-		REuint u32CurrentLine = 1, u32CurrentCharacter = 0;
+		uint32_t u32CurrentLine = 1, u32CurrentCharacter = 0;
 		while (true) {
 			switch (pcString[u32CurrentCharacter]) {
 				case '\0':
@@ -23,8 +23,8 @@ namespace RE {
 		}
 	}
 
-	std::string get_line(const char* pcString, REuint u32Line) {
-		REuint u32CurrentLine = 0U, u32CurrentCharacter = 0U;
+	std::string get_line(const char* pcString, uint32_t u32Line) {
+		uint32_t u32CurrentLine = 0U, u32CurrentCharacter = 0U;
 		std::stringstream resultStream("");
 		bool bReachedEndOfString = false;
 		while (true) {
@@ -55,14 +55,14 @@ namespace RE {
 	}
 	
 	std::string convert_wide_chars_to_utf8(const wchar_t* pwcString) {
-		const REuint u32StringSize = std::wcslen(pwcString) + 1U;
+		const uint32_t u32StringSize = std::wcslen(pwcString) + 1U;
 		std::string strConverted("", u32StringSize);
 		std::wcstombs(&strConverted[0], pwcString, u32StringSize);
 		return strConverted;
 	}
 
 	std::wstring convert_chars_to_wide(const char* pcString) {
-		const REuint u32StringSize = std::strlen(pcString) + 1U;
+		const uint32_t u32StringSize = std::strlen(pcString) + 1U;
 		std::wstring wstrConverted(L"", u32StringSize);
 		std::mbstowcs(&wstrConverted[0], pcString, u32StringSize);
 		return wstrConverted;

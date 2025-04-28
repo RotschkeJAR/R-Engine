@@ -10,7 +10,7 @@ namespace RE {
 # define VK_Z 0x5A
 # define VK_0 0x30
 # define VK_9 0x39
-	constexpr RElong virtual_keycode_from_key(Input eKey) {
+	constexpr int64_t virtual_keycode_from_key(Input eKey) {
 		switch (eKey) {
 			case RE_INPUT_KEY_SPACE:
 				return VK_SPACE;
@@ -102,20 +102,20 @@ namespace RE {
 			case RE_INPUT_KEY_WORLD_1:
 				return VK_OEM_102;
 			default: {
-				RElong u64KeyId = static_cast<RElong>(eKey);
-				if (u64KeyId >= static_cast<RElong>(RE_INPUT_KEY_A) && u64KeyId <= static_cast<RElong>(RE_INPUT_KEY_Z))
-					return VK_A + (u64KeyId - static_cast<RElong>(RE_INPUT_KEY_A));
-				if (u64KeyId >= static_cast<RElong>(RE_INPUT_KEY_TOP_0) && u64KeyId <= static_cast<RElong>(RE_INPUT_KEY_TOP_9))
-					return VK_0 + (u64KeyId - static_cast<RElong>(RE_INPUT_KEY_TOP_0));
-				if (u64KeyId >= static_cast<RElong>(RE_INPUT_KEY_F1) && u64KeyId <= static_cast<RElong>(RE_INPUT_KEY_F25))
-					return VK_F1 + (u64KeyId - static_cast<RElong>(RE_INPUT_KEY_F1));
-				if (u64KeyId >= static_cast<RElong>(RE_INPUT_KEY_NUMPAD_0) && u64KeyId <= static_cast<RElong>(RE_INPUT_KEY_NUMPAD_9))
-					return VK_NUMPAD0 + (u64KeyId - static_cast<RElong>(RE_INPUT_KEY_NUMPAD_0));
+				int64_t u64KeyId = static_cast<int64_t>(eKey);
+				if (u64KeyId >= static_cast<int64_t>(RE_INPUT_KEY_A) && u64KeyId <= static_cast<int64_t>(RE_INPUT_KEY_Z))
+					return VK_A + (u64KeyId - static_cast<int64_t>(RE_INPUT_KEY_A));
+				if (u64KeyId >= static_cast<int64_t>(RE_INPUT_KEY_TOP_0) && u64KeyId <= static_cast<int64_t>(RE_INPUT_KEY_TOP_9))
+					return VK_0 + (u64KeyId - static_cast<int64_t>(RE_INPUT_KEY_TOP_0));
+				if (u64KeyId >= static_cast<int64_t>(RE_INPUT_KEY_F1) && u64KeyId <= static_cast<int64_t>(RE_INPUT_KEY_F25))
+					return VK_F1 + (u64KeyId - static_cast<int64_t>(RE_INPUT_KEY_F1));
+				if (u64KeyId >= static_cast<int64_t>(RE_INPUT_KEY_NUMPAD_0) && u64KeyId <= static_cast<int64_t>(RE_INPUT_KEY_NUMPAD_9))
+					return VK_NUMPAD0 + (u64KeyId - static_cast<int64_t>(RE_INPUT_KEY_NUMPAD_0));
 				} return 0L;
 		}
 	}
 
-	constexpr Input key_from_virtual_keycode(RElong i64VirtualKeyCode) {
+	constexpr Input key_from_virtual_keycode(int64_t i64VirtualKeyCode) {
 		switch (i64VirtualKeyCode) {
 			case VK_SPACE:
 				return RE_INPUT_KEY_SPACE;
@@ -213,19 +213,19 @@ namespace RE {
 				return RE_INPUT_UNKNOWN;
 			default:
 				if (i64VirtualKeyCode >= VK_A && i64VirtualKeyCode <= VK_Z)
-					return static_cast<Input>(i64VirtualKeyCode - VK_A + static_cast<RElong>(RE_INPUT_KEY_A));
+					return static_cast<Input>(i64VirtualKeyCode - VK_A + static_cast<int64_t>(RE_INPUT_KEY_A));
 				else if (i64VirtualKeyCode >= VK_0 && i64VirtualKeyCode <= VK_9)
-					return static_cast<Input>(i64VirtualKeyCode - VK_0 + static_cast<RElong>(RE_INPUT_KEY_TOP_0));
+					return static_cast<Input>(i64VirtualKeyCode - VK_0 + static_cast<int64_t>(RE_INPUT_KEY_TOP_0));
 				else if (i64VirtualKeyCode >= VK_F1 && i64VirtualKeyCode <= VK_F24)
-					return static_cast<Input>(i64VirtualKeyCode - VK_F1 + static_cast<RElong>(RE_INPUT_KEY_F1));
+					return static_cast<Input>(i64VirtualKeyCode - VK_F1 + static_cast<int64_t>(RE_INPUT_KEY_F1));
 				else if (i64VirtualKeyCode >= VK_NUMPAD0 && i64VirtualKeyCode <= VK_NUMPAD9)
-					return static_cast<Input>(i64VirtualKeyCode - VK_NUMPAD0 + static_cast<RElong>(RE_INPUT_KEY_NUMPAD_0));
+					return static_cast<Input>(i64VirtualKeyCode - VK_NUMPAD0 + static_cast<int64_t>(RE_INPUT_KEY_NUMPAD_0));
 				else
 					return RE_INPUT_UNKNOWN;
 		}
 	}
 #elif defined RE_OS_LINUX
-	constexpr RElong virtual_keycode_from_key(Input eKey) {
+	constexpr int64_t virtual_keycode_from_key(Input eKey) {
 		switch (eKey) {
 			case RE_INPUT_KEY_SPACE:
 				return XK_space;
@@ -318,20 +318,20 @@ namespace RE {
 			case RE_INPUT_KEY_WORLD_1:
 				return XK_less;
 			default: {
-				RElong u64KeyId = static_cast<RElong>(eKey);
-				if (u64KeyId >= static_cast<RElong>(RE_INPUT_KEY_A) && u64KeyId <= static_cast<RElong>(RE_INPUT_KEY_Z))
-					return XK_a + (u64KeyId - static_cast<RElong>(RE_INPUT_KEY_A));
-				if (u64KeyId >= static_cast<RElong>(RE_INPUT_KEY_TOP_0) && u64KeyId <= static_cast<RElong>(RE_INPUT_KEY_TOP_9))
-					return XK_0 + (u64KeyId - static_cast<RElong>(RE_INPUT_KEY_TOP_0));
-				if (u64KeyId >= static_cast<RElong>(RE_INPUT_KEY_F1) && u64KeyId <= static_cast<RElong>(RE_INPUT_KEY_F25))
-					return XK_F1 + (u64KeyId - static_cast<RElong>(RE_INPUT_KEY_F1));
-				if (u64KeyId >= static_cast<RElong>(RE_INPUT_KEY_NUMPAD_0) && u64KeyId <= static_cast<RElong>(RE_INPUT_KEY_NUMPAD_9))
-					return XK_KP_0 + (u64KeyId - static_cast<RElong>(RE_INPUT_KEY_NUMPAD_0));
+				int64_t u64KeyId = static_cast<int64_t>(eKey);
+				if (u64KeyId >= static_cast<int64_t>(RE_INPUT_KEY_A) && u64KeyId <= static_cast<int64_t>(RE_INPUT_KEY_Z))
+					return XK_a + (u64KeyId - static_cast<int64_t>(RE_INPUT_KEY_A));
+				if (u64KeyId >= static_cast<int64_t>(RE_INPUT_KEY_TOP_0) && u64KeyId <= static_cast<int64_t>(RE_INPUT_KEY_TOP_9))
+					return XK_0 + (u64KeyId - static_cast<int64_t>(RE_INPUT_KEY_TOP_0));
+				if (u64KeyId >= static_cast<int64_t>(RE_INPUT_KEY_F1) && u64KeyId <= static_cast<int64_t>(RE_INPUT_KEY_F25))
+					return XK_F1 + (u64KeyId - static_cast<int64_t>(RE_INPUT_KEY_F1));
+				if (u64KeyId >= static_cast<int64_t>(RE_INPUT_KEY_NUMPAD_0) && u64KeyId <= static_cast<int64_t>(RE_INPUT_KEY_NUMPAD_9))
+					return XK_KP_0 + (u64KeyId - static_cast<int64_t>(RE_INPUT_KEY_NUMPAD_0));
 				} return 0L;
 		}
 	}
 
-	constexpr Input key_from_virtual_keycode(RElong i64VirtualKeyCode) {
+	constexpr Input key_from_virtual_keycode(int64_t i64VirtualKeyCode) {
 		switch (i64VirtualKeyCode) {
 			case XK_space:
 				return RE_INPUT_KEY_SPACE;
@@ -468,13 +468,13 @@ namespace RE {
 				return RE_INPUT_KEY_MENU;
 			default:
 				if (i64VirtualKeyCode >= XK_a && i64VirtualKeyCode <= XK_z)
-					return static_cast<Input>(i64VirtualKeyCode - XK_a + static_cast<RElong>(RE_INPUT_KEY_A));
+					return static_cast<Input>(i64VirtualKeyCode - XK_a + static_cast<int64_t>(RE_INPUT_KEY_A));
 				else if (i64VirtualKeyCode >= XK_A && i64VirtualKeyCode <= XK_Z)
-					return static_cast<Input>(i64VirtualKeyCode - XK_A + static_cast<RElong>(RE_INPUT_KEY_A));
+					return static_cast<Input>(i64VirtualKeyCode - XK_A + static_cast<int64_t>(RE_INPUT_KEY_A));
 				else if (i64VirtualKeyCode >= XK_0 && i64VirtualKeyCode <= XK_9)
-					return static_cast<Input>(i64VirtualKeyCode - XK_0 + static_cast<RElong>(RE_INPUT_KEY_TOP_0));
+					return static_cast<Input>(i64VirtualKeyCode - XK_0 + static_cast<int64_t>(RE_INPUT_KEY_TOP_0));
 				else if (i64VirtualKeyCode >= XK_F1 && i64VirtualKeyCode <= XK_F25)
-					return static_cast<Input>(i64VirtualKeyCode - XK_F1 + static_cast<RElong>(RE_INPUT_KEY_F1));
+					return static_cast<Input>(i64VirtualKeyCode - XK_F1 + static_cast<int64_t>(RE_INPUT_KEY_F1));
 				else
 					return RE_INPUT_UNKNOWN;
 		}

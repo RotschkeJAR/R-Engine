@@ -17,7 +17,7 @@ namespace RE {
 		std::setlocale(LC_ALL, "");
 
 		// Create window
-		Window* pWindow;
+		Window* pWindow = nullptr;
 #ifdef RE_OS_WINDOWS
 		CATCH_SIGNAL(pWindow = new Window_Win64());
 		eUsingWindowingSystem = RE_WINDOWING_SYSTEM_WIN32;

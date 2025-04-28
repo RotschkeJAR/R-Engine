@@ -24,15 +24,6 @@
 #include <random>
 #include <limits.h>
 
-typedef int8_t REbyte;
-typedef uint8_t REubyte;
-typedef int16_t REshort;
-typedef uint16_t REushort;
-typedef int32_t REint;
-typedef uint32_t REuint;
-typedef int64_t RElong;
-typedef uint64_t REulong;
-
 namespace RE {
 
 #define STRIP_QUOTE_MACRO(T) T
@@ -192,10 +183,10 @@ namespace RE {
 		if constexpr (sizeof...(content) == 0)
 			return;
 		([&]() {
-			if constexpr (std::is_same_v<T, REubyte>)
-				std::cout << static_cast<REushort>(content);
-			else if constexpr (std::is_same_v<T, REbyte>)
-				std::cout << static_cast<REshort>(content);
+			if constexpr (std::is_same_v<T, uint8_t>)
+				std::cout << static_cast<uint16_t>(content);
+			else if constexpr (std::is_same_v<T, int8_t>)
+				std::cout << static_cast<int16_t>(content);
 			else if constexpr (std::is_same_v<T, wchar_t> || std::is_same_v<T, const wchar_t> || std::is_same_v<T, wchar_t*> || std::is_same_v<T, const wchar_t*> || std::is_same_v<T, std::wstring>)
 				std::wcout << content;
 			else
@@ -211,9 +202,9 @@ namespace RE {
 #define PRINT(MSG) print(append_to_string(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE_MACRO(MSG)))
 #define PRINT_LN(MSG) print(append_to_string(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE_MACRO(MSG), "\n"))
 	
-	void error(const char* pcFile, const char* pcFunc, REuint u32Line, const char* pcDetail, bool bTerminate);
-	void warning(const char* pcFile, const char* pcFunc, REuint u32Line, const char* pcDetail);
-	void note(const char* pcFile, const char* pcFunc, REuint u32Line, const char* pcDetail);
+	void error(const char* pcFile, const char* pcFunc, uint32_t u32Line, const char* pcDetail, bool bTerminate);
+	void warning(const char* pcFile, const char* pcFunc, uint32_t u32Line, const char* pcDetail);
+	void note(const char* pcFile, const char* pcFunc, uint32_t u32Line, const char* pcDetail);
 #define FATAL_ERROR(T) error(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(T), true)
 #define ERROR(T) error(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(T), false)
 #define WARNING(T) warning(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(T))
@@ -229,11 +220,11 @@ namespace RE {
 			~SignalCatcher();
 	};
 
-	void add_to_stack_trace(const char* pcFile, const char* pcMethod, REuint u32Line, const char* pcDetails);
+	void add_to_stack_trace(const char* pcFile, const char* pcMethod, uint32_t u32Line, const char* pcDetails);
 	void remove_from_stack_trace();
 	class SignalGuard final {
 		public:
-			SignalGuard(const char* pcFile, const char* pcFunc, REuint u32Line, const char* pcDetails);
+			SignalGuard(const char* pcFile, const char* pcFunc, uint32_t u32Line, const char* pcDetails);
 			~SignalGuard();
 	};
 #define DEFINE_SIGNAL_GUARD_DETAILED(NAME, DETAILS) SignalGuard NAME(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(DETAILS))
@@ -280,8 +271,8 @@ namespace RE {
 	}
 
 	bool is_string_empty(const char* pcString);
-	REuint get_line_count(const char* pcString);
-	std::string get_line(const char* pcString, REuint u32Line);
+	uint32_t get_line_count(const char* pcString);
+	std::string get_line(const char* pcString, uint32_t u32Line);
 	std::string convert_wide_chars_to_utf8(const wchar_t* pwcString);
 	std::wstring convert_chars_to_wide(const char* pcString);
 	std::string get_app_name();
@@ -319,18 +310,18 @@ namespace RE {
 		ss << "0x";
 		if constexpr (std::is_signed<T>::value)
 			number = std::abs(number);
-		constexpr REint i32HexadecimalDigits = sizeof(T) * 8 / 4;
+		constexpr int32_t i32HexadecimalDigits = sizeof(T) * 8 / 4;
 		bool bNumbersPresent = !bCutZeros;
-		for (REint i32Digit = i32HexadecimalDigits - 1U; i32Digit >= 0; i32Digit--) {
+		for (int32_t i32Digit = i32HexadecimalDigits - 1U; i32Digit >= 0; i32Digit--) {
 			T base = std::pow<T>(16, static_cast<T>(i32Digit));
-			REuint u32HexadecimalCharacterIndex = static_cast<REuint>(number / base);
+			uint32_t u32HexadecimalCharacterIndex = static_cast<uint32_t>(number / base);
 			number -= base * u32HexadecimalCharacterIndex;
 			if (u32HexadecimalCharacterIndex || bNumbersPresent) {
 				bNumbersPresent = true;
-				if (u32HexadecimalCharacterIndex < 10)
+				if (u32HexadecimalCharacterIndex < 10U)
 					ss << u32HexadecimalCharacterIndex;
 				else
-					ss << static_cast<char>(u32HexadecimalCharacterIndex - 10 + static_cast<REuint>('A'));
+					ss << static_cast<char>(u32HexadecimalCharacterIndex - 10U + static_cast<uint32_t>('A'));
 			}
 		}
 		if (!bNumbersPresent)
@@ -344,18 +335,18 @@ namespace RE {
 	}
 
 	template <typename... T>
-	constexpr REulong gen_bitmask(T... bits) {
-		return (... | (1UL << static_cast<REulong>(bits)));
+	constexpr uint64_t gen_bitmask(T... bits) {
+		return (... | (1UL << static_cast<uint64_t>(bits)));
 	}
 
-	constexpr REulong gen_bitmask_in_range(REulong u64Begin, REulong u64End) {
+	constexpr uint64_t gen_bitmask_in_range(uint64_t u64Begin, uint64_t u64End) {
 		if (u64Begin > u64End) {
 			FATAL_ERROR(append_to_string("Start (", u64Begin, ") of the range is larger than end (", u64End, ")").c_str());
 			return 0UL;
 		} else if (u64Begin == u64End)
 			return gen_bitmask(u64Begin);
-		REulong u64Result = 0UL;
-		for (REulong u64CurrentNumber = u64Begin; u64CurrentNumber < u64End; u64CurrentNumber++)
+		uint64_t u64Result = 0UL;
+		for (uint64_t u64CurrentNumber = u64Begin; u64CurrentNumber < u64End; u64CurrentNumber++)
 			u64Result |= gen_bitmask(u64CurrentNumber);
 		return u64Result;
 	}
@@ -411,7 +402,7 @@ namespace RE {
 		return std::string(strResult.str());
 	}
 
-	template <typename T, REuint u32Dimensions>
+	template <typename T, uint32_t u32Dimensions>
 	class Vector final {
 		static_assert(u32Dimensions != 0U, "A vector-template has zero dimensions");
 
@@ -431,7 +422,7 @@ namespace RE {
 			template <typename... V>
 			Vector(V... values) {
 				fill(static_cast<T>(0.0));
-				REuint u32Index = 0U;
+				uint32_t u32Index = 0U;
 				([&]() {
 					CATCH_SIGNAL_DETAILED(coords[u32Index] = static_cast<T>(values), append_to_string("Index: ", u32Index).c_str());
 					u32Index++;
@@ -468,30 +459,30 @@ namespace RE {
 					WARNING(append_to_string("Tried to copy values from one vector (", copyVector.get_dimensions(), ") to another (", u32Dimensions, "). This process has been terminated").c_str());
 					return;
 				}
-				for (REuint u32Index = 0U; u32Index < u32Dimensions; u32Index++)
+				for (uint32_t u32Index = 0U; u32Index < u32Dimensions; u32Index++)
 					coords[u32Index] = copyVector[u32Index];
 			}
 
 			bool equals(const Vector &compareVector) const {
 				if (u32Dimensions != compareVector.get_dimensions())
 					return false;
-				for (REuint u32Index = 0U; u32Index < u32Dimensions; u32Index++)
+				for (uint32_t u32Index = 0U; u32Index < u32Dimensions; u32Index++)
 					if (coords[u32Index] != compareVector[u32Index])
 						return false;
 				return true;
 			}
 
-			constexpr REuint get_dimensions() const {
+			constexpr uint32_t get_dimensions() const {
 				return u32Dimensions;
 			}
 
-			T& operator [](REuint index) {
+			T& operator [](uint32_t index) {
 				if (index >= u32Dimensions)
 					FATAL_ERROR(append_to_string("Index ", index, " is out of bounds: [0, ", u32Dimensions, ")").c_str());
 				return coords[index];
 			}
 
-			T operator [](REuint index) const {
+			T operator [](uint32_t index) const {
 				if (index >= u32Dimensions)
 					FATAL_ERROR(append_to_string("Index ", index, " is out of bounds: [0, ", u32Dimensions, ")").c_str());
 				return coords[index];
@@ -511,7 +502,7 @@ namespace RE {
 
 			friend std::ostream& operator <<(std::ostream &stream, const Vector &vector) {
 				stream << "(";
-				for (REuint i = 0U; i < vector.get_dimensions(); i++) {
+				for (uint32_t i = 0U; i < vector.get_dimensions(); i++) {
 					if (i != 0U)
 						stream << ", ";
 					stream << vector.coords[i];
@@ -526,12 +517,12 @@ namespace RE {
 	typedef Vector<double, 2U> Vector2d;
 	typedef Vector<double, 3U> Vector3d;
 	typedef Vector<double, 4U> Vector4d;
-	typedef Vector<REint, 2U> Vector2i;
-	typedef Vector<REint, 3U> Vector3i;
-	typedef Vector<REint, 4U> Vector4i;
-	typedef Vector<REuint, 2U> Vector2u;
-	typedef Vector<REuint, 3U> Vector3u;
-	typedef Vector<REuint, 4U> Vector4u;
+	typedef Vector<int32_t, 2U> Vector2i;
+	typedef Vector<int32_t, 3U> Vector3i;
+	typedef Vector<int32_t, 4U> Vector4i;
+	typedef Vector<uint32_t, 2U> Vector2u;
+	typedef Vector<uint32_t, 3U> Vector3u;
+	typedef Vector<uint32_t, 4U> Vector4u;
 
 	class Color final {
 		private:
@@ -555,9 +546,9 @@ namespace RE {
 
 		public:
 			RandomNumberGenerator();
-			RandomNumberGenerator(REuint u32Seed);
+			RandomNumberGenerator(uint32_t u32Seed);
 			~RandomNumberGenerator();
-			void set_seed(REuint newSeed);
+			void set_seed(uint32_t newSeed);
 
 			template <typename T>
 			T random(T min, T max) {
@@ -579,10 +570,10 @@ namespace RE {
 
 	class Scene {
 		public:
-			const REuint u32Id;
+			const uint32_t u32Id;
 
 			Scene() = delete;
-			Scene(REuint u32Id);
+			Scene(uint32_t u32Id);
 			virtual ~Scene();
 
 			virtual void start();
@@ -618,13 +609,13 @@ namespace RE {
 
 	class GameObject {
 		public:
-			const REuint u32OwnId;
-			const REuint u32SceneParentId;
+			const uint32_t u32OwnId;
+			const uint32_t u32SceneParentId;
 			Transform transform;
 			SpriteRenderer spriteRenderer;
 
 			GameObject() = delete;
-			GameObject(REuint u32OwnId, REuint u32SceneParentId);
+			GameObject(uint32_t u32OwnId, uint32_t u32SceneParentId);
 			virtual ~GameObject();
 
 			virtual void start(Scene* pStartingScene);
@@ -634,13 +625,13 @@ namespace RE {
 
 	class InputAction {
 		private:
-			REuint u32KeyScancode;
+			uint32_t u32KeyScancode;
 			Input eInput;
 
 		public:
 			InputAction();
 			InputAction(Input eInput);
-			InputAction(REuint u32KeyScancode);
+			InputAction(uint32_t u32KeyScancode);
 			~InputAction();
 			bool is_scroll_wheel();
 			bool is_button();
@@ -652,7 +643,7 @@ namespace RE {
 			static bool can_update();
 
 			void change_input(Input eInput);
-			void change_scancode(REuint u32NewScancode);
+			void change_scancode(uint32_t u32NewScancode);
 
 			bool is_pressed();
 			bool is_down();
@@ -666,8 +657,8 @@ namespace RE {
 	float get_cursor_normal_position_x();
 	float get_cursor_normal_position_y();
 
-	Input map_scancode_to_input(REuint u32Scancode);
-	REuint map_input_to_scancode(Input eInput);
+	Input map_scancode_to_input(uint32_t u32Scancode);
+	uint32_t map_input_to_scancode(Input eInput);
 
 	void execute();
 	float get_deltaseconds();
@@ -682,11 +673,11 @@ namespace RE {
 	void set_next_scene(Scene* pNextSceneParam);
 	bool is_next_scene_set();
 	Scene* get_current_scene();
-	REuint get_current_scene_id();
-	bool is_scene_current(REuint u32SceneId);
+	uint32_t get_current_scene_id();
+	bool is_scene_current(uint32_t u32SceneId);
 	Scene* get_next_scene();
-	REuint get_next_scene_id();
-	bool is_scene_next(REuint u32SceneId);
+	uint32_t get_next_scene_id();
+	bool is_scene_next(uint32_t u32SceneId);
 
 	void enable_vsync(bool bEnableVsync);
 	bool is_vsync_enabled();

@@ -17,7 +17,7 @@ namespace RE {
 		else {
 			switch (win_uMsg) {
 				case WM_SIZE: /* resized */
-					CATCH_SIGNAL(pWin64->update_window_size(static_cast<REushort>(LOWORD(win_lParam)), static_cast<REushort>(HIWORD(win_lParam))));
+					CATCH_SIGNAL(pWin64->update_window_size(static_cast<uint16_t>(LOWORD(win_lParam)), static_cast<uint16_t>(HIWORD(win_lParam))));
 					return 0;
 				case WM_CLOSE: /* close */
 					pWin64->bCloseFlag = true;
@@ -67,7 +67,7 @@ namespace RE {
 							break;
 					}
 					BOOL win_keyReleased = (win_keyFlags & KF_UP) == KF_UP;
-					CATCH_SIGNAL(pWin64->inputMgr.input_event(key_from_virtual_keycode(static_cast<RElong>(win_virtualKeyCode)), static_cast<REuint>(win_extScancode), !static_cast<bool>(win_keyReleased), bFallbackToInput));
+					CATCH_SIGNAL(pWin64->inputMgr.input_event(key_from_virtual_keycode(static_cast<int64_t>(win_virtualKeyCode)), static_cast<uint32_t>(win_extScancode), !static_cast<bool>(win_keyReleased), bFallbackToInput));
 					} return 0;
 				case WM_CHAR: {
 					wchar_t wCharacter[2] = {static_cast<wchar_t>(win_wParam), L'\0'};
@@ -97,8 +97,8 @@ namespace RE {
 					CATCH_SIGNAL(ReleaseCapture());
 					return 0;
 				case WM_MOUSEMOVE: { /* mouse moved */
-					REint i32XPos = GET_X_LPARAM(win_lParam);
-					REint i32YPos = GET_Y_LPARAM(win_lParam);
+					int32_t i32XPos = GET_X_LPARAM(win_lParam);
+					int32_t i32YPos = GET_Y_LPARAM(win_lParam);
 					CATCH_SIGNAL(pWin64->inputMgr.cursor_event(i32XPos, i32YPos));
 					} return 0;
 				case WM_SETCURSOR:
@@ -108,7 +108,7 @@ namespace RE {
 					}
 					break;
 				case WM_MOUSEWHEEL: { /* mouse wheel used/scrolled */
-					REint deltaMouseWheel = GET_WHEEL_DELTA_WPARAM(win_wParam);
+					int32_t deltaMouseWheel = GET_WHEEL_DELTA_WPARAM(win_wParam);
 					if (deltaMouseWheel > 0)
 						CATCH_SIGNAL(pWin64->inputMgr.input_event(RE_INPUT_SCROLL_UP, 0U, true, false));
 					else
@@ -171,7 +171,7 @@ namespace RE {
 		pWin64 = nullptr;
 	}
 
-	Vector2i Window_Win64::get_adjusted_window_size(Vector<REushort, 2> size) {
+	Vector2i Window_Win64::get_adjusted_window_size(Vector<uint16_t, 2> size) {
 		RECT win_adjustableSize = {0, 0, size[0], size[1]};
 		CATCH_SIGNAL(AdjustWindowRect(&win_adjustableSize, WINDOW_STYLE_FLAGS, FALSE));
 		return Vector2i(win_adjustableSize.right - win_adjustableSize.left, win_adjustableSize.bottom - win_adjustableSize.top);

@@ -6,14 +6,14 @@ namespace RE {
 
 	struct AppLocation {
 		const char *pcFile, *pcMethod, *pcDetails;
-		REuint u32Line;
+		uint32_t u32Line;
 	};
 
 	SignalCatcher* pInstance = nullptr;
 	std::stack<AppLocation> stackTrace;
 	bool signalAlreadyCaught = false;
 
-	void handle_signal(int signalId) {
+	void handle_signal(int32_t signalId) {
 		if (signalAlreadyCaught) {
 			println_colored("\nThe signal handler has been called again. Terminating instantly", RE_TERMINAL_COLOR_RED, true, false);
 			std::exit(signalId);
@@ -82,7 +82,7 @@ namespace RE {
 		std::signal(SIGINT, SIG_DFL);
 	}
 
-	void add_to_stack_trace(const char* pcFile, const char* pcMethod, REuint u32Line, const char* pcDetails) {
+	void add_to_stack_trace(const char* pcFile, const char* pcMethod, uint32_t u32Line, const char* pcDetails) {
 		AppLocation newTrace = {};
 		newTrace.pcFile = pcFile;
 		newTrace.pcMethod = pcMethod;

@@ -128,12 +128,12 @@ namespace RE {
 		return pCurrentScene;
 	}
 
-	REuint get_current_scene_id() {
+	uint32_t get_current_scene_id() {
 		Scene* pCurrentScene = get_current_scene();
 		return pCurrentScene ? CATCH_SIGNAL_AND_RETURN(pCurrentScene->u32Id, uint32_t) : 0U;
 	}
 
-	bool is_scene_current(REuint u32SceneId) {
+	bool is_scene_current(uint32_t u32SceneId) {
 		return get_current_scene() && get_current_scene_id() == u32SceneId;
 	}
 
@@ -141,12 +141,12 @@ namespace RE {
 		return pNextScene;
 	}
 
-	REuint get_next_scene_id() {
+	uint32_t get_next_scene_id() {
 		Scene* pNextScene = get_next_scene();
 		return pNextScene ? CATCH_SIGNAL_AND_RETURN(pNextScene->u32Id, uint32_t) : 0U;
 	}
 
-	bool is_scene_next(REuint u32SceneId) {
+	bool is_scene_next(uint32_t u32SceneId) {
 		return get_next_scene() && get_next_scene_id() == u32SceneId;
 	}
 

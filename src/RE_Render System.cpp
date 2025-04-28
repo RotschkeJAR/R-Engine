@@ -523,7 +523,7 @@ namespace RE {
 			return false;
 		}
 		vk_phPhysicalDevicesAvailable = new VkPhysicalDevice[u32PhysicalDevicesAvailableCount];
-		REuint u32CurrentIndex = 0U;
+		uint32_t u32CurrentIndex = 0U;
 		for (VkPhysicalDevice vk_hPhysicalDevice : suitablePhysicalDevices) {
 			vk_phPhysicalDevicesAvailable[u32CurrentIndex] = vk_hPhysicalDevice;
 			u32CurrentIndex++;
@@ -584,7 +584,7 @@ namespace RE {
 		constexpr float fQueuePriority = 1.0f;
 		const size_t uniqueQueueIndexCount = uniqueQueueIndices.size();
 		VkDeviceQueueCreateInfo *vk_pDeviceQueueCreateInfos = new VkDeviceQueueCreateInfo[uniqueQueueIndexCount];
-		REuint u32UniqueQueueIndexIndex = 0U;
+		uint32_t u32UniqueQueueIndexIndex = 0U;
 		for (uint32_t u32UniqueQueueIndex : uniqueQueueIndices) {
 			vk_pDeviceQueueCreateInfos[u32UniqueQueueIndexIndex].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 			vk_pDeviceQueueCreateInfos[u32UniqueQueueIndexIndex].pNext = nullptr;
@@ -653,8 +653,8 @@ namespace RE {
 			if (vk_surfaceCapabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
 				vk_swapchainResolution = vk_surfaceCapabilities.currentExtent;
 			else {
-				vk_swapchainResolution.width = std::clamp<REushort>(Window::pInstance->get_size()[0], vk_surfaceCapabilities.minImageExtent.width, vk_surfaceCapabilities.maxImageExtent.width);
-				vk_swapchainResolution.height = std::clamp<REushort>(Window::pInstance->get_size()[1], vk_surfaceCapabilities.minImageExtent.height, vk_surfaceCapabilities.maxImageExtent.height);
+				vk_swapchainResolution.width = std::clamp<uint16_t>(Window::pInstance->get_size()[0], vk_surfaceCapabilities.minImageExtent.width, vk_surfaceCapabilities.maxImageExtent.width);
+				vk_swapchainResolution.height = std::clamp<uint16_t>(Window::pInstance->get_size()[1], vk_surfaceCapabilities.minImageExtent.height, vk_surfaceCapabilities.maxImageExtent.height);
 			}
 			vk_swapchainCreateInfo.imageExtent = vk_swapchainResolution;
 			vk_swapchainCreateInfo.imageArrayLayers = 1U;

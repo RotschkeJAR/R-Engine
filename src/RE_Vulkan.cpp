@@ -1348,7 +1348,7 @@ namespace RE {
 		return bValid;
 	}
 
-	bool check_vulkan_result(VkResult vk_eResult, const char* pcFile, const char* pcFunc, REuint u32Line) {
+	bool check_vulkan_result(VkResult vk_eResult, const char* pcFile, const char* pcFunc, uint32_t u32Line) {
 		const char* pcErrName = "Unknown Vulkan result";
 		const char* pcErrDetail = "Unknown Vulkan Result enumeration value";
 		switch (vk_eResult) {

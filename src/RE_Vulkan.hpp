@@ -335,7 +335,7 @@ namespace RE {
 			bool is_valid();
 	};
 
-	bool check_vulkan_result(VkResult vk_eResult, const char* pcFile, const char* pcFunc, REuint u32Line);
+	bool check_vulkan_result(VkResult vk_eResult, const char* pcFile, const char* pcFunc, uint32_t u32Line);
 #define CHECK_VK_RESULT(T) ([&](const char *const pcActualFunc) -> bool { \
 		add_to_stack_trace(__FILE__, pcActualFunc, __LINE__, "\0"); \
 		const bool bResult = check_vulkan_result(T, __FILE__, pcActualFunc, __LINE__); \

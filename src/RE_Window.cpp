@@ -18,7 +18,7 @@ namespace RE {
 			pInstance = nullptr;
 	}
 
-	void Window::update_window_size(REushort u16NewWidth, REushort u16NewHeight) {
+	void Window::update_window_size(uint16_t u16NewWidth, uint16_t u16NewHeight) {
 		size[0] = u16NewWidth;
 		size[1] = u16NewHeight;
 		if (RenderSystem::pInstance)
@@ -52,8 +52,8 @@ namespace RE {
 		return bValid;
 	}
 
-	Vector<REushort, 2> Window::get_size() {
-		Vector<REushort, 2> copySize;
+	Vector<uint16_t, 2> Window::get_size() {
+		Vector<uint16_t, 2> copySize;
 		copySize = size;
 		return copySize;
 	}

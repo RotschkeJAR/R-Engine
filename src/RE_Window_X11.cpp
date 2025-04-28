@@ -10,7 +10,7 @@ namespace RE {
 			RE_ERROR("Unable to connect to X11 server");
 			return;
 		}
-		REint i32DefaultScreen;
+		int32_t i32DefaultScreen;
 		CATCH_SIGNAL(i32DefaultScreen = XDefaultScreen(x11_pDisplay));
 		XWindow x11_rootWindow;
 		CATCH_SIGNAL(x11_rootWindow = XDefaultRootWindow(x11_pDisplay));
@@ -18,7 +18,7 @@ namespace RE {
 		CATCH_SIGNAL(x11_pDefaultScreen = XScreenOfDisplay(x11_pDisplay, i32DefaultScreen));
 
 		XVisualInfo x11_visualInfo;
-		REint i32VisualsCount = 0;
+		int32_t i32VisualsCount = 0;
 		XVisualInfo x11_visualTemplate = {};
 		x11_visualTemplate.screen = i32DefaultScreen;
 		x11_visualTemplate.c_class = TrueColor;
@@ -88,11 +88,11 @@ namespace RE {
 	}
 
 	void Window_X11::internal_update_title() {
-		CATCH_SIGNAL(XChangeProperty(x11_pDisplay, x11_hWindow, x11_hWindowName, x11_hUTF8, 8, PropModeReplace, reinterpret_cast<const unsigned char*>(pcTitle), std::strlen(pcTitle)));
+		CATCH_SIGNAL(XChangeProperty(x11_pDisplay, x11_hWindow, x11_hWindowName, x11_hUTF8, 8, PropModeReplace, int32_terpret_cast<const unsigned char*>(pcTitle), std::strlen(pcTitle)));
 	}
 
 	void Window_X11::internal_window_proc() {
-		REint i32PendingEvents;
+		int32_t i32PendingEvents;
 		do {
 			CATCH_SIGNAL(i32PendingEvents = XPending(x11_pDisplay));
 			if (!i32PendingEvents)
@@ -114,7 +114,7 @@ namespace RE {
 					std::fill(std::begin(cString), std::end(cString), '\0');
 					XKeySym x11_keySym;
 					CATCH_SIGNAL(x11_keySym = XLookupKeysym(&x11_keyEvent, 0));
-					REubyte u8CharLength;
+					uint8_t u8CharLength;
 					CATCH_SIGNAL(u8CharLength = Xutf8LookupString(x11_hInputContext, &x11_keyEvent, cString, sizeof(cString) - 1, &x11_keySym, nullptr));
 					if (bKeyPressed && u8CharLength)
 						cString[u8CharLength] = '\0';
@@ -150,7 +150,7 @@ namespace RE {
 					} break;
 				case XResizeRequest: { /* window resized */
 					XResizeRequestEvent x11_resizeEvent = x11_event.xresizerequest;
-					CATCH_SIGNAL(update_window_size(static_cast<REushort>(x11_resizeEvent.width), static_cast<REushort>(x11_resizeEvent.height)));
+					CATCH_SIGNAL(update_window_size(static_cast<uint16_t>(x11_resizeEvent.width), static_cast<uint16_t>(x11_resizeEvent.height)));
 					} break;
 				default:
 					break;

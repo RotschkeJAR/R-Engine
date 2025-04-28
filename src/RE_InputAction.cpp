@@ -5,7 +5,7 @@ namespace RE {
 	
 	InputAction::InputAction() : u32KeyScancode(0U), eInput(RE_INPUT_UNKNOWN) {}
 	InputAction::InputAction(Input eInput) : u32KeyScancode(map_input_to_scancode(eInput)), eInput(eInput) {}
-	InputAction::InputAction(REuint u32KeyScancode) : u32KeyScancode(u32KeyScancode), eInput(map_scancode_to_input(u32KeyScancode)) {}
+	InputAction::InputAction(uint32_t u32KeyScancode) : u32KeyScancode(u32KeyScancode), eInput(map_scancode_to_input(u32KeyScancode)) {}
 	InputAction::~InputAction() {
 		if (is_updating())
 			pUpdateInputObject = nullptr;
@@ -48,7 +48,7 @@ namespace RE {
 		u32KeyScancode = map_input_to_scancode(eNewInput);
 	}
 
-	void InputAction::change_scancode(REuint u32NewScancode) {
+	void InputAction::change_scancode(uint32_t u32NewScancode) {
 		if (u32KeyScancode == u32NewScancode)
 			return;
 		u32KeyScancode = u32NewScancode;

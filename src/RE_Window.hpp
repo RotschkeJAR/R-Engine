@@ -10,7 +10,7 @@ namespace RE {
 		protected:
 			InputMgr inputMgr;
 			const char* pcTitle;
-			Vector<REushort, 2> size;
+			Vector<uint16_t, 2> size;
 			bool bWindowVisible;
 			bool bCloseFlag;
 			bool bValid;
@@ -18,7 +18,7 @@ namespace RE {
 			virtual void internal_window_proc() = 0;
 			virtual void internal_show_window() = 0;
 			virtual void internal_update_title() = 0;
-			void update_window_size(REushort usNewWidth, REushort usNewHeight);
+			void update_window_size(uint16_t usNewWidth, uint16_t usNewHeight);
 
 		public:
 			static Window* pInstance;
@@ -30,7 +30,7 @@ namespace RE {
 			void window_proc();
 			bool should_close();
 			bool is_valid();
-			Vector<REushort, 2> get_size();
+			Vector<uint16_t, 2> get_size();
 
 		friend class InputMgr;
 	};
@@ -41,7 +41,7 @@ namespace RE {
 			HWND win_hWindow;
 			HCURSOR win_hCursor;
 
-			Vector2i get_adjusted_window_size(Vector<REushort, 2> size);
+			Vector2i get_adjusted_window_size(Vector<uint16_t, 2> size);
 
 		protected:
 			void internal_window_proc();

@@ -32,11 +32,11 @@ namespace RE {
 	void set_next_scene(Scene* pNextScene);
 	bool is_next_scene_set();
 	Scene* get_current_scene();
-	REuint get_current_scene_id();
-	bool is_scene_current(REuint u32SceneId);
+	uint32_t get_current_scene_id();
+	bool is_scene_current(uint32_t u32SceneId);
 	Scene* get_next_scene();
-	REuint get_next_scene_id();
-	bool is_scene_next(REuint u32SceneId);
+	uint32_t get_next_scene_id();
+	bool is_scene_next(uint32_t u32SceneId);
 
 }
 

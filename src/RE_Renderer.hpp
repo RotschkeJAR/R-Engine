@@ -9,21 +9,16 @@ namespace RE {
 
 	class SubRenderer {
 		protected:
-			Vulkan_CommandBuffer secondaryCommandBuffer;
+			Vulkan_CommandBuffer **ppSecondaryCommandBuffers;
 			bool bValid;
 
 		public:
 			SubRenderer();
 			~SubRenderer();
-			virtual void record_command_buffer(const Vulkan_CommandBuffer& commandBuffer) = 0;
-			virtual void record_secondary_command_buffer() = 0;
-			virtual void render() = 0;
-			const Vulkan_CommandBuffer* get_vulkan_command_buffer_ptr() const;
-			VkCommandBuffer get_actual_command_buffer() const;
+			virtual void record_secondary_command_buffer(const uint32_t u32CommandBufferIndex) const = 0;
+			virtual void add_secondary_command_buffer(const Vulkan_CommandBuffer& rPrimaryCommandBuffer, const uint32_t u32FramebufferIndex) const = 0;
+			virtual void render(bool &rbSecondaryCommandBufferChanged, const uint32_t u32CurrentFramebufferIndex) = 0;
 			bool is_valid() const;
-
-			operator const Vulkan_CommandBuffer*() const;
-			operator VkCommandBuffer() const;
 	};
 
 
@@ -36,16 +31,16 @@ namespace RE {
 			Vulkan_Buffer gameObjectVertexBuffer, gameObjectVertexStagingBuffer;
 			Vulkan_CommandBuffer vertexBufferTransferCommandBuffer;
 			float *pVertices;
-			uint32_t u32GameObjectsToRender;
+			uint16_t u16GameObjectsToRenderCount;
 
 		public:
 			const Vulkan_Semaphore semaphoreWaitForVertexBufferTransfer;
 
 			Renderer_GameObject(const Vulkan_RenderPass *pRenderPass);
 			~Renderer_GameObject();
-			void record_command_buffer(const Vulkan_CommandBuffer& commandBuffer);
-			void record_secondary_command_buffer();
-			void render();
+			void record_secondary_command_buffer(const uint32_t u32CommandBufferIndex) const;
+			void add_secondary_command_buffer(const Vulkan_CommandBuffer& rPrimaryCommandBuffer, const uint32_t u32FramebufferIndex) const;
+			void render(bool &rbSecondaryCommandBufferChanged, const uint32_t u32CurrentFramebufferIndex);
 	};
 	
 	class Renderer final {
@@ -53,14 +48,14 @@ namespace RE {
 			const Vulkan_RenderPass renderPass;
 
 		private:
-			const Vulkan_CommandBuffer **ppPrimaryCommandBuffer;
+			Vulkan_CommandBuffer **ppPrimaryCommandBuffer;
 			VkSemaphore vk_semaphoresToWaitForBeforeRendering[2];
 			Renderer_GameObject gameObjectRenderer;
-			bool bValid;
+			bool bRequiresRerecordingPrimaryCommandBuffer, bValid;
 
 			void create_framebuffers();
 			void destroy_framebuffers();
-			void record_command_buffers();
+			void record_command_buffer(const uint32_t u32CommandBufferRecordIndex);
 
 		public:
 			const Vulkan_Buffer rectangleIndexBuffer;

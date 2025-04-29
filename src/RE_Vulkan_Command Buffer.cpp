@@ -56,16 +56,34 @@ namespace RE {
 	void Vulkan_CommandBuffer::reset_command_buffer(const VkCommandBufferResetFlags vk_eCommandBufferResetFlags) const {
 		CATCH_SIGNAL(vkResetCommandBuffer(vk_hCommandBuffer, vk_eCommandBufferResetFlags));
 	}
-
-	bool Vulkan_CommandBuffer::begin_recording_command_buffer(const VkCommandBufferUsageFlags vk_eCommandBufferUsageFlags) const {
+	
+	bool Vulkan_CommandBuffer::begin_recording_command_buffer(const VkCommandBufferUsageFlags vk_eCommandBufferUsageFlags, const VkCommandBufferInheritanceInfo *vk_pInheritanceInfo) const {
 		VkCommandBufferBeginInfo vk_commandBufferBeginInfo = {};
 		vk_commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 		vk_commandBufferBeginInfo.flags = vk_eCommandBufferUsageFlags;
+		vk_commandBufferBeginInfo.pInheritanceInfo = vk_pInheritanceInfo;
 		if (!CHECK_VK_RESULT(vkBeginCommandBuffer(vk_hCommandBuffer, &vk_commandBufferBeginInfo))) {
 			RE_ERROR("Failed to begin recording commands in Vulkan command buffer");
 			return false;
 		}
 		return true;
+	}
+
+	bool Vulkan_CommandBuffer::begin_recording_command_buffer(const VkCommandBufferUsageFlags vk_eCommandBufferUsageFlags) const {
+		return CATCH_SIGNAL_AND_RETURN(begin_recording_command_buffer(vk_eCommandBufferUsageFlags, nullptr), bool);
+	}
+	
+	bool Vulkan_CommandBuffer::begin_recording_command_buffer(const VkCommandBufferUsageFlags vk_eCommandBufferUsageFlags, const VkRenderPass vk_renderPass, const uint32_t u32Subpass, const VkFramebuffer vk_framebuffer) const {
+		VkCommandBufferInheritanceInfo vk_inheritanceInfo = {};
+		vk_inheritanceInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
+		vk_inheritanceInfo.renderPass = vk_renderPass;
+		vk_inheritanceInfo.subpass = u32Subpass;
+		vk_inheritanceInfo.framebuffer = vk_framebuffer;
+		return CATCH_SIGNAL_AND_RETURN(begin_recording_command_buffer(vk_eCommandBufferUsageFlags, &vk_inheritanceInfo), bool);
+	}
+	
+	bool Vulkan_CommandBuffer::begin_recording_command_buffer(const VkCommandBufferUsageFlags vk_eCommandBufferUsageFlags, const Vulkan_RenderPass *pRenderPass, const uint32_t u32Subpass, const Vulkan_Framebuffer *pFramebuffer) const {
+		return CATCH_SIGNAL_AND_RETURN(begin_recording_command_buffer(vk_eCommandBufferUsageFlags, pRenderPass->get_render_pass(), u32Subpass, pFramebuffer ? pFramebuffer->get_framebuffer() : VK_NULL_HANDLE), bool);
 	}
 
 	bool Vulkan_CommandBuffer::end_recording_command_buffer() const {

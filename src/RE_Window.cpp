@@ -19,6 +19,8 @@ namespace RE {
 	}
 
 	void Window::update_window_size(uint16_t u16NewWidth, uint16_t u16NewHeight) {
+		if (!u16NewWidth || !u16NewHeight)
+			return;
 		size[0] = u16NewWidth;
 		size[1] = u16NewHeight;
 		if (RenderSystem::pInstance)

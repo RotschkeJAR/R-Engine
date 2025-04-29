@@ -24,7 +24,7 @@ namespace RE {
 		CATCH_SIGNAL(vkDestroyFramebuffer(vk_hDevice, vk_hFramebuffer, nullptr));
 	}
 	
-	VkFramebuffer Vulkan_Framebuffer::get_frmebuffer() const {
+	VkFramebuffer Vulkan_Framebuffer::get_framebuffer() const {
 		return vk_hFramebuffer;
 	}
 	

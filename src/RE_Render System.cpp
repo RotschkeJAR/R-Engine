@@ -34,11 +34,11 @@ namespace RE {
 	// Configurable settings
 	VkPhysicalDevice vk_hPhysicalDeviceSelected = VK_NULL_HANDLE;
 	VkSurfaceFormatKHR vk_surfaceFormatSelected = {};
-	VkPresentModeKHR vk_ePresentModeSelected = VK_PRESENT_MODE_FIFO_KHR;
 
-	uint8_t u8RenderSystemFlags = 0U;
+	uint8_t u8RenderSystemFlags = 0b00000110U;
 #define SWAPCHAIN_DIRTY_INDEX 0
 #define VSYNC_SETTING_INDEX 1
+#define PREFER_WAITING_FOR_VSYNC_INDEX 2
 	
 	RenderSystem* RenderSystem::pInstance = nullptr;
 
@@ -668,7 +668,10 @@ namespace RE {
 				vk_swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
 			vk_swapchainCreateInfo.preTransform = vk_surfaceCapabilities.currentTransform;
 			vk_swapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-			vk_swapchainCreateInfo.presentMode = is_bit_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_INDEX) ? vk_ePresentModeVsync : vk_ePresentModeNoVsync;
+			if (is_bit_true<uint8_t>(u8RenderSystemFlags, PREFER_WAITING_FOR_VSYNC_INDEX))
+				vk_swapchainCreateInfo.presentMode = is_bit_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_INDEX) ? VK_PRESENT_MODE_FIFO_KHR : vk_ePresentModeNoVsync;
+			else
+				vk_swapchainCreateInfo.presentMode = is_bit_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_INDEX) ? vk_ePresentModeVsync : vk_ePresentModeNoVsync;
 			vk_swapchainCreateInfo.clipped = VK_TRUE;
 			vk_swapchainCreateInfo.oldSwapchain = vk_hOldSwapchain;
 			if (!CHECK_VK_RESULT(vkCreateSwapchainKHR(vk_hDevice, &vk_swapchainCreateInfo, nullptr, &vk_hSwapchain))) {
@@ -758,13 +761,25 @@ namespace RE {
 	}
 
 	void enable_vsync(bool bEnableVsync) {
-		if (is_bit_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_INDEX) != bEnableVsync)
+		if (is_bit_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_INDEX) != bEnableVsync) {
+			set_bit<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_INDEX, bEnableVsync);
 			set_bit<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_INDEX, true);
-		set_bit<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_INDEX, bEnableVsync);
+		}
 	}
 
 	bool is_vsync_enabled() {
 		return is_bit_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_INDEX);
+	}
+
+	void enable_waiting_for_vsync(bool bEnableWaitForVsync) {
+		if (is_bit_true<uint8_t>(u8RenderSystemFlags, PREFER_WAITING_FOR_VSYNC_INDEX) != bEnableWaitForVsync) {
+			set_bit<uint8_t>(u8RenderSystemFlags, PREFER_WAITING_FOR_VSYNC_INDEX, bEnableWaitForVsync);
+			set_bit<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_INDEX, true);
+		}
+	}
+
+	bool is_waiting_for_vsync_enabled() {
+		return is_bit_true<uint8_t>(u8RenderSystemFlags, PREFER_WAITING_FOR_VSYNC_INDEX);
 	}
 
 }

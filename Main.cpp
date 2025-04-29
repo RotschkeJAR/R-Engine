@@ -45,7 +45,7 @@ class Objy : public GameObject {
 		RandomNumberGenerator rng;
 		uint64_t hits, misses;
 
-		Objy() : GameObject(0, 1), hits(0UL), misses(0UL) {
+		Objy() : GameObject(1, 1), hits(0UL), misses(0UL) {
 			transform.scale[0] = 0.1f;
 			transform.scale[1] = 0.1f;
 		}
@@ -61,14 +61,26 @@ class Objy : public GameObject {
 				misses++;
 			transform.position[0] = (get_cursor_normal_position_x() * 2.0f) - 1.0f;
 			transform.position[1] = (get_cursor_normal_position_y() * 2.0f) - 1.0f;
+			PRINT_LN(get_fps_rate());
 		}
 		void end(Scene* pEndingScene) {
 			PRINT_LN(append_to_string(hits, ", ", misses).c_str());
 		}
 };
 
+class Background : public GameObject {
+	public:
+		Background() : GameObject(2, 1) {
+			transform.scale[0] = 2.0f;
+			transform.scale[1] = 2.0f;
+			spriteRenderer.color.set_channel(1U, 0.0f);
+			spriteRenderer.color.set_channel(2U, 0.0f);
+		}
+};
+
 class First : public Scene {
 	public:
+		Background background;
 		Objy objy;
 		InputAction trigger, refresh;
 

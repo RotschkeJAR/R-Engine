@@ -10,7 +10,6 @@ namespace RE {
 
 	class Manager final {
 		private:
-			bool should_update_object(GameObject* pGameObject);
 			void start_proc();
 			void update_proc();
 			void end_proc();
@@ -22,9 +21,10 @@ namespace RE {
 
 			Manager();
 			~Manager();
+			bool is_object_active(GameObject* pGameObject) const;
 			void game_logic_update();
 			void last_game_logic_update();
-			bool is_game_valid();
+			bool is_game_valid() const;
 	};
 
 	void mark_delete(GameObject* pGameObject);

@@ -51,7 +51,7 @@ namespace RE {
 	gameObjectVertexBuffer(RE_VK_VERTEX_BUFFER_BYTES, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, u32GameObjectVertexBufferQueues, u32GameObjectVertexBufferQueueCount, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT), 
 	gameObjectVertexStagingBuffer(RE_VK_VERTEX_BUFFER_BYTES, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, u32GameObjectVertexStagingBufferQueues, u32GameObjectVertexStagingBufferQueueCount, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), 
 	vertexBufferTransferCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, pCommandPools[RE_VK_COMMAND_POOL_TRANSFER_INDEX]), 
-	u32GameObjectsToRender(0U) {
+	u16GameObjectsToRenderCount(0U) {
 		gameObjectVertexStagingBuffer.map_memory((void**)&pVertices, 0UL, RE_VK_VERTEX_BUFFER_BYTES);
 	}
 
@@ -59,47 +59,60 @@ namespace RE {
 		gameObjectVertexStagingBuffer.unmap_memory();
 	}
 
-	void Renderer_GameObject::record_command_buffer(const Vulkan_CommandBuffer& commandBuffer) {
-		CATCH_SIGNAL(commandBuffer.cmd_bind_graphics_pipeline(&gameObjectsGraphicsPipeline));
-		CATCH_SIGNAL(commandBuffer.cmd_bind_index_buffer(&Renderer::pInstance->rectangleIndexBuffer, VK_INDEX_TYPE_UINT16));
-		CATCH_SIGNAL(commandBuffer.cmd_bind_vertex_buffer(&gameObjectVertexBuffer, 0UL));
-		CATCH_SIGNAL(commandBuffer.cmd_set_viewport(0.0f, 0.0f, vk_swapchainResolution.width, vk_swapchainResolution.height, 0.0f, 1.0f));
-		CATCH_SIGNAL(commandBuffer.cmd_set_scissor(0, 0, vk_swapchainResolution.width, vk_swapchainResolution.height));
-		CATCH_SIGNAL(commandBuffer.cmd_draw_indexed(u32GameObjectsToRender * 6U, 1U, 0U, 0U, 0U));
+	void Renderer_GameObject::record_secondary_command_buffer(const uint32_t u32CommandBufferIndex) const {
+		CATCH_SIGNAL(ppSecondaryCommandBuffers[u32CommandBufferIndex]->begin_recording_command_buffer(VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT, &Renderer::pInstance->renderPass, 0U, Renderer::pInstance->ppFramebuffers[u32CommandBufferIndex]));
+		if (u16GameObjectsToRenderCount) {
+			CATCH_SIGNAL(ppSecondaryCommandBuffers[u32CommandBufferIndex]->cmd_bind_graphics_pipeline(&gameObjectsGraphicsPipeline));
+			CATCH_SIGNAL(ppSecondaryCommandBuffers[u32CommandBufferIndex]->cmd_bind_index_buffer(&Renderer::pInstance->rectangleIndexBuffer, VK_INDEX_TYPE_UINT16));
+			CATCH_SIGNAL(ppSecondaryCommandBuffers[u32CommandBufferIndex]->cmd_bind_vertex_buffer(&gameObjectVertexBuffer, 0UL));
+			CATCH_SIGNAL(ppSecondaryCommandBuffers[u32CommandBufferIndex]->cmd_set_viewport(50.0f, 50.0f, vk_swapchainResolution.width - 100.0f, vk_swapchainResolution.height - 100.0f, 0.0f, 1.0f));
+			CATCH_SIGNAL(ppSecondaryCommandBuffers[u32CommandBufferIndex]->cmd_set_scissor(0, 0, vk_swapchainResolution.width, vk_swapchainResolution.height));
+			CATCH_SIGNAL(ppSecondaryCommandBuffers[u32CommandBufferIndex]->cmd_draw_indexed(u16GameObjectsToRenderCount * 6U, 1U, 0U, 0U, 0U));
+		}
+		CATCH_SIGNAL(ppSecondaryCommandBuffers[u32CommandBufferIndex]->end_recording_command_buffer());
 	}
 
-	void Renderer_GameObject::record_secondary_command_buffer() {
-		
+	void Renderer_GameObject::add_secondary_command_buffer(const Vulkan_CommandBuffer& primaryCommandBuffer, const uint32_t u32FramebufferIndex) const {
+		CATCH_SIGNAL(primaryCommandBuffer.cmd_execute(ppSecondaryCommandBuffers[u32FramebufferIndex]));
 	}
 
-	void Renderer_GameObject::render() {
+	void Renderer_GameObject::render(bool &rbSecondaryCommandBufferChanged, const uint32_t u32CurrentFramebufferIndex) {
 		if (gameObjects.empty()) {
 			CATCH_SIGNAL(pDeviceQueues[RE_VK_QUEUE_TRANSFER_INDEX]->submit_to_queue(0U, nullptr, nullptr, 0U, nullptr, 1U, &semaphoreWaitForVertexBufferTransfer, nullptr));
 			return;
 		}
-		u32GameObjectsToRender = 0U;
+		u16GameObjectsToRenderCount = 0U;
 		for (GameObject *pObject : gameObjects) {
+			if (u16GameObjectsToRenderCount == RE_VK_RENDERABLE_RECTANGLES_COUNT) {
+				RE_ERROR("There are objects, which couldn't be rendered due to reaching the memory limit");
+				break;
+			}
+			DEFINE_SIGNAL_GUARD_DETAILED(sigGuardGameObjectRender, append_to_string("Rendering game object at ", pObject).c_str());
+			if (!Manager::pInstance->is_object_active(pObject))
+				continue;
 			for (uint32_t u32CurrentGameObjectVertexIndex = 0U; u32CurrentGameObjectVertexIndex < 4U; u32CurrentGameObjectVertexIndex++) {
-				const uint32_t u32OffsetInVertices = RE_VK_VERTEX_TOTAL_SIZE * 4U * u32GameObjectsToRender + RE_VK_VERTEX_TOTAL_SIZE * u32CurrentGameObjectVertexIndex;
+				const uint32_t u32OffsetInVertices = RE_VK_VERTEX_TOTAL_SIZE * 4U * u16GameObjectsToRenderCount + RE_VK_VERTEX_TOTAL_SIZE * u32CurrentGameObjectVertexIndex;
+				const float vertexXOffset = pObject->transform.scale[0] / 2.0f;
+				const float vertexYOffset = pObject->transform.scale[1] / 2.0f;
 				switch (u32CurrentGameObjectVertexIndex) {
 					case 0U:
-						pVertices[u32OffsetInVertices + 0U] = pObject->transform.position[0] - pObject->transform.scale[0] / 2.0f;
-						pVertices[u32OffsetInVertices + 1U] = pObject->transform.position[1] + pObject->transform.scale[1] / 2.0f;
+						pVertices[u32OffsetInVertices + 0U] = pObject->transform.position[0] - vertexXOffset;
+						pVertices[u32OffsetInVertices + 1U] = pObject->transform.position[1] + vertexYOffset;
 						pVertices[u32OffsetInVertices + 2U] = pObject->transform.position[2];
 						break;
 					case 1U:
-						pVertices[u32OffsetInVertices + 0U] = pObject->transform.position[0] + pObject->transform.scale[0] / 2.0f;
-						pVertices[u32OffsetInVertices + 1U] = pObject->transform.position[1] + pObject->transform.scale[1] / 2.0f;
+						pVertices[u32OffsetInVertices + 0U] = pObject->transform.position[0] + vertexXOffset;
+						pVertices[u32OffsetInVertices + 1U] = pObject->transform.position[1] + vertexYOffset;
 						pVertices[u32OffsetInVertices + 2U] = pObject->transform.position[2];
 						break;
 					case 2U:
-						pVertices[u32OffsetInVertices + 0U] = pObject->transform.position[0] + pObject->transform.scale[0] / 2.0f;
-						pVertices[u32OffsetInVertices + 1U] = pObject->transform.position[1] - pObject->transform.scale[1] / 2.0f;
+						pVertices[u32OffsetInVertices + 0U] = pObject->transform.position[0] + vertexXOffset;
+						pVertices[u32OffsetInVertices + 1U] = pObject->transform.position[1] - vertexYOffset;
 						pVertices[u32OffsetInVertices + 2U] = pObject->transform.position[2];
 						break;
 					case 3U:
-						pVertices[u32OffsetInVertices + 0U] = pObject->transform.position[0] - pObject->transform.scale[0] / 2.0f;
-						pVertices[u32OffsetInVertices + 1U] = pObject->transform.position[1] - pObject->transform.scale[1] / 2.0f;
+						pVertices[u32OffsetInVertices + 0U] = pObject->transform.position[0] - vertexXOffset;
+						pVertices[u32OffsetInVertices + 1U] = pObject->transform.position[1] - vertexYOffset;
 						pVertices[u32OffsetInVertices + 2U] = pObject->transform.position[2];
 						break;
 				}
@@ -108,11 +121,17 @@ namespace RE {
 				pVertices[u32OffsetInVertices + 5U] = pObject->spriteRenderer.color[2];
 				pVertices[u32OffsetInVertices + 6U] = pObject->spriteRenderer.color[3];
 			}
-			u32GameObjectsToRender++;
+			u16GameObjectsToRenderCount++;
+		}
+		CATCH_SIGNAL(record_secondary_command_buffer(u32CurrentFramebufferIndex));
+		rbSecondaryCommandBufferChanged = true;
+		if (!u16GameObjectsToRenderCount) {
+			CATCH_SIGNAL(pDeviceQueues[RE_VK_QUEUE_TRANSFER_INDEX]->submit_to_queue(0U, nullptr, nullptr, 0U, nullptr, 1U, &semaphoreWaitForVertexBufferTransfer, nullptr));
+			return;
 		}
 		CATCH_SIGNAL(vertexBufferTransferCommandBuffer.reset_command_buffer(0));
 		CATCH_SIGNAL(vertexBufferTransferCommandBuffer.begin_recording_command_buffer(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT));
-		CATCH_SIGNAL(vertexBufferTransferCommandBuffer.cmd_copy_buffer(&gameObjectVertexStagingBuffer, &gameObjectVertexBuffer, u32GameObjectsToRender * 4U * RE_VK_VERTEX_TOTAL_SIZE_BYTES));
+		CATCH_SIGNAL(vertexBufferTransferCommandBuffer.cmd_copy_buffer(&gameObjectVertexStagingBuffer, &gameObjectVertexBuffer, u16GameObjectsToRenderCount * 4U * RE_VK_VERTEX_TOTAL_SIZE_BYTES));
 		CATCH_SIGNAL(vertexBufferTransferCommandBuffer.end_recording_command_buffer());
 		CATCH_SIGNAL(pDeviceQueues[RE_VK_QUEUE_TRANSFER_INDEX]->submit_to_queue(0U, nullptr, nullptr, 1U, &vertexBufferTransferCommandBuffer, 1U, &semaphoreWaitForVertexBufferTransfer, nullptr));
 	}

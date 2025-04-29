@@ -23,18 +23,12 @@ namespace RE {
 		pNextScene = nullptr;
 	}
 
-	bool Manager::should_update_object(GameObject* pGameObject) {
-		bool bResult;
-		CATCH_SIGNAL(bResult = !pGameObject->u32SceneParentId || pGameObject->u32SceneParentId == pCurrentScene->u32Id);
-		return bResult;
-	}
-
 	void Manager::start_proc() {
 		if (!pCurrentScene)
 			return;
 		CATCH_SIGNAL_DETAILED(pCurrentScene->start(), append_to_string("Scene ID: ", pCurrentScene->u32Id).c_str());
 		for (GameObject* pObj : gameObjects)
-			if (should_update_object(pObj))
+			if (is_object_active(pObj))
 				CATCH_SIGNAL_DETAILED(pObj->start(pCurrentScene), append_to_string("Game Object ID: ", pObj->u32OwnId).c_str());
 	}
 
@@ -43,7 +37,7 @@ namespace RE {
 			return;
 		CATCH_SIGNAL_DETAILED(pCurrentScene->update(), append_to_string("Scene ID: ", pCurrentScene->u32Id).c_str());
 		for (GameObject* pObj : gameObjects)
-			if (should_update_object(pObj))
+			if (is_object_active(pObj))
 				CATCH_SIGNAL_DETAILED(pObj->update(pCurrentScene), append_to_string("Game Object ID: ", pObj->u32OwnId).c_str());
 	}
 
@@ -52,20 +46,23 @@ namespace RE {
 			return;
 		CATCH_SIGNAL_DETAILED(pCurrentScene->end(), append_to_string("Scene ID: ", pCurrentScene->u32Id).c_str());
 		for (GameObject* pObj : gameObjects)
-			if (should_update_object(pObj))
+			if (is_object_active(pObj))
 				CATCH_SIGNAL_DETAILED(pObj->end(pCurrentScene), append_to_string("Game Object ID: ", pObj->u32OwnId).c_str());
 	}
 
 	void Manager::delete_proc() {
 		for (GameObject* deletableGameObject : deletableGameObjects)
-			DELETE_SAFELY(deletableGameObject);
+			delete deletableGameObject;
 		deletableGameObjects.clear();
 	}
 
 	void Manager::add_proc() {
-		for (GameObject* newGameObject : newGameObjects)
-			gameObjects.push_back(newGameObject);
+		gameObjects.insert(gameObjects.end(), newGameObjects.begin(), newGameObjects.end());
 		newGameObjects.clear();
+	}
+
+	bool Manager::is_object_active(GameObject* pGameObject) const {
+		return CATCH_SIGNAL_AND_RETURN(!pGameObject->u32SceneParentId || pGameObject->u32SceneParentId == pCurrentScene->u32Id, bool);
 	}
 
 	void Manager::game_logic_update() {
@@ -90,7 +87,7 @@ namespace RE {
 		CATCH_SIGNAL(delete_proc());
 	}
 
-	bool Manager::is_game_valid() {
+	bool Manager::is_game_valid() const {
 		return pCurrentScene || pNextScene;
 	}
 

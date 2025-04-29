@@ -531,6 +531,7 @@ namespace RE {
 		public:
 			Color();
 			~Color();
+			void set_channel(const uint8_t u8ChannelIndex, const float fNormal);
 			void copy_from(const Color &copyColor);
 			bool equals(const Color &compareColor) const;
 
@@ -540,7 +541,25 @@ namespace RE {
 			bool operator !=(const Color &compareColor) const;
 	};
 
-	class RandomNumberGenerator {
+	class Transform final {
+		public:
+			Vector3f position, scale;
+
+			Transform();
+			Transform(const Vector3f &positionCopy);
+			Transform(const Vector3f &positionCopy, const Vector3f &scaleCopy);
+			Transform(const Transform &copyTransform);
+			~Transform();
+			void reset_position();
+			void copy_from(const Transform &copyTransform);
+			bool equals(const Transform &compareTransform) const;
+
+			void operator =(const Transform &copyTransform);
+			bool operator ==(const Transform &compareTransform) const;
+			bool operator !=(const Transform &compareTransform) const;
+	};
+
+	class RandomNumberGenerator final {
 		private:
 			std::mt19937 rng;
 
@@ -579,24 +598,6 @@ namespace RE {
 			virtual void start();
 			virtual void update();
 			virtual void end();
-	};
-
-	class Transform final {
-		public:
-			Vector3f position, scale;
-
-			Transform();
-			Transform(const Vector3f &positionCopy);
-			Transform(const Vector3f &positionCopy, const Vector3f &scaleCopy);
-			Transform(const Transform &copyTransform);
-			~Transform();
-			void reset_position();
-			void copy_from(const Transform &copyTransform);
-			bool equals(const Transform &compareTransform) const;
-
-			void operator =(const Transform &copyTransform);
-			bool operator ==(const Transform &compareTransform) const;
-			bool operator !=(const Transform &compareTransform) const;
 	};
 
 	class SpriteRenderer final {
@@ -681,6 +682,8 @@ namespace RE {
 
 	void enable_vsync(bool bEnableVsync);
 	bool is_vsync_enabled();
+	void enable_waiting_for_vsync(bool bEnableWaitForVsync);
+	bool is_waiting_for_vsync_enabled();
 
 #ifdef RE_OS_WINDOWS
 	void set_hinstance(HINSTANCE win_hInstance);

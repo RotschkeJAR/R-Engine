@@ -717,7 +717,7 @@ namespace RE {
 			Vulkan_Framebuffer() = delete;
 			Vulkan_Framebuffer(const Vulkan_RenderPass *pRenderPass, const uint32_t u32ImageViewAttachmentCount, const VkImageView *vk_pImageViewAttachments, const uint32_t u32Width, const uint32_t u32Height);
 			~Vulkan_Framebuffer();
-			VkFramebuffer get_frmebuffer() const;
+			VkFramebuffer get_framebuffer() const;
 			bool is_valid() const;
 
 			operator VkFramebuffer() const;
@@ -750,7 +750,10 @@ namespace RE {
 			~Vulkan_CommandBuffer();
 
 			void reset_command_buffer(const VkCommandBufferResetFlags vk_eCommandBufferResetFlags) const;
+			bool begin_recording_command_buffer(const VkCommandBufferUsageFlags vk_eCommandBufferUsageFlags, const VkCommandBufferInheritanceInfo *vk_pInheritanceInfo) const;
 			bool begin_recording_command_buffer(const VkCommandBufferUsageFlags vk_eCommandBufferUsageFlags) const;
+			bool begin_recording_command_buffer(const VkCommandBufferUsageFlags vk_eCommandBufferUsageFlags, const VkRenderPass vk_renderPass, const uint32_t u32Subpass, const VkFramebuffer vk_framebuffer) const;
+			bool begin_recording_command_buffer(const VkCommandBufferUsageFlags vk_eCommandBufferUsageFlags, const Vulkan_RenderPass *pRenderPass, const uint32_t u32Subpass, const Vulkan_Framebuffer *pFramebuffer) const;
 			bool end_recording_command_buffer() const;
 			void cmd_begin_renderpass(const VkRenderPassBeginInfo vk_commandBufferRenderpassBeginInfo, const VkSubpassContents vk_eSubpassContents) const;
 			void cmd_begin_renderpass(const float fClearColor[4], const int32_t i32ClearColor[4], const uint32_t u32ClearColor[4], const float fClearDepth, const uint32_t u32ClearStencil, const Vulkan_RenderPass *pRenderPass, const Vulkan_Framebuffer *pFramebuffer, const VkRect2D vk_renderArea, const VkSubpassContents vk_eSubpassContents) const;

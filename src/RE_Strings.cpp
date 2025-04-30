@@ -3,7 +3,11 @@
 namespace RE {
 
 	bool is_string_empty(const char* pcString) {
-		return std::strlen(pcString) == 0;
+		return get_string_length_safely(pcString) == 0U;
+	}
+
+	size_t get_string_length_safely(const char* pcString) {
+		return pcString ? std::strlen(pcString) : 0U;
 	}
 
 	uint32_t get_line_count(const char* pcString) {

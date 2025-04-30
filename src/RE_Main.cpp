@@ -21,12 +21,12 @@ namespace RE {
 		CATCH_SIGNAL(pWindow = new Window_Win64());
 #elif defined RE_OS_LINUX
 		{
-			const bool bX11Exists = std::strlen(std::getenv("DISPLAY")) > 0, bWaylandExists = std::strlen(std::getenv("WAYLAND_DISPLAY")) > 0;
+			const bool bX11Exists = !is_string_empty(std::getenv("DISPLAY")), bWaylandExists = !is_string_empty(std::getenv("WAYLAND_DISPLAY"));
 			if (bX11Exists) {
 				CATCH_SIGNAL(pWindow = new Window_X11());
 				if (!pWindow->is_valid()) {
+					CATCH_SIGNAL(delete pWindow);
 					if (bWaylandExists) {
-						CATCH_SIGNAL(delete pWindow);
 						RE_NOTE("Failed creating X11 window. Using Wayland instead");
 						CATCH_SIGNAL(pWindow = new Window_Wayland());
 					} else {
@@ -37,8 +37,8 @@ namespace RE {
 			} else if (bWaylandExists) {
 				CATCH_SIGNAL(pWindow = new Window_Wayland());
 				if (!pWindow->is_valid()) {
+					CATCH_SIGNAL(delete pWindow);
 					if (bX11Exists) {
-						CATCH_SIGNAL(delete pWindow);
 						RE_NOTE("Failed creating Wayland window. Using X11 instead");
 						CATCH_SIGNAL(pWindow = new Window_X11());
 					} else {
@@ -56,7 +56,7 @@ namespace RE {
 		RE_ERROR("The OS is unknown. The engine can't initialize");
 		return;
 #endif
-		if (!pWindow->is_valid() || bErrorOccured) {
+		if (!CATCH_SIGNAL_AND_RETURN(pWindow->is_valid(), bool) || bErrorOccured) {
 			CATCH_SIGNAL(delete pWindow);
 			return;
 		}

@@ -31,9 +31,9 @@ namespace RE {
 			virtual bool create_vulkan_surface(VkSurfaceKHR &vk_rhSurface) const = 0;
 			virtual const char* get_vulkan_required_surface_extension_name() const = 0;
 			void window_proc();
-			bool should_close();
-			bool is_valid();
-			Vector<uint16_t, 2> get_size();
+			bool should_close() const;
+			bool is_valid() const;
+			Vector<uint16_t, 2> get_size() const;
 
 		friend class InputMgr;
 	};
@@ -59,6 +59,7 @@ namespace RE {
 			~Window_Win64();
 			bool create_vulkan_surface(VkSurfaceKHR &vk_rhSurface) const;
 			const char* get_vulkan_required_surface_extension_name() const;
+			HWND get_hwindow() const;
 
 		friend LRESULT CALLBACK windows_window_proc(HWND win_hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	};

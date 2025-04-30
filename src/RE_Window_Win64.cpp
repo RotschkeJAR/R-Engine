@@ -212,6 +212,10 @@ namespace RE {
 		return VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
 	}
 
+	HWND Window_Win64::get_hwindow() const {
+		return win_hWindow;
+	}
+
 	void set_hinstance(HINSTANCE win_hInstance) {
 		Window_Win64::win_hInstance = win_hInstance;
 	}

@@ -46,18 +46,16 @@ namespace RE {
 		CATCH_SIGNAL(internal_window_proc());
 	}
 
-	bool Window::should_close() {
+	bool Window::should_close() const {
 		return bCloseFlag;
 	}
 
-	bool Window::is_valid() {
+	bool Window::is_valid() const {
 		return bValid;
 	}
 
-	Vector<uint16_t, 2> Window::get_size() {
-		Vector<uint16_t, 2> copySize;
-		copySize = size;
-		return copySize;
+	Vector<uint16_t, 2> Window::get_size() const {
+		return size;
 	}
 
 }

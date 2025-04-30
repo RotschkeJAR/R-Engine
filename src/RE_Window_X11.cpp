@@ -88,7 +88,7 @@ namespace RE {
 	}
 
 	void Window_X11::internal_update_title() {
-		CATCH_SIGNAL(XChangeProperty(x11_pDisplay, x11_hWindow, x11_hWindowName, x11_hUTF8, 8, PropModeReplace, int32_terpret_cast<const unsigned char*>(pcTitle), std::strlen(pcTitle)));
+		CATCH_SIGNAL(XChangeProperty(x11_pDisplay, x11_hWindow, x11_hWindowName, x11_hUTF8, 8, PropModeReplace, reinterpret_cast<const unsigned char*>(pcTitle), std::strlen(pcTitle)));
 	}
 
 	void Window_X11::internal_window_proc() {
@@ -118,7 +118,7 @@ namespace RE {
 					CATCH_SIGNAL(u8CharLength = Xutf8LookupString(x11_hInputContext, &x11_keyEvent, cString, sizeof(cString) - 1, &x11_keySym, nullptr));
 					if (bKeyPressed && u8CharLength)
 						cString[u8CharLength] = '\0';
-					CATCH_SIGNAL(inputMgr.input_event(key_from_virtual_keycode(static_cast<RElong>(x11_keySym)), static_cast<REuint>(x11_scancode), bKeyPressed, false));
+					CATCH_SIGNAL(inputMgr.input_event(key_from_virtual_keycode(static_cast<int64_t>(x11_keySym)), static_cast<uint32_t>(x11_scancode), bKeyPressed, false));
 					} break;
 				case XButtonPress:
 				case XButtonRelease: {
@@ -158,8 +158,16 @@ namespace RE {
 		} while (i32PendingEvents);
 	}
 
-	XWindow Window_X11::get_xwindow() {
-		return x11_hWindow;
+	bool Window_X11::create_vulkan_surface(VkSurfaceKHR &vk_rhSurface) const {
+		VkXlibSurfaceCreateInfoKHR vk_x11SurfaceCreateInfo = {};
+		vk_x11SurfaceCreateInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
+		vk_x11SurfaceCreateInfo.dpy = x11_pDisplay;
+		vk_x11SurfaceCreateInfo.window = x11_hWindow;
+		return CHECK_VK_RESULT(vkCreateXlibSurfaceKHR(RE_VK_INSTANCE, &vk_x11SurfaceCreateInfo, nullptr, &vk_rhSurface));
+	}
+
+	const char* Window_X11::get_vulkan_required_surface_extension_name() const {
+		return VK_KHR_XLIB_SURFACE_EXTENSION_NAME;
 	}
 #endif /* RE_OS_LINUX */
 

@@ -808,26 +808,22 @@ namespace RE {
 		if (!pfn_vkGetPhysicalDeviceWin32PresentationSupportKHR)
 			return false;
 #elif defined RE_OS_LINUX
-		switch (eUsingWindowingSystem) {
-			case RE_WINDOWING_SYSTEM_WAYLAND:
-				pfn_vkCreateWaylandSurfaceKHR = reinterpret_cast<PFN_vkCreateWaylandSurfaceKHR>(load_func("vkCreateWaylandSurfaceKHR"));
-				if (!pfn_vkCreateWaylandSurfaceKHR)
-					return false;
-				pfn_vkGetPhysicalDeviceWaylandPresentationSupportKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR>(load_func("vkGetPhysicalDeviceWaylandPresentationSupportKHR"));
-				if (!pfn_vkGetPhysicalDeviceWaylandPresentationSupportKHR)
-					return false;
-				break;
-			case RE_WINDOWING_SYSTEM_X11:
-				pfn_vkCreateXlibSurfaceKHR = reinterpret_cast<PFN_vkCreateXlibSurfaceKHR>(load_func("vkCreateXlibSurfaceKHR"));
-				if (!pfn_vkCreateXlibSurfaceKHR)
-					return false;
-				pfn_vkGetPhysicalDeviceXlibPresentationSupportKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceXlibPresentationSupportKHR>(load_func("vkGetPhysicalDeviceXlibPresentationSupportKHR"));
-				if (!pfn_vkGetPhysicalDeviceXlibPresentationSupportKHR)
-					return false;
-				break;
-			default:
+		if (std::strcmp(Window::pInstance->get_vulkan_required_surface_extension_name(), VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME) == 0) {
+			pfn_vkCreateWaylandSurfaceKHR = reinterpret_cast<PFN_vkCreateWaylandSurfaceKHR>(load_func("vkCreateWaylandSurfaceKHR"));
+			if (!pfn_vkCreateWaylandSurfaceKHR)
 				return false;
-		}
+			pfn_vkGetPhysicalDeviceWaylandPresentationSupportKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR>(load_func("vkGetPhysicalDeviceWaylandPresentationSupportKHR"));
+			if (!pfn_vkGetPhysicalDeviceWaylandPresentationSupportKHR)
+				return false;
+		} else if (std::strcmp(Window::pInstance->get_vulkan_required_surface_extension_name(), VK_KHR_XLIB_SURFACE_EXTENSION_NAME) == 0) {
+			pfn_vkCreateXlibSurfaceKHR = reinterpret_cast<PFN_vkCreateXlibSurfaceKHR>(load_func("vkCreateXlibSurfaceKHR"));
+			if (!pfn_vkCreateXlibSurfaceKHR)
+				return false;
+			pfn_vkGetPhysicalDeviceXlibPresentationSupportKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceXlibPresentationSupportKHR>(load_func("vkGetPhysicalDeviceXlibPresentationSupportKHR"));
+			if (!pfn_vkGetPhysicalDeviceXlibPresentationSupportKHR)
+				return false;
+		} else
+			return false;
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 		return true;
 	}
@@ -1212,9 +1208,7 @@ namespace RE {
 	}
 
 	void* Vulkan::load_func(const char* pFuncName) {
-		void* pFuncPtr;
-		CATCH_SIGNAL(pFuncPtr = load_func_with_instance(vk_hInstance, pFuncName));
-		return pFuncPtr;
+		return CATCH_SIGNAL_AND_RETURN(load_func_with_instance(vk_hInstance, pFuncName), void*);
 	}
 
 	bool Vulkan::create_instance() {
@@ -1236,21 +1230,7 @@ namespace RE {
 
 		constexpr uint32_t u32ExtensionsToLoadCount = 3U;
 		const char** ppcExtensionsToLoad = new const char*[u32ExtensionsToLoadCount] {VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_KHR_SURFACE_EXTENSION_NAME};
-#ifdef RE_OS_WINDOWS
-		ppcExtensionsToLoad[u32ExtensionsToLoadCount - 1U] = VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
-#elif defined RE_OS_LINUX
-		switch (eUsingWindowingSystem) {
-			case RE_WINDOWING_SYSTEM_WAYLAND:
-				ppcExtensionsToLoad[u32ExtensionsToLoadCount - 1U] = VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME;
-				break;
-			case RE_WINDOWING_SYSTEM_X11:
-				ppcExtensionsToLoad[u32ExtensionsToLoadCount - 1U] = VK_KHR_XLIB_SURFACE_EXTENSION_NAME;
-				break;
-			default:
-				RE_ERROR("Unknown windowing system on Linux selected");
-				break;
-		}
-#endif /* RE_OS_WINDOWS, RE_OS_LINUX */
+		ppcExtensionsToLoad[u32ExtensionsToLoadCount - 1U] = Window::pInstance->get_vulkan_required_surface_extension_name();
 		uint32_t u32AvailableExtensionsCount = 0U;
 		CATCH_SIGNAL(pfn_vkEnumerateInstanceExtensionProperties(nullptr, &u32AvailableExtensionsCount, nullptr));
 		VkExtensionProperties* vk_pAvailableExtensions = new VkExtensionProperties[u32AvailableExtensionsCount];

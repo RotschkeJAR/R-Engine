@@ -58,19 +58,6 @@ typedef Colormap XColormap;
 # define XSuccess Success
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 
-namespace RE {
-
-	enum WindowingSystem {
-		// Windows only
-		RE_WINDOWING_SYSTEM_WIN32,
-
-		// Linux only
-		RE_WINDOWING_SYSTEM_X11,
-		RE_WINDOWING_SYSTEM_WAYLAND,
-
-		RE_WINDOWING_SYSTEM_MAX_ENUM
-	};
-	
-}
+namespace RE {}
 
 #endif /* __RE_EXT_H__ */

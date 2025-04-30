@@ -5,7 +5,6 @@ namespace RE {
 	
 	extern bool bRunning;
 	extern bool bErrorOccured;
-	extern WindowingSystem eUsingWindowingSystem;
 
 	float get_deltaseconds();
 	float get_fps_rate();

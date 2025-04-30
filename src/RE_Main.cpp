@@ -10,7 +10,6 @@ namespace RE {
 	bool bErrorOccured = false;
 	bool bRunning = false;
 	float fDeltaseconds = 0.0f, fMinDeltatime = -1.0f;
-	WindowingSystem eUsingWindowingSystem = RE_WINDOWING_SYSTEM_MAX_ENUM;
 
 	void execute() {
 		DEFINE_SIGNAL_GUARD(sigGuardMainLoop);
@@ -20,48 +19,36 @@ namespace RE {
 		Window* pWindow = nullptr;
 #ifdef RE_OS_WINDOWS
 		CATCH_SIGNAL(pWindow = new Window_Win64());
-		eUsingWindowingSystem = RE_WINDOWING_SYSTEM_WIN32;
 #elif defined RE_OS_LINUX
 		{
-			const char *const pcSessionType = CATCH_SIGNAL_AND_RETURN(std::getenv("XDG_SESSION_TYPE"), const char*);
-			if (std::strcmp(pcSessionType, "wayland") == 0) {
-				CATCH_SIGNAL(pWindow = new Window_Wayland());
-				if (!pWindow->is_valid() || bErrorOccured) {
-					DELETE_SAFELY(pWindow);
-					if (std::strlen(std::getenv("DISPLAY")) > 0) {
-						RE_NOTE("Failed to create Wayland window. Attempting to create in X11");
-						CATCH_SIGNAL(pWindow = new Window_X11());
-						if (!pWindow->is_valid() || bErrorOccured) {
-							RE_FATAL_ERROR("Failed to create window in X11 either");
-							DELETE_SAFELY(pWindow);
-							return;
-						}
-						eUsingWindowingSystem = RE_WINDOWING_SYSTEM_X11;
-					} else {
-						RE_FATAL_ERROR("Failed to create Wayland window. No other alternative known window managers exist");
-						return;
-					}
-				} else
-					eUsingWindowingSystem = RE_WINDOWING_SYSTEM_WAYLAND;
-			} else if (std::strcmp(pcSessionType, "x11") == 0) {
+			const bool bX11Exists = std::strlen(std::getenv("DISPLAY")) > 0, bWaylandExists = std::strlen(std::getenv("WAYLAND_DISPLAY")) > 0;
+			if (bX11Exists) {
 				CATCH_SIGNAL(pWindow = new Window_X11());
-				if (!pWindow->is_valid() || bErrorOccured) {
-					DELETE_SAFELY(pWindow);
-					if (std::strlen(std::getenv("WAYLAND_DISPLAY")) > 0) {
-						RE_NOTE("Failed to create X11 window. Attempting to create in Wayland");
+				if (!pWindow->is_valid()) {
+					if (bWaylandExists) {
+						CATCH_SIGNAL(delete pWindow);
+						RE_NOTE("Failed creating X11 window. Using Wayland instead");
 						CATCH_SIGNAL(pWindow = new Window_Wayland());
-						if (!pWindow->is_valid() || bErrorOccured) {
-							RE_FATAL_ERROR("Failed to create window in Wayland either");
-							DELETE_SAFELY(pWindow);
-							return;
-						}
-						eUsingWindowingSystem = RE_WINDOWING_SYSTEM_WAYLAND;
 					} else {
-						RE_FATAL_ERROR("Failed to create X11 window. No other alternative known window managers exist");
+						RE_FATAL_ERROR("Failed creating X11 window. No other alternative window compositor exists");
 						return;
 					}
-				} else
-					eUsingWindowingSystem = RE_WINDOWING_SYSTEM_X11;
+				}
+			} else if (bWaylandExists) {
+				CATCH_SIGNAL(pWindow = new Window_Wayland());
+				if (!pWindow->is_valid()) {
+					if (bX11Exists) {
+						CATCH_SIGNAL(delete pWindow);
+						RE_NOTE("Failed creating Wayland window. Using X11 instead");
+						CATCH_SIGNAL(pWindow = new Window_X11());
+					} else {
+						RE_FATAL_ERROR("Failed creating Wayland window. No other alternative window compositor exists");
+						return;
+					}
+				}
+			} else {
+				RE_FATAL_ERROR("There aren't any window compositors installed, that is supported by the engine");
+				return;
 			}
 		}
 #else

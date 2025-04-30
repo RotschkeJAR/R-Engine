@@ -3,6 +3,7 @@
 
 #include "RE_Internal Header.hpp"
 #include "RE_Input.hpp"
+#include "RE_Vulkan.hpp"
 
 namespace RE {
 	
@@ -27,6 +28,8 @@ namespace RE {
 			virtual ~Window();
 			void show_window(bool bShowWindow);
 			void set_window_title(const char* pNewTitle);
+			virtual bool create_vulkan_surface(VkSurfaceKHR &vk_rhSurface) const = 0;
+			virtual const char* get_vulkan_required_surface_extension_name() const = 0;
 			void window_proc();
 			bool should_close();
 			bool is_valid();
@@ -54,7 +57,8 @@ namespace RE {
 			
 			Window_Win64();
 			~Window_Win64();
-			HWND get_hwindow();
+			bool create_vulkan_surface(VkSurfaceKHR &vk_rhSurface) const;
+			const char* get_vulkan_required_surface_extension_name() const;
 
 		friend LRESULT CALLBACK windows_window_proc(HWND win_hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	};
@@ -80,7 +84,8 @@ namespace RE {
 			
 			Window_X11();
 			~Window_X11();
-			XWindow get_xwindow();
+			bool create_vulkan_surface(VkSurfaceKHR &vk_rhSurface) const;
+			const char* get_vulkan_required_surface_extension_name() const;
 	};
 
 	class Window_Wayland final : public Window {
@@ -99,7 +104,8 @@ namespace RE {
 
 			Window_Wayland();
 			~Window_Wayland();
-			wl_surface* get_wl_surface();
+			bool create_vulkan_surface(VkSurfaceKHR &vk_rhSurface) const;
+			const char* get_vulkan_required_surface_extension_name() const;
 	};
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 

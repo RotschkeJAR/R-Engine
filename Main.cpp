@@ -61,7 +61,7 @@ class Objy : public GameObject {
 				misses++;
 			transform.position[0] = (get_cursor_normal_position_x() * 2.0f) - 1.0f;
 			transform.position[1] = (get_cursor_normal_position_y() * 2.0f) - 1.0f;
-			PRINT_LN(get_fps_rate());
+			//PRINT_LN(get_fps_rate());
 		}
 		void end(Scene* pEndingScene) {
 			PRINT_LN(append_to_string(hits, ", ", misses).c_str());

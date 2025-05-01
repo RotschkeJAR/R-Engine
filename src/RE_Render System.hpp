@@ -40,14 +40,14 @@ namespace RE {
 			void destroy_device();
 			bool create_swapchain();
 			void destroy_swapchain();
-			void recreate_swapchain();
+			bool recreate_swapchain();
 
 		public:
 			static RenderSystem* pInstance;
 
 			RenderSystem();
 			~RenderSystem();
-			void refresh();
+			bool refresh();
 			void get_next_swapchain_image(const Vulkan_Semaphore *pSemaphoreWaitForSwapchainImageAcquired, uint32_t *pu32NextSwapchainImageIndex);
 			void window_resize_event();
 			bool is_valid();

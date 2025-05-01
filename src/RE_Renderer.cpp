@@ -34,10 +34,15 @@ namespace RE {
 	Renderer *Renderer::pInstance = nullptr;
 
 	Renderer::Renderer() : ppPrimaryCommandBuffer(nullptr), 
+#if (RE_VK_FRAMES_IN_FLIGHT == 2)
+	renderFence{Vulkan_Fence(VK_FENCE_CREATE_SIGNALED_BIT), Vulkan_Fence(VK_FENCE_CREATE_SIGNALED_BIT)}, 
+#else
+# error Update the array initialization above!
+#endif
+	u8CurrentFrameInFlight(0U), 
 	gameObjectRenderer(&renderPass), 
 	bValid(false), 
 	rectangleIndexBuffer(RE_VK_INDEX_BUFFER_BYTES, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, u32IndexBufferQueueTypes, sizeof(u32IndexBufferQueueTypes) / sizeof(u32IndexBufferQueueTypes[0]), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT), 
-	renderFence(VK_FENCE_CREATE_SIGNALED_BIT), 
 	ppFramebuffers(nullptr), 
 	vk_maxViewportArea({}), 
 	vk_maxScissorArea({}) {
@@ -67,8 +72,6 @@ namespace RE {
 		VkPipelineStageFlags vk_ePipelineStagesToWaitFor[] = {VK_PIPELINE_STAGE_NONE};
 		CATCH_SIGNAL(pDeviceQueues[RE_VK_QUEUE_TRANSFER_INDEX]->submit_to_queue(0U, nullptr, vk_ePipelineStagesToWaitFor, 1U, &indexBufferTransferCommandBuffer, 0U, nullptr, &indexBufferTransferFence));
 
-		vk_semaphoresToWaitForBeforeRendering[0] = semaphoreAcquireSwapchainImage;
-		vk_semaphoresToWaitForBeforeRendering[1] = gameObjectRenderer.semaphoreWaitForVertexBufferTransfer;
 		CATCH_SIGNAL(create_framebuffers());
 		CATCH_SIGNAL(create_command_buffers());
 		calculate_render_area();
@@ -95,7 +98,7 @@ namespace RE {
 	void Renderer::destroy_framebuffers() {
 		if (!ppFramebuffers)
 			return;
-		CATCH_SIGNAL(renderFence.wait_for_fence());
+		CATCH_SIGNAL(wait_for_all_fences());
 		for (uint32_t u32FramebufferDestroyIndex = 0U; u32FramebufferDestroyIndex < u32SwapchainImageCount; u32FramebufferDestroyIndex++)
 			CATCH_SIGNAL_DETAILED(delete ppFramebuffers[u32FramebufferDestroyIndex], append_to_string("Framebuffer Index: ", u32FramebufferDestroyIndex).c_str());
 		DELETE_ARRAY_SAFELY(ppFramebuffers);
@@ -139,26 +142,38 @@ namespace RE {
 		if (pActiveCamera) {
 			CATCH_SIGNAL(pActiveCamera->update());
 		}
-		CATCH_SIGNAL(renderFence.wait_for_and_reset_fence());
+		CATCH_SIGNAL(renderFence[u8CurrentFrameInFlight].wait_for_and_reset_fence());
 		uint32_t u32NextSwapchainImageIndex;
-		CATCH_SIGNAL(RenderSystem::pInstance->get_next_swapchain_image(&semaphoreAcquireSwapchainImage, &u32NextSwapchainImageIndex));
-		CATCH_SIGNAL(gameObjectRenderer.render(u32NextSwapchainImageIndex));
+		CATCH_SIGNAL(RenderSystem::pInstance->get_next_swapchain_image(&semaphoreAcquireSwapchainImage[u8CurrentFrameInFlight], &u32NextSwapchainImageIndex));
+		CATCH_SIGNAL(gameObjectRenderer.render(u32NextSwapchainImageIndex, u8CurrentFrameInFlight));
 		CATCH_SIGNAL_DETAILED(record_command_buffer(u32NextSwapchainImageIndex), append_to_string("Primary Command Buffer Index: ", u32NextSwapchainImageIndex).c_str());
-		VkPipelineStageFlags vk_ePipelinesStagesToWaitFor[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT};
-		VkCommandBuffer commandBuffersForRendering[] = {ppPrimaryCommandBuffer[u32NextSwapchainImageIndex]->get_command_buffer()};
-		VkSemaphore vk_semaphoresToSignalAfterRendering[] = {semaphoreRenderFinished.get_semaphore()};
-		VkFence vk_fenceToSignal = renderFence.get_fence();
-		CATCH_SIGNAL(pDeviceQueues[RE_VK_QUEUE_GRAPHICS_INDEX]->submit_to_queue(2U, vk_semaphoresToWaitForBeforeRendering, vk_ePipelinesStagesToWaitFor, 1U, commandBuffersForRendering, 1U, vk_semaphoresToSignalAfterRendering, vk_fenceToSignal));
-		CATCH_SIGNAL(pDeviceQueues[RE_VK_QUEUE_PRESENT_INDEX]->submit_to_present_queue(1U, &semaphoreRenderFinished, 1U, &vk_hSwapchain, &u32NextSwapchainImageIndex));
+
+		// Submission to queue
+		constexpr uint32_t u32SemaphoresToWaitForBeforeRenderingCount = 2U;
+		VkSemaphore vk_semaphoresToWaitForBeforeRendering[u32SemaphoresToWaitForBeforeRenderingCount] = {semaphoreAcquireSwapchainImage[u8CurrentFrameInFlight].get_semaphore(), gameObjectRenderer.semaphoreWaitForVertexBufferTransfer[u8CurrentFrameInFlight].get_semaphore()};
+		VkPipelineStageFlags vk_ePipelinesStagesToWaitFor[u32SemaphoresToWaitForBeforeRenderingCount] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT};
+		constexpr uint32_t u32CommandBufferForRenderingCount = 1U;
+		VkCommandBuffer commandBuffersForRendering[u32CommandBufferForRenderingCount] = {ppPrimaryCommandBuffer[u32NextSwapchainImageIndex]->get_command_buffer()};
+		constexpr uint32_t u32SemaphoresToSignalAfterRenderingCount = 1U;
+		VkSemaphore vk_semaphoresToSignalAfterRendering[u32SemaphoresToSignalAfterRenderingCount] = {semaphoreRenderFinished[u8CurrentFrameInFlight].get_semaphore()};
+		VkFence vk_fenceToSignal = renderFence[u8CurrentFrameInFlight].get_fence();
+		CATCH_SIGNAL(pDeviceQueues[RE_VK_QUEUE_GRAPHICS_INDEX]->submit_to_queue(u32SemaphoresToWaitForBeforeRenderingCount, (VkSemaphore*) &vk_semaphoresToWaitForBeforeRendering, (VkPipelineStageFlags*) &vk_ePipelinesStagesToWaitFor, u32CommandBufferForRenderingCount, (VkCommandBuffer*) commandBuffersForRendering, u32SemaphoresToSignalAfterRenderingCount, (VkSemaphore*) &vk_semaphoresToSignalAfterRendering, vk_fenceToSignal));
+		CATCH_SIGNAL(pDeviceQueues[RE_VK_QUEUE_PRESENT_INDEX]->submit_to_present_queue(u32SemaphoresToSignalAfterRenderingCount, (VkSemaphore*) &vk_semaphoresToSignalAfterRendering, 1U, &vk_hSwapchain, &u32NextSwapchainImageIndex));
+		u8CurrentFrameInFlight = (u8CurrentFrameInFlight + 1) % RE_VK_FRAMES_IN_FLIGHT;
 	}
 
 	void Renderer::window_resize_event() {
-		CATCH_SIGNAL(renderFence.wait_for_fence());
+		CATCH_SIGNAL(wait_for_all_fences());
 		CATCH_SIGNAL(destroy_command_buffers());
 		CATCH_SIGNAL(destroy_framebuffers());
 		CATCH_SIGNAL(create_framebuffers());
 		CATCH_SIGNAL(create_command_buffers());
 		calculate_render_area();
+	}
+
+	void Renderer::wait_for_all_fences() const {
+		for (uint8_t u8FenceWaitForIndex = 0U; u8FenceWaitForIndex < RE_VK_FRAMES_IN_FLIGHT; u8FenceWaitForIndex++)
+			CATCH_SIGNAL_DETAILED(renderFence[u8FenceWaitForIndex].wait_for_fence(), append_to_string("Fence to wait for-index: ", u8FenceWaitForIndex).c_str());
 	}
 
 	bool Renderer::is_valid() const {

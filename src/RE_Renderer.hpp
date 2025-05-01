@@ -6,6 +6,7 @@
 namespace RE {
 
 #define RE_VK_RENDERABLE_RECTANGLES_COUNT 16384U
+#define RE_VK_FRAMES_IN_FLIGHT 2U
 
 	class SubRenderer {
 		protected:
@@ -17,7 +18,7 @@ namespace RE {
 			~SubRenderer();
 			virtual void record_secondary_command_buffer(const uint32_t u32CommandBufferIndex) const = 0;
 			virtual void add_secondary_command_buffer(const Vulkan_CommandBuffer& rPrimaryCommandBuffer, const uint32_t u32FramebufferIndex) const = 0;
-			virtual void render(const uint32_t u32CurrentFramebufferIndex) = 0;
+			virtual void render(const uint32_t u32CurrentFramebufferIndex, const uint8_t u8CurrentFrameInFlight) = 0;
 			bool is_valid() const;
 	};
 
@@ -29,18 +30,18 @@ namespace RE {
 			Vulkan_PipelineLayout gameObjectsPipelineLayout;
 			Vulkan_GraphicsPipeline gameObjectsGraphicsPipeline;
 			Vulkan_Buffer gameObjectVertexBuffer, gameObjectVertexStagingBuffer;
-			Vulkan_CommandBuffer vertexBufferTransferCommandBuffer;
+			Vulkan_CommandBuffer vertexBufferTransferCommandBuffer[RE_VK_FRAMES_IN_FLIGHT];
 			float *pVertices;
 			uint16_t u16GameObjectsToRenderCount;
 
 		public:
-			const Vulkan_Semaphore semaphoreWaitForVertexBufferTransfer;
+			const Vulkan_Semaphore semaphoreWaitForVertexBufferTransfer[RE_VK_FRAMES_IN_FLIGHT];
 
 			Renderer_GameObject(const Vulkan_RenderPass *pRenderPass);
 			~Renderer_GameObject();
 			void record_secondary_command_buffer(const uint32_t u32CommandBufferIndex) const;
 			void add_secondary_command_buffer(const Vulkan_CommandBuffer& rPrimaryCommandBuffer, const uint32_t u32FramebufferIndex) const;
-			void render(const uint32_t u32CurrentFramebufferIndex);
+			void render(const uint32_t u32CurrentFramebufferIndex, const uint8_t u8CurrentFrameInFlight);
 	};
 
 	extern Camera *pActiveCamera;
@@ -51,7 +52,9 @@ namespace RE {
 
 		private:
 			Vulkan_CommandBuffer **ppPrimaryCommandBuffer;
-			VkSemaphore vk_semaphoresToWaitForBeforeRendering[2];
+			const Vulkan_Semaphore semaphoreAcquireSwapchainImage[RE_VK_FRAMES_IN_FLIGHT], semaphoreRenderFinished[RE_VK_FRAMES_IN_FLIGHT];
+			const Vulkan_Fence renderFence[RE_VK_FRAMES_IN_FLIGHT];
+			uint8_t u8CurrentFrameInFlight;
 			Renderer_GameObject gameObjectRenderer;
 			bool bValid;
 
@@ -64,8 +67,6 @@ namespace RE {
 
 		public:
 			const Vulkan_Buffer rectangleIndexBuffer;
-			const Vulkan_Semaphore semaphoreAcquireSwapchainImage, semaphoreRenderFinished;
-			const Vulkan_Fence renderFence;
 			const Vulkan_Framebuffer **ppFramebuffers;
 			VkViewport vk_maxViewportArea;
 			VkRect2D vk_maxScissorArea;
@@ -75,6 +76,7 @@ namespace RE {
 			~Renderer();
 			void render();
 			void window_resize_event();
+			void wait_for_all_fences() const;
 			bool is_valid() const;
 	};
 

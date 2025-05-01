@@ -704,20 +704,25 @@ namespace RE {
 		vk_hSwapchain = VK_NULL_HANDLE;
 	}
 
-	void RenderSystem::recreate_swapchain() {
+	bool RenderSystem::recreate_swapchain() {
 		CATCH_SIGNAL(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &vk_surfaceCapabilities));
 		WAIT_FOR_IDLE_VULKAN_DEVICE();
-		if (!CATCH_SIGNAL_AND_RETURN(create_swapchain(), bool))
+		if (!CATCH_SIGNAL_AND_RETURN(create_swapchain(), bool)) {
 			RE_ERROR("Failed recreating the swapchain");
+			return false;
+		}
+		return true;
 	}
 
-	void RenderSystem::refresh() {
+	bool RenderSystem::refresh() {
 		if (is_bit_true<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_INDEX)) {
-			CATCH_SIGNAL(Renderer::pInstance->renderFence.wait_for_fence());
-			CATCH_SIGNAL(recreate_swapchain());
+			CATCH_SIGNAL(Renderer::pInstance->wait_for_all_fences());
+			if (!CATCH_SIGNAL_AND_RETURN(recreate_swapchain(), bool))
+				return false;
 			CATCH_SIGNAL(Renderer::pInstance->window_resize_event());
 			set_bit<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_INDEX, false);
 		}
+		return true;
 	}
 
 	void RenderSystem::get_next_swapchain_image(const Vulkan_Semaphore *pSemaphoreWaitForSwapchainImageAcquired, uint32_t *pu32NextSwapchainImageIndex) {

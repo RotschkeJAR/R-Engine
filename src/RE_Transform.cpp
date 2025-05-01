@@ -3,34 +3,34 @@
 namespace RE {
 	
 	Transform::Transform() : scale(1.0f, 1.0f, 1.0f) {}
-	Transform::Transform(const Vector3f &positionCopy) : position(positionCopy), scale(1.0f, 1.0f, 1.0f) {}
-	Transform::Transform(const Vector3f &positionCopy, const Vector3f &scaleCopy) : position(positionCopy), scale(scaleCopy) {}
-	Transform::Transform(const Transform &copyTransform) : position(copyTransform.position), scale(copyTransform.scale) {}
+	Transform::Transform(const Vector3f &rPositionCopy) : position(rPositionCopy), scale(1.0f, 1.0f, 1.0f) {}
+	Transform::Transform(const Vector3f &rPositionCopy, const Vector3f &rScaleCopy) : position(rPositionCopy), scale(rScaleCopy) {}
+	Transform::Transform(const Transform &rCopyTransform) : position(rCopyTransform.position), scale(rCopyTransform.scale) {}
 	Transform::~Transform() {}
 
 	void Transform::reset_position() {
 		position.fill(0.0f);
 	}
 
-	void Transform::copy_from(const Transform &copyTransform) {
-		position.copy_from(copyTransform.position);
-		scale.copy_from(copyTransform.scale);
+	void Transform::copy_from(const Transform &rCopyTransform) {
+		position.copy_from(rCopyTransform.position);
+		scale.copy_from(rCopyTransform.scale);
 	}
 	
-	bool Transform::equals(const Transform &compareTransform) const {
-		return position.equals(compareTransform.position) && scale.equals(compareTransform.scale);
+	bool Transform::equals(const Transform &rCompareTransform) const {
+		return position.equals(rCompareTransform.position) && scale.equals(rCompareTransform.scale);
 	}
 
-	void Transform::operator =(const Transform &copyTransform) {
-		copy_from(copyTransform);
+	void Transform::operator =(const Transform &rCopyTransform) {
+		copy_from(rCopyTransform);
 	}
 	
-	bool Transform::operator ==(const Transform &compareTransform) const {
-		return equals(compareTransform);
+	bool Transform::operator ==(const Transform &rCompareTransform) const {
+		return equals(rCompareTransform);
 	}
 	
-	bool Transform::operator !=(const Transform &compareTransform) const {
-		return !equals(compareTransform);
+	bool Transform::operator !=(const Transform &rCompareTransform) const {
+		return !equals(rCompareTransform);
 	}
 
 }

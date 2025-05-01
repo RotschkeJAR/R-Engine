@@ -65,9 +65,9 @@ namespace RE {
 			CATCH_SIGNAL(ppSecondaryCommandBuffers[u32CommandBufferIndex]->cmd_bind_graphics_pipeline(&gameObjectsGraphicsPipeline));
 			CATCH_SIGNAL(ppSecondaryCommandBuffers[u32CommandBufferIndex]->cmd_bind_index_buffer(&Renderer::pInstance->rectangleIndexBuffer, VK_INDEX_TYPE_UINT16));
 			CATCH_SIGNAL(ppSecondaryCommandBuffers[u32CommandBufferIndex]->cmd_bind_vertex_buffer(&gameObjectVertexBuffer, 0UL));
-			CATCH_SIGNAL(ppSecondaryCommandBuffers[u32CommandBufferIndex]->cmd_set_viewport(50.0f, 50.0f, vk_swapchainResolution.width - 100.0f, vk_swapchainResolution.height - 100.0f, 0.0f, 1.0f));
-			CATCH_SIGNAL(ppSecondaryCommandBuffers[u32CommandBufferIndex]->cmd_set_scissor(0, 0, vk_swapchainResolution.width, vk_swapchainResolution.height));
-			CATCH_SIGNAL(ppSecondaryCommandBuffers[u32CommandBufferIndex]->cmd_draw_indexed(u16GameObjectsToRenderCount * 6U, 1U, 0U, 0U, 0U));
+			CATCH_SIGNAL(ppSecondaryCommandBuffers[u32CommandBufferIndex]->cmd_set_viewport(Renderer::pInstance->vk_maxViewportArea));
+			CATCH_SIGNAL(ppSecondaryCommandBuffers[u32CommandBufferIndex]->cmd_set_scissor(Renderer::pInstance->vk_maxScissorArea));
+			CATCH_SIGNAL(ppSecondaryCommandBuffers[u32CommandBufferIndex]->cmd_draw_indexed(u16GameObjectsToRenderCount * 6U, 0U, 0U));
 		}
 		CATCH_SIGNAL(ppSecondaryCommandBuffers[u32CommandBufferIndex]->end_recording_command_buffer());
 	}
@@ -76,7 +76,7 @@ namespace RE {
 		CATCH_SIGNAL(primaryCommandBuffer.cmd_execute(ppSecondaryCommandBuffers[u32FramebufferIndex]));
 	}
 
-	void Renderer_GameObject::render(bool &rbSecondaryCommandBufferChanged, const uint32_t u32CurrentFramebufferIndex) {
+	void Renderer_GameObject::render(const uint32_t u32CurrentFramebufferIndex) {
 		if (gameObjects.empty()) {
 			CATCH_SIGNAL(pDeviceQueues[RE_VK_QUEUE_TRANSFER_INDEX]->submit_to_queue(0U, nullptr, nullptr, 0U, nullptr, 1U, &semaphoreWaitForVertexBufferTransfer, nullptr));
 			return;
@@ -84,7 +84,7 @@ namespace RE {
 		u16GameObjectsToRenderCount = 0U;
 		for (GameObject *pObject : gameObjects) {
 			if (u16GameObjectsToRenderCount == RE_VK_RENDERABLE_RECTANGLES_COUNT) {
-				RE_ERROR("There are objects, which couldn't be rendered due to reaching the memory limit");
+				RE_ERROR("There are objects, which couldn't be rendered due to the memory limit");
 				break;
 			}
 			DEFINE_SIGNAL_GUARD_DETAILED(sigGuardGameObjectRender, append_to_string("Rendering game object at ", pObject).c_str());
@@ -124,7 +124,6 @@ namespace RE {
 			u16GameObjectsToRenderCount++;
 		}
 		CATCH_SIGNAL(record_secondary_command_buffer(u32CurrentFramebufferIndex));
-		rbSecondaryCommandBufferChanged = true;
 		if (!u16GameObjectsToRenderCount) {
 			CATCH_SIGNAL(pDeviceQueues[RE_VK_QUEUE_TRANSFER_INDEX]->submit_to_queue(0U, nullptr, nullptr, 0U, nullptr, 1U, &semaphoreWaitForVertexBufferTransfer, nullptr));
 			return;

@@ -774,8 +774,10 @@ namespace RE {
 			void cmd_set_scissor(const VkRect2D vk_scissorRect) const;
 			void cmd_set_scissor(const VkOffset2D vk_scissorOffset, const VkExtent2D vk_scissorExtent) const;
 			void cmd_set_scissor(const int32_t i32X, const int32_t i32Y, const uint32_t u32Width, const uint32_t u32Height) const;
-			void cmd_draw(const uint32_t u32VerticesToDrawCount, const uint32_t u32InstanceCount, const uint32_t u32FirstVertex, const uint32_t u32FirstInstance) const;
-			void cmd_draw_indexed(const uint32_t u32IndicesToDrawCount, const uint32_t u32InstanceCount, const uint32_t u32FirstIndex, const uint32_t u32VertexOffset, const uint32_t u32FirstInstance) const;
+			void cmd_draw(const uint32_t u32VerticesToDrawCount, const uint32_t u32FirstVertex) const;
+			void cmd_draw_instanced(const uint32_t u32VerticesToDrawCount, const uint32_t u32InstanceCount, const uint32_t u32FirstVertex, const uint32_t u32FirstInstance) const;
+			void cmd_draw_indexed(const uint32_t u32IndicesToDrawCount, const uint32_t u32FirstIndex, const uint32_t u32VertexOffset) const;
+			void cmd_draw_indexed_instanced(const uint32_t u32IndicesToDrawCount, const uint32_t u32InstanceCount, const uint32_t u32FirstIndex, const uint32_t u32VertexOffset, const uint32_t u32FirstInstance) const;
 			void cmd_execute(const uint32_t u32CommandBufferCount, const VkCommandBuffer *vk_pCommandBuffers) const;
 			void cmd_execute(const VkCommandBuffer vk_commandBuffer) const;
 			void cmd_execute(const uint32_t u32CommandBufferCount, const Vulkan_CommandBuffer *pCommandBuffers) const;

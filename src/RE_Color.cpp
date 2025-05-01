@@ -3,6 +3,7 @@
 namespace RE {
 	
 	Color::Color() : channels{1.0f, 1.0f, 1.0f, 1.0f} {}
+	Color::Color(Color &rCopyColor) : channels{rCopyColor.channels[0], rCopyColor.channels[1], rCopyColor.channels[2], rCopyColor.channels[3]} {}
 	Color::~Color() {}
 
 	void Color::set_channel(const uint8_t u8ChannelIndex, const float fNormal) {
@@ -19,14 +20,14 @@ namespace RE {
 		}
 	}
 
-	void Color::copy_from(const Color &copyColor) {
+	void Color::copy_from(const Color &rCopyColor) {
 		for (uint8_t u8Channel = 0U; u8Channel < 4U; u8Channel++)
-			channels[u8Channel] = copyColor.channels[u8Channel];
+			channels[u8Channel] = rCopyColor.channels[u8Channel];
 	}
 	
-	bool Color::equals(const Color &compareColor) const {
+	bool Color::equals(const Color &rCompareColor) const {
 		for (uint8_t u8Channel = 0U; u8Channel < 4U; u8Channel++)
-			if (channels[u8Channel] != compareColor.channels[u8Channel])
+			if (channels[u8Channel] != rCompareColor.channels[u8Channel])
 				return false;
 		return true;
 	}
@@ -40,16 +41,16 @@ namespace RE {
 		}
 	}
 
-	void Color::operator =(const Color &copyColor) {
-		copy_from(copyColor);
+	void Color::operator =(const Color &rCopyColor) {
+		copy_from(rCopyColor);
 	}
 	
-	bool Color::operator ==(const Color &compareColor) const {
-		return equals(compareColor);
+	bool Color::operator ==(const Color &rCompareColor) const {
+		return equals(rCompareColor);
 	}
 	
-	bool Color::operator !=(const Color &compareColor) const {
-		return equals(compareColor);
+	bool Color::operator !=(const Color &rCompareColor) const {
+		return equals(rCompareColor);
 	}
 
 }

@@ -280,6 +280,7 @@ namespace RE {
 
 	template <typename T>
 	constexpr T nth_root(T n, T value) {
+		static_assert(n > 0, "The 0th root is forbidden for causing undefined behaviour");
 		if (!n) {
 			FATAL_ERROR("The value of n shouldn't be zero in an nth root");
 			return static_cast<T>(0.0);
@@ -414,11 +415,11 @@ namespace RE {
 				fill(static_cast<T>(0.0));
 			}
 			template <typename P, uint32_t u32CopyDimensions>
-			Vector(Vector<P, u32CopyDimensions> &copyVector) {
-				if (u32Dimensions != copyVector.get_dimensions())
-					WARNING(append_to_string("The coordinates of this vector with ", u32Dimensions, " dimensions were copied from a vector with ", copyVector.get_dimensions(), " dimensions").c_str());
-				for (uint32_t u32CoordinateIndex = 0U; u32CoordinateIndex < copyVector.get_dimensions() && u32CoordinateIndex < u32Dimensions; u32CoordinateIndex++)
-					coords[u32CoordinateIndex] = copyVector.coords[u32CoordinateIndex];
+			Vector(Vector<P, u32CopyDimensions> &rCopyVector) {
+				if (u32Dimensions != rCopyVector.get_dimensions())
+					WARNING(append_to_string("The coordinates of this vector with ", u32Dimensions, " dimensions were copied from a vector with ", rCopyVector.get_dimensions(), " dimensions").c_str());
+				for (uint32_t u32CoordinateIndex = 0U; u32CoordinateIndex < rCopyVector.get_dimensions() && u32CoordinateIndex < u32Dimensions; u32CoordinateIndex++)
+					coords[u32CoordinateIndex] = rCopyVector.coords[u32CoordinateIndex];
 			}
 			template <typename... V>
 			Vector(V... values) {
@@ -455,20 +456,20 @@ namespace RE {
 				std::fill(std::begin(coords), std::end(coords), value);
 			}
 
-			void copy_from(const Vector &copyVector) {
-				if (u32Dimensions != copyVector.get_dimensions()) {
-					WARNING(append_to_string("Tried to copy values from one vector (", copyVector.get_dimensions(), ") to another (", u32Dimensions, "). This process has been terminated").c_str());
+			void copy_from(const Vector &rCopyVector) {
+				if (u32Dimensions != rCopyVector.get_dimensions()) {
+					WARNING(append_to_string("Tried to copy values from one vector (", rCopyVector.get_dimensions(), ") to another (", u32Dimensions, "). This process has been terminated").c_str());
 					return;
 				}
 				for (uint32_t u32Index = 0U; u32Index < u32Dimensions; u32Index++)
-					coords[u32Index] = copyVector[u32Index];
+					coords[u32Index] = rCopyVector[u32Index];
 			}
 
-			bool equals(const Vector &compareVector) const {
-				if (u32Dimensions != compareVector.get_dimensions())
+			bool equals(const Vector &rCompareVector) const {
+				if (u32Dimensions != rCompareVector.get_dimensions())
 					return false;
 				for (uint32_t u32Index = 0U; u32Index < u32Dimensions; u32Index++)
-					if (coords[u32Index] != compareVector[u32Index])
+					if (coords[u32Index] != rCompareVector[u32Index])
 						return false;
 				return true;
 			}
@@ -489,16 +490,16 @@ namespace RE {
 				return coords[index];
 			}
 
-			void operator =(const Vector &copyVector) {
-				copy_from(copyVector);
+			void operator =(const Vector &rCopyVector) {
+				copy_from(rCopyVector);
 			}
 
-			bool operator ==(const Vector &compareVector) const {
-				return equals(compareVector);
+			bool operator ==(const Vector &rCompareVector) const {
+				return equals(rCompareVector);
 			}
 
-			bool operator !=(const Vector &compareVector) const {
-				return !equals(compareVector);
+			bool operator !=(const Vector &rCompareVector) const {
+				return !equals(rCompareVector);
 			}
 
 			friend std::ostream& operator <<(std::ostream &stream, const Vector &vector) {
@@ -531,15 +532,16 @@ namespace RE {
 
 		public:
 			Color();
+			Color(Color &rCopyColor);
 			~Color();
 			void set_channel(const uint8_t u8ChannelIndex, const float fNormal);
-			void copy_from(const Color &copyColor);
-			bool equals(const Color &compareColor) const;
+			void copy_from(const Color &rCopyColor);
+			bool equals(const Color &rCompareColor) const;
 
 			float operator [](const uint32_t u32ChannelIndex) const;
-			void operator =(const Color &copyColor);
-			bool operator ==(const Color &compareColor) const;
-			bool operator !=(const Color &compareColor) const;
+			void operator =(const Color &rCopyColor);
+			bool operator ==(const Color &rCompareColor) const;
+			bool operator !=(const Color &rCompareColor) const;
 	};
 
 	class Transform final {
@@ -547,17 +549,25 @@ namespace RE {
 			Vector3f position, scale;
 
 			Transform();
-			Transform(const Vector3f &positionCopy);
-			Transform(const Vector3f &positionCopy, const Vector3f &scaleCopy);
-			Transform(const Transform &copyTransform);
+			Transform(const Vector3f &rPositionCopy);
+			Transform(const Vector3f &rPositionCopy, const Vector3f &rScaleCopy);
+			Transform(const Transform &rCopyTransform);
 			~Transform();
 			void reset_position();
-			void copy_from(const Transform &copyTransform);
-			bool equals(const Transform &compareTransform) const;
+			void copy_from(const Transform &rCopyTransform);
+			bool equals(const Transform &rCompareTransform) const;
 
-			void operator =(const Transform &copyTransform);
-			bool operator ==(const Transform &compareTransform) const;
-			bool operator !=(const Transform &compareTransform) const;
+			void operator =(const Transform &rCopyTransform);
+			bool operator ==(const Transform &rCompareTransform) const;
+			bool operator !=(const Transform &rCompareTransform) const;
+	};
+
+	class SpriteRenderer final {
+		public:
+			Color color;
+
+			SpriteRenderer();
+			~SpriteRenderer();
 	};
 
 	class RandomNumberGenerator final {
@@ -601,12 +611,23 @@ namespace RE {
 			virtual void end();
 	};
 
-	class SpriteRenderer final {
+	class Camera {
 		public:
-			Color color;
+			Vector3f position;
+			Vector2f scale;
 
-			SpriteRenderer();
-			~SpriteRenderer();
+			Camera();
+			Camera(Vector3f &rPosition);
+			Camera(Vector3f &rPosition, Vector2f &rScale);
+			~Camera();
+			virtual void update();
+			void activate();
+			void deactivate() const;
+			bool has_same_transform(const Camera &rCompareCamera) const;
+
+			void operator =(const Camera &rCopyCamera);
+			bool operator ==(const Camera &rCompareCamera) const;
+			bool operator !=(const Camera &rCompareCamera) const;
 	};
 
 	class GameObject {

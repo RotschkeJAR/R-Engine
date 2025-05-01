@@ -30,15 +30,17 @@ namespace RE {
 
 
 	constexpr uint32_t u32IndexBufferQueueTypes[] = {RE_VK_QUEUE_GRAPHICS_INDEX, RE_VK_QUEUE_TRANSFER_INDEX};
+	Camera *pActiveCamera = nullptr;
 	Renderer *Renderer::pInstance = nullptr;
 
 	Renderer::Renderer() : ppPrimaryCommandBuffer(nullptr), 
 	gameObjectRenderer(&renderPass), 
-	bRequiresRerecordingPrimaryCommandBuffer(false), 
 	bValid(false), 
 	rectangleIndexBuffer(RE_VK_INDEX_BUFFER_BYTES, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, u32IndexBufferQueueTypes, sizeof(u32IndexBufferQueueTypes) / sizeof(u32IndexBufferQueueTypes[0]), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT), 
 	renderFence(VK_FENCE_CREATE_SIGNALED_BIT), 
-	ppFramebuffers(nullptr) {
+	ppFramebuffers(nullptr), 
+	vk_maxViewportArea({}), 
+	vk_maxScissorArea({}) {
 		if (pInstance) {
 			RE_FATAL_ERROR("Another instance of Renderer has been constructed.");
 			return;
@@ -68,12 +70,9 @@ namespace RE {
 		vk_semaphoresToWaitForBeforeRendering[0] = semaphoreAcquireSwapchainImage;
 		vk_semaphoresToWaitForBeforeRendering[1] = gameObjectRenderer.semaphoreWaitForVertexBufferTransfer;
 		CATCH_SIGNAL(create_framebuffers());
-		ppPrimaryCommandBuffer = new Vulkan_CommandBuffer*[u32SwapchainImageCount];
-		if (!CATCH_SIGNAL_AND_RETURN(alloc_vk_command_buffers(VK_COMMAND_BUFFER_LEVEL_PRIMARY, pCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_INDEX], u32SwapchainImageCount, ppPrimaryCommandBuffer), bool)) {
-			DELETE_ARRAY_SAFELY(ppPrimaryCommandBuffer);
-			RE_FATAL_ERROR("Failed to allocate primary command buffers");
-			return;
-		}
+		CATCH_SIGNAL(create_command_buffers());
+		calculate_render_area();
+		vk_maxViewportArea.maxDepth = 1.0f;
 
 		CATCH_SIGNAL(indexBufferTransferFence.wait_for_fence());
 		bValid = true;
@@ -83,9 +82,7 @@ namespace RE {
 		if (pInstance != this)
 			return;
 		pInstance = nullptr;
-		if (ppPrimaryCommandBuffer)
-			CATCH_SIGNAL(free_vk_command_buffers(pCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_INDEX], u32SwapchainImageCount, ppPrimaryCommandBuffer));
-		DELETE_ARRAY_SAFELY(ppPrimaryCommandBuffer);
+		CATCH_SIGNAL(destroy_command_buffers());
 		CATCH_SIGNAL(destroy_framebuffers());
 	}
 
@@ -104,6 +101,28 @@ namespace RE {
 		DELETE_ARRAY_SAFELY(ppFramebuffers);
 	}
 
+	void Renderer::create_command_buffers() {
+		ppPrimaryCommandBuffer = new Vulkan_CommandBuffer*[u32SwapchainImageCount];
+		if (!CATCH_SIGNAL_AND_RETURN(alloc_vk_command_buffers(VK_COMMAND_BUFFER_LEVEL_PRIMARY, pCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_INDEX], u32SwapchainImageCount, ppPrimaryCommandBuffer), bool)) {
+			DELETE_ARRAY_SAFELY(ppPrimaryCommandBuffer);
+			RE_FATAL_ERROR("Failed to allocate primary command buffers");
+			return;
+		}
+	}
+	
+	void Renderer::destroy_command_buffers() {
+		if (ppPrimaryCommandBuffer) {
+			CATCH_SIGNAL(free_vk_command_buffers(pCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_INDEX], u32SwapchainImageCount, ppPrimaryCommandBuffer));
+			DELETE_ARRAY_SAFELY(ppPrimaryCommandBuffer);
+		}
+	}
+
+	void Renderer::calculate_render_area() {
+		vk_maxViewportArea.width = static_cast<float>(vk_swapchainResolution.width);
+		vk_maxViewportArea.height = static_cast<float>(vk_swapchainResolution.height);
+		vk_maxScissorArea.extent = vk_swapchainResolution;
+	}
+
 	void Renderer::record_command_buffer(const uint32_t u32CommandBufferRecordIndex) {
 		CATCH_SIGNAL(ppPrimaryCommandBuffer[u32CommandBufferRecordIndex]->reset_command_buffer(0));
 		CATCH_SIGNAL(ppPrimaryCommandBuffer[u32CommandBufferRecordIndex]->begin_recording_command_buffer(0));
@@ -111,21 +130,20 @@ namespace RE {
 		const int32_t i32ClearColor[4] = {0, 0, 0, 255};
 		const uint32_t u32ClearColor[4] = {0U, 0U, 0U, 255U};
 		CATCH_SIGNAL(ppPrimaryCommandBuffer[u32CommandBufferRecordIndex]->cmd_begin_renderpass(fClearColor, i32ClearColor, u32ClearColor, 0.0f, 0U, &renderPass, ppFramebuffers[u32CommandBufferRecordIndex], {{0, 0}, {vk_swapchainResolution.width, vk_swapchainResolution.height}}, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS));
-		CATCH_SIGNAL(gameObjectRenderer.record_secondary_command_buffer(u32CommandBufferRecordIndex));
 		CATCH_SIGNAL(gameObjectRenderer.add_secondary_command_buffer(*ppPrimaryCommandBuffer[u32CommandBufferRecordIndex], u32CommandBufferRecordIndex));
 		CATCH_SIGNAL(ppPrimaryCommandBuffer[u32CommandBufferRecordIndex]->cmd_end_renderpass());
 		CATCH_SIGNAL(ppPrimaryCommandBuffer[u32CommandBufferRecordIndex]->end_recording_command_buffer());
 	}
 
 	void Renderer::render() {
+		if (pActiveCamera) {
+			CATCH_SIGNAL(pActiveCamera->update());
+		}
 		CATCH_SIGNAL(renderFence.wait_for_and_reset_fence());
 		uint32_t u32NextSwapchainImageIndex;
 		CATCH_SIGNAL(RenderSystem::pInstance->get_next_swapchain_image(&semaphoreAcquireSwapchainImage, &u32NextSwapchainImageIndex));
-		CATCH_SIGNAL(gameObjectRenderer.render(bRequiresRerecordingPrimaryCommandBuffer, u32NextSwapchainImageIndex));
-		if (bRequiresRerecordingPrimaryCommandBuffer) {
-			CATCH_SIGNAL_DETAILED(record_command_buffer(u32NextSwapchainImageIndex), append_to_string("Primary Command Buffer Index: ", u32NextSwapchainImageIndex).c_str());
-			bRequiresRerecordingPrimaryCommandBuffer = false;
-		}
+		CATCH_SIGNAL(gameObjectRenderer.render(u32NextSwapchainImageIndex));
+		CATCH_SIGNAL_DETAILED(record_command_buffer(u32NextSwapchainImageIndex), append_to_string("Primary Command Buffer Index: ", u32NextSwapchainImageIndex).c_str());
 		VkPipelineStageFlags vk_ePipelinesStagesToWaitFor[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT};
 		VkCommandBuffer commandBuffersForRendering[] = {ppPrimaryCommandBuffer[u32NextSwapchainImageIndex]->get_command_buffer()};
 		VkSemaphore vk_semaphoresToSignalAfterRendering[] = {semaphoreRenderFinished.get_semaphore()};
@@ -136,9 +154,11 @@ namespace RE {
 
 	void Renderer::window_resize_event() {
 		CATCH_SIGNAL(renderFence.wait_for_fence());
+		CATCH_SIGNAL(destroy_command_buffers());
 		CATCH_SIGNAL(destroy_framebuffers());
 		CATCH_SIGNAL(create_framebuffers());
-		bRequiresRerecordingPrimaryCommandBuffer = true;
+		CATCH_SIGNAL(create_command_buffers());
+		calculate_render_area();
 	}
 
 	bool Renderer::is_valid() const {

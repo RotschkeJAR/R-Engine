@@ -17,7 +17,7 @@ namespace RE {
 			~SubRenderer();
 			virtual void record_secondary_command_buffer(const uint32_t u32CommandBufferIndex) const = 0;
 			virtual void add_secondary_command_buffer(const Vulkan_CommandBuffer& rPrimaryCommandBuffer, const uint32_t u32FramebufferIndex) const = 0;
-			virtual void render(bool &rbSecondaryCommandBufferChanged, const uint32_t u32CurrentFramebufferIndex) = 0;
+			virtual void render(const uint32_t u32CurrentFramebufferIndex) = 0;
 			bool is_valid() const;
 	};
 
@@ -40,8 +40,10 @@ namespace RE {
 			~Renderer_GameObject();
 			void record_secondary_command_buffer(const uint32_t u32CommandBufferIndex) const;
 			void add_secondary_command_buffer(const Vulkan_CommandBuffer& rPrimaryCommandBuffer, const uint32_t u32FramebufferIndex) const;
-			void render(bool &rbSecondaryCommandBufferChanged, const uint32_t u32CurrentFramebufferIndex);
+			void render(const uint32_t u32CurrentFramebufferIndex);
 	};
+
+	extern Camera *pActiveCamera;
 	
 	class Renderer final {
 		public:
@@ -51,10 +53,13 @@ namespace RE {
 			Vulkan_CommandBuffer **ppPrimaryCommandBuffer;
 			VkSemaphore vk_semaphoresToWaitForBeforeRendering[2];
 			Renderer_GameObject gameObjectRenderer;
-			bool bRequiresRerecordingPrimaryCommandBuffer, bValid;
+			bool bValid;
 
 			void create_framebuffers();
 			void destroy_framebuffers();
+			void create_command_buffers();
+			void destroy_command_buffers();
+			void calculate_render_area();
 			void record_command_buffer(const uint32_t u32CommandBufferRecordIndex);
 
 		public:
@@ -62,6 +67,8 @@ namespace RE {
 			const Vulkan_Semaphore semaphoreAcquireSwapchainImage, semaphoreRenderFinished;
 			const Vulkan_Fence renderFence;
 			const Vulkan_Framebuffer **ppFramebuffers;
+			VkViewport vk_maxViewportArea;
+			VkRect2D vk_maxScissorArea;
 			static Renderer *pInstance;
 
 			Renderer();

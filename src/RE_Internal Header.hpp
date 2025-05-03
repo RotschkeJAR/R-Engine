@@ -51,6 +51,8 @@ typedef Colormap XColormap;
 # define XButtonRelease ButtonRelease
 # define XMotionNotify MotionNotify
 # define XClientMessage ClientMessage
+# define XMapNotify MapNotify
+# define XUnmapNotify UnmapNotify
 # define XResizeRequest ResizeRequest
 # define XNone None
 # define XNoSymbol NoSymbol

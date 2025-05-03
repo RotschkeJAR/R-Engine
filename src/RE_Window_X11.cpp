@@ -1,4 +1,5 @@
 #include "RE_Window.hpp"
+#include "RE_Main.hpp"
 
 #include <cstring>
 

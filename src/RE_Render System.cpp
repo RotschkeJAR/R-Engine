@@ -75,6 +75,9 @@ namespace RE {
 				vk_hPhysicalDeviceSelected = vk_phPhysicalDevicesAvailable[i];
 			}
 		}
+		VkPhysicalDeviceProperties vk_physicalDeviceSelectedProperties;
+		CATCH_SIGNAL(vkGetPhysicalDeviceProperties(vk_hPhysicalDeviceSelected, &vk_physicalDeviceSelectedProperties));
+		PRINT_LN(append_to_string("Physical device selected: ", vk_physicalDeviceSelectedProperties.deviceName).c_str());
 		CATCH_SIGNAL(fetch_surface_infos());
 		int16_t i16BestSurfaceFormatScore = std::numeric_limits<int16_t>::min();
 		for (uint32_t i = 0U; i < u32SurfaceFormatsAvailableCount; i++) {
@@ -193,11 +196,11 @@ namespace RE {
 #define DISCARD_DEVICE() ([&]() { \
 			delete[] vk_pPhysicalDeviceExtensionProperties; \
 			delete[] vk_pPhysicalDeviceQueueFamilyProperties; \
-			println_colored(append_to_string("\tPhysical Vulkan device ", vk_physicalDeviceProperties.deviceName, " has been discarded!").c_str(), RE_TERMINAL_COLOR_RED, false, true); \
+			println_colored(append_to_string("\tPhysical Vulkan device ", vk_physicalDeviceProperties.deviceName, " has been discarded for not fulfilling the requirements!").c_str(), RE_TERMINAL_COLOR_RED, false, true); \
 		}) ()
 
 			{ // Prints information about physical device to console
-				print("\t", vk_physicalDeviceProperties.deviceName, " [", VK_VERSION_MAJOR(vk_physicalDeviceProperties.driverVersion), '.', VK_VERSION_MINOR(vk_physicalDeviceProperties.driverVersion), '.', VK_VERSION_PATCH(vk_physicalDeviceProperties.driverVersion), "] (");
+				print("\t", vk_physicalDeviceProperties.deviceName, " [Driver version: ", VK_VERSION_MAJOR(vk_physicalDeviceProperties.driverVersion), '.', VK_VERSION_MINOR(vk_physicalDeviceProperties.driverVersion), '.', VK_VERSION_PATCH(vk_physicalDeviceProperties.driverVersion), "; Device type: ");
 				switch (vk_physicalDeviceProperties.deviceType) {
 					case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
 						print("integrated GPU");
@@ -212,10 +215,10 @@ namespace RE {
 						print("CPU");
 						break;
 					default:
-						print("unknown device type");
+						print("unknown");
 						break;
 				}
-				println(") supporting Vulkan ", VK_VERSION_MAJOR(vk_physicalDeviceProperties.apiVersion), '.', VK_VERSION_MINOR(vk_physicalDeviceProperties.apiVersion), '.', VK_VERSION_PATCH(vk_physicalDeviceProperties.apiVersion));
+				println("] supporting Vulkan ", VK_VERSION_MAJOR(vk_physicalDeviceProperties.apiVersion), '.', VK_VERSION_MINOR(vk_physicalDeviceProperties.apiVersion), '.', VK_VERSION_PATCH(vk_physicalDeviceProperties.apiVersion));
 				println("\t\tAvailable device extensions:");
 				for (uint32_t u32PhysicalDeviceExtensionIndex = 0U; u32PhysicalDeviceExtensionIndex < u32PhysicalDeviceExtensionCount; u32PhysicalDeviceExtensionIndex++)
 					println("\t\t\t", vk_pPhysicalDeviceExtensionProperties[u32PhysicalDeviceExtensionIndex].extensionName, " (", VK_VERSION_MAJOR(vk_pPhysicalDeviceExtensionProperties[u32PhysicalDeviceExtensionIndex].specVersion), '.', VK_VERSION_MINOR(vk_pPhysicalDeviceExtensionProperties[u32PhysicalDeviceExtensionIndex].specVersion), '.', VK_VERSION_PATCH(vk_pPhysicalDeviceExtensionProperties[u32PhysicalDeviceExtensionIndex].specVersion), ")");

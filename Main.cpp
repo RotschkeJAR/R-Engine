@@ -101,7 +101,7 @@ class First : public Scene {
 
 int main_func() {
 	show_message_box_on_error(false);
-	enable_waiting_for_vsync(false);
+	bind_fps_to_vsync(true);
 	SignalCatcher sigCatcher;
 	First first;
 	second = new Second();

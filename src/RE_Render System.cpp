@@ -38,7 +38,7 @@ namespace RE {
 	uint8_t u8RenderSystemFlags = 0b00000110U;
 #define SWAPCHAIN_DIRTY_INDEX 0
 #define VSYNC_SETTING_INDEX 1
-#define PREFER_WAITING_FOR_VSYNC_INDEX 2
+#define FPS_BOUND_TO_VSYNC_INDEX 2
 	
 	RenderSystem* RenderSystem::pInstance = nullptr;
 
@@ -640,7 +640,7 @@ namespace RE {
 				vk_swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
 			vk_swapchainCreateInfo.preTransform = vk_surfaceCapabilities.currentTransform;
 			vk_swapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-			if (is_bit_true<uint8_t>(u8RenderSystemFlags, PREFER_WAITING_FOR_VSYNC_INDEX))
+			if (is_bit_true<uint8_t>(u8RenderSystemFlags, FPS_BOUND_TO_VSYNC_INDEX))
 				vk_swapchainCreateInfo.presentMode = is_bit_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_INDEX) ? VK_PRESENT_MODE_FIFO_KHR : vk_ePresentModeNoVsync;
 			else
 				vk_swapchainCreateInfo.presentMode = is_bit_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_INDEX) ? vk_ePresentModeVsync : vk_ePresentModeNoVsync;
@@ -748,15 +748,15 @@ namespace RE {
 		return is_bit_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_INDEX);
 	}
 
-	void enable_waiting_for_vsync(bool bEnableWaitForVsync) {
-		if (is_bit_true<uint8_t>(u8RenderSystemFlags, PREFER_WAITING_FOR_VSYNC_INDEX) != bEnableWaitForVsync) {
-			set_bit<uint8_t>(u8RenderSystemFlags, PREFER_WAITING_FOR_VSYNC_INDEX, bEnableWaitForVsync);
+	void bind_fps_to_vsync(bool bBindFpsToVsync) {
+		if (is_bit_true<uint8_t>(u8RenderSystemFlags, FPS_BOUND_TO_VSYNC_INDEX) != bBindFpsToVsync) {
+			set_bit<uint8_t>(u8RenderSystemFlags, FPS_BOUND_TO_VSYNC_INDEX, bBindFpsToVsync);
 			set_bit<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_INDEX, true);
 		}
 	}
 
-	bool is_waiting_for_vsync_enabled() {
-		return is_bit_true<uint8_t>(u8RenderSystemFlags, PREFER_WAITING_FOR_VSYNC_INDEX);
+	bool is_fps_bound_to_vsync() {
+		return is_bit_true<uint8_t>(u8RenderSystemFlags, FPS_BOUND_TO_VSYNC_INDEX);
 	}
 
 }

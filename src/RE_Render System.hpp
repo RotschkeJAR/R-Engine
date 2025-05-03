@@ -55,8 +55,8 @@ namespace RE {
 
 	void enable_vsync(bool bEnableVsync);
 	bool is_vsync_enabled();
-	void enable_waiting_for_vsync(bool bEnableWaitForVsync);
-	bool is_waiting_for_vsync_enabled();
+	void bind_fps_to_vsync(bool bBindFpsToVsync);
+	bool is_fps_bound_to_vsync();
 
 #define WAIT_FOR_IDLE_VULKAN_DEVICE() CATCH_SIGNAL(vkDeviceWaitIdle(vk_hDevice))
 

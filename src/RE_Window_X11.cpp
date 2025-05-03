@@ -5,7 +5,7 @@
 namespace RE {
 
 #ifdef RE_OS_LINUX
-	Window_X11::Window_X11() : x11_hWindow(0), x11_hClose(0), x11_hUTF8(0), x11_hWindowName(0), x11_pSizes(XAllocSizeHints()), x11_pDisplay(XOpenDisplay(nullptr)) {
+	Window_X11::Window_X11() : x11_colormap(0), x11_hWindow(0), x11_hClose(0), x11_hUTF8(0), x11_hWindowName(0), x11_pSizes(XAllocSizeHints()), x11_pDisplay(XOpenDisplay(nullptr)) {
 		if (!x11_pDisplay) {
 			RE_ERROR("Unable to connect to X11 server");
 			return;
@@ -32,9 +32,10 @@ namespace RE {
 		CATCH_SIGNAL(XFree(x11_availableVisualInfos));
 
 		XSetWindowAttributes winAttrib = {};
-		CATCH_SIGNAL(winAttrib.colormap = XCreateColormap(x11_pDisplay, x11_rootWindow, x11_visualInfo.visual, AllocNone));
+		CATCH_SIGNAL(x11_colormap = XCreateColormap(x11_pDisplay, x11_rootWindow, x11_visualInfo.visual, AllocNone));
+		winAttrib.colormap = x11_colormap;
 		winAttrib.border_pixel = 0;
-		winAttrib.event_mask = ExposureMask | KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ResizeRedirectMask;
+		winAttrib.event_mask = ExposureMask | KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ResizeRedirectMask | SubstructureNotifyMask;
 		CATCH_SIGNAL(x11_hWindow = XCreateWindow(x11_pDisplay, x11_rootWindow, 0, 0, size[0], size[1], 0, x11_visualInfo.depth, InputOutput, x11_visualInfo.visual, CWColormap | CWEventMask, &winAttrib));
 
 		x11_pSizes->flags = PMinSize | PMaxSize;
@@ -69,6 +70,7 @@ namespace RE {
 		if (!x11_pDisplay)
 			return;
 		if (x11_hWindow) {
+			CATCH_SIGNAL(XFreeColormap(x11_pDisplay, x11_colormap));
 			CATCH_SIGNAL(XDestroyWindow(x11_pDisplay, x11_hWindow));
 			if (x11_hInputContext) {
 				CATCH_SIGNAL(XDestroyIC(x11_hInputContext));
@@ -81,7 +83,7 @@ namespace RE {
 	}
 
 	void Window_X11::internal_show_window() {
-		if (bWindowVisible)
+		if (bVisible)
 			CATCH_SIGNAL(XMapWindow(x11_pDisplay, x11_hWindow));
 		else
 			CATCH_SIGNAL(XUnmapWindow(x11_pDisplay, x11_hWindow));
@@ -92,11 +94,8 @@ namespace RE {
 	}
 
 	void Window_X11::internal_window_proc() {
-		int32_t i32PendingEvents;
-		do {
-			CATCH_SIGNAL(i32PendingEvents = XPending(x11_pDisplay));
-			if (!i32PendingEvents)
-				break;
+		int32_t i32PendingEvents = CATCH_SIGNAL_AND_RETURN(XPending(x11_pDisplay), int32_t);
+		while (i32PendingEvents > 0) {
 			i32PendingEvents--;
 			XEvent x11_event = {};
 			CATCH_SIGNAL(XNextEvent(x11_pDisplay, &x11_event));
@@ -148,14 +147,22 @@ namespace RE {
 					XMotionEvent x11_motionEvent = x11_event.xmotion;
 					CATCH_SIGNAL(inputMgr.cursor_event(x11_motionEvent.x, x11_motionEvent.y));
 					} break;
+				case XMapNotify: /* window showed or unminimized/restored */
+					if (bRunning)
+						bMinimized = false;
+					break;
+				case XUnmapNotify: /* window hidden or minimized/iconified */
+					if (bRunning)
+						bMinimized = true;
+					break;
 				case XResizeRequest: { /* window resized */
 					XResizeRequestEvent x11_resizeEvent = x11_event.xresizerequest;
-					CATCH_SIGNAL(update_window_size(static_cast<uint16_t>(x11_resizeEvent.width), static_cast<uint16_t>(x11_resizeEvent.height)));
+					CATCH_SIGNAL(update_window_size(static_cast<uint32_t>(x11_resizeEvent.width), static_cast<uint32_t>(x11_resizeEvent.height)));
 					} break;
 				default:
 					break;
 			}
-		} while (i32PendingEvents);
+		}
 	}
 
 	bool Window_X11::create_vulkan_surface(VkSurfaceKHR &vk_rhSurface) const {

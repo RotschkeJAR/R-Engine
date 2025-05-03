@@ -102,11 +102,7 @@ namespace RE {
 	}
 
 	float get_fps_rate() {
-		DEFINE_SIGNAL_GUARD(sigGuardGetFpsRate);
-		if (fDeltaseconds > 0.0f)
-			return 1.0f / fDeltaseconds;
-		RE_ERROR("FPS rate couldn't be calculated, because the deltatime is still in its default value and would crash the game");
-		return 0.0f;
+		return CATCH_SIGNAL_AND_RETURN((fDeltaseconds > 0.0f ? (1.0f / fDeltaseconds) : 0.0f), float);
 	}
 
 }

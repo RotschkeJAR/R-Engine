@@ -11,15 +11,15 @@ namespace RE {
 		protected:
 			InputMgr inputMgr;
 			const char* pcTitle;
-			Vector<uint16_t, 2> size;
-			bool bWindowVisible;
+			Vector<uint32_t, 2> size;
+			bool bVisible, bMinimized;
 			bool bCloseFlag;
 			bool bValid;
 
 			virtual void internal_window_proc() = 0;
 			virtual void internal_show_window() = 0;
 			virtual void internal_update_title() = 0;
-			void update_window_size(uint16_t usNewWidth, uint16_t usNewHeight);
+			void update_window_size(uint32_t usNewWidth, uint32_t usNewHeight);
 
 		public:
 			static Window* pInstance;
@@ -33,7 +33,7 @@ namespace RE {
 			void window_proc();
 			bool should_close() const;
 			bool is_valid() const;
-			Vector<uint16_t, 2> get_size() const;
+			Vector<uint32_t, 2> get_size() const;
 
 		friend class InputMgr;
 	};
@@ -44,7 +44,7 @@ namespace RE {
 			HWND win_hWindow;
 			HCURSOR win_hCursor;
 
-			Vector2i get_adjusted_window_size(Vector<uint16_t, 2> size);
+			Vector2i get_adjusted_window_size(Vector<uint32_t, 2> size);
 
 		protected:
 			void internal_window_proc();
@@ -68,6 +68,7 @@ namespace RE {
 #elif (defined RE_OS_LINUX)
 	class Window_X11 final : public Window {
 		private:
+			XColormap x11_colormap;
 			XWindow x11_hWindow;
 			XAtom x11_hClose;
 			XAtom x11_hUTF8, x11_hWindowName;

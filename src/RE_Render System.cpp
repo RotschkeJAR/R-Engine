@@ -63,7 +63,7 @@ namespace RE {
 					i32CurrentDeviceScore += 1000;
 					break;
 				case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
-					i32CurrentDeviceScore += 400;
+					i32CurrentDeviceScore += 500;
 					break;
 				default:
 					i32CurrentDeviceScore -= 1000;
@@ -77,27 +77,27 @@ namespace RE {
 		}
 		VkPhysicalDeviceProperties vk_physicalDeviceSelectedProperties;
 		CATCH_SIGNAL(vkGetPhysicalDeviceProperties(vk_hPhysicalDeviceSelected, &vk_physicalDeviceSelectedProperties));
-		PRINT_LN(append_to_string("Physical device selected: ", vk_physicalDeviceSelectedProperties.deviceName).c_str());
+		PRINT_LN(append_to_string("Device selected: ", vk_physicalDeviceSelectedProperties.deviceName).c_str());
 		CATCH_SIGNAL(fetch_surface_infos());
-		int16_t i16BestSurfaceFormatScore = std::numeric_limits<int16_t>::min();
+		int32_t i32BestSurfaceFormatScore = std::numeric_limits<int32_t>::min();
 		for (uint32_t i = 0U; i < u32SurfaceFormatsAvailableCount; i++) {
-			int16_t i16CurrentSurfaceFormatScore = 0;
+			int32_t i32CurrentSurfaceFormatScore = 0;
 			switch (vk_pSurfaceFormatsAvailable[i].format) {
 				case VK_FORMAT_R8G8B8A8_UNORM:
 				case VK_FORMAT_B8G8R8A8_UNORM:
-					i16CurrentSurfaceFormatScore += 5;
+					i32CurrentSurfaceFormatScore += 500;
 					break;
 				case VK_FORMAT_R8G8B8A8_SRGB:
 				case VK_FORMAT_B8G8R8A8_SRGB:
-					i16CurrentSurfaceFormatScore += 10;
+					i32CurrentSurfaceFormatScore += 1000;
 					break;
 				default:
-					i16CurrentSurfaceFormatScore -= 20;
+					i32CurrentSurfaceFormatScore -= 2000;
 					break;
 			}
-			i16CurrentSurfaceFormatScore += (vk_pSurfaceFormatsAvailable[i].colorSpace != VK_COLOR_SPACE_SRGB_NONLINEAR_KHR ? -1 : 1) * 50;
-			if (i16BestSurfaceFormatScore < i16CurrentSurfaceFormatScore) {
-				i16BestSurfaceFormatScore = i16CurrentSurfaceFormatScore;
+			i32CurrentSurfaceFormatScore += (vk_pSurfaceFormatsAvailable[i].colorSpace != VK_COLOR_SPACE_SRGB_NONLINEAR_KHR ? -1 : 1) * 5000;
+			if (i32BestSurfaceFormatScore < i32CurrentSurfaceFormatScore) {
+				i32BestSurfaceFormatScore = i32CurrentSurfaceFormatScore;
 				vk_surfaceFormatSelected = vk_pSurfaceFormatsAvailable[i];
 			}
 		}

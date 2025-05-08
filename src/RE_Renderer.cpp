@@ -1,6 +1,7 @@
 #include "RE_Renderer.hpp"
 #include "RE_Internal Header.hpp"
 #include "RE_Render System.hpp"
+#include "RE_Window.hpp"
 
 namespace RE {
 
@@ -37,15 +38,13 @@ namespace RE {
 #if (RE_VK_FRAMES_IN_FLIGHT == 2)
 	renderFence{Vulkan_Fence(VK_FENCE_CREATE_SIGNALED_BIT), Vulkan_Fence(VK_FENCE_CREATE_SIGNALED_BIT)}, 
 #else
-# error Update the array initialization above!
+# error Update the array initializations above!
 #endif
 	u8CurrentFrameInFlight(0U), 
 	gameObjectRenderer(&renderPass), 
 	bValid(false), 
 	rectangleIndexBuffer(RE_VK_INDEX_BUFFER_BYTES, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, u32IndexBufferQueueTypes, sizeof(u32IndexBufferQueueTypes) / sizeof(u32IndexBufferQueueTypes[0]), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT), 
-	ppFramebuffers(nullptr), 
-	vk_maxViewportArea({}), 
-	vk_maxScissorArea({}) {
+	ppFramebuffers(nullptr) {
 		if (pInstance) {
 			RE_FATAL_ERROR("Another instance of Renderer has been constructed.");
 			return;
@@ -75,7 +74,10 @@ namespace RE {
 		CATCH_SIGNAL(create_framebuffers());
 		CATCH_SIGNAL(create_command_buffers());
 		calculate_render_area();
-		vk_maxViewportArea.maxDepth = 1.0f;
+		vk_cameraViewportArea.minDepth = 0.0f;
+		vk_cameraViewportArea.maxDepth = 1.0f;
+		vk_cameraScissorArea.offset.x = 0;
+		vk_cameraScissorArea.offset.y = 0;
 
 		CATCH_SIGNAL(indexBufferTransferFence.wait_for_fence());
 		bValid = true;
@@ -120,12 +122,6 @@ namespace RE {
 		}
 	}
 
-	void Renderer::calculate_render_area() {
-		vk_maxViewportArea.width = static_cast<float>(vk_swapchainResolution.width);
-		vk_maxViewportArea.height = static_cast<float>(vk_swapchainResolution.height);
-		vk_maxScissorArea.extent = vk_swapchainResolution;
-	}
-
 	void Renderer::record_command_buffer(const uint32_t u32CommandBufferRecordIndex) {
 		CATCH_SIGNAL(ppPrimaryCommandBuffer[u32CommandBufferRecordIndex]->reset_command_buffer(0));
 		CATCH_SIGNAL(ppPrimaryCommandBuffer[u32CommandBufferRecordIndex]->begin_recording_command_buffer(0));
@@ -139,12 +135,12 @@ namespace RE {
 	}
 
 	void Renderer::render() {
-		if (pActiveCamera) {
+		if (pActiveCamera)
 			CATCH_SIGNAL(pActiveCamera->update());
-		}
-		CATCH_SIGNAL(renderFence[u8CurrentFrameInFlight].wait_for_and_reset_fence());
+		CATCH_SIGNAL(renderFence[u8CurrentFrameInFlight].wait_for_fence());
 		uint32_t u32NextSwapchainImageIndex;
-		CATCH_SIGNAL(RenderSystem::pInstance->get_next_swapchain_image(&semaphoreAcquireSwapchainImage[u8CurrentFrameInFlight], &u32NextSwapchainImageIndex));
+		if (!CATCH_SIGNAL_AND_RETURN(RenderSystem::pInstance->get_next_swapchain_image(&semaphoreAcquireSwapchainImage[u8CurrentFrameInFlight], &u32NextSwapchainImageIndex), bool))
+			return;
 		CATCH_SIGNAL(gameObjectRenderer.render(u32NextSwapchainImageIndex, u8CurrentFrameInFlight));
 		CATCH_SIGNAL_DETAILED(record_command_buffer(u32NextSwapchainImageIndex), append_to_string("Primary Command Buffer Index: ", u32NextSwapchainImageIndex).c_str());
 
@@ -157,6 +153,7 @@ namespace RE {
 		constexpr uint32_t u32SemaphoresToSignalAfterRenderingCount = 1U;
 		VkSemaphore vk_semaphoresToSignalAfterRendering[u32SemaphoresToSignalAfterRenderingCount] = {semaphoreRenderFinished[u8CurrentFrameInFlight].get_semaphore()};
 		VkFence vk_fenceToSignal = renderFence[u8CurrentFrameInFlight].get_fence();
+		CATCH_SIGNAL(renderFence[u8CurrentFrameInFlight].reset_fence());
 		CATCH_SIGNAL(pDeviceQueues[RE_VK_QUEUE_GRAPHICS_INDEX]->submit_to_queue(u32SemaphoresToWaitForBeforeRenderingCount, (VkSemaphore*) &vk_semaphoresToWaitForBeforeRendering, (VkPipelineStageFlags*) &vk_ePipelinesStagesToWaitFor, u32CommandBufferForRenderingCount, (VkCommandBuffer*) commandBuffersForRendering, u32SemaphoresToSignalAfterRenderingCount, (VkSemaphore*) &vk_semaphoresToSignalAfterRendering, vk_fenceToSignal));
 		CATCH_SIGNAL(pDeviceQueues[RE_VK_QUEUE_PRESENT_INDEX]->submit_to_present_queue(u32SemaphoresToSignalAfterRenderingCount, (VkSemaphore*) &vk_semaphoresToSignalAfterRendering, 1U, &vk_hSwapchain, &u32NextSwapchainImageIndex));
 		u8CurrentFrameInFlight = (u8CurrentFrameInFlight + 1) % RE_VK_FRAMES_IN_FLIGHT;
@@ -169,6 +166,25 @@ namespace RE {
 		CATCH_SIGNAL(create_framebuffers());
 		CATCH_SIGNAL(create_command_buffers());
 		calculate_render_area();
+	}
+
+	void Renderer::calculate_render_area() {
+		if (pActiveCamera) {
+			const float fCameraScale = std::min(vk_swapchainResolution.width / pActiveCamera->scale[0], vk_swapchainResolution.height / pActiveCamera->scale[1]);
+			vk_cameraViewportArea.width = std::round(pActiveCamera->scale[0] * fCameraScale);
+			vk_cameraViewportArea.height = std::round(pActiveCamera->scale[1] * fCameraScale);
+			vk_cameraViewportArea.x = std::round((vk_swapchainResolution.width - vk_cameraViewportArea.width) / 2.0f);
+			vk_cameraViewportArea.y = std::round((vk_swapchainResolution.height - vk_cameraViewportArea.height) / 2.0f);
+		} else {
+			vk_cameraViewportArea.width = vk_swapchainResolution.width;
+			vk_cameraViewportArea.height = vk_swapchainResolution.height;
+			vk_cameraViewportArea.x = 0.0f;
+			vk_cameraViewportArea.y = 0.0f;
+		}
+		vk_cameraScissorArea.extent.width = vk_cameraViewportArea.width;
+		vk_cameraScissorArea.extent.height = vk_cameraViewportArea.height;
+		vk_cameraScissorArea.offset.x = vk_cameraViewportArea.x;
+		vk_cameraScissorArea.offset.y = vk_cameraViewportArea.y;
 	}
 
 	void Renderer::wait_for_all_fences() const {

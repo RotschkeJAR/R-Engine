@@ -61,7 +61,7 @@ class Objy : public GameObject {
 				misses++;
 			transform.position[0] = (get_cursor_normal_position_x() * 2.0f) - 1.0f;
 			transform.position[1] = (get_cursor_normal_position_y() * 2.0f) - 1.0f;
-			PRINT_LN(get_fps_rate());
+			//PRINT_LN(get_fps_rate());
 		}
 		void end(Scene* pEndingScene) {
 			PRINT_LN(append_to_string(hits, ", ", misses).c_str());
@@ -78,15 +78,27 @@ class Background : public GameObject {
 		}
 };
 
+class PlayerCamera : public Camera {
+	public:
+		PlayerCamera() {
+			scale[0] = 400.0f;
+			scale[1] = 300.0f;
+		}
+		~PlayerCamera() {}
+		void update() {}
+};
+
 class First : public Scene {
 	public:
 		Background background;
 		Objy objy;
+		PlayerCamera playerCam;
 		InputAction trigger, refresh;
 
 		First() : Scene(1) {}
 		~First() {}
 		void start() {
+			playerCam.activate();
 			trigger.change_input(RE_INPUT_KEY_NUMPAD_ENTER);
 			refresh.change_input(RE_INPUT_KEY_ESCAPE);
 		}

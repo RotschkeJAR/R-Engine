@@ -9,7 +9,7 @@ namespace RE {
 
 	bool bErrorOccured = false;
 	bool bRunning = false;
-	float fDeltaseconds = 0.0f, fMinDeltatime = -1.0f;
+	float fDeltaseconds = 0.0f, fMinDeltatime = 1.0f / 60.0f;
 
 	void execute() {
 		DEFINE_SIGNAL_GUARD(sigGuardMainLoop);
@@ -79,8 +79,15 @@ namespace RE {
 			while (bRunning) {
 				CATCH_SIGNAL(pWindow->window_proc());
 				CATCH_SIGNAL(gameMgr.game_logic_update());
-				CATCH_SIGNAL(renderSystem.refresh());
-				CATCH_SIGNAL(renderer.render());
+				if (pWindow->should_render()) {
+					CATCH_SIGNAL(renderSystem.refresh());
+					CATCH_SIGNAL(renderer.render());
+				} else {
+					// branch avoiding excessive CPU usage, when rendering is ambigious
+					float fTimeToWait = fMinDeltatime - fDeltaseconds;
+					if (fTimeToWait > 0.0f)
+						std::this_thread::sleep_for(std::chrono::duration<float>(fTimeToWait));
+				}
 				lastFrameTime = currentFrameTime;
 				currentFrameTime = std::chrono::high_resolution_clock::now();
 				fDeltaseconds = std::chrono::duration_cast<std::chrono::duration<float>>(currentFrameTime - lastFrameTime).count();

@@ -48,7 +48,7 @@ namespace RE {
 			RenderSystem();
 			~RenderSystem();
 			bool refresh();
-			void get_next_swapchain_image(const Vulkan_Semaphore *pSemaphoreWaitForSwapchainImageAcquired, uint32_t *pu32NextSwapchainImageIndex);
+			bool get_next_swapchain_image(const Vulkan_Semaphore *pSemaphoreWaitForSwapchainImageAcquired, uint32_t *pu32NextSwapchainImageIndex);
 			void window_resize_event();
 			bool is_valid();
 	};

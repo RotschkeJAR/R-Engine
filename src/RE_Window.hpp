@@ -32,6 +32,7 @@ namespace RE {
 			virtual const char* get_vulkan_required_surface_extension_name() const = 0;
 			void window_proc();
 			bool should_close() const;
+			bool should_render() const;
 			bool is_valid() const;
 			Vector<uint32_t, 2> get_size() const;
 

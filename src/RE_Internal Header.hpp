@@ -2,6 +2,7 @@
 #define __RE_EXT_H__
 
 #include <algorithm>
+#include <numeric>
 #include <fstream>
 #include <optional>
 #include <vector>

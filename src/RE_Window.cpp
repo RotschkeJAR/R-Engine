@@ -48,6 +48,10 @@ namespace RE {
 		return bCloseFlag;
 	}
 
+	bool Window::should_render() const {
+		return !bMinimized && bVisible;
+	}
+
 	bool Window::is_valid() const {
 		return bValid;
 	}

@@ -69,8 +69,8 @@ namespace RE {
 			CATCH_SIGNAL(ppSecondaryCommandBuffers[u32CommandBufferIndex]->cmd_bind_graphics_pipeline(&gameObjectsGraphicsPipeline));
 			CATCH_SIGNAL(ppSecondaryCommandBuffers[u32CommandBufferIndex]->cmd_bind_index_buffer(&Renderer::pInstance->rectangleIndexBuffer, VK_INDEX_TYPE_UINT16));
 			CATCH_SIGNAL(ppSecondaryCommandBuffers[u32CommandBufferIndex]->cmd_bind_vertex_buffer(&gameObjectVertexBuffer, 0UL));
-			CATCH_SIGNAL(ppSecondaryCommandBuffers[u32CommandBufferIndex]->cmd_set_viewport(Renderer::pInstance->vk_maxViewportArea));
-			CATCH_SIGNAL(ppSecondaryCommandBuffers[u32CommandBufferIndex]->cmd_set_scissor(Renderer::pInstance->vk_maxScissorArea));
+			CATCH_SIGNAL(ppSecondaryCommandBuffers[u32CommandBufferIndex]->cmd_set_viewport(Renderer::pInstance->vk_cameraViewportArea));
+			CATCH_SIGNAL(ppSecondaryCommandBuffers[u32CommandBufferIndex]->cmd_set_scissor(Renderer::pInstance->vk_cameraScissorArea));
 			CATCH_SIGNAL(ppSecondaryCommandBuffers[u32CommandBufferIndex]->cmd_draw_indexed(u16GameObjectsToRenderCount * 6U, 0U, 0U));
 		}
 		CATCH_SIGNAL(ppSecondaryCommandBuffers[u32CommandBufferIndex]->end_recording_command_buffer());

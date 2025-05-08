@@ -17,8 +17,10 @@ namespace RE {
 		else {
 			switch (win_uMsg) {
 				case WM_SIZE: /* resized */
+					RECT win_contentRect;
+					CATCH_SIGNAL(GetClientRect(win_hWndParam, &win_contentRect));
 					pWin64->bMinimized = win_wParam == SIZE_MINIMIZED;
-					CATCH_SIGNAL(pWin64->update_window_size(static_cast<uint32_t>(LOWORD(win_lParam)), static_cast<uint32_t>(HIWORD(win_lParam))));
+					CATCH_SIGNAL(pWin64->update_window_size(static_cast<uint32_t>(win_contentRect.right - win_contentRect.left), static_cast<uint32_t>(win_contentRect.bottom - win_contentRect.top)));
 					return 0;
 				case WM_CLOSE: /* close */
 					pWin64->bCloseFlag = true;
@@ -150,7 +152,7 @@ namespace RE {
 		};
 		Vector2i adjustedSize;
 		CATCH_SIGNAL(adjustedSize = get_adjusted_window_size(size));
-		CATCH_SIGNAL(win_hWindow = CreateWindowExW(0, WINDOW_CLASS_NAME, wideTitleStr.c_str(), WINDOW_STYLE_FLAGS, CW_USEDEFAULT, CW_USEDEFAULT, size[0], size[1], nullptr, nullptr, win_hInstance, nullptr));
+		CATCH_SIGNAL(win_hWindow = CreateWindowExW(0, WINDOW_CLASS_NAME, wideTitleStr.c_str(), WINDOW_STYLE_FLAGS, CW_USEDEFAULT, CW_USEDEFAULT, adjustedSize[0], adjustedSize[1], nullptr, nullptr, win_hInstance, nullptr));
 		if (!win_hWindow) {
 			RE_FATAL_ERROR("Failed creating window");
 			return;

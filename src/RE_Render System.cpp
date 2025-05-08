@@ -728,8 +728,21 @@ namespace RE {
 		return true;
 	}
 
-	void RenderSystem::get_next_swapchain_image(const Vulkan_Semaphore *pSemaphoreWaitForSwapchainImageAcquired, uint32_t *pu32NextSwapchainImageIndex) {
-		CATCH_SIGNAL(vkAcquireNextImageKHR(vk_hDevice, vk_hSwapchain, UINT64_MAX, *pSemaphoreWaitForSwapchainImageAcquired, VK_NULL_HANDLE, pu32NextSwapchainImageIndex));
+	bool RenderSystem::get_next_swapchain_image(const Vulkan_Semaphore *pSemaphoreWaitForSwapchainImageAcquired, uint32_t *pu32NextSwapchainImageIndex) {
+		VkResult vk_eSwapchainResult = CATCH_SIGNAL_AND_RETURN(vkAcquireNextImageKHR(vk_hDevice, vk_hSwapchain, UINT64_MAX, *pSemaphoreWaitForSwapchainImageAcquired, VK_NULL_HANDLE, pu32NextSwapchainImageIndex), VkResult);
+		switch (vk_eSwapchainResult) {
+			case VK_SUCCESS:
+				return true;
+			case VK_ERROR_OUT_OF_DATE_KHR:
+			case VK_SUBOPTIMAL_KHR:
+				if (!CATCH_SIGNAL_AND_RETURN(recreate_swapchain(), bool))
+					return false;
+				CHECK_VK_RESULT(vkAcquireNextImageKHR(vk_hDevice, vk_hSwapchain, UINT64_MAX, *pSemaphoreWaitForSwapchainImageAcquired, VK_NULL_HANDLE, pu32NextSwapchainImageIndex));
+				return true;
+			default:
+				CHECK_VK_RESULT(vk_eSwapchainResult);
+				return false;
+		}
 	}
 
 	void RenderSystem::window_resize_event() {

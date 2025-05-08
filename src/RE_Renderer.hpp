@@ -62,20 +62,20 @@ namespace RE {
 			void destroy_framebuffers();
 			void create_command_buffers();
 			void destroy_command_buffers();
-			void calculate_render_area();
 			void record_command_buffer(const uint32_t u32CommandBufferRecordIndex);
 
 		public:
 			const Vulkan_Buffer rectangleIndexBuffer;
 			const Vulkan_Framebuffer **ppFramebuffers;
-			VkViewport vk_maxViewportArea;
-			VkRect2D vk_maxScissorArea;
+			VkViewport vk_cameraViewportArea;
+			VkRect2D vk_cameraScissorArea;
 			static Renderer *pInstance;
 
 			Renderer();
 			~Renderer();
 			void render();
 			void window_resize_event();
+			void calculate_render_area();
 			void wait_for_all_fences() const;
 			bool is_valid() const;
 	};

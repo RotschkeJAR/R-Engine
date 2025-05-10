@@ -341,7 +341,7 @@ namespace RE {
 		return (... | (1UL << static_cast<uint64_t>(bits)));
 	}
 
-	constexpr uint64_t gen_bitmask_in_range(uint64_t u64Begin, uint64_t u64End) {
+	constexpr uint64_t gen_bitmask_in_range(const uint64_t u64Begin, const uint64_t u64End) {
 		if (u64Begin > u64End) {
 			FATAL_ERROR(append_to_string("Start (", u64Begin, ") of the range is larger than end (", u64End, ")").c_str());
 			return 0UL;
@@ -354,12 +354,12 @@ namespace RE {
 	}
 
 	template <typename T>
-	constexpr bool is_bit_true(T value, T bit) {
+	constexpr bool is_bit_true(const T value, const T bit) {
 		return (value & gen_bitmask<T>(bit)) != static_cast<T>(0);
 	}
 
 	template <typename T>
-	constexpr bool are_bits_true_in_range(T value, T begin, T end) {
+	constexpr bool are_bits_true_in_range(const T value, const T begin, const T end) {
 		if (begin > end) {
 			FATAL_ERROR(append_to_string("Start (", begin, ") of the range is larger than end (", end, ")").c_str());
 			return false;
@@ -372,7 +372,7 @@ namespace RE {
 	}
 
 	template <typename T>
-	constexpr T set_bit(T& value, T bit, bool bNewState) {
+	constexpr T set_bit(T& value, const T bit, const bool bNewState) {
 		T targetBit = gen_bitmask<T>(bit);
 		if (bNewState)
 			value |= targetBit;
@@ -382,7 +382,7 @@ namespace RE {
 	}
 
 	template <typename T>
-	constexpr T set_bits(T& value, T begin, T end, bool bNewState) {
+	constexpr T set_bits(T& value, const T begin, const T end, const bool bNewState) {
 		if (begin > end) {
 			FATAL_ERROR(append_to_string("Start (", begin, ") of the range is larger than end (", end, ")").c_str());
 			return value;
@@ -393,7 +393,7 @@ namespace RE {
 	}
 
 	template <typename T>
-	std::string bitmask_to_string(T bitmask, bool bWithSpace) {
+	std::string bitmask_to_string(const T bitmask, const bool bWithSpace) {
 		std::stringstream strResult("");
 		constexpr T bits = sizeof(T) * 8;
 		for (T bit = 0; bit < bits; bit++) {
@@ -402,6 +402,11 @@ namespace RE {
 			strResult << ((bitmask >> (bits - 1 - bit)) & 1);
 		}
 		return std::string(strResult.str());
+	}
+
+	template <typename T>
+	std::string bitmask_to_string(const T bitmask) {
+		return bitmask_to_string(bitmask, true);
 	}
 
 	template <typename T, uint32_t u32Dimensions>
@@ -452,7 +457,7 @@ namespace RE {
 				return result;
 			}
 
-			void fill(T value) {
+			void fill(const T value) {
 				std::fill(std::begin(coords), std::end(coords), value);
 			}
 

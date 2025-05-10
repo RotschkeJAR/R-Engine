@@ -150,9 +150,9 @@ namespace RE {
 			RE_FATAL_ERROR("Failed registering class for window creation");
 			return;
 		};
-		Vector2i adjustedSize;
-		CATCH_SIGNAL(adjustedSize = get_adjusted_window_size(size));
-		CATCH_SIGNAL(win_hWindow = CreateWindowExW(0, WINDOW_CLASS_NAME, wideTitleStr.c_str(), WINDOW_STYLE_FLAGS, CW_USEDEFAULT, CW_USEDEFAULT, adjustedSize[0], adjustedSize[1], nullptr, nullptr, win_hInstance, nullptr));
+		RECT win_adjustableSize = {0, 0, static_cast<LONG>(windowSize[0]), static_cast<LONG>(windowSize[1])};
+		CATCH_SIGNAL(AdjustWindowRect(&win_adjustableSize, WINDOW_STYLE_FLAGS, FALSE));
+		CATCH_SIGNAL(win_hWindow = CreateWindowExW(0, WINDOW_CLASS_NAME, wideTitleStr.c_str(), WINDOW_STYLE_FLAGS, CW_USEDEFAULT, CW_USEDEFAULT, win_adjustableSize.right - win_adjustableSize.left, win_adjustableSize.bottom - win_adjustableSize.top, nullptr, nullptr, win_hInstance, nullptr));
 		if (!win_hWindow) {
 			RE_FATAL_ERROR("Failed creating window");
 			return;
@@ -172,12 +172,6 @@ namespace RE {
 		CATCH_SIGNAL(DestroyWindow(win_hWindow));
 		CATCH_SIGNAL(UnregisterClassW(WINDOW_CLASS_NAME, win_hInstance));
 		pWin64 = nullptr;
-	}
-
-	Vector2i Window_Win64::get_adjusted_window_size(Vector<uint32_t, 2> size) {
-		RECT win_adjustableSize = {0, 0, static_cast<LONG>(size[0]), static_cast<LONG>(size[1])};
-		CATCH_SIGNAL(AdjustWindowRect(&win_adjustableSize, WINDOW_STYLE_FLAGS, FALSE));
-		return Vector2i(win_adjustableSize.right - win_adjustableSize.left, win_adjustableSize.bottom - win_adjustableSize.top);
 	}
 
 	void Window_Win64::internal_show_window() {

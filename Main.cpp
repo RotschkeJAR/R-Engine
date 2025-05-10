@@ -43,9 +43,10 @@ Clonus* clonus = nullptr;
 class Objy : public GameObject {
 	public:
 		RandomNumberGenerator rng;
+		InputAction left, right, up, down;
 		uint64_t hits, misses;
 
-		Objy() : GameObject(1, 1), hits(0UL), misses(0UL) {
+		Objy() : GameObject(1, 1), left(RE_INPUT_KEY_ARROW_LEFT), right(RE_INPUT_KEY_ARROW_RIGHT), up(RE_INPUT_KEY_ARROW_UP), down(RE_INPUT_KEY_ARROW_DOWN), hits(0UL), misses(0UL) {
 			transform.scale[0] = 0.1f;
 			transform.scale[1] = 0.1f;
 		}
@@ -59,8 +60,8 @@ class Objy : public GameObject {
 				hits++;
 			else
 				misses++;
-			transform.position[0] = (get_cursor_normal_position_x() * 2.0f) - 1.0f;
-			transform.position[1] = (get_cursor_normal_position_y() * 2.0f) - 1.0f;
+			transform.position[0] += (right.is_down() - left.is_down()) * 0.1f * get_deltaseconds();
+			transform.position[1] += (up.is_down() - down.is_down()) * 0.1f * get_deltaseconds();
 			//PRINT_LN(get_fps_rate());
 		}
 		void end(Scene* pEndingScene) {

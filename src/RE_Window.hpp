@@ -6,12 +6,13 @@
 #include "RE_Vulkan.hpp"
 
 namespace RE {
+
+	extern Vector2u windowSize;
 	
 	class Window {
 		protected:
 			InputMgr inputMgr;
 			const char* pcTitle;
-			Vector<uint32_t, 2> size;
 			bool bVisible, bMinimized;
 			bool bCloseFlag;
 			bool bValid;
@@ -34,7 +35,6 @@ namespace RE {
 			bool should_close() const;
 			bool should_render() const;
 			bool is_valid() const;
-			Vector<uint32_t, 2> get_size() const;
 
 		friend class InputMgr;
 	};
@@ -44,8 +44,6 @@ namespace RE {
 		private:
 			HWND win_hWindow;
 			HCURSOR win_hCursor;
-
-			Vector2i get_adjusted_window_size(Vector<uint32_t, 2> size);
 
 		protected:
 			void internal_window_proc();

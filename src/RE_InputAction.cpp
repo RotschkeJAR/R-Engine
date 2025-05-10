@@ -56,30 +56,15 @@ namespace RE {
 	}
 
 	bool InputAction::is_pressed() {
-		if (!InputMgr::pInstance) {
-			RE_NOTE("You can't check whether anything has been pressed, when the engine is not running");
-			return false;
-		} else if (!has_valid_input_values())
-			return false;
-		return InputMgr::pInstance->is_down(eInput, u32KeyScancode) && !InputMgr::pInstance->was_down(eInput, u32KeyScancode);
+		return has_valid_input_values() ? (is_key_down(eInput, u32KeyScancode) && !was_key_down(eInput, u32KeyScancode)) : false;
 	}
 
 	bool InputAction::is_down() {
-		if (!InputMgr::pInstance) {
-			RE_NOTE("You can't check whether anything is held down, when the engine is not running");
-			return false;
-		} else if (!has_valid_input_values())
-			return false;
-		return InputMgr::pInstance->is_down(eInput, u32KeyScancode);
+		return has_valid_input_values() ? is_key_down(eInput, u32KeyScancode) : false;
 	}
 
 	bool InputAction::is_released() {
-		if (!InputMgr::pInstance) {
-			RE_NOTE("You can't check whether anything has been released, when the engine is not running");
-			return false;
-		} else if (!has_valid_input_values())
-			return false;
-		return !InputMgr::pInstance->is_down(eInput, u32KeyScancode) && InputMgr::pInstance->was_down(eInput, u32KeyScancode);
+		return has_valid_input_values() ? (!is_key_down(eInput, u32KeyScancode) && was_key_down(eInput, u32KeyScancode)) : false;
 	}
 
 	bool InputAction::has_valid_input_values() {

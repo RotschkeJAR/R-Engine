@@ -3,9 +3,10 @@
 
 namespace RE {
 	
+	Vector2u windowSize(600, 400);
 	Window* Window::pInstance = nullptr;
 
-	Window::Window() : pcTitle("Untitled game window"), size(600, 400), bVisible(false), bMinimized(false), bCloseFlag(false), bValid(false) {
+	Window::Window() : pcTitle("Untitled game window"), bVisible(false), bMinimized(false), bCloseFlag(false), bValid(false) {
 		if (pInstance) {
 			RE_FATAL_ERROR("A window already exists. New window has been discarded");
 			return;
@@ -18,9 +19,9 @@ namespace RE {
 			pInstance = nullptr;
 	}
 
-	void Window::update_window_size(uint32_t u16NewWidth, uint32_t u16NewHeight) {
-		size[0] = u16NewWidth;
-		size[1] = u16NewHeight;
+	void Window::update_window_size(uint32_t u32NewWidth, uint32_t u32NewHeight) {
+		windowSize[0] = u32NewWidth;
+		windowSize[1] = u32NewHeight;
 		if (RenderSystem::pInstance)
 			CATCH_SIGNAL(RenderSystem::pInstance->window_resize_event());
 	}
@@ -54,10 +55,6 @@ namespace RE {
 
 	bool Window::is_valid() const {
 		return bValid;
-	}
-
-	Vector<uint32_t, 2> Window::get_size() const {
-		return size;
 	}
 
 }

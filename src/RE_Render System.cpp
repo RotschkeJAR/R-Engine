@@ -714,15 +714,14 @@ namespace RE {
 			RE_ERROR("Failed recreating the swapchain");
 			return false;
 		}
+		CATCH_SIGNAL(Renderer::pInstance->swapchain_recreated());
 		return true;
 	}
 
 	bool RenderSystem::refresh() {
 		if (is_bit_true<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_INDEX)) {
-			CATCH_SIGNAL(Renderer::pInstance->wait_for_all_fences());
 			if (!CATCH_SIGNAL_AND_RETURN(recreate_swapchain(), bool))
 				return false;
-			CATCH_SIGNAL(Renderer::pInstance->window_resize_event());
 			set_bit<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_INDEX, false);
 		}
 		return true;
@@ -756,7 +755,8 @@ namespace RE {
 	void enable_vsync(bool bEnableVsync) {
 		if (is_bit_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_INDEX) != bEnableVsync) {
 			set_bit<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_INDEX, bEnableVsync);
-			set_bit<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_INDEX, true);
+			if (RenderSystem::pInstance)
+				set_bit<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_INDEX, true);
 		}
 	}
 
@@ -767,7 +767,8 @@ namespace RE {
 	void bind_fps_to_vsync(bool bBindFpsToVsync) {
 		if (is_bit_true<uint8_t>(u8RenderSystemFlags, FPS_BOUND_TO_VSYNC_INDEX) != bBindFpsToVsync) {
 			set_bit<uint8_t>(u8RenderSystemFlags, FPS_BOUND_TO_VSYNC_INDEX, bBindFpsToVsync);
-			set_bit<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_INDEX, true);
+			if (RenderSystem::pInstance)
+				set_bit<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_INDEX, true);
 		}
 	}
 

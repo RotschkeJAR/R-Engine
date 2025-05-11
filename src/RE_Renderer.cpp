@@ -40,6 +40,7 @@ namespace RE {
 #else
 # error Update the array initializations above!
 #endif
+	ppSwapchainImageFences(new const Vulkan_Fence*[u32SwapchainImageCount] {}), 
 	u8CurrentFrameInFlight(0U), 
 	gameObjectRenderer(&renderPass), 
 	bValid(false), 
@@ -87,6 +88,7 @@ namespace RE {
 		if (pInstance != this)
 			return;
 		pInstance = nullptr;
+		DELETE_ARRAY_SAFELY(ppSwapchainImageFences);
 		CATCH_SIGNAL(destroy_command_buffers());
 		CATCH_SIGNAL(destroy_framebuffers());
 	}
@@ -141,6 +143,9 @@ namespace RE {
 		uint32_t u32NextSwapchainImageIndex;
 		if (!CATCH_SIGNAL_AND_RETURN(RenderSystem::pInstance->get_next_swapchain_image(&semaphoreAcquireSwapchainImage[u8CurrentFrameInFlight], &u32NextSwapchainImageIndex), bool))
 			return;
+		if (ppSwapchainImageFences[u32NextSwapchainImageIndex])
+			ppSwapchainImageFences[u32NextSwapchainImageIndex]->wait_for_fence();
+		ppSwapchainImageFences[u32NextSwapchainImageIndex] = &renderFence[u8CurrentFrameInFlight];
 		CATCH_SIGNAL(gameObjectRenderer.render(u32NextSwapchainImageIndex, u8CurrentFrameInFlight));
 		CATCH_SIGNAL_DETAILED(record_command_buffer(u32NextSwapchainImageIndex), append_to_string("Primary Command Buffer Index: ", u32NextSwapchainImageIndex).c_str());
 
@@ -159,8 +164,9 @@ namespace RE {
 		u8CurrentFrameInFlight = (u8CurrentFrameInFlight + 1) % RE_VK_FRAMES_IN_FLIGHT;
 	}
 
-	void Renderer::window_resize_event() {
-		CATCH_SIGNAL(wait_for_all_fences());
+	void Renderer::swapchain_recreated() {
+		delete[] ppSwapchainImageFences;
+		ppSwapchainImageFences = new const Vulkan_Fence*[u32SwapchainImageCount] {};
 		CATCH_SIGNAL(destroy_command_buffers());
 		CATCH_SIGNAL(destroy_framebuffers());
 		CATCH_SIGNAL(create_framebuffers());

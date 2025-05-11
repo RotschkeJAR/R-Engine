@@ -62,7 +62,6 @@ class Objy : public GameObject {
 				misses++;
 			transform.position[0] += (right.is_down() - left.is_down()) * 0.1f * get_deltaseconds();
 			transform.position[1] += (up.is_down() - down.is_down()) * 0.1f * get_deltaseconds();
-			//PRINT_LN(get_fps_rate());
 		}
 		void end(Scene* pEndingScene) {
 			PRINT_LN(append_to_string(hits, ", ", misses).c_str());

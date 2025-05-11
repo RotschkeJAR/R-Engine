@@ -7,13 +7,18 @@
 
 namespace RE {
 
+#define MIN_WINDOW_WIDTH 100
+#define MIN_WINDOW_HEIGHT 100
+#define MAX_WINDOW_WIDTH_RELATIVE_TO_MONITOR -100
+#define MAX_WINDOW_HEIGHT_RELATIVE_TO_MONITOR -100
+
 	extern Vector2u windowSize;
 	
 	class Window {
 		protected:
 			InputMgr inputMgr;
 			const char* pcTitle;
-			bool bVisible, bMinimized;
+			bool bVisible, bMinimized, bMaximized;
 			bool bCloseFlag;
 			bool bValid;
 

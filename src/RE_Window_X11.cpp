@@ -40,10 +40,10 @@ namespace RE {
 		CATCH_SIGNAL(x11_hWindow = XCreateWindow(x11_pDisplay, x11_rootWindow, 0, 0, windowSize[0], windowSize[1], 0, x11_visualInfo.depth, InputOutput, x11_visualInfo.visual, CWColormap | CWEventMask, &winAttrib));
 
 		x11_pSizes->flags = PMinSize | PMaxSize;
-		x11_pSizes->min_width = 100;
-		x11_pSizes->min_height = 100;
-		CATCH_SIGNAL(x11_pSizes->max_width = XWidthOfScreen(x11_pDefaultScreen) - 100);
-		CATCH_SIGNAL(x11_pSizes->max_height = XHeightOfScreen(x11_pDefaultScreen) - 100);
+		x11_pSizes->min_width = MIN_WINDOW_WIDTH;
+		x11_pSizes->min_height = MIN_WINDOW_HEIGHT;
+		CATCH_SIGNAL(x11_pSizes->max_width = XWidthOfScreen(x11_pDefaultScreen) + MAX_WINDOW_WIDTH_RELATIVE_TO_MONITOR);
+		CATCH_SIGNAL(x11_pSizes->max_height = XHeightOfScreen(x11_pDefaultScreen) + MAX_WINDOW_HEIGHT_RELATIVE_TO_MONITOR);
 		CATCH_SIGNAL(XSetWMNormalHints(x11_pDisplay, x11_hWindow, x11_pSizes));
 
 		CATCH_SIGNAL(x11_hClose = XInternAtom(x11_pDisplay, "WM_DELETE_WINDOW", XFalse));

@@ -6,6 +6,7 @@ namespace RE {
 #ifdef RE_OS_WINDOWS
 # define WINDOW_CLASS_NAME L"RE_WindowClass"
 # define WINDOW_STYLE_FLAGS (WS_SIZEBOX | WS_MAXIMIZEBOX | WS_MINIMIZEBOX | WS_CAPTION | WS_SYSMENU)
+# define RE_WM_MAXIMIZED WM_APP
 	HINSTANCE Window_Win64::win_hInstance = nullptr;
 	Window_Win64* pWin64 = nullptr;
 
@@ -20,6 +21,12 @@ namespace RE {
 					RECT win_contentRect;
 					CATCH_SIGNAL(GetClientRect(win_hWndParam, &win_contentRect));
 					pWin64->bMinimized = win_wParam == SIZE_MINIMIZED;
+					pWin64->bMaximized = win_wParam == SIZE_MAXIMIZED;
+					PRINT_LN(pWin64->bMaximized);
+					if (pWin64->bMaximized) {
+						PRINT_LN("Maximized");
+						PostMessageW(win_hWndParam, RE_WM_MAXIMIZED, (WPARAM) 0, (LPARAM) 0);
+					}
 					CATCH_SIGNAL(pWin64->update_window_size(static_cast<uint32_t>(win_contentRect.right - win_contentRect.left), static_cast<uint32_t>(win_contentRect.bottom - win_contentRect.top)));
 					return 0;
 				case WM_CLOSE: /* close */
@@ -28,20 +35,27 @@ namespace RE {
 				case WM_DESTROY: /* destroy window */
 					CATCH_SIGNAL(PostQuitMessage(0));
 					return 0;
-				/* case WM_GETMINMAXINFO: {
+				case WM_GETMINMAXINFO: {
 					MINMAXINFO* win_windowSizeLimits = (MINMAXINFO*) win_lParam;
-					win_windowSizeLimits->ptMinTrackSize.x = 100;
-					win_windowSizeLimits->ptMinTrackSize.y = 100;
+					win_windowSizeLimits->ptMinTrackSize.x = MIN_WINDOW_WIDTH;
+					win_windowSizeLimits->ptMinTrackSize.y = MIN_WINDOW_HEIGHT;
 					MONITORINFO win_monitorInfo = {};
 					win_monitorInfo.cbSize = sizeof(MONITORINFO);
 					BOOL win_monitorInfoRetrieved;
 					CATCH_SIGNAL(win_monitorInfoRetrieved = GetMonitorInfoW(MonitorFromWindow(win_hWndParam, MONITOR_DEFAULTTOPRIMARY), &win_monitorInfo));
 					if (win_monitorInfoRetrieved) {
-						win_windowSizeLimits->ptMaxTrackSize.x = std::abs(win_monitorInfo.rcWork.right - win_monitorInfo.rcWork.left - 100);
-						win_windowSizeLimits->ptMaxTrackSize.y = std::abs(win_monitorInfo.rcWork.bottom - win_monitorInfo.rcWork.top - 100);
+						const Vector2i monitorSize(win_monitorInfo.rcWork.right - win_monitorInfo.rcWork.left, win_monitorInfo.rcWork.bottom - win_monitorInfo.rcWork.top);
+						if (!pWin64->bMaximized) {
+							win_windowSizeLimits->ptMaxTrackSize.x = std::abs(monitorSize[0] + MAX_WINDOW_WIDTH_RELATIVE_TO_MONITOR);
+							win_windowSizeLimits->ptMaxTrackSize.y = std::abs(monitorSize[1] + MAX_WINDOW_HEIGHT_RELATIVE_TO_MONITOR);
+						} else {
+							win_windowSizeLimits->ptMaxTrackSize.x = monitorSize[0];
+							win_windowSizeLimits->ptMaxTrackSize.y = monitorSize[1];
+						}
+						PRINT_LN(append_to_string("New maximum window size limit: ", win_windowSizeLimits->ptMaxTrackSize.x, ", ", win_windowSizeLimits->ptMaxTrackSize.y, "\nMonitor size: ", monitorSize));
 					} else
-						RE_FATAL_ERROR("Failed getting the monitor, where the window is currently on");
-					} return 0; */
+						RE_FATAL_ERROR("Failed getting monitor info, where the window is currently on");
+					} return 0;
 				case WM_KEYDOWN: /* key pressed */
 				case WM_SYSKEYDOWN:
 				case WM_KEYUP: /* key released */
@@ -100,8 +114,8 @@ namespace RE {
 					CATCH_SIGNAL(ReleaseCapture());
 					return 0;
 				case WM_MOUSEMOVE: { /* mouse moved */
-					int32_t i32XPos = GET_X_LPARAM(win_lParam);
-					int32_t i32YPos = GET_Y_LPARAM(win_lParam);
+					const int32_t i32XPos = GET_X_LPARAM(win_lParam);
+					const int32_t i32YPos = GET_Y_LPARAM(win_lParam);
 					CATCH_SIGNAL(pWin64->inputMgr.cursor_event(i32XPos, i32YPos));
 					} return 0;
 				case WM_SETCURSOR:
@@ -111,11 +125,24 @@ namespace RE {
 					}
 					break;
 				case WM_MOUSEWHEEL: { /* mouse wheel used/scrolled */
-					int32_t deltaMouseWheel = GET_WHEEL_DELTA_WPARAM(win_wParam);
+					const int32_t deltaMouseWheel = GET_WHEEL_DELTA_WPARAM(win_wParam);
 					if (deltaMouseWheel > 0)
 						CATCH_SIGNAL(pWin64->inputMgr.input_event(RE_INPUT_SCROLL_UP, 0U, true, false));
 					else
 						CATCH_SIGNAL(pWin64->inputMgr.input_event(RE_INPUT_SCROLL_DOWN, 0U, true, false));
+					} return 0;
+				case RE_WM_MAXIMIZED: {
+					PRINT_LN("Received custom message");
+					MONITORINFO win_monitorInfo = {};
+					win_monitorInfo.cbSize = sizeof(MONITORINFO);
+					BOOL win_monitorInfoRetrieved;
+					CATCH_SIGNAL(win_monitorInfoRetrieved = GetMonitorInfoW(MonitorFromWindow(win_hWndParam, MONITOR_DEFAULTTOPRIMARY), &win_monitorInfo));
+					if (!win_monitorInfoRetrieved) {
+						RE_FATAL_ERROR("Failed getting monitor info, where the window is currently on");
+						return 1;
+					}
+					const Vector2i monitorSize(win_monitorInfo.rcWork.right - win_monitorInfo.rcWork.left, win_monitorInfo.rcWork.bottom - win_monitorInfo.rcWork.top);
+					CATCH_SIGNAL(SetWindowPos(win_hWndParam, nullptr, 0, 0, monitorSize[0], monitorSize[1], SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOZORDER));
 					} return 0;
 				default:
 					break;

@@ -22,11 +22,8 @@ namespace RE {
 					CATCH_SIGNAL(GetClientRect(win_hWndParam, &win_contentRect));
 					pWin64->bMinimized = win_wParam == SIZE_MINIMIZED;
 					pWin64->bMaximized = win_wParam == SIZE_MAXIMIZED;
-					PRINT_LN(pWin64->bMaximized);
-					if (pWin64->bMaximized) {
-						PRINT_LN("Maximized");
+					if (pWin64->bMaximized)
 						PostMessageW(win_hWndParam, RE_WM_MAXIMIZED, (WPARAM) 0, (LPARAM) 0);
-					}
 					CATCH_SIGNAL(pWin64->update_window_size(static_cast<uint32_t>(win_contentRect.right - win_contentRect.left), static_cast<uint32_t>(win_contentRect.bottom - win_contentRect.top)));
 					return 0;
 				case WM_CLOSE: /* close */
@@ -52,7 +49,6 @@ namespace RE {
 							win_windowSizeLimits->ptMaxTrackSize.x = monitorSize[0];
 							win_windowSizeLimits->ptMaxTrackSize.y = monitorSize[1];
 						}
-						PRINT_LN(append_to_string("New maximum window size limit: ", win_windowSizeLimits->ptMaxTrackSize.x, ", ", win_windowSizeLimits->ptMaxTrackSize.y, "\nMonitor size: ", monitorSize));
 					} else
 						RE_FATAL_ERROR("Failed getting monitor info, where the window is currently on");
 					} return 0;
@@ -132,7 +128,6 @@ namespace RE {
 						CATCH_SIGNAL(pWin64->inputMgr.input_event(RE_INPUT_SCROLL_DOWN, 0U, true, false));
 					} return 0;
 				case RE_WM_MAXIMIZED: {
-					PRINT_LN("Received custom message");
 					MONITORINFO win_monitorInfo = {};
 					win_monitorInfo.cbSize = sizeof(MONITORINFO);
 					BOOL win_monitorInfoRetrieved;

@@ -51,11 +51,20 @@ namespace RE {
 	gameObjectVertexBuffer(RE_VK_VERTEX_BUFFER_BYTES, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, u32GameObjectVertexBufferQueues, u32GameObjectVertexBufferQueueCount, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT), 
 	gameObjectVertexStagingBuffer(RE_VK_VERTEX_BUFFER_BYTES, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, u32GameObjectVertexStagingBufferQueues, u32GameObjectVertexStagingBufferQueueCount, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), 
 #if (RE_VK_FRAMES_IN_FLIGHT == 2)
-	vertexBufferTransferCommandBuffer{Vulkan_CommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, pCommandPools[RE_VK_COMMAND_POOL_TRANSFER_INDEX]), Vulkan_CommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, pCommandPools[RE_VK_COMMAND_POOL_TRANSFER_INDEX])}, 
+	vertexBufferTransferCommandBuffers{Vulkan_CommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, pCommandPools[RE_VK_COMMAND_POOL_TRANSFER_INDEX]), Vulkan_CommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, pCommandPools[RE_VK_COMMAND_POOL_TRANSFER_INDEX])}, 
 #else
 # error Update the array initialization above!
 #endif
 	u16GameObjectsToRenderCount(0U) {
+		bool bVertexBufferTransferCommandBuffersSuccessfullyCreated = false;
+		for (uint8_t u8CurrentTransferCommandBufferIndex = 0U; u8CurrentTransferCommandBufferIndex < RE_VK_FRAMES_IN_FLIGHT; u8CurrentTransferCommandBufferIndex++)
+			if (vertexBufferTransferCommandBuffers[u8CurrentTransferCommandBufferIndex].is_valid()) {
+				bVertexBufferTransferCommandBuffersSuccessfullyCreated = true;
+				break;
+			}
+		if (!bVertexBufferTransferCommandBuffersSuccessfullyCreated || !gameObjectsVertexShader.is_valid() || !gameObjectsFragmentShader.is_valid() || !gameObjectsGraphicsPipeline.is_valid() || !gameObjectVertexBuffer.is_valid() || !gameObjectVertexStagingBuffer.is_valid()) {
+
+		}
 		gameObjectVertexStagingBuffer.map_memory((void**)&pVertices, 0UL, RE_VK_VERTEX_BUFFER_BYTES);
 	}
 
@@ -132,11 +141,11 @@ namespace RE {
 			CATCH_SIGNAL(pDeviceQueues[RE_VK_QUEUE_TRANSFER_INDEX]->submit_to_queue(0U, nullptr, nullptr, 0U, nullptr, 1U, &semaphoreWaitForVertexBufferTransfer[u8CurrentFrameInFlight], nullptr));
 			return;
 		}
-		CATCH_SIGNAL(vertexBufferTransferCommandBuffer[u8CurrentFrameInFlight].reset_command_buffer(0));
-		CATCH_SIGNAL(vertexBufferTransferCommandBuffer[u8CurrentFrameInFlight].begin_recording_command_buffer(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT));
-		CATCH_SIGNAL(vertexBufferTransferCommandBuffer[u8CurrentFrameInFlight].cmd_copy_buffer(&gameObjectVertexStagingBuffer, &gameObjectVertexBuffer, u16GameObjectsToRenderCount * 4U * RE_VK_VERTEX_TOTAL_SIZE_BYTES));
-		CATCH_SIGNAL(vertexBufferTransferCommandBuffer[u8CurrentFrameInFlight].end_recording_command_buffer());
-		CATCH_SIGNAL(pDeviceQueues[RE_VK_QUEUE_TRANSFER_INDEX]->submit_to_queue(0U, nullptr, nullptr, 1U, &vertexBufferTransferCommandBuffer[u8CurrentFrameInFlight], 1U, &semaphoreWaitForVertexBufferTransfer[u8CurrentFrameInFlight], nullptr));
+		CATCH_SIGNAL(vertexBufferTransferCommandBuffers[u8CurrentFrameInFlight].reset_command_buffer(0));
+		CATCH_SIGNAL(vertexBufferTransferCommandBuffers[u8CurrentFrameInFlight].begin_recording_command_buffer(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT));
+		CATCH_SIGNAL(vertexBufferTransferCommandBuffers[u8CurrentFrameInFlight].cmd_copy_buffer(&gameObjectVertexStagingBuffer, &gameObjectVertexBuffer, u16GameObjectsToRenderCount * 4U * RE_VK_VERTEX_TOTAL_SIZE_BYTES));
+		CATCH_SIGNAL(vertexBufferTransferCommandBuffers[u8CurrentFrameInFlight].end_recording_command_buffer());
+		CATCH_SIGNAL(pDeviceQueues[RE_VK_QUEUE_TRANSFER_INDEX]->submit_to_queue(0U, nullptr, nullptr, 1U, &vertexBufferTransferCommandBuffers[u8CurrentFrameInFlight], 1U, &semaphoreWaitForVertexBufferTransfer[u8CurrentFrameInFlight], nullptr));
 	}
 
 }

@@ -1,4 +1,5 @@
 @echo off
+SETLOCAL EnableDelayedExpansion
 
 set SRC=src
 set BIN=bin\MinGW
@@ -7,33 +8,46 @@ set CC=g++
 set CFLAG=-std=c++20 -pedantic-errors -Wall -march=x86-64 -m64 -ffast-math -O2 -D_WIN32_WINNT=0x0A00
 set LDFLAG=-lRE -lgdi32 -luser32 -I%SRC% -L%BIN% -static-libgcc -static-libstdc++
 
-for %%x in (%SRC%\*.cpp) do (
-	echo %%x
-	%CC% %CFLAG% -c -I"C:\VulkanSDK\Include" "%%x"
+for %%f in (%SRC%\*.cpp) do (
+	echo %%f
+	%CC% %CFLAG% -c -I"C:\VulkanSDK\Include" "%%f"
 	if %ERRORLEVEL% NEQ 0 (
 		del /f *.o
+		echo ERROR : Failed compiling engine source code
 		pause
 		exit 1
 	)
 )
 del /f "%BIN%\*.o"
 move *.o %BIN% >nul
-ar rs %BIN%\libRE.a %BIN%\*.o
-for %%x in (*.cpp) do (
-	echo %%x
-	%CC% %CFLAG% -c -I"src" "%%x"
+for %%f in (%BIN%\*.o) do (
+	ar rs %BIN%\libRE.a "%%f"
+)
+for %%f in (*.cpp) do (
+	echo %%f
+	%CC% %CFLAG% -c -I"src" "%%f"
 	if %ERRORLEVEL% NEQ 0 (
 		del /f *.o
+		echo ERROR : Failed compiling game source code
 		pause
 		exit 1
 	)
 )
-%CC% -o "Game (MinGW; Windows).exe" *.o -mwindows %LDFLAG%
+for %%f in (*.o) do (
+	set OBJS=!OBJS! %%f
+)
+%CC% -o "Game (MinGW; Windows).exe" %OBJS% -mwindows %LDFLAG%
 if %ERRORLEVEL% NEQ 0 (
 	del /f *.o
+	echo ERROR : Failed generating Windows executable
 	pause
 	exit 1
 )
-%CC% -o "Game (MinGW; Console).exe" *.o %LDFLAG%
+%CC% -o "Game (MinGW; Console).exe" %OBJS% %LDFLAG%
 del /f *.o
+if %ERRORLEVEL% NEQ 0 (
+	echo ERROR : Failed generating Console executable
+) else (
+	echo SUCCESS
+)
 pause

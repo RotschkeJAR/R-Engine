@@ -682,12 +682,27 @@ namespace RE {
 			operator VkRenderPass() const;
 	};
 
+	class Vulkan_DescriptorSetLayout final {
+		private:
+			VkDescriptorSetLayout vk_descriptorSetLayout;
+
+		public:
+			Vulkan_DescriptorSetLayout();
+			Vulkan_DescriptorSetLayout(const uint32_t u32BindingCount, const VkDescriptorSetLayoutBinding *vk_pDescriptorSetLayoutBindings);
+			~Vulkan_DescriptorSetLayout();
+			VkDescriptorSetLayout get_descriptor_set_layout() const;
+			bool is_valid() const;
+
+			operator VkDescriptorSetLayout() const;
+	};
+
 	class Vulkan_PipelineLayout final {
 		private:
 			VkPipelineLayout vk_hPipelineLayout;
 
 		public:
 			Vulkan_PipelineLayout();
+			Vulkan_PipelineLayout(const uint32_t u32DescriptorSetLayoutCount, const VkDescriptorSetLayout *vk_pDescriptorSetLayouts);
 			~Vulkan_PipelineLayout();
 			VkPipelineLayout get_pipeline_layout() const;
 			bool is_valid() const;

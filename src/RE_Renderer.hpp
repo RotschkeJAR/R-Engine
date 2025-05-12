@@ -30,7 +30,7 @@ namespace RE {
 			Vulkan_PipelineLayout gameObjectsPipelineLayout;
 			Vulkan_GraphicsPipeline gameObjectsGraphicsPipeline;
 			Vulkan_Buffer gameObjectVertexBuffer, gameObjectVertexStagingBuffer;
-			Vulkan_CommandBuffer vertexBufferTransferCommandBuffer[RE_VK_FRAMES_IN_FLIGHT];
+			Vulkan_CommandBuffer vertexBufferTransferCommandBuffers[RE_VK_FRAMES_IN_FLIGHT];
 			float *pVertices;
 			uint16_t u16GameObjectsToRenderCount;
 

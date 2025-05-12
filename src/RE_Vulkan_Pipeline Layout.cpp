@@ -2,16 +2,20 @@
 #include "RE_Render System.hpp"
 
 namespace RE {
+
+	Vulkan_PipelineLayout::Vulkan_PipelineLayout() : Vulkan_PipelineLayout(0U, nullptr) {}
 	
-	Vulkan_PipelineLayout::Vulkan_PipelineLayout() : vk_hPipelineLayout(VK_NULL_HANDLE) {
+	Vulkan_PipelineLayout::Vulkan_PipelineLayout(const uint32_t u32DescriptorSetLayoutCount, const VkDescriptorSetLayout *vk_pDescriptorSetLayouts) : vk_hPipelineLayout(VK_NULL_HANDLE) {
 		VkPipelineLayoutCreateInfo vk_pipelineLayoutCreateInfo = {};
 		vk_pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-		vk_pipelineLayoutCreateInfo.setLayoutCount = 0U;
-		vk_pipelineLayoutCreateInfo.pSetLayouts = nullptr;
+		vk_pipelineLayoutCreateInfo.setLayoutCount = u32DescriptorSetLayoutCount;
+		vk_pipelineLayoutCreateInfo.pSetLayouts = vk_pDescriptorSetLayouts;
 		vk_pipelineLayoutCreateInfo.pushConstantRangeCount = 0U;
 		vk_pipelineLayoutCreateInfo.pPushConstantRanges = nullptr;
-		if (!CHECK_VK_RESULT(vkCreatePipelineLayout(vk_hDevice, &vk_pipelineLayoutCreateInfo, nullptr, &vk_hPipelineLayout)))
+		if (!CHECK_VK_RESULT(vkCreatePipelineLayout(vk_hDevice, &vk_pipelineLayoutCreateInfo, nullptr, &vk_hPipelineLayout))) {
+			RE_ERROR("Failed to create pipeline layout in Vulkan");
 			vk_hPipelineLayout = VK_NULL_HANDLE;
+		}
 	}
 
 	Vulkan_PipelineLayout::~Vulkan_PipelineLayout() {

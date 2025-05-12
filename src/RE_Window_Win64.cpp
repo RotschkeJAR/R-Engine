@@ -181,7 +181,7 @@ namespace RE {
 		}
 		BOOL win_dpiAwarenessChangedResult;
 		CATCH_SIGNAL(win_dpiAwarenessChangedResult = SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_UNAWARE));
-		if (!win_dpiAwarenessChangedResult) {
+		if (win_dpiAwarenessChangedResult == FALSE) {
 			RE_FATAL_ERROR("Failed telling Windows R-Engine's DPI awareness");
 			return;
 		}

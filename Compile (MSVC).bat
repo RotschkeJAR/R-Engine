@@ -4,7 +4,7 @@ set SRC=src
 set BIN=bin\MSVC
 
 set CC=cl
-set CFLAG=/nologo /EHsc /std:c++20 /W1 /favor:blend
+set CFLAG=/nologo /EHsc /std:c++20 /W1 /D_WIN32_WINNT=0x0A00 /favor:blend
 set LDFLAG=gdi32.lib user32.lib
 
 set OUT_LIB=%BIN%\RE.lib
@@ -12,7 +12,7 @@ set OUT_LIB=%BIN%\RE.lib
 call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
 
 del /f *.obj %BIN%\*.obj
-%CC% %CFLAG% /c %SRC%\*.cpp /I "C:\VulkanSDK\Include"
+%CC% %CFLAG% /c %SRC%\*.cpp /I"C:\VulkanSDK\Include"
 if %errorlevel% NEQ 0 (
 	del /f *.obj
 	pause

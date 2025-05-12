@@ -25,7 +25,9 @@
 #  define NOMINMAX
 # endif
 # define WIN32_LEAN_AND_MEAN /* speeds compilation up */
+# define WINVER _WIN32_WINNT
 # include <windows.h>
+# include <shellscalingapi.h>
 # include <windowsx.h>
 #elif defined RE_OS_LINUX
 # include <X11/Xlib.h>

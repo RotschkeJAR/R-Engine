@@ -1,6 +1,8 @@
 @echo off
 SETLOCAL EnableDelayedExpansion
 
+rem Script for compiling with LLVM-MinGW 20250430 (LLVM 20.1.4) from https://github.com/mstorsjo/llvm-mingw/releases
+
 set SRC=src
 set BIN=bin\MinGW
 

@@ -684,7 +684,7 @@ namespace RE {
 
 	class Vulkan_DescriptorSetLayout final {
 		private:
-			VkDescriptorSetLayout vk_descriptorSetLayout;
+			VkDescriptorSetLayout vk_hDescriptorSetLayout;
 
 		public:
 			Vulkan_DescriptorSetLayout();
@@ -702,6 +702,7 @@ namespace RE {
 
 		public:
 			Vulkan_PipelineLayout();
+			Vulkan_PipelineLayout(const uint32_t u32DescriptorSetLayoutCount, const Vulkan_DescriptorSetLayout *pDescriptorSetLayouts);
 			Vulkan_PipelineLayout(const uint32_t u32DescriptorSetLayoutCount, const VkDescriptorSetLayout *vk_pDescriptorSetLayouts);
 			~Vulkan_PipelineLayout();
 			VkPipelineLayout get_pipeline_layout() const;

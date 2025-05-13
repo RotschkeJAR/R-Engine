@@ -8,6 +8,8 @@ namespace RE {
 #define RE_VK_RENDERABLE_RECTANGLES_COUNT 16384U
 #define RE_VK_FRAMES_IN_FLIGHT 2U
 
+	typedef float REgameObjectVertex_t;
+
 	class SubRenderer {
 		protected:
 			Vulkan_CommandBuffer **ppSecondaryCommandBuffers;
@@ -16,7 +18,7 @@ namespace RE {
 		public:
 			SubRenderer();
 			~SubRenderer();
-			virtual void record_secondary_command_buffer(const uint32_t u32CommandBufferIndex) const = 0;
+			virtual void record_secondary_command_buffer(const uint32_t u32CurrentFramebufferIndex, const uint8_t u8CurrentFrameInFlight) const = 0;
 			virtual void add_secondary_command_buffer(const Vulkan_CommandBuffer& rPrimaryCommandBuffer, const uint32_t u32FramebufferIndex) const = 0;
 			virtual void render(const uint32_t u32CurrentFramebufferIndex, const uint8_t u8CurrentFrameInFlight) = 0;
 			bool is_valid() const;
@@ -27,11 +29,13 @@ namespace RE {
 		private:
 			Vulkan_Shader gameObjectsVertexShader;
 			Vulkan_Shader gameObjectsFragmentShader;
+			Vulkan_DescriptorSetLayout gameObjectsDescriptorSetLayout;
 			Vulkan_PipelineLayout gameObjectsPipelineLayout;
 			Vulkan_GraphicsPipeline gameObjectsGraphicsPipeline;
-			Vulkan_Buffer gameObjectVertexBuffer, gameObjectVertexStagingBuffer;
+			Vulkan_Buffer gameObjectVertexBuffers[RE_VK_FRAMES_IN_FLIGHT], gameObjectVertexStagingBuffer, uniformBuffers[RE_VK_FRAMES_IN_FLIGHT];
 			Vulkan_CommandBuffer vertexBufferTransferCommandBuffers[RE_VK_FRAMES_IN_FLIGHT];
-			float *pVertices;
+			REgameObjectVertex_t *pVertices;
+			void *pUniformBuffer[RE_VK_FRAMES_IN_FLIGHT];
 			uint16_t u16GameObjectsToRenderCount;
 
 		public:
@@ -39,7 +43,7 @@ namespace RE {
 
 			Renderer_GameObject(const Vulkan_RenderPass *pRenderPass);
 			~Renderer_GameObject();
-			void record_secondary_command_buffer(const uint32_t u32CommandBufferIndex) const;
+			void record_secondary_command_buffer(const uint32_t u32CurrentFramebufferIndex, const uint8_t u8CurrentFrameInFlight) const;
 			void add_secondary_command_buffer(const Vulkan_CommandBuffer& rPrimaryCommandBuffer, const uint32_t u32FramebufferIndex) const;
 			void render(const uint32_t u32CurrentFramebufferIndex, const uint8_t u8CurrentFrameInFlight);
 	};

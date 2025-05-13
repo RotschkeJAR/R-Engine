@@ -1,6 +1,8 @@
 @echo off
 SETLOCAL EnableDelayedExpansion
 
+rem Script for compiling with MSVC 2022 x64 native tools
+
 set SRC=src
 set BIN=bin\MSVC
 
@@ -24,16 +26,27 @@ for %%f in (%SRC%\*.cpp) do (
 )
 move *.obj %BIN%
 lib /NOLOGO /OUT:%OUT_LIB% %BIN%\*.obj
-%CC% %CFLAG% /I%SRC% *.cpp /Fe:"Game (MSVC; Windows).exe" /link %OUT_LIB% %LDFLAG% /SUBSYSTEM:WINDOWS
+for %%f in (*.cpp) do (
+	%CC% %CFLAG% /c /I%SRC% *.cpp "%%f"
+	if %ERRORLEVEL% NEQ 0 (
+		del /f *.obj
+		echo ERROR : Failed compiling game source code
+		pause
+		exit 1
+	)
+)
+link /NOLOGO *.obj %OUT_LIB% %LDFLAG% /OUT:"Game (MSVC; Windows).exe" /SUBSYSTEM:WINDOWS
 if %ERRORLEVEL% NEQ 0 (
+	del /f *.obj
 	echo ERROR : Failed generating Windows executable
 	pause
 	exit 1
 )
-%CC% %CFLAG% /I%SRC% *.cpp /Fe:"Game (MSVC; Console).exe" /link %OUT_LIB% %LDFLAG% /SUBSYSTEM:CONSOLE
+link /NOLOGO *.obj %OUT_LIB% %LDFLAG% /OUT:"Game (MSVC; Console).exe" /SUBSYSTEM:CONSOLE
 if %ERRORLEVEL% NEQ 0 (
 	echo ERROR : Failed generating Console executable
 ) else (
 	echo SUCCESS
 )
+del /f *.obj
 pause

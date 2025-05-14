@@ -15,12 +15,21 @@ namespace RE {
 #define RE_VK_VERTEX_COLOR_OFFSET_BYTES (RE_VK_VERTEX_COLOR_OFFSET * sizeof(REgameObjectVertex_t))
 #define RE_VK_VERTEX_TOTAL_SIZE (RE_VK_VERTEX_POSITION_SIZE + RE_VK_VERTEX_COLOR_SIZE)
 #define RE_VK_VERTEX_TOTAL_SIZE_BYTES (RE_VK_VERTEX_TOTAL_SIZE * sizeof(REgameObjectVertex_t))
-#define RE_VK_VERTEX_BUFFER_BYTES (RE_VK_VERTEX_TOTAL_SIZE_BYTES * 4U * RE_VK_RENDERABLE_RECTANGLES_COUNT)
+#define RE_VK_VERTEX_BUFFER_SIZE_BYTES (RE_VK_VERTEX_TOTAL_SIZE_BYTES * 4U * RE_VK_RENDERABLE_RECTANGLES_COUNT)
 
-#define RE_VK_UNIFORM_BUFFER_BYTES 1UL
+#define RE_VK_VIEW_MATRIX_SIZE (4U * 4U)
+#define RE_VK_UNIFORM_BUFFER_SIZE RE_VK_VIEW_MATRIX_SIZE
+#define RE_VK_UNIFORM_BUFFER_SIZE_BYTES (RE_VK_UNIFORM_BUFFER_SIZE * sizeof(REuniformCamPos_t))
 
-	constexpr uint32_t u32DescriptorSetLayoutBindingCount = 1U;
-	constexpr VkDescriptorSetLayoutBinding vk_descriptorSetLayoutBindings[u32DescriptorSetLayoutBindingCount] = {
+#define RE_VK_GAME_OBJECTS_DESCRIPTOR_SET_LAYOUT_BINDING_COUNT 1U
+#define RE_VK_GAME_OBJECTS_DESCRIPTOR_POOL_SIZE 1U
+#define RE_VK_GAME_OBJECTS_VERTEX_INPUT_BINDING_DESCRIPTION_COUNT 1U
+#define RE_VK_GAME_OBJECTS_VERTEX_INPUT_ATTRIB_DESCRIPTION_COUNT 2U
+#define RE_VK_GAME_OBJECTS_VERTEX_BUFFER_QUEUE_COUNT 1U
+#define RE_VK_GAME_OBJECTS_VERTEX_STAGING_BUFFER_QUEUE_COUNT 1U
+#define RE_VK_GAME_OBJECTS_UNIFORM_BUFFER_QUEUE_COUNT 1U
+
+	constexpr VkDescriptorSetLayoutBinding vk_descriptorSetLayoutBindings[RE_VK_GAME_OBJECTS_DESCRIPTOR_SET_LAYOUT_BINDING_COUNT] = {
 		{
 			.binding = 0U,
 			.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -29,16 +38,20 @@ namespace RE {
 			.pImmutableSamplers = nullptr
 		}
 	};
-	constexpr uint32_t u32GameObjectsVertexInputBindingDescriptionCount = 1U;
-	constexpr VkVertexInputBindingDescription vk_gameObjectsVertexInputBindingDescriptions[u32GameObjectsVertexInputBindingDescriptionCount] = {
+	constexpr VkDescriptorPoolSize vk_descriptorPoolSize[RE_VK_GAME_OBJECTS_DESCRIPTOR_POOL_SIZE] = {
+		{
+			.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+			.descriptorCount = RE_VK_FRAMES_IN_FLIGHT
+		}
+	};
+	constexpr VkVertexInputBindingDescription vk_gameObjectsVertexInputBindingDescriptions[RE_VK_GAME_OBJECTS_VERTEX_INPUT_BINDING_DESCRIPTION_COUNT] = {
 		{
 			.binding = 0U,
 			.stride = RE_VK_VERTEX_TOTAL_SIZE_BYTES,
 			.inputRate = VK_VERTEX_INPUT_RATE_VERTEX
 		}
 	};
-	constexpr uint32_t u32GameObjectsVertexInputAttributeDescriptionCount = 2U;
-	constexpr VkVertexInputAttributeDescription vk_gameObjectsVertexInputAttributeDescriptions[u32GameObjectsVertexInputAttributeDescriptionCount] = {
+	constexpr VkVertexInputAttributeDescription vk_gameObjectsVertexInputAttributeDescriptions[RE_VK_GAME_OBJECTS_VERTEX_INPUT_ATTRIB_DESCRIPTION_COUNT] = {
 		{
 			.location = 0U,
 			.binding = 0U,
@@ -51,54 +64,89 @@ namespace RE {
 			.offset = RE_VK_VERTEX_COLOR_OFFSET_BYTES
 		}
 	};
-	constexpr uint32_t u32gameObjectVertexBuffersQueueCount = 1U;
-	constexpr uint32_t u32gameObjectVertexBuffersQueues[u32gameObjectVertexBuffersQueueCount] = {RE_VK_QUEUE_TRANSFER_INDEX};
-	constexpr uint32_t u32gameObjectVertexStagingBufferQueueCount = 1U;
-	constexpr uint32_t u32gameObjectVertexStagingBufferQueues[u32gameObjectVertexStagingBufferQueueCount] = {RE_VK_QUEUE_GRAPHICS_INDEX};
-	constexpr uint32_t u32GameObjectUniformBufferQueueCount = 1U;
-	constexpr uint32_t u32GameObjectUniformBufferQueues[u32GameObjectUniformBufferQueueCount] = {RE_VK_QUEUE_GRAPHICS_INDEX};
+	constexpr uint32_t u32vertexBuffersQueues[RE_VK_GAME_OBJECTS_VERTEX_BUFFER_QUEUE_COUNT] = {RE_VK_QUEUE_TRANSFER_INDEX};
+	constexpr uint32_t u32vertexStagingBufferQueues[RE_VK_GAME_OBJECTS_VERTEX_STAGING_BUFFER_QUEUE_COUNT] = {RE_VK_QUEUE_GRAPHICS_INDEX};
+	constexpr uint32_t u32GameObjectUniformBufferQueues[RE_VK_GAME_OBJECTS_UNIFORM_BUFFER_QUEUE_COUNT] = {RE_VK_QUEUE_GRAPHICS_INDEX};
 	
-	Renderer_GameObject::Renderer_GameObject(const Vulkan_RenderPass *pRenderPass) : gameObjectsVertexShader("shaders/vertex.spv"), 
-	gameObjectsFragmentShader("shaders/fragment.spv"), 
-	gameObjectsDescriptorSetLayout(u32DescriptorSetLayoutBindingCount, vk_descriptorSetLayoutBindings), 
-	gameObjectsPipelineLayout(1U, &gameObjectsDescriptorSetLayout), 
-	gameObjectsGraphicsPipeline(&gameObjectsVertexShader, &gameObjectsFragmentShader, u32GameObjectsVertexInputBindingDescriptionCount, vk_gameObjectsVertexInputBindingDescriptions, u32GameObjectsVertexInputAttributeDescriptionCount, vk_gameObjectsVertexInputAttributeDescriptions, &gameObjectsPipelineLayout, pRenderPass), 
+	Renderer_GameObject::Renderer_GameObject(const Vulkan_RenderPass *pRenderPass) 
 #if (RE_VK_FRAMES_IN_FLIGHT == 2)
-	gameObjectVertexBuffers{Vulkan_Buffer(RE_VK_VERTEX_BUFFER_BYTES, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, u32gameObjectVertexBuffersQueues, u32gameObjectVertexBuffersQueueCount, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT), Vulkan_Buffer(RE_VK_VERTEX_BUFFER_BYTES, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, u32gameObjectVertexBuffersQueues, u32gameObjectVertexBuffersQueueCount, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)}, 
-	gameObjectVertexStagingBuffer(RE_VK_VERTEX_BUFFER_BYTES, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, u32gameObjectVertexStagingBufferQueues, u32gameObjectVertexStagingBufferQueueCount, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), 
-	uniformBuffers{Vulkan_Buffer(RE_VK_UNIFORM_BUFFER_BYTES, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, u32GameObjectUniformBufferQueues, u32GameObjectUniformBufferQueueCount, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), Vulkan_Buffer(RE_VK_UNIFORM_BUFFER_BYTES, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, u32GameObjectUniformBufferQueues, u32GameObjectUniformBufferQueueCount, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)}, 
-	vertexBufferTransferCommandBuffers{Vulkan_CommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, pCommandPools[RE_VK_COMMAND_POOL_TRANSFER_INDEX]), Vulkan_CommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, pCommandPools[RE_VK_COMMAND_POOL_TRANSFER_INDEX])}, 
+	: vertexShader("shaders/vertex.spv"), 
+	fragmentShader("shaders/fragment.spv"), 
+	descriptorSetLayout(RE_VK_GAME_OBJECTS_DESCRIPTOR_SET_LAYOUT_BINDING_COUNT, vk_descriptorSetLayoutBindings), 
+	descriptorPool(RE_VK_GAME_OBJECTS_DESCRIPTOR_POOL_SIZE, vk_descriptorPoolSize, RE_VK_FRAMES_IN_FLIGHT), 
+	ppDescriptorSets(nullptr), 
+	pipelineLayout(RE_VK_GAME_OBJECTS_DESCRIPTOR_SET_LAYOUT_BINDING_COUNT, &descriptorSetLayout), 
+	graphicsPipeline(&vertexShader, &fragmentShader, RE_VK_GAME_OBJECTS_VERTEX_INPUT_BINDING_DESCRIPTION_COUNT, vk_gameObjectsVertexInputBindingDescriptions, RE_VK_GAME_OBJECTS_VERTEX_INPUT_ATTRIB_DESCRIPTION_COUNT, vk_gameObjectsVertexInputAttributeDescriptions, &pipelineLayout, pRenderPass), 
+	vertexBuffers{Vulkan_Buffer(RE_VK_VERTEX_BUFFER_SIZE_BYTES, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, u32vertexBuffersQueues, RE_VK_GAME_OBJECTS_VERTEX_BUFFER_QUEUE_COUNT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT), Vulkan_Buffer(RE_VK_VERTEX_BUFFER_SIZE_BYTES, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, u32vertexBuffersQueues, RE_VK_GAME_OBJECTS_VERTEX_BUFFER_QUEUE_COUNT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)}, 
+	vertexStagingBuffer(RE_VK_VERTEX_BUFFER_SIZE_BYTES, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, u32vertexStagingBufferQueues, RE_VK_GAME_OBJECTS_VERTEX_STAGING_BUFFER_QUEUE_COUNT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), 
+	uniformBuffers{Vulkan_Buffer(RE_VK_UNIFORM_BUFFER_SIZE_BYTES, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, u32GameObjectUniformBufferQueues, RE_VK_GAME_OBJECTS_UNIFORM_BUFFER_QUEUE_COUNT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), Vulkan_Buffer(RE_VK_UNIFORM_BUFFER_SIZE_BYTES, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, u32GameObjectUniformBufferQueues, RE_VK_GAME_OBJECTS_UNIFORM_BUFFER_QUEUE_COUNT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)}, 
+	ppVertexBufferTransferCommandBuffers(nullptr), 
+	pVertices(nullptr), 
+	pUniformBuffer{nullptr, nullptr}, 
+	u16GameObjectsToRenderCount(0U) 
 #else
-# error Update the array initialization above!
+# error Update the array initializations above!
 #endif
-	u16GameObjectsToRenderCount(0U) {
+	{
+		if (!is_subrenderer_valid())
+			return;
 		bool bSuccessfullyCreated = true;
 		for (uint8_t u8CurrentTransferCommandBufferIndex = 0U; u8CurrentTransferCommandBufferIndex < RE_VK_FRAMES_IN_FLIGHT; u8CurrentTransferCommandBufferIndex++)
-			if (!vertexBufferTransferCommandBuffers[u8CurrentTransferCommandBufferIndex].is_valid() || !gameObjectVertexBuffers[u8CurrentTransferCommandBufferIndex].is_valid()) {
+			if (!vertexBuffers[u8CurrentTransferCommandBufferIndex].is_valid()) {
 				bSuccessfullyCreated = false;
 				break;
 			}
-		if (!bSuccessfullyCreated || !gameObjectsVertexShader.is_valid() || !gameObjectsFragmentShader.is_valid() || !gameObjectsDescriptorSetLayout.is_valid() || !gameObjectsPipelineLayout.is_valid() || !gameObjectsGraphicsPipeline.is_valid() || !gameObjectVertexStagingBuffer.is_valid()) {
+		if (!bSuccessfullyCreated || !vertexShader.is_valid() || !fragmentShader.is_valid() || !descriptorSetLayout.is_valid() || !pipelineLayout.is_valid() || !graphicsPipeline.is_valid() || !vertexStagingBuffer.is_valid()) {
 			RE_FATAL_ERROR("Failed creating/allocating necessary ressources in Vulkan for rendering game objects");
 			return;
 		}
-		for (uint32_t u32FrameInFlightIndex = 0U; u32FrameInFlightIndex < RE_VK_FRAMES_IN_FLIGHT; u32FrameInFlightIndex++)
-			uniformBuffers[u32FrameInFlightIndex].map_memory((void**)&pUniformBuffer[u32FrameInFlightIndex], 0UL, RE_VK_UNIFORM_BUFFER_BYTES);
-		gameObjectVertexStagingBuffer.map_memory((void**)&pVertices, 0UL, RE_VK_VERTEX_BUFFER_BYTES);
+		ppDescriptorSets = new Vulkan_DescriptorSet*[RE_VK_FRAMES_IN_FLIGHT];
+		if (!CATCH_SIGNAL_AND_RETURN(alloc_vk_descriptor_sets(&descriptorPool, &descriptorSetLayout, RE_VK_FRAMES_IN_FLIGHT, ppDescriptorSets), bool)) {
+			RE_FATAL_ERROR("Failed allocating uniform buffer descriptor sets in Vulkan");
+			DELETE_ARRAY_SAFELY(ppDescriptorSets);
+			return;
+		}
+		ppVertexBufferTransferCommandBuffers = new Vulkan_CommandBuffer*[RE_VK_FRAMES_IN_FLIGHT];
+		if (!CATCH_SIGNAL_AND_RETURN(alloc_vk_command_buffers(pCommandPools[RE_VK_COMMAND_POOL_TRANSFER_INDEX], VK_COMMAND_BUFFER_LEVEL_PRIMARY, RE_VK_FRAMES_IN_FLIGHT, ppVertexBufferTransferCommandBuffers), bool)) {
+			RE_FATAL_ERROR("Failed allocating vertex buffer transfer command buffers in Vulkan");
+			DELETE_ARRAY_SAFELY(ppVertexBufferTransferCommandBuffers);
+			return;
+		}
+		for (uint32_t u32FrameInFlightIndex = 0U; u32FrameInFlightIndex < RE_VK_FRAMES_IN_FLIGHT; u32FrameInFlightIndex++) {
+			uniformBuffers[u32FrameInFlightIndex].map_memory((void**)&pUniformBuffer[u32FrameInFlightIndex], 0UL, RE_VK_UNIFORM_BUFFER_SIZE_BYTES);
+			std::fill(pUniformBuffer[u32FrameInFlightIndex], pUniformBuffer[u32FrameInFlightIndex] + RE_VK_UNIFORM_BUFFER_SIZE, 0.0f);
+		}
+		pUniformBuffer[0][3] = 1.0f;
+		pUniformBuffer[0][7] = 1.0f;
+		pUniformBuffer[0][11] = 1.0f;
+		pUniformBuffer[0][15] = 1.0f;
+		pUniformBuffer[1][3] = 1.0f;
+		pUniformBuffer[1][7] = 1.0f;
+		pUniformBuffer[1][11] = 1.0f;
+		pUniformBuffer[1][15] = 1.0f;
+		vertexStagingBuffer.map_memory((void**)&pVertices, 0UL, RE_VK_VERTEX_BUFFER_SIZE_BYTES);
 	}
 
 	Renderer_GameObject::~Renderer_GameObject() {
 		for (uint32_t u32FrameInFlightIndex = 0U; u32FrameInFlightIndex < RE_VK_FRAMES_IN_FLIGHT; u32FrameInFlightIndex++)
 			uniformBuffers[u32FrameInFlightIndex].unmap_memory();
-		gameObjectVertexStagingBuffer.unmap_memory();
+		vertexStagingBuffer.unmap_memory();
+		if (ppVertexBufferTransferCommandBuffers) {
+			CATCH_SIGNAL(free_vk_command_buffers(RE_VK_FRAMES_IN_FLIGHT, ppVertexBufferTransferCommandBuffers));
+			delete[] ppVertexBufferTransferCommandBuffers;
+		}
+		if (ppDescriptorSets) {
+			CATCH_SIGNAL(free_vk_descriptor_sets(RE_VK_FRAMES_IN_FLIGHT, ppDescriptorSets));
+			delete[] ppDescriptorSets;
+		}
 	}
 
 	void Renderer_GameObject::record_secondary_command_buffer(const uint32_t u32CurrentFramebufferIndex, const uint8_t u8CurrentFrameInFlight) const {
 		CATCH_SIGNAL(ppSecondaryCommandBuffers[u32CurrentFramebufferIndex]->begin_recording_command_buffer(VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT, &Renderer::pInstance->renderPass, 0U, Renderer::pInstance->ppFramebuffers[u32CurrentFramebufferIndex]));
 		if (u16GameObjectsToRenderCount) {
-			CATCH_SIGNAL(ppSecondaryCommandBuffers[u32CurrentFramebufferIndex]->cmd_bind_graphics_pipeline(&gameObjectsGraphicsPipeline));
+			CATCH_SIGNAL(ppSecondaryCommandBuffers[u32CurrentFramebufferIndex]->cmd_bind_graphics_pipeline(&graphicsPipeline));
 			CATCH_SIGNAL(ppSecondaryCommandBuffers[u32CurrentFramebufferIndex]->cmd_bind_index_buffer(&Renderer::pInstance->rectangleIndexBuffer, VK_INDEX_TYPE_UINT16));
-			CATCH_SIGNAL(ppSecondaryCommandBuffers[u32CurrentFramebufferIndex]->cmd_bind_vertex_buffer(&gameObjectVertexBuffers[u8CurrentFrameInFlight], 0UL));
+			CATCH_SIGNAL(ppSecondaryCommandBuffers[u32CurrentFramebufferIndex]->cmd_bind_vertex_buffer(&vertexBuffers[u8CurrentFrameInFlight], 0UL));
 			CATCH_SIGNAL(ppSecondaryCommandBuffers[u32CurrentFramebufferIndex]->cmd_set_viewport(Renderer::pInstance->vk_cameraViewportArea));
 			CATCH_SIGNAL(ppSecondaryCommandBuffers[u32CurrentFramebufferIndex]->cmd_set_scissor(Renderer::pInstance->vk_cameraScissorArea));
 			CATCH_SIGNAL(ppSecondaryCommandBuffers[u32CurrentFramebufferIndex]->cmd_draw_indexed(u16GameObjectsToRenderCount * 6U, 0U, 0U));
@@ -161,11 +209,22 @@ namespace RE {
 			CATCH_SIGNAL(pDeviceQueues[RE_VK_QUEUE_TRANSFER_INDEX]->submit_to_queue(0U, nullptr, nullptr, 0U, nullptr, 1U, &semaphoreWaitForVertexBufferTransfer[u8CurrentFrameInFlight], nullptr));
 			return;
 		}
-		CATCH_SIGNAL(vertexBufferTransferCommandBuffers[u8CurrentFrameInFlight].reset_command_buffer(0));
-		CATCH_SIGNAL(vertexBufferTransferCommandBuffers[u8CurrentFrameInFlight].begin_recording_command_buffer(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT));
-		CATCH_SIGNAL(vertexBufferTransferCommandBuffers[u8CurrentFrameInFlight].cmd_copy_buffer(&gameObjectVertexStagingBuffer, &gameObjectVertexBuffers[u8CurrentFrameInFlight], u16GameObjectsToRenderCount * 4U * RE_VK_VERTEX_TOTAL_SIZE_BYTES));
-		CATCH_SIGNAL(vertexBufferTransferCommandBuffers[u8CurrentFrameInFlight].end_recording_command_buffer());
-		CATCH_SIGNAL(pDeviceQueues[RE_VK_QUEUE_TRANSFER_INDEX]->submit_to_queue(0U, nullptr, nullptr, 1U, &vertexBufferTransferCommandBuffers[u8CurrentFrameInFlight], 1U, &semaphoreWaitForVertexBufferTransfer[u8CurrentFrameInFlight], nullptr));
+		CATCH_SIGNAL(ppVertexBufferTransferCommandBuffers[u8CurrentFrameInFlight]->reset_command_buffer(0));
+		CATCH_SIGNAL(ppVertexBufferTransferCommandBuffers[u8CurrentFrameInFlight]->begin_recording_command_buffer(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT));
+		CATCH_SIGNAL(ppVertexBufferTransferCommandBuffers[u8CurrentFrameInFlight]->cmd_copy_buffer(&vertexStagingBuffer, &vertexBuffers[u8CurrentFrameInFlight], u16GameObjectsToRenderCount * 4U * RE_VK_VERTEX_TOTAL_SIZE_BYTES));
+		CATCH_SIGNAL(ppVertexBufferTransferCommandBuffers[u8CurrentFrameInFlight]->end_recording_command_buffer());
+		CATCH_SIGNAL(pDeviceQueues[RE_VK_QUEUE_TRANSFER_INDEX]->submit_to_queue(0U, nullptr, nullptr, 1U, ppVertexBufferTransferCommandBuffers[u8CurrentFrameInFlight], 1U, &semaphoreWaitForVertexBufferTransfer[u8CurrentFrameInFlight], nullptr));
+	}
+
+	bool Renderer_GameObject::is_valid() const {
+		if (!is_subrenderer_valid())
+			return false;
+		if (!ppDescriptorSets || !ppVertexBufferTransferCommandBuffers)
+			return false;
+		for (uint8_t u8FrameInFlightIndex = 0U; u8FrameInFlightIndex < RE_VK_FRAMES_IN_FLIGHT; u8FrameInFlightIndex++)
+			if (!ppDescriptorSets[u8FrameInFlightIndex]->is_valid() || !vertexBuffers[u8FrameInFlightIndex].is_valid() || !uniformBuffers[u8FrameInFlightIndex].is_valid() || !ppVertexBufferTransferCommandBuffers[u8FrameInFlightIndex]->is_valid() || !pUniformBuffer[u8FrameInFlightIndex])
+				return false;
+		return vertexShader.is_valid() && fragmentShader.is_valid() && descriptorSetLayout.is_valid() && descriptorPool.is_valid() && pipelineLayout.is_valid() && graphicsPipeline.is_valid() && vertexStagingBuffer.is_valid() && pVertices;
 	}
 
 }

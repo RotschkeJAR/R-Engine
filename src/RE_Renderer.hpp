@@ -9,11 +9,13 @@ namespace RE {
 #define RE_VK_FRAMES_IN_FLIGHT 2U
 
 	typedef float REgameObjectVertex_t;
+	typedef float REuniformCamPos_t;
 
 	class SubRenderer {
 		protected:
 			Vulkan_CommandBuffer **ppSecondaryCommandBuffers;
-			bool bValid;
+
+			bool is_subrenderer_valid() const;
 
 		public:
 			SubRenderer();
@@ -21,21 +23,23 @@ namespace RE {
 			virtual void record_secondary_command_buffer(const uint32_t u32CurrentFramebufferIndex, const uint8_t u8CurrentFrameInFlight) const = 0;
 			virtual void add_secondary_command_buffer(const Vulkan_CommandBuffer& rPrimaryCommandBuffer, const uint32_t u32FramebufferIndex) const = 0;
 			virtual void render(const uint32_t u32CurrentFramebufferIndex, const uint8_t u8CurrentFrameInFlight) = 0;
-			bool is_valid() const;
+			virtual bool is_valid() const = 0;
 	};
 
 
 	class Renderer_GameObject final : public SubRenderer {
 		private:
-			Vulkan_Shader gameObjectsVertexShader;
-			Vulkan_Shader gameObjectsFragmentShader;
-			Vulkan_DescriptorSetLayout gameObjectsDescriptorSetLayout;
-			Vulkan_PipelineLayout gameObjectsPipelineLayout;
-			Vulkan_GraphicsPipeline gameObjectsGraphicsPipeline;
-			Vulkan_Buffer gameObjectVertexBuffers[RE_VK_FRAMES_IN_FLIGHT], gameObjectVertexStagingBuffer, uniformBuffers[RE_VK_FRAMES_IN_FLIGHT];
-			Vulkan_CommandBuffer vertexBufferTransferCommandBuffers[RE_VK_FRAMES_IN_FLIGHT];
+			Vulkan_Shader vertexShader;
+			Vulkan_Shader fragmentShader;
+			Vulkan_DescriptorSetLayout descriptorSetLayout;
+			Vulkan_DescriptorPool descriptorPool;
+			Vulkan_DescriptorSet **ppDescriptorSets;
+			Vulkan_PipelineLayout pipelineLayout;
+			Vulkan_GraphicsPipeline graphicsPipeline;
+			Vulkan_Buffer vertexBuffers[RE_VK_FRAMES_IN_FLIGHT], vertexStagingBuffer, uniformBuffers[RE_VK_FRAMES_IN_FLIGHT];
+			Vulkan_CommandBuffer **ppVertexBufferTransferCommandBuffers;
 			REgameObjectVertex_t *pVertices;
-			void *pUniformBuffer[RE_VK_FRAMES_IN_FLIGHT];
+			REuniformCamPos_t *pUniformBuffer[RE_VK_FRAMES_IN_FLIGHT];
 			uint16_t u16GameObjectsToRenderCount;
 
 		public:
@@ -46,6 +50,7 @@ namespace RE {
 			void record_secondary_command_buffer(const uint32_t u32CurrentFramebufferIndex, const uint8_t u8CurrentFrameInFlight) const;
 			void add_secondary_command_buffer(const Vulkan_CommandBuffer& rPrimaryCommandBuffer, const uint32_t u32FramebufferIndex) const;
 			void render(const uint32_t u32CurrentFramebufferIndex, const uint8_t u8CurrentFrameInFlight);
+			bool is_valid() const;
 	};
 
 	extern Camera *pActiveCamera;

@@ -34,23 +34,24 @@ namespace RE {
 
 
 	
-	Vulkan_CommandBuffer::Vulkan_CommandBuffer(const Vulkan_CommandPool *pCommandPool) : vk_hCommandBuffer(VK_NULL_HANDLE), vk_hCommandPool(*pCommandPool) {}
-	Vulkan_CommandBuffer::Vulkan_CommandBuffer(const VkCommandBufferLevel vk_eCommandBufferLevel, const Vulkan_CommandPool *pCommandPool) : vk_hCommandBuffer(VK_NULL_HANDLE), vk_hCommandPool(*pCommandPool) {
+	Vulkan_CommandBuffer::Vulkan_CommandBuffer(const VkCommandPool vk_hCommandPool) : vk_hCommandBuffer(VK_NULL_HANDLE), vk_hCommandPool(vk_hCommandPool) {}
+	Vulkan_CommandBuffer::Vulkan_CommandBuffer(const VkCommandBufferLevel vk_eCommandBufferLevel, const VkCommandPool vk_hCommandPool) : vk_hCommandBuffer(VK_NULL_HANDLE), vk_hCommandPool(vk_hCommandPool) {
 		VkCommandBufferAllocateInfo vk_commandBufferAllocInfo = {};
 		vk_commandBufferAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 		vk_commandBufferAllocInfo.level = vk_eCommandBufferLevel;
-		vk_commandBufferAllocInfo.commandPool = *pCommandPool;
+		vk_commandBufferAllocInfo.commandPool = vk_hCommandPool;
 		vk_commandBufferAllocInfo.commandBufferCount = 1U;
 		if (!CHECK_VK_RESULT(vkAllocateCommandBuffers(vk_hDevice, &vk_commandBufferAllocInfo, &vk_hCommandBuffer))) {
 			RE_ERROR("Failed allocating Vulkan command buffer");
 			vk_hCommandBuffer = VK_NULL_HANDLE;
 		}
 	}
+	Vulkan_CommandBuffer::Vulkan_CommandBuffer(const Vulkan_CommandPool *pCommandPool) : Vulkan_CommandBuffer(pCommandPool->get_command_pool()) {}
+	Vulkan_CommandBuffer::Vulkan_CommandBuffer(const VkCommandBufferLevel vk_eCommandBufferLevel, const Vulkan_CommandPool *pCommandPool) : Vulkan_CommandBuffer(vk_eCommandBufferLevel, pCommandPool->get_command_pool()) {}
 
 	Vulkan_CommandBuffer::~Vulkan_CommandBuffer() {
-		if (!is_valid())
-			return;
-		CATCH_SIGNAL(vkFreeCommandBuffers(vk_hDevice, vk_hCommandPool, 1U, &vk_hCommandBuffer));
+		if (is_valid())
+			CATCH_SIGNAL(vkFreeCommandBuffers(vk_hDevice, vk_hCommandPool, 1U, &vk_hCommandBuffer));
 	}
 
 	void Vulkan_CommandBuffer::reset_command_buffer(const VkCommandBufferResetFlags vk_eCommandBufferResetFlags) const {
@@ -258,13 +259,13 @@ namespace RE {
 
 
 
-	bool alloc_vk_command_buffers(const VkCommandBufferLevel vk_eCommandBufferLevel, const Vulkan_CommandPool *pCommandPool, const uint32_t u32CommandBufferCount, Vulkan_CommandBuffer **ppCommandBuffers) {
+	bool alloc_vk_command_buffers(const VkCommandPool vk_hCommandPool, const VkCommandBufferLevel vk_eCommandBufferLevel, const uint32_t u32CommandBufferCount, Vulkan_CommandBuffer **ppCommandBuffers) {
 		for (uint32_t i = 0U; i < u32CommandBufferCount; i++)
-			ppCommandBuffers[i] = new Vulkan_CommandBuffer(pCommandPool);
+			ppCommandBuffers[i] = new Vulkan_CommandBuffer(vk_hCommandPool);
 		VkCommandBufferAllocateInfo vk_commandBufferAllocInfo = {};
 		vk_commandBufferAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 		vk_commandBufferAllocInfo.level = vk_eCommandBufferLevel;
-		vk_commandBufferAllocInfo.commandPool = *pCommandPool;
+		vk_commandBufferAllocInfo.commandPool = vk_hCommandPool;
 		vk_commandBufferAllocInfo.commandBufferCount = u32CommandBufferCount;
 		VkCommandBuffer *const vk_phCommandBuffers = new VkCommandBuffer[u32CommandBufferCount] {};
 		if (!CHECK_VK_RESULT(vkAllocateCommandBuffers(vk_hDevice, &vk_commandBufferAllocInfo, vk_phCommandBuffers))) {
@@ -278,11 +279,20 @@ namespace RE {
 		return true;
 	}
 
-	void free_vk_command_buffers(const Vulkan_CommandPool *pCommandPool, const uint32_t u32CommandBufferCount, Vulkan_CommandBuffer **ppCommandBuffers) {
+	bool alloc_vk_command_buffers(const Vulkan_CommandPool *pCommandPool, const VkCommandBufferLevel vk_eCommandBufferLevel, const uint32_t u32CommandBufferCount, Vulkan_CommandBuffer **ppCommandBuffers) {
+		return CATCH_SIGNAL_AND_RETURN(alloc_vk_command_buffers(pCommandPool->get_command_pool(), vk_eCommandBufferLevel, u32CommandBufferCount, ppCommandBuffers), bool);
+	}
+
+	void free_vk_command_buffers(const uint32_t u32CommandBufferCount, Vulkan_CommandBuffer **ppCommandBuffers) {
 		VkCommandBuffer *vk_phCommandBuffers = new VkCommandBuffer[u32CommandBufferCount];
-		for (uint32_t u32CommandBufferIndex = 0U; u32CommandBufferIndex < u32CommandBufferCount; u32CommandBufferIndex++)
+		for (uint32_t u32CommandBufferIndex = 0U; u32CommandBufferIndex < u32CommandBufferCount; u32CommandBufferIndex++) {
 			vk_phCommandBuffers[u32CommandBufferIndex] = ppCommandBuffers[u32CommandBufferIndex]->get_command_buffer();
-		CATCH_SIGNAL(vkFreeCommandBuffers(vk_hDevice, *pCommandPool, u32CommandBufferCount, vk_phCommandBuffers));
+			ppCommandBuffers[u32CommandBufferIndex]->vk_hCommandBuffer = VK_NULL_HANDLE;
+		}
+		CATCH_SIGNAL(vkFreeCommandBuffers(vk_hDevice, ppCommandBuffers[0]->vk_hCommandPool, u32CommandBufferCount, vk_phCommandBuffers));
+		delete[] vk_phCommandBuffers;
+		for (uint32_t u32CommandBufferIndex = 0U; u32CommandBufferIndex < u32CommandBufferCount; u32CommandBufferIndex++)
+			delete ppCommandBuffers[u32CommandBufferIndex];
 	}
 
 }

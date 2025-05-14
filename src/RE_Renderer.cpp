@@ -9,9 +9,9 @@ namespace RE {
 #define RE_VK_INDEX_BUFFER_SIZE RE_VK_RENDERABLE_RECTANGLES_COUNT * 6U
 #define RE_VK_INDEX_BUFFER_BYTES RE_VK_INDEX_BUFFER_SIZE * sizeof(REindex_t)
 
-	SubRenderer::SubRenderer() : ppSecondaryCommandBuffers(nullptr), bValid(false) {
+	SubRenderer::SubRenderer() : ppSecondaryCommandBuffers(nullptr) {
 		ppSecondaryCommandBuffers = new Vulkan_CommandBuffer*[u32SwapchainImageCount];
-		if (!CATCH_SIGNAL_AND_RETURN(alloc_vk_command_buffers(VK_COMMAND_BUFFER_LEVEL_SECONDARY, pCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_INDEX], u32SwapchainImageCount, ppSecondaryCommandBuffers), bool)) {
+		if (!CATCH_SIGNAL_AND_RETURN(alloc_vk_command_buffers(pCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_INDEX], VK_COMMAND_BUFFER_LEVEL_SECONDARY, u32SwapchainImageCount, ppSecondaryCommandBuffers), bool)) {
 			RE_FATAL_ERROR("Failed to allocate secondary command buffers for subrenderer");
 			DELETE_ARRAY_SAFELY(ppSecondaryCommandBuffers);
 			return;
@@ -19,13 +19,14 @@ namespace RE {
 	}
 
 	SubRenderer::~SubRenderer() {
-		if (ppSecondaryCommandBuffers)
-			CATCH_SIGNAL(free_vk_command_buffers(pCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_INDEX], u32SwapchainImageCount, ppSecondaryCommandBuffers));
-		DELETE_ARRAY_SAFELY(ppSecondaryCommandBuffers);
+		if (is_subrenderer_valid()) {
+			CATCH_SIGNAL(free_vk_command_buffers(u32SwapchainImageCount, ppSecondaryCommandBuffers));
+			delete[] ppSecondaryCommandBuffers;
+		}
 	}
 
-	bool SubRenderer::is_valid() const {
-		return bValid;
+	bool SubRenderer::is_subrenderer_valid() const {
+		return ppSecondaryCommandBuffers != nullptr;
 	}
 
 
@@ -51,6 +52,8 @@ namespace RE {
 			return;
 		}
 		pInstance = this;
+		if (!gameObjectRenderer.is_valid())
+			return;
 		constexpr uint32_t u32IndexStagingBufferQueueTypes[] = {RE_VK_QUEUE_TRANSFER_INDEX};
 		const Vulkan_Buffer indexStagingBuffer(RE_VK_INDEX_BUFFER_BYTES, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, u32IndexStagingBufferQueueTypes, sizeof(u32IndexStagingBufferQueueTypes) / sizeof(u32IndexStagingBufferQueueTypes[0]), VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 		REindex_t indices[RE_VK_INDEX_BUFFER_SIZE];
@@ -110,7 +113,7 @@ namespace RE {
 
 	void Renderer::create_command_buffers() {
 		ppPrimaryCommandBuffer = new Vulkan_CommandBuffer*[u32SwapchainImageCount];
-		if (!CATCH_SIGNAL_AND_RETURN(alloc_vk_command_buffers(VK_COMMAND_BUFFER_LEVEL_PRIMARY, pCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_INDEX], u32SwapchainImageCount, ppPrimaryCommandBuffer), bool)) {
+		if (!CATCH_SIGNAL_AND_RETURN(alloc_vk_command_buffers(pCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_INDEX], VK_COMMAND_BUFFER_LEVEL_PRIMARY, u32SwapchainImageCount, ppPrimaryCommandBuffer), bool)) {
 			DELETE_ARRAY_SAFELY(ppPrimaryCommandBuffer);
 			RE_FATAL_ERROR("Failed to allocate primary command buffers");
 			return;
@@ -119,7 +122,7 @@ namespace RE {
 	
 	void Renderer::destroy_command_buffers() {
 		if (ppPrimaryCommandBuffer) {
-			CATCH_SIGNAL(free_vk_command_buffers(pCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_INDEX], u32SwapchainImageCount, ppPrimaryCommandBuffer));
+			CATCH_SIGNAL(free_vk_command_buffers(u32SwapchainImageCount, ppPrimaryCommandBuffer));
 			DELETE_ARRAY_SAFELY(ppPrimaryCommandBuffer);
 		}
 	}

@@ -696,6 +696,44 @@ namespace RE {
 			operator VkDescriptorSetLayout() const;
 	};
 
+	class Vulkan_DescriptorPool final {
+		private:
+			VkDescriptorPool vk_hDescriptorPool;
+
+		public:
+			Vulkan_DescriptorPool() = delete;
+			Vulkan_DescriptorPool(const uint32_t u32DescriptorPoolCount, const VkDescriptorPoolSize *vk_pDescriptorPoolSizes, const uint32_t u32MaxDescriptorSets);
+			~Vulkan_DescriptorPool();
+			VkDescriptorPool get_descriptor_pool() const;
+			bool is_valid() const;
+
+			operator VkDescriptorPool() const;
+	};
+
+	class Vulkan_DescriptorSet final {
+		private:
+			VkDescriptorSet vk_hDescriptorSet;
+
+		public:
+			const VkDescriptorPool vk_hDescriptorPool;
+
+			Vulkan_DescriptorSet() = delete;
+			Vulkan_DescriptorSet(const VkDescriptorPool vk_hDescriptorPool);
+			Vulkan_DescriptorSet(const VkDescriptorPool vk_hDescriptorPool, const VkDescriptorSetLayout vk_hDescriptorSetLayout);
+			Vulkan_DescriptorSet(const Vulkan_DescriptorPool *pDescriptorPool, const Vulkan_DescriptorSetLayout *pDescriptorSetLayout);
+			~Vulkan_DescriptorSet();
+			VkDescriptorSet get_descriptor_set() const;
+			bool is_valid() const;
+
+			operator VkDescriptorSet() const;
+
+		friend bool alloc_vk_descriptor_sets(const VkDescriptorPool vk_hDescriptorPool, const VkDescriptorSetLayout vk_hDescriptorSetLayout, const uint32_t u32DescriptorSetCount, Vulkan_DescriptorSet **ppDescriptorSets);
+		friend void free_vk_descriptor_sets(const uint32_t u32DescriptorSetCount, Vulkan_DescriptorSet **ppDescriptorSets);
+	};
+	bool alloc_vk_descriptor_sets(const VkDescriptorPool vk_hDescriptorPool, const VkDescriptorSetLayout vk_hDescriptorSetLayout, const uint32_t u32DescriptorSetCount, Vulkan_DescriptorSet **ppDescriptorSets);
+	bool alloc_vk_descriptor_sets(const Vulkan_DescriptorPool *pDescriptorPool, const Vulkan_DescriptorSetLayout *pDescriptorSetLayout, const uint32_t u32DescriptorSetCount, Vulkan_DescriptorSet **ppDescriptorSets);
+	void free_vk_descriptor_sets(const uint32_t u32DescriptorSetCount, Vulkan_DescriptorSet **ppDescriptorSets);
+
 	class Vulkan_PipelineLayout final {
 		private:
 			VkPipelineLayout vk_hPipelineLayout;
@@ -761,7 +799,9 @@ namespace RE {
 			const VkCommandPool vk_hCommandPool;
 
 			Vulkan_CommandBuffer() = delete;
-			Vulkan_CommandBuffer(const Vulkan_CommandPool *pCommandPool); // does not initialize the Vulkan command buffer
+			Vulkan_CommandBuffer(const VkCommandPool vk_hCommandPool);  // does not fully initialize the Vulkan command buffer
+			Vulkan_CommandBuffer(const VkCommandBufferLevel vk_eCommandBufferLevel, const VkCommandPool vk_hCommandPool);
+			Vulkan_CommandBuffer(const Vulkan_CommandPool *pCommandPool);  // does not fully initialize the Vulkan command buffer
 			Vulkan_CommandBuffer(const VkCommandBufferLevel vk_eCommandBufferLevel, const Vulkan_CommandPool *pCommandPool);
 			~Vulkan_CommandBuffer();
 
@@ -804,10 +844,12 @@ namespace RE {
 
 			operator VkCommandBuffer() const;
 
-		friend bool alloc_vk_command_buffers(const VkCommandBufferLevel vk_eCommandBufferLevel, const Vulkan_CommandPool *pCommandPool, const uint32_t u32CommandBufferCount, Vulkan_CommandBuffer **ppCommandBuffers);
+		friend bool alloc_vk_command_buffers(const VkCommandPool vk_hCommandPool, const VkCommandBufferLevel vk_eCommandBufferLevel, const uint32_t u32CommandBufferCount, Vulkan_CommandBuffer **ppCommandBuffers);
+		friend void free_vk_command_buffers(const uint32_t u32CommandBufferCount, Vulkan_CommandBuffer **ppCommandBuffers);
 	};
-	bool alloc_vk_command_buffers(const VkCommandBufferLevel vk_eCommandBufferLevel, const Vulkan_CommandPool *pCommandPool, const uint32_t u32CommandBufferCount, Vulkan_CommandBuffer **ppCommandBuffers);
-	void free_vk_command_buffers(const Vulkan_CommandPool *pCommandPool, const uint32_t u32CommandBufferCount, Vulkan_CommandBuffer **ppCommandBuffers);
+	bool alloc_vk_command_buffers(const VkCommandPool vk_hCommandPool, const VkCommandBufferLevel vk_eCommandBufferLevel, const uint32_t u32CommandBufferCount, Vulkan_CommandBuffer **ppCommandBuffers);
+	bool alloc_vk_command_buffers(const Vulkan_CommandPool *pCommandPool, const VkCommandBufferLevel vk_eCommandBufferLevel, const uint32_t u32CommandBufferCount, Vulkan_CommandBuffer **ppCommandBuffers);
+	void free_vk_command_buffers(const uint32_t u32CommandBufferCount, Vulkan_CommandBuffer **ppCommandBuffers);
 
 	class Vulkan_Semaphore final {
 		private:

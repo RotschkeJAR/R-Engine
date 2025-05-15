@@ -39,7 +39,7 @@ namespace RE {
 			Vulkan_Buffer vertexBuffers[RE_VK_FRAMES_IN_FLIGHT], vertexStagingBuffer, uniformBuffers[RE_VK_FRAMES_IN_FLIGHT];
 			Vulkan_CommandBuffer **ppVertexBufferTransferCommandBuffers;
 			REgameObjectVertex_t *pVertices;
-			REuniformCamPos_t *pUniformBuffer[RE_VK_FRAMES_IN_FLIGHT];
+			REuniformCamPos_t *pUniformBufferData[RE_VK_FRAMES_IN_FLIGHT];
 			uint16_t u16GameObjectsToRenderCount;
 
 		public:

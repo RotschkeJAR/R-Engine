@@ -60,8 +60,8 @@ class Objy : public GameObject {
 				hits++;
 			else
 				misses++;
-			transform.position[0] += (right.is_down() - left.is_down()) * 0.1f * get_deltaseconds();
-			transform.position[1] += (up.is_down() - down.is_down()) * 0.1f * get_deltaseconds();
+			transform.position[0] += (right.is_down() - left.is_down()) * 0.5f * get_deltaseconds();
+			transform.position[1] += (up.is_down() - down.is_down()) * 0.5f * get_deltaseconds();
 		}
 		void end(Scene* pEndingScene) {
 			PRINT_LN(append_to_string(hits, ", ", misses).c_str());
@@ -107,6 +107,8 @@ class First : public Scene {
 				set_next_scene(second);
 			else if (refresh.is_pressed())
 				trigger.update_input();
+			playerCam.position[0] = objy.transform.position[0];
+			playerCam.position[1] = objy.transform.position[1];
 		}
 		void end() {}
 };

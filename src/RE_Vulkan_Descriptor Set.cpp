@@ -24,6 +24,31 @@ namespace RE {
 		if (is_valid())
 			CATCH_SIGNAL(vkFreeDescriptorSets(vk_hDevice, vk_hDescriptorPool, 1U, &vk_hDescriptorSet));
 	}
+
+	void Vulkan_DescriptorSet::update_set_with_buffer(const VkBuffer vk_buffer, const VkDeviceSize vk_bufferOffsetBytes, const VkDeviceSize vk_bufferSizeBytes, const uint32_t u32Binding, const VkDescriptorType vk_descriptorType) const {
+		VkDescriptorBufferInfo vk_bufferInfo;
+		vk_bufferInfo.buffer = vk_buffer;
+		vk_bufferInfo.offset = vk_bufferOffsetBytes;
+		vk_bufferInfo.range = vk_bufferSizeBytes;
+		VkWriteDescriptorSet vk_writeDescriptor = {};
+		vk_writeDescriptor.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		vk_writeDescriptor.dstSet = vk_hDescriptorSet;
+		vk_writeDescriptor.dstBinding = u32Binding;
+		vk_writeDescriptor.descriptorType = vk_descriptorType;
+		vk_writeDescriptor.descriptorCount = 1U;
+		vk_writeDescriptor.pBufferInfo = &vk_bufferInfo;
+		vk_writeDescriptor.pImageInfo = nullptr;
+		vk_writeDescriptor.pTexelBufferView = nullptr;
+		CATCH_SIGNAL(vkUpdateDescriptorSets(vk_hDevice, 1U, &vk_writeDescriptor, 0U, nullptr));
+	}
+
+	void Vulkan_DescriptorSet::update_set_with_buffer(const Vulkan_Buffer *pBuffer, const VkDeviceSize vk_bufferOffsetBytes, const VkDeviceSize vk_bufferSizeBytes, const uint32_t u32Binding, const VkDescriptorType vk_descriptorType) const {
+		CATCH_SIGNAL(update_set_with_buffer(pBuffer->get_buffer(), vk_bufferOffsetBytes, vk_bufferSizeBytes, u32Binding, vk_descriptorType));
+	}
+
+	void Vulkan_DescriptorSet::update_set_with_image() const {
+		
+	}
 	
 	VkDescriptorSet Vulkan_DescriptorSet::get_descriptor_set() const {
 		return vk_hDescriptorSet;

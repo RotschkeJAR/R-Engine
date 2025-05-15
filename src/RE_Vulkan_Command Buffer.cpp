@@ -125,6 +125,19 @@ namespace RE {
 		CATCH_SIGNAL(vkCmdNextSubpass(vk_hCommandBuffer, vk_eSubpassContents));
 	}
 
+	void Vulkan_CommandBuffer::cmd_bind_descriptor_set(const VkPipelineBindPoint vk_pipelineBindPoint, const VkPipelineLayout vk_pipelineLayout, const uint32_t u32FirstSet, const uint32_t u32DescriptorSetCount, const VkDescriptorSet *vk_pDescriptorSet) const {
+		CATCH_SIGNAL(vkCmdBindDescriptorSets(vk_hCommandBuffer, vk_pipelineBindPoint, vk_pipelineLayout, u32FirstSet, u32DescriptorSetCount, vk_pDescriptorSet, 0U, nullptr));
+	}
+
+	void Vulkan_CommandBuffer::cmd_bind_descriptor_set(const VkPipelineBindPoint vk_pipelineBindPoint, const VkPipelineLayout vk_pipelineLayout, const VkDescriptorSet vk_descriptorSet) const {
+		const VkDescriptorSet vk_descriptorSetCopy = vk_descriptorSet;
+		CATCH_SIGNAL(cmd_bind_descriptor_set(vk_pipelineBindPoint, vk_pipelineLayout, 0U, 1U, &vk_descriptorSetCopy));
+	}
+
+	void Vulkan_CommandBuffer::cmd_bind_descriptor_set(const VkPipelineBindPoint vk_pipelineBindPoint, const Vulkan_PipelineLayout *pPipelineLayout, const Vulkan_DescriptorSet *pDescriptorSet) const {
+		CATCH_SIGNAL(cmd_bind_descriptor_set(vk_pipelineBindPoint, pPipelineLayout->get_pipeline_layout(), pDescriptorSet->get_descriptor_set()));
+	}
+
 	void Vulkan_CommandBuffer::cmd_bind_pipeline(const VkPipelineBindPoint vk_ePipelineBindPoint, const VkPipeline vk_pipeline) const {
 		CATCH_SIGNAL(vkCmdBindPipeline(vk_hCommandBuffer, vk_ePipelineBindPoint, vk_pipeline));
 	}

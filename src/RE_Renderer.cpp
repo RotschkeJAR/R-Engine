@@ -52,8 +52,10 @@ namespace RE {
 			return;
 		}
 		pInstance = this;
-		if (!gameObjectRenderer.is_valid())
+		if (!gameObjectRenderer.is_valid()) {
+			PRINT_LN("returning");
 			return;
+		}
 		constexpr uint32_t u32IndexStagingBufferQueueTypes[] = {RE_VK_QUEUE_TRANSFER_INDEX};
 		const Vulkan_Buffer indexStagingBuffer(RE_VK_INDEX_BUFFER_BYTES, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, u32IndexStagingBufferQueueTypes, sizeof(u32IndexStagingBufferQueueTypes) / sizeof(u32IndexStagingBufferQueueTypes[0]), VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 		REindex_t indices[RE_VK_INDEX_BUFFER_SIZE];

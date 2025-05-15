@@ -121,9 +121,8 @@ namespace RE {
 	}
 
 	Vulkan_GraphicsPipeline::~Vulkan_GraphicsPipeline() {
-		if (!is_valid())
-			return;
-		CATCH_SIGNAL(vkDestroyPipeline(vk_hDevice, vk_hGraphicsPipeline, nullptr));
+		if (is_valid())
+			CATCH_SIGNAL(vkDestroyPipeline(vk_hDevice, vk_hGraphicsPipeline, nullptr));
 	}
 
 	VkPipeline Vulkan_GraphicsPipeline::get_graphics_pipeline() const {

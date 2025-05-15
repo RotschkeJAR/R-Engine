@@ -9,7 +9,6 @@ namespace RE {
 #define RE_VK_FRAMES_IN_FLIGHT 2U
 
 	typedef float REgameObjectVertex_t;
-	typedef float REuniformCamPos_t;
 
 	class SubRenderer {
 		protected:
@@ -36,10 +35,10 @@ namespace RE {
 			Vulkan_DescriptorSet **ppDescriptorSets;
 			Vulkan_PipelineLayout pipelineLayout;
 			Vulkan_GraphicsPipeline graphicsPipeline;
-			Vulkan_Buffer vertexBuffers[RE_VK_FRAMES_IN_FLIGHT], vertexStagingBuffer, uniformBuffers[RE_VK_FRAMES_IN_FLIGHT];
+			Vulkan_Buffer vertexBuffers[RE_VK_FRAMES_IN_FLIGHT], vertexStagingBuffer, uniformBuffers[RE_VK_FRAMES_IN_FLIGHT], uniformStagingBuffer;
 			Vulkan_CommandBuffer **ppVertexBufferTransferCommandBuffers;
 			REgameObjectVertex_t *pVertices;
-			REuniformCamPos_t *pUniformBufferData[RE_VK_FRAMES_IN_FLIGHT];
+			float *pUniformBufferData;
 			uint16_t u16GameObjectsToRenderCount;
 
 		public:

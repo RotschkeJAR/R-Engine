@@ -411,27 +411,24 @@ namespace RE {
 
 	template <typename T, uint32_t u32Dimensions>
 	class Vector final {
-		static_assert(u32Dimensions != 0U, "A vector-template has zero dimensions");
+		static_assert(u32Dimensions != 0U, "A data-template has zero dimensions");
 
 		public:
-			T coords[u32Dimensions];
+			T data[u32Dimensions];
 
-			Vector() {
-				fill(static_cast<T>(0.0));
-			}
+			Vector() : data{} {}
 			template <typename P, uint32_t u32CopyDimensions>
 			Vector(Vector<P, u32CopyDimensions> &rCopyVector) {
-				if (u32Dimensions != rCopyVector.get_dimensions())
-					WARNING(append_to_string("The coordinates of this vector with ", u32Dimensions, " dimensions were copied from a vector with ", rCopyVector.get_dimensions(), " dimensions").c_str());
-				for (uint32_t u32CoordinateIndex = 0U; u32CoordinateIndex < rCopyVector.get_dimensions() && u32CoordinateIndex < u32Dimensions; u32CoordinateIndex++)
-					coords[u32CoordinateIndex] = rCopyVector.coords[u32CoordinateIndex];
+				if (u32Dimensions != u32CopyDimensions)
+					WARNING(append_to_string("The coordinates of this vector with ", u32Dimensions, " dimensions were copied from a vector with ", u32CopyDimensions, " dimensions").c_str());
+				for (uint32_t u32CoordinateIndex = 0U; u32CoordinateIndex < u32CopyDimensions && u32CoordinateIndex < u32Dimensions; u32CoordinateIndex++)
+					data[u32CoordinateIndex] = rCopyVector.data[u32CoordinateIndex];
 			}
 			template <typename... V>
-			Vector(V... values) {
-				fill(static_cast<T>(0.0));
+			Vector(V... values) : data{} {
 				uint32_t u32Index = 0U;
 				([&]() {
-					CATCH_SIGNAL_DETAILED(coords[u32Index] = static_cast<T>(values), append_to_string("Index: ", u32Index).c_str());
+					CATCH_SIGNAL_DETAILED(data[u32Index] = static_cast<T>(values), append_to_string("Index: ", u32Index).c_str());
 					u32Index++;
 				} (), ...);
 			}
@@ -439,14 +436,14 @@ namespace RE {
 
 			T sum() const {
 				T sum = static_cast<T>(0.0);
-				for (T coord : coords)
+				for (T coord : data)
 					sum += coord;
 				return sum;
 			}
 
 			T area() const {
 				T result = static_cast<T>(1.0);
-				for (T coord : coords)
+				for (T coord : data)
 					result *= coord;
 				return result;
 			}
@@ -458,7 +455,7 @@ namespace RE {
 			}
 
 			void fill(const T value) {
-				std::fill(std::begin(coords), std::end(coords), value);
+				std::fill(std::begin(data), std::end(data), value);
 			}
 
 			void copy_from(const Vector &rCopyVector) {
@@ -467,14 +464,14 @@ namespace RE {
 					return;
 				}
 				for (uint32_t u32Index = 0U; u32Index < u32Dimensions; u32Index++)
-					coords[u32Index] = rCopyVector[u32Index];
+					data[u32Index] = rCopyVector[u32Index];
 			}
 
 			bool equals(const Vector &rCompareVector) const {
 				if (u32Dimensions != rCompareVector.get_dimensions())
 					return false;
 				for (uint32_t u32Index = 0U; u32Index < u32Dimensions; u32Index++)
-					if (coords[u32Index] != rCompareVector[u32Index])
+					if (data[u32Index] != rCompareVector[u32Index])
 						return false;
 				return true;
 			}
@@ -483,16 +480,16 @@ namespace RE {
 				return u32Dimensions;
 			}
 
-			T& operator [](uint32_t index) {
-				if (index >= u32Dimensions)
-					FATAL_ERROR(append_to_string("Index ", index, " is out of bounds: [0, ", u32Dimensions, ")").c_str());
-				return coords[index];
+			T& operator [](const uint32_t u32Index) {
+				if (u32Index >= u32Dimensions)
+					FATAL_ERROR(append_to_string("Index ", u32Index, " is out of bounds: [0, ", u32Dimensions, ")").c_str());
+				return data[u32Index];
 			}
 
-			T operator [](uint32_t index) const {
-				if (index >= u32Dimensions)
-					FATAL_ERROR(append_to_string("Index ", index, " is out of bounds: [0, ", u32Dimensions, ")").c_str());
-				return coords[index];
+			T operator [](const uint32_t u32Index) const {
+				if (u32Index >= u32Dimensions)
+					FATAL_ERROR(append_to_string("Index ", u32Index, " is out of bounds: [0, ", u32Dimensions, ")").c_str());
+				return data[u32Index];
 			}
 
 			void operator =(const Vector &rCopyVector) {
@@ -507,12 +504,12 @@ namespace RE {
 				return !equals(rCompareVector);
 			}
 
-			friend std::ostream& operator <<(std::ostream &stream, const Vector &vector) {
+			friend std::ostream& operator <<(std::ostream &stream, const Vector &rVector) {
 				stream << "(";
-				for (uint32_t i = 0U; i < vector.get_dimensions(); i++) {
+				for (uint32_t i = 0U; i < rVector.get_dimensions(); i++) {
 					if (i != 0U)
 						stream << ", ";
-					stream << vector.coords[i];
+					stream << rVector.data[i];
 				}
 				stream << ")";
 				return stream;
@@ -530,6 +527,35 @@ namespace RE {
 	typedef Vector<uint32_t, 2U> Vector2u;
 	typedef Vector<uint32_t, 3U> Vector3u;
 	typedef Vector<uint32_t, 4U> Vector4u;
+
+	template <typename T, uint32_t u32Rows, uint32_t u32Columns>
+	class Matrix final {
+		static_assert(u32Rows != 0U, "A matrix-template has zero rows");
+		static_assert(u32Columns != 0U, "A matrix-template has zero columns");
+
+		public:
+			T data[u32Columns][u32Rows];
+
+			Matrix() : data{} {}
+			~Matrix() {}
+
+			template <typename P>
+			void fill(P value) {
+				std::fill(std::begin(data), std::end(data), static_cast<T>(value));
+			}
+	};
+	typedef Matrix<float, 2U, 2U> Matrix2_2f;
+	typedef Matrix<float, 3U, 3U> Matrix3_3f;
+	typedef Matrix<float, 4U, 4U> Matrix4_4f;
+	typedef Matrix<double, 2U, 2U> Matrix2_2d;
+	typedef Matrix<double, 3U, 3U> Matrix3_3d;
+	typedef Matrix<double, 4U, 4U> Matrix4_4d;
+	typedef Matrix<int32_t, 2U, 2U> Matrix2_2i;
+	typedef Matrix<int32_t, 3U, 3U> Matrix3_3i;
+	typedef Matrix<int32_t, 4U, 4U> Matrix4_4i;
+	typedef Matrix<uint32_t, 2U, 2U> Matrix2_2u;
+	typedef Matrix<uint32_t, 3U, 3U> Matrix3_3u;
+	typedef Matrix<uint32_t, 4U, 4U> Matrix4_4u;
 
 	class Color final {
 		private:

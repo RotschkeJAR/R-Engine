@@ -625,8 +625,8 @@ namespace RE {
 				return random<T>(std::numeric_limits<T>::max());
 			}
 			bool random_bool();
-			bool random_bool(float fChance);
-			float random_percentage();
+			bool random_bool(double dChance);
+			double random_percentage();
 	};
 
 	class Scene {

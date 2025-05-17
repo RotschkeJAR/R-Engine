@@ -38,7 +38,7 @@ namespace RE {
 			Vulkan_Buffer vertexBuffers[RE_VK_FRAMES_IN_FLIGHT], vertexStagingBuffer, uniformBuffers[RE_VK_FRAMES_IN_FLIGHT], uniformStagingBuffer;
 			Vulkan_CommandBuffer **ppVertexBufferTransferCommandBuffers;
 			REgameObjectVertex_t *pVertices;
-			float *pUniformBufferData;
+			float *pfUniformBufferData;
 			uint16_t u16GameObjectsToRenderCount;
 
 		public:

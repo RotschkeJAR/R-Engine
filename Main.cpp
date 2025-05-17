@@ -55,7 +55,7 @@ class Objy : public GameObject {
 			PRINT_LN("start objy");
 		}
 		void update(Scene* pCurrentScene) {
-			bool randomResult = rng.random_bool(0.2f);
+			bool randomResult = rng.random_bool(0.2);
 			if (randomResult)
 				hits++;
 			else
@@ -80,10 +80,7 @@ class Background : public GameObject {
 
 class PlayerCamera : public Camera {
 	public:
-		PlayerCamera() {
-			scale[0] = 400.0f;
-			scale[1] = 300.0f;
-		}
+		PlayerCamera() {}
 		~PlayerCamera() {}
 		void update() {}
 };
@@ -98,6 +95,8 @@ class First : public Scene {
 		First() : Scene(1) {}
 		~First() {}
 		void start() {
+			playerCam.scale[0] = 1.0f;
+			playerCam.scale[1] = 1.0f;
 			playerCam.activate();
 			trigger.change_input(RE_INPUT_KEY_NUMPAD_ENTER);
 			refresh.change_input(RE_INPUT_KEY_ESCAPE);

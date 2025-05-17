@@ -3,10 +3,10 @@
 
 namespace RE {
 	
-	Vulkan_DescriptorPool::Vulkan_DescriptorPool(const uint32_t u32DescriptorPoolCount, const VkDescriptorPoolSize *vk_pDescriptorPoolSizes, const uint32_t u32MaxDescriptorSets) : vk_hDescriptorPool(VK_NULL_HANDLE) {
+	Vulkan_DescriptorPool::Vulkan_DescriptorPool(const VkDescriptorPoolCreateFlags vk_eDescriptorPoolFlags, const uint32_t u32DescriptorPoolCount, const VkDescriptorPoolSize *vk_pDescriptorPoolSizes, const uint32_t u32MaxDescriptorSets) : vk_hDescriptorPool(VK_NULL_HANDLE) {
 		VkDescriptorPoolCreateInfo vk_descriptorPoolCreateInfo = {};
 		vk_descriptorPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-		vk_descriptorPoolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+		vk_descriptorPoolCreateInfo.flags = vk_eDescriptorPoolFlags;
 		vk_descriptorPoolCreateInfo.poolSizeCount = u32DescriptorPoolCount;
 		vk_descriptorPoolCreateInfo.pPoolSizes = vk_pDescriptorPoolSizes;
 		vk_descriptorPoolCreateInfo.maxSets = u32MaxDescriptorSets;

@@ -3,8 +3,8 @@
 
 namespace RE {
 	
-	Camera::Camera() {}
-	Camera::Camera(Vector3f &rPosition) : position(rPosition) {}
+	Camera::Camera() : scale(10.0f, 10.0f) {}
+	Camera::Camera(Vector3f &rPosition) : position(rPosition), scale(10.0f, 10.0f) {}
 	Camera::Camera(Vector3f &rPosition, Vector2f &rScale) : position(rPosition), scale(rScale) {}
 	Camera::~Camera() {
 		deactivate();

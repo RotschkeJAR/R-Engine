@@ -702,7 +702,7 @@ namespace RE {
 
 		public:
 			Vulkan_DescriptorPool() = delete;
-			Vulkan_DescriptorPool(const uint32_t u32DescriptorPoolCount, const VkDescriptorPoolSize *vk_pDescriptorPoolSizes, const uint32_t u32MaxDescriptorSets);
+			Vulkan_DescriptorPool(const VkDescriptorPoolCreateFlags vk_eDescriptorPoolFlags, const uint32_t u32DescriptorPoolCount, const VkDescriptorPoolSize *vk_pDescriptorPoolSizes, const uint32_t u32MaxDescriptorSets);
 			~Vulkan_DescriptorPool();
 			VkDescriptorPool get_descriptor_pool() const;
 			bool is_valid() const;

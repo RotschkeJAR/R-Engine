@@ -22,12 +22,12 @@ namespace RE {
 		return static_cast<bool>(random<uint16_t>() & 1U);
 	}
 
-	bool RandomNumberGenerator::random_bool(float fChance) {
-		return random_percentage() <= fChance;
+	bool RandomNumberGenerator::random_bool(double dChance) {
+		return random_percentage() <= dChance;
 	}
 
-	float RandomNumberGenerator::random_percentage() {
-		return static_cast<float>(random<uint32_t>()) / std::numeric_limits<uint32_t>::max();
+	double RandomNumberGenerator::random_percentage() {
+		return static_cast<double>(random<uint32_t>()) / std::numeric_limits<uint32_t>::max();
 	}
 
 }

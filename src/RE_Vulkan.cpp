@@ -1109,7 +1109,7 @@ namespace RE {
 #elif defined RE_OS_LINUX
 		pfn_vkCreateXlibSurfaceKHR = nullptr;
 		pfn_vkGetPhysicalDeviceXlibPresentationSupportKHR = nullptr;
-		CATCH_SIGNAL(hLibVulkan = dlopen("libvulkan.so", RTLD_NOW | RTLD_LOCAL));
+		CATCH_SIGNAL(hLibVulkan = dlopen("libvulkan.so.1", RTLD_NOW | RTLD_LOCAL));
 		if (!hLibVulkan) {
 			RE_FATAL_ERROR("Failed loading Vulkan library");
 			return;

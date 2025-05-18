@@ -32,7 +32,7 @@ $(RE): $(SRC)/*
 	@if [ "$(wildcard $(BIN)/*.gch)" != "" ]; then \
 		mv $(BIN)/*.gch $(SRC); \
 	fi
-	@$(CC) $(CFLAG) -c $(SRC)/*.cpp -I"~/Vulkan SDK/x86_64/include" || (rm -f *.o; exit 1)
+	@$(CC) $(CFLAG) -c $(SRC)/*.cpp -I"$(HOME)/Vulkan SDK/x86_64/include" || (rm -f *.o; exit 1)
 	@mv *.o $(BIN)
 	@if [ "$(wildcard $(SRC)/*.gch)" != "" ]; then \
 		mv $(SRC)/*.gch $(BIN); \

@@ -122,7 +122,7 @@ namespace RE {
 		uniformStagingBuffer.map_memory((void**)&pfUniformBufferData, 0UL, RE_VK_UNIFORM_BUFFER_SIZE_BYTES);
 		std::fill(pfUniformBufferData, pfUniformBufferData + RE_VK_UNIFORM_BUFFER_SIZE_BYTES, 0.0f);
 		pfUniformBufferData[0] = 1;
-		pfUniformBufferData[5] = -1;
+		pfUniformBufferData[5] = 1;
 		pfUniformBufferData[10] = 1;
 		pfUniformBufferData[15] = 1;
 		pfUniformBufferData[16] = 1;

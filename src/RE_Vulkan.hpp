@@ -674,7 +674,8 @@ namespace RE {
 			VkRenderPass vk_hRenderPass;
 
 		public:
-			Vulkan_RenderPass();
+			Vulkan_RenderPass() = delete;
+			Vulkan_RenderPass(const uint32_t u32AttachmentDescriptionCount, const VkAttachmentDescription *vk_pAttachmentDescriptions, const uint32_t u32SubpassDescriptionCount, const VkSubpassDescription *vk_pSubpassDescriptions, const uint32_t u32SubpassDependencyCount, const VkSubpassDependency *vk_pSubpassDependencies);
 			~Vulkan_RenderPass();
 			VkRenderPass get_render_pass() const;
 			bool is_valid() const;

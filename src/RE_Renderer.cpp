@@ -31,22 +31,69 @@ namespace RE {
 
 
 
+#define RE_VK_RENDER_PASS_ATTACHMENT_DESCRIPTION_COUNT 1U
+#define RE_VK_RENDER_PASS_SUBPASS_DESCRIPTION_COUNT 1U
+#define RE_VK_RENDER_PASS_SUBPASS_DEPENDENCY_COUNT 1U
+
+	VkAttachmentDescription vk_colorAttachment[RE_VK_RENDER_PASS_ATTACHMENT_DESCRIPTION_COUNT] = {
+		{
+			.samples = VK_SAMPLE_COUNT_1_BIT,
+			.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+			.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+			.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+			.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+			.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+			.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+		}
+	};
+	constexpr VkAttachmentReference vk_attachmentReference[] = {
+		{
+			.attachment = 0U,
+			.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+		}
+	};
+	constexpr VkSubpassDescription vk_subpassDescription[RE_VK_RENDER_PASS_SUBPASS_DESCRIPTION_COUNT] = {
+		{
+			.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
+			.colorAttachmentCount = 1U,
+			.pColorAttachments = &vk_attachmentReference[0]
+		}
+	};
+	constexpr VkSubpassDependency vk_subpassDependency[RE_VK_RENDER_PASS_SUBPASS_DEPENDENCY_COUNT] = {
+		{
+			.srcSubpass = VK_SUBPASS_EXTERNAL,
+			.dstSubpass = 0,
+			.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+			.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+			.srcAccessMask = 0U,
+			.dstAccessMask = 0U
+		}
+	};
+
 	constexpr uint32_t u32IndexBufferQueueTypes[] = {RE_VK_QUEUE_GRAPHICS_INDEX, RE_VK_QUEUE_TRANSFER_INDEX};
 	Camera *pActiveCamera = nullptr;
 	Renderer *Renderer::pInstance = nullptr;
 
-	Renderer::Renderer() : ppPrimaryCommandBuffer(nullptr), 
+	static uint32_t setup_renderpass_objects() {
+		vk_colorAttachment[0].format = vk_eSwapchainImageFormat;
+		return RE_VK_RENDER_PASS_ATTACHMENT_DESCRIPTION_COUNT;
+	}
+
+	Renderer::Renderer() 
 #if (RE_VK_FRAMES_IN_FLIGHT == 2)
+	: renderPass(setup_renderpass_objects(), vk_colorAttachment, RE_VK_RENDER_PASS_SUBPASS_DESCRIPTION_COUNT, vk_subpassDescription, RE_VK_RENDER_PASS_SUBPASS_DEPENDENCY_COUNT, vk_subpassDependency), 
+	ppPrimaryCommandBuffer(nullptr), 
 	renderFence{Vulkan_Fence(VK_FENCE_CREATE_SIGNALED_BIT), Vulkan_Fence(VK_FENCE_CREATE_SIGNALED_BIT)}, 
-#else
-# error Update the array initializations above!
-#endif
 	ppSwapchainImageFences(new const Vulkan_Fence*[u32SwapchainImageCount] {}), 
 	u8CurrentFrameInFlight(0U), 
 	gameObjectRenderer(&renderPass), 
 	bValid(false), 
 	rectangleIndexBuffer(RE_VK_INDEX_BUFFER_BYTES, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, u32IndexBufferQueueTypes, sizeof(u32IndexBufferQueueTypes) / sizeof(u32IndexBufferQueueTypes[0]), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT), 
-	ppFramebuffers(nullptr) {
+	ppFramebuffers(nullptr) 
+#else
+# error Update the array initializations above!
+#endif
+	{
 		if (pInstance) {
 			RE_FATAL_ERROR("Another instance of Renderer has been constructed.");
 			return;

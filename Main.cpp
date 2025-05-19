@@ -40,6 +40,9 @@ class Clonus : public GameObject {
 
 Clonus* clonus = nullptr;
 
+class Objy;
+Objy *pObjy = nullptr;
+
 class Objy : public GameObject {
 	public:
 		RandomNumberGenerator rng;
@@ -47,10 +50,13 @@ class Objy : public GameObject {
 		uint64_t hits, misses;
 
 		Objy() : GameObject(1, 1), left(RE_INPUT_KEY_ARROW_LEFT), right(RE_INPUT_KEY_ARROW_RIGHT), up(RE_INPUT_KEY_ARROW_UP), down(RE_INPUT_KEY_ARROW_DOWN), hits(0UL), misses(0UL) {
+			pObjy = this;
 			transform.scale[0] = 0.1f;
 			transform.scale[1] = 0.1f;
 		}
-		~Objy() {}
+		~Objy() {
+			pObjy = nullptr;
+		}
 		void start(Scene* pStartingScene) {
 			PRINT_LN("start objy");
 		}
@@ -71,8 +77,8 @@ class Objy : public GameObject {
 class Background : public GameObject {
 	public:
 		Background() : GameObject(2, 1) {
-			transform.scale[0] = 2.0f;
-			transform.scale[1] = 2.0f;
+			transform.scale[0] = 1.0f;
+			transform.scale[1] = 1.0f;
 			spriteRenderer.color.set_channel(1U, 0.0f);
 			spriteRenderer.color.set_channel(2U, 0.0f);
 		}
@@ -82,7 +88,12 @@ class PlayerCamera : public Camera {
 	public:
 		PlayerCamera() {}
 		~PlayerCamera() {}
-		void update() {}
+		void update() {
+			if (pObjy) {
+				position[0] = pObjy->transform.position[0];
+				position[1] = pObjy->transform.position[1];
+			}
+		}
 };
 
 class First : public Scene {
@@ -106,8 +117,6 @@ class First : public Scene {
 				set_next_scene(second);
 			else if (refresh.is_pressed())
 				trigger.update_input();
-			playerCam.position[0] = objy.transform.position[0];
-			playerCam.position[1] = objy.transform.position[1];
 		}
 		void end() {}
 };

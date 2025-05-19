@@ -20,6 +20,7 @@ namespace RE {
 	extern VkSwapchainKHR vk_hSwapchain;
 	extern VkFormat vk_eSwapchainImageFormat;
 	extern VkExtent2D vk_swapchainResolution;
+	extern VkImage *vk_pSwapchainImages;
 	extern VkImageView *vk_phSwapchainImageViews;
 	extern uint32_t u32SwapchainImageCount;
 	extern Vulkan_CommandPool *pCommandPools[RE_VK_COMMAND_POOL_COUNT];

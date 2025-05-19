@@ -3,6 +3,8 @@
 #include "RE_Window.hpp"
 #include "RE_Main.hpp"
 
+#include <queue>
+
 namespace RE {
 
 	static void println_vkbool32(const char* pcName, VkBool32 vk_bState) {
@@ -173,7 +175,7 @@ namespace RE {
 		PRINT_LN("Available GPUs:");
 		VkPhysicalDevice *const vk_phTotalPhysicalDevice = new VkPhysicalDevice[u32TotalPhysicalDeviceCount];
 		CATCH_SIGNAL(vkEnumeratePhysicalDevices(RE_VK_INSTANCE, &u32TotalPhysicalDeviceCount, vk_phTotalPhysicalDevice));
-		std::vector<VkPhysicalDevice> suitablePhysicalDevices;
+		std::queue<VkPhysicalDevice> suitablePhysicalDevices;
 		for (uint32_t u32PhysicalDeviceIndex = 0U; u32PhysicalDeviceIndex < u32TotalPhysicalDeviceCount; u32PhysicalDeviceIndex++) {
 			const VkPhysicalDevice vk_hPhysicalDevice = vk_phTotalPhysicalDevice[u32PhysicalDeviceIndex];
 
@@ -193,11 +195,9 @@ namespace RE {
 			VkQueueFamilyProperties *const vk_pPhysicalDeviceQueueFamilyProperties = new VkQueueFamilyProperties[u32PhysicalDeviceQueueFamilyCount];
 			CATCH_SIGNAL(vkGetPhysicalDeviceQueueFamilyProperties(vk_hPhysicalDevice, &u32PhysicalDeviceQueueFamilyCount, vk_pPhysicalDeviceQueueFamilyProperties));
 
-#define DISCARD_DEVICE() ([&]() { \
-			delete[] vk_pPhysicalDeviceExtensionProperties; \
-			delete[] vk_pPhysicalDeviceQueueFamilyProperties; \
-			println_colored(append_to_string("\tPhysical Vulkan device ", vk_physicalDeviceProperties.deviceName, " has been discarded for not fulfilling the requirements!").c_str(), RE_TERMINAL_COLOR_RED, false, true); \
-		}) ()
+			// Fetch surface-data about the GPU
+			VkSurfaceCapabilitiesKHR vk_physicalDeviceSurfaceCapabilities;
+			CATCH_SIGNAL(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk_hPhysicalDevice, vk_hSurface, &vk_physicalDeviceSurfaceCapabilities));
 
 			{ // Prints information about physical device to console
 				print("\t", vk_physicalDeviceProperties.deviceName, " [Driver version: ", VK_VERSION_MAJOR(vk_physicalDeviceProperties.driverVersion), '.', VK_VERSION_MINOR(vk_physicalDeviceProperties.driverVersion), '.', VK_VERSION_PATCH(vk_physicalDeviceProperties.driverVersion), "; Device type: ");
@@ -403,16 +403,16 @@ namespace RE {
 				println("\t\t\tmaxFramebufferWidth: ", vk_physicalDeviceProperties.limits.maxFramebufferWidth);
 				println("\t\t\tmaxFramebufferHeight: ", vk_physicalDeviceProperties.limits.maxFramebufferHeight);
 				println("\t\t\tmaxFramebufferLayers: ", vk_physicalDeviceProperties.limits.maxFramebufferLayers);
-				println("\t\t\tframebufferColorSampleCounts: ", bitmask_to_string(vk_physicalDeviceProperties.limits.framebufferColorSampleCounts, true));
-				println("\t\t\tframebufferDepthSampleCounts: ", bitmask_to_string(vk_physicalDeviceProperties.limits.framebufferDepthSampleCounts, true));
-				println("\t\t\tframebufferStencilSampleCounts: ", bitmask_to_string(vk_physicalDeviceProperties.limits.framebufferStencilSampleCounts, true));
-				println("\t\t\tframebufferNoAttachmentsSampleCounts: ", bitmask_to_string(vk_physicalDeviceProperties.limits.framebufferNoAttachmentsSampleCounts, true));
+				println("\t\t\tframebufferColorSampleCounts: ", bitmask_to_string(vk_physicalDeviceProperties.limits.framebufferColorSampleCounts));
+				println("\t\t\tframebufferDepthSampleCounts: ", bitmask_to_string(vk_physicalDeviceProperties.limits.framebufferDepthSampleCounts));
+				println("\t\t\tframebufferStencilSampleCounts: ", bitmask_to_string(vk_physicalDeviceProperties.limits.framebufferStencilSampleCounts));
+				println("\t\t\tframebufferNoAttachmentsSampleCounts: ", bitmask_to_string(vk_physicalDeviceProperties.limits.framebufferNoAttachmentsSampleCounts));
 				println("\t\t\tmaxColorAttachments: ", vk_physicalDeviceProperties.limits.maxColorAttachments);
-				println("\t\t\tsampledImageColorSampleCounts: ", bitmask_to_string(vk_physicalDeviceProperties.limits.sampledImageColorSampleCounts, true));
-				println("\t\t\tsampledImageIntegerSampleCounts: ", bitmask_to_string(vk_physicalDeviceProperties.limits.sampledImageIntegerSampleCounts, true));
-				println("\t\t\tsampledImageDepthSampleCounts: ", bitmask_to_string(vk_physicalDeviceProperties.limits.sampledImageDepthSampleCounts, true));
-				println("\t\t\tsampledImageStencilSampleCounts: ", bitmask_to_string(vk_physicalDeviceProperties.limits.sampledImageStencilSampleCounts, true));
-				println("\t\t\tstorageImageSampleCounts: ", bitmask_to_string(vk_physicalDeviceProperties.limits.storageImageSampleCounts, true));
+				println("\t\t\tsampledImageColorSampleCounts: ", bitmask_to_string(vk_physicalDeviceProperties.limits.sampledImageColorSampleCounts));
+				println("\t\t\tsampledImageIntegerSampleCounts: ", bitmask_to_string(vk_physicalDeviceProperties.limits.sampledImageIntegerSampleCounts));
+				println("\t\t\tsampledImageDepthSampleCounts: ", bitmask_to_string(vk_physicalDeviceProperties.limits.sampledImageDepthSampleCounts));
+				println("\t\t\tsampledImageStencilSampleCounts: ", bitmask_to_string(vk_physicalDeviceProperties.limits.sampledImageStencilSampleCounts));
+				println("\t\t\tstorageImageSampleCounts: ", bitmask_to_string(vk_physicalDeviceProperties.limits.storageImageSampleCounts));
 				println("\t\t\tmaxSampleMaskWords: ", vk_physicalDeviceProperties.limits.maxSampleMaskWords);
 				println_vkbool32("timestampComputeAndGraphics: ", vk_physicalDeviceProperties.limits.timestampComputeAndGraphics);
 				println("\t\t\ttimestampPeriod: ", vk_physicalDeviceProperties.limits.timestampPeriod);
@@ -429,29 +429,32 @@ namespace RE {
 				println("\t\t\toptimalBufferCopyOffsetAlignment: ", vk_physicalDeviceProperties.limits.optimalBufferCopyOffsetAlignment);
 				println("\t\t\toptimalBufferCopyRowPitchAlignment: ", vk_physicalDeviceProperties.limits.optimalBufferCopyRowPitchAlignment);
 				println("\t\t\tnonCoherentAtomSize: ", vk_physicalDeviceProperties.limits.nonCoherentAtomSize);
+				println("\t\tSupported surface capabilities:");
+				println("\t\t\tsupportedTransforms: ", bitmask_to_string(vk_physicalDeviceSurfaceCapabilities.supportedTransforms));
+				println("\t\t\tsupportedCompositeAlpha: ", bitmask_to_string(vk_physicalDeviceSurfaceCapabilities.supportedCompositeAlpha));
+				println("\t\t\tsupportedUsageFlags: ", bitmask_to_string(vk_physicalDeviceSurfaceCapabilities.supportedUsageFlags));
 			} // End of printing information about physical device to console
+
+
+			std::queue<const char*> missingFeatures;
 
 			// Check if there are surface formats defined
 			uint32_t u32PhysicalDeviceSurfaceFormatCount;
 			CATCH_SIGNAL(vkGetPhysicalDeviceSurfaceFormatsKHR(vk_hPhysicalDevice, vk_hSurface, &u32PhysicalDeviceSurfaceFormatCount, nullptr));
-			if (!u32PhysicalDeviceSurfaceFormatCount) {
-				DISCARD_DEVICE();
-				continue;
-			}
+			if (!u32PhysicalDeviceSurfaceFormatCount)
+				missingFeatures.push("No surface formats available");
 
 			// Check if there are present modes defined
 			uint32_t u32PhysicalDevicePresentModeCount;
 			CATCH_SIGNAL(vkGetPhysicalDeviceSurfacePresentModesKHR(vk_hPhysicalDevice, vk_hSurface, &u32PhysicalDevicePresentModeCount, nullptr));
-			if (!u32PhysicalDevicePresentModeCount) {
-				DISCARD_DEVICE();
-				continue;
-			}
+			if (!u32PhysicalDevicePresentModeCount)
+				missingFeatures.push("No presentation modes available");
+
+			// Check if swapchain images support the required image usages
+			if ((vk_physicalDeviceSurfaceCapabilities.supportedUsageFlags & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) == 0 || (vk_physicalDeviceSurfaceCapabilities.supportedUsageFlags & VK_IMAGE_USAGE_TRANSFER_DST_BIT) == 0)
+				missingFeatures.push("Swapchain images neither support being used for color attachments and/or transfer operations");
 
 			// Check if the required extensions exist
-			if (!u32PhysicalDeviceExtensionCount) {
-				DISCARD_DEVICE();
-				continue;
-			}
 			bool bSwapchainExtists = false;
 			for (uint32_t u32PhysicalDeviceExtensionIndex = 0U; u32PhysicalDeviceExtensionIndex < u32PhysicalDeviceExtensionCount; u32PhysicalDeviceExtensionIndex++) {
 				if (!bSwapchainExtists && std::strcmp(vk_pPhysicalDeviceExtensionProperties[u32PhysicalDeviceExtensionIndex].extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME) == 0)
@@ -459,16 +462,10 @@ namespace RE {
 				if (bSwapchainExtists)
 					break;
 			}
-			if (!bSwapchainExtists) {
-				DISCARD_DEVICE();
-				continue;
-			}
+			if (!bSwapchainExtists)
+				missingFeatures.push("The swapchain extension doesn't exist on this GPU");
 
 			// Check if required queues exist
-			if (!u32PhysicalDeviceQueueFamilyCount) {
-				DISCARD_DEVICE();
-				continue;
-			}
 			bool bGraphicsQueueExists = false, bPresentQueueExists = false, bTransferQueueExists = false;
 			for (uint32_t u32PhysicalDeviceQueueFamilyIndex = 0U; u32PhysicalDeviceQueueFamilyIndex < u32PhysicalDeviceQueueFamilyCount; u32PhysicalDeviceQueueFamilyIndex++) {
 				if (!bPresentQueueExists) {
@@ -484,12 +481,20 @@ namespace RE {
 				if (bGraphicsQueueExists && bPresentQueueExists && bTransferQueueExists)
 					break;
 			}
-			if (bGraphicsQueueExists && bPresentQueueExists && bTransferQueueExists)
-				suitablePhysicalDevices.push_back(vk_hPhysicalDevice);
+			if (!bGraphicsQueueExists || !bPresentQueueExists || !bTransferQueueExists)
+				missingFeatures.push("The graphics, presentation or transfer queue doesn't exist");
 
 			delete[] vk_pPhysicalDeviceExtensionProperties;
 			delete[] vk_pPhysicalDeviceQueueFamilyProperties;
-#undef DISCARD_DEVICE
+			if (!missingFeatures.empty()) {
+				println_colored(append_to_string("\tPhysical Vulkan device ", vk_physicalDeviceProperties.deviceName, " has been discarded for not fulfilling the requirement(s):").c_str(), RE_TERMINAL_COLOR_RED, false, true);
+				do {
+					println_colored(append_to_string("\t - ", missingFeatures.front()).c_str(), RE_TERMINAL_COLOR_RED, false, true);
+					missingFeatures.pop();
+				} while (!missingFeatures.empty());
+				continue;
+			} else
+				suitablePhysicalDevices.push(vk_hPhysicalDevice);
 		}
 		delete[] vk_phTotalPhysicalDevice;
 		u32PhysicalDevicesAvailableCount = suitablePhysicalDevices.size();
@@ -499,10 +504,11 @@ namespace RE {
 		}
 		vk_phPhysicalDevicesAvailable = new VkPhysicalDevice[u32PhysicalDevicesAvailableCount];
 		uint32_t u32CurrentIndex = 0U;
-		for (VkPhysicalDevice vk_hPhysicalDevice : suitablePhysicalDevices) {
-			vk_phPhysicalDevicesAvailable[u32CurrentIndex] = vk_hPhysicalDevice;
+		do {
+			vk_phPhysicalDevicesAvailable[u32CurrentIndex] = suitablePhysicalDevices.front();
 			u32CurrentIndex++;
-		}
+			suitablePhysicalDevices.pop();
+		} while (!suitablePhysicalDevices.empty());
 		return true;
 	}
 
@@ -633,7 +639,7 @@ namespace RE {
 			}
 			vk_swapchainCreateInfo.imageExtent = vk_swapchainResolution;
 			vk_swapchainCreateInfo.imageArrayLayers = 1U;
-			vk_swapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+			vk_swapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 			const uint32_t u32SwapchainRelevantQueueIndices[2] = {pDeviceQueues[RE_VK_QUEUE_GRAPHICS_INDEX]->u32QueueIndex, pDeviceQueues[RE_VK_QUEUE_PRESENT_INDEX]->u32QueueIndex};
 			if (pDeviceQueues[RE_VK_QUEUE_GRAPHICS_INDEX]->u32QueueIndex != pDeviceQueues[RE_VK_QUEUE_PRESENT_INDEX]->u32QueueIndex) {
 				vk_swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;

@@ -100,7 +100,6 @@ namespace RE {
 		}
 		pInstance = this;
 		if (!gameObjectRenderer.is_valid()) {
-			PRINT_LN("returning");
 			return;
 		}
 		constexpr uint32_t u32IndexStagingBufferQueueTypes[] = {RE_VK_QUEUE_TRANSFER_INDEX};

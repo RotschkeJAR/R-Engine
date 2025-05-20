@@ -655,6 +655,34 @@ namespace RE {
 			operator VkDeviceMemory() const;
 	};
 
+	class Vulkan_Image final {
+		private:
+			VkImage vk_hImage;
+
+		public:
+			Vulkan_Image() = delete;
+			Vulkan_Image(const VkImageType vk_eType, const VkFormat vk_eFormat, const VkExtent3D vk_imgSizes, const VkImageTiling vk_eTiling, const VkImageUsageFlagBits vk_eUsages, const uint32_t u32QueueTypeCount, const uint32_t *pu32BufferQueueTypeIndices, const VkImageLayout vk_eInitialLayout);
+			~Vulkan_Image();
+			VkImage get_image() const;
+			bool is_valid() const;
+
+			operator VkImage() const;
+	};
+
+	class Vulkan_ImageView final {
+		private:
+			VkImageView vk_hImageView;
+
+		public:
+			Vulkan_ImageView() = delete;
+			Vulkan_ImageView(const VkImage vk_hImage, const VkImageViewType vk_eType, const VkFormat vk_eFormat, const VkComponentMapping vk_componentMapping, const VkImageSubresourceRange vk_subresourceRange);
+			~Vulkan_ImageView();
+			VkImageView get_image_view() const;
+			bool is_valid() const;
+
+			operator VkImageView() const;
+	};
+
 	class Vulkan_Shader final {
 		private:
 			VkShaderModule vk_hShader;

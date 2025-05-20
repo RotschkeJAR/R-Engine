@@ -83,6 +83,7 @@ namespace RE {
 #if (RE_VK_FRAMES_IN_FLIGHT == 2)
 	: renderPass(setup_renderpass_objects(), vk_colorAttachment, RE_VK_RENDER_PASS_SUBPASS_DESCRIPTION_COUNT, vk_subpassDescription, RE_VK_RENDER_PASS_SUBPASS_DEPENDENCY_COUNT, vk_subpassDependency), 
 	ppPrimaryCommandBuffer(nullptr), 
+	pSemaphoresRenderFinished(nullptr), 
 	renderFence{Vulkan_Fence(VK_FENCE_CREATE_SIGNALED_BIT), Vulkan_Fence(VK_FENCE_CREATE_SIGNALED_BIT)}, 
 	ppSwapchainImageFences(new const Vulkan_Fence*[u32SwapchainImageCount] {}), 
 	u8CurrentFrameInFlight(0U), 
@@ -115,6 +116,8 @@ namespace RE {
 		}
 		CATCH_SIGNAL(indexStagingBuffer.upload_data(&indices, 0UL, RE_VK_INDEX_BUFFER_BYTES));
 
+		pSemaphoresRenderFinished = new const Vulkan_Semaphore[u32SwapchainImageCount];
+
 		const Vulkan_CommandBuffer indexBufferTransferCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, pCommandPools[RE_VK_COMMAND_POOL_TRANSFER_INDEX]);
 		CATCH_SIGNAL(indexBufferTransferCommandBuffer.begin_recording_command_buffer(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT));
 		CATCH_SIGNAL(indexBufferTransferCommandBuffer.cmd_copy_buffer(&indexStagingBuffer, &rectangleIndexBuffer, RE_VK_INDEX_BUFFER_BYTES));
@@ -139,6 +142,7 @@ namespace RE {
 		if (pInstance != this)
 			return;
 		pInstance = nullptr;
+		DELETE_ARRAY_SAFELY(pSemaphoresRenderFinished);
 		DELETE_ARRAY_SAFELY(ppSwapchainImageFences);
 		CATCH_SIGNAL(destroy_command_buffers());
 		CATCH_SIGNAL(destroy_framebuffers());
@@ -207,7 +211,7 @@ namespace RE {
 		constexpr uint32_t u32CommandBufferForRenderingCount = 1U;
 		VkCommandBuffer commandBuffersForRendering[u32CommandBufferForRenderingCount] = {ppPrimaryCommandBuffer[u32NextSwapchainImageIndex]->get_command_buffer()};
 		constexpr uint32_t u32SemaphoresToSignalAfterRenderingCount = 1U;
-		VkSemaphore vk_semaphoresToSignalAfterRendering[u32SemaphoresToSignalAfterRenderingCount] = {semaphoreRenderFinished[u8CurrentFrameInFlight].get_semaphore()};
+		VkSemaphore vk_semaphoresToSignalAfterRendering[u32SemaphoresToSignalAfterRenderingCount] = {pSemaphoresRenderFinished[u32NextSwapchainImageIndex].get_semaphore()};
 		VkFence vk_fenceToSignal = renderFence[u8CurrentFrameInFlight].get_fence();
 		CATCH_SIGNAL(renderFence[u8CurrentFrameInFlight].reset_fence());
 		CATCH_SIGNAL(pDeviceQueues[RE_VK_QUEUE_GRAPHICS_INDEX]->submit_to_queue(u32SemaphoresToWaitForBeforeRenderingCount, (VkSemaphore*) &vk_semaphoresToWaitForBeforeRendering, (VkPipelineStageFlags*) &vk_ePipelinesStagesToWaitFor, u32CommandBufferForRenderingCount, (VkCommandBuffer*) commandBuffersForRendering, u32SemaphoresToSignalAfterRenderingCount, (VkSemaphore*) &vk_semaphoresToSignalAfterRendering, vk_fenceToSignal));
@@ -217,7 +221,9 @@ namespace RE {
 
 	void Renderer::swapchain_recreated() {
 		delete[] ppSwapchainImageFences;
+		delete[] pSemaphoresRenderFinished;
 		ppSwapchainImageFences = new const Vulkan_Fence*[u32SwapchainImageCount] {};
+		pSemaphoresRenderFinished = new const Vulkan_Semaphore[u32SwapchainImageCount];
 		CATCH_SIGNAL(destroy_command_buffers());
 		CATCH_SIGNAL(destroy_framebuffers());
 		CATCH_SIGNAL(create_framebuffers());

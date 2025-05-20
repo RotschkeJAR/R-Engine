@@ -60,7 +60,8 @@ namespace RE {
 
 		private:
 			Vulkan_CommandBuffer **ppPrimaryCommandBuffer;
-			const Vulkan_Semaphore semaphoreAcquireSwapchainImage[RE_VK_FRAMES_IN_FLIGHT], semaphoreRenderFinished[RE_VK_FRAMES_IN_FLIGHT];
+			const Vulkan_Semaphore semaphoreAcquireSwapchainImage[RE_VK_FRAMES_IN_FLIGHT];
+			const Vulkan_Semaphore *pSemaphoresRenderFinished;
 			const Vulkan_Fence renderFence[RE_VK_FRAMES_IN_FLIGHT], **ppSwapchainImageFences;
 			uint8_t u8CurrentFrameInFlight;
 			Renderer_GameObject gameObjectRenderer;

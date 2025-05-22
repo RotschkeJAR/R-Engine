@@ -16,7 +16,8 @@ namespace RE {
 
 	// Attributes initialized at beginning and rarely changed
 	extern VkDevice vk_hDevice;
-	extern Vulkan_Queue *pDeviceQueues[RE_VK_QUEUE_COUNT];
+	extern VkQueue vk_deviceQueueFamilies[RE_VK_QUEUE_COUNT];
+	extern uint32_t u32DeviceQueueFamilyIndices[RE_VK_QUEUE_COUNT];
 	extern VkSwapchainKHR vk_hSwapchain;
 	extern VkFormat vk_eSwapchainImageFormat;
 	extern VkExtent2D vk_swapchainResolution;
@@ -27,6 +28,7 @@ namespace RE {
 
 	// Configurable settings
 	extern VkPhysicalDevice vk_hPhysicalDeviceSelected;
+	extern VkPhysicalDeviceMemoryProperties vk_physicalDeviceMemoryProperties;
 	
 	class RenderSystem final {
 		private:

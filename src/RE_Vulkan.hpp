@@ -11,8 +11,6 @@
 #define VK_NO_PROTOTYPES
 #include <vulkan/vulkan.h>
 
-#define VK_LAYER_KHR_VALIDATION_NAME "VK_LAYER_KHRONOS_validation"
-
 namespace RE {
 	
 	class Vulkan final {
@@ -633,84 +631,6 @@ namespace RE {
 #define VK_KHR_VALIDATION_LAYER_NAME "VK_LAYER_KHRONOS_validation"
 
 
-	class Vulkan_Buffer final {
-		private:
-			VkBuffer vk_hBuffer;
-			VkDeviceMemory vk_hBufferMemory;
-
-		public:
-			const VkDeviceSize vk_bufferSizeInBytes;
-
-			Vulkan_Buffer() = delete;
-			Vulkan_Buffer(const VkDeviceSize vk_bufferSizeInBytes, const VkBufferUsageFlags vk_bufferUsage, const uint32_t *pu32BufferQueueTypeIndices, const uint32_t u32QueueTypeCount, const VkMemoryPropertyFlags vk_memoryProperties);
-			~Vulkan_Buffer();
-			void map_memory(void** ppData, const VkDeviceSize vk_offsetBytes, const VkDeviceSize vk_memoryBytes) const;
-			void unmap_memory() const;
-			void upload_data(const void *pData, const VkDeviceSize vk_offsetBytes, const VkDeviceSize vk_uploadBytes) const;
-			VkBuffer get_buffer() const;
-			VkDeviceMemory get_memory() const;
-			bool is_valid() const;
-
-			operator VkBuffer() const;
-			operator VkDeviceMemory() const;
-	};
-
-	class Vulkan_Image final {
-		private:
-			VkImage vk_hImage;
-
-		public:
-			Vulkan_Image() = delete;
-			Vulkan_Image(const VkImageType vk_eType, const VkFormat vk_eFormat, const VkExtent3D vk_imgSizes, const VkImageTiling vk_eTiling, const VkImageUsageFlagBits vk_eUsages, const uint32_t u32QueueTypeCount, const uint32_t *pu32BufferQueueTypeIndices, const VkImageLayout vk_eInitialLayout);
-			~Vulkan_Image();
-			VkImage get_image() const;
-			bool is_valid() const;
-
-			operator VkImage() const;
-	};
-
-	class Vulkan_ImageView final {
-		private:
-			VkImageView vk_hImageView;
-
-		public:
-			Vulkan_ImageView() = delete;
-			Vulkan_ImageView(const VkImage vk_hImage, const VkImageViewType vk_eType, const VkFormat vk_eFormat, const VkComponentMapping vk_componentMapping, const VkImageSubresourceRange vk_subresourceRange);
-			~Vulkan_ImageView();
-			VkImageView get_image_view() const;
-			bool is_valid() const;
-
-			operator VkImageView() const;
-	};
-
-	class Vulkan_Shader final {
-		private:
-			VkShaderModule vk_hShader;
-
-		public:
-			Vulkan_Shader() = delete;
-			Vulkan_Shader(const char *const pcShaderBinaryFileSource);
-			~Vulkan_Shader();
-			VkShaderModule get_shader() const;
-			bool is_valid() const;
-
-			operator VkShaderModule() const;
-	};
-
-	class Vulkan_RenderPass final {
-		private:
-			VkRenderPass vk_hRenderPass;
-
-		public:
-			Vulkan_RenderPass() = delete;
-			Vulkan_RenderPass(const uint32_t u32AttachmentDescriptionCount, const VkAttachmentDescription *vk_pAttachmentDescriptions, const uint32_t u32SubpassDescriptionCount, const VkSubpassDescription *vk_pSubpassDescriptions, const uint32_t u32SubpassDependencyCount, const VkSubpassDependency *vk_pSubpassDependencies);
-			~Vulkan_RenderPass();
-			VkRenderPass get_render_pass() const;
-			bool is_valid() const;
-
-			operator VkRenderPass() const;
-	};
-
 	class Vulkan_DescriptorSetLayout final {
 		private:
 			VkDescriptorSetLayout vk_hDescriptorSetLayout;
@@ -795,20 +715,6 @@ namespace RE {
 			operator VkPipeline() const;
 	};
 
-	class Vulkan_Framebuffer final {
-		private:
-			VkFramebuffer vk_hFramebuffer;
-
-		public:
-			Vulkan_Framebuffer() = delete;
-			Vulkan_Framebuffer(const Vulkan_RenderPass *pRenderPass, const uint32_t u32ImageViewAttachmentCount, const VkImageView *vk_pImageViewAttachments, const uint32_t u32Width, const uint32_t u32Height);
-			~Vulkan_Framebuffer();
-			VkFramebuffer get_framebuffer() const;
-			bool is_valid() const;
-
-			operator VkFramebuffer() const;
-	};
-
 	class Vulkan_CommandPool final {
 		private:
 			VkCommandPool vk_hCommandPool;
@@ -886,37 +792,6 @@ namespace RE {
 	bool alloc_vk_command_buffers(const Vulkan_CommandPool *pCommandPool, const VkCommandBufferLevel vk_eCommandBufferLevel, const uint32_t u32CommandBufferCount, Vulkan_CommandBuffer **ppCommandBuffers);
 	void free_vk_command_buffers(const uint32_t u32CommandBufferCount, Vulkan_CommandBuffer **ppCommandBuffers);
 
-	class Vulkan_Semaphore final {
-		private:
-			VkSemaphore vk_hSemaphore;
-
-		public:
-			Vulkan_Semaphore();
-			~Vulkan_Semaphore();
-			VkSemaphore get_semaphore() const;
-			bool is_valid() const;
-
-			operator VkSemaphore() const;
-	};
-
-	class Vulkan_Fence final {
-		private:
-			VkFence vk_hFence;
-
-		public:
-			Vulkan_Fence();
-			Vulkan_Fence(VkFenceCreateFlagBits vk_eFenceCreateFlags);
-			~Vulkan_Fence();
-			void wait_for_fence() const;
-			void reset_fence() const;
-			void wait_for_and_reset_fence() const;
-			bool is_fence_signaled() const;
-			VkFence get_fence() const;
-			bool is_valid() const;
-
-			operator VkFence() const;
-	};
-
 	class Vulkan_Queue final {
 		public:
 			const VkQueue vk_hQueue;
@@ -939,5 +814,7 @@ namespace RE {
 	};
 
 }
+
+#include "RE_Vulkan_Wrapper Functions.hpp"
 
 #endif /* __RE_VULKAN_H__ */

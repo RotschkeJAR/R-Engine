@@ -19,7 +19,8 @@ namespace RE {
 	VkPhysicalDevice *vk_phPhysicalDevicesAvailable = nullptr;
 	uint32_t u32PhysicalDevicesAvailableCount = 0U;
 	VkDevice vk_hDevice = VK_NULL_HANDLE;
-	Vulkan_Queue *pDeviceQueues[RE_VK_QUEUE_COUNT] = {};
+	VkQueue vk_deviceQueueFamilies[RE_VK_QUEUE_COUNT] = {};
+	uint32_t u32DeviceQueueFamilyIndices[RE_VK_QUEUE_COUNT] = {};
 	VkSurfaceKHR vk_hSurface = VK_NULL_HANDLE;
 	VkSurfaceCapabilitiesKHR vk_surfaceCapabilities = {};
 	VkSurfaceFormatKHR *vk_pSurfaceFormatsAvailable = nullptr;
@@ -35,6 +36,7 @@ namespace RE {
 
 	// Configurable settings
 	VkPhysicalDevice vk_hPhysicalDeviceSelected = VK_NULL_HANDLE;
+	VkPhysicalDeviceMemoryProperties vk_physicalDeviceMemoryProperties = {};
 	VkSurfaceFormatKHR vk_surfaceFormatSelected = {};
 
 	uint8_t u8RenderSystemFlags = 0b00000110U;
@@ -103,6 +105,7 @@ namespace RE {
 				vk_surfaceFormatSelected = vk_pSurfaceFormatsAvailable[i];
 			}
 		}
+		CATCH_SIGNAL(vkGetPhysicalDeviceMemoryProperties(vk_hPhysicalDeviceSelected, &vk_physicalDeviceMemoryProperties));
 		if (!create_device() || !create_swapchain()) {
 			RE_ERROR("Failed initializing the render system");
 			return;
@@ -592,13 +595,12 @@ namespace RE {
 			return false;
 		}
 
-		VkQueue vk_hQueues[RE_VK_QUEUE_COUNT];
-		CATCH_SIGNAL(vkGetDeviceQueue(vk_hDevice, graphicsQueueIndex.value(), 0, &vk_hQueues[RE_VK_QUEUE_GRAPHICS_INDEX]));
-		pDeviceQueues[RE_VK_QUEUE_GRAPHICS_INDEX] = new Vulkan_Queue(vk_hQueues[RE_VK_QUEUE_GRAPHICS_INDEX], graphicsQueueIndex.value());
-		CATCH_SIGNAL(vkGetDeviceQueue(vk_hDevice, presentQueueIndex.value(), 0, &vk_hQueues[RE_VK_QUEUE_PRESENT_INDEX]));
-		pDeviceQueues[RE_VK_QUEUE_PRESENT_INDEX] = new Vulkan_Queue(vk_hQueues[RE_VK_QUEUE_PRESENT_INDEX], presentQueueIndex.value());
-		CATCH_SIGNAL(vkGetDeviceQueue(vk_hDevice, transferQueueIndex.value(), 0, &vk_hQueues[RE_VK_QUEUE_TRANSFER_INDEX]));
-		pDeviceQueues[RE_VK_QUEUE_TRANSFER_INDEX] = new Vulkan_Queue(vk_hQueues[RE_VK_QUEUE_TRANSFER_INDEX], transferQueueIndex.value());
+		u32DeviceQueueFamilyIndices[RE_VK_QUEUE_GRAPHICS_INDEX] = graphicsQueueIndex.value();
+		u32DeviceQueueFamilyIndices[RE_VK_QUEUE_PRESENT_INDEX] = presentQueueIndex.value();
+		u32DeviceQueueFamilyIndices[RE_VK_QUEUE_TRANSFER_INDEX] = transferQueueIndex.value();
+		CATCH_SIGNAL(vkGetDeviceQueue(vk_hDevice, u32DeviceQueueFamilyIndices[RE_VK_QUEUE_GRAPHICS_INDEX], 0, &vk_deviceQueueFamilies[RE_VK_QUEUE_GRAPHICS_INDEX]));
+		CATCH_SIGNAL(vkGetDeviceQueue(vk_hDevice, u32DeviceQueueFamilyIndices[RE_VK_QUEUE_PRESENT_INDEX], 0, &vk_deviceQueueFamilies[RE_VK_QUEUE_PRESENT_INDEX]));
+		CATCH_SIGNAL(vkGetDeviceQueue(vk_hDevice, u32DeviceQueueFamilyIndices[RE_VK_QUEUE_TRANSFER_INDEX], 0, &vk_deviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX]));
 
 		pCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_INDEX] = new Vulkan_CommandPool(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, graphicsQueueIndex.value());
 		pCommandPools[RE_VK_COMMAND_POOL_TRANSFER_INDEX] = new Vulkan_CommandPool(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, transferQueueIndex.value());

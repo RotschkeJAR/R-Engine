@@ -18,6 +18,7 @@ namespace RE {
 	// Attributes initialized at beginning and rarely changed
 	VkPhysicalDevice *vk_phPhysicalDevicesAvailable = nullptr;
 	uint32_t u32PhysicalDevicesAvailableCount = 0U;
+	VkPhysicalDeviceMemoryProperties vk_physicalDeviceMemoryProperties = {};
 	VkDevice vk_hDevice = VK_NULL_HANDLE;
 	VkQueue vk_deviceQueueFamilies[RE_VK_QUEUE_COUNT] = {};
 	uint32_t u32DeviceQueueFamilyIndices[RE_VK_QUEUE_COUNT] = {};
@@ -36,7 +37,6 @@ namespace RE {
 
 	// Configurable settings
 	VkPhysicalDevice vk_hPhysicalDeviceSelected = VK_NULL_HANDLE;
-	VkPhysicalDeviceMemoryProperties vk_physicalDeviceMemoryProperties = {};
 	VkSurfaceFormatKHR vk_surfaceFormatSelected = {};
 
 	uint8_t u8RenderSystemFlags = 0b00000110U;

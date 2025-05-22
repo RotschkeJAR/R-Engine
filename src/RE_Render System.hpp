@@ -15,6 +15,7 @@ namespace RE {
 #define RE_VK_COMMAND_POOL_TRANSFER_INDEX 1U
 
 	// Attributes initialized at beginning and rarely changed
+	extern VkPhysicalDeviceMemoryProperties vk_physicalDeviceMemoryProperties;
 	extern VkDevice vk_hDevice;
 	extern VkQueue vk_deviceQueueFamilies[RE_VK_QUEUE_COUNT];
 	extern uint32_t u32DeviceQueueFamilyIndices[RE_VK_QUEUE_COUNT];
@@ -28,7 +29,6 @@ namespace RE {
 
 	// Configurable settings
 	extern VkPhysicalDevice vk_hPhysicalDeviceSelected;
-	extern VkPhysicalDeviceMemoryProperties vk_physicalDeviceMemoryProperties;
 	
 	class RenderSystem final {
 		private:

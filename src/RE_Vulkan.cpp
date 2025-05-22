@@ -1540,7 +1540,7 @@ namespace RE {
 			default:
 				break;
 		}
-		error(pcFile, pcFunc, u32Line, append_to_string("The recently called Vulkan function threw an error: ", pcErrName, "\n", pcErrDetail).c_str(), true);
+		error(pcFile, pcFunc, u32Line, append_to_string("The recently called Vulkan function threw an error: ", pcErrName, "\n", pcErrDetail).c_str(), false);
 		return false;
 	}
 

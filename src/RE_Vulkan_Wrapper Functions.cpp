@@ -7,9 +7,11 @@ namespace RE {
 	static std::vector<uint32_t> get_queue_indices(const uint32_t u32QueueTypeCount, const uint32_t *pu32QueueTypes) {
 		std::vector<uint32_t> queueFamilyIndices;
 		if (u32QueueTypeCount > 1U)
-			for (uint32_t u32QueueTypeIndex = 0U; u32QueueTypeIndex < u32QueueTypeCount; u32QueueTypeIndex++)
-				if (std::find(queueFamilyIndices.begin(), queueFamilyIndices.end(), pDeviceQueues[pu32QueueTypes[u32QueueTypeIndex]]->u32QueueIndex) == queueFamilyIndices.end())
-					queueFamilyIndices.push_back(pDeviceQueues[pu32QueueTypes[u32QueueTypeIndex]]->u32QueueIndex);
+			for (uint32_t u32QueueTypeIndex = 0U; u32QueueTypeIndex < u32QueueTypeCount; u32QueueTypeIndex++) {
+				const uint32_t u32QueueType = pu32QueueTypes[u32QueueTypeIndex];
+				if (std::find(queueFamilyIndices.begin(), queueFamilyIndices.end(), u32DeviceQueueFamilyIndices[u32QueueType]) == queueFamilyIndices.end())
+					queueFamilyIndices.push_back(u32DeviceQueueFamilyIndices[u32QueueType]);
+			}
 		return queueFamilyIndices;
 	}
 	
@@ -32,7 +34,7 @@ namespace RE {
 			return false;
 		}
 		VkMemoryRequirements vk_bufferMemoryRequirements;
-		CATCH_SIGNAL(vkGetBufferMemoryRequirements(vk_hDevice, vk_hBuffer, &vk_bufferMemoryRequirements));
+		CATCH_SIGNAL(vkGetBufferMemoryRequirements(vk_hDevice, *vk_phBuffer, &vk_bufferMemoryRequirements));
 		std::optional<uint32_t> physicalMemoryTypeSelected;
 		for (uint32_t u32PhysicalMemoryTypeIndex = 0U; u32PhysicalMemoryTypeIndex < vk_physicalDeviceMemoryProperties.memoryTypeCount; u32PhysicalMemoryTypeIndex++) {
 			if ((vk_bufferMemoryRequirements.memoryTypeBits & (1U << u32PhysicalMemoryTypeIndex)) && (vk_physicalDeviceMemoryProperties.memoryTypes[u32PhysicalMemoryTypeIndex].propertyFlags & vk_memoryProperties)) {
@@ -66,15 +68,15 @@ namespace RE {
 
 	bool __vk_create_framebuffer(const VkFramebufferCreateFlags vk_eCreateFlags, const VkRenderPass vk_hRenderPass, const uint32_t u32ImageViewAttachmentCount, const VkImageView *vk_phImageViewAttachments, const uint32_t u32Width, const uint32_t u32Height, const uint32_t u32Layers, VkFramebuffer *vk_phFramebuffer, const char *pcFile, const char *pcFunc, const uint32_t u32Line) {
 		VkFramebufferCreateInfo vk_framebufferCreateInfo = {
-			.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+			.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
 			.flags = vk_eCreateFlags,
-			.renderPass = vk_hRenderPass;
-			.attachmentCount = u32ImageViewAttachmentCount;
-			.pAttachments = vk_phImageViewAttachments;
-			.width = u32Width;
-			.height = u32Height;
-			.layers = u32Layers;
-		}
+			.renderPass = vk_hRenderPass,
+			.attachmentCount = u32ImageViewAttachmentCount,
+			.pAttachments = vk_phImageViewAttachments,
+			.width = u32Width,
+			.height = u32Height,
+			.layers = u32Layers
+		};
 		if (!CHECK_VK_RESULT(vkCreateFramebuffer(vk_hDevice, &vk_framebufferCreateInfo, nullptr, vk_phFramebuffer))) {
 			error(pcFile, pcFunc, u32Line, "Failed creating Vulkan framebuffer", true);
 			return false;
@@ -82,12 +84,12 @@ namespace RE {
 		return true;
 	}
 
-	bool __vk_create_semaphore(const VkSemaphoreCreateFlags vk_eCreateFlags, const VkSemaphore *vk_phSemaphore, const char *pcFile, const char *pcFunc, const uint32_t u32Line) {
+	bool __vk_create_semaphore(const VkSemaphoreCreateFlags vk_eCreateFlags, VkSemaphore *vk_phSemaphore, const char *pcFile, const char *pcFunc, const uint32_t u32Line) {
 		VkSemaphoreCreateInfo vk_semaphoreCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
 			.flags = vk_eCreateFlags
-		}
-		if (!CHECK_VK_RESULT(vk_hDevice, &vk_semaphoreCreateInfo, nullptr, vk_phSemaphore)) {
+		};
+		if (!CHECK_VK_RESULT(vkCreateSemaphore(vk_hDevice, &vk_semaphoreCreateInfo, nullptr, vk_phSemaphore))) {
 			error(pcFile, pcFunc, u32Line, "Failed creating Vulkan semaphore", true);
 			return false;
 		}
@@ -99,7 +101,7 @@ namespace RE {
 			.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
 			.flags = vk_eCreateFlags
 		};
-		if (!CHECK_VK_RESULT(vk_hDevice, &vk_fenceCreateInfo, nullptr, vk_phFence)) {
+		if (!CHECK_VK_RESULT(vkCreateFence(vk_hDevice, &vk_fenceCreateInfo, nullptr, vk_phFence))) {
 			error(pcFile, pcFunc, u32Line, "Failed creating Vulkan fence", true);
 			return false;
 		}
@@ -107,9 +109,9 @@ namespace RE {
 	}
 
 	bool __vk_create_shader_from_file(const char *pcPathToFile, const VkShaderModuleCreateFlags vk_eCreateFlags, VkShaderModule *vk_phShaderModule, const char *pcFile, const char *pcFunc, const uint32_t u32Line) {
-		std::ifstream shaderBinaryFile(pcShaderBinaryFileSource, std::ios::ate | std::ios::binary);
+		std::ifstream shaderBinaryFile(pcPathToFile, std::ios::ate | std::ios::binary);
 		if (!shaderBinaryFile.is_open()) {
-			error(pcFile, pcFunc, u32Line, append_to_string("Failed opening the SPIR-V shader binary file \"", pcShaderBinaryFileSource, "\"").c_str(), true);
+			error(pcFile, pcFunc, u32Line, append_to_string("Failed opening the SPIR-V shader binary file \"", pcPathToFile, "\"").c_str(), true);
 			return false;
 		}
 		const size_t shaderBinaryFileSize = shaderBinaryFile.tellg();
@@ -127,7 +129,7 @@ namespace RE {
 		const bool bShaderCreatedSuccessfully = CHECK_VK_RESULT(vkCreateShaderModule(vk_hDevice, &vk_shaderCreateInfo, nullptr, vk_phShaderModule));
 		delete[] pcShaderBinaries;
 		if (!bShaderCreatedSuccessfully) {
-			error(pcFile, pcFunc, u32Line, append_to_string("Failed creating Vulkan shader module for the SPIR-V shader binaries loaded from \"", pcShaderBinaryFileSource, "\"").c_str(), true);
+			error(pcFile, pcFunc, u32Line, append_to_string("Failed creating Vulkan shader module for the SPIR-V shader binaries loaded from \"", pcPathToFile, "\"").c_str(), true);
 			return false;
 		}
 		return true;
@@ -150,24 +152,91 @@ namespace RE {
 		return true;
 	}
 
-
-	void __vk_wait_for_fence(const VkFence vk_hFence) {
-		constexpr uint32_t u32FenceCount = 1U;
-		const VkFence vk_allFences[u32FenceCount] = {vk_hFence};
-		CATCH_SIGNAL(vkWaitForFences(vk_hDevice, u32FenceCount, vk_allFences, VK_TRUE, std::numeric_limits<uint32_t>::max()));
+	bool __vk_create_descriptor_set_layout(const VkDescriptorSetLayoutCreateFlags vk_eCreateFlags, const uint32_t u32BindingCount, const VkDescriptorSetLayoutBinding *vk_pBindings, VkDescriptorSetLayout *vk_pDescriptorSetLayout, const char *pcFile, const char *pcFunc, const uint32_t u32Line) {
+		VkDescriptorSetLayoutCreateInfo vk_descriptorSetLayoutCreateInfo = {
+			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+			.flags = vk_eCreateFlags,
+			.bindingCount = u32BindingCount,
+			.pBindings = vk_pBindings
+		};
+		if (!CHECK_VK_RESULT(vkCreateDescriptorSetLayout(vk_hDevice, &vk_descriptorSetLayoutCreateInfo, nullptr, vk_pDescriptorSetLayout))) {
+			error(pcFile, pcFunc, u32Line, "Failed to create Vulkan descriptor set layout", true);
+			return false;
+		}
+		return true;
 	}
 
-	void __vk_reset_fence(const VkFence vk_hFence) {
-		constexpr uint32_t u32FenceCount = 1U;
-		const VkFence vk_allFences[u32FenceCount] = {vk_hFence};
-		CATCH_SIGNAL(vkResetFences(vk_hDevice, u32FenceCount, vk_allFences));
+	bool __vk_create_pipeline_layout(const VkPipelineLayoutCreateFlags vk_eCreateFlags, const uint32_t u32DescriptorSetLayoutCount, const VkDescriptorSetLayout *vk_phDescriptorSetLayouts, const uint32_t u32PushConstantRangeCount, const VkPushConstantRange *vk_pPushConstantRanges, VkPipelineLayout *vk_phPipelineLayout, const char *pcFile, const char *pcFunc, const uint32_t u32Line) {
+		VkPipelineLayoutCreateInfo vk_pipelineLayoutCreateInfo = {
+			.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+			.flags = vk_eCreateFlags,
+			.setLayoutCount = u32DescriptorSetLayoutCount,
+			.pSetLayouts = vk_phDescriptorSetLayouts,
+			.pushConstantRangeCount = u32PushConstantRangeCount,
+			.pPushConstantRanges = vk_pPushConstantRanges
+		};
+		if (!CHECK_VK_RESULT(vkCreatePipelineLayout(vk_hDevice, &vk_pipelineLayoutCreateInfo, nullptr, vk_phPipelineLayout))) {
+			error(pcFile, pcFunc, u32Line, "Failed to create Vulkan pipeline layout", true);
+			return false;
+		}
+		return true;
 	}
 
-	void __vk_wait_for_and_reset_fence(const VkFence vk_hFence) {
-		constexpr uint32_t u32FenceCount = 1U;
-		const VkFence vk_allFences[u32FenceCount] = {vk_hFence};
-		CATCH_SIGNAL(vkWaitForFences(vk_hDevice, u32FenceCount, vk_allFences, VK_TRUE, std::numeric_limits<uint32_t>::max()));
-		CATCH_SIGNAL(vkResetFences(vk_hDevice, u32FenceCount, vk_allFences));
+	bool __vk_create_descriptor_pool(const VkDescriptorPoolCreateFlags vk_eCreateFlags, const uint32_t u32MaxSets, const uint32_t u32PoolSizeCount, const VkDescriptorPoolSize *vk_pPoolSizes, VkDescriptorPool *vk_phDescriptorPool, const char *pcFile, const char *pcFunc, const uint32_t u32Line) {
+		VkDescriptorPoolCreateInfo vk_descriptorPoolCreateInfo = {
+			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+			.flags = vk_eCreateFlags,
+			.maxSets = u32MaxSets,
+			.poolSizeCount = u32PoolSizeCount,
+			.pPoolSizes = vk_pPoolSizes
+		};
+		if (!CHECK_VK_RESULT(vkCreateDescriptorPool(vk_hDevice, &vk_descriptorPoolCreateInfo, nullptr, vk_phDescriptorPool))) {
+			error(pcFile, pcFunc, u32Line, "Failed to create Vulkan descriptor pool", true);
+			return false;
+		}
+		return true;
+	}
+
+	bool __vk_alloc_command_buffers(const VkCommandPool vk_hCommandPool, const VkCommandBufferLevel vk_eCommandBufferLevel, const uint32_t u32CommandBufferCount, VkCommandBuffer *vk_phCommandBuffers, const char *pcFile, const char *pcFunc, const uint32_t u32Line) {
+		VkCommandBufferAllocateInfo vk_commandBufferAllocInfo = {
+			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+			.commandPool = vk_hCommandPool,
+			.level = vk_eCommandBufferLevel,
+			.commandBufferCount = u32CommandBufferCount
+		};
+		if (!CHECK_VK_RESULT(vkAllocateCommandBuffers(vk_hDevice, &vk_commandBufferAllocInfo, vk_phCommandBuffers))) {
+			error(pcFile, pcFunc, u32Line, "Failed to allocate Vulkan command buffers", true);
+			return false;
+		}
+		return true;
+	}
+
+	bool __vk_alloc_descriptor_sets(const VkDescriptorPool vk_hDescriptorPool, const uint32_t u32DescriptorSetCount, const VkDescriptorSetLayout *vk_phDescriptorSetLayouts, VkDescriptorSet *vk_phDescriptorSets, const char *pcFile, const char *pcFunc, const uint32_t u32Line) {
+		VkDescriptorSetAllocateInfo vk_descriptorSetAllocInfo = {
+			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+			.descriptorPool = vk_hDescriptorPool,
+			.descriptorSetCount = u32DescriptorSetCount,
+			.pSetLayouts = vk_phDescriptorSetLayouts
+		};
+		if (!CHECK_VK_RESULT(vkAllocateDescriptorSets(vk_hDevice, &vk_descriptorSetAllocInfo, vk_phDescriptorSets))) {
+			error(pcFile, pcFunc, u32Line, "Failed to allocate Vulkan descriptor sets", true);
+			return false;
+		}
+		return true;
+	}
+
+
+	void __vk_wait_for_fence(const VkFence *vk_phFence) {
+		CATCH_SIGNAL(vkWaitForFences(vk_hDevice, 1U, vk_phFence, VK_TRUE, std::numeric_limits<uint32_t>::max()));
+	}
+
+	void __vk_reset_fence(const VkFence *vk_phFence) {
+		CATCH_SIGNAL(vkResetFences(vk_hDevice, 1U, vk_phFence));
+	}
+
+	void __vk_wait_for_and_reset_fence(const VkFence *vk_phFence) {
+		__vk_wait_for_fence(vk_phFence);
+		__vk_reset_fence(vk_phFence);
 	}
 
 	bool __vk_signal_semaphores(const uint32_t u32SignalSemaphoreCount, const VkSemaphore *vk_phSignalSemaphores, const char *pcFile, const char *pcFunc, const uint32_t u32Line) {
@@ -177,11 +246,11 @@ namespace RE {
 			.pWaitSemaphores = nullptr,
 			.pWaitDstStageMask = nullptr,
 			.commandBufferCount = 1U,
-			.pCommandBuffers = ,
+			.pCommandBuffers = nullptr,
 			.signalSemaphoreCount = u32SignalSemaphoreCount,
 			.pSignalSemaphores = vk_phSignalSemaphores
 		};
-		if (!CHECK_VK_RESULT(vkQueueSubmit(vk_deviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], 1U, &vk_queueSubmissionInfo, VK_NULL_HANDLE))) {
+		if (!CHECK_VK_RESULT(vkQueueSubmit(vk_hDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], 1U, &vk_queueSubmissionInfo, VK_NULL_HANDLE))) {
 			error(pcFile, pcFunc, u32Line, "Failed to submit dummy task to the transfer queue to signal semaphores", true);
 			return false;
 		}
@@ -189,30 +258,30 @@ namespace RE {
 	}
 
 
-	static bool submit_to_vulkan_queue(const VkQueue vk_hQueue, const uint32_t u32WaitSemaphoreCount, const VkSemaphore *vk_phWaitSemaphores, const VkPipelineStageFlagBits vk_eWaitPipelineStage, const uint32_t u32CommandBufferCount, const VkCommandBuffer *vk_phCommandBuffers, const uint32_t u32SignalSemaphoreCount, const VkSemaphore vk_phSignalSemaphores, const VkFence vk_hFenceToSignal, const char *pcFile, const char *pcFunc, const uint32_t u32Line) {
+	static bool submit_to_vulkan_queue(const VkQueue vk_hQueue, const uint32_t u32WaitSemaphoreCount, const VkSemaphore *vk_phWaitSemaphores, const VkPipelineStageFlags *vk_peWaitPipelineStages, const uint32_t u32CommandBufferCount, const VkCommandBuffer *vk_phCommandBuffers, const uint32_t u32SignalSemaphoreCount, const VkSemaphore *vk_phSignalSemaphores, const VkFence vk_hFenceToSignal, const char *pcFile, const char *pcFunc, const uint32_t u32Line) {
 		VkSubmitInfo vk_queueSubmissionInfo = {
 			.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
 			.waitSemaphoreCount = u32WaitSemaphoreCount,
 			.pWaitSemaphores = vk_phWaitSemaphores,
-			.pWaitDstStageMask = vk_eWaitPipelineStage,
+			.pWaitDstStageMask = vk_peWaitPipelineStages,
 			.commandBufferCount = u32CommandBufferCount,
 			.pCommandBuffers = vk_phCommandBuffers,
 			.signalSemaphoreCount = u32SignalSemaphoreCount,
 			.pSignalSemaphores = vk_phSignalSemaphores
 		};
-		return CHECK_VK_RESULT(vkQueueSubmit(vk_hQueue, 1U, &vk_queueSubmissionInfo, vk_hFence));
+		return CHECK_VK_RESULT(vkQueueSubmit(vk_hQueue, 1U, &vk_queueSubmissionInfo, vk_hFenceToSignal));
 	}
 
-	bool __vk_submit_to_graphics_queue(const uint32_t u32WaitSemaphoreCount, const VkSemaphore *vk_phWaitSemaphores, const VkPipelineStageFlagBits vk_eWaitPipelineStage, const uint32_t u32CommandBufferCount, const VkCommandBuffer *vk_phCommandBuffers, const uint32_t u32SignalSemaphoreCount, const VkSemaphore vk_phSignalSemaphores, const VkFence vk_hFenceToSignal, const char *pcFile, const char *pcFunc, const uint32_t u32Line) {
-		if (!submit_to_vulkan_queue(vk_deviceQueueFamilies[RE_VK_QUEUE_GRAPHICS_INDEX], vk_phWaitSemaphores, vk_eWaitPipelineStage, u32CommandBufferCount, vk_phCommandBuffers, u32SignalSemaphoreCount, vk_phSignalSemaphores, vk_hFenceToSignal, pcFile, pcFunc, u32Line)) {
+	bool __vk_submit_to_graphics_queue(const uint32_t u32WaitSemaphoreCount, const VkSemaphore *vk_phWaitSemaphores, const VkPipelineStageFlags *vk_peWaitPipelineStages, const uint32_t u32CommandBufferCount, const VkCommandBuffer *vk_phCommandBuffers, const uint32_t u32SignalSemaphoreCount, const VkSemaphore *vk_phSignalSemaphores, const VkFence vk_hFenceToSignal, const char *pcFile, const char *pcFunc, const uint32_t u32Line) {
+		if (!submit_to_vulkan_queue(vk_hDeviceQueueFamilies[RE_VK_QUEUE_GRAPHICS_INDEX], u32WaitSemaphoreCount, vk_phWaitSemaphores, vk_peWaitPipelineStages, u32CommandBufferCount, vk_phCommandBuffers, u32SignalSemaphoreCount, vk_phSignalSemaphores, vk_hFenceToSignal, pcFile, pcFunc, u32Line)) {
 			error(pcFile, pcFunc, u32Line, "Failed to submit task(s) to the graphics queue", true);
 			return false;
 		}
 		return true;
 	}
 
-	bool __vk_submit_to_transfer_queue(const uint32_t u32WaitSemaphoreCount, const VkSemaphore *vk_phWaitSemaphores, const VkPipelineStageFlagBits vk_eWaitPipelineStage, const uint32_t u32CommandBufferCount, const VkCommandBuffer *vk_phCommandBuffers, const uint32_t u32SignalSemaphoreCount, const VkSemaphore vk_phSignalSemaphores, const VkFence vk_hFenceToSignal, const char *pcFile, const char *pcFunc, const uint32_t u32Line) {
-		if (!submit_to_vulkan_queue(vk_deviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], vk_phWaitSemaphores, vk_eWaitPipelineStage, u32CommandBufferCount, vk_phCommandBuffers, u32SignalSemaphoreCount, vk_phSignalSemaphores, vk_hFenceToSignal, pcFile, pcFunc, u32Line)) {
+	bool __vk_submit_to_transfer_queue(const uint32_t u32WaitSemaphoreCount, const VkSemaphore *vk_phWaitSemaphores, const VkPipelineStageFlags *vk_peWaitPipelineStages, const uint32_t u32CommandBufferCount, const VkCommandBuffer *vk_phCommandBuffers, const uint32_t u32SignalSemaphoreCount, const VkSemaphore *vk_phSignalSemaphores, const VkFence vk_hFenceToSignal, const char *pcFile, const char *pcFunc, const uint32_t u32Line) {
+		if (!submit_to_vulkan_queue(vk_hDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], u32WaitSemaphoreCount, vk_phWaitSemaphores, vk_peWaitPipelineStages, u32CommandBufferCount, vk_phCommandBuffers, u32SignalSemaphoreCount, vk_phSignalSemaphores, vk_hFenceToSignal, pcFile, pcFunc, u32Line)) {
 			error(pcFile, pcFunc, u32Line, "Failed to submit task(s) to the transfer queue", true);
 			return false;
 		}
@@ -228,9 +297,11 @@ namespace RE {
 			.pSwapchains = &vk_hSwapchain,
 			.pImageIndices = pu32SwapchainImageIndex,
 		};
-		if (!CHECK_VK_RESULT(vkQueuePresentKHR(vk_deviceQueueFamilies[RE_VK_QUEUE_PRESENT_INDEX], &vk_presentInfo))) {
-			error(pcFile, pcFunc, u32Line, "Failed to submit task(s) to the present queue");
+		if (!CHECK_VK_RESULT(vkQueuePresentKHR(vk_hDeviceQueueFamilies[RE_VK_QUEUE_PRESENT_INDEX], &vk_presentInfo))) {
+			error(pcFile, pcFunc, u32Line, "Failed to submit task(s) to the present queue", true);
+			return false;
 		}
+		return true;
 	}
 
 }

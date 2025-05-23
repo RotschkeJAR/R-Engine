@@ -17,15 +17,15 @@ namespace RE {
 	// Attributes initialized at beginning and rarely changed
 	extern VkPhysicalDeviceMemoryProperties vk_physicalDeviceMemoryProperties;
 	extern VkDevice vk_hDevice;
-	extern VkQueue vk_deviceQueueFamilies[RE_VK_QUEUE_COUNT];
+	extern VkQueue vk_hDeviceQueueFamilies[RE_VK_QUEUE_COUNT];
 	extern uint32_t u32DeviceQueueFamilyIndices[RE_VK_QUEUE_COUNT];
 	extern VkSwapchainKHR vk_hSwapchain;
 	extern VkFormat vk_eSwapchainImageFormat;
 	extern VkExtent2D vk_swapchainResolution;
-	extern VkImage *vk_pSwapchainImages;
+	extern VkImage *vk_phSwapchainImages;
 	extern VkImageView *vk_phSwapchainImageViews;
 	extern uint32_t u32SwapchainImageCount;
-	extern Vulkan_CommandPool *pCommandPools[RE_VK_COMMAND_POOL_COUNT];
+	extern VkCommandPool vk_hCommandPools[RE_VK_COMMAND_POOL_COUNT];
 
 	// Configurable settings
 	extern VkPhysicalDevice vk_hPhysicalDeviceSelected;
@@ -51,7 +51,6 @@ namespace RE {
 			RenderSystem();
 			~RenderSystem();
 			bool refresh();
-			bool get_next_swapchain_image(const Vulkan_Semaphore *pSemaphoreWaitForSwapchainImageAcquired, uint32_t *pu32NextSwapchainImageIndex);
 			void window_resize_event();
 			bool is_valid();
 	};

@@ -66,11 +66,6 @@ namespace RE {
 	Camera *pActiveCamera = nullptr;
 	Renderer *Renderer::pInstance = nullptr;
 
-	static uint32_t setup_renderpass_objects() {
-		vk_colorAttachment[0].format = vk_eSwapchainImageFormat;
-		return RE_VK_RENDER_PASS_ATTACHMENT_DESCRIPTION_COUNT;
-	}
-
 	Renderer::Renderer() 
 #if (RE_VK_FRAMES_IN_FLIGHT == 2)
 #else

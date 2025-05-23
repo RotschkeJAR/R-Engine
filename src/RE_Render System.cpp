@@ -20,7 +20,7 @@ namespace RE {
 	uint32_t u32PhysicalDevicesAvailableCount = 0U;
 	VkPhysicalDeviceMemoryProperties vk_physicalDeviceMemoryProperties = {};
 	VkDevice vk_hDevice = VK_NULL_HANDLE;
-	VkQueue vk_deviceQueueFamilies[RE_VK_QUEUE_COUNT] = {};
+	VkQueue vk_hDeviceQueueFamilies[RE_VK_QUEUE_COUNT] = {};
 	uint32_t u32DeviceQueueFamilyIndices[RE_VK_QUEUE_COUNT] = {};
 	VkSurfaceKHR vk_hSurface = VK_NULL_HANDLE;
 	VkSurfaceCapabilitiesKHR vk_surfaceCapabilities = {};
@@ -30,10 +30,10 @@ namespace RE {
 	VkSwapchainKHR vk_hSwapchain = VK_NULL_HANDLE;
 	VkFormat vk_eSwapchainImageFormat = VK_FORMAT_UNDEFINED;
 	VkExtent2D vk_swapchainResolution = {};
-	VkImage *vk_pSwapchainImages = nullptr;
+	VkImage *vk_phSwapchainImages = nullptr;
 	VkImageView *vk_phSwapchainImageViews = nullptr;
 	uint32_t u32SwapchainImageCount = 0U;
-	Vulkan_CommandPool *pCommandPools[RE_VK_COMMAND_POOL_COUNT] = {};
+	VkCommandPool vk_hCommandPools[RE_VK_COMMAND_POOL_COUNT] = {};
 
 	// Configurable settings
 	VkPhysicalDevice vk_hPhysicalDeviceSelected = VK_NULL_HANDLE;
@@ -598,22 +598,32 @@ namespace RE {
 		u32DeviceQueueFamilyIndices[RE_VK_QUEUE_GRAPHICS_INDEX] = graphicsQueueIndex.value();
 		u32DeviceQueueFamilyIndices[RE_VK_QUEUE_PRESENT_INDEX] = presentQueueIndex.value();
 		u32DeviceQueueFamilyIndices[RE_VK_QUEUE_TRANSFER_INDEX] = transferQueueIndex.value();
-		CATCH_SIGNAL(vkGetDeviceQueue(vk_hDevice, u32DeviceQueueFamilyIndices[RE_VK_QUEUE_GRAPHICS_INDEX], 0, &vk_deviceQueueFamilies[RE_VK_QUEUE_GRAPHICS_INDEX]));
-		CATCH_SIGNAL(vkGetDeviceQueue(vk_hDevice, u32DeviceQueueFamilyIndices[RE_VK_QUEUE_PRESENT_INDEX], 0, &vk_deviceQueueFamilies[RE_VK_QUEUE_PRESENT_INDEX]));
-		CATCH_SIGNAL(vkGetDeviceQueue(vk_hDevice, u32DeviceQueueFamilyIndices[RE_VK_QUEUE_TRANSFER_INDEX], 0, &vk_deviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX]));
+		CATCH_SIGNAL(vkGetDeviceQueue(vk_hDevice, u32DeviceQueueFamilyIndices[RE_VK_QUEUE_GRAPHICS_INDEX], 0, &vk_hDeviceQueueFamilies[RE_VK_QUEUE_GRAPHICS_INDEX]));
+		CATCH_SIGNAL(vkGetDeviceQueue(vk_hDevice, u32DeviceQueueFamilyIndices[RE_VK_QUEUE_PRESENT_INDEX], 0, &vk_hDeviceQueueFamilies[RE_VK_QUEUE_PRESENT_INDEX]));
+		CATCH_SIGNAL(vkGetDeviceQueue(vk_hDevice, u32DeviceQueueFamilyIndices[RE_VK_QUEUE_TRANSFER_INDEX], 0, &vk_hDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX]));
 
-		pCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_INDEX] = new Vulkan_CommandPool(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, graphicsQueueIndex.value());
-		pCommandPools[RE_VK_COMMAND_POOL_TRANSFER_INDEX] = new Vulkan_CommandPool(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, transferQueueIndex.value());
+		VkCommandPoolCreateInfo vk_commandPoolCreateInfo = {
+			.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+			.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
+			.queueFamilyIndex = u32DeviceQueueFamilyIndices[RE_VK_QUEUE_GRAPHICS_INDEX]
+		};
+		CATCH_SIGNAL(vkCreateCommandPool(vk_hDevice, &vk_commandPoolCreateInfo, nullptr, &vk_hCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_INDEX]));
+		vk_commandPoolCreateInfo.queueFamilyIndex = u32DeviceQueueFamilyIndices[RE_VK_QUEUE_TRANSFER_INDEX];
+		CATCH_SIGNAL(vkCreateCommandPool(vk_hDevice, &vk_commandPoolCreateInfo, nullptr, &vk_hCommandPools[RE_VK_COMMAND_POOL_TRANSFER_INDEX]));
 		return true;
 	}
 	
 	void RenderSystem::destroy_device() {
 		if (!vk_hDevice)
 			return;
-		for (uint8_t u8CommandPoolIndex = 0U; u8CommandPoolIndex < RE_VK_COMMAND_POOL_COUNT; u8CommandPoolIndex++)
-			DELETE_SAFELY(pCommandPools[u8CommandPoolIndex]);
-		for (uint8_t u8QueueIndex = 0U; u8QueueIndex < RE_VK_QUEUE_COUNT; u8QueueIndex++)
-			DELETE_SAFELY(pDeviceQueues[u8QueueIndex]);
+		for (uint8_t u8CommandPoolIndex = 0U; u8CommandPoolIndex < RE_VK_COMMAND_POOL_COUNT; u8CommandPoolIndex++) {
+			CATCH_SIGNAL(vkDestroyCommandPool(vk_hDevice, vk_hCommandPools[u8CommandPoolIndex], nullptr));
+			vk_hCommandPools[u8CommandPoolIndex] = VK_NULL_HANDLE;
+		}
+		for (uint8_t u8QueueFamilyIndex = 0U; u8QueueFamilyIndex < RE_VK_QUEUE_COUNT; u8QueueFamilyIndex++) {
+			u32DeviceQueueFamilyIndices[u8QueueFamilyIndex] = 0U;
+			vk_hDeviceQueueFamilies[u8QueueFamilyIndex] = VK_NULL_HANDLE;
+		}
 		CATCH_SIGNAL(vkDestroyDevice(vk_hDevice, nullptr));
 		vk_hDevice = VK_NULL_HANDLE;
 	}
@@ -624,7 +634,7 @@ namespace RE {
 			if (vk_hOldSwapchain) {
 				for (uint32_t u32SwapchainImageIndex = 0U; u32SwapchainImageIndex < u32SwapchainImageCount; u32SwapchainImageIndex++)
 					CATCH_SIGNAL(vkDestroyImageView(vk_hDevice, vk_phSwapchainImageViews[u32SwapchainImageIndex], nullptr));
-				DELETE_ARRAY_SAFELY(vk_pSwapchainImages);
+				DELETE_ARRAY_SAFELY(vk_phSwapchainImages);
 				DELETE_ARRAY_SAFELY(vk_phSwapchainImageViews);
 			}
 			VkSwapchainCreateInfoKHR vk_swapchainCreateInfo = {};
@@ -642,8 +652,8 @@ namespace RE {
 			vk_swapchainCreateInfo.imageExtent = vk_swapchainResolution;
 			vk_swapchainCreateInfo.imageArrayLayers = 1U;
 			vk_swapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-			const uint32_t u32SwapchainRelevantQueueIndices[2] = {pDeviceQueues[RE_VK_QUEUE_GRAPHICS_INDEX]->u32QueueIndex, pDeviceQueues[RE_VK_QUEUE_PRESENT_INDEX]->u32QueueIndex};
-			if (pDeviceQueues[RE_VK_QUEUE_GRAPHICS_INDEX]->u32QueueIndex != pDeviceQueues[RE_VK_QUEUE_PRESENT_INDEX]->u32QueueIndex) {
+			const uint32_t u32SwapchainRelevantQueueIndices[2] = {u32DeviceQueueFamilyIndices[RE_VK_QUEUE_GRAPHICS_INDEX], u32DeviceQueueFamilyIndices[RE_VK_QUEUE_PRESENT_INDEX]};
+			if (u32DeviceQueueFamilyIndices[RE_VK_QUEUE_GRAPHICS_INDEX] != u32DeviceQueueFamilyIndices[RE_VK_QUEUE_PRESENT_INDEX]) {
 				vk_swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
 				vk_swapchainCreateInfo.queueFamilyIndexCount = 2U;
 				vk_swapchainCreateInfo.pQueueFamilyIndices = u32SwapchainRelevantQueueIndices;
@@ -667,14 +677,14 @@ namespace RE {
 		} // End of creating actual swapchain
 
 		CATCH_SIGNAL(vkGetSwapchainImagesKHR(vk_hDevice, vk_hSwapchain, &u32SwapchainImageCount, nullptr));
-		vk_pSwapchainImages = new VkImage[u32SwapchainImageCount];
-		CATCH_SIGNAL(vkGetSwapchainImagesKHR(vk_hDevice, vk_hSwapchain, &u32SwapchainImageCount, vk_pSwapchainImages));
+		vk_phSwapchainImages = new VkImage[u32SwapchainImageCount];
+		CATCH_SIGNAL(vkGetSwapchainImagesKHR(vk_hDevice, vk_hSwapchain, &u32SwapchainImageCount, vk_phSwapchainImages));
 		vk_phSwapchainImageViews = new VkImageView[u32SwapchainImageCount];
 		uint32_t u32SwapchainImageViewsCreated = 0U;
 		while (u32SwapchainImageViewsCreated < u32SwapchainImageCount) {
 			VkImageViewCreateInfo vk_swapchainImageViewCreateInfo = {};
 			vk_swapchainImageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-			vk_swapchainImageViewCreateInfo.image = vk_pSwapchainImages[u32SwapchainImageViewsCreated];
+			vk_swapchainImageViewCreateInfo.image = vk_phSwapchainImages[u32SwapchainImageViewsCreated];
 			vk_swapchainImageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
 			vk_swapchainImageViewCreateInfo.format = vk_eSwapchainImageFormat;
 			vk_swapchainImageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -695,7 +705,7 @@ namespace RE {
 		if (u32SwapchainImageViewsCreated != u32SwapchainImageCount) {
 			for (uint32_t u32SwapchainImageDeleteIndex = 0U; u32SwapchainImageDeleteIndex < u32SwapchainImageViewsCreated; u32SwapchainImageDeleteIndex++)
 				CATCH_SIGNAL(vkDestroyImageView(vk_hDevice, vk_phSwapchainImageViews[u32SwapchainImageDeleteIndex], nullptr));
-			DELETE_ARRAY_SAFELY(vk_pSwapchainImages);
+			DELETE_ARRAY_SAFELY(vk_phSwapchainImages);
 			DELETE_ARRAY_SAFELY(vk_phSwapchainImageViews);
 			CATCH_SIGNAL(vkDestroySwapchainKHR(vk_hDevice, vk_hSwapchain, nullptr));
 			vk_hSwapchain = VK_NULL_HANDLE;
@@ -709,7 +719,7 @@ namespace RE {
 			return;
 		for (uint32_t u32SwapchainImageIndex = 0U; u32SwapchainImageIndex < u32SwapchainImageCount; u32SwapchainImageIndex++)
 			CATCH_SIGNAL(vkDestroyImageView(vk_hDevice, vk_phSwapchainImageViews[u32SwapchainImageIndex], nullptr));
-		DELETE_ARRAY_SAFELY(vk_pSwapchainImages);
+		DELETE_ARRAY_SAFELY(vk_phSwapchainImages);
 		DELETE_ARRAY_SAFELY(vk_phSwapchainImageViews);
 		CATCH_SIGNAL(vkDestroySwapchainKHR(vk_hDevice, vk_hSwapchain, nullptr));
 		vk_hSwapchain = VK_NULL_HANDLE;
@@ -733,23 +743,6 @@ namespace RE {
 			set_bit<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_INDEX, false);
 		}
 		return true;
-	}
-
-	bool RenderSystem::get_next_swapchain_image(const Vulkan_Semaphore *pSemaphoreWaitForSwapchainImageAcquired, uint32_t *pu32NextSwapchainImageIndex) {
-		VkResult vk_eSwapchainResult = CATCH_SIGNAL_AND_RETURN(vkAcquireNextImageKHR(vk_hDevice, vk_hSwapchain, UINT64_MAX, *pSemaphoreWaitForSwapchainImageAcquired, VK_NULL_HANDLE, pu32NextSwapchainImageIndex), VkResult);
-		switch (vk_eSwapchainResult) {
-			case VK_SUCCESS:
-				return true;
-			case VK_ERROR_OUT_OF_DATE_KHR:
-			case VK_SUBOPTIMAL_KHR:
-				if (!CATCH_SIGNAL_AND_RETURN(recreate_swapchain(), bool))
-					return false;
-				CHECK_VK_RESULT(vkAcquireNextImageKHR(vk_hDevice, vk_hSwapchain, UINT64_MAX, *pSemaphoreWaitForSwapchainImageAcquired, VK_NULL_HANDLE, pu32NextSwapchainImageIndex));
-				return true;
-			default:
-				CHECK_VK_RESULT(vk_eSwapchainResult);
-				return false;
-		}
 	}
 
 	void RenderSystem::window_resize_event() {

@@ -22,8 +22,7 @@ namespace RE {
 	void Window::update_window_size(uint32_t u32NewWidth, uint32_t u32NewHeight) {
 		windowSize[0] = u32NewWidth;
 		windowSize[1] = u32NewHeight;
-		if (RenderSystem::pInstance)
-			CATCH_SIGNAL(RenderSystem::pInstance->window_resize_event());
+		CATCH_SIGNAL(mark_swapchain_dirty());
 	}
 
 	void Window::show_window(bool bShowWindow) {

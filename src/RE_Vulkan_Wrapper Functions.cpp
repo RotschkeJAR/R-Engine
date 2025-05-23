@@ -242,16 +242,26 @@ namespace RE {
 	bool __vk_signal_semaphores(const uint32_t u32SignalSemaphoreCount, const VkSemaphore *vk_phSignalSemaphores, const char *pcFile, const char *pcFunc, const uint32_t u32Line) {
 		VkSubmitInfo vk_queueSubmissionInfo = {
 			.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-			.waitSemaphoreCount = 0U,
-			.pWaitSemaphores = nullptr,
-			.pWaitDstStageMask = nullptr,
 			.commandBufferCount = 1U,
-			.pCommandBuffers = nullptr,
+			.pCommandBuffers = &vk_hDummyTransferCommandBuffer,
 			.signalSemaphoreCount = u32SignalSemaphoreCount,
 			.pSignalSemaphores = vk_phSignalSemaphores
 		};
 		if (!CHECK_VK_RESULT(vkQueueSubmit(vk_hDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], 1U, &vk_queueSubmissionInfo, VK_NULL_HANDLE))) {
 			error(pcFile, pcFunc, u32Line, "Failed to submit dummy task to the transfer queue to signal semaphores", true);
+			return false;
+		}
+		return true;
+	}
+
+	bool __vk_signal_fence(const VkFence vk_hSignalFence, const char *pcFile, const char *pcFunc, const uint32_t u32Line) {
+		VkSubmitInfo vk_queueSubmissionInfo = {
+			.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+			.commandBufferCount = 1U,
+			.pCommandBuffers = &vk_hDummyTransferCommandBuffer
+		};
+		if (!CHECK_VK_RESULT(vkQueueSubmit(vk_hDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], 1U, &vk_queueSubmissionInfo, vk_hSignalFence))) {
+			error(pcFile, pcFunc, u32Line, "Failed to submit dummy task to the transfer queue to signal a fence", true);
 			return false;
 		}
 		return true;
@@ -299,6 +309,19 @@ namespace RE {
 		};
 		if (!CHECK_VK_RESULT(vkQueuePresentKHR(vk_hDeviceQueueFamilies[RE_VK_QUEUE_PRESENT_INDEX], &vk_presentInfo))) {
 			error(pcFile, pcFunc, u32Line, "Failed to submit task(s) to the present queue", true);
+			return false;
+		}
+		return true;
+	}
+
+	bool __vk_begin_recording_command_buffer(const VkCommandBuffer vk_hCommandBuffer, const VkCommandBufferUsageFlags vk_eUsageFlags, const VkCommandBufferInheritanceInfo *vk_pInheritanceInfo, const char *pcFile, const char *pcFunc, const uint32_t u32Line) {
+		VkCommandBufferBeginInfo vk_beginRecordInfo = {
+			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+			.flags = vk_eUsageFlags,
+			.pInheritanceInfo = vk_pInheritanceInfo
+		};
+		if (!CHECK_VK_RESULT(vkBeginCommandBuffer(vk_hCommandBuffer, &vk_beginRecordInfo))) {
+			error(pcFile, pcFunc, u32Line, "Failed to begin recording a Vulkan command buffer", true);
 			return false;
 		}
 		return true;

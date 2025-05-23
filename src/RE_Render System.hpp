@@ -10,9 +10,11 @@ namespace RE {
 #define RE_VK_QUEUE_PRESENT_INDEX 1U
 #define RE_VK_QUEUE_TRANSFER_INDEX 2U
 
-#define RE_VK_COMMAND_POOL_COUNT 2U
-#define RE_VK_COMMAND_POOL_GRAPHICS_INDEX 0U
-#define RE_VK_COMMAND_POOL_TRANSFER_INDEX 1U
+#define RE_VK_COMMAND_POOL_COUNT 4U
+#define RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX 0U
+#define RE_VK_COMMAND_POOL_GRAPHICS_TRANSIENT_INDEX 1U
+#define RE_VK_COMMAND_POOL_TRANSFER_PERSISTENT_INDEX 2U
+#define RE_VK_COMMAND_POOL_TRANSFER_TRANSIENT_INDEX 3U
 
 	// Attributes initialized at beginning and rarely changed
 	extern VkPhysicalDeviceMemoryProperties vk_physicalDeviceMemoryProperties;
@@ -22,38 +24,19 @@ namespace RE {
 	extern VkSwapchainKHR vk_hSwapchain;
 	extern VkFormat vk_eSwapchainImageFormat;
 	extern VkExtent2D vk_swapchainResolution;
+	extern uint32_t u32SwapchainImageCount;
 	extern VkImage *vk_phSwapchainImages;
 	extern VkImageView *vk_phSwapchainImageViews;
-	extern uint32_t u32SwapchainImageCount;
 	extern VkCommandPool vk_hCommandPools[RE_VK_COMMAND_POOL_COUNT];
+	extern VkCommandBuffer vk_hDummyTransferCommandBuffer;
 
 	// Configurable settings
 	extern VkPhysicalDevice vk_hPhysicalDeviceSelected;
-	
-	class RenderSystem final {
-		private:
-			bool bValid;
 
-			bool create_surface();
-			void destroy_surface();
-			void fetch_surface_infos();
-			bool alloc_physical_device_list();
-			void free_physical_device_list();
-			bool create_device();
-			void destroy_device();
-			bool create_swapchain();
-			void destroy_swapchain();
-			bool recreate_swapchain();
-
-		public:
-			static RenderSystem* pInstance;
-
-			RenderSystem();
-			~RenderSystem();
-			bool refresh();
-			void window_resize_event();
-			bool is_valid();
-	};
+	bool init_render_system();
+	void destroy_render_system();
+	bool refresh_render_system();
+	void mark_swapchain_dirty();
 
 	void enable_vsync(bool bEnableVsync);
 	bool is_vsync_enabled();

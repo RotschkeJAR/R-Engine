@@ -32,7 +32,7 @@ namespace RE {
 	bool __vk_create_descriptor_pool(const VkDescriptorPoolCreateFlags vk_eCreateFlags, const uint32_t u32MaxSets, const uint32_t u32PoolSizeCount, const VkDescriptorPoolSize *vk_pPoolSizes, VkDescriptorPool *vk_phDescriptorPool, const char *pcFile, const char *pcFunc, const uint32_t u32Line);
 #define vk_create_descriptor_pool(FLAGS, MAX_SETS, POOL_SIZE_COUNT, POOL_SIZES, DESC_POOL_OUT) CATCH_SIGNAL_AND_RETURN(__vk_create_descriptor_pool(FLAGS, MAX_SETS, POOL_SIZE_COUNT, POOL_SIZES, DESC_POOL_OUT, __FILE__, __func__, __LINE__), bool)
 
-	bool __vk_alloc_command_buffers(const VkCommandPool vk_hCommandPool, const VkCommandBufferLevel vk_eCommandBufferLevel, const uint32_t u32CommandBufferCount, const VkCommandBuffer *vk_phCommandBuffers, const char *pcFile, const char *pcFunc, const uint32_t u32Line);
+	bool __vk_alloc_command_buffers(const VkCommandPool vk_hCommandPool, const VkCommandBufferLevel vk_eCommandBufferLevel, const uint32_t u32CommandBufferCount, VkCommandBuffer *vk_phCommandBuffers, const char *pcFile, const char *pcFunc, const uint32_t u32Line);
 #define vk_alloc_command_buffers(CMDPOOL, CMDBUFFER_LEVEL, CMDBUFFER_COUNT, CMDBUFFERS_OUT) CATCH_SIGNAL_AND_RETURN(__vk_alloc_command_buffers(CMDPOOL, CMDBUFFER_LEVEL, CMDBUFFER_COUNT, CMDBUFFERS_OUT, __FILE__, __func__, __LINE__), bool)
 
 	bool __vk_alloc_descriptor_sets(const VkDescriptorPool vk_hDescriptorPool, const uint32_t u32DescriptorSetCount, const VkDescriptorSetLayout *vk_phDescriptorSetLayouts, VkDescriptorSet *vk_phDescriptorSets, const char *pcFile, const char *pcFunc, const uint32_t u32Line);
@@ -51,6 +51,9 @@ namespace RE {
 	bool __vk_signal_semaphores(const uint32_t u32SignalSemaphoreCount, const VkSemaphore *vk_phSignalSemaphores, const char *pcFile, const char *pcFunc, const uint32_t u32Line);
 #define vk_signal_semaphores(SIGNAL_SEMA_COUNT, SIGNAL_SEMAS) CATCH_SIGNAL_AND_RETURN(__vk_signal_semaphores(SIGNAL_SEMA_COUNT, SIGNAL_SEMAS, __FILE__, __func__, __LINE__), bool)
 
+	bool __vk_signal_fence(const VkFence vk_hSignalFence, const char *pcFile, const char *pcFunc, const uint32_t u32Line);
+#define vk_signal_fence(FENCE) CATCH_SIGNAL_AND_RETURN(__vk_signal_fence(FENCE, __FILE__, __func__, __LINE__), bool)
+
 
 	bool __vk_submit_to_graphics_queue(const uint32_t u32WaitSemaphoreCount, const VkSemaphore *vk_phWaitSemaphores, const VkPipelineStageFlags *vk_peWaitPipelineStage, const uint32_t u32CommandBufferCount, const VkCommandBuffer *vk_phCommandBuffers, const uint32_t u32SignalSemaphoreCount, const VkSemaphore *vk_phSignalSemaphores, const VkFence vk_hFenceToSignal, const char *pcFile, const char *pcFunc, const uint32_t u32Line);
 #define vk_submit_to_graphics_queue(WAIT_SEMA_COUNT, WAIT_SEMAS, WAIT_PIPES, CMDBUFFER_COUNT, CMDBUFFERS, SIGNAL_SEMA_COUNT, SIGNAL_SEMAS, SIGNAL_FENCE) CATCH_SIGNAL_AND_RETURN(__vk_submit_to_graphics_queue(WAIT_SEMA_COUNT, WAIT_SEMAS, WAIT_PIPES, CMDBUFFER_COUNT, CMDBUFFERS, SIGNAL_SEMA_COUNT, SIGNAL_SEMAS, SIGNAL_FENCE, __FILE__, __func__, __LINE__), bool)
@@ -60,6 +63,9 @@ namespace RE {
 
 	bool __vk_submit_to_present_queue(const uint32_t u32WaitSemaphoreCount, const VkSemaphore *vk_phWaitSemaphores, const uint32_t *pu32SwapchainImageIndex, const char *pcFile, const char *pcFunc, const uint32_t u32Line);
 #define vk_submit_to_present_queue(WAIT_SEMA_COUNT, WAIT_SEMAS, SWAPIMG_INDEX) CATCH_SIGNAL_AND_RETURN(__vk_submit_to_present_queue(WAIT_SEMA_COUNT, WAIT_SEMAS, SWAPIMG_INDEX, __FILE__, __func__, __LINE__), bool)
+
+	bool __vk_begin_recording_command_buffer(const VkCommandBuffer vk_hCommandBuffer, const VkCommandBufferUsageFlags vk_eUsageFlags, const VkCommandBufferInheritanceInfo *vk_pInheritanceInfo, const char *pcFile, const char *pcFunc, const uint32_t u32Line);
+#define vk_begin_recording_command_buffer(CMDBUFFER, USAGE, INHERITANCE_INFO) __vk_begin_recording_command_buffer(CMDBUFFER, USAGE, INHERITANCE_INFO, __FILE__, __func__, __LINE__)
 
 }
 

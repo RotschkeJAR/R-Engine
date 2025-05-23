@@ -7,14 +7,6 @@
 
 namespace RE {
 
-	static void println_vkbool32(const char* pcName, VkBool32 vk_bState) {
-		print("\t\t\t", pcName, ": ");
-		if (vk_bState)
-			println_colored("true", RE_TERMINAL_COLOR_GREEN, false, false);
-		else
-			println_colored("false", RE_TERMINAL_COLOR_RED, false, false);
-	}
-
 	// Attributes initialized at beginning and rarely changed
 	VkPhysicalDevice *vk_phPhysicalDevicesAvailable = nullptr;
 	uint32_t u32PhysicalDevicesAvailableCount = 0U;
@@ -24,16 +16,17 @@ namespace RE {
 	uint32_t u32DeviceQueueFamilyIndices[RE_VK_QUEUE_COUNT] = {};
 	VkSurfaceKHR vk_hSurface = VK_NULL_HANDLE;
 	VkSurfaceCapabilitiesKHR vk_surfaceCapabilities = {};
-	VkSurfaceFormatKHR *vk_pSurfaceFormatsAvailable = nullptr;
 	uint32_t u32SurfaceFormatsAvailableCount = 0U;
+	VkSurfaceFormatKHR *vk_pSurfaceFormatsAvailable = nullptr;
 	VkPresentModeKHR vk_ePresentModeVsync = VK_PRESENT_MODE_FIFO_KHR, vk_ePresentModeNoVsync = VK_PRESENT_MODE_FIFO_KHR;
 	VkSwapchainKHR vk_hSwapchain = VK_NULL_HANDLE;
 	VkFormat vk_eSwapchainImageFormat = VK_FORMAT_UNDEFINED;
 	VkExtent2D vk_swapchainResolution = {};
+	uint32_t u32SwapchainImageCount = 0U;
 	VkImage *vk_phSwapchainImages = nullptr;
 	VkImageView *vk_phSwapchainImageViews = nullptr;
-	uint32_t u32SwapchainImageCount = 0U;
 	VkCommandPool vk_hCommandPools[RE_VK_COMMAND_POOL_COUNT] = {};
+	VkCommandBuffer vk_hDummyTransferCommandBuffer = VK_NULL_HANDLE;
 
 	// Configurable settings
 	VkPhysicalDevice vk_hPhysicalDeviceSelected = VK_NULL_HANDLE;
@@ -43,20 +36,16 @@ namespace RE {
 #define SWAPCHAIN_DIRTY_INDEX 0
 #define VSYNC_SETTING_INDEX 1
 #define FPS_BOUND_TO_VSYNC_INDEX 2
-	
-	RenderSystem* RenderSystem::pInstance = nullptr;
 
-	RenderSystem::RenderSystem() : bValid(false) {
-		if (RenderSystem::pInstance) {
-			RE_ERROR("An instance of the render system has already been created. The new one won't be initialized and remains invalid");
-			return;
-		}
-		RenderSystem::pInstance = this;
-		DEFINE_SIGNAL_GUARD(sigGuardConstructorRenderSystem);
-		if (!create_surface() || !alloc_physical_device_list()) {
-			RE_ERROR("Failed initializing the render system");
-			return;
-		}
+	static void println_vkbool32(const char* pcName, VkBool32 vk_bState) {
+		print("\t\t\t", pcName, ": ");
+		if (vk_bState)
+			println_colored("true", RE_TERMINAL_COLOR_GREEN, false, false);
+		else
+			println_colored("false", RE_TERMINAL_COLOR_RED, false, false);
+	}
+
+	static void select_best_physical_vulkan_device() {
 		int32_t i32BestDeviceScore = std::numeric_limits<int32_t>::min();
 		for (uint32_t i = 0U; i < u32PhysicalDevicesAvailableCount; i++) {
 			VkPhysicalDeviceProperties vk_physicalDeviceProperties;
@@ -79,10 +68,9 @@ namespace RE {
 				vk_hPhysicalDeviceSelected = vk_phPhysicalDevicesAvailable[i];
 			}
 		}
-		VkPhysicalDeviceProperties vk_physicalDeviceSelectedProperties;
-		CATCH_SIGNAL(vkGetPhysicalDeviceProperties(vk_hPhysicalDeviceSelected, &vk_physicalDeviceSelectedProperties));
-		PRINT_LN(append_to_string("Device selected: ", vk_physicalDeviceSelectedProperties.deviceName).c_str());
-		CATCH_SIGNAL(fetch_surface_infos());
+	}
+
+	static void select_best_surface_format() {
 		int32_t i32BestSurfaceFormatScore = std::numeric_limits<int32_t>::min();
 		for (uint32_t i = 0U; i < u32SurfaceFormatsAvailableCount; i++) {
 			int32_t i32CurrentSurfaceFormatScore = 0;
@@ -105,31 +93,15 @@ namespace RE {
 				vk_surfaceFormatSelected = vk_pSurfaceFormatsAvailable[i];
 			}
 		}
-		CATCH_SIGNAL(vkGetPhysicalDeviceMemoryProperties(vk_hPhysicalDeviceSelected, &vk_physicalDeviceMemoryProperties));
-		if (!create_device() || !create_swapchain()) {
-			RE_ERROR("Failed initializing the render system");
-			return;
-		}
-		bValid = true;
 	}
 
-	RenderSystem::~RenderSystem() {
-		if (RenderSystem::pInstance != this)
-			return;
-		RenderSystem::pInstance = nullptr;
-		CATCH_SIGNAL(destroy_swapchain());
-		CATCH_SIGNAL(destroy_surface());
-		CATCH_SIGNAL(destroy_device());
-		CATCH_SIGNAL(free_physical_device_list());
-	}
-
-	bool RenderSystem::create_surface() {
+	static bool create_surface() {
 		if (vk_hSurface)
 			return false;
 		return CATCH_SIGNAL_AND_RETURN(Window::pInstance->create_vulkan_surface(vk_hSurface), bool);
 	}
 	
-	void RenderSystem::destroy_surface() {
+	static void destroy_surface() {
 		if (!vk_hSurface)
 			return;
 		CATCH_SIGNAL(vkDestroySurfaceKHR(RE_VK_INSTANCE, vk_hSurface, nullptr));
@@ -137,7 +109,7 @@ namespace RE {
 		vk_hSurface = VK_NULL_HANDLE;
 	}
 
-	void RenderSystem::fetch_surface_infos() {
+	static void fetch_surface_infos() {
 		if (!vk_hSurface)
 			return;
 		CATCH_SIGNAL(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &vk_surfaceCapabilities));
@@ -165,7 +137,7 @@ namespace RE {
 		delete[] vk_peAllPresentModes;
 	}
 
-	bool RenderSystem::alloc_physical_device_list() {
+	static bool alloc_physical_device_list() {
 		if (vk_phPhysicalDevicesAvailable)
 			return false;
 		DEFINE_SIGNAL_GUARD(sigGuardAllocPhysicalDeviceList);
@@ -515,11 +487,11 @@ namespace RE {
 		return true;
 	}
 
-	void RenderSystem::free_physical_device_list() {
+	static void free_physical_device_list() {
 		DELETE_ARRAY_SAFELY(vk_phPhysicalDevicesAvailable);
 	}
 
-	bool RenderSystem::create_device() {
+	static bool create_device() {
 		if (vk_hDevice)
 			return false;
 		DEFINE_SIGNAL_GUARD(sigGuardCreateDevice);
@@ -607,13 +579,22 @@ namespace RE {
 			.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
 			.queueFamilyIndex = u32DeviceQueueFamilyIndices[RE_VK_QUEUE_GRAPHICS_INDEX]
 		};
-		CATCH_SIGNAL(vkCreateCommandPool(vk_hDevice, &vk_commandPoolCreateInfo, nullptr, &vk_hCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_INDEX]));
+		CATCH_SIGNAL(vkCreateCommandPool(vk_hDevice, &vk_commandPoolCreateInfo, nullptr, &vk_hCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX]));
+		vk_commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+		CATCH_SIGNAL(vkCreateCommandPool(vk_hDevice, &vk_commandPoolCreateInfo, nullptr, &vk_hCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_TRANSIENT_INDEX]));
 		vk_commandPoolCreateInfo.queueFamilyIndex = u32DeviceQueueFamilyIndices[RE_VK_QUEUE_TRANSFER_INDEX];
-		CATCH_SIGNAL(vkCreateCommandPool(vk_hDevice, &vk_commandPoolCreateInfo, nullptr, &vk_hCommandPools[RE_VK_COMMAND_POOL_TRANSFER_INDEX]));
+		CATCH_SIGNAL(vkCreateCommandPool(vk_hDevice, &vk_commandPoolCreateInfo, nullptr, &vk_hCommandPools[RE_VK_COMMAND_POOL_TRANSFER_TRANSIENT_INDEX]));
+		vk_commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+		CATCH_SIGNAL(vkCreateCommandPool(vk_hDevice, &vk_commandPoolCreateInfo, nullptr, &vk_hCommandPools[RE_VK_COMMAND_POOL_TRANSFER_PERSISTENT_INDEX]));
+		if (!CATCH_SIGNAL_AND_RETURN(vk_alloc_command_buffers(vk_hCommandPools[RE_VK_COMMAND_POOL_TRANSFER_PERSISTENT_INDEX], VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1U, &vk_hDummyTransferCommandBuffer), bool))
+			return false;
+		if (!CATCH_SIGNAL_AND_RETURN(vk_begin_recording_command_buffer(vk_hDummyTransferCommandBuffer, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT, nullptr), bool))
+			return false;
+		CATCH_SIGNAL(vkEndCommandBuffer(vk_hDummyTransferCommandBuffer));
 		return true;
 	}
 	
-	void RenderSystem::destroy_device() {
+	static void destroy_device() {
 		if (!vk_hDevice)
 			return;
 		for (uint8_t u8CommandPoolIndex = 0U; u8CommandPoolIndex < RE_VK_COMMAND_POOL_COUNT; u8CommandPoolIndex++) {
@@ -628,74 +609,81 @@ namespace RE {
 		vk_hDevice = VK_NULL_HANDLE;
 	}
 
-	bool RenderSystem::create_swapchain() {
-		{ // Create actual sweapchain
-			const VkSwapchainKHR vk_hOldSwapchain = vk_hSwapchain;
-			if (vk_hOldSwapchain) {
-				for (uint32_t u32SwapchainImageIndex = 0U; u32SwapchainImageIndex < u32SwapchainImageCount; u32SwapchainImageIndex++)
-					CATCH_SIGNAL(vkDestroyImageView(vk_hDevice, vk_phSwapchainImageViews[u32SwapchainImageIndex], nullptr));
-				DELETE_ARRAY_SAFELY(vk_phSwapchainImages);
-				DELETE_ARRAY_SAFELY(vk_phSwapchainImageViews);
-			}
-			VkSwapchainCreateInfoKHR vk_swapchainCreateInfo = {};
-			vk_swapchainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-			vk_swapchainCreateInfo.surface = vk_hSurface;
-			vk_swapchainCreateInfo.minImageCount = std::clamp(vk_surfaceCapabilities.minImageCount + 1U, vk_surfaceCapabilities.minImageCount, vk_surfaceCapabilities.maxImageCount > 0U ? vk_surfaceCapabilities.maxImageCount : std::numeric_limits<uint32_t>::max());
-			vk_swapchainCreateInfo.imageFormat = vk_surfaceFormatSelected.format;
-			vk_swapchainCreateInfo.imageColorSpace = vk_surfaceFormatSelected.colorSpace;
-			if (vk_surfaceCapabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
-				vk_swapchainResolution = vk_surfaceCapabilities.currentExtent;
-			else {
-				vk_swapchainResolution.width = std::clamp<uint32_t>(windowSize[0], vk_surfaceCapabilities.minImageExtent.width, vk_surfaceCapabilities.maxImageExtent.width);
-				vk_swapchainResolution.height = std::clamp<uint32_t>(windowSize[1], vk_surfaceCapabilities.minImageExtent.height, vk_surfaceCapabilities.maxImageExtent.height);
-			}
-			vk_swapchainCreateInfo.imageExtent = vk_swapchainResolution;
-			vk_swapchainCreateInfo.imageArrayLayers = 1U;
-			vk_swapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-			const uint32_t u32SwapchainRelevantQueueIndices[2] = {u32DeviceQueueFamilyIndices[RE_VK_QUEUE_GRAPHICS_INDEX], u32DeviceQueueFamilyIndices[RE_VK_QUEUE_PRESENT_INDEX]};
-			if (u32DeviceQueueFamilyIndices[RE_VK_QUEUE_GRAPHICS_INDEX] != u32DeviceQueueFamilyIndices[RE_VK_QUEUE_PRESENT_INDEX]) {
-				vk_swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-				vk_swapchainCreateInfo.queueFamilyIndexCount = 2U;
-				vk_swapchainCreateInfo.pQueueFamilyIndices = u32SwapchainRelevantQueueIndices;
-			} else
-				vk_swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-			vk_swapchainCreateInfo.preTransform = vk_surfaceCapabilities.currentTransform;
-			vk_swapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-			if (is_bit_true<uint8_t>(u8RenderSystemFlags, FPS_BOUND_TO_VSYNC_INDEX))
-				vk_swapchainCreateInfo.presentMode = is_bit_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_INDEX) ? VK_PRESENT_MODE_FIFO_KHR : vk_ePresentModeNoVsync;
-			else
-				vk_swapchainCreateInfo.presentMode = is_bit_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_INDEX) ? vk_ePresentModeVsync : vk_ePresentModeNoVsync;
-			vk_swapchainCreateInfo.clipped = VK_TRUE;
-			vk_swapchainCreateInfo.oldSwapchain = vk_hOldSwapchain;
-			if (!CHECK_VK_RESULT(vkCreateSwapchainKHR(vk_hDevice, &vk_swapchainCreateInfo, nullptr, &vk_hSwapchain))) {
-				RE_FATAL_ERROR("Failed creating Vulkan swapchain");
-				return false;
-			}
-			vk_eSwapchainImageFormat = vk_surfaceFormatSelected.format;
-			if (vk_hOldSwapchain != VK_NULL_HANDLE)
-				CATCH_SIGNAL(vkDestroySwapchainKHR(vk_hDevice, vk_hOldSwapchain, nullptr));
-		} // End of creating actual swapchain
-
+	static bool create_swapchain() {
+		// Create actual sweapchain
+		const VkSwapchainKHR vk_hOldSwapchain = vk_hSwapchain;
+		if (vk_hOldSwapchain) {
+			for (uint32_t u32SwapchainImageIndex = 0U; u32SwapchainImageIndex < u32SwapchainImageCount; u32SwapchainImageIndex++)
+				CATCH_SIGNAL(vkDestroyImageView(vk_hDevice, vk_phSwapchainImageViews[u32SwapchainImageIndex], nullptr));
+			DELETE_ARRAY_SAFELY(vk_phSwapchainImages);
+			DELETE_ARRAY_SAFELY(vk_phSwapchainImageViews);
+		}
+		if (vk_surfaceCapabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
+			vk_swapchainResolution = vk_surfaceCapabilities.currentExtent;
+		else {
+			vk_swapchainResolution.width = std::clamp<uint32_t>(windowSize[0], vk_surfaceCapabilities.minImageExtent.width, vk_surfaceCapabilities.maxImageExtent.width);
+			vk_swapchainResolution.height = std::clamp<uint32_t>(windowSize[1], vk_surfaceCapabilities.minImageExtent.height, vk_surfaceCapabilities.maxImageExtent.height);
+		}
+		VkSwapchainCreateInfoKHR vk_swapchainCreateInfo = {
+			.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
+			.surface = vk_hSurface,
+			.minImageCount = std::clamp(vk_surfaceCapabilities.minImageCount + 1U, vk_surfaceCapabilities.minImageCount, vk_surfaceCapabilities.maxImageCount > 0U ? vk_surfaceCapabilities.maxImageCount : std::numeric_limits<uint32_t>::max()),
+			.imageFormat = vk_surfaceFormatSelected.format,
+			.imageColorSpace = vk_surfaceFormatSelected.colorSpace,
+			.imageExtent = vk_swapchainResolution,
+			.imageArrayLayers = 1U,
+			.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+			.preTransform = vk_surfaceCapabilities.currentTransform,
+			.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+			.clipped = VK_TRUE,
+			.oldSwapchain = vk_hOldSwapchain
+		};
+		const uint32_t u32SwapchainRelevantQueueIndices[2] = {u32DeviceQueueFamilyIndices[RE_VK_QUEUE_GRAPHICS_INDEX], u32DeviceQueueFamilyIndices[RE_VK_QUEUE_PRESENT_INDEX]};
+		if (u32DeviceQueueFamilyIndices[RE_VK_QUEUE_GRAPHICS_INDEX] != u32DeviceQueueFamilyIndices[RE_VK_QUEUE_PRESENT_INDEX]) {
+			vk_swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+			vk_swapchainCreateInfo.queueFamilyIndexCount = 2U;
+			vk_swapchainCreateInfo.pQueueFamilyIndices = u32SwapchainRelevantQueueIndices;
+		} else
+			vk_swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		if (is_bit_true<uint8_t>(u8RenderSystemFlags, FPS_BOUND_TO_VSYNC_INDEX))
+			vk_swapchainCreateInfo.presentMode = is_bit_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_INDEX) ? VK_PRESENT_MODE_FIFO_KHR : vk_ePresentModeNoVsync;
+		else
+			vk_swapchainCreateInfo.presentMode = is_bit_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_INDEX) ? vk_ePresentModeVsync : vk_ePresentModeNoVsync;
+		if (!CHECK_VK_RESULT(vkCreateSwapchainKHR(vk_hDevice, &vk_swapchainCreateInfo, nullptr, &vk_hSwapchain))) {
+			RE_FATAL_ERROR("Failed creating Vulkan swapchain");
+			return false;
+		}
+		vk_eSwapchainImageFormat = vk_surfaceFormatSelected.format;
+		if (vk_hOldSwapchain != VK_NULL_HANDLE)
+			CATCH_SIGNAL(vkDestroySwapchainKHR(vk_hDevice, vk_hOldSwapchain, nullptr));
 		CATCH_SIGNAL(vkGetSwapchainImagesKHR(vk_hDevice, vk_hSwapchain, &u32SwapchainImageCount, nullptr));
 		vk_phSwapchainImages = new VkImage[u32SwapchainImageCount];
 		CATCH_SIGNAL(vkGetSwapchainImagesKHR(vk_hDevice, vk_hSwapchain, &u32SwapchainImageCount, vk_phSwapchainImages));
+		// End of creating actual swapchain
+
+		// Create swapchain image views
 		vk_phSwapchainImageViews = new VkImageView[u32SwapchainImageCount];
 		uint32_t u32SwapchainImageViewsCreated = 0U;
 		while (u32SwapchainImageViewsCreated < u32SwapchainImageCount) {
-			VkImageViewCreateInfo vk_swapchainImageViewCreateInfo = {};
-			vk_swapchainImageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-			vk_swapchainImageViewCreateInfo.image = vk_phSwapchainImages[u32SwapchainImageViewsCreated];
-			vk_swapchainImageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-			vk_swapchainImageViewCreateInfo.format = vk_eSwapchainImageFormat;
-			vk_swapchainImageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-			vk_swapchainImageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-			vk_swapchainImageViewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-			vk_swapchainImageViewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-			vk_swapchainImageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-			vk_swapchainImageViewCreateInfo.subresourceRange.baseMipLevel = 0U;
-			vk_swapchainImageViewCreateInfo.subresourceRange.levelCount = 1U;
-			vk_swapchainImageViewCreateInfo.subresourceRange.baseArrayLayer = 0U;
-			vk_swapchainImageViewCreateInfo.subresourceRange.layerCount = 1U;
+			VkImageViewCreateInfo vk_swapchainImageViewCreateInfo = {
+				.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+				.image = vk_phSwapchainImages[u32SwapchainImageViewsCreated],
+				.viewType = VK_IMAGE_VIEW_TYPE_2D,
+				.format = vk_eSwapchainImageFormat,
+				.components = {
+					.r = VK_COMPONENT_SWIZZLE_IDENTITY,
+					.g = VK_COMPONENT_SWIZZLE_IDENTITY,
+					.b = VK_COMPONENT_SWIZZLE_IDENTITY,
+					.a = VK_COMPONENT_SWIZZLE_IDENTITY
+				},
+				.subresourceRange = {
+					.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+					.baseMipLevel = 0U,
+					.levelCount = 1U,
+					.baseArrayLayer = 0U,
+					.layerCount = 1U
+				}
+			};
 			if (!CHECK_VK_RESULT(vkCreateImageView(vk_hDevice, &vk_swapchainImageViewCreateInfo, nullptr, &vk_phSwapchainImageViews[u32SwapchainImageViewsCreated]))) {
 				RE_FATAL_ERROR(append_to_string("Failed to create Vulkan image view at index ", u32SwapchainImageViewsCreated));
 				break;
@@ -711,10 +699,12 @@ namespace RE {
 			vk_hSwapchain = VK_NULL_HANDLE;
 			return false;
 		}
+		// End of creating swapchain image views
+
 		return true;
 	}
 	
-	void RenderSystem::destroy_swapchain() {
+	static void destroy_swapchain() {
 		if (!vk_hSwapchain)
 			return;
 		for (uint32_t u32SwapchainImageIndex = 0U; u32SwapchainImageIndex < u32SwapchainImageCount; u32SwapchainImageIndex++)
@@ -725,18 +715,44 @@ namespace RE {
 		vk_hSwapchain = VK_NULL_HANDLE;
 	}
 
-	bool RenderSystem::recreate_swapchain() {
+	static bool recreate_swapchain() {
 		CATCH_SIGNAL(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &vk_surfaceCapabilities));
 		WAIT_FOR_IDLE_VULKAN_DEVICE();
 		if (!CATCH_SIGNAL_AND_RETURN(create_swapchain(), bool)) {
 			RE_ERROR("Failed recreating the swapchain");
 			return false;
 		}
-		CATCH_SIGNAL(Renderer::pInstance->swapchain_recreated());
 		return true;
 	}
 
-	bool RenderSystem::refresh() {
+	bool init_render_system() {
+		DEFINE_SIGNAL_GUARD(sigGuardConstructorRenderSystem);
+		if (!create_surface() || !alloc_physical_device_list()) {
+			RE_ERROR("Failed initializing the render system");
+			return false;
+		}
+		CATCH_SIGNAL(select_best_physical_vulkan_device());
+		VkPhysicalDeviceProperties vk_physicalDeviceSelectedProperties;
+		CATCH_SIGNAL(vkGetPhysicalDeviceProperties(vk_hPhysicalDeviceSelected, &vk_physicalDeviceSelectedProperties));
+		PRINT_LN(append_to_string("Device selected: ", vk_physicalDeviceSelectedProperties.deviceName).c_str());
+		CATCH_SIGNAL(vkGetPhysicalDeviceMemoryProperties(vk_hPhysicalDeviceSelected, &vk_physicalDeviceMemoryProperties));
+		CATCH_SIGNAL(fetch_surface_infos());
+		CATCH_SIGNAL(select_best_surface_format());
+		if (!create_device() || !create_swapchain()) {
+			RE_ERROR("Failed initializing the render system");
+			return false;
+		}
+		return true;
+	}
+
+	void destroy_render_system() {
+		CATCH_SIGNAL(destroy_swapchain());
+		CATCH_SIGNAL(destroy_surface());
+		CATCH_SIGNAL(destroy_device());
+		CATCH_SIGNAL(free_physical_device_list());
+	}
+
+	bool refresh_render_system() {
 		if (is_bit_true<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_INDEX)) {
 			if (!CATCH_SIGNAL_AND_RETURN(recreate_swapchain(), bool))
 				return false;
@@ -745,19 +761,14 @@ namespace RE {
 		return true;
 	}
 
-	void RenderSystem::window_resize_event() {
-		set_bit<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_INDEX, true);
-	}
-
-	bool RenderSystem::is_valid() {
-		return bValid;
+	void mark_swapchain_dirty() {
+		set_bit<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_INDEX, bRunning);
 	}
 
 	void enable_vsync(bool bEnableVsync) {
 		if (is_bit_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_INDEX) != bEnableVsync) {
 			set_bit<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_INDEX, bEnableVsync);
-			if (RenderSystem::pInstance)
-				set_bit<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_INDEX, true);
+			set_bit<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_INDEX, bRunning);
 		}
 	}
 
@@ -768,8 +779,7 @@ namespace RE {
 	void bind_fps_to_vsync(bool bBindFpsToVsync) {
 		if (is_bit_true<uint8_t>(u8RenderSystemFlags, FPS_BOUND_TO_VSYNC_INDEX) != bBindFpsToVsync) {
 			set_bit<uint8_t>(u8RenderSystemFlags, FPS_BOUND_TO_VSYNC_INDEX, bBindFpsToVsync);
-			if (RenderSystem::pInstance)
-				set_bit<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_INDEX, true);
+			set_bit<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_INDEX, bRunning);
 		}
 	}
 

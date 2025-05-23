@@ -8,24 +8,10 @@ namespace RE {
 	extern Scene *pCurrentScene, *pNextScene;
 	extern std::vector<GameObject*> gameObjects, deletableGameObjects, newGameObjects;
 
-	class Manager final {
-		private:
-			void start_proc();
-			void update_proc();
-			void end_proc();
-			void delete_proc();
-			void add_proc();
-
-		public:
-			static Manager *pInstance;
-
-			Manager();
-			~Manager();
-			bool is_object_active(GameObject* pGameObject) const;
-			void game_logic_update();
-			void last_game_logic_update();
-			bool is_game_valid() const;
-	};
+	bool is_object_active(GameObject* pGameObject);
+	void game_logic_update();
+	void last_game_logic_update();
+	bool is_game_valid();
 
 	void mark_delete(GameObject* pGameObject);
 

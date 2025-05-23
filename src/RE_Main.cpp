@@ -62,15 +62,10 @@ namespace RE {
 		}
 
 		{
-			Manager gameMgr;
 			Vulkan vulkan;
 			if (!vulkan.is_valid() || bErrorOccured)
 				return;
-			RenderSystem renderSystem;
-			if (!renderSystem.is_valid() || bErrorOccured)
-				return;
-			Renderer renderer;
-			if (!renderer.is_valid() || bErrorOccured)
+			if (!init_render_system() || !init_renderer() || bErrorOccured)
 				return;
 			std::chrono::high_resolution_clock::time_point currentFrameTime = std::chrono::high_resolution_clock::now(), lastFrameTime;
 			bRunning = true;
@@ -78,10 +73,10 @@ namespace RE {
 			// Game loop
 			while (bRunning) {
 				CATCH_SIGNAL(pWindow->window_proc());
-				CATCH_SIGNAL(gameMgr.game_logic_update());
+				CATCH_SIGNAL(game_logic_update());
 				if (pWindow->should_render()) {
-					CATCH_SIGNAL(renderSystem.refresh());
-					CATCH_SIGNAL(renderer.render());
+					CATCH_SIGNAL(refresh_render_system());
+					CATCH_SIGNAL(render());
 				} else {
 					// branch avoiding excessive CPU usage, when rendering is ambigious
 					float fTimeToWait = fMinDeltatime - fDeltaseconds;
@@ -92,13 +87,15 @@ namespace RE {
 				currentFrameTime = std::chrono::high_resolution_clock::now();
 				fDeltaseconds = std::chrono::duration_cast<std::chrono::duration<float>>(currentFrameTime - lastFrameTime).count();
 				CATCH_SIGNAL(pWindow->show_window(true));
-				bRunning = !pWindow->should_close() && gameMgr.is_game_valid() && !bErrorOccured;
+				bRunning = !pWindow->should_close() && is_game_valid() && !bErrorOccured;
 			}
 
 			// Termination
 			CATCH_SIGNAL(pWindow->show_window(false));
-			CATCH_SIGNAL(gameMgr.last_game_logic_update());
+			CATCH_SIGNAL(last_game_logic_update());
 			WAIT_FOR_IDLE_VULKAN_DEVICE();
+			CATCH_SIGNAL(destroy_renderer());
+			CATCH_SIGNAL(destroy_render_system());
 			fDeltaseconds = 0.0f;
 		}
 		CATCH_SIGNAL(delete pWindow);

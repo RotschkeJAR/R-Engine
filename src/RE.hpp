@@ -505,15 +505,15 @@ namespace RE {
 				return !equals(rCompareVector);
 			}
 
-			friend std::ostream& operator <<(std::ostream &stream, const Vector &rVector) {
-				stream << "(";
+			friend std::ostream& operator <<(std::ostream &rStream, const Vector &rVector) {
+				rStream << "(";
 				for (uint32_t i = 0U; i < rVector.get_dimensions(); i++) {
 					if (i != 0U)
-						stream << ", ";
-					stream << rVector.data[i];
+						rStream << ", ";
+					rStream << rVector.data[i];
 				}
-				stream << ")";
-				return stream;
+				rStream << ")";
+				return rStream;
 			}
 	};
 	typedef Vector<float, 2U> Vector2f;
@@ -528,35 +528,6 @@ namespace RE {
 	typedef Vector<uint32_t, 2U> Vector2u;
 	typedef Vector<uint32_t, 3U> Vector3u;
 	typedef Vector<uint32_t, 4U> Vector4u;
-
-	template <typename T, uint32_t u32Rows, uint32_t u32Columns>
-	class Matrix final {
-		static_assert(u32Rows != 0U, "A matrix-template has zero rows");
-		static_assert(u32Columns != 0U, "A matrix-template has zero columns");
-
-		public:
-			T data[u32Columns][u32Rows];
-
-			Matrix() : data{} {}
-			~Matrix() {}
-
-			template <typename P>
-			void fill(P value) {
-				std::fill(std::begin(data), std::end(data), static_cast<T>(value));
-			}
-	};
-	typedef Matrix<float, 2U, 2U> Matrix2_2f;
-	typedef Matrix<float, 3U, 3U> Matrix3_3f;
-	typedef Matrix<float, 4U, 4U> Matrix4_4f;
-	typedef Matrix<double, 2U, 2U> Matrix2_2d;
-	typedef Matrix<double, 3U, 3U> Matrix3_3d;
-	typedef Matrix<double, 4U, 4U> Matrix4_4d;
-	typedef Matrix<int32_t, 2U, 2U> Matrix2_2i;
-	typedef Matrix<int32_t, 3U, 3U> Matrix3_3i;
-	typedef Matrix<int32_t, 4U, 4U> Matrix4_4i;
-	typedef Matrix<uint32_t, 2U, 2U> Matrix2_2u;
-	typedef Matrix<uint32_t, 3U, 3U> Matrix3_3u;
-	typedef Matrix<uint32_t, 4U, 4U> Matrix4_4u;
 
 	class Color final {
 		private:

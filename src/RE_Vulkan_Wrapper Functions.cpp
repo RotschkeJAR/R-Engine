@@ -15,13 +15,13 @@ namespace RE {
 		return queueFamilyIndices;
 	}
 	
-	bool __vk_create_buffer(const VkBufferCreateFlags vk_eCreateFlags, const VkDeviceSize vk_bufferSizeInBytes, const VkBufferUsageFlags vk_bufferUsage, const uint32_t u32QueueTypeCount, const uint32_t *pu32BufferQueueTypeIndices, const VkMemoryPropertyFlags vk_memoryProperties, VkBuffer *vk_phBuffer, VkDeviceMemory *vk_phBufferMemory, const char *pcFile, const char *pcFunc, const uint32_t u32Line) {
+	bool __vk_create_buffer(const VkBufferCreateFlags vk_eCreateFlags, const VkDeviceSize vk_bufferSizeInBytes, const VkBufferUsageFlags vk_eBufferUsage, const uint32_t u32QueueTypeCount, const uint32_t *pu32BufferQueueTypeIndices, const VkMemoryPropertyFlags vk_eMemoryProperties, VkBuffer *vk_phBuffer, VkDeviceMemory *vk_phBufferMemory, const char *pcFile, const char *pcFunc, const uint32_t u32Line) {
 		const std::vector<uint32_t> queueFamilies = get_queue_indices(u32QueueTypeCount, pu32BufferQueueTypeIndices);
 		VkBufferCreateInfo vk_bufferCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
 			.flags = vk_eCreateFlags,
 			.size = vk_bufferSizeInBytes,
-			.usage = vk_bufferUsage
+			.usage = vk_eBufferUsage
 		};
 		if (queueFamilies.size() > 1U) {
 			vk_bufferCreateInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
@@ -37,7 +37,7 @@ namespace RE {
 		CATCH_SIGNAL(vkGetBufferMemoryRequirements(vk_hDevice, *vk_phBuffer, &vk_bufferMemoryRequirements));
 		std::optional<uint32_t> physicalMemoryTypeSelected;
 		for (uint32_t u32PhysicalMemoryTypeIndex = 0U; u32PhysicalMemoryTypeIndex < vk_physicalDeviceMemoryProperties.memoryTypeCount; u32PhysicalMemoryTypeIndex++) {
-			if ((vk_bufferMemoryRequirements.memoryTypeBits & (1U << u32PhysicalMemoryTypeIndex)) && (vk_physicalDeviceMemoryProperties.memoryTypes[u32PhysicalMemoryTypeIndex].propertyFlags & vk_memoryProperties)) {
+			if ((vk_bufferMemoryRequirements.memoryTypeBits & (1U << u32PhysicalMemoryTypeIndex)) && (vk_physicalDeviceMemoryProperties.memoryTypes[u32PhysicalMemoryTypeIndex].propertyFlags & vk_eMemoryProperties)) {
 				physicalMemoryTypeSelected = u32PhysicalMemoryTypeIndex;
 				break;
 			}

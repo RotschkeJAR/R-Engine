@@ -57,7 +57,7 @@ namespace RE {
 			CATCH_SIGNAL(vkDestroyBuffer(vk_hDevice, *vk_phBuffer, nullptr));
 			return false;
 		}
-		if (!CHECK_VK_RESULT(vkBindBufferMemory(vk_hDevice, *vk_phBuffer, *vk_phBufferMemory, vk_bufferMemoryRequirements.size))) {
+		if (!CHECK_VK_RESULT(vkBindBufferMemory(vk_hDevice, *vk_phBuffer, *vk_phBufferMemory, 0UL))) {
 			error(pcFile, pcFunc, u32Line, "Failed to bind recently allocated memory to recently created Vulkan buffer", true);
 			CATCH_SIGNAL(vkFreeMemory(vk_hDevice, *vk_phBufferMemory, nullptr));
 			CATCH_SIGNAL(vkDestroyBuffer(vk_hDevice, *vk_phBuffer, nullptr));

@@ -3,6 +3,8 @@
 #include "RE_Render System.hpp"
 #include "RE_Window.hpp"
 
+#include <thread>
+
 namespace RE {
 
 	typedef uint16_t REindex_t;
@@ -13,18 +15,21 @@ namespace RE {
 	VkViewport vk_cameraViewportArea;
 	VkRect2D vk_cameraScissorArea;
 
+	VkBuffer vk_hRectIndexBuffer = VK_NULL_HANDLE;
+	VkDeviceMemory vk_hRectIndexBufferMemory = VK_NULL_HANDLE;
+
 	bool init_renderer() {
 		return true;
 	}
 	
 	void destroy_renderer() {
-
+		
 	}
 
 	void render() {
 		if (pActiveCamera)
 			CATCH_SIGNAL(pActiveCamera->update());
-		// TODO: render proess
+		// TODO: render process
 	}
 
 	void calculate_render_area() {

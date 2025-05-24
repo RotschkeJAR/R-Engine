@@ -104,7 +104,7 @@ namespace RE {
 	static void destroy_surface() {
 		if (!vk_hSurface)
 			return;
-		CATCH_SIGNAL(vkDestroySurfaceKHR(RE_VK_INSTANCE, vk_hSurface, nullptr));
+		CATCH_SIGNAL(vkDestroySurfaceKHR(vk_hInstance, vk_hSurface, nullptr));
 		DELETE_ARRAY_SAFELY(vk_pSurfaceFormatsAvailable);
 		vk_hSurface = VK_NULL_HANDLE;
 	}
@@ -142,14 +142,14 @@ namespace RE {
 			return false;
 		DEFINE_SIGNAL_GUARD(sigGuardAllocPhysicalDeviceList);
 		uint32_t u32TotalPhysicalDeviceCount;
-		CATCH_SIGNAL(vkEnumeratePhysicalDevices(RE_VK_INSTANCE, &u32TotalPhysicalDeviceCount, nullptr));
+		CATCH_SIGNAL(vkEnumeratePhysicalDevices(vk_hInstance, &u32TotalPhysicalDeviceCount, nullptr));
 		if (!u32TotalPhysicalDeviceCount) {
 			RE_FATAL_ERROR("There aren't any devices supporting Vulkan");
 			return false;
 		}
 		PRINT_LN("Available GPUs:");
 		VkPhysicalDevice *const vk_phTotalPhysicalDevice = new VkPhysicalDevice[u32TotalPhysicalDeviceCount];
-		CATCH_SIGNAL(vkEnumeratePhysicalDevices(RE_VK_INSTANCE, &u32TotalPhysicalDeviceCount, vk_phTotalPhysicalDevice));
+		CATCH_SIGNAL(vkEnumeratePhysicalDevices(vk_hInstance, &u32TotalPhysicalDeviceCount, vk_phTotalPhysicalDevice));
 		std::queue<VkPhysicalDevice> suitablePhysicalDevices;
 		for (uint32_t u32PhysicalDeviceIndex = 0U; u32PhysicalDeviceIndex < u32TotalPhysicalDeviceCount; u32PhysicalDeviceIndex++) {
 			const VkPhysicalDevice vk_hPhysicalDevice = vk_phTotalPhysicalDevice[u32PhysicalDeviceIndex];
@@ -432,7 +432,7 @@ namespace RE {
 			// Check if the required extensions exist
 			bool bSwapchainExtists = false;
 			for (uint32_t u32PhysicalDeviceExtensionIndex = 0U; u32PhysicalDeviceExtensionIndex < u32PhysicalDeviceExtensionCount; u32PhysicalDeviceExtensionIndex++) {
-				if (!bSwapchainExtists && std::strcmp(vk_pPhysicalDeviceExtensionProperties[u32PhysicalDeviceExtensionIndex].extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME) == 0)
+				if (!bSwapchainExtists && are_string_contents_equal(vk_pPhysicalDeviceExtensionProperties[u32PhysicalDeviceExtensionIndex].extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME))
 					bSwapchainExtists = true;
 				if (bSwapchainExtists)
 					break;

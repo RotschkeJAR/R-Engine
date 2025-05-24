@@ -2,13 +2,410 @@
 #include "RE_Window.hpp"
 #include "RE_Main.hpp"
 
-#undef vk_hInstance
+#include <queue>
 
 namespace RE {
 
-	Vulkan* Vulkan::pInstance = nullptr;
+#ifdef RE_OS_WINDOWS
+	HMODULE hLibVulkan = nullptr;
+#elif defined RE_OS_LINUX
+	void *hLibVulkan = nullptr;
+#endif /* RE_OS_WINDOWS, RE_OS_LINUX */
+	VkInstance vk_hInstance = VK_NULL_HANDLE;
+	VkDebugUtilsMessengerEXT vk_hDebugMessenger = VK_NULL_HANDLE;
 
-	bool Vulkan::load_vulkan_1_0() {
+	PFN_vkCreateInstance pfn_vkCreateInstance = nullptr;
+	PFN_vkDestroyInstance pfn_vkDestroyInstance = nullptr;
+	PFN_vkEnumeratePhysicalDevices pfn_vkEnumeratePhysicalDevices = nullptr;
+	PFN_vkGetPhysicalDeviceFeatures pfn_vkGetPhysicalDeviceFeatures = nullptr;
+	PFN_vkGetPhysicalDeviceFormatProperties pfn_vkGetPhysicalDeviceFormatProperties = nullptr;
+	PFN_vkGetPhysicalDeviceImageFormatProperties pfn_vkGetPhysicalDeviceImageFormatProperties = nullptr;
+	PFN_vkGetPhysicalDeviceProperties pfn_vkGetPhysicalDeviceProperties = nullptr;
+	PFN_vkGetPhysicalDeviceQueueFamilyProperties pfn_vkGetPhysicalDeviceQueueFamilyProperties = nullptr;
+	PFN_vkGetPhysicalDeviceMemoryProperties pfn_vkGetPhysicalDeviceMemoryProperties = nullptr;
+	PFN_vkGetInstanceProcAddr pfn_vkGetInstanceProcAddr = nullptr;
+	PFN_vkGetDeviceProcAddr pfn_vkGetDeviceProcAddr = nullptr;
+	PFN_vkCreateDevice pfn_vkCreateDevice = nullptr;
+	PFN_vkDestroyDevice pfn_vkDestroyDevice = nullptr;
+	PFN_vkEnumerateInstanceExtensionProperties pfn_vkEnumerateInstanceExtensionProperties = nullptr;
+	PFN_vkEnumerateDeviceExtensionProperties pfn_vkEnumerateDeviceExtensionProperties = nullptr;
+	PFN_vkEnumerateInstanceLayerProperties pfn_vkEnumerateInstanceLayerProperties = nullptr;
+	PFN_vkEnumerateDeviceLayerProperties pfn_vkEnumerateDeviceLayerProperties = nullptr;
+	PFN_vkGetDeviceQueue pfn_vkGetDeviceQueue = nullptr;
+	PFN_vkQueueSubmit pfn_vkQueueSubmit = nullptr;
+	PFN_vkQueueWaitIdle pfn_vkQueueWaitIdle = nullptr;
+	PFN_vkDeviceWaitIdle pfn_vkDeviceWaitIdle = nullptr;
+	PFN_vkAllocateMemory pfn_vkAllocateMemory = nullptr;
+	PFN_vkFreeMemory pfn_vkFreeMemory = nullptr;
+	PFN_vkMapMemory pfn_vkMapMemory = nullptr;
+	PFN_vkUnmapMemory pfn_vkUnmapMemory = nullptr;
+	PFN_vkFlushMappedMemoryRanges pfn_vkFlushMappedMemoryRanges = nullptr;
+	PFN_vkInvalidateMappedMemoryRanges pfn_vkInvalidateMappedMemoryRanges = nullptr;
+	PFN_vkGetDeviceMemoryCommitment pfn_vkGetDeviceMemoryCommitment = nullptr;
+	PFN_vkBindBufferMemory pfn_vkBindBufferMemory = nullptr;
+	PFN_vkBindImageMemory pfn_vkBindImageMemory = nullptr;
+	PFN_vkGetBufferMemoryRequirements pfn_vkGetBufferMemoryRequirements = nullptr;
+	PFN_vkGetImageMemoryRequirements pfn_vkGetImageMemoryRequirements = nullptr;
+	PFN_vkGetImageSparseMemoryRequirements pfn_vkGetImageSparseMemoryRequirements = nullptr;
+	PFN_vkGetPhysicalDeviceSparseImageFormatProperties pfn_vkGetPhysicalDeviceSparseImageFormatProperties = nullptr;
+	PFN_vkQueueBindSparse pfn_vkQueueBindSparse = nullptr;
+	PFN_vkCreateFence pfn_vkCreateFence = nullptr;
+	PFN_vkDestroyFence pfn_vkDestroyFence = nullptr;
+	PFN_vkResetFences pfn_vkResetFences = nullptr;
+	PFN_vkGetFenceStatus pfn_vkGetFenceStatus = nullptr;
+	PFN_vkWaitForFences pfn_vkWaitForFences = nullptr;
+	PFN_vkCreateSemaphore pfn_vkCreateSemaphore = nullptr;
+	PFN_vkDestroySemaphore pfn_vkDestroySemaphore = nullptr;
+	PFN_vkCreateEvent pfn_vkCreateEvent = nullptr;
+	PFN_vkDestroyEvent pfn_vkDestroyEvent = nullptr;
+	PFN_vkGetEventStatus pfn_vkGetEventStatus = nullptr;
+	PFN_vkSetEvent pfn_vkSetEvent = nullptr;
+	PFN_vkResetEvent pfn_vkResetEvent = nullptr;
+	PFN_vkCreateQueryPool pfn_vkCreateQueryPool = nullptr;
+	PFN_vkDestroyQueryPool pfn_vkDestroyQueryPool = nullptr;
+	PFN_vkGetQueryPoolResults pfn_vkGetQueryPoolResults = nullptr;
+	PFN_vkCreateBuffer pfn_vkCreateBuffer = nullptr;
+	PFN_vkDestroyBuffer pfn_vkDestroyBuffer = nullptr;
+	PFN_vkCreateBufferView pfn_vkCreateBufferView = nullptr;
+	PFN_vkDestroyBufferView pfn_vkDestroyBufferView = nullptr;	
+	PFN_vkCreateImage pfn_vkCreateImage = nullptr;
+	PFN_vkDestroyImage pfn_vkDestroyImage = nullptr;
+	PFN_vkGetImageSubresourceLayout pfn_vkGetImageSubresourceLayout = nullptr;
+	PFN_vkCreateImageView pfn_vkCreateImageView = nullptr;
+	PFN_vkDestroyImageView pfn_vkDestroyImageView = nullptr;
+	PFN_vkCreateShaderModule pfn_vkCreateShaderModule = nullptr;
+	PFN_vkDestroyShaderModule pfn_vkDestroyShaderModule = nullptr;
+	PFN_vkCreatePipelineCache pfn_vkCreatePipelineCache = nullptr;
+	PFN_vkDestroyPipelineCache pfn_vkDestroyPipelineCache = nullptr;
+	PFN_vkGetPipelineCacheData pfn_vkGetPipelineCacheData = nullptr;
+	PFN_vkMergePipelineCaches pfn_vkMergePipelineCaches = nullptr;
+	PFN_vkCreateGraphicsPipelines pfn_vkCreateGraphicsPipelines = nullptr;
+	PFN_vkCreateComputePipelines pfn_vkCreateComputePipelines = nullptr;
+	PFN_vkDestroyPipeline pfn_vkDestroyPipeline = nullptr;
+	PFN_vkCreatePipelineLayout pfn_vkCreatePipelineLayout = nullptr;
+	PFN_vkDestroyPipelineLayout pfn_vkDestroyPipelineLayout = nullptr;
+	PFN_vkCreateSampler pfn_vkCreateSampler = nullptr;
+	PFN_vkDestroySampler pfn_vkDestroySampler = nullptr;
+	PFN_vkCreateDescriptorSetLayout pfn_vkCreateDescriptorSetLayout = nullptr;
+	PFN_vkDestroyDescriptorSetLayout pfn_vkDestroyDescriptorSetLayout = nullptr;
+	PFN_vkCreateDescriptorPool pfn_vkCreateDescriptorPool = nullptr;
+	PFN_vkDestroyDescriptorPool pfn_vkDestroyDescriptorPool = nullptr;
+	PFN_vkResetDescriptorPool pfn_vkResetDescriptorPool = nullptr;
+	PFN_vkAllocateDescriptorSets pfn_vkAllocateDescriptorSets = nullptr;
+	PFN_vkFreeDescriptorSets pfn_vkFreeDescriptorSets = nullptr;
+	PFN_vkUpdateDescriptorSets pfn_vkUpdateDescriptorSets = nullptr;
+	PFN_vkCreateFramebuffer pfn_vkCreateFramebuffer = nullptr;
+	PFN_vkDestroyFramebuffer pfn_vkDestroyFramebuffer = nullptr;
+	PFN_vkCreateRenderPass pfn_vkCreateRenderPass = nullptr;
+	PFN_vkDestroyRenderPass pfn_vkDestroyRenderPass = nullptr;
+	PFN_vkGetRenderAreaGranularity pfn_vkGetRenderAreaGranularity = nullptr;
+	PFN_vkCreateCommandPool pfn_vkCreateCommandPool = nullptr;
+	PFN_vkDestroyCommandPool pfn_vkDestroyCommandPool = nullptr;
+	PFN_vkResetCommandPool pfn_vkResetCommandPool = nullptr;
+	PFN_vkAllocateCommandBuffers pfn_vkAllocateCommandBuffers = nullptr;
+	PFN_vkFreeCommandBuffers pfn_vkFreeCommandBuffers = nullptr;
+	PFN_vkBeginCommandBuffer pfn_vkBeginCommandBuffer = nullptr;
+	PFN_vkEndCommandBuffer pfn_vkEndCommandBuffer = nullptr;
+	PFN_vkResetCommandBuffer pfn_vkResetCommandBuffer = nullptr;
+	PFN_vkCmdBindPipeline pfn_vkCmdBindPipeline = nullptr;
+	PFN_vkCmdSetViewport pfn_vkCmdSetViewport = nullptr;
+	PFN_vkCmdSetScissor pfn_vkCmdSetScissor = nullptr;
+	PFN_vkCmdSetLineWidth pfn_vkCmdSetLineWidth = nullptr;
+	PFN_vkCmdSetDepthBias pfn_vkCmdSetDepthBias = nullptr;
+	PFN_vkCmdSetBlendConstants pfn_vkCmdSetBlendConstants = nullptr;
+	PFN_vkCmdSetDepthBounds pfn_vkCmdSetDepthBounds = nullptr;
+	PFN_vkCmdSetStencilCompareMask pfn_vkCmdSetStencilCompareMask = nullptr;
+	PFN_vkCmdSetStencilWriteMask pfn_vkCmdSetStencilWriteMask = nullptr;
+	PFN_vkCmdSetStencilReference pfn_vkCmdSetStencilReference = nullptr;
+	PFN_vkCmdBindDescriptorSets pfn_vkCmdBindDescriptorSets = nullptr;
+	PFN_vkCmdBindIndexBuffer pfn_vkCmdBindIndexBuffer = nullptr;
+	PFN_vkCmdBindVertexBuffers pfn_vkCmdBindVertexBuffers = nullptr;
+	PFN_vkCmdDraw pfn_vkCmdDraw = nullptr;
+	PFN_vkCmdDrawIndexed pfn_vkCmdDrawIndexed = nullptr;
+	PFN_vkCmdDrawIndirect pfn_vkCmdDrawIndirect = nullptr;
+	PFN_vkCmdDrawIndexedIndirect pfn_vkCmdDrawIndexedIndirect = nullptr;
+	PFN_vkCmdDispatch pfn_vkCmdDispatch = nullptr;
+	PFN_vkCmdDispatchIndirect pfn_vkCmdDispatchIndirect = nullptr;
+	PFN_vkCmdCopyBuffer pfn_vkCmdCopyBuffer = nullptr;
+	PFN_vkCmdCopyImage pfn_vkCmdCopyImage = nullptr;
+	PFN_vkCmdBlitImage pfn_vkCmdBlitImage = nullptr;
+	PFN_vkCmdCopyBufferToImage pfn_vkCmdCopyBufferToImage = nullptr;
+	PFN_vkCmdCopyImageToBuffer pfn_vkCmdCopyImageToBuffer = nullptr;
+	PFN_vkCmdUpdateBuffer pfn_vkCmdUpdateBuffer = nullptr;
+	PFN_vkCmdFillBuffer pfn_vkCmdFillBuffer = nullptr;
+	PFN_vkCmdClearColorImage pfn_vkCmdClearColorImage = nullptr;
+	PFN_vkCmdClearDepthStencilImage pfn_vkCmdClearDepthStencilImage = nullptr;
+	PFN_vkCmdClearAttachments pfn_vkCmdClearAttachments = nullptr;
+	PFN_vkCmdResolveImage pfn_vkCmdResolveImage = nullptr;
+	PFN_vkCmdSetEvent pfn_vkCmdSetEvent = nullptr;
+	PFN_vkCmdResetEvent pfn_vkCmdResetEvent = nullptr;
+	PFN_vkCmdWaitEvents pfn_vkCmdWaitEvents = nullptr;
+	PFN_vkCmdPipelineBarrier pfn_vkCmdPipelineBarrier = nullptr;
+	PFN_vkCmdBeginQuery pfn_vkCmdBeginQuery = nullptr;
+	PFN_vkCmdEndQuery pfn_vkCmdEndQuery = nullptr;
+	PFN_vkCmdResetQueryPool pfn_vkCmdResetQueryPool = nullptr;
+	PFN_vkCmdWriteTimestamp pfn_vkCmdWriteTimestamp = nullptr;
+	PFN_vkCmdCopyQueryPoolResults pfn_vkCmdCopyQueryPoolResults = nullptr;
+	PFN_vkCmdPushConstants pfn_vkCmdPushConstants = nullptr;
+	PFN_vkCmdBeginRenderPass pfn_vkCmdBeginRenderPass = nullptr;
+	PFN_vkCmdNextSubpass pfn_vkCmdNextSubpass = nullptr;
+	PFN_vkCmdEndRenderPass pfn_vkCmdEndRenderPass = nullptr;
+	PFN_vkCmdExecuteCommands pfn_vkCmdExecuteCommands = nullptr;
+
+	// Vulkan 1.1
+	PFN_vkEnumerateInstanceVersion pfn_vkEnumerateInstanceVersion = nullptr;
+	PFN_vkBindBufferMemory2 pfn_vkBindBufferMemory2 = nullptr;
+	PFN_vkBindImageMemory2 pfn_vkBindImageMemory2 = nullptr;
+	PFN_vkGetDeviceGroupPeerMemoryFeatures pfn_vkGetDeviceGroupPeerMemoryFeatures = nullptr;
+	PFN_vkCmdSetDeviceMask pfn_vkCmdSetDeviceMask = nullptr;
+	PFN_vkCmdDispatchBase pfn_vkCmdDispatchBase = nullptr;
+	PFN_vkEnumeratePhysicalDeviceGroups pfn_vkEnumeratePhysicalDeviceGroups = nullptr;
+	PFN_vkGetImageMemoryRequirements2 pfn_vkGetImageMemoryRequirements2 = nullptr;
+	PFN_vkGetBufferMemoryRequirements2 pfn_vkGetBufferMemoryRequirements2 = nullptr;
+	PFN_vkGetImageSparseMemoryRequirements2 pfn_vkGetImageSparseMemoryRequirements2 = nullptr;
+	PFN_vkGetPhysicalDeviceFeatures2 pfn_vkGetPhysicalDeviceFeatures2 = nullptr;
+	PFN_vkGetPhysicalDeviceProperties2 pfn_vkGetPhysicalDeviceProperties2 = nullptr;
+	PFN_vkGetPhysicalDeviceFormatProperties2 pfn_vkGetPhysicalDeviceFormatProperties2 = nullptr;
+	PFN_vkGetPhysicalDeviceImageFormatProperties2 pfn_vkGetPhysicalDeviceImageFormatProperties2 = nullptr;
+	PFN_vkGetPhysicalDeviceQueueFamilyProperties2 pfn_vkGetPhysicalDeviceQueueFamilyProperties2 = nullptr;
+	PFN_vkGetPhysicalDeviceMemoryProperties2 pfn_vkGetPhysicalDeviceMemoryProperties2 = nullptr;
+	PFN_vkGetPhysicalDeviceSparseImageFormatProperties2 pfn_vkGetPhysicalDeviceSparseImageFormatProperties2 = nullptr;
+	PFN_vkTrimCommandPool pfn_vkTrimCommandPool = nullptr;
+	PFN_vkGetDeviceQueue2 pfn_vkGetDeviceQueue2 = nullptr;
+	PFN_vkCreateSamplerYcbcrConversion pfn_vkCreateSamplerYcbcrConversion = nullptr;
+	PFN_vkDestroySamplerYcbcrConversion pfn_vkDestroySamplerYcbcrConversion = nullptr;
+	PFN_vkCreateDescriptorUpdateTemplate pfn_vkCreateDescriptorUpdateTemplate = nullptr;
+	PFN_vkDestroyDescriptorUpdateTemplate pfn_vkDestroyDescriptorUpdateTemplate = nullptr;
+	PFN_vkUpdateDescriptorSetWithTemplate pfn_vkUpdateDescriptorSetWithTemplate = nullptr;
+	PFN_vkGetPhysicalDeviceExternalBufferProperties pfn_vkGetPhysicalDeviceExternalBufferProperties = nullptr;
+	PFN_vkGetPhysicalDeviceExternalFenceProperties pfn_vkGetPhysicalDeviceExternalFenceProperties = nullptr;
+	PFN_vkGetPhysicalDeviceExternalSemaphoreProperties pfn_vkGetPhysicalDeviceExternalSemaphoreProperties = nullptr;
+	PFN_vkGetDescriptorSetLayoutSupport pfn_vkGetDescriptorSetLayoutSupport = nullptr;
+
+	// Vulkan 1.2
+	PFN_vkCmdDrawIndirectCount pfn_vkCmdDrawIndirectCount = nullptr;
+	PFN_vkCmdDrawIndexedIndirectCount pfn_vkCmdDrawIndexedIndirectCount = nullptr;
+	PFN_vkCreateRenderPass2 pfn_vkCreateRenderPass2 = nullptr;
+	PFN_vkCmdBeginRenderPass2 pfn_vkCmdBeginRenderPass2 = nullptr;
+	PFN_vkCmdNextSubpass2 pfn_vkCmdNextSubpass2 = nullptr;
+	PFN_vkCmdEndRenderPass2 pfn_vkCmdEndRenderPass2 = nullptr;
+	PFN_vkResetQueryPool pfn_vkResetQueryPool = nullptr;
+	PFN_vkGetSemaphoreCounterValue pfn_vkGetSemaphoreCounterValue = nullptr;
+	PFN_vkWaitSemaphores pfn_vkWaitSemaphores = nullptr;
+	PFN_vkSignalSemaphore pfn_vkSignalSemaphore = nullptr;
+	PFN_vkGetBufferDeviceAddress pfn_vkGetBufferDeviceAddress = nullptr;
+	PFN_vkGetBufferOpaqueCaptureAddress pfn_vkGetBufferOpaqueCaptureAddress = nullptr;
+	PFN_vkGetDeviceMemoryOpaqueCaptureAddress pfn_vkGetDeviceMemoryOpaqueCaptureAddress = nullptr;
+
+	// Vulkan 1.3
+	PFN_vkGetPhysicalDeviceToolProperties pfn_vkGetPhysicalDeviceToolProperties = nullptr;
+	PFN_vkCreatePrivateDataSlot pfn_vkCreatePrivateDataSlot = nullptr;
+	PFN_vkDestroyPrivateDataSlot pfn_vkDestroyPrivateDataSlot = nullptr;
+	PFN_vkSetPrivateData pfn_vkSetPrivateData = nullptr;
+	PFN_vkGetPrivateData pfn_vkGetPrivateData = nullptr;
+	PFN_vkCmdSetEvent2 pfn_vkCmdSetEvent2 = nullptr;
+	PFN_vkCmdResetEvent2 pfn_vkCmdResetEvent2 = nullptr;
+	PFN_vkCmdWaitEvents2 pfn_vkCmdWaitEvents2 = nullptr;
+	PFN_vkCmdPipelineBarrier2 pfn_vkCmdPipelineBarrier2 = nullptr;
+	PFN_vkCmdWriteTimestamp2 pfn_vkCmdWriteTimestamp2 = nullptr;
+	PFN_vkQueueSubmit2 pfn_vkQueueSubmit2 = nullptr;
+	PFN_vkCmdCopyBuffer2 pfn_vkCmdCopyBuffer2 = nullptr;
+	PFN_vkCmdCopyImage2 pfn_vkCmdCopyImage2 = nullptr;
+	PFN_vkCmdCopyBufferToImage2 pfn_vkCmdCopyBufferToImage2 = nullptr;
+	PFN_vkCmdCopyImageToBuffer2 pfn_vkCmdCopyImageToBuffer2 = nullptr;
+	PFN_vkCmdBlitImage2 pfn_vkCmdBlitImage2 = nullptr;
+	PFN_vkCmdResolveImage2 pfn_vkCmdResolveImage2 = nullptr;
+	PFN_vkCmdBeginRendering pfn_vkCmdBeginRendering = nullptr;
+	PFN_vkCmdEndRendering pfn_vkCmdEndRendering = nullptr;
+	PFN_vkCmdSetCullMode pfn_vkCmdSetCullMode = nullptr;
+	PFN_vkCmdSetFrontFace pfn_vkCmdSetFrontFace = nullptr;
+	PFN_vkCmdSetPrimitiveTopology pfn_vkCmdSetPrimitiveTopology = nullptr;
+	PFN_vkCmdSetViewportWithCount pfn_vkCmdSetViewportWithCount = nullptr;
+	PFN_vkCmdSetScissorWithCount pfn_vkCmdSetScissorWithCount = nullptr;
+	PFN_vkCmdBindVertexBuffers2 pfn_vkCmdBindVertexBuffers2 = nullptr;
+	PFN_vkCmdSetDepthTestEnable pfn_vkCmdSetDepthTestEnable = nullptr;
+	PFN_vkCmdSetDepthWriteEnable pfn_vkCmdSetDepthWriteEnable = nullptr;
+	PFN_vkCmdSetDepthCompareOp pfn_vkCmdSetDepthCompareOp = nullptr;
+	PFN_vkCmdSetDepthBoundsTestEnable pfn_vkCmdSetDepthBoundsTestEnable = nullptr;
+	PFN_vkCmdSetStencilTestEnable pfn_vkCmdSetStencilTestEnable = nullptr;
+	PFN_vkCmdSetStencilOp pfn_vkCmdSetStencilOp = nullptr;
+	PFN_vkCmdSetRasterizerDiscardEnable pfn_vkCmdSetRasterizerDiscardEnable = nullptr;
+	PFN_vkCmdSetDepthBiasEnable pfn_vkCmdSetDepthBiasEnable = nullptr;
+	PFN_vkCmdSetPrimitiveRestartEnable pfn_vkCmdSetPrimitiveRestartEnable = nullptr;
+	PFN_vkGetDeviceBufferMemoryRequirements pfn_vkGetDeviceBufferMemoryRequirements = nullptr;
+	PFN_vkGetDeviceImageMemoryRequirements pfn_vkGetDeviceImageMemoryRequirements = nullptr;
+	PFN_vkGetDeviceImageSparseMemoryRequirements pfn_vkGetDeviceImageSparseMemoryRequirements = nullptr;
+
+	// Vulkan 1.4
+	/* PFN_vkCmdSetLineStipple pfn_vkCmdSetLineStipple = nullptr;
+	PFN_vkMapMemory2 pfn_vkMapMemory2 = nullptr;
+	PFN_vkUnmapMemory2 pfn_vkUnmapMemory2 = nullptr;
+	PFN_vkCmdBindIndexBuffer2 pfn_vkCmdBindIndexBuffer2 = nullptr;
+	PFN_vkGetRenderingAreaGranularity pfn_vkGetRenderingAreaGranularity = nullptr;
+	PFN_vkGetDeviceImageSubresourceLayout pfn_vkGetDeviceImageSubresourceLayout = nullptr;
+	PFN_vkGetImageSubresourceLayout2 pfn_vkGetImageSubresourceLayout2 = nullptr;
+	PFN_vkCmdPushDescriptorSet pfn_vkCmdPushDescriptorSet = nullptr;
+	PFN_vkCmdPushDescriptorSetWithTemplate pfn_vkCmdPushDescriptorSetWithTemplate = nullptr;
+	PFN_vkCmdSetRenderingAttachmentLocations pfn_vkCmdSetRenderingAttachmentLocations = nullptr;
+	PFN_vkCmdSetRenderingInputAttachmentIndices pfn_vkCmdSetRenderingInputAttachmentIndices = nullptr;
+	PFN_vkCmdBindDescriptorSets2 pfn_vkCmdBindDescriptorSets2 = nullptr;
+	PFN_vkCmdPushConstants2 pfn_vkCmdPushConstants2 = nullptr;
+	PFN_vkCmdPushDescriptorSet2 pfn_vkCmdPushDescriptorSet2 = nullptr;
+	PFN_vkCmdPushDescriptorSetWithTemplate2 pfn_vkCmdPushDescriptorSetWithTemplate2 = nullptr;
+	PFN_vkCopyMemoryToImage pfn_vkCopyMemoryToImage = nullptr;
+	PFN_vkCopyImageToMemory pfn_vkCopyImageToMemory = nullptr;
+	PFN_vkCopyImageToImage pfn_vkCopyImageToImage = nullptr;
+	PFN_vkTransitionImageLayout pfn_vkTransitionImageLayout = nullptr; */
+
+	// Debug Messages
+	PFN_vkSetDebugUtilsObjectNameEXT pfn_vkSetDebugUtilsObjectNameEXT = nullptr;
+	PFN_vkSetDebugUtilsObjectTagEXT pfn_vkSetDebugUtilsObjectTagEXT = nullptr;
+	PFN_vkQueueBeginDebugUtilsLabelEXT pfn_vkQueueBeginDebugUtilsLabelEXT = nullptr;
+	PFN_vkQueueEndDebugUtilsLabelEXT pfn_vkQueueEndDebugUtilsLabelEXT = nullptr;
+	PFN_vkQueueInsertDebugUtilsLabelEXT pfn_vkQueueInsertDebugUtilsLabelEXT = nullptr;
+	PFN_vkCmdBeginDebugUtilsLabelEXT pfn_vkCmdBeginDebugUtilsLabelEXT = nullptr;
+	PFN_vkCmdEndDebugUtilsLabelEXT pfn_vkCmdEndDebugUtilsLabelEXT = nullptr;
+	PFN_vkCmdInsertDebugUtilsLabelEXT pfn_vkCmdInsertDebugUtilsLabelEXT = nullptr;
+	PFN_vkCreateDebugUtilsMessengerEXT pfn_vkCreateDebugUtilsMessengerEXT = nullptr;
+	PFN_vkDestroyDebugUtilsMessengerEXT pfn_vkDestroyDebugUtilsMessengerEXT = nullptr;
+	PFN_vkSubmitDebugUtilsMessageEXT pfn_vkSubmitDebugUtilsMessageEXT = nullptr;
+
+	// Surface
+	PFN_vkDestroySurfaceKHR pfn_vkDestroySurfaceKHR = nullptr;
+	PFN_vkGetPhysicalDeviceSurfaceSupportKHR pfn_vkGetPhysicalDeviceSurfaceSupportKHR = nullptr;
+	PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR pfn_vkGetPhysicalDeviceSurfaceCapabilitiesKHR = nullptr;
+	PFN_vkGetPhysicalDeviceSurfaceFormatsKHR pfn_vkGetPhysicalDeviceSurfaceFormatsKHR = nullptr;
+	PFN_vkGetPhysicalDeviceSurfacePresentModesKHR pfn_vkGetPhysicalDeviceSurfacePresentModesKHR = nullptr;
+
+	// Swapchain
+	PFN_vkCreateSwapchainKHR pfn_vkCreateSwapchainKHR = nullptr;
+	PFN_vkDestroySwapchainKHR pfn_vkDestroySwapchainKHR = nullptr;
+	PFN_vkGetSwapchainImagesKHR pfn_vkGetSwapchainImagesKHR = nullptr;
+	PFN_vkAcquireNextImageKHR pfn_vkAcquireNextImageKHR = nullptr;
+	PFN_vkQueuePresentKHR pfn_vkQueuePresentKHR = nullptr;
+	PFN_vkGetDeviceGroupPresentCapabilitiesKHR pfn_vkGetDeviceGroupPresentCapabilitiesKHR = nullptr;
+	PFN_vkGetDeviceGroupSurfacePresentModesKHR pfn_vkGetDeviceGroupSurfacePresentModesKHR = nullptr;
+	PFN_vkGetPhysicalDevicePresentRectanglesKHR pfn_vkGetPhysicalDevicePresentRectanglesKHR = nullptr;
+	PFN_vkAcquireNextImage2KHR pfn_vkAcquireNextImage2KHR = nullptr;
+
+#ifdef RE_OS_WINDOWS
+	// Win32-Surface
+	PFN_vkCreateWin32SurfaceKHR pfn_vkCreateWin32SurfaceKHR = nullptr;
+	PFN_vkGetPhysicalDeviceWin32PresentationSupportKHR pfn_vkGetPhysicalDeviceWin32PresentationSupportKHR = nullptr;
+#elif defined RE_OS_LINUX
+	// Wayland-Surface
+	PFN_vkCreateWaylandSurfaceKHR pfn_vkCreateWaylandSurfaceKHR = nullptr;
+	PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR pfn_vkGetPhysicalDeviceWaylandPresentationSupportKHR = nullptr;
+	// X11-Surface
+	PFN_vkCreateXlibSurfaceKHR pfn_vkCreateXlibSurfaceKHR = nullptr;
+	PFN_vkGetPhysicalDeviceXlibPresentationSupportKHR pfn_vkGetPhysicalDeviceXlibPresentationSupportKHR = nullptr;
+#endif /* RE_OS_WINDOWS, RE_OS_LINUX */
+
+	static void* load_func_with_instance(VkInstance vk_hInstance, const char* pFuncName) {
+		void* pFuncPtr;
+		CATCH_SIGNAL(pFuncPtr = reinterpret_cast<void*>(pfn_vkGetInstanceProcAddr(vk_hInstance, pFuncName)));
+		if (!pFuncPtr)
+			RE_FATAL_ERROR(append_to_string("Failed loading the Vulkan function \"", pFuncName, "\""));
+		return pFuncPtr;
+	}
+
+	static void* load_func(const char* pFuncName) {
+		return CATCH_SIGNAL_AND_RETURN(load_func_with_instance(vk_hInstance, pFuncName), void*);
+	}
+
+#define RE_VK_REQUIRED_EXTENSIONS_COUNT 3U
+	const char *pcRequiredExtensions[RE_VK_REQUIRED_EXTENSIONS_COUNT] = {VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_KHR_SURFACE_EXTENSION_NAME, "\0"};
+#define RE_VK_REQUIRED_LAYERS_COUNT 1U
+	constexpr const char *pcRequiredLayers[RE_VK_REQUIRED_LAYERS_COUNT] = {VK_KHR_VALIDATION_LAYER_NAME};
+
+	static bool create_vulkan_instance() {
+		CATCH_SIGNAL(pfn_vkCreateInstance = reinterpret_cast<PFN_vkCreateInstance>(load_func_with_instance(VK_NULL_HANDLE, "vkCreateInstance")));
+		CATCH_SIGNAL(pfn_vkEnumerateInstanceExtensionProperties = reinterpret_cast<PFN_vkEnumerateInstanceExtensionProperties>(load_func_with_instance(VK_NULL_HANDLE, "vkEnumerateInstanceExtensionProperties")));
+		CATCH_SIGNAL(pfn_vkEnumerateInstanceLayerProperties = reinterpret_cast<PFN_vkEnumerateInstanceLayerProperties>(load_func_with_instance(VK_NULL_HANDLE, "vkEnumerateInstanceLayerProperties")));
+		if (!pfn_vkCreateInstance || !pfn_vkEnumerateInstanceExtensionProperties || !pfn_vkEnumerateInstanceLayerProperties)
+			return false;
+
+		bool bFailure = false;
+		pcRequiredExtensions[RE_VK_REQUIRED_EXTENSIONS_COUNT - 1U] = Window::pInstance->get_vulkan_required_surface_extension_name();
+		uint32_t u32AvailableExtensionsCount = 0U;
+		CATCH_SIGNAL(pfn_vkEnumerateInstanceExtensionProperties(nullptr, &u32AvailableExtensionsCount, nullptr));
+		VkExtensionProperties* vk_pAvailableExtensions = new VkExtensionProperties[u32AvailableExtensionsCount];
+		CATCH_SIGNAL(pfn_vkEnumerateInstanceExtensionProperties(nullptr, &u32AvailableExtensionsCount, vk_pAvailableExtensions));
+		bool bExtensionsPresent[RE_VK_REQUIRED_EXTENSIONS_COUNT] = {};
+		std::queue<const char*> missingExtensions;
+		PRINT_LN("Available Vulkan instance extensions:");
+		for (uint32_t u32ExtensionIndex = 0U; u32ExtensionIndex < u32AvailableExtensionsCount; u32ExtensionIndex++) {
+			println(append_to_string("\t", vk_pAvailableExtensions[u32ExtensionIndex].extensionName, " (", VK_API_VERSION_MAJOR(vk_pAvailableExtensions[u32ExtensionIndex].specVersion), ".",VK_API_VERSION_MINOR(vk_pAvailableExtensions[u32ExtensionIndex].specVersion), ".", VK_API_VERSION_PATCH(vk_pAvailableExtensions[u32ExtensionIndex].specVersion), ")"));
+			for (uint8_t u8RequiredExtensionIndex = 0U; u8RequiredExtensionIndex < RE_VK_REQUIRED_EXTENSIONS_COUNT; u8RequiredExtensionIndex++)
+				if (are_string_contents_equal(vk_pAvailableExtensions[u32ExtensionIndex].extensionName, pcRequiredExtensions[u8RequiredExtensionIndex]))
+					bExtensionsPresent[u8RequiredExtensionIndex] = true;
+		}
+		delete[] vk_pAvailableExtensions;
+		for (uint8_t u8RequiredExtensionIndex = 0U; u8RequiredExtensionIndex < RE_VK_REQUIRED_EXTENSIONS_COUNT; u8RequiredExtensionIndex++)
+			if (!bExtensionsPresent[u8RequiredExtensionIndex])
+				missingExtensions.push(pcRequiredExtensions[u8RequiredExtensionIndex]);
+		if (!missingExtensions.empty()) {
+			bFailure = true;
+			println_colored("\tThe following Vulkan instance extensions are missing on this computer:", RE_TERMINAL_COLOR_RED, false, false);
+			do {
+				println_colored(append_to_string("\t - ", missingExtensions.front()).c_str(), RE_TERMINAL_COLOR_RED, false, false);
+				missingExtensions.pop();
+			} while (!missingExtensions.empty());
+		}
+
+		uint32_t u32AvailableLayersCount = 0U;
+		CATCH_SIGNAL(pfn_vkEnumerateInstanceLayerProperties(&u32AvailableLayersCount, nullptr));
+		VkLayerProperties* vk_pAvailableLayers = new VkLayerProperties[u32AvailableLayersCount];
+		CATCH_SIGNAL(pfn_vkEnumerateInstanceLayerProperties(&u32AvailableLayersCount, vk_pAvailableLayers));
+		bool bRequiredLayersPresent[RE_VK_REQUIRED_LAYERS_COUNT] = {};
+		std::queue<const char*>  missingLayers;
+		PRINT_LN("Available Vulkan instance layers:");
+		for (uint32_t u32LayerIndex = 0; u32LayerIndex < u32AvailableLayersCount; u32LayerIndex++) {
+			println(append_to_string("\t", vk_pAvailableLayers[u32LayerIndex].layerName, " (", VK_API_VERSION_MAJOR(vk_pAvailableLayers[u32LayerIndex].specVersion), ".", VK_API_VERSION_MINOR(vk_pAvailableLayers[u32LayerIndex].specVersion), ".",VK_API_VERSION_PATCH(vk_pAvailableLayers[u32LayerIndex].specVersion), " - ", vk_pAvailableLayers[u32LayerIndex].implementationVersion, "): ", vk_pAvailableLayers[u32LayerIndex].description));
+			for (uint8_t u8RequiredLayerIndex = 0U; u8RequiredLayerIndex < RE_VK_REQUIRED_LAYERS_COUNT; u8RequiredLayerIndex++)
+				if (are_string_contents_equal(vk_pAvailableLayers[u32LayerIndex].layerName, pcRequiredLayers[u8RequiredLayerIndex]))
+					bRequiredLayersPresent[u8RequiredLayerIndex] = true;
+		}
+		delete[] vk_pAvailableLayers;
+		for (uint8_t u8RequiredLayerIndex = 0U; u8RequiredLayerIndex < RE_VK_REQUIRED_LAYERS_COUNT; u8RequiredLayerIndex++)
+			if (!bRequiredLayersPresent[u8RequiredLayerIndex])
+				missingLayers.push(pcRequiredLayers[u8RequiredLayerIndex]);
+		if (!missingLayers.empty()) {
+			bFailure = true;
+			println_colored("\tThe following Vulkan instance layers are missing on this computer:", RE_TERMINAL_COLOR_RED, false, false);
+			do {
+				println_colored(append_to_string("\t - ", missingLayers.front()).c_str(), RE_TERMINAL_COLOR_RED, false, false);
+				missingLayers.pop();
+			} while (!missingLayers.empty());
+		}
+
+		if (bFailure)
+			return false;
+		std::string strAppName = get_app_name();
+		VkApplicationInfo vk_appInfo = {
+			.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
+			.pApplicationName = strAppName.c_str(),
+			.applicationVersion = VK_MAKE_API_VERSION(0, 1, 0, 0),
+			.pEngineName = "R-Engine",
+			.engineVersion = VK_MAKE_API_VERSION(0, 1, 0, 0),
+			.apiVersion = VK_API_VERSION_1_3
+		};
+		VkInstanceCreateInfo vk_instanceCreateInfo = {
+			.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+			.pApplicationInfo = &vk_appInfo,
+			.enabledLayerCount = RE_VK_REQUIRED_LAYERS_COUNT,
+			.ppEnabledLayerNames = pcRequiredLayers,
+			.enabledExtensionCount = RE_VK_REQUIRED_EXTENSIONS_COUNT,
+			.ppEnabledExtensionNames = pcRequiredExtensions
+		};
+		if (!CHECK_VK_RESULT(pfn_vkCreateInstance(&vk_instanceCreateInfo, nullptr, &vk_hInstance))) {
+			RE_FATAL_ERROR("Failed creating Vulkan instance");
+			return false;
+		}
+		return true;
+	}
+
+	static bool load_vulkan_1_0() {
 		// Skipped initialization of "pfn_vkCreateInstance", because it's already loaded
 		pfn_vkDestroyInstance = reinterpret_cast<PFN_vkDestroyInstance>(load_func("vkDestroyInstance"));
 		if (!pfn_vkDestroyInstance)
@@ -417,7 +814,7 @@ namespace RE {
 		return true;
 	}
 
-	bool Vulkan::load_vulkan_1_1() {
+	static bool load_vulkan_1_1() {
 		pfn_vkEnumerateInstanceVersion = reinterpret_cast<PFN_vkEnumerateInstanceVersion>(load_func_with_instance(nullptr, "vkEnumerateInstanceVersion"));
 		if (!pfn_vkEnumerateInstanceVersion)
 			return false;
@@ -505,7 +902,7 @@ namespace RE {
 		return true;
 	}
 
-	bool Vulkan::load_vulkan_1_2() {
+	static bool load_vulkan_1_2() {
 		pfn_vkCmdDrawIndirectCount = reinterpret_cast<PFN_vkCmdDrawIndirectCount>(load_func("vkCmdDrawIndirectCount"));
 		if (!pfn_vkCmdDrawIndirectCount)
 			return false;
@@ -548,7 +945,7 @@ namespace RE {
 		return true;
 	}
 
-	bool Vulkan::load_vulkan_1_3() {
+	static bool load_vulkan_1_3() {
 		pfn_vkGetPhysicalDeviceToolProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceToolProperties>(load_func("vkGetPhysicalDeviceToolProperties"));
 		if (!pfn_vkGetPhysicalDeviceToolProperties)
 			return false;
@@ -663,7 +1060,7 @@ namespace RE {
 		return true;
 	}
 
-	/* bool Vulkan::load_vulkan_1_4() {
+	/* static bool load_vulkan_1_4() {
 		pfn_vkCmdSetLineStipple = reinterpret_cast<PFN_vkCmdSetLineStipple>(load_func("vkCmdSetLineStipple"));
 		if (!pfn_vkCmdSetLineStipple)
 			return false;
@@ -724,7 +1121,7 @@ namespace RE {
 		return true;
 	} */
 
-	bool Vulkan::load_extension_funcs() {
+	static bool load_extension_funcs() {
 		pfn_vkSetDebugUtilsObjectNameEXT = reinterpret_cast<PFN_vkSetDebugUtilsObjectNameEXT>(load_func("vkSetDebugUtilsObjectNameEXT"));
 		if (!pfn_vkSetDebugUtilsObjectNameEXT)
 			return false;
@@ -827,16 +1224,79 @@ namespace RE {
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 		return true;
 	}
-	
-	Vulkan::Vulkan() : bValid(false), hLibVulkan(nullptr), vk_hInstance(VK_NULL_HANDLE), vk_hDebugMessenger(VK_NULL_HANDLE) {
-		if (Vulkan::pInstance) {
-			RE_FATAL_ERROR("A new object of the Vulkan class has been constructed. Only one can exist at a time");
-			return;
-		}
-		Vulkan::pInstance = this;
-		DEFINE_SIGNAL_GUARD(sigGuardVulkanConstructor);
 
-		// Avoiding wild pointers (don't remove!)
+	static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT vk_eSeverityFlagBits, VkDebugUtilsMessageTypeFlagsEXT vk_eMsgTypeBits, const VkDebugUtilsMessengerCallbackDataEXT* vk_pCallbackData, void* vk_pUserData) {
+		if (vk_eSeverityFlagBits == VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+			RE_WARNING(append_to_string("Vulkan's validation layers were triggered\n", vk_pCallbackData->pMessage));
+		else if (vk_eSeverityFlagBits == VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+			RE_ERROR(append_to_string("Vulkan's validation layers were triggered\n", vk_pCallbackData->pMessage));
+		else
+			RE_NOTE(append_to_string("Vulkan's validation layers were triggered. The severity couldn't be determined\n", vk_pCallbackData->pMessage));
+		return VK_FALSE;
+	}
+
+	static bool setup_validation_layers() {
+		VkDebugUtilsMessengerCreateInfoEXT vk_debugCreateInfo = { VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT };
+		vk_debugCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+		vk_debugCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+		vk_debugCreateInfo.pfnUserCallback = debug_callback;
+		vk_debugCreateInfo.pUserData = nullptr;
+		VkResult vk_eSuccessResult;
+		CATCH_SIGNAL(vk_eSuccessResult = pfn_vkCreateDebugUtilsMessengerEXT(vk_hInstance, &vk_debugCreateInfo, nullptr, &vk_hDebugMessenger));
+		if (!CHECK_VK_RESULT(vk_eSuccessResult)) {
+			RE_FATAL_ERROR("Failed creating Vulkan debug messenger for validation layers");
+			return false;
+		}
+		return true;
+	}
+
+	bool link_vulkan() {
+#ifdef RE_OS_WINDOWS
+		CATCH_SIGNAL(hLibVulkan = LoadLibraryW(L"vulkan-1.dll"));
+		if (!hLibVulkan) {
+			RE_FATAL_ERROR("Failed loading Vulkan library");
+			return false;
+		}
+		CATCH_SIGNAL(pfn_vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(GetProcAddress(hLibVulkan, "vkGetInstanceProcAddr")));
+#elif defined RE_OS_LINUX
+		CATCH_SIGNAL(hLibVulkan = dlopen("libvulkan.so.1", RTLD_NOW | RTLD_LOCAL));
+		if (!hLibVulkan) {
+			RE_FATAL_ERROR("Failed loading Vulkan library");
+			return false;
+		}
+		CATCH_SIGNAL(pfn_vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(dlsym(hLibVulkan, "vkGetInstanceProcAddr")));
+#endif /* RE_OS_WINDOWS, RE_OS_LINUX */
+		if (!pfn_vkGetInstanceProcAddr) {
+			RE_FATAL_ERROR("Failed loading the Vulkan function \"vkGetInstanceProcAddr\" with the OS-specific API");
+			return false;
+		}
+		return CATCH_SIGNAL_AND_RETURN(create_vulkan_instance() && load_vulkan_1_0() && load_vulkan_1_1() && load_vulkan_1_2() && load_vulkan_1_3() /* && load_vulkan_1_4() */ && load_extension_funcs() && setup_validation_layers(), bool);
+	}
+	
+	void unlink_vulkan() {
+		if (vk_hInstance) {
+			if (vk_hDebugMessenger)
+				pfn_vkDestroyDebugUtilsMessengerEXT(vk_hInstance, vk_hDebugMessenger, nullptr);
+			if (!pfn_vkDestroyInstance) {
+				RE_NOTE("Attempting to reload function for destroying Vulkan instances");
+				pfn_vkDestroyInstance = reinterpret_cast<PFN_vkDestroyInstance>(load_func_with_instance(VK_NULL_HANDLE, "vkDestroyInstance"));
+				if (!pfn_vkDestroyInstance)
+					RE_ERROR("Failed reloading the function for destroying the Vulkan instance");
+				else
+					CATCH_SIGNAL(pfn_vkDestroyInstance(vk_hInstance, nullptr));
+			} else
+				CATCH_SIGNAL(pfn_vkDestroyInstance(vk_hInstance, nullptr));
+		}
+		if (hLibVulkan) {
+#ifdef RE_OS_WINDOWS
+			FreeLibrary(hLibVulkan);
+#elif defined RE_OS_LINUX
+			dlclose(hLibVulkan);
+#endif /* RE_OS_WINDOWS, RE_OS_LINUX */
+			hLibVulkan = nullptr;
+		}
+
+		// Avoiding dangling pointers (don't remove!)
 		pfn_vkCreateInstance = nullptr;
 		pfn_vkDestroyInstance = nullptr;
 		pfn_vkEnumeratePhysicalDevices = nullptr;
@@ -1096,236 +1556,15 @@ namespace RE {
 		pfn_vkGetDeviceGroupSurfacePresentModesKHR = nullptr;
 		pfn_vkGetPhysicalDevicePresentRectanglesKHR = nullptr;
 		pfn_vkAcquireNextImage2KHR = nullptr;
-
 #ifdef RE_OS_WINDOWS
 		pfn_vkCreateWin32SurfaceKHR = nullptr;
 		pfn_vkGetPhysicalDeviceWin32PresentationSupportKHR = nullptr;
-		CATCH_SIGNAL(hLibVulkan = LoadLibraryW(L"vulkan-1.dll"));
-		if (!hLibVulkan) {
-			RE_FATAL_ERROR("Failed loading Vulkan library");
-			return;
-		}
-		CATCH_SIGNAL(pfn_vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(GetProcAddress(hLibVulkan, "vkGetInstanceProcAddr")));
 #elif defined RE_OS_LINUX
+		pfn_vkCreateWaylandSurfaceKHR = nullptr;
+		pfn_vkGetPhysicalDeviceWaylandPresentationSupportKHR = nullptr;
 		pfn_vkCreateXlibSurfaceKHR = nullptr;
 		pfn_vkGetPhysicalDeviceXlibPresentationSupportKHR = nullptr;
-		CATCH_SIGNAL(hLibVulkan = dlopen("libvulkan.so.1", RTLD_NOW | RTLD_LOCAL));
-		if (!hLibVulkan) {
-			RE_FATAL_ERROR("Failed loading Vulkan library");
-			return;
-		}
-		CATCH_SIGNAL(pfn_vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(dlsym(hLibVulkan, "vkGetInstanceProcAddr")));
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
-		if (!pfn_vkGetInstanceProcAddr) {
-			RE_FATAL_ERROR("Failed loading the Vulkan function \"vkGetInstanceProcAddr\" with the OS-specific API");
-			return;
-		}
-
-		bool bRecentSuccess;
-		CATCH_SIGNAL(bRecentSuccess = create_instance());
-		if (!bRecentSuccess) {
-			RE_FATAL_ERROR("Failed creating a Vulkan instance");
-			return;
-		}
-		CATCH_SIGNAL(bRecentSuccess = load_vulkan_1_0());
-		if (!bRecentSuccess) {
-			RE_FATAL_ERROR("Failed loading Vulkan 1.0 functions");
-			return;
-		}
-		CATCH_SIGNAL(bRecentSuccess = load_vulkan_1_1());
-		if (!bRecentSuccess) {
-			RE_FATAL_ERROR("Failed loading Vulkan 1.1 functions");
-			return;
-		}
-		CATCH_SIGNAL(bRecentSuccess = load_vulkan_1_2());
-		if (!bRecentSuccess) {
-			RE_FATAL_ERROR("Failed loading Vulkan 1.2 functions");
-			return;
-		}
-		CATCH_SIGNAL(bRecentSuccess = load_vulkan_1_3());
-		if (!bRecentSuccess) {
-			RE_FATAL_ERROR("Failed loading Vulkan 1.3 functions");
-			return;
-		}
-		/* CATCH_SIGNAL(bRecentSuccess = load_vulkan_1_4());
-		if (!bRecentSuccess) {
-			RE_ERROR("Failed loading Vulkan 1.4 functions");
-			return;
-		} */
-		CATCH_SIGNAL(bRecentSuccess = load_extension_funcs());
-		if (!bRecentSuccess) {
-			RE_FATAL_ERROR("Failed loading Vulkan extension functions");
-			return;
-		}
-		CATCH_SIGNAL(bRecentSuccess = setup_validation_layers());
-		if (!bRecentSuccess) {
-			RE_FATAL_ERROR("Failed setting validation layers up");
-			return;
-		}
-		bValid = true;
-	}
-
-	Vulkan::~Vulkan() {
-		if (Vulkan::pInstance != this)
-			return;
-		Vulkan::pInstance = nullptr;
-		if (vk_hInstance != VK_NULL_HANDLE) {
-			if (vk_hDebugMessenger != VK_NULL_HANDLE)
-				pfn_vkDestroyDebugUtilsMessengerEXT(vk_hInstance, vk_hDebugMessenger, nullptr);
-			if (!pfn_vkDestroyInstance) {
-				RE_NOTE("Attempting to reload function for destroying Vulkan instances");
-				pfn_vkDestroyInstance = reinterpret_cast<PFN_vkDestroyInstance>(load_func_with_instance(VK_NULL_HANDLE, "vkDestroyInstance"));
-				if (!pfn_vkDestroyInstance)
-					RE_ERROR("Failed reloading the function for destroying the Vulkan instance");
-				else
-					CATCH_SIGNAL(pfn_vkDestroyInstance(vk_hInstance, nullptr));
-			} else
-				CATCH_SIGNAL(pfn_vkDestroyInstance(vk_hInstance, nullptr));
-		}
-#ifdef RE_OS_WINDOWS
-		FreeLibrary(hLibVulkan);
-#elif defined RE_OS_LINUX
-		dlclose(hLibVulkan);
-#endif /* RE_OS_WINDOWS, RE_OS_LINUX */
-	}
-
-	VKAPI_ATTR VkBool32 VKAPI_CALL Vulkan::debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT vk_eSeverityFlagBits, VkDebugUtilsMessageTypeFlagsEXT vk_eMsgTypeBits, const VkDebugUtilsMessengerCallbackDataEXT* vk_pCallbackData, void* vk_pUserData) {
-		if (vk_eSeverityFlagBits == VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
-			RE_WARNING(append_to_string("Vulkan's validation layers were triggered\n", vk_pCallbackData->pMessage));
-		else if (vk_eSeverityFlagBits == VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
-			RE_ERROR(append_to_string("Vulkan's validation layers were triggered\n", vk_pCallbackData->pMessage));
-		else
-			RE_NOTE(append_to_string("Vulkan's validation layers were triggered. The severity couldn't be determined\n", vk_pCallbackData->pMessage));
-		return VK_FALSE;
-	}
-
-	void* Vulkan::load_func_with_instance(VkInstance vk_hInstance, const char* pFuncName) {
-		void* pFuncPtr;
-		CATCH_SIGNAL(pFuncPtr = reinterpret_cast<void*>(pfn_vkGetInstanceProcAddr(vk_hInstance, pFuncName)));
-		if (!pFuncPtr)
-			RE_ERROR(append_to_string("Failed loading the Vulkan function \"", pFuncName, "\""));
-		return pFuncPtr;
-	}
-
-	void* Vulkan::load_func(const char* pFuncName) {
-		return CATCH_SIGNAL_AND_RETURN(load_func_with_instance(vk_hInstance, pFuncName), void*);
-	}
-
-	bool Vulkan::create_instance() {
-		CATCH_SIGNAL(pfn_vkCreateInstance = reinterpret_cast<PFN_vkCreateInstance>(load_func_with_instance(VK_NULL_HANDLE, "vkCreateInstance")));
-		if (!pfn_vkCreateInstance) {
-			RE_NOTE("Attempted to load the Vulkan function mentioned before for creating a Vulkan instance");
-			return false;
-		}
-		CATCH_SIGNAL(pfn_vkEnumerateInstanceExtensionProperties = reinterpret_cast<PFN_vkEnumerateInstanceExtensionProperties>(load_func_with_instance(VK_NULL_HANDLE, "vkEnumerateInstanceExtensionProperties")));
-		if (!pfn_vkEnumerateInstanceExtensionProperties) {
-			RE_NOTE("Attempted to load the Vulkan function mentioned before for creating a Vulkan instance");
-			return false;
-		}
-		CATCH_SIGNAL(pfn_vkEnumerateInstanceLayerProperties = reinterpret_cast<PFN_vkEnumerateInstanceLayerProperties>(load_func_with_instance(VK_NULL_HANDLE, "vkEnumerateInstanceLayerProperties")));
-		if (!pfn_vkEnumerateInstanceLayerProperties) {
-			RE_NOTE("Attempted to load the Vulkan function mentioned before for creating a Vulkan instance");
-			return false;
-		}
-
-		constexpr uint32_t u32ExtensionsToLoadCount = 3U;
-		const char** ppcExtensionsToLoad = new const char*[u32ExtensionsToLoadCount] {VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_KHR_SURFACE_EXTENSION_NAME};
-		ppcExtensionsToLoad[u32ExtensionsToLoadCount - 1U] = Window::pInstance->get_vulkan_required_surface_extension_name();
-		uint32_t u32AvailableExtensionsCount = 0U;
-		CATCH_SIGNAL(pfn_vkEnumerateInstanceExtensionProperties(nullptr, &u32AvailableExtensionsCount, nullptr));
-		VkExtensionProperties* vk_pAvailableExtensions = new VkExtensionProperties[u32AvailableExtensionsCount];
-		CATCH_SIGNAL(pfn_vkEnumerateInstanceExtensionProperties(nullptr, &u32AvailableExtensionsCount, vk_pAvailableExtensions));
-		PRINT_LN("Available Vulkan instance extensions:");
-		for (uint32_t i = 0U; i < u32AvailableExtensionsCount; i++)
-			println(append_to_string("\t", vk_pAvailableExtensions[i].extensionName, " (", VK_API_VERSION_MAJOR(vk_pAvailableExtensions[i].specVersion), ".", VK_API_VERSION_MINOR(vk_pAvailableExtensions[i].specVersion), ".", VK_API_VERSION_PATCH(vk_pAvailableExtensions[i].specVersion), ")"));
-		bool bExtensionsMissing = false;
-		for (uint32_t u32ExtToLoadIndex = 0U; u32ExtToLoadIndex < u32ExtensionsToLoadCount; u32ExtToLoadIndex++) {
-			bool bFound = false;
-			for (uint32_t uiAvailableExtsIndex = 0U; uiAvailableExtsIndex < u32AvailableExtensionsCount; uiAvailableExtsIndex++)
-				if (std::strcmp(ppcExtensionsToLoad[u32ExtToLoadIndex], vk_pAvailableExtensions[uiAvailableExtsIndex].extensionName) == 0) {
-					bFound = true;
-					break;
-				}
-			if (!bFound) {
-				RE_FATAL_ERROR(append_to_string("The requested Vulkan instance extension \"", ppcExtensionsToLoad[u32ExtToLoadIndex], "\" does not exist on this computer"));
-				bExtensionsMissing = true;
-			}
-		}
-
-		constexpr uint32_t u32LayersToLoadCount = 1U;
-		const char** ppcLayersToLoad = new const char*[u32LayersToLoadCount] {VK_KHR_VALIDATION_LAYER_NAME};
-		uint32_t u32AvailableLayersCount = 0U;
-		CATCH_SIGNAL(pfn_vkEnumerateInstanceLayerProperties(&u32AvailableLayersCount, nullptr));
-		VkLayerProperties* vk_pAvailableLayers = new VkLayerProperties[u32AvailableLayersCount];
-		CATCH_SIGNAL(pfn_vkEnumerateInstanceLayerProperties(&u32AvailableLayersCount, vk_pAvailableLayers));
-		PRINT_LN("Available Vulkan instance layers:");
-		for (uint32_t u32LayerIndex = 0; u32LayerIndex < u32AvailableLayersCount; u32LayerIndex++)
-			println(append_to_string("\t", vk_pAvailableLayers[u32LayerIndex].layerName, " (", VK_API_VERSION_MAJOR(vk_pAvailableLayers[u32LayerIndex].specVersion), ".", VK_API_VERSION_MINOR(vk_pAvailableLayers[u32LayerIndex].specVersion), ".",VK_API_VERSION_PATCH(vk_pAvailableLayers[u32LayerIndex].specVersion), " - ", vk_pAvailableLayers[u32LayerIndex].implementationVersion, "): ", vk_pAvailableLayers[u32LayerIndex].description));
-		bool bLayersMissing = false;
-		for (uint32_t u32LayersToLoadIndex = 0U; u32LayersToLoadIndex < u32LayersToLoadCount; u32LayersToLoadIndex++) {
-			bool bFound = false;
-			for (uint32_t u32AvailableLayersIndex = 0U; u32AvailableLayersIndex < u32AvailableLayersCount; u32AvailableLayersIndex++)
-				if (std::strcmp(ppcLayersToLoad[u32LayersToLoadIndex], vk_pAvailableLayers[u32AvailableLayersIndex].layerName) == 0) {
-					bFound = true;
-					break;
-				}
-			if (!bFound) {
-				RE_FATAL_ERROR(append_to_string("The requested Vulkan instance layer \"", ppcLayersToLoad[u32LayersToLoadIndex], "\" does not exist on this computer"));
-				bLayersMissing = true;
-			}
-		}
-
-		bool bInstanceCreationSuccessful = false;
-		if (!bExtensionsMissing && !bLayersMissing) {
-			VkApplicationInfo vk_appInfo = {};
-			vk_appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-			std::string strAppName = get_app_name();
-			vk_appInfo.pApplicationName = strAppName.c_str();
-			vk_appInfo.applicationVersion = VK_MAKE_API_VERSION(0, 1, 0, 0);
-			vk_appInfo.pEngineName = "R-Engine";
-			vk_appInfo.engineVersion = VK_MAKE_API_VERSION(0, 1, 0, 0);
-			vk_appInfo.apiVersion = VK_API_VERSION_1_3;
-			VkInstanceCreateInfo vk_instanceCreateInfo = {};
-			vk_instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-			vk_instanceCreateInfo.pApplicationInfo = &vk_appInfo;
-			vk_instanceCreateInfo.enabledExtensionCount = u32ExtensionsToLoadCount;
-			vk_instanceCreateInfo.ppEnabledExtensionNames = ppcExtensionsToLoad;
-			vk_instanceCreateInfo.enabledLayerCount = u32LayersToLoadCount;
-			vk_instanceCreateInfo.ppEnabledLayerNames = ppcLayersToLoad;
-			VkResult vk_eSuccessResult;
-			CATCH_SIGNAL(vk_eSuccessResult = pfn_vkCreateInstance(&vk_instanceCreateInfo, nullptr, &vk_hInstance));
-			if (!CHECK_VK_RESULT(vk_eSuccessResult))
-				RE_FATAL_ERROR("Failed creating Vulkan instance");
-			bInstanceCreationSuccessful = vk_eSuccessResult == VK_SUCCESS;
-		}
-		CATCH_SIGNAL(delete[] ppcExtensionsToLoad);
-		CATCH_SIGNAL(delete[] vk_pAvailableExtensions);
-		CATCH_SIGNAL(delete[] ppcLayersToLoad);
-		CATCH_SIGNAL(delete[] vk_pAvailableLayers);
-		return bInstanceCreationSuccessful;
-	}
-
-	bool Vulkan::setup_validation_layers() {
-		VkDebugUtilsMessengerCreateInfoEXT vk_debugCreateInfo = { VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT };
-		vk_debugCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-		vk_debugCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-		vk_debugCreateInfo.pfnUserCallback = debug_callback;
-		vk_debugCreateInfo.pUserData = nullptr;
-		VkResult vk_eSuccessResult;
-		CATCH_SIGNAL(vk_eSuccessResult = pfn_vkCreateDebugUtilsMessengerEXT(vk_hInstance, &vk_debugCreateInfo, nullptr, &vk_hDebugMessenger));
-		if (!CHECK_VK_RESULT(vk_eSuccessResult)) {
-			RE_FATAL_ERROR("Failed creating Vulkan debug messenger for validation layers");
-			return false;
-		}
-		return true;
-	}
-
-	VkInstance Vulkan::get_instance() {
-		return pInstance ? pInstance->vk_hInstance : nullptr;
-	}
-
-	bool Vulkan::is_valid() {
-		return bValid;
 	}
 
 	bool check_vulkan_result(VkResult vk_eResult, const char* pcFile, const char* pcFunc, uint32_t u32Line) {

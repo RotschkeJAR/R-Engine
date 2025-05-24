@@ -62,10 +62,7 @@ namespace RE {
 		}
 
 		{
-			Vulkan vulkan;
-			if (!vulkan.is_valid() || bErrorOccured)
-				return;
-			if (!init_render_system() || !init_renderer() || bErrorOccured)
+			if (!link_vulkan() || !init_render_system() || !init_renderer() || bErrorOccured)
 				return;
 			std::chrono::high_resolution_clock::time_point currentFrameTime = std::chrono::high_resolution_clock::now(), lastFrameTime;
 			bRunning = true;
@@ -96,6 +93,7 @@ namespace RE {
 			WAIT_FOR_IDLE_VULKAN_DEVICE();
 			CATCH_SIGNAL(destroy_renderer());
 			CATCH_SIGNAL(destroy_render_system());
+			CATCH_SIGNAL(unlink_vulkan());
 			fDeltaseconds = 0.0f;
 		}
 		CATCH_SIGNAL(delete pWindow);

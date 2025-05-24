@@ -224,7 +224,7 @@ namespace RE {
 		vk_win32SurfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
 		vk_win32SurfaceCreateInfo.hwnd = win_hWindow;
 		vk_win32SurfaceCreateInfo.hinstance = win_hInstance;
-		return CHECK_VK_RESULT(vkCreateWin32SurfaceKHR(RE_VK_INSTANCE, &vk_win32SurfaceCreateInfo, nullptr, &vk_rhSurface));
+		return CHECK_VK_RESULT(vkCreateWin32SurfaceKHR(vk_hInstance, &vk_win32SurfaceCreateInfo, nullptr, &vk_rhSurface));
 	}
 
 	const char* Window_Win64::get_vulkan_required_surface_extension_name() const {

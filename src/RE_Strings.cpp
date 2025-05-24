@@ -3,39 +3,43 @@
 namespace RE {
 
 	bool is_string_empty(const char* pcString) {
-		return get_string_length_safely(pcString) == 0U;
+		return !pcString || pcString[0] == '\0';
 	}
 
-	size_t get_string_length_safely(const char* pcString) {
+	uint32_t get_string_length_safely(const char* pcString) {
 		return pcString ? std::strlen(pcString) : 0U;
+	}
+
+	bool are_string_contents_equal(const char *pcString1, const char *pcString2) {
+		return pcString1 && pcString2 && std::strcmp(pcString1, pcString2) == 0U;
 	}
 
 	uint32_t get_line_count(const char* pcString) {
 		if (is_string_empty(pcString))
 			return 0;
-		uint32_t u32CurrentLine = 1, u32CurrentCharacter = 0;
+		uint32_t u32Lines = 1, u32CharacterIndex = 0;
 		while (true) {
-			switch (pcString[u32CurrentCharacter]) {
+			switch (pcString[u32CharacterIndex]) {
 				case '\0':
-					return u32CurrentLine;
+					return u32Lines;
 				case '\n':
-					u32CurrentLine++;
+					u32Lines++;
 				default:
 					break;
 			}
-			u32CurrentCharacter++;
+			u32CharacterIndex++;
 		}
 	}
 
 	std::string get_line(const char* pcString, uint32_t u32Line) {
-		uint32_t u32CurrentLine = 0U, u32CurrentCharacter = 0U;
+		uint32_t u32CurrentLine = 0U, u32CharacterIndex = 0U;
 		std::stringstream resultStream("");
 		bool bReachedEndOfString = false;
 		while (true) {
 			const bool bLineFound = u32CurrentLine == u32Line;
 			while (true) {
 				bool bBreakout = false;
-				switch (pcString[u32CurrentCharacter]) {
+				switch (pcString[u32CharacterIndex]) {
 					case '\0':
 						bReachedEndOfString = true;
 						// Don't break here!
@@ -44,10 +48,10 @@ namespace RE {
 						break;
 					default:
 						if (bLineFound)
-							resultStream << pcString[u32CurrentCharacter];
+							resultStream << pcString[u32CharacterIndex];
 						break;
 				}
-				u32CurrentCharacter++;
+				u32CharacterIndex++;
 				if (bBreakout)
 					break;
 			}
@@ -77,7 +81,7 @@ namespace RE {
 #ifdef RE_OS_WINDOWS
 # define PATH_SIZE 500
 		wchar_t wcBuffer[PATH_SIZE] = {0};
-		if (GetModuleFileNameW(nullptr, wcBuffer, PATH_SIZE)) 
+		if (GetModuleFileNameW(nullptr, wcBuffer, PATH_SIZE))
 			strAppName = convert_wide_chars_to_utf8(wcBuffer);
 		else
 			RE_ERROR("Failed retrieving the file name of the application");

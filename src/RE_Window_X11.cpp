@@ -171,7 +171,7 @@ namespace RE {
 		vk_x11SurfaceCreateInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
 		vk_x11SurfaceCreateInfo.dpy = x11_pDisplay;
 		vk_x11SurfaceCreateInfo.window = x11_hWindow;
-		return CHECK_VK_RESULT(vkCreateXlibSurfaceKHR(RE_VK_INSTANCE, &vk_x11SurfaceCreateInfo, nullptr, &vk_rhSurface));
+		return CHECK_VK_RESULT(vkCreateXlibSurfaceKHR(vk_hInstance, &vk_x11SurfaceCreateInfo, nullptr, &vk_rhSurface));
 	}
 
 	const char* Window_X11::get_vulkan_required_surface_extension_name() const {

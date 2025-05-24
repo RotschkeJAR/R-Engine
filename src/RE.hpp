@@ -270,12 +270,13 @@ namespace RE {
 		return std::wstring(wss.str());
 	}
 
-	bool is_string_empty(const char* pcString);
-	size_t get_string_length_safely(const char* pcString);
-	uint32_t get_line_count(const char* pcString);
-	std::string get_line(const char* pcString, uint32_t u32Line);
-	std::string convert_wide_chars_to_utf8(const wchar_t* pwcString);
-	std::wstring convert_chars_to_wide(const char* pcString);
+	bool is_string_empty(const char *pcString);
+	uint32_t get_string_length_safely(const char *pcString);
+	bool are_string_contents_equal(const char *pcString1, const char *pcString2);
+	uint32_t get_line_count(const char *pcString);
+	std::string get_line(const char *pcString, uint32_t u32Line);
+	std::string convert_wide_chars_to_utf8(const wchar_t *pwcString);
+	std::wstring convert_chars_to_wide(const char *pcString);
 	std::string get_app_name();
 
 	template <typename T>

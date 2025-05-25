@@ -66,6 +66,13 @@ namespace RE {
 		return true;
 	}
 
+	void __vk_destroy_buffer(VkBuffer &vk_rhBuffer, VkDeviceMemory &vk_rhMemory) {
+		CATCH_SIGNAL(vkFreeMemory(vk_hDevice, vk_rhMemory, nullptr));
+		CATCH_SIGNAL(vkDestroyBuffer(vk_hDevice, vk_rhBuffer, nullptr));
+		vk_rhMemory = VK_NULL_HANDLE;
+		vk_rhBuffer = VK_NULL_HANDLE;
+	}
+
 	bool __vk_create_framebuffer(const VkFramebufferCreateFlags vk_eCreateFlags, const VkRenderPass vk_hRenderPass, const uint32_t u32ImageViewAttachmentCount, const VkImageView *vk_phImageViewAttachments, const uint32_t u32Width, const uint32_t u32Height, const uint32_t u32Layers, VkFramebuffer *vk_phFramebuffer, const char *pcFile, const char *pcFunc, const uint32_t u32Line) {
 		VkFramebufferCreateInfo vk_framebufferCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,

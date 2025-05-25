@@ -8,6 +8,9 @@ namespace RE {
 	bool __vk_create_buffer(const VkBufferCreateFlags vk_eCreateFlags, const VkDeviceSize vk_bufferSizeInBytes, const VkBufferUsageFlags vk_eBufferUsage, const uint32_t u32QueueTypeCount, const uint32_t *pu32BufferQueueTypeIndices, const VkMemoryPropertyFlags vk_eMemoryProperties, VkBuffer *vk_phBuffer, VkDeviceMemory *vk_phBufferMemory, const char *pFile, const char *pFunc, const uint32_t u32Line);
 #define vk_create_buffer(SIZE, USAGE, QUEUE_COUNT, QUEUES, MEMORY_PROPERTY, BUFFER_OUT, MEMORY_OUT) CATCH_SIGNAL_AND_RETURN(__vk_create_buffer(0, SIZE, USAGE, QUEUE_COUNT, QUEUES, MEMORY_PROPERTY, BUFFER_OUT, MEMORY_OUT, __FILE__, __func__, __LINE__), bool)
 
+	void __vk_destroy_buffer(VkBuffer &vk_rhBuffer, VkDeviceMemory &vk_rhMemory);
+#define vk_destroy_buffer(BUFFER, MEMORY) CATCH_SIGNAL(__vk_destroy_buffer(BUFFER, MEMORY))
+
 	bool __vk_create_framebuffer(const VkFramebufferCreateFlags vk_eCreateFlags, const VkRenderPass vk_hRenderPass, const uint32_t u32ImageViewAttachmentCount, const VkImageView *vk_phImageViewAttachments, const uint32_t u32Width, const uint32_t u32Height, const uint32_t u32Layers, VkFramebuffer *vk_phFramebuffer, const char *pcFile, const char *pcFunc, const uint32_t u32Line);
 #define vk_create_framebuffer(RENDERPASS, IMGVIEW_ATTACH_COUNT, IMGVIEW_ATTACHS, WIDTH, HEIGHT, LAYERS, FRAMEBUFFER_OUT) CATCH_SIGNAL_AND_RETURN(__vk_create_framebuffer(0, RENDERPASS, IMGVIEW_ATTACH_COUNT, IMGVIEW_ATTACHS, WIDTH, HEIGHT, LAYERS, FRAMEBUFFER_OUT, __FILE__, __func__, __LINE__), bool)
 

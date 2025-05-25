@@ -604,5 +604,6 @@ namespace RE {
 }
 
 #include "RE_Vulkan_Wrapper Functions.hpp"
+#include "RE_Vulkan_Wrapper Classes.hpp"
 
 #endif /* __RE_VULKAN_H__ */

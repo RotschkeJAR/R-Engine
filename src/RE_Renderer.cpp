@@ -18,7 +18,9 @@ namespace RE {
 	VkBuffer vk_hRectIndexBuffer = VK_NULL_HANDLE;
 	VkDeviceMemory vk_hRectIndexBufferMemory = VK_NULL_HANDLE;
 
-	VkRenderPass vk_hFirstRenderPass = VK_NULL_HANDLE;
+	VkRenderPass vk_hWorldRenderPass = VK_NULL_HANDLE;
+
+	VkCommandBuffer *vk_phPrimaryCommandBuffers = nullptr;
 
 	bool init_renderer() {
 		constexpr const uint32_t u32StagingRectIndexBufferQueueCount = 1U, u32StagingRectIndexBufferQueues[u32StagingRectIndexBufferQueueCount] = {RE_VK_QUEUE_TRANSFER_INDEX};
@@ -47,12 +49,7 @@ namespace RE {
 		}
 		transferRectIndicesCommandBuffer.cmd_copy_buffers(stagingRectIndexBuffer, vk_hRectIndexBuffer, RE_VK_INDEX_BUFFER_BYTES);
 		transferRectIndicesCommandBuffer.end_recording();
-		Vulkan_Fence rectIndexBufferTransferFence;
-		initRectIndexBufferData.join();
-		if (!vk_submit_to_transfer_queue(0U, nullptr, nullptr, 1U, transferRectIndicesCommandBuffer, 0U, nullptr, rectIndexBufferTransferFence)) {
-			vk_destroy_buffer(vk_hRectIndexBuffer, vk_hRectIndexBufferMemory);
-			return false;
-		}
+
 		constexpr const uint32_t u32AttachmentDescriptionCount = 1U, u32ColorAttachmentCount = 1U, u32SubpassDescriptionCount = 1U, u32SubpassDependencyCount = 1U;
 		const VkAttachmentDescription vk_attachmentDescriptions[u32AttachmentDescriptionCount] = {
 			{
@@ -63,7 +60,7 @@ namespace RE {
 				.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
 				.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
 				.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-				.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+				.finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
 			}
 		};
 		const VkAttachmentReference vk_colorAttachments[u32ColorAttachmentCount] = {
@@ -89,7 +86,18 @@ namespace RE {
 				.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
 			}
 		};
-		if (!vk_create_render_pass(u32AttachmentDescriptionCount, vk_attachmentDescriptions, u32SubpassDescriptionCount, vk_subpassDescriptions, u32SubpassDependencyCount, vk_subpassDependencies, &vk_hFirstRenderPass)) {
+		if (!vk_create_render_pass(u32AttachmentDescriptionCount, vk_attachmentDescriptions, u32SubpassDescriptionCount, vk_subpassDescriptions, u32SubpassDependencyCount, vk_subpassDependencies, &vk_hWorldRenderPass)) {
+			vk_destroy_buffer(vk_hRectIndexBuffer, vk_hRectIndexBufferMemory);
+			initRectIndexBufferData.join();
+			return false;
+		}
+
+		vk_phPrimaryCommandBuffers = new VkCommandBuffer[u32SwapchainImageCount];
+		vk_alloc_command_buffers(vk_hCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX], VK_COMMAND_BUFFER_LEVEL_PRIMARY, u32SwapchainImageCount, vk_phPrimaryCommandBuffers);
+
+		Vulkan_Fence rectIndexBufferTransferFence;
+		initRectIndexBufferData.join();
+		if (!vk_submit_to_transfer_queue(0U, nullptr, nullptr, 1U, transferRectIndicesCommandBuffer, 0U, nullptr, rectIndexBufferTransferFence)) {
 			vk_destroy_buffer(vk_hRectIndexBuffer, vk_hRectIndexBufferMemory);
 			return false;
 		}
@@ -98,7 +106,9 @@ namespace RE {
 	}
 	
 	void destroy_renderer() {
-		vk_destroy_render_pass(vk_hFirstRenderPass);
+		vk_free_command_buffers(vk_hCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX], u32SwapchainImageCount, vk_phPrimaryCommandBuffers);
+		DELETE_ARRAY_SAFELY(vk_phPrimaryCommandBuffers);
+		vk_destroy_render_pass(vk_hWorldRenderPass);
 		vk_destroy_buffer(vk_hRectIndexBuffer, vk_hRectIndexBufferMemory);
 	}
 

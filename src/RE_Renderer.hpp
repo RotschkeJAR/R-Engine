@@ -13,6 +13,8 @@ namespace RE {
 	extern VkRect2D vk_cameraScissorArea;
 
 	extern VkBuffer vk_rectIndexBuffer;
+
+	extern VkRenderPass vk_hWorldRenderPass;
 	
 	bool init_renderer();
 	void destroy_renderer();

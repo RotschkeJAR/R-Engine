@@ -223,6 +223,10 @@ namespace RE {
 		return true;
 	}
 
+	void __vk_free_command_buffers(const VkCommandPool vk_hCommandPool, const uint32_t u32CommandBufferCount, const VkCommandBuffer *vk_phCommandBuffers) {
+		CATCH_SIGNAL(vkFreeCommandBuffers(vk_hDevice, vk_hCommandPool, u32CommandBufferCount, vk_phCommandBuffers));
+	}
+
 	bool __vk_alloc_descriptor_sets(const VkDescriptorPool vk_hDescriptorPool, const uint32_t u32DescriptorSetCount, const VkDescriptorSetLayout *vk_phDescriptorSetLayouts, VkDescriptorSet *vk_phDescriptorSets, const char *pcFile, const char *pcFunc, const uint32_t u32Line) {
 		VkDescriptorSetAllocateInfo vk_descriptorSetAllocInfo = {
 			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,

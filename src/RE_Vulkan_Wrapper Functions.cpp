@@ -159,6 +159,11 @@ namespace RE {
 		return true;
 	}
 
+	void __vk_destroy_render_pass(VkRenderPass &vk_rhRenderPass) {
+		CATCH_SIGNAL(vkDestroyRenderPass(vk_hDevice, vk_rhRenderPass, nullptr));
+		vk_rhRenderPass = VK_NULL_HANDLE;
+	}
+
 	bool __vk_create_descriptor_set_layout(const VkDescriptorSetLayoutCreateFlags vk_eCreateFlags, const uint32_t u32BindingCount, const VkDescriptorSetLayoutBinding *vk_pBindings, VkDescriptorSetLayout *vk_pDescriptorSetLayout, const char *pcFile, const char *pcFunc, const uint32_t u32Line) {
 		VkDescriptorSetLayoutCreateInfo vk_descriptorSetLayoutCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,

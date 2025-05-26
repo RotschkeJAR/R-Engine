@@ -18,8 +18,10 @@ namespace RE {
 	VkBuffer vk_hRectIndexBuffer = VK_NULL_HANDLE;
 	VkDeviceMemory vk_hRectIndexBufferMemory = VK_NULL_HANDLE;
 
+	VkRenderPass vk_hFirstRenderPass = VK_NULL_HANDLE;
+
 	bool init_renderer() {
-		constexpr uint32_t u32StagingRectIndexBufferQueueCount = 1U, u32StagingRectIndexBufferQueues[u32StagingRectIndexBufferQueueCount] = {RE_VK_QUEUE_TRANSFER_INDEX};
+		constexpr const uint32_t u32StagingRectIndexBufferQueueCount = 1U, u32StagingRectIndexBufferQueues[u32StagingRectIndexBufferQueueCount] = {RE_VK_QUEUE_TRANSFER_INDEX};
 		Vulkan_Buffer stagingRectIndexBuffer(RE_VK_INDEX_BUFFER_BYTES, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, u32StagingRectIndexBufferQueueCount, u32StagingRectIndexBufferQueues, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 		if (!stagingRectIndexBuffer.is_valid())
 			return false;
@@ -35,7 +37,7 @@ namespace RE {
 				pu16RectIndices[u16RectNumber * 6U + 5U] = u16RectNumber * 4U + 0U;
 			}
 		});
-		constexpr uint32_t u32RectIndexBufferQueueCount = 2U, u32RectIndexBufferQueues[u32RectIndexBufferQueueCount] = {RE_VK_QUEUE_TRANSFER_INDEX, RE_VK_QUEUE_GRAPHICS_INDEX};
+		constexpr const uint32_t u32RectIndexBufferQueueCount = 2U, u32RectIndexBufferQueues[u32RectIndexBufferQueueCount] = {RE_VK_QUEUE_TRANSFER_INDEX, RE_VK_QUEUE_GRAPHICS_INDEX};
 		vk_create_buffer(RE_VK_INDEX_BUFFER_BYTES, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, u32RectIndexBufferQueueCount, u32RectIndexBufferQueues, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_hRectIndexBuffer, &vk_hRectIndexBufferMemory);
 		Vulkan_CommandBuffer transferRectIndicesCommandBuffer(vk_hCommandPools[RE_VK_COMMAND_POOL_TRANSFER_TRANSIENT_INDEX], VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 		if (!transferRectIndicesCommandBuffer.is_valid() || !transferRectIndicesCommandBuffer.begin_recording(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr)) {
@@ -51,11 +53,52 @@ namespace RE {
 			vk_destroy_buffer(vk_hRectIndexBuffer, vk_hRectIndexBufferMemory);
 			return false;
 		}
+		constexpr const uint32_t u32AttachmentDescriptionCount = 1U, u32ColorAttachmentCount = 1U, u32SubpassDescriptionCount = 1U, u32SubpassDependencyCount = 1U;
+		const VkAttachmentDescription vk_attachmentDescriptions[u32AttachmentDescriptionCount] = {
+			{
+				.format = vk_eSwapchainImageFormat,
+				.samples = VK_SAMPLE_COUNT_1_BIT,
+				.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+				.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+				.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+				.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+				.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+				.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+			}
+		};
+		const VkAttachmentReference vk_colorAttachments[u32ColorAttachmentCount] = {
+			{
+				.attachment = 0U,
+				.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+			}
+		};
+		const VkSubpassDescription vk_subpassDescriptions[u32SubpassDescriptionCount] = {
+			{
+				.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
+				.colorAttachmentCount = u32ColorAttachmentCount,
+				.pColorAttachments = &vk_colorAttachments[0]
+			}
+		};
+		const VkSubpassDependency vk_subpassDependencies[u32SubpassDependencyCount] = {
+			{
+				.srcSubpass = VK_SUBPASS_EXTERNAL,
+				.dstSubpass = 0U,
+				.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+				.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+				.srcAccessMask = VK_ACCESS_NONE,
+				.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
+			}
+		};
+		if (!vk_create_render_pass(u32AttachmentDescriptionCount, vk_attachmentDescriptions, u32SubpassDescriptionCount, vk_subpassDescriptions, u32SubpassDependencyCount, vk_subpassDependencies, &vk_hFirstRenderPass)) {
+			vk_destroy_buffer(vk_hRectIndexBuffer, vk_hRectIndexBufferMemory);
+			return false;
+		}
 		rectIndexBufferTransferFence.wait_for();
 		return true;
 	}
 	
 	void destroy_renderer() {
+		vk_destroy_render_pass(vk_hFirstRenderPass);
 		vk_destroy_buffer(vk_hRectIndexBuffer, vk_hRectIndexBufferMemory);
 	}
 

@@ -26,6 +26,9 @@ namespace RE {
 	bool __vk_create_render_pass(const uint32_t u32AttachmentDescriptionCount, const VkAttachmentDescription *vk_pAttachmentDescriptions, const uint32_t u32SubpassDescriptionCount, const VkSubpassDescription *vk_pSubpassDescriptions, const uint32_t u32SubpassDependencyCount, const VkSubpassDependency *vk_pSubpassDependencies, VkRenderPass *vk_phRenderPass, const char *pcFile, const char *pcFunc, const uint32_t u32Line);
 #define vk_create_render_pass(ATTACH_DESC_COUNT, ATTACH_DESCS, SUBPASS_DESC_COUNT, SUBPASS_DESCS, SUBPASS_DEP_COUNT, SUBPASS_DEPS, RENDERPASS_OUT) CATCH_SIGNAL_AND_RETURN(__vk_create_render_pass(ATTACH_DESC_COUNT, ATTACH_DESCS, SUBPASS_DESC_COUNT, SUBPASS_DESCS, SUBPASS_DEP_COUNT, SUBPASS_DEPS, RENDERPASS_OUT, __FILE__, __func__, __LINE__), bool)
 
+	void __vk_destroy_render_pass(VkRenderPass &vk_rhRenderPass);
+#define vk_destroy_render_pass(RENDERPASS) CATCH_SIGNAL(__vk_destroy_render_pass(RENDERPASS))
+
 	bool __vk_create_descriptor_set_layout(const VkDescriptorSetLayoutCreateFlags vk_eCreateFlags, const uint32_t u32BindingCount, const VkDescriptorSetLayoutBinding *vk_pBindings, VkDescriptorSetLayout *vk_pDescriptorSetLayout, const char *pcFile, const char *pcFunc, const uint32_t u32Line);
 #define vk_create_descriptor_set_layout(FLAGS, BINDING_COUNT, BINDINGS, DESC_SET_LAYOUT_OUT) CATCH_SIGNAL_AND_RETURN(__vk_create_descriptor_set_layout(FLAGS, BINDING_COUNT, BINDINGS, DESC_SET_LAYOUT_OUT, __FILE__, __func__, __LINE__), bool)
 

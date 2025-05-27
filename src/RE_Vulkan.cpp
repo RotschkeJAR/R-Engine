@@ -12,6 +12,9 @@ namespace RE {
 	void *hLibVulkan = nullptr;
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 	VkInstance vk_hInstance = VK_NULL_HANDLE;
+
+	const char *pcVulkanDebugFocusOnFile = nullptr, *pcVulkanDebugFocusOnFunc = nullptr;
+	uint32_t u32VulkanDebugFocusOnLine = 0U, u32VulkanDebugFocusCount = 0U;
 	VkDebugUtilsMessengerEXT vk_hDebugMessenger = VK_NULL_HANDLE;
 
 	PFN_vkCreateInstance pfn_vkCreateInstance = nullptr;
@@ -1226,12 +1229,28 @@ namespace RE {
 	}
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT vk_eSeverityFlagBits, VkDebugUtilsMessageTypeFlagsEXT vk_eMsgTypeBits, const VkDebugUtilsMessengerCallbackDataEXT* vk_pCallbackData, void* vk_pUserData) {
-		if (vk_eSeverityFlagBits == VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
-			RE_WARNING(append_to_string("Vulkan's validation layers were triggered\n", vk_pCallbackData->pMessage));
-		else if (vk_eSeverityFlagBits == VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
-			RE_ERROR(append_to_string("Vulkan's validation layers were triggered\n", vk_pCallbackData->pMessage));
-		else
-			RE_NOTE(append_to_string("Vulkan's validation layers were triggered. The severity couldn't be determined\n", vk_pCallbackData->pMessage));
+		TerminalColor eConsoleColor = RE_TERMINAL_COLOR_WHITE;
+		switch (vk_eSeverityFlagBits) {
+			case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
+				eConsoleColor = RE_TERMINAL_COLOR_RED;
+				break;
+			case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
+				eConsoleColor = RE_TERMINAL_COLOR_YELLOW;
+				break;
+			case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
+				eConsoleColor = RE_TERMINAL_COLOR_BRIGHT_BLACK;
+				break;
+			default:
+				return VK_FALSE;
+		}
+		if (!u32VulkanDebugFocusCount) {
+			if (pcVulkanDebugFocusOnFile && pcVulkanDebugFocusOnFunc && u32VulkanDebugFocusOnLine)
+				println_colored(append_to_string("Vulkan validation layers triggered in ", pcVulkanDebugFocusOnFile, ", in function \"", pcVulkanDebugFocusOnFunc, "\", at line ", u32VulkanDebugFocusOnLine, ":").c_str(), eConsoleColor, false, false);
+			else
+				println_colored("Vulkan validation layers triggered", eConsoleColor, false, false);
+		}
+		u32VulkanDebugFocusCount++;
+		println_colored(append_to_string("\t[", pMessageIdName, "] ", vk_pCallbackData->pMessage).c_str(), eConsoleColor, false, false);
 		return VK_FALSE;
 	}
 
@@ -1565,6 +1584,20 @@ namespace RE {
 		pfn_vkCreateXlibSurfaceKHR = nullptr;
 		pfn_vkGetPhysicalDeviceXlibPresentationSupportKHR = nullptr;
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
+	}
+
+	void focus_vulkan_debug_on(const char *const pcFile, const char *const pcFunc, const uint32_t u32Line) {
+		pcVulkanDebugFocusOnFile = pcFile;
+		pcVulkanDebugFocusOnFunc = pcFunc;
+		u32VulkanDebugFocusOnLine = u32Line;
+		u32VulkanDebugFocusCount = 0U;
+	}
+
+	void unfocus_vulkan_debug() {
+		pcVulkanDebugFocusOnFile = nullptr;
+		pcVulkanDebugFocusOnFunc = nullptr;
+		u32VulkanDebugFocusOnLine = 0U;
+		u32VulkanDebugFocusCount = 0U;
 	}
 
 	bool check_vulkan_result(VkResult vk_eResult, const char* pcFile, const char* pcFunc, uint32_t u32Line) {

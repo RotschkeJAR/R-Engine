@@ -23,6 +23,9 @@ namespace RE {
 	bool __vk_create_shader_from_file(const char *pcPathToFile, const VkShaderModuleCreateFlags vk_eCreateFlags, VkShaderModule *vk_phShaderModule, const char *pcFile, const char *pcFunc, const uint32_t u32Line);
 #define vk_create_shader_from_file(FILEPATH, SHADER_OUT) CATCH_SIGNAL_AND_RETURN(__vk_create_shader_from_file(FILEPATH, 0, SHADER_OUT, __FILE__, __func__, __LINE__), bool)
 
+	void __vk_destroy_shader(const VkShaderModule &vk_rhShader);
+#define vk_destroy_shader(SHADER) CATCH_SIGNAL(__vk_destroy_shader(SHADER))
+
 	bool __vk_create_render_pass(const uint32_t u32AttachmentDescriptionCount, const VkAttachmentDescription *vk_pAttachmentDescriptions, const uint32_t u32SubpassDescriptionCount, const VkSubpassDescription *vk_pSubpassDescriptions, const uint32_t u32SubpassDependencyCount, const VkSubpassDependency *vk_pSubpassDependencies, VkRenderPass *vk_phRenderPass, const char *pcFile, const char *pcFunc, const uint32_t u32Line);
 #define vk_create_render_pass(ATTACH_DESC_COUNT, ATTACH_DESCS, SUBPASS_DESC_COUNT, SUBPASS_DESCS, SUBPASS_DEP_COUNT, SUBPASS_DEPS, RENDERPASS_OUT) CATCH_SIGNAL_AND_RETURN(__vk_create_render_pass(ATTACH_DESC_COUNT, ATTACH_DESCS, SUBPASS_DESC_COUNT, SUBPASS_DESCS, SUBPASS_DEP_COUNT, SUBPASS_DEPS, RENDERPASS_OUT, __FILE__, __func__, __LINE__), bool)
 
@@ -40,6 +43,9 @@ namespace RE {
 
 	bool __vk_alloc_command_buffers(const VkCommandPool vk_hCommandPool, const VkCommandBufferLevel vk_eCommandBufferLevel, const uint32_t u32CommandBufferCount, VkCommandBuffer *vk_phCommandBuffers, const char *pcFile, const char *pcFunc, const uint32_t u32Line);
 #define vk_alloc_command_buffers(CMDPOOL, CMDBUFFER_LEVEL, CMDBUFFER_COUNT, CMDBUFFERS_OUT) CATCH_SIGNAL_AND_RETURN(__vk_alloc_command_buffers(CMDPOOL, CMDBUFFER_LEVEL, CMDBUFFER_COUNT, CMDBUFFERS_OUT, __FILE__, __func__, __LINE__), bool)
+
+	void __vk_free_command_buffers(const VkCommandPool vk_hCommandPool, const uint32_t u32CommandBufferCount, const VkCommandBuffer *vk_phCommandBuffers);
+#define vk_free_command_buffers(CMDPOOL, CMDBUFFER_COUNT, CMDBUFFERS) CATCH_SIGNAL(__vk_free_command_buffers(CMDPOOL, CMDBUFFER_COUNT, CMDBUFFERS))
 
 	bool __vk_alloc_descriptor_sets(const VkDescriptorPool vk_hDescriptorPool, const uint32_t u32DescriptorSetCount, const VkDescriptorSetLayout *vk_phDescriptorSetLayouts, VkDescriptorSet *vk_phDescriptorSets, const char *pcFile, const char *pcFunc, const uint32_t u32Line);
 #define vk_alloc_descriptor_sets(DESC_POOL, DESC_SET_COUNT, DESC_SET_LAYOUTS, DESC_SETS_OUT) CATCH_SIGNAL_AND_RETURN(__vk_alloc_descriptor_sets(DESC_POOL, DESC_SET_COUNT, DESC_SET_LAYOUTS, DESC_SETS_OUT, __FILE__, __func__, __LINE__), bool)
@@ -70,8 +76,12 @@ namespace RE {
 	bool __vk_submit_to_present_queue(const uint32_t u32WaitSemaphoreCount, const VkSemaphore *vk_phWaitSemaphores, const uint32_t *pu32SwapchainImageIndex, const char *pcFile, const char *pcFunc, const uint32_t u32Line);
 #define vk_submit_to_present_queue(WAIT_SEMA_COUNT, WAIT_SEMAS, SWAPIMG_INDEX) CATCH_SIGNAL_AND_RETURN(__vk_submit_to_present_queue(WAIT_SEMA_COUNT, WAIT_SEMAS, SWAPIMG_INDEX, __FILE__, __func__, __LINE__), bool)
 
+
 	bool __vk_begin_recording_command_buffer(const VkCommandBuffer vk_hCommandBuffer, const VkCommandBufferUsageFlags vk_eUsageFlags, const VkCommandBufferInheritanceInfo *vk_pInheritanceInfo, const char *pcFile, const char *pcFunc, const uint32_t u32Line);
 #define vk_begin_recording_command_buffer(CMDBUFFER, USAGE, INHERITANCE_INFO) __vk_begin_recording_command_buffer(CMDBUFFER, USAGE, INHERITANCE_INFO, __FILE__, __func__, __LINE__)
+
+	void __vk_cmd_begin_render_pass(const VkCommandBuffer vk_hCommandBuffer, const VkRenderPass vk_hRenderPass, const VkFramebuffer vk_hFramebuffer, const VkSubpassContents vk_eSubpassContents);
+#define vk_cmd_begin_render_pass(CMDBUFFER, RENDERPASS, FRAMEBUFFER, SUBPASS_CONTENTS) CATCH_SIGNAL(__vk_cmd_begin_render_pass(CMDBUFFER, RENDERPASS, FRAMEBUFFER, SUBPASS_CONTENTS))
 
 }
 

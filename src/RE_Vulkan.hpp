@@ -306,50 +306,62 @@ namespace RE {
 	bool link_vulkan();
 	void unlink_vulkan();
 
+	void focus_vulkan_debug_on(const char *const pcFile, const char *const pcFunc, const uint32_t u32Line);
+	void unfocus_vulkan_debug();
+#define FOCUS_FOR_VK_DEBUG(CMD) ([&](const char *const pcFile, const char *const pcActualFunc, const uint32_t u32Line) {
+			add_to_stack_trace(pcFile, pcActualFunc, u32Line, "\0"); \
+			focus_vulkan_debug_on(pcFile, pcActualFunc, u32Line); \
+			CMD; \
+			unfocus_vulkan_debug(); \
+			remove_from_stack_trace(); \
+		}) (__FILE__, __func__, __LINE__)
+
 	bool check_vulkan_result(VkResult vk_eResult, const char* pcFile, const char* pcFunc, uint32_t u32Line);
-#define CHECK_VK_RESULT(T) ([&](const char *const pcActualFunc) -> bool { \
-			add_to_stack_trace(__FILE__, pcActualFunc, __LINE__, "\0"); \
-			const bool bResult = check_vulkan_result(T, __FILE__, pcActualFunc, __LINE__); \
+#define CHECK_VK_RESULT(RESULT) ([&](const char *const pcFile, const char *const pcActualFunc, const uint32_t u32Line) -> bool { \
+			add_to_stack_trace(pcFile, pcActualFunc, u32Line, "\0"); \
+			focus_vulkan_debug_on(pcFile, pcActualFunc, u32Line); \
+			const bool bResult = check_vulkan_result(RESULT, pcFile, pcActualFunc, u32Line); \
+			unfocus_vulkan_debug(); \
 			remove_from_stack_trace(); \
 			return bResult; \
-		})(__func__)
+		}) (__FILE__, __func__, __LINE__)
 
 // Vulkan 1.0
-#define vkCreateInstance pfn_vkCreateInstance
-#define vkDestroyInstance pfn_vkDestroyInstance
-#define vkEnumeratePhysicalDevices pfn_vkEnumeratePhysicalDevices
+#define vkCreateInstance(INSTANCE_CREATE_INFO_IN_PTR) CHECK_VK_RESULT(pfn_vkCreateInstance(INSTANCE_CREATE_INFO_IN_PTR, nullptr, &vk_hInstance))
+#define vkDestroyInstance() FOCUS_FOR_VK_DEBUG((pfn_vkDestroyInstance(vk_hInstance, nullptr), vk_hInstance = VK_NULL_HANDLE))
+#define vkEnumeratePhysicalDevices(DEVICE_COUNT_OUT_PTR, DEVICES_OUT_PTR) CHECK_VK_RESULT(pfn_vkEnumeratePhysicalDevices(vk_hInstance, DEVICE_COUNT_OUT_PTR, DEVICES_OUT_PTR))
 #define vkGetPhysicalDeviceFeatures pfn_vkGetPhysicalDeviceFeatures
 #define vkGetPhysicalDeviceFormatProperties pfn_vkGetPhysicalDeviceFormatProperties
 #define vkGetPhysicalDeviceImageFormatProperties pfn_vkGetPhysicalDeviceImageFormatProperties
 #define vkGetPhysicalDeviceProperties pfn_vkGetPhysicalDeviceProperties
 #define vkGetPhysicalDeviceQueueFamilyProperties pfn_vkGetPhysicalDeviceQueueFamilyProperties
 #define vkGetPhysicalDeviceMemoryProperties pfn_vkGetPhysicalDeviceMemoryProperties
-#define vkGetInstanceProcAddr pfn_vkGetInstanceProcAddr
-#define vkGetDeviceProcAddr pfn_vkGetDeviceProcAddr
-#define vkCreateDevice pfn_vkCreateDevice
-#define vkDestroyDevice pfn_vkDestroyDevice
+#define vkGetInstanceProcAddr(NAME) pfn_vkGetInstanceProcAddr(vk_hInstance, NAME)
+#define vkGetDeviceProcAddr(NAME) pfn_vkGetDeviceProcAddr(vk_hDevice, NAME)
+#define vkCreateDevice(PHYS_DEVICE, CREATE_INFO) CHECK_VK_RESULT(pfn_vkCreateDevice(PHYS_DEVICE, CREATE_INFO, nullptr, &vk_hDevice))
+#define vkDestroyDevice() FOCUS_FOR_VK_DEBUG((pfn_vkDestroyDevice(vk_hDevice, nullptr), vk_hDevice = VK_NULL_HANDLE))
 #define vkEnumerateInstanceExtensionProperties pfn_vkEnumerateInstanceExtensionProperties
 #define vkEnumerateDeviceExtensionProperties pfn_vkEnumerateDeviceExtensionProperties
 #define vkEnumerateInstanceLayerProperties pfn_vkEnumerateInstanceLayerProperties
 #define vkEnumerateDeviceLayerProperties pfn_vkEnumerateDeviceLayerProperties
-#define vkGetDeviceQueue pfn_vkGetDeviceQueue
-#define vkQueueSubmit pfn_vkQueueSubmit
-#define vkQueueWaitIdle pfn_vkQueueWaitIdle
-#define vkDeviceWaitIdle pfn_vkDeviceWaitIdle
-#define vkAllocateMemory pfn_vkAllocateMemory
-#define vkFreeMemory pfn_vkFreeMemory
-#define vkMapMemory pfn_vkMapMemory
-#define vkUnmapMemory pfn_vkUnmapMemory
-#define vkFlushMappedMemoryRanges pfn_vkFlushMappedMemoryRanges
-#define vkInvalidateMappedMemoryRanges pfn_vkInvalidateMappedMemoryRanges
-#define vkGetDeviceMemoryCommitment pfn_vkGetDeviceMemoryCommitment
-#define vkBindBufferMemory pfn_vkBindBufferMemory
-#define vkBindImageMemory pfn_vkBindImageMemory
-#define vkGetBufferMemoryRequirements pfn_vkGetBufferMemoryRequirements
-#define vkGetImageMemoryRequirements pfn_vkGetImageMemoryRequirements
-#define vkGetImageSparseMemoryRequirements pfn_vkGetImageSparseMemoryRequirements
-#define vkGetPhysicalDeviceSparseImageFormatProperties pfn_vkGetPhysicalDeviceSparseImageFormatProperties
-#define vkQueueBindSparse pfn_vkQueueBindSparse
+#define vkGetDeviceQueue(QUEUE_FAMILY_INDEX, QUEUE_PTR) FOCUS_FOR_VK_DEBUG(pfn_vkGetDeviceQueue(vk_hDevice, QUEUE_FAMILY_INDEX, 0, QUEUE_PTR))
+#define vkQueueSubmit(QUEUE, SUBMIT_COUNT, SUBMITS_IN_PTR, FENCE) CHECK_VK_RESULT(pfn_vkQueueSubmit(QUEUE, SUBMIT_COUNT, SUBMITS_IN_PTR, FENCE))
+#define vkQueueWaitIdle(QUEUE) CHECK_VK_RESULT(pfn_vkQueueWaitIdle(QUEUE))
+#define vkDeviceWaitIdle() CHECK_VK_RESULT(pfn_vkDeviceWaitIdle(vk_hDevice))
+#define vkAllocateMemory(ALLOC_INFO_IN_PTR, MEMORY_OUT_PTR) FOCUS_FOR_VK_DEBUG(pfn_vkAllocateMemory(vk_hDevice, ALLOC_INFO_IN_PTR, nullptr, MEMORY_OUT_PTR))
+#define vkFreeMemory(MEMORY) FOCUS_FOR_VK_DEBUG(pfn_vkFreeMemory(vk_hDevice, MEMORY, nullptr))
+#define vkMapMemory(MEMORY, OFFSET, SIZE, FLAGS, DATA_OUT_PTR) CHECK_VK_RESULT(pfn_vkMapMemory(vk_hDevice, MEMORY, OFFSET, SIZE, FLAGS, DATA_OUT_PTR))
+#define vkUnmapMemory(MEMORY) FOCUS_FOR_VK_DEBUG(pfn_vkUnmapMemory(vk_hDevice, MEMORY))
+#define vkFlushMappedMemoryRanges(RANGE_COUNT, RANGES_IN_PTR) CHECK_VK_RESULT(pfn_vkFlushMappedMemoryRanges(vk_hDevice, RANGE_COUNT, RANGES_IN_PTR))
+#define vkInvalidateMappedMemoryRanges(RANGE_COUNT, RANGES_IN_PTR) CHECK_VK_RESULT(pfn_vkInvalidateMappedMemoryRanges(vk_hDevice, RANGE_COUNT, RANGES_IN_PTR))
+#define vkGetDeviceMemoryCommitment(MEMORY, COMMITTED_MEMORY_IN_BYTES_OUT_PTR) FOCUS_FOR_VK_DEBUG(pfn_vkGetDeviceMemoryCommitment(vk_hDevice, MEMORY, COMMITTED_MEMORY_IN_BYTES_OUT_PTR))
+#define vkBindBufferMemory(BUFFER, MEMORY, MEMORY_OFFSET) CHECK_VK_RESULT(pfn_vkBindBufferMemory(vk_hDevice, BUFFER, MEMORY, MEMORY_OFFSET))
+#define vkBindImageMemory(BUFFER, IMAGE, MEMORY_OFFSET) CHECK_VK_RESULT(pfn_vkBindBufferMemory(vk_hDevice, BUFFER, IMAGE, MEMORY_OFFSET))
+#define vkGetBufferMemoryRequirements(BUFFER, MEMORY_REQUIREMENTS_OUT_PTR) FOCUS_FOR_VK_DEBUG(pfn_vkGetBufferMemoryRequirements(vk_hDevice, BUFFER, MEMORY_REQUIREMENTS_OUT_PTR))
+#define vkGetImageMemoryRequirements(IMAGE, MEMORY_REQUIREMENTS_OUT_PTR) FOCUS_FOR_VK_DEBUG(pfn_vkGetImageMemoryRequirements(vk_hDevice, IMAGE, MEMORY_REQUIREMENTS_OUT_PTR))
+#define vkGetImageSparseMemoryRequirements(IMAGE, SPARSE_MEMORY_REQUIREMENT_COUNT_OUT_PTR, SPARSE_MEMORY_REQUIREMENTS_OUT_PTR) FOCUS_FOR_VK_DEBUG(pfn_vkGetImageSparseMemoryRequirements(vk_hDevice, IMAGE, SPARSE_MEMORY_REQUIREMENT_COUNT_OUT_PTR, SPARSE_MEMORY_REQUIREMENTS_OUT_PTR))
+#define vkGetPhysicalDeviceSparseImageFormatProperties(FORMAT, IMG_TYPE, SAMPLES, USAGES, TILING, PROPERTY_COUNT_OUT_PTR, PROPERTIES_OUT_PTR) FOCUS_FOR_VK_DEBUG(pfn_vkGetPhysicalDeviceSparseImageFormatProperties(vk_hDevice, FORMAT, IMG_TYPE, SAMPLES, USAGES, TILING, PROPERTY_COUNT_OUT_PTR, PROPERTIES_OUT_PTR))
+#define vkQueueBindSparse(BIND_INFO, BINDS_IN_PTR, FENCE) CHECK_VK_RESULT(pfn_vkQueueBindSparse(VK_NULL_HANDLE, BIND_INFO, BINDS_IN_PTR, FENCE))
 #define vkCreateFence pfn_vkCreateFence
 #define vkDestroyFence pfn_vkDestroyFence
 #define vkResetFences pfn_vkResetFences

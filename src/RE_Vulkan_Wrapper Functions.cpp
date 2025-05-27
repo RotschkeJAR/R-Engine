@@ -47,7 +47,7 @@ namespace RE {
 			CATCH_SIGNAL(vkDestroyBuffer(vk_hDevice, *vk_phBuffer, nullptr));
 			return false;
 		}
-		VkMemoryAllocateInfo vk_bufferMemoryAllocInfo = {
+		const VkMemoryAllocateInfo vk_bufferMemoryAllocInfo = {
 			.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
 			.allocationSize = vk_bufferMemoryRequirements.size,
 			.memoryTypeIndex = physicalMemoryTypeSelected.value()
@@ -74,7 +74,7 @@ namespace RE {
 	}
 
 	bool __vk_create_framebuffer(const VkFramebufferCreateFlags vk_eCreateFlags, const VkRenderPass vk_hRenderPass, const uint32_t u32ImageViewAttachmentCount, const VkImageView *vk_phImageViewAttachments, const uint32_t u32Width, const uint32_t u32Height, const uint32_t u32Layers, VkFramebuffer *vk_phFramebuffer, const char *pcFile, const char *pcFunc, const uint32_t u32Line) {
-		VkFramebufferCreateInfo vk_framebufferCreateInfo = {
+		const VkFramebufferCreateInfo vk_framebufferCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
 			.flags = vk_eCreateFlags,
 			.renderPass = vk_hRenderPass,
@@ -92,7 +92,7 @@ namespace RE {
 	}
 
 	bool __vk_create_semaphore(const VkSemaphoreCreateFlags vk_eCreateFlags, VkSemaphore *vk_phSemaphore, const char *pcFile, const char *pcFunc, const uint32_t u32Line) {
-		VkSemaphoreCreateInfo vk_semaphoreCreateInfo = {
+		const VkSemaphoreCreateInfo vk_semaphoreCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
 			.flags = vk_eCreateFlags
 		};
@@ -104,7 +104,7 @@ namespace RE {
 	}
 
 	bool __vk_create_fence(const VkFenceCreateFlags vk_eCreateFlags, VkFence *vk_phFence, const char *pcFile, const char *pcFunc, const uint32_t u32Line) {
-		VkFenceCreateInfo vk_fenceCreateInfo = {
+		const VkFenceCreateInfo vk_fenceCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
 			.flags = vk_eCreateFlags
 		};
@@ -126,7 +126,7 @@ namespace RE {
 		shaderBinaryFile.seekg(0);
 		CATCH_SIGNAL(shaderBinaryFile.read(pcShaderBinaries, shaderBinaryFileSize));
 		shaderBinaryFile.close();
-		VkShaderModuleCreateInfo vk_shaderCreateInfo = {
+		const VkShaderModuleCreateInfo vk_shaderCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
 			.flags = vk_eCreateFlags,
 			.codeSize = static_cast<uint32_t>(shaderBinaryFileSize),
@@ -142,8 +142,13 @@ namespace RE {
 		return true;
 	}
 
+	void __vk_destroy_shader(const VkShaderModule &vk_rhShader) {
+		CATCH_SIGNAL(vkDestroyShaderModule(vk_hDevice, vk_rhShader, nullptr));
+		vk_rhShader = VK_NULL_HANDLE;
+	}
+
 	bool __vk_create_render_pass(const uint32_t u32AttachmentDescriptionCount, const VkAttachmentDescription *vk_pAttachmentDescriptions, const uint32_t u32SubpassDescriptionCount, const VkSubpassDescription *vk_pSubpassDescriptions, const uint32_t u32SubpassDependencyCount, const VkSubpassDependency *vk_pSubpassDependencies, VkRenderPass *vk_phRenderPass, const char *pcFile, const char *pcFunc, const uint32_t u32Line) {
-		VkRenderPassCreateInfo vk_renderPassCreateInfo = {
+		const VkRenderPassCreateInfo vk_renderPassCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
 			.attachmentCount = u32AttachmentDescriptionCount,
 			.pAttachments = vk_pAttachmentDescriptions,
@@ -165,7 +170,7 @@ namespace RE {
 	}
 
 	bool __vk_create_descriptor_set_layout(const VkDescriptorSetLayoutCreateFlags vk_eCreateFlags, const uint32_t u32BindingCount, const VkDescriptorSetLayoutBinding *vk_pBindings, VkDescriptorSetLayout *vk_pDescriptorSetLayout, const char *pcFile, const char *pcFunc, const uint32_t u32Line) {
-		VkDescriptorSetLayoutCreateInfo vk_descriptorSetLayoutCreateInfo = {
+		const VkDescriptorSetLayoutCreateInfo vk_descriptorSetLayoutCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
 			.flags = vk_eCreateFlags,
 			.bindingCount = u32BindingCount,
@@ -179,7 +184,7 @@ namespace RE {
 	}
 
 	bool __vk_create_pipeline_layout(const VkPipelineLayoutCreateFlags vk_eCreateFlags, const uint32_t u32DescriptorSetLayoutCount, const VkDescriptorSetLayout *vk_phDescriptorSetLayouts, const uint32_t u32PushConstantRangeCount, const VkPushConstantRange *vk_pPushConstantRanges, VkPipelineLayout *vk_phPipelineLayout, const char *pcFile, const char *pcFunc, const uint32_t u32Line) {
-		VkPipelineLayoutCreateInfo vk_pipelineLayoutCreateInfo = {
+		const VkPipelineLayoutCreateInfo vk_pipelineLayoutCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
 			.flags = vk_eCreateFlags,
 			.setLayoutCount = u32DescriptorSetLayoutCount,
@@ -195,7 +200,7 @@ namespace RE {
 	}
 
 	bool __vk_create_descriptor_pool(const VkDescriptorPoolCreateFlags vk_eCreateFlags, const uint32_t u32MaxSets, const uint32_t u32PoolSizeCount, const VkDescriptorPoolSize *vk_pPoolSizes, VkDescriptorPool *vk_phDescriptorPool, const char *pcFile, const char *pcFunc, const uint32_t u32Line) {
-		VkDescriptorPoolCreateInfo vk_descriptorPoolCreateInfo = {
+		const VkDescriptorPoolCreateInfo vk_descriptorPoolCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
 			.flags = vk_eCreateFlags,
 			.maxSets = u32MaxSets,
@@ -210,7 +215,7 @@ namespace RE {
 	}
 
 	bool __vk_alloc_command_buffers(const VkCommandPool vk_hCommandPool, const VkCommandBufferLevel vk_eCommandBufferLevel, const uint32_t u32CommandBufferCount, VkCommandBuffer *vk_phCommandBuffers, const char *pcFile, const char *pcFunc, const uint32_t u32Line) {
-		VkCommandBufferAllocateInfo vk_commandBufferAllocInfo = {
+		const VkCommandBufferAllocateInfo vk_commandBufferAllocInfo = {
 			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
 			.commandPool = vk_hCommandPool,
 			.level = vk_eCommandBufferLevel,
@@ -228,7 +233,7 @@ namespace RE {
 	}
 
 	bool __vk_alloc_descriptor_sets(const VkDescriptorPool vk_hDescriptorPool, const uint32_t u32DescriptorSetCount, const VkDescriptorSetLayout *vk_phDescriptorSetLayouts, VkDescriptorSet *vk_phDescriptorSets, const char *pcFile, const char *pcFunc, const uint32_t u32Line) {
-		VkDescriptorSetAllocateInfo vk_descriptorSetAllocInfo = {
+		const VkDescriptorSetAllocateInfo vk_descriptorSetAllocInfo = {
 			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
 			.descriptorPool = vk_hDescriptorPool,
 			.descriptorSetCount = u32DescriptorSetCount,
@@ -256,7 +261,7 @@ namespace RE {
 	}
 
 	bool __vk_signal_semaphores(const uint32_t u32SignalSemaphoreCount, const VkSemaphore *vk_phSignalSemaphores, const char *pcFile, const char *pcFunc, const uint32_t u32Line) {
-		VkSubmitInfo vk_queueSubmissionInfo = {
+		const VkSubmitInfo vk_queueSubmissionInfo = {
 			.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
 			.commandBufferCount = 1U,
 			.pCommandBuffers = &vk_hDummyTransferCommandBuffer,
@@ -271,7 +276,7 @@ namespace RE {
 	}
 
 	bool __vk_signal_fence(const VkFence vk_hSignalFence, const char *pcFile, const char *pcFunc, const uint32_t u32Line) {
-		VkSubmitInfo vk_queueSubmissionInfo = {
+		const VkSubmitInfo vk_queueSubmissionInfo = {
 			.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
 			.commandBufferCount = 1U,
 			.pCommandBuffers = &vk_hDummyTransferCommandBuffer
@@ -285,7 +290,7 @@ namespace RE {
 
 
 	static bool submit_to_vulkan_queue(const VkQueue vk_hQueue, const uint32_t u32WaitSemaphoreCount, const VkSemaphore *vk_phWaitSemaphores, const VkPipelineStageFlags *vk_peWaitPipelineStages, const uint32_t u32CommandBufferCount, const VkCommandBuffer *vk_phCommandBuffers, const uint32_t u32SignalSemaphoreCount, const VkSemaphore *vk_phSignalSemaphores, const VkFence vk_hFenceToSignal, const char *pcFile, const char *pcFunc, const uint32_t u32Line) {
-		VkSubmitInfo vk_queueSubmissionInfo = {
+		const VkSubmitInfo vk_queueSubmissionInfo = {
 			.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
 			.waitSemaphoreCount = u32WaitSemaphoreCount,
 			.pWaitSemaphores = vk_phWaitSemaphores,
@@ -315,7 +320,7 @@ namespace RE {
 	}
 
 	bool __vk_submit_to_present_queue(const uint32_t u32WaitSemaphoreCount, const VkSemaphore *vk_phWaitSemaphores, const uint32_t *pu32SwapchainImageIndex, const char *pcFile, const char *pcFunc, const uint32_t u32Line) {
-		VkPresentInfoKHR vk_presentInfo = {
+		const VkPresentInfoKHR vk_presentInfo = {
 			.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
 			.waitSemaphoreCount = u32WaitSemaphoreCount,
 			.pWaitSemaphores = vk_phWaitSemaphores,
@@ -330,8 +335,9 @@ namespace RE {
 		return true;
 	}
 
+
 	bool __vk_begin_recording_command_buffer(const VkCommandBuffer vk_hCommandBuffer, const VkCommandBufferUsageFlags vk_eUsageFlags, const VkCommandBufferInheritanceInfo *vk_pInheritanceInfo, const char *pcFile, const char *pcFunc, const uint32_t u32Line) {
-		VkCommandBufferBeginInfo vk_beginRecordInfo = {
+		const VkCommandBufferBeginInfo vk_beginRecordInfo = {
 			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
 			.flags = vk_eUsageFlags,
 			.pInheritanceInfo = vk_pInheritanceInfo
@@ -341,6 +347,18 @@ namespace RE {
 			return false;
 		}
 		return true;
+	}
+
+	void __vk_cmd_begin_render_pass(const VkCommandBuffer vk_hCommandBuffer, const VkRenderPass vk_hRenderPass, const VkFramebuffer vk_hFramebuffer, const VkSubpassContents vk_eSubpassContents) {
+		const VkRenderPassBeginInfo vk_renderPassBeginInfo = {
+			.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+			.renderPass = vk_hRenderPass,
+			.framebuffer = vk_hFramebuffer,
+			.renderArea = {
+				.extent = vk_swapchainResolution
+			}
+		};
+		CATCH_SIGNAL(vkCmdBeginRenderPass(vk_hCommandBuffer, &vk_renderPassBeginInfo, vk_eSubpassContents));
 	}
 
 }

@@ -11,14 +11,12 @@ namespace RE {
 	extern Camera *pActiveCamera;
 	extern VkViewport vk_cameraViewportArea;
 	extern VkRect2D vk_cameraScissorArea;
-
-	extern VkBuffer vk_rectIndexBuffer;
-
-	extern VkRenderPass vk_hWorldRenderPass;
 	
 	bool init_renderer();
 	void destroy_renderer();
 	void render();
+	bool swapchain_created_renderer();
+	void swapchain_destroyed_renderer();
 	void calculate_render_area();
 
 }

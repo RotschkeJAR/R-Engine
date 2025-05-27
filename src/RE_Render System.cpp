@@ -613,6 +613,7 @@ namespace RE {
 		// Create actual sweapchain
 		const VkSwapchainKHR vk_hOldSwapchain = vk_hSwapchain;
 		if (vk_hOldSwapchain) {
+			CATCH_SIGNAL(swapchain_destroyed_renderer());
 			for (uint32_t u32SwapchainImageIndex = 0U; u32SwapchainImageIndex < u32SwapchainImageCount; u32SwapchainImageIndex++)
 				CATCH_SIGNAL(vkDestroyImageView(vk_hDevice, vk_phSwapchainImageViews[u32SwapchainImageIndex], nullptr));
 			DELETE_ARRAY_SAFELY(vk_phSwapchainImages);
@@ -707,6 +708,7 @@ namespace RE {
 	static void destroy_swapchain() {
 		if (!vk_hSwapchain)
 			return;
+		CATCH_SIGNAL(swapchain_destroyed_renderer());
 		for (uint32_t u32SwapchainImageIndex = 0U; u32SwapchainImageIndex < u32SwapchainImageCount; u32SwapchainImageIndex++)
 			CATCH_SIGNAL(vkDestroyImageView(vk_hDevice, vk_phSwapchainImageViews[u32SwapchainImageIndex], nullptr));
 		DELETE_ARRAY_SAFELY(vk_phSwapchainImages);
@@ -718,7 +720,7 @@ namespace RE {
 	static bool recreate_swapchain() {
 		CATCH_SIGNAL(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &vk_surfaceCapabilities));
 		WAIT_FOR_IDLE_VULKAN_DEVICE();
-		if (!CATCH_SIGNAL_AND_RETURN(create_swapchain(), bool)) {
+		if (!CATCH_SIGNAL_AND_RETURN(create_swapchain() && swapchain_created_renderer(), bool)) {
 			RE_ERROR("Failed recreating the swapchain");
 			return false;
 		}

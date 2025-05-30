@@ -1,0 +1,493 @@
+#ifndef __RE_VULKAN_DEVICE_H__
+#define __RE_VULKAN_DEVICE_H__
+
+#include "RE_Vulkan_Instance.hpp"
+
+namespace RE {
+
+#define RE_VK_QUEUE_COUNT 3U
+#define RE_VK_QUEUE_GRAPHICS_INDEX 0U
+#define RE_VK_QUEUE_PRESENT_INDEX 1U
+#define RE_VK_QUEUE_TRANSFER_INDEX 2U
+
+#define RE_VK_COMMAND_POOL_COUNT 4U
+#define RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX 0U
+#define RE_VK_COMMAND_POOL_GRAPHICS_TRANSIENT_INDEX 1U
+#define RE_VK_COMMAND_POOL_TRANSFER_PERSISTENT_INDEX 2U
+#define RE_VK_COMMAND_POOL_TRANSFER_TRANSIENT_INDEX 3U
+
+	// Attributes initialized at beginning and rarely changed
+	extern VkPhysicalDevice vk_hPhysicalDeviceSelected;
+	extern VkPhysicalDeviceMemoryProperties vk_physicalDeviceMemoryProperties;
+	extern VkDevice vk_hDevice;
+	extern VkQueue vk_hDeviceQueueFamilies[RE_VK_QUEUE_COUNT];
+	extern uint32_t u32DeviceQueueFamilyIndices[RE_VK_QUEUE_COUNT];
+	extern VkSurfaceFormatKHR vk_surfaceFormatSelected;
+	extern VkSwapchainKHR vk_hSwapchain;
+	extern VkFormat vk_eSwapchainImageFormat;
+	extern VkExtent2D vk_swapchainResolution;
+	extern uint32_t u32SwapchainImageCount;
+	extern VkImage *vk_phSwapchainImages;
+	extern VkImageView *vk_phSwapchainImageViews;
+	extern VkCommandPool vk_hCommandPools[RE_VK_COMMAND_POOL_COUNT];
+	extern VkCommandBuffer vk_hDummyTransferCommandBuffer;
+
+	// Vulkan 1.0
+	extern PFN_vkGetDeviceQueue pfn_vkGetDeviceQueue;
+	extern PFN_vkQueueSubmit pfn_vkQueueSubmit;
+	extern PFN_vkQueueWaitIdle pfn_vkQueueWaitIdle;
+	extern PFN_vkDeviceWaitIdle pfn_vkDeviceWaitIdle;
+	extern PFN_vkAllocateMemory pfn_vkAllocateMemory;
+	extern PFN_vkFreeMemory pfn_vkFreeMemory;
+	extern PFN_vkMapMemory pfn_vkMapMemory;
+	extern PFN_vkUnmapMemory pfn_vkUnmapMemory;
+	extern PFN_vkFlushMappedMemoryRanges pfn_vkFlushMappedMemoryRanges;
+	extern PFN_vkInvalidateMappedMemoryRanges pfn_vkInvalidateMappedMemoryRanges;
+	extern PFN_vkGetDeviceMemoryCommitment pfn_vkGetDeviceMemoryCommitment;
+	extern PFN_vkBindBufferMemory pfn_vkBindBufferMemory;
+	extern PFN_vkBindImageMemory pfn_vkBindImageMemory;
+	extern PFN_vkGetBufferMemoryRequirements pfn_vkGetBufferMemoryRequirements;
+	extern PFN_vkGetImageMemoryRequirements pfn_vkGetImageMemoryRequirements;
+	extern PFN_vkGetImageSparseMemoryRequirements pfn_vkGetImageSparseMemoryRequirements;
+	extern PFN_vkGetPhysicalDeviceSparseImageFormatProperties pfn_vkGetPhysicalDeviceSparseImageFormatProperties;
+	extern PFN_vkQueueBindSparse pfn_vkQueueBindSparse;
+	extern PFN_vkCreateFence pfn_vkCreateFence;
+	extern PFN_vkDestroyFence pfn_vkDestroyFence;
+	extern PFN_vkResetFences pfn_vkResetFences;
+	extern PFN_vkGetFenceStatus pfn_vkGetFenceStatus;
+	extern PFN_vkWaitForFences pfn_vkWaitForFences;
+	extern PFN_vkCreateSemaphore pfn_vkCreateSemaphore;
+	extern PFN_vkDestroySemaphore pfn_vkDestroySemaphore;
+	extern PFN_vkCreateEvent pfn_vkCreateEvent;
+	extern PFN_vkDestroyEvent pfn_vkDestroyEvent;
+	extern PFN_vkGetEventStatus pfn_vkGetEventStatus;
+	extern PFN_vkSetEvent pfn_vkSetEvent;
+	extern PFN_vkResetEvent pfn_vkResetEvent;
+	extern PFN_vkCreateQueryPool pfn_vkCreateQueryPool;
+	extern PFN_vkDestroyQueryPool pfn_vkDestroyQueryPool;
+	extern PFN_vkGetQueryPoolResults pfn_vkGetQueryPoolResults;
+	extern PFN_vkCreateBuffer pfn_vkCreateBuffer;
+	extern PFN_vkDestroyBuffer pfn_vkDestroyBuffer;
+	extern PFN_vkCreateBufferView pfn_vkCreateBufferView;
+	extern PFN_vkDestroyBufferView pfn_vkDestroyBufferView;	
+	extern PFN_vkCreateImage pfn_vkCreateImage;
+	extern PFN_vkDestroyImage pfn_vkDestroyImage;
+	extern PFN_vkGetImageSubresourceLayout pfn_vkGetImageSubresourceLayout;
+	extern PFN_vkCreateImageView pfn_vkCreateImageView;
+	extern PFN_vkDestroyImageView pfn_vkDestroyImageView;
+	extern PFN_vkCreateShaderModule pfn_vkCreateShaderModule;
+	extern PFN_vkDestroyShaderModule pfn_vkDestroyShaderModule;
+	extern PFN_vkCreatePipelineCache pfn_vkCreatePipelineCache;
+	extern PFN_vkDestroyPipelineCache pfn_vkDestroyPipelineCache;
+	extern PFN_vkGetPipelineCacheData pfn_vkGetPipelineCacheData;
+	extern PFN_vkMergePipelineCaches pfn_vkMergePipelineCaches;
+	extern PFN_vkCreateGraphicsPipelines pfn_vkCreateGraphicsPipelines;
+	extern PFN_vkCreateComputePipelines pfn_vkCreateComputePipelines;
+	extern PFN_vkDestroyPipeline pfn_vkDestroyPipeline;
+	extern PFN_vkCreatePipelineLayout pfn_vkCreatePipelineLayout;
+	extern PFN_vkDestroyPipelineLayout pfn_vkDestroyPipelineLayout;
+	extern PFN_vkCreateSampler pfn_vkCreateSampler;
+	extern PFN_vkDestroySampler pfn_vkDestroySampler;
+	extern PFN_vkCreateDescriptorSetLayout pfn_vkCreateDescriptorSetLayout;
+	extern PFN_vkDestroyDescriptorSetLayout pfn_vkDestroyDescriptorSetLayout;
+	extern PFN_vkCreateDescriptorPool pfn_vkCreateDescriptorPool;
+	extern PFN_vkDestroyDescriptorPool pfn_vkDestroyDescriptorPool;
+	extern PFN_vkResetDescriptorPool pfn_vkResetDescriptorPool;
+	extern PFN_vkAllocateDescriptorSets pfn_vkAllocateDescriptorSets;
+	extern PFN_vkFreeDescriptorSets pfn_vkFreeDescriptorSets;
+	extern PFN_vkUpdateDescriptorSets pfn_vkUpdateDescriptorSets;
+	extern PFN_vkCreateFramebuffer pfn_vkCreateFramebuffer;
+	extern PFN_vkDestroyFramebuffer pfn_vkDestroyFramebuffer;
+	extern PFN_vkCreateRenderPass pfn_vkCreateRenderPass;
+	extern PFN_vkDestroyRenderPass pfn_vkDestroyRenderPass;
+	extern PFN_vkGetRenderAreaGranularity pfn_vkGetRenderAreaGranularity;
+	extern PFN_vkCreateCommandPool pfn_vkCreateCommandPool;
+	extern PFN_vkDestroyCommandPool pfn_vkDestroyCommandPool;
+	extern PFN_vkResetCommandPool pfn_vkResetCommandPool;
+	extern PFN_vkAllocateCommandBuffers pfn_vkAllocateCommandBuffers;
+	extern PFN_vkFreeCommandBuffers pfn_vkFreeCommandBuffers;
+	extern PFN_vkBeginCommandBuffer pfn_vkBeginCommandBuffer;
+	extern PFN_vkEndCommandBuffer pfn_vkEndCommandBuffer;
+	extern PFN_vkResetCommandBuffer pfn_vkResetCommandBuffer;
+	extern PFN_vkCmdBindPipeline pfn_vkCmdBindPipeline;
+	extern PFN_vkCmdSetViewport pfn_vkCmdSetViewport;
+	extern PFN_vkCmdSetScissor pfn_vkCmdSetScissor;
+	extern PFN_vkCmdSetLineWidth pfn_vkCmdSetLineWidth;
+	extern PFN_vkCmdSetDepthBias pfn_vkCmdSetDepthBias;
+	extern PFN_vkCmdSetBlendConstants pfn_vkCmdSetBlendConstants;
+	extern PFN_vkCmdSetDepthBounds pfn_vkCmdSetDepthBounds;
+	extern PFN_vkCmdSetStencilCompareMask pfn_vkCmdSetStencilCompareMask;
+	extern PFN_vkCmdSetStencilWriteMask pfn_vkCmdSetStencilWriteMask;
+	extern PFN_vkCmdSetStencilReference pfn_vkCmdSetStencilReference;
+	extern PFN_vkCmdBindDescriptorSets pfn_vkCmdBindDescriptorSets;
+	extern PFN_vkCmdBindIndexBuffer pfn_vkCmdBindIndexBuffer;
+	extern PFN_vkCmdBindVertexBuffers pfn_vkCmdBindVertexBuffers;
+	extern PFN_vkCmdDraw pfn_vkCmdDraw;
+	extern PFN_vkCmdDrawIndexed pfn_vkCmdDrawIndexed;
+	extern PFN_vkCmdDrawIndirect pfn_vkCmdDrawIndirect;
+	extern PFN_vkCmdDrawIndexedIndirect pfn_vkCmdDrawIndexedIndirect;
+	extern PFN_vkCmdDispatch pfn_vkCmdDispatch;
+	extern PFN_vkCmdDispatchIndirect pfn_vkCmdDispatchIndirect;
+	extern PFN_vkCmdCopyBuffer pfn_vkCmdCopyBuffer;
+	extern PFN_vkCmdCopyImage pfn_vkCmdCopyImage;
+	extern PFN_vkCmdBlitImage pfn_vkCmdBlitImage;
+	extern PFN_vkCmdCopyBufferToImage pfn_vkCmdCopyBufferToImage;
+	extern PFN_vkCmdCopyImageToBuffer pfn_vkCmdCopyImageToBuffer;
+	extern PFN_vkCmdUpdateBuffer pfn_vkCmdUpdateBuffer;
+	extern PFN_vkCmdFillBuffer pfn_vkCmdFillBuffer;
+	extern PFN_vkCmdClearColorImage pfn_vkCmdClearColorImage;
+	extern PFN_vkCmdClearDepthStencilImage pfn_vkCmdClearDepthStencilImage;
+	extern PFN_vkCmdClearAttachments pfn_vkCmdClearAttachments;
+	extern PFN_vkCmdResolveImage pfn_vkCmdResolveImage;
+	extern PFN_vkCmdSetEvent pfn_vkCmdSetEvent;
+	extern PFN_vkCmdResetEvent pfn_vkCmdResetEvent;
+	extern PFN_vkCmdWaitEvents pfn_vkCmdWaitEvents;
+	extern PFN_vkCmdPipelineBarrier pfn_vkCmdPipelineBarrier;
+	extern PFN_vkCmdBeginQuery pfn_vkCmdBeginQuery;
+	extern PFN_vkCmdEndQuery pfn_vkCmdEndQuery;
+	extern PFN_vkCmdResetQueryPool pfn_vkCmdResetQueryPool;
+	extern PFN_vkCmdWriteTimestamp pfn_vkCmdWriteTimestamp;
+	extern PFN_vkCmdCopyQueryPoolResults pfn_vkCmdCopyQueryPoolResults;
+	extern PFN_vkCmdPushConstants pfn_vkCmdPushConstants;
+	extern PFN_vkCmdBeginRenderPass pfn_vkCmdBeginRenderPass;
+	extern PFN_vkCmdNextSubpass pfn_vkCmdNextSubpass;
+	extern PFN_vkCmdEndRenderPass pfn_vkCmdEndRenderPass;
+	extern PFN_vkCmdExecuteCommands pfn_vkCmdExecuteCommands;
+
+	// Vulkan 1.1
+	extern PFN_vkBindBufferMemory2 pfn_vkBindBufferMemory2;
+	extern PFN_vkBindImageMemory2 pfn_vkBindImageMemory2;
+	extern PFN_vkGetDeviceGroupPeerMemoryFeatures pfn_vkGetDeviceGroupPeerMemoryFeatures;
+	extern PFN_vkCmdSetDeviceMask pfn_vkCmdSetDeviceMask;
+	extern PFN_vkCmdDispatchBase pfn_vkCmdDispatchBase;
+	extern PFN_vkGetImageMemoryRequirements2 pfn_vkGetImageMemoryRequirements2;
+	extern PFN_vkGetBufferMemoryRequirements2 pfn_vkGetBufferMemoryRequirements2;
+	extern PFN_vkGetImageSparseMemoryRequirements2 pfn_vkGetImageSparseMemoryRequirements2;
+	extern PFN_vkTrimCommandPool pfn_vkTrimCommandPool;
+	extern PFN_vkGetDeviceQueue2 pfn_vkGetDeviceQueue2;
+	extern PFN_vkCreateSamplerYcbcrConversion pfn_vkCreateSamplerYcbcrConversion;
+	extern PFN_vkDestroySamplerYcbcrConversion pfn_vkDestroySamplerYcbcrConversion;
+	extern PFN_vkCreateDescriptorUpdateTemplate pfn_vkCreateDescriptorUpdateTemplate;
+	extern PFN_vkDestroyDescriptorUpdateTemplate pfn_vkDestroyDescriptorUpdateTemplate;
+	extern PFN_vkUpdateDescriptorSetWithTemplate pfn_vkUpdateDescriptorSetWithTemplate;
+	extern PFN_vkGetDescriptorSetLayoutSupport pfn_vkGetDescriptorSetLayoutSupport;
+
+	// Vulkan 1.2
+	extern PFN_vkCmdDrawIndirectCount pfn_vkCmdDrawIndirectCount;
+	extern PFN_vkCmdDrawIndexedIndirectCount pfn_vkCmdDrawIndexedIndirectCount;
+	extern PFN_vkCreateRenderPass2 pfn_vkCreateRenderPass2;
+	extern PFN_vkCmdBeginRenderPass2 pfn_vkCmdBeginRenderPass2;
+	extern PFN_vkCmdNextSubpass2 pfn_vkCmdNextSubpass2;
+	extern PFN_vkCmdEndRenderPass2 pfn_vkCmdEndRenderPass2;
+	extern PFN_vkResetQueryPool pfn_vkResetQueryPool;
+	extern PFN_vkGetSemaphoreCounterValue pfn_vkGetSemaphoreCounterValue;
+	extern PFN_vkWaitSemaphores pfn_vkWaitSemaphores;
+	extern PFN_vkSignalSemaphore pfn_vkSignalSemaphore;
+	extern PFN_vkGetBufferDeviceAddress pfn_vkGetBufferDeviceAddress;
+	extern PFN_vkGetBufferOpaqueCaptureAddress pfn_vkGetBufferOpaqueCaptureAddress;
+	extern PFN_vkGetDeviceMemoryOpaqueCaptureAddress pfn_vkGetDeviceMemoryOpaqueCaptureAddress;
+
+	// Vulkan 1.3
+	/* extern PFN_vkCreatePrivateDataSlot pfn_vkCreatePrivateDataSlot;
+	extern PFN_vkDestroyPrivateDataSlot pfn_vkDestroyPrivateDataSlot;
+	extern PFN_vkSetPrivateData pfn_vkSetPrivateData;
+	extern PFN_vkGetPrivateData pfn_vkGetPrivateData;
+	extern PFN_vkCmdSetEvent2 pfn_vkCmdSetEvent2;
+	extern PFN_vkCmdResetEvent2 pfn_vkCmdResetEvent2;
+	extern PFN_vkCmdWaitEvents2 pfn_vkCmdWaitEvents2;
+	extern PFN_vkCmdPipelineBarrier2 pfn_vkCmdPipelineBarrier2;
+	extern PFN_vkCmdWriteTimestamp2 pfn_vkCmdWriteTimestamp2;
+	extern PFN_vkQueueSubmit2 pfn_vkQueueSubmit2;
+	extern PFN_vkCmdCopyBuffer2 pfn_vkCmdCopyBuffer2;
+	extern PFN_vkCmdCopyImage2 pfn_vkCmdCopyImage2;
+	extern PFN_vkCmdCopyBufferToImage2 pfn_vkCmdCopyBufferToImage2;
+	extern PFN_vkCmdCopyImageToBuffer2 pfn_vkCmdCopyImageToBuffer2;
+	extern PFN_vkCmdBlitImage2 pfn_vkCmdBlitImage2;
+	extern PFN_vkCmdResolveImage2 pfn_vkCmdResolveImage2;
+	extern PFN_vkCmdBeginRendering pfn_vkCmdBeginRendering;
+	extern PFN_vkCmdEndRendering pfn_vkCmdEndRendering;
+	extern PFN_vkCmdSetCullMode pfn_vkCmdSetCullMode;
+	extern PFN_vkCmdSetFrontFace pfn_vkCmdSetFrontFace;
+	extern PFN_vkCmdSetPrimitiveTopology pfn_vkCmdSetPrimitiveTopology;
+	extern PFN_vkCmdSetViewportWithCount pfn_vkCmdSetViewportWithCount;
+	extern PFN_vkCmdSetScissorWithCount pfn_vkCmdSetScissorWithCount;
+	extern PFN_vkCmdBindVertexBuffers2 pfn_vkCmdBindVertexBuffers2;
+	extern PFN_vkCmdSetDepthTestEnable pfn_vkCmdSetDepthTestEnable;
+	extern PFN_vkCmdSetDepthWriteEnable pfn_vkCmdSetDepthWriteEnable;
+	extern PFN_vkCmdSetDepthCompareOp pfn_vkCmdSetDepthCompareOp;
+	extern PFN_vkCmdSetDepthBoundsTestEnable pfn_vkCmdSetDepthBoundsTestEnable;
+	extern PFN_vkCmdSetStencilTestEnable pfn_vkCmdSetStencilTestEnable;
+	extern PFN_vkCmdSetStencilOp pfn_vkCmdSetStencilOp;
+	extern PFN_vkCmdSetRasterizerDiscardEnable pfn_vkCmdSetRasterizerDiscardEnable;
+	extern PFN_vkCmdSetDepthBiasEnable pfn_vkCmdSetDepthBiasEnable;
+	extern PFN_vkCmdSetPrimitiveRestartEnable pfn_vkCmdSetPrimitiveRestartEnable;
+	extern PFN_vkGetDeviceBufferMemoryRequirements pfn_vkGetDeviceBufferMemoryRequirements;
+	extern PFN_vkGetDeviceImageMemoryRequirements pfn_vkGetDeviceImageMemoryRequirements;
+	extern PFN_vkGetDeviceImageSparseMemoryRequirements pfn_vkGetDeviceImageSparseMemoryRequirements; */
+
+	// Vulkan 1.4
+	/* extern PFN_vkCmdSetLineStipple pfn_vkCmdSetLineStipple;
+	extern PFN_vkMapMemory2 pfn_vkMapMemory2;
+	extern PFN_vkUnmapMemory2 pfn_vkUnmapMemory2;
+	extern PFN_vkCmdBindIndexBuffer2 pfn_vkCmdBindIndexBuffer2;
+	extern PFN_vkGetRenderingAreaGranularity pfn_vkGetRenderingAreaGranularity;
+	extern PFN_vkGetDeviceImageSubresourceLayout pfn_vkGetDeviceImageSubresourceLayout;
+	extern PFN_vkGetImageSubresourceLayout2 pfn_vkGetImageSubresourceLayout2;
+	extern PFN_vkCmdPushDescriptorSet pfn_vkCmdPushDescriptorSet;
+	extern PFN_vkCmdPushDescriptorSetWithTemplate pfn_vkCmdPushDescriptorSetWithTemplate;
+	extern PFN_vkCmdSetRenderingAttachmentLocations pfn_vkCmdSetRenderingAttachmentLocations;
+	extern PFN_vkCmdSetRenderingInputAttachmentIndices pfn_vkCmdSetRenderingInputAttachmentIndices;
+	extern PFN_vkCmdBindDescriptorSets2 pfn_vkCmdBindDescriptorSets2;
+	extern PFN_vkCmdPushConstants2 pfn_vkCmdPushConstants2;
+	extern PFN_vkCmdPushDescriptorSet2 pfn_vkCmdPushDescriptorSet2;
+	extern PFN_vkCmdPushDescriptorSetWithTemplate2 pfn_vkCmdPushDescriptorSetWithTemplate2;
+	extern PFN_vkCopyMemoryToImage pfn_vkCopyMemoryToImage;
+	extern PFN_vkCopyImageToMemory pfn_vkCopyImageToMemory;
+	extern PFN_vkCopyImageToImage pfn_vkCopyImageToImage;
+	extern PFN_vkTransitionImageLayout pfn_vkTransitionImageLayout; */
+
+	bool init_vulkan_device();
+	void destroy_vulkan_device();
+	bool refresh_swapchain();
+	void mark_swapchain_dirty();
+
+	void enable_vsync(bool bEnableVsync);
+	bool is_vsync_enabled();
+	void bind_fps_to_vsync(bool bBindFpsToVsync);
+	bool is_fps_bound_to_vsync();
+
+// Vulkan 1.0
+#define vkGetDeviceQueue pfn_vkGetDeviceQueue
+#define vkQueueSubmit pfn_vkQueueSubmit
+#define vkQueueWaitIdle pfn_vkQueueWaitIdle
+#define vkDeviceWaitIdle pfn_vkDeviceWaitIdle
+#define vkAllocateMemory pfn_vkAllocateMemory
+#define vkFreeMemory pfn_vkFreeMemory
+#define vkMapMemory pfn_vkMapMemory
+#define vkUnmapMemory pfn_vkUnmapMemory
+#define vkFlushMappedMemoryRanges pfn_vkFlushMappedMemoryRanges
+#define vkInvalidateMappedMemoryRanges pfn_vkInvalidateMappedMemoryRanges
+#define vkGetDeviceMemoryCommitment pfn_vkGetDeviceMemoryCommitment
+#define vkBindBufferMemory pfn_vkBindBufferMemory
+#define vkBindImageMemory pfn_vkBindBufferMemory
+#define vkGetBufferMemoryRequirements pfn_vkGetBufferMemoryRequirements
+#define vkGetImageMemoryRequirements pfn_vkGetImageMemoryRequirements
+#define vkGetImageSparseMemoryRequirements pfn_vkGetImageSparseMemoryRequirements
+#define vkQueueBindSparse pfn_vkQueueBindSparse
+#define vkCreateFence pfn_vkCreateFence
+#define vkDestroyFence pfn_vkDestroyFence
+#define vkResetFences pfn_vkResetFences
+#define vkGetFenceStatus pfn_vkGetFenceStatus
+#define vkWaitForFences pfn_vkWaitForFences
+#define vkCreateSemaphore pfn_vkCreateSemaphore
+#define vkDestroySemaphore pfn_vkDestroySemaphore
+#define vkCreateEvent pfn_vkCreateEvent
+#define vkDestroyEvent pfn_vkDestroyEvent
+#define vkGetEventStatus pfn_vkGetEventStatus
+#define vkSetEvent pfn_vkSetEvent
+#define vkResetEvent pfn_vkResetEvent
+#define vkCreateQueryPool pfn_vkCreateQueryPool
+#define vkDestroyQueryPool pfn_vkDestroyQueryPool
+#define vkGetQueryPoolResults pfn_vkGetQueryPoolResults
+#define vkCreateBuffer pfn_vkCreateBuffer
+#define vkDestroyBuffer pfn_vkDestroyBuffer
+#define vkCreateBufferView pfn_vkCreateBufferView
+#define vkDestroyBufferView pfn_vkDestroyBufferView
+#define vkCreateImage pfn_vkCreateImage
+#define vkDestroyImage pfn_vkDestroyImage
+#define vkGetImageSubresourceLayout pfn_vkGetImageSubresourceLayout
+#define vkCreateImageView pfn_vkCreateImageView
+#define vkDestroyImageView pfn_vkDestroyImageView
+#define vkCreateShaderModule pfn_vkCreateShaderModule
+#define vkDestroyShaderModule pfn_vkDestroyShaderModule
+#define vkCreatePipelineCache pfn_vkCreatePipelineCache
+#define vkDestroyPipelineCache pfn_vkDestroyPipelineCache
+#define vkGetPipelineCacheData pfn_vkGetPipelineCacheData
+#define vkMergePipelineCaches pfn_vkMergePipelineCaches
+#define vkCreateGraphicsPipelines pfn_vkCreateGraphicsPipelines
+#define vkCreateComputePipelines pfn_vkCreateComputePipelines
+#define vkDestroyPipeline pfn_vkDestroyPipeline
+#define vkCreatePipelineLayout pfn_vkCreatePipelineLayout
+#define vkDestroyPipelineLayout pfn_vkDestroyPipelineLayout
+#define vkCreateSampler pfn_vkCreateSampler
+#define vkDestroySampler pfn_vkDestroySampler
+#define vkCreateDescriptorSetLayout pfn_vkCreateDescriptorSetLayout
+#define vkDestroyDescriptorSetLayout pfn_vkDestroyDescriptorSetLayout
+#define vkCreateDescriptorPool pfn_vkCreateDescriptorPool
+#define vkDestroyDescriptorPool pfn_vkDestroyDescriptorPool
+#define vkResetDescriptorPool pfn_vkResetDescriptorPool
+#define vkAllocateDescriptorSets pfn_vkAllocateDescriptorSets
+#define vkFreeDescriptorSets pfn_vkFreeDescriptorSets
+#define vkUpdateDescriptorSets pfn_vkUpdateDescriptorSets
+#define vkCreateFramebuffer pfn_vkCreateFramebuffer
+#define vkDestroyFramebuffer pfn_vkDestroyFramebuffer
+#define vkCreateRenderPass pfn_vkCreateRenderPass
+#define vkDestroyRenderPass pfn_vkDestroyRenderPass
+#define vkGetRenderAreaGranularity pfn_vkGetRenderAreaGranularity
+#define vkCreateCommandPool pfn_vkCreateCommandPool
+#define vkDestroyCommandPool pfn_vkDestroyCommandPool
+#define vkResetCommandPool pfn_vkResetCommandPool
+#define vkAllocateCommandBuffers pfn_vkAllocateCommandBuffers
+#define vkFreeCommandBuffers pfn_vkFreeCommandBuffers
+#define vkBeginCommandBuffer pfn_vkBeginCommandBuffer
+#define vkEndCommandBuffer pfn_vkEndCommandBuffer
+#define vkResetCommandBuffer pfn_vkResetCommandBuffer
+#define vkCmdBindPipeline pfn_vkCmdBindPipeline
+#define vkCmdSetViewport pfn_vkCmdSetViewport
+#define vkCmdSetScissor pfn_vkCmdSetScissor
+#define vkCmdSetLineWidth pfn_vkCmdSetLineWidth
+#define vkCmdSetDepthBias pfn_vkCmdSetDepthBias
+#define vkCmdSetBlendConstants pfn_vkCmdSetBlendConstants
+#define vkCmdSetDepthBounds pfn_vkCmdSetDepthBounds
+#define vkCmdSetStencilCompareMask pfn_vkCmdSetStencilCompareMask
+#define vkCmdSetStencilWriteMask pfn_vkCmdSetStencilWriteMask
+#define vkCmdSetStencilReference pfn_vkCmdSetStencilReference
+#define vkCmdBindDescriptorSets pfn_vkCmdBindDescriptorSets
+#define vkCmdBindIndexBuffer pfn_vkCmdBindIndexBuffer
+#define vkCmdBindVertexBuffers pfn_vkCmdBindVertexBuffers
+#define vkCmdDraw pfn_vkCmdDraw
+#define vkCmdDrawIndexed pfn_vkCmdDrawIndexed
+#define vkCmdDrawIndirect pfn_vkCmdDrawIndirect
+#define vkCmdDrawIndexedIndirect pfn_vkCmdDrawIndexedIndirect
+#define vkCmdDispatch pfn_vkCmdDispatch
+#define vkCmdDispatchIndirect pfn_vkCmdDispatchIndirect
+#define vkCmdCopyBuffer pfn_vkCmdCopyBuffer
+#define vkCmdCopyImage pfn_vkCmdCopyImage
+#define vkCmdBlitImage pfn_vkCmdBlitImage
+#define vkCmdCopyBufferToImage pfn_vkCmdCopyBufferToImage
+#define vkCmdCopyImageToBuffer pfn_vkCmdCopyImageToBuffer
+#define vkCmdUpdateBuffer pfn_vkCmdUpdateBuffer
+#define vkCmdFillBuffer pfn_vkCmdFillBuffer
+#define vkCmdClearColorImage pfn_vkCmdClearColorImage
+#define vkCmdClearDepthStencilImage pfn_vkCmdClearDepthStencilImage
+#define vkCmdClearAttachments pfn_vkCmdClearAttachments
+#define vkCmdResolveImage pfn_vkCmdResolveImage
+#define vkCmdSetEvent pfn_vkCmdSetEvent
+#define vkCmdResetEvent pfn_vkCmdResetEvent
+#define vkCmdWaitEvents pfn_vkCmdWaitEvents
+#define vkCmdPipelineBarrier pfn_vkCmdPipelineBarrier
+#define vkCmdBeginQuery pfn_vkCmdBeginQuery
+#define vkCmdEndQuery pfn_vkCmdEndQuery
+#define vkCmdResetQueryPool pfn_vkCmdResetQueryPool
+#define vkCmdWriteTimestamp pfn_vkCmdWriteTimestamp
+#define vkCmdCopyQueryPoolResults pfn_vkCmdCopyQueryPoolResults
+#define vkCmdPushConstants pfn_vkCmdPushConstants
+#define vkCmdBeginRenderPass pfn_vkCmdBeginRenderPass
+#define vkCmdNextSubpass pfn_vkCmdNextSubpass
+#define vkCmdEndRenderPass pfn_vkCmdEndRenderPass
+#define vkCmdExecuteCommands pfn_vkCmdExecuteCommands
+
+// Vulkan 1.1
+#define vkBindBufferMemory2 pfn_vkBindBufferMemory2
+#define vkBindImageMemory2 pfn_vkBindImageMemory2
+#define vkGetDeviceGroupPeerMemoryFeatures pfn_vkGetDeviceGroupPeerMemoryFeatures
+#define vkCmdSetDeviceMask pfn_vkCmdSetDeviceMask
+#define vkCmdDispatchBase pfn_vkCmdDispatchBase
+#define vkGetImageMemoryRequirements2 pfn_vkGetImageMemoryRequirements2
+#define vkGetBufferMemoryRequirements2 pfn_vkGetBufferMemoryRequirements2
+#define vkGetImageSparseMemoryRequirements2 pfn_vkGetImageSparseMemoryRequirements2
+#define vkTrimCommandPool pfn_vkTrimCommandPool
+#define vkGetDeviceQueue2 pfn_vkGetDeviceQueue2
+#define vkCreateSamplerYcbcrConversion pfn_vkCreateSamplerYcbcrConversion
+#define vkDestroySamplerYcbcrConversion pfn_vkDestroySamplerYcbcrConversion
+#define vkCreateDescriptorUpdateTemplate pfn_vkCreateDescriptorUpdateTemplate
+#define vkDestroyDescriptorUpdateTemplate pfn_vkDestroyDescriptorUpdateTemplate
+#define vkUpdateDescriptorSetWithTemplate pfn_vkUpdateDescriptorSetWithTemplate
+#define vkGetDescriptorSetLayoutSupport pfn_vkGetDescriptorSetLayoutSupport
+
+// Vulkan 1.2
+#define vkCmdDrawIndirectCount pfn_vkCmdDrawIndirectCount
+#define vkCmdDrawIndexedIndirectCount pfn_vkCmdDrawIndexedIndirectCount
+#define vkCreateRenderPass2 pfn_vkCreateRenderPass2
+#define vkCmdBeginRenderPass2 pfn_vkCmdBeginRenderPass2
+#define vkCmdNextSubpass2 pfn_vkCmdNextSubpass2
+#define vkCmdEndRenderPass2 pfn_vkCmdEndRenderPass2
+#define vkResetQueryPool pfn_vkResetQueryPool
+#define vkGetSemaphoreCounterValue pfn_vkGetSemaphoreCounterValue
+#define vkWaitSemaphores pfn_vkWaitSemaphores
+#define vkSignalSemaphore pfn_vkSignalSemaphore
+#define vkGetBufferDeviceAddress pfn_vkGetBufferDeviceAddress
+#define vkGetBufferOpaqueCaptureAddress pfn_vkGetBufferOpaqueCaptureAddress
+#define vkGetDeviceMemoryOpaqueCaptureAddress pfn_vkGetDeviceMemoryOpaqueCaptureAddress
+
+// Vulkan 1.3
+/* #define vkCreatePrivateDataSlot pfn_vkCreatePrivateDataSlot
+#define vkDestroyPrivateDataSlot pfn_vkDestroyPrivateDataSlot
+#define vkSetPrivateData pfn_vkSetPrivateData
+#define vkGetPrivateData pfn_vkGetPrivateData
+#define vkCmdSetEvent2 pfn_vkCmdSetEvent2
+#define vkCmdResetEvent2 pfn_vkCmdResetEvent2
+#define vkCmdWaitEvents2 pfn_vkCmdWaitEvents2
+#define vkCmdPipelineBarrier2 pfn_vkCmdPipelineBarrier2
+#define vkCmdWriteTimestamp2 pfn_vkCmdWriteTimestamp2
+#define vkQueueSubmit2 pfn_vkQueueSubmit2
+#define vkCmdCopyBuffer2 pfn_vkCmdCopyBuffer2
+#define vkCmdCopyImage2 pfn_vkCmdCopyImage2
+#define vkCmdCopyBufferToImage2 pfn_vkCmdCopyBufferToImage2
+#define vkCmdCopyImageToBuffer2 pfn_vkCmdCopyImageToBuffer2
+#define vkCmdBlitImage2 pfn_vkCmdBlitImage2
+#define vkCmdResolveImage2 pfn_vkCmdResolveImage2
+#define vkCmdBeginRendering pfn_vkCmdBeginRendering
+#define vkCmdEndRendering pfn_vkCmdEndRendering
+#define vkCmdSetCullMode pfn_vkCmdSetCullMode
+#define vkCmdSetFrontFace pfn_vkCmdSetFrontFace
+#define vkCmdSetPrimitiveTopology pfn_vkCmdSetPrimitiveTopology
+#define vkCmdSetViewportWithCount pfn_vkCmdSetViewportWithCount
+#define vkCmdSetScissorWithCount pfn_vkCmdSetScissorWithCount
+#define vkCmdBindVertexBuffers2 pfn_vkCmdBindVertexBuffers2
+#define vkCmdSetDepthTestEnable pfn_vkCmdSetDepthTestEnable
+#define vkCmdSetDepthWriteEnable pfn_vkCmdSetDepthWriteEnable
+#define vkCmdSetDepthCompareOp pfn_vkCmdSetDepthCompareOp
+#define vkCmdSetDepthBoundsTestEnable pfn_vkCmdSetDepthBoundsTestEnable
+#define vkCmdSetStencilTestEnable pfn_vkCmdSetStencilTestEnable
+#define vkCmdSetStencilOp pfn_vkCmdSetStencilOp
+#define vkCmdSetRasterizerDiscardEnable pfn_vkCmdSetRasterizerDiscardEnable
+#define vkCmdSetDepthBiasEnable pfn_vkCmdSetDepthBiasEnable
+#define vkCmdSetPrimitiveRestartEnable pfn_vkCmdSetPrimitiveRestartEnable
+#define vkGetDeviceBufferMemoryRequirements pfn_vkGetDeviceBufferMemoryRequirements
+#define vkGetDeviceImageMemoryRequirements pfn_vkGetDeviceImageMemoryRequirements
+#define vkGetDeviceImageSparseMemoryRequirements pfn_vkGetDeviceImageSparseMemoryRequirements */
+
+// Vulkan 1.4
+/* #define vkCmdSetLineStipple pfn_vkCmdSetLineStipple
+#define vkMapMemory2 pfn_vkMapMemory2
+#define vkUnmapMemory2 pfn_vkUnmapMemory2
+#define vkCmdBindIndexBuffer2 pfn_vkCmdBindIndexBuffer2
+#define vkGetRenderingAreaGranularity pfn_vkGetRenderingAreaGranularity
+#define vkGetDeviceImageSubresourceLayout pfn_vkGetDeviceImageSubresourceLayout
+#define vkGetImageSubresourceLayout2 pfn_vkGetImageSubresourceLayout2
+#define vkCmdPushDescriptorSet pfn_vkCmdPushDescriptorSet
+#define vkCmdPushDescriptorSetWithTemplate pfn_vkCmdPushDescriptorSetWithTemplate
+#define vkCmdSetRenderingAttachmentLocations pfn_vkCmdSetRenderingAttachmentLocations
+#define vkCmdSetRenderingInputAttachmentIndices pfn_vkCmdSetRenderingInputAttachmentIndices
+#define vkCmdBindDescriptorSets2 pfn_vkCmdBindDescriptorSets2
+#define vkCmdPushConstants2 pfn_vkCmdPushConstants2
+#define vkCmdPushDescriptorSet2 pfn_vkCmdPushDescriptorSet2
+#define vkCmdPushDescriptorSetWithTemplate2 pfn_vkCmdPushDescriptorSetWithTemplate2
+#define vkCopyMemoryToImage pfn_vkCopyMemoryToImage
+#define vkCopyImageToMemory pfn_vkCopyImageToMemory
+#define vkCopyImageToImage pfn_vkCopyImageToImage
+#define vkTransitionImageLayout pfn_vkTransitionImageLayout */
+
+// Debug extension
+#define vkQueueBeginDebugUtilsLabelEXT pfn_vkQueueBeginDebugUtilsLabelEXT;
+#define vkQueueEndDebugUtilsLabelEXT pfn_vkQueueEndDebugUtilsLabelEXT;
+#define vkQueueInsertDebugUtilsLabelEXT pfn_vkQueueInsertDebugUtilsLabelEXT;
+#define vkCmdBeginDebugUtilsLabelEXT pfn_vkCmdBeginDebugUtilsLabelEXT;
+#define vkCmdEndDebugUtilsLabelEXT pfn_vkCmdEndDebugUtilsLabelEXT;
+#define vkCmdInsertDebugUtilsLabelEXT pfn_vkCmdInsertDebugUtilsLabelEXT;
+// Swapchain extension
+#define vkCreateSwapchainKHR pfn_vkCreateSwapchainKHR
+#define vkDestroySwapchainKHR pfn_vkDestroySwapchainKHR
+#define vkGetSwapchainImagesKHR pfn_vkGetSwapchainImagesKHR
+#define vkAcquireNextImageKHR pfn_vkAcquireNextImageKHR
+#define vkQueuePresentKHR pfn_vkQueuePresentKHR
+#define vkGetDeviceGroupPresentCapabilitiesKHR pfn_vkGetDeviceGroupPresentCapabilitiesKHR
+#define vkGetDeviceGroupSurfacePresentModesKHR pfn_vkGetDeviceGroupSurfacePresentModesKHR
+#define vkAcquireNextImage2KHR pfn_vkAcquireNextImage2KHR
+
+#define WAIT_FOR_IDLE_VULKAN_DEVICE() CATCH_SIGNAL(vkDeviceWaitIdle(vk_hDevice))
+
+}
+
+#endif /* __RE_VULKAN_DEVICE_H__ */

@@ -1,0 +1,197 @@
+#ifndef __RE_VULKAN_INSTANCE_H__
+#define __RE_VULKAN_INSTANCE_H__
+
+#include "RE_Internal Header.hpp"
+#ifdef RE_OS_WINDOWS
+# define VK_USE_PLATFORM_WIN32_KHR
+#elif defined RE_OS_LINUX
+# define VK_USE_PLATFORM_WAYLAND_KHR
+# define VK_USE_PLATFORM_XLIB_KHR
+#endif
+#define VK_NO_PROTOTYPES
+#include <vulkan/vulkan.h>
+
+namespace RE {
+	
+	extern VkInstance vk_hInstance;
+	
+	// Vulkan 1.0
+	extern PFN_vkEnumeratePhysicalDevices pfn_vkEnumeratePhysicalDevices;
+	extern PFN_vkGetPhysicalDeviceFeatures pfn_vkGetPhysicalDeviceFeatures;
+	extern PFN_vkGetPhysicalDeviceFormatProperties pfn_vkGetPhysicalDeviceFormatProperties;
+	extern PFN_vkGetPhysicalDeviceImageFormatProperties pfn_vkGetPhysicalDeviceImageFormatProperties;
+	extern PFN_vkGetPhysicalDeviceProperties pfn_vkGetPhysicalDeviceProperties;
+	extern PFN_vkGetPhysicalDeviceQueueFamilyProperties pfn_vkGetPhysicalDeviceQueueFamilyProperties;
+	extern PFN_vkGetPhysicalDeviceMemoryProperties pfn_vkGetPhysicalDeviceMemoryProperties;
+	extern PFN_vkGetInstanceProcAddr pfn_vkGetInstanceProcAddr;
+	extern PFN_vkGetDeviceProcAddr pfn_vkGetDeviceProcAddr;
+	extern PFN_vkCreateDevice pfn_vkCreateDevice;
+	extern PFN_vkDestroyDevice pfn_vkDestroyDevice;
+	extern PFN_vkEnumerateInstanceExtensionProperties pfn_vkEnumerateInstanceExtensionProperties;
+	extern PFN_vkEnumerateDeviceExtensionProperties pfn_vkEnumerateDeviceExtensionProperties;
+	extern PFN_vkEnumerateInstanceLayerProperties pfn_vkEnumerateInstanceLayerProperties;
+	extern PFN_vkEnumerateDeviceLayerProperties pfn_vkEnumerateDeviceLayerProperties;
+
+	// Vulkan 1.1
+	extern PFN_vkEnumerateInstanceVersion pfn_vkEnumerateInstanceVersion;
+	extern PFN_vkEnumeratePhysicalDeviceGroups pfn_vkEnumeratePhysicalDeviceGroups;
+	extern PFN_vkGetPhysicalDeviceFeatures2 pfn_vkGetPhysicalDeviceFeatures2;
+	extern PFN_vkGetPhysicalDeviceProperties2 pfn_vkGetPhysicalDeviceProperties2;
+	extern PFN_vkGetPhysicalDeviceFormatProperties2 pfn_vkGetPhysicalDeviceFormatProperties2;
+	extern PFN_vkGetPhysicalDeviceImageFormatProperties2 pfn_vkGetPhysicalDeviceImageFormatProperties2;
+	extern PFN_vkGetPhysicalDeviceQueueFamilyProperties2 pfn_vkGetPhysicalDeviceQueueFamilyProperties2;
+	extern PFN_vkGetPhysicalDeviceMemoryProperties2 pfn_vkGetPhysicalDeviceMemoryProperties2;
+	extern PFN_vkGetPhysicalDeviceSparseImageFormatProperties2 pfn_vkGetPhysicalDeviceSparseImageFormatProperties2;
+	extern PFN_vkGetPhysicalDeviceExternalBufferProperties pfn_vkGetPhysicalDeviceExternalBufferProperties;
+	extern PFN_vkGetPhysicalDeviceExternalFenceProperties pfn_vkGetPhysicalDeviceExternalFenceProperties;
+	extern PFN_vkGetPhysicalDeviceExternalSemaphoreProperties pfn_vkGetPhysicalDeviceExternalSemaphoreProperties;
+
+	// Vulkan 1.3
+	/* extern PFN_vkGetPhysicalDeviceToolProperties pfn_vkGetPhysicalDeviceToolProperties; */
+
+	// Debug Messages
+	extern PFN_vkSetDebugUtilsObjectNameEXT pfn_vkSetDebugUtilsObjectNameEXT;
+	extern PFN_vkSetDebugUtilsObjectTagEXT pfn_vkSetDebugUtilsObjectTagEXT;
+	extern PFN_vkQueueBeginDebugUtilsLabelEXT pfn_vkQueueBeginDebugUtilsLabelEXT;
+	extern PFN_vkQueueEndDebugUtilsLabelEXT pfn_vkQueueEndDebugUtilsLabelEXT;
+	extern PFN_vkQueueInsertDebugUtilsLabelEXT pfn_vkQueueInsertDebugUtilsLabelEXT;
+	extern PFN_vkCmdBeginDebugUtilsLabelEXT pfn_vkCmdBeginDebugUtilsLabelEXT;
+	extern PFN_vkCmdEndDebugUtilsLabelEXT pfn_vkCmdEndDebugUtilsLabelEXT;
+	extern PFN_vkCmdInsertDebugUtilsLabelEXT pfn_vkCmdInsertDebugUtilsLabelEXT;
+	extern PFN_vkCreateDebugUtilsMessengerEXT pfn_vkCreateDebugUtilsMessengerEXT;
+	extern PFN_vkDestroyDebugUtilsMessengerEXT pfn_vkDestroyDebugUtilsMessengerEXT;
+	extern PFN_vkSubmitDebugUtilsMessageEXT pfn_vkSubmitDebugUtilsMessageEXT;
+
+	// Surface
+	extern PFN_vkDestroySurfaceKHR pfn_vkDestroySurfaceKHR;
+	extern PFN_vkGetPhysicalDeviceSurfaceSupportKHR pfn_vkGetPhysicalDeviceSurfaceSupportKHR;
+	extern PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR pfn_vkGetPhysicalDeviceSurfaceCapabilitiesKHR;
+	extern PFN_vkGetPhysicalDeviceSurfaceFormatsKHR pfn_vkGetPhysicalDeviceSurfaceFormatsKHR;
+	extern PFN_vkGetPhysicalDeviceSurfacePresentModesKHR pfn_vkGetPhysicalDeviceSurfacePresentModesKHR;
+
+	// Swapchain
+	extern PFN_vkCreateSwapchainKHR pfn_vkCreateSwapchainKHR;
+	extern PFN_vkDestroySwapchainKHR pfn_vkDestroySwapchainKHR;
+	extern PFN_vkGetSwapchainImagesKHR pfn_vkGetSwapchainImagesKHR;
+	extern PFN_vkAcquireNextImageKHR pfn_vkAcquireNextImageKHR;
+	extern PFN_vkQueuePresentKHR pfn_vkQueuePresentKHR;
+	extern PFN_vkGetDeviceGroupPresentCapabilitiesKHR pfn_vkGetDeviceGroupPresentCapabilitiesKHR;
+	extern PFN_vkGetDeviceGroupSurfacePresentModesKHR pfn_vkGetDeviceGroupSurfacePresentModesKHR;
+	extern PFN_vkGetPhysicalDevicePresentRectanglesKHR pfn_vkGetPhysicalDevicePresentRectanglesKHR;
+	extern PFN_vkAcquireNextImage2KHR pfn_vkAcquireNextImage2KHR;
+
+#ifdef RE_OS_WINDOWS
+	// Win32-Surface
+	extern PFN_vkCreateWin32SurfaceKHR pfn_vkCreateWin32SurfaceKHR;
+	extern PFN_vkGetPhysicalDeviceWin32PresentationSupportKHR pfn_vkGetPhysicalDeviceWin32PresentationSupportKHR;
+#elif defined RE_OS_LINUX
+	// Wayland-Surface
+	extern PFN_vkCreateWaylandSurfaceKHR pfn_vkCreateWaylandSurfaceKHR;
+	extern PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR pfn_vkGetPhysicalDeviceWaylandPresentationSupportKHR;
+	// X11-Surface
+	extern PFN_vkCreateXlibSurfaceKHR pfn_vkCreateXlibSurfaceKHR;
+	extern PFN_vkGetPhysicalDeviceXlibPresentationSupportKHR pfn_vkGetPhysicalDeviceXlibPresentationSupportKHR;
+#endif /* RE_OS_WINDOWS, RE_OS_LINUX */
+
+	bool init_vulkan_instance();
+	void destroy_vulkan_instance();
+
+	void focus_vulkan_debug_on(const char *const pcFile, const char *const pcFunc, const uint32_t u32Line);
+	void unfocus_vulkan_debug();
+#define FOCUS_FOR_VK_DEBUG(CMD) ([&](const char *const pcFile, const char *const pcActualFunc, const uint32_t u32Line) { \
+			add_to_stack_trace(pcFile, pcActualFunc, u32Line, "\0"); \
+			focus_vulkan_debug_on(pcFile, pcActualFunc, u32Line); \
+			CMD; \
+			unfocus_vulkan_debug(); \
+			remove_from_stack_trace(); \
+		}) (__FILE__, __func__, __LINE__)
+
+	bool check_vulkan_result(const VkResult vk_eResult, const char *const pcFile, const char *const pcFunc, const uint32_t u32Line);
+#define CHECK_VK_RESULT(RESULT) ([&](const char *const pcFile, const char *const pcActualFunc, const uint32_t u32Line) -> bool { \
+			add_to_stack_trace(pcFile, pcActualFunc, u32Line, "\0"); \
+			focus_vulkan_debug_on(pcFile, pcActualFunc, u32Line); \
+			const bool bResult = check_vulkan_result(RESULT, pcFile, pcActualFunc, u32Line); \
+			unfocus_vulkan_debug(); \
+			remove_from_stack_trace(); \
+			return bResult; \
+		}) (__FILE__, __func__, __LINE__)
+
+// Vulkan 1.0
+#define vkEnumeratePhysicalDevices pfn_vkEnumeratePhysicalDevices
+#define vkGetPhysicalDeviceFeatures pfn_vkGetPhysicalDeviceFeatures
+#define vkGetPhysicalDeviceFormatProperties pfn_vkGetPhysicalDeviceFormatProperties
+#define vkGetPhysicalDeviceImageFormatProperties pfn_vkGetPhysicalDeviceImageFormatProperties
+#define vkGetPhysicalDeviceProperties pfn_vkGetPhysicalDeviceProperties
+#define vkGetPhysicalDeviceQueueFamilyProperties pfn_vkGetPhysicalDeviceQueueFamilyProperties
+#define vkGetPhysicalDeviceMemoryProperties pfn_vkGetPhysicalDeviceMemoryProperties
+#define vkGetInstanceProcAddr pfn_vkGetInstanceProcAddr
+#define vkGetDeviceProcAddr pfn_vkGetDeviceProcAddr
+#define vkCreateDevice pfn_vkCreateDevice
+#define vkDestroyDevice pfn_vkDestroyDevice
+#define vkEnumerateInstanceExtensionProperties pfn_vkEnumerateInstanceExtensionProperties
+#define vkEnumerateDeviceExtensionProperties pfn_vkEnumerateDeviceExtensionProperties
+#define vkEnumerateInstanceLayerProperties pfn_vkEnumerateInstanceLayerProperties
+#define vkEnumerateDeviceLayerProperties pfn_vkEnumerateDeviceLayerProperties
+#define vkGetPhysicalDeviceSparseImageFormatProperties pfn_vkGetPhysicalDeviceSparseImageFormatProperties
+
+// Vulkan 1.1
+#define vkEnumerateInstanceVersion pfn_vkEnumerateInstanceVersion
+#define vkEnumeratePhysicalDeviceGroups pfn_vkEnumeratePhysicalDeviceGroups
+#define vkGetPhysicalDeviceFeatures2 pfn_vkGetPhysicalDeviceFeatures2
+#define vkGetPhysicalDeviceProperties2 pfn_vkGetPhysicalDeviceProperties2
+#define vkGetPhysicalDeviceFormatProperties2 pfn_vkGetPhysicalDeviceFormatProperties2
+#define vkGetPhysicalDeviceImageFormatProperties2 pfn_vkGetPhysicalDeviceImageFormatProperties2
+#define vkGetPhysicalDeviceQueueFamilyProperties2 pfn_vkGetPhysicalDeviceQueueFamilyProperties2
+#define vkGetPhysicalDeviceMemoryProperties2 pfn_vkGetPhysicalDeviceMemoryProperties2
+#define vkGetPhysicalDeviceSparseImageFormatProperties2 pfn_vkGetPhysicalDeviceSparseImageFormatProperties2
+#define vkGetPhysicalDeviceExternalBufferProperties pfn_vkGetPhysicalDeviceExternalBufferProperties
+#define vkGetPhysicalDeviceExternalFenceProperties pfn_vkGetPhysicalDeviceExternalFenceProperties
+#define vkGetPhysicalDeviceExternalSemaphoreProperties pfn_vkGetPhysicalDeviceExternalSemaphoreProperties
+
+// Vulkan 1.3
+/* #define vkGetPhysicalDeviceToolProperties pfn_vkGetPhysicalDeviceToolProperties */
+
+// Debug extension
+#define vkSetDebugUtilsObjectNameEXT pfn_vkSetDebugUtilsObjectNameEXT;
+#define vkSetDebugUtilsObjectTagEXT pfn_vkSetDebugUtilsObjectTagEXT;
+#define vkQueueBeginDebugUtilsLabelEXT pfn_vkQueueBeginDebugUtilsLabelEXT;
+#define vkQueueEndDebugUtilsLabelEXT pfn_vkQueueEndDebugUtilsLabelEXT;
+#define vkQueueInsertDebugUtilsLabelEXT pfn_vkQueueInsertDebugUtilsLabelEXT;
+#define vkCmdBeginDebugUtilsLabelEXT pfn_vkCmdBeginDebugUtilsLabelEXT;
+#define vkCmdEndDebugUtilsLabelEXT pfn_vkCmdEndDebugUtilsLabelEXT;
+#define vkCmdInsertDebugUtilsLabelEXT pfn_vkCmdInsertDebugUtilsLabelEXT;
+#define vkCreateDebugUtilsMessengerEXT pfn_vkCreateDebugUtilsMessengerEXT;
+#define vkDestroyDebugUtilsMessengerEXT pfn_vkDestroyDebugUtilsMessengerEXT;
+#define vkSubmitDebugUtilsMessageEXT pfn_vkSubmitDebugUtilsMessageEXT;
+// Surface extension
+#define vkDestroySurfaceKHR pfn_vkDestroySurfaceKHR
+#define vkGetPhysicalDeviceSurfaceSupportKHR pfn_vkGetPhysicalDeviceSurfaceSupportKHR
+#define vkGetPhysicalDeviceSurfaceCapabilitiesKHR pfn_vkGetPhysicalDeviceSurfaceCapabilitiesKHR
+#define vkGetPhysicalDeviceSurfaceFormatsKHR pfn_vkGetPhysicalDeviceSurfaceFormatsKHR
+#define vkGetPhysicalDeviceSurfacePresentModesKHR pfn_vkGetPhysicalDeviceSurfacePresentModesKHR
+// Swapchain extension
+#define vkCreateSwapchainKHR pfn_vkCreateSwapchainKHR
+#define vkDestroySwapchainKHR pfn_vkDestroySwapchainKHR
+#define vkGetSwapchainImagesKHR pfn_vkGetSwapchainImagesKHR
+#define vkAcquireNextImageKHR pfn_vkAcquireNextImageKHR
+#define vkQueuePresentKHR pfn_vkQueuePresentKHR
+#define vkGetDeviceGroupPresentCapabilitiesKHR pfn_vkGetDeviceGroupPresentCapabilitiesKHR
+#define vkGetDeviceGroupSurfacePresentModesKHR pfn_vkGetDeviceGroupSurfacePresentModesKHR
+#define vkGetPhysicalDevicePresentRectanglesKHR pfn_vkGetPhysicalDevicePresentRectanglesKHR
+#define vkAcquireNextImage2KHR pfn_vkAcquireNextImage2KHR
+
+#ifdef RE_OS_WINDOWS
+# define vkCreateWin32SurfaceKHR pfn_vkCreateWin32SurfaceKHR
+# define vkGetPhysicalDeviceWin32PresentationSupportKHR pfn_vkGetPhysicalDeviceWin32PresentationSupportKHR
+#elif defined RE_OS_LINUX
+# define vkCreateWaylandSurfaceKHR pfn_vkCreateWaylandSurfaceKHR
+# define vkGetPhysicalDeviceWaylandPresentationSupportKHR pfn_vkGetPhysicalDeviceWaylandPresentationSupportKHR
+# define vkCreateXlibSurfaceKHR pfn_vkCreateXlibSurfaceKHR
+# define vkGetPhysicalDeviceXlibPresentationSupportKHR pfn_vkGetPhysicalDeviceXlibPresentationSupportKHR
+#endif /* RE_OS_WINDOWS, RE_OS_LINUX */
+
+#define VK_KHR_VALIDATION_LAYER_NAME "VK_LAYER_KHRONOS_validation"
+
+}
+
+#endif /* __RE_VULKAN_INSTANCE_H__ */

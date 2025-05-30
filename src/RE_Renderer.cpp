@@ -1,6 +1,5 @@
 #include "RE_Renderer.hpp"
 #include "RE_Internal Header.hpp"
-#include "RE_Render System.hpp"
 #include "RE_Window.hpp"
 
 #include <thread>
@@ -20,7 +19,6 @@ namespace RE {
 	}
 	
 	void destroy_renderer() {
-		vk_destroy_buffer(vk_hRectIndexBuffer, vk_hRectIndexBufferMemory);
 	}
 
 	void render() {

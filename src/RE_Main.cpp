@@ -2,7 +2,6 @@
 #include "RE_Window.hpp"
 #include "RE_Renderer.hpp"
 #include "RE_Vulkan.hpp"
-#include "RE_Render System.hpp"
 #include "RE_Manager.hpp"
 
 namespace RE {
@@ -62,7 +61,7 @@ namespace RE {
 		}
 
 		{
-			if (!link_vulkan() || !init_render_system() || !init_renderer() || bErrorOccured)
+			if (!init_vulkan_instance() || !init_vulkan_device() || !init_renderer() || bErrorOccured)
 				return;
 			std::chrono::high_resolution_clock::time_point currentFrameTime = std::chrono::high_resolution_clock::now(), lastFrameTime;
 			bRunning = true;
@@ -72,7 +71,7 @@ namespace RE {
 				CATCH_SIGNAL(pWindow->window_proc());
 				CATCH_SIGNAL(game_logic_update());
 				if (pWindow->should_render()) {
-					CATCH_SIGNAL(refresh_render_system());
+					CATCH_SIGNAL(refresh_swapchain());
 					CATCH_SIGNAL(render());
 				} else {
 					// branch avoiding excessive CPU usage, when rendering is ambigious
@@ -92,8 +91,8 @@ namespace RE {
 			CATCH_SIGNAL(last_game_logic_update());
 			WAIT_FOR_IDLE_VULKAN_DEVICE();
 			CATCH_SIGNAL(destroy_renderer());
-			CATCH_SIGNAL(destroy_render_system());
-			CATCH_SIGNAL(unlink_vulkan());
+			CATCH_SIGNAL(destroy_vulkan_device());
+			CATCH_SIGNAL(destroy_vulkan_instance());
 			fDeltaseconds = 0.0f;
 		}
 		CATCH_SIGNAL(delete pWindow);

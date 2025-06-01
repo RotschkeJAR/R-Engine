@@ -115,79 +115,73 @@ namespace RE {
 			remove_from_stack_trace(); \
 			return bResult; \
 		}) (__FILE__, __func__, __LINE__)
+#define FOCUS_FOR_VK_DEBUG_AND_RETURN(CMD, RETURN_TYPE) ([&](const char *const pcFile, const char *const pcActualFunc, const uint32_t u32Line) -> RETURN_TYPE { \
+			add_to_stack_trace(pcFile, pcActualFunc, u32Line, "\0"); \
+			focus_vulkan_debug_on(pcFile, pcActualFunc, u32Line); \
+			const RETURN_TYPE vk_bResult = CMD; \
+			unfocus_vulkan_debug(); \
+			remove_from_stack_trace(); \
+			return vk_bResult; \
+		}) (__FILE__, __func__, __LINE__)
 
 // Vulkan 1.0
-#define vkEnumeratePhysicalDevices pfn_vkEnumeratePhysicalDevices
-#define vkGetPhysicalDeviceFeatures pfn_vkGetPhysicalDeviceFeatures
-#define vkGetPhysicalDeviceFormatProperties pfn_vkGetPhysicalDeviceFormatProperties
-#define vkGetPhysicalDeviceImageFormatProperties pfn_vkGetPhysicalDeviceImageFormatProperties
-#define vkGetPhysicalDeviceProperties pfn_vkGetPhysicalDeviceProperties
-#define vkGetPhysicalDeviceQueueFamilyProperties pfn_vkGetPhysicalDeviceQueueFamilyProperties
-#define vkGetPhysicalDeviceMemoryProperties pfn_vkGetPhysicalDeviceMemoryProperties
-#define vkGetInstanceProcAddr pfn_vkGetInstanceProcAddr
-#define vkGetDeviceProcAddr pfn_vkGetDeviceProcAddr
-#define vkCreateDevice pfn_vkCreateDevice
-#define vkDestroyDevice pfn_vkDestroyDevice
-#define vkEnumerateInstanceExtensionProperties pfn_vkEnumerateInstanceExtensionProperties
-#define vkEnumerateDeviceExtensionProperties pfn_vkEnumerateDeviceExtensionProperties
-#define vkEnumerateInstanceLayerProperties pfn_vkEnumerateInstanceLayerProperties
-#define vkEnumerateDeviceLayerProperties pfn_vkEnumerateDeviceLayerProperties
-#define vkGetPhysicalDeviceSparseImageFormatProperties pfn_vkGetPhysicalDeviceSparseImageFormatProperties
+#define vkEnumeratePhysicalDevices(...) CHECK_VK_RESULT(pfn_vkEnumeratePhysicalDevices(__VA_ARGS__))
+#define vkGetPhysicalDeviceFeatures(...) FOCUS_FOR_VK_DEBUG(pfn_vkGetPhysicalDeviceFeatures(__VA_ARGS__))
+#define vkGetPhysicalDeviceFormatProperties(...) FOCUS_FOR_VK_DEBUG(pfn_vkGetPhysicalDeviceFormatProperties(__VA_ARGS__))
+#define vkGetPhysicalDeviceImageFormatProperties(...) CHECK_VK_RESULT(pfn_vkGetPhysicalDeviceImageFormatProperties(__VA_ARGS__))
+#define vkGetPhysicalDeviceProperties(...) FOCUS_FOR_VK_DEBUG(pfn_vkGetPhysicalDeviceProperties(__VA_ARGS__))
+#define vkGetPhysicalDeviceQueueFamilyProperties(...) FOCUS_FOR_VK_DEBUG(pfn_vkGetPhysicalDeviceQueueFamilyProperties(__VA_ARGS__))
+#define vkGetPhysicalDeviceMemoryProperties(...) FOCUS_FOR_VK_DEBUG(pfn_vkGetPhysicalDeviceMemoryProperties(__VA_ARGS__))
+#define vkGetInstanceProcAddr(...) FOCUS_FOR_VK_DEBUG_AND_RETURN(pfn_vkGetInstanceProcAddr(__VA_ARGS__), PFN_vkVoidFunction)
+#define vkGetDeviceProcAddr(...) FOCUS_FOR_VK_DEBUG_AND_RETURN(pfn_vkGetDeviceProcAddr(__VA_ARGS__), PFN_vkVoidFunction)
+#define vkCreateDevice(...) CHECK_VK_RESULT(pfn_vkCreateDevice(__VA_ARGS__))
+#define vkDestroyDevice(...) FOCUS_FOR_VK_DEBUG(pfn_vkDestroyDevice(__VA_ARGS__))
+#define vkEnumerateInstanceExtensionProperties(...) FOCUS_FOR_VK_DEBUG(pfn_vkEnumerateInstanceExtensionProperties(__VA_ARGS__))
+#define vkEnumerateDeviceExtensionProperties(...) FOCUS_FOR_VK_DEBUG(pfn_vkEnumerateDeviceExtensionProperties(__VA_ARGS__))
+#define vkEnumerateInstanceLayerProperties(...) FOCUS_FOR_VK_DEBUG(pfn_vkEnumerateInstanceLayerProperties(__VA_ARGS__))
+#define vkEnumerateDeviceLayerProperties(...) FOCUS_FOR_VK_DEBUG(pfn_vkEnumerateDeviceLayerProperties(__VA_ARGS__))
+#define vkGetPhysicalDeviceSparseImageFormatProperties(...) FOCUS_FOR_VK_DEBUG(pfn_vkGetPhysicalDeviceSparseImageFormatProperties(__VA_ARGS__))
 
 // Vulkan 1.1
-#define vkEnumerateInstanceVersion pfn_vkEnumerateInstanceVersion
-#define vkEnumeratePhysicalDeviceGroups pfn_vkEnumeratePhysicalDeviceGroups
-#define vkGetPhysicalDeviceFeatures2 pfn_vkGetPhysicalDeviceFeatures2
-#define vkGetPhysicalDeviceProperties2 pfn_vkGetPhysicalDeviceProperties2
-#define vkGetPhysicalDeviceFormatProperties2 pfn_vkGetPhysicalDeviceFormatProperties2
-#define vkGetPhysicalDeviceImageFormatProperties2 pfn_vkGetPhysicalDeviceImageFormatProperties2
-#define vkGetPhysicalDeviceQueueFamilyProperties2 pfn_vkGetPhysicalDeviceQueueFamilyProperties2
-#define vkGetPhysicalDeviceMemoryProperties2 pfn_vkGetPhysicalDeviceMemoryProperties2
-#define vkGetPhysicalDeviceSparseImageFormatProperties2 pfn_vkGetPhysicalDeviceSparseImageFormatProperties2
-#define vkGetPhysicalDeviceExternalBufferProperties pfn_vkGetPhysicalDeviceExternalBufferProperties
-#define vkGetPhysicalDeviceExternalFenceProperties pfn_vkGetPhysicalDeviceExternalFenceProperties
-#define vkGetPhysicalDeviceExternalSemaphoreProperties pfn_vkGetPhysicalDeviceExternalSemaphoreProperties
+#define vkEnumerateInstanceVersion(...) CHECK_VK_RESULT(pfn_vkEnumerateInstanceVersion(__VA_ARGS__))
+#define vkEnumeratePhysicalDeviceGroups(...) CHECK_VK_RESULT(pfn_vkEnumeratePhysicalDeviceGroups(__VA_ARGS__))
+#define vkGetPhysicalDeviceFeatures2(...) FOCUS_FOR_VK_DEBUG(pfn_vkGetPhysicalDeviceFeatures2(__VA_ARGS__))
+#define vkGetPhysicalDeviceProperties2(...) FOCUS_FOR_VK_DEBUG(pfn_vkGetPhysicalDeviceProperties2(__VA_ARGS__))
+#define vkGetPhysicalDeviceFormatProperties2(...) FOCUS_FOR_VK_DEBUG(pfn_vkGetPhysicalDeviceFormatProperties2(__VA_ARGS__))
+#define vkGetPhysicalDeviceImageFormatProperties2(...) CHECK_VK_RESULT(pfn_vkGetPhysicalDeviceImageFormatProperties2(__VA_ARGS__))
+#define vkGetPhysicalDeviceQueueFamilyProperties2(...) FOCUS_FOR_VK_DEBUG(pfn_vkGetPhysicalDeviceQueueFamilyProperties2(__VA_ARGS__))
+#define vkGetPhysicalDeviceMemoryProperties2(...) FOCUS_FOR_VK_DEBUG(pfn_vkGetPhysicalDeviceMemoryProperties2(__VA_ARGS__))
+#define vkGetPhysicalDeviceSparseImageFormatProperties2(...) FOCUS_FOR_VK_DEBUG(pfn_vkGetPhysicalDeviceSparseImageFormatProperties2(__VA_ARGS__))
+#define vkGetPhysicalDeviceExternalBufferProperties(...) FOCUS_FOR_VK_DEBUG(pfn_vkGetPhysicalDeviceExternalBufferProperties(__VA_ARGS__))
+#define vkGetPhysicalDeviceExternalFenceProperties(...) FOCUS_FOR_VK_DEBUG(pfn_vkGetPhysicalDeviceExternalFenceProperties(__VA_ARGS__))
+#define vkGetPhysicalDeviceExternalSemaphoreProperties(...) FOCUS_FOR_VK_DEBUG(pfn_vkGetPhysicalDeviceExternalSemaphoreProperties(__VA_ARGS__))
 
 // Vulkan 1.3
-/* #define vkGetPhysicalDeviceToolProperties pfn_vkGetPhysicalDeviceToolProperties */
+/* #define vkGetPhysicalDeviceToolProperties(...) CHECK_VK_RESULT(pfn_vkGetPhysicalDeviceToolProperties(__VA_ARGS__)) */
 
 // Debug extension
-#define vkSetDebugUtilsObjectNameEXT pfn_vkSetDebugUtilsObjectNameEXT;
-#define vkSetDebugUtilsObjectTagEXT pfn_vkSetDebugUtilsObjectTagEXT;
-#define vkQueueBeginDebugUtilsLabelEXT pfn_vkQueueBeginDebugUtilsLabelEXT;
-#define vkQueueEndDebugUtilsLabelEXT pfn_vkQueueEndDebugUtilsLabelEXT;
-#define vkQueueInsertDebugUtilsLabelEXT pfn_vkQueueInsertDebugUtilsLabelEXT;
-#define vkCmdBeginDebugUtilsLabelEXT pfn_vkCmdBeginDebugUtilsLabelEXT;
-#define vkCmdEndDebugUtilsLabelEXT pfn_vkCmdEndDebugUtilsLabelEXT;
-#define vkCmdInsertDebugUtilsLabelEXT pfn_vkCmdInsertDebugUtilsLabelEXT;
-#define vkCreateDebugUtilsMessengerEXT pfn_vkCreateDebugUtilsMessengerEXT;
-#define vkDestroyDebugUtilsMessengerEXT pfn_vkDestroyDebugUtilsMessengerEXT;
-#define vkSubmitDebugUtilsMessageEXT pfn_vkSubmitDebugUtilsMessageEXT;
+#define vkSetDebugUtilsObjectNameEXT(...) CHECK_VK_RESULT(pfn_vkSetDebugUtilsObjectNameEXT(__VA_ARGS__))
+#define vkSetDebugUtilsObjectTagEXT(...) CHECK_VK_RESULT(pfn_vkSetDebugUtilsObjectTagEXT(__VA_ARGS__))
+#define vkCreateDebugUtilsMessengerEXT(...) CHECK_VK_RESULT(pfn_vkCreateDebugUtilsMessengerEXT(__VA_ARGS__))
+#define vkDestroyDebugUtilsMessengerEXT(...) FOCUS_FOR_VK_DEBUG(pfn_vkDestroyDebugUtilsMessengerEXT(__VA_ARGS__))
+#define vkSubmitDebugUtilsMessageEXT(...) FOCUS_FOR_VK_DEBUG(pfn_vkSubmitDebugUtilsMessageEXT(__VA_ARGS__))
 // Surface extension
-#define vkDestroySurfaceKHR pfn_vkDestroySurfaceKHR
-#define vkGetPhysicalDeviceSurfaceSupportKHR pfn_vkGetPhysicalDeviceSurfaceSupportKHR
-#define vkGetPhysicalDeviceSurfaceCapabilitiesKHR pfn_vkGetPhysicalDeviceSurfaceCapabilitiesKHR
-#define vkGetPhysicalDeviceSurfaceFormatsKHR pfn_vkGetPhysicalDeviceSurfaceFormatsKHR
-#define vkGetPhysicalDeviceSurfacePresentModesKHR pfn_vkGetPhysicalDeviceSurfacePresentModesKHR
-// Swapchain extension
-#define vkCreateSwapchainKHR pfn_vkCreateSwapchainKHR
-#define vkDestroySwapchainKHR pfn_vkDestroySwapchainKHR
-#define vkGetSwapchainImagesKHR pfn_vkGetSwapchainImagesKHR
-#define vkAcquireNextImageKHR pfn_vkAcquireNextImageKHR
-#define vkQueuePresentKHR pfn_vkQueuePresentKHR
-#define vkGetDeviceGroupPresentCapabilitiesKHR pfn_vkGetDeviceGroupPresentCapabilitiesKHR
-#define vkGetDeviceGroupSurfacePresentModesKHR pfn_vkGetDeviceGroupSurfacePresentModesKHR
-#define vkGetPhysicalDevicePresentRectanglesKHR pfn_vkGetPhysicalDevicePresentRectanglesKHR
-#define vkAcquireNextImage2KHR pfn_vkAcquireNextImage2KHR
+#define vkDestroySurfaceKHR(...) FOCUS_FOR_VK_DEBUG(pfn_vkDestroySurfaceKHR(__VA_ARGS__))
+#define vkGetPhysicalDeviceSurfaceSupportKHR(...) CHECK_VK_RESULT(pfn_vkGetPhysicalDeviceSurfaceSupportKHR(__VA_ARGS__))
+#define vkGetPhysicalDeviceSurfaceCapabilitiesKHR(...) CHECK_VK_RESULT(pfn_vkGetPhysicalDeviceSurfaceCapabilitiesKHR(__VA_ARGS__))
+#define vkGetPhysicalDeviceSurfaceFormatsKHR(...) CHECK_VK_RESULT(pfn_vkGetPhysicalDeviceSurfaceFormatsKHR(__VA_ARGS__))
+#define vkGetPhysicalDeviceSurfacePresentModesKHR(...) CHECK_VK_RESULT(pfn_vkGetPhysicalDeviceSurfacePresentModesKHR(__VA_ARGS__))
+// Swapchain extensions
+#define vkGetPhysicalDevicePresentRectanglesKHR(...) CHECK_VK_RESULT(pfn_vkGetPhysicalDevicePresentRectanglesKHR(__VA_ARGS__))
 
 #ifdef RE_OS_WINDOWS
-# define vkCreateWin32SurfaceKHR pfn_vkCreateWin32SurfaceKHR
-# define vkGetPhysicalDeviceWin32PresentationSupportKHR pfn_vkGetPhysicalDeviceWin32PresentationSupportKHR
+# define vkCreateWin32SurfaceKHR(...) CHECK_VK_RESULT(pfn_vkCreateWin32SurfaceKHR(__VA_ARGS__))
+# define vkGetPhysicalDeviceWin32PresentationSupportKHR(...) FOCUS_FOR_VK_DEBUG_AND_RETURN(pfn_vkGetPhysicalDeviceWin32PresentationSupportKHR(__VA_ARGS__), VkBool32)
 #elif defined RE_OS_LINUX
-# define vkCreateWaylandSurfaceKHR pfn_vkCreateWaylandSurfaceKHR
-# define vkGetPhysicalDeviceWaylandPresentationSupportKHR pfn_vkGetPhysicalDeviceWaylandPresentationSupportKHR
-# define vkCreateXlibSurfaceKHR pfn_vkCreateXlibSurfaceKHR
-# define vkGetPhysicalDeviceXlibPresentationSupportKHR pfn_vkGetPhysicalDeviceXlibPresentationSupportKHR
+# define vkCreateWaylandSurfaceKHR(...) CHECK_VK_RESULT(pfn_vkCreateWaylandSurfaceKHR(__VA_ARGS__))
+# define vkGetPhysicalDeviceWaylandPresentationSupportKHR(...) FOCUS_FOR_VK_DEBUG_AND_RETURN(pfn_vkGetPhysicalDeviceWaylandPresentationSupportKHR(__VA_ARGS__), VkBool32)
+# define vkCreateXlibSurfaceKHR(...) CHECK_VK_RESULT(pfn_vkCreateXlibSurfaceKHR(__VA_ARGS__))
+# define vkGetPhysicalDeviceXlibPresentationSupportKHR(...) FOCUS_FOR_VK_DEBUG_AND_RETURN(pfn_vkGetPhysicalDeviceXlibPresentationSupportKHR(__VA_ARGS__), VkBool32)
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 
 #define VK_KHR_VALIDATION_LAYER_NAME "VK_LAYER_KHRONOS_validation"

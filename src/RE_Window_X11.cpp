@@ -167,11 +167,12 @@ namespace RE {
 	}
 
 	bool Window_X11::create_vulkan_surface(VkSurfaceKHR &vk_rhSurface) const {
-		VkXlibSurfaceCreateInfoKHR vk_x11SurfaceCreateInfo = {};
-		vk_x11SurfaceCreateInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
-		vk_x11SurfaceCreateInfo.dpy = x11_pDisplay;
-		vk_x11SurfaceCreateInfo.window = x11_hWindow;
-		return CHECK_VK_RESULT(vkCreateXlibSurfaceKHR(vk_hInstance, &vk_x11SurfaceCreateInfo, nullptr, &vk_rhSurface));
+		const VkXlibSurfaceCreateInfoKHR vk_x11SurfaceCreateInfo = {
+			.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR,
+			.dpy = x11_pDisplay,
+			.window = x11_hWindow
+		};
+		return vkCreateXlibSurfaceKHR(vk_hInstance, &vk_x11SurfaceCreateInfo, nullptr, &vk_rhSurface);
 	}
 
 	const char* Window_X11::get_vulkan_required_surface_extension_name() const {

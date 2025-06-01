@@ -220,11 +220,12 @@ namespace RE {
 	}
 
 	bool Window_Win64::create_vulkan_surface(VkSurfaceKHR &vk_rhSurface) const {
-		VkWin32SurfaceCreateInfoKHR vk_win32SurfaceCreateInfo = {};
-		vk_win32SurfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-		vk_win32SurfaceCreateInfo.hwnd = win_hWindow;
-		vk_win32SurfaceCreateInfo.hinstance = win_hInstance;
-		return CHECK_VK_RESULT(vkCreateWin32SurfaceKHR(vk_hInstance, &vk_win32SurfaceCreateInfo, nullptr, &vk_rhSurface));
+		const VkWin32SurfaceCreateInfoKHR vk_win32SurfaceCreateInfo = {
+			.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR,
+			.hwnd = win_hWindow,
+			.hinstance = win_hInstance
+		};
+		return vkCreateWin32SurfaceKHR(vk_hInstance, &vk_win32SurfaceCreateInfo, nullptr, &vk_rhSurface);
 	}
 
 	const char* Window_Win64::get_vulkan_required_surface_extension_name() const {

@@ -1196,7 +1196,7 @@ namespace RE {
 		int32_t i32BestDeviceScore = std::numeric_limits<int32_t>::min();
 		for (uint32_t i = 0U; i < u32PhysicalDevicesAvailableCount; i++) {
 			VkPhysicalDeviceProperties vk_physicalDeviceProperties;
-			CATCH_SIGNAL(vkGetPhysicalDeviceProperties(vk_phPhysicalDevicesAvailable[i], &vk_physicalDeviceProperties));
+			vkGetPhysicalDeviceProperties(vk_phPhysicalDevicesAvailable[i], &vk_physicalDeviceProperties);
 			int32_t i32CurrentDeviceScore = 0;
 			switch (vk_physicalDeviceProperties.deviceType) {
 				case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
@@ -1251,7 +1251,7 @@ namespace RE {
 	static void destroy_surface() {
 		if (!vk_hSurface)
 			return;
-		CATCH_SIGNAL(vkDestroySurfaceKHR(vk_hInstance, vk_hSurface, nullptr));
+		vkDestroySurfaceKHR(vk_hInstance, vk_hSurface, nullptr);
 		DELETE_ARRAY_SAFELY(vk_pSurfaceFormatsAvailable);
 		vk_hSurface = VK_NULL_HANDLE;
 	}
@@ -1259,14 +1259,14 @@ namespace RE {
 	static void fetch_surface_infos() {
 		if (!vk_hSurface)
 			return;
-		CATCH_SIGNAL(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &vk_surfaceCapabilities));
-		CATCH_SIGNAL(vkGetPhysicalDeviceSurfaceFormatsKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &u32SurfaceFormatsAvailableCount, nullptr));
+		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &vk_surfaceCapabilities);
+		vkGetPhysicalDeviceSurfaceFormatsKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &u32SurfaceFormatsAvailableCount, nullptr);
 		vk_pSurfaceFormatsAvailable = new VkSurfaceFormatKHR[u32SurfaceFormatsAvailableCount];
-		CATCH_SIGNAL(vkGetPhysicalDeviceSurfaceFormatsKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &u32SurfaceFormatsAvailableCount, vk_pSurfaceFormatsAvailable));
+		vkGetPhysicalDeviceSurfaceFormatsKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &u32SurfaceFormatsAvailableCount, vk_pSurfaceFormatsAvailable);
 		uint32_t u32PresentModesCount;
-		CATCH_SIGNAL(vkGetPhysicalDeviceSurfacePresentModesKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &u32PresentModesCount, nullptr));
+		vkGetPhysicalDeviceSurfacePresentModesKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &u32PresentModesCount, nullptr);
 		VkPresentModeKHR *const vk_peAllPresentModes = new VkPresentModeKHR[u32PresentModesCount];
-		CATCH_SIGNAL(vkGetPhysicalDeviceSurfacePresentModesKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &u32PresentModesCount, vk_peAllPresentModes));
+		vkGetPhysicalDeviceSurfacePresentModesKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &u32PresentModesCount, vk_peAllPresentModes);
 		vk_ePresentModeVsync = VK_PRESENT_MODE_FIFO_KHR;
 		vk_ePresentModeNoVsync = VK_PRESENT_MODE_FIFO_KHR;
 		for (uint32_t u32PresentModeIndex = 0U; u32PresentModeIndex < u32PresentModesCount; u32PresentModeIndex++) {
@@ -1289,37 +1289,37 @@ namespace RE {
 			return false;
 		DEFINE_SIGNAL_GUARD(sigGuardAllocPhysicalDeviceList);
 		uint32_t u32TotalPhysicalDeviceCount;
-		CATCH_SIGNAL(vkEnumeratePhysicalDevices(vk_hInstance, &u32TotalPhysicalDeviceCount, nullptr));
+		vkEnumeratePhysicalDevices(vk_hInstance, &u32TotalPhysicalDeviceCount, nullptr);
 		if (!u32TotalPhysicalDeviceCount) {
 			RE_FATAL_ERROR("There aren't any devices supporting Vulkan");
 			return false;
 		}
 		PRINT_LN("Available GPUs:");
 		VkPhysicalDevice *const vk_phTotalPhysicalDevice = new VkPhysicalDevice[u32TotalPhysicalDeviceCount];
-		CATCH_SIGNAL(vkEnumeratePhysicalDevices(vk_hInstance, &u32TotalPhysicalDeviceCount, vk_phTotalPhysicalDevice));
+		vkEnumeratePhysicalDevices(vk_hInstance, &u32TotalPhysicalDeviceCount, vk_phTotalPhysicalDevice);
 		std::queue<VkPhysicalDevice> suitablePhysicalDevices;
 		for (uint32_t u32PhysicalDeviceIndex = 0U; u32PhysicalDeviceIndex < u32TotalPhysicalDeviceCount; u32PhysicalDeviceIndex++) {
 			const VkPhysicalDevice vk_hPhysicalDevice = vk_phTotalPhysicalDevice[u32PhysicalDeviceIndex];
 
 			// Fetch general information about the GPU
 			VkPhysicalDeviceProperties vk_physicalDeviceProperties;
-			CATCH_SIGNAL(vkGetPhysicalDeviceProperties(vk_hPhysicalDevice, &vk_physicalDeviceProperties));
+			vkGetPhysicalDeviceProperties(vk_hPhysicalDevice, &vk_physicalDeviceProperties);
 
 			// Fetch extensions-data about the GPU
 			uint32_t u32PhysicalDeviceExtensionCount;
-			CATCH_SIGNAL(vkEnumerateDeviceExtensionProperties(vk_hPhysicalDevice, nullptr, &u32PhysicalDeviceExtensionCount, nullptr));
+			vkEnumerateDeviceExtensionProperties(vk_hPhysicalDevice, nullptr, &u32PhysicalDeviceExtensionCount, nullptr);
 			VkExtensionProperties *const vk_pPhysicalDeviceExtensionProperties = new VkExtensionProperties[u32PhysicalDeviceExtensionCount];
-			CATCH_SIGNAL(vkEnumerateDeviceExtensionProperties(vk_hPhysicalDevice, nullptr, &u32PhysicalDeviceExtensionCount, vk_pPhysicalDeviceExtensionProperties));
+			vkEnumerateDeviceExtensionProperties(vk_hPhysicalDevice, nullptr, &u32PhysicalDeviceExtensionCount, vk_pPhysicalDeviceExtensionProperties);
 
 			// Fetch queue-data about the GPU
 			uint32_t u32PhysicalDeviceQueueFamilyCount;
-			CATCH_SIGNAL(vkGetPhysicalDeviceQueueFamilyProperties(vk_hPhysicalDevice, &u32PhysicalDeviceQueueFamilyCount, nullptr));
+			vkGetPhysicalDeviceQueueFamilyProperties(vk_hPhysicalDevice, &u32PhysicalDeviceQueueFamilyCount, nullptr);
 			VkQueueFamilyProperties *const vk_pPhysicalDeviceQueueFamilyProperties = new VkQueueFamilyProperties[u32PhysicalDeviceQueueFamilyCount];
-			CATCH_SIGNAL(vkGetPhysicalDeviceQueueFamilyProperties(vk_hPhysicalDevice, &u32PhysicalDeviceQueueFamilyCount, vk_pPhysicalDeviceQueueFamilyProperties));
+			vkGetPhysicalDeviceQueueFamilyProperties(vk_hPhysicalDevice, &u32PhysicalDeviceQueueFamilyCount, vk_pPhysicalDeviceQueueFamilyProperties);
 
 			// Fetch surface-data about the GPU
 			VkSurfaceCapabilitiesKHR vk_physicalDeviceSurfaceCapabilities;
-			CATCH_SIGNAL(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk_hPhysicalDevice, vk_hSurface, &vk_physicalDeviceSurfaceCapabilities));
+			vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk_hPhysicalDevice, vk_hSurface, &vk_physicalDeviceSurfaceCapabilities);
 
 			{ // Prints information about physical device to console
 				print("\t", vk_physicalDeviceProperties.deviceName, " [Driver version: ", VK_VERSION_MAJOR(vk_physicalDeviceProperties.driverVersion), '.', VK_VERSION_MINOR(vk_physicalDeviceProperties.driverVersion), '.', VK_VERSION_PATCH(vk_physicalDeviceProperties.driverVersion), "; Device type: ");
@@ -1345,9 +1345,9 @@ namespace RE {
 				for (uint32_t u32PhysicalDeviceExtensionIndex = 0U; u32PhysicalDeviceExtensionIndex < u32PhysicalDeviceExtensionCount; u32PhysicalDeviceExtensionIndex++)
 					println("\t\t\t", vk_pPhysicalDeviceExtensionProperties[u32PhysicalDeviceExtensionIndex].extensionName, " (", VK_VERSION_MAJOR(vk_pPhysicalDeviceExtensionProperties[u32PhysicalDeviceExtensionIndex].specVersion), '.', VK_VERSION_MINOR(vk_pPhysicalDeviceExtensionProperties[u32PhysicalDeviceExtensionIndex].specVersion), '.', VK_VERSION_PATCH(vk_pPhysicalDeviceExtensionProperties[u32PhysicalDeviceExtensionIndex].specVersion), ")");
 				uint32_t u32PhysicalDeviceLayerCount;
-				CATCH_SIGNAL(vkEnumerateDeviceLayerProperties(vk_hPhysicalDevice, &u32PhysicalDeviceLayerCount, nullptr));
+				vkEnumerateDeviceLayerProperties(vk_hPhysicalDevice, &u32PhysicalDeviceLayerCount, nullptr);
 				VkLayerProperties *vk_pPhysicalDeviceLayerProperties = new VkLayerProperties[u32PhysicalDeviceLayerCount];
-				CATCH_SIGNAL(vkEnumerateDeviceLayerProperties(vk_hPhysicalDevice, &u32PhysicalDeviceLayerCount, vk_pPhysicalDeviceLayerProperties));
+				vkEnumerateDeviceLayerProperties(vk_hPhysicalDevice, &u32PhysicalDeviceLayerCount, vk_pPhysicalDeviceLayerProperties);
 				println("\t\tVulkan layers present on the device (deprecated):");
 				for (uint32_t u32PhysicalDeviceLayerIndex = 0U; u32PhysicalDeviceLayerIndex < u32PhysicalDeviceLayerCount; u32PhysicalDeviceLayerIndex++)
 					println("\t\t\t", vk_pPhysicalDeviceLayerProperties[u32PhysicalDeviceLayerIndex].layerName, " (", VK_VERSION_MAJOR(vk_pPhysicalDeviceLayerProperties[u32PhysicalDeviceLayerIndex].implementationVersion), '.', VK_VERSION_MINOR(vk_pPhysicalDeviceLayerProperties[u32PhysicalDeviceLayerIndex].implementationVersion), '.', VK_VERSION_PATCH(vk_pPhysicalDeviceLayerProperties[u32PhysicalDeviceLayerIndex].implementationVersion), "): ", vk_pPhysicalDeviceLayerProperties[u32PhysicalDeviceLayerIndex].description);
@@ -1387,7 +1387,7 @@ namespace RE {
 					println();
 				}
 				VkPhysicalDeviceFeatures vk_physicalDeviceFeaturesAvailable;
-				CATCH_SIGNAL(vkGetPhysicalDeviceFeatures(vk_hPhysicalDevice, &vk_physicalDeviceFeaturesAvailable));
+				vkGetPhysicalDeviceFeatures(vk_hPhysicalDevice, &vk_physicalDeviceFeaturesAvailable);
 				println("\t\tFeatures supported by the GPU device:");
 				println_vkbool32("robustBufferAccess", vk_physicalDeviceFeaturesAvailable.robustBufferAccess);
 				println_vkbool32("fullDrawIndexUint32", vk_physicalDeviceFeaturesAvailable.fullDrawIndexUint32);
@@ -1562,13 +1562,13 @@ namespace RE {
 
 			// Check if there are surface formats defined
 			uint32_t u32PhysicalDeviceSurfaceFormatCount;
-			CATCH_SIGNAL(vkGetPhysicalDeviceSurfaceFormatsKHR(vk_hPhysicalDevice, vk_hSurface, &u32PhysicalDeviceSurfaceFormatCount, nullptr));
+			vkGetPhysicalDeviceSurfaceFormatsKHR(vk_hPhysicalDevice, vk_hSurface, &u32PhysicalDeviceSurfaceFormatCount, nullptr);
 			if (!u32PhysicalDeviceSurfaceFormatCount)
 				missingFeatures.push("No surface formats available");
 
 			// Check if there are present modes defined
 			uint32_t u32PhysicalDevicePresentModeCount;
-			CATCH_SIGNAL(vkGetPhysicalDeviceSurfacePresentModesKHR(vk_hPhysicalDevice, vk_hSurface, &u32PhysicalDevicePresentModeCount, nullptr));
+			vkGetPhysicalDeviceSurfacePresentModesKHR(vk_hPhysicalDevice, vk_hSurface, &u32PhysicalDevicePresentModeCount, nullptr);
 			if (!u32PhysicalDevicePresentModeCount)
 				missingFeatures.push("No presentation modes available");
 
@@ -1592,7 +1592,7 @@ namespace RE {
 			for (uint32_t u32PhysicalDeviceQueueFamilyIndex = 0U; u32PhysicalDeviceQueueFamilyIndex < u32PhysicalDeviceQueueFamilyCount; u32PhysicalDeviceQueueFamilyIndex++) {
 				if (!bPresentQueueExists) {
 					VkBool32 surfaceSupportExists;
-					CATCH_SIGNAL(vkGetPhysicalDeviceSurfaceSupportKHR(vk_hPhysicalDevice, u32PhysicalDeviceQueueFamilyIndex, vk_hSurface, &surfaceSupportExists));
+					vkGetPhysicalDeviceSurfaceSupportKHR(vk_hPhysicalDevice, u32PhysicalDeviceQueueFamilyIndex, vk_hSurface, &surfaceSupportExists);
 					if (surfaceSupportExists)
 						bPresentQueueExists = true;
 				}
@@ -1645,9 +1645,9 @@ namespace RE {
 		constexpr uint32_t u32PhysicalDeviceExtensionCount = 1U;
 		const char *const pcPhysicalDeviceExtensions[u32PhysicalDeviceExtensionCount] = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 		uint32_t u32PhysicalDeviceQueueFamilyCount;
-		CATCH_SIGNAL(vkGetPhysicalDeviceQueueFamilyProperties(vk_hPhysicalDeviceSelected, &u32PhysicalDeviceQueueFamilyCount, nullptr));
+		vkGetPhysicalDeviceQueueFamilyProperties(vk_hPhysicalDeviceSelected, &u32PhysicalDeviceQueueFamilyCount, nullptr);
 		VkQueueFamilyProperties *vk_pPhysicalDeviceQueueFamilyProperties = new VkQueueFamilyProperties[u32PhysicalDeviceQueueFamilyCount];
-		CATCH_SIGNAL(vkGetPhysicalDeviceQueueFamilyProperties(vk_hPhysicalDeviceSelected, &u32PhysicalDeviceQueueFamilyCount, vk_pPhysicalDeviceQueueFamilyProperties));
+		vkGetPhysicalDeviceQueueFamilyProperties(vk_hPhysicalDeviceSelected, &u32PhysicalDeviceQueueFamilyCount, vk_pPhysicalDeviceQueueFamilyProperties);
 		std::optional<uint32_t> graphicsQueueIndex, presentQueueIndex, transferQueueIndex;
 		std::vector<uint32_t> uniqueQueueIndices;
 		for (uint32_t u32PhysicalDeviceQueueFamilyIndex = 0U; u32PhysicalDeviceQueueFamilyIndex < u32PhysicalDeviceQueueFamilyCount; u32PhysicalDeviceQueueFamilyIndex++) {
@@ -1657,7 +1657,7 @@ namespace RE {
 				graphicsQueueIndex = u32PhysicalDeviceQueueFamilyIndex;
 				// Check if graphics queue supports presenting too for better performance
 				VkBool32 surfaceSupportExists;
-				CATCH_SIGNAL(vkGetPhysicalDeviceSurfaceSupportKHR(vk_hPhysicalDeviceSelected, u32PhysicalDeviceQueueFamilyIndex, vk_hSurface, &surfaceSupportExists));
+				vkGetPhysicalDeviceSurfaceSupportKHR(vk_hPhysicalDeviceSelected, u32PhysicalDeviceQueueFamilyIndex, vk_hSurface, &surfaceSupportExists);
 				if (surfaceSupportExists)
 					presentQueueIndex = u32PhysicalDeviceQueueFamilyIndex;
 				bQueueUseful = true;
@@ -1665,7 +1665,7 @@ namespace RE {
 			// Get presenting-queue index
 			if (!presentQueueIndex.has_value()) {
 				VkBool32 surfaceSupportExists;
-				CATCH_SIGNAL(vkGetPhysicalDeviceSurfaceSupportKHR(vk_hPhysicalDeviceSelected, u32PhysicalDeviceQueueFamilyIndex, vk_hSurface, &surfaceSupportExists));
+				vkGetPhysicalDeviceSurfaceSupportKHR(vk_hPhysicalDeviceSelected, u32PhysicalDeviceQueueFamilyIndex, vk_hSurface, &surfaceSupportExists);
 				if (surfaceSupportExists)
 					presentQueueIndex = u32PhysicalDeviceQueueFamilyIndex;
 				bQueueUseful = true;
@@ -1707,7 +1707,7 @@ namespace RE {
 		vk_deviceCreateInfo.enabledExtensionCount = u32PhysicalDeviceExtensionCount;
 		vk_deviceCreateInfo.ppEnabledExtensionNames = static_cast<const char *const *>(pcPhysicalDeviceExtensions);
 		vk_deviceCreateInfo.pEnabledFeatures = &vk_physicalDeviceFeaturesEnabled;
-		const bool bCreatedDeviceSuccessfully = CHECK_VK_RESULT(vkCreateDevice(vk_hPhysicalDeviceSelected, &vk_deviceCreateInfo, nullptr, &vk_hDevice));
+		const bool bCreatedDeviceSuccessfully = vkCreateDevice(vk_hPhysicalDeviceSelected, &vk_deviceCreateInfo, nullptr, &vk_hDevice);
 		DELETE_ARRAY_SAFELY(vk_pDeviceQueueCreateInfos);
 		if (!bCreatedDeviceSuccessfully) {
 			RE_FATAL_ERROR("Failed creating logical Vulkan device");
@@ -1716,7 +1716,7 @@ namespace RE {
 
 		if (!CATCH_SIGNAL_AND_RETURN(load_vulkan_1_0_device() && load_vulkan_1_1_device() && load_vulkan_1_2_device() /* && load_vulkan_1_3_device() && load_vulkan_1_4_device() */ && load_extension_funcs_with_device(), bool)) {
 			unload_all_vulkan_functions_of_device();
-			CATCH_SIGNAL(vkDestroyDevice(vk_hDevice, nullptr));
+			vkDestroyDevice(vk_hDevice, nullptr);
 			vk_hDevice = VK_NULL_HANDLE;
 			return false;
 		}
@@ -1724,37 +1724,37 @@ namespace RE {
 		u32DeviceQueueFamilyIndices[RE_VK_QUEUE_GRAPHICS_INDEX] = graphicsQueueIndex.value();
 		u32DeviceQueueFamilyIndices[RE_VK_QUEUE_PRESENT_INDEX] = presentQueueIndex.value();
 		u32DeviceQueueFamilyIndices[RE_VK_QUEUE_TRANSFER_INDEX] = transferQueueIndex.value();
-		CATCH_SIGNAL(vkGetDeviceQueue(vk_hDevice, u32DeviceQueueFamilyIndices[RE_VK_QUEUE_GRAPHICS_INDEX], 0, &vk_hDeviceQueueFamilies[RE_VK_QUEUE_GRAPHICS_INDEX]));
-		CATCH_SIGNAL(vkGetDeviceQueue(vk_hDevice, u32DeviceQueueFamilyIndices[RE_VK_QUEUE_PRESENT_INDEX], 0, &vk_hDeviceQueueFamilies[RE_VK_QUEUE_PRESENT_INDEX]));
-		CATCH_SIGNAL(vkGetDeviceQueue(vk_hDevice, u32DeviceQueueFamilyIndices[RE_VK_QUEUE_TRANSFER_INDEX], 0, &vk_hDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX]));
+		vkGetDeviceQueue(vk_hDevice, u32DeviceQueueFamilyIndices[RE_VK_QUEUE_GRAPHICS_INDEX], 0, &vk_hDeviceQueueFamilies[RE_VK_QUEUE_GRAPHICS_INDEX]);
+		vkGetDeviceQueue(vk_hDevice, u32DeviceQueueFamilyIndices[RE_VK_QUEUE_PRESENT_INDEX], 0, &vk_hDeviceQueueFamilies[RE_VK_QUEUE_PRESENT_INDEX]);
+		vkGetDeviceQueue(vk_hDevice, u32DeviceQueueFamilyIndices[RE_VK_QUEUE_TRANSFER_INDEX], 0, &vk_hDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX]);
 
 		VkCommandPoolCreateInfo vk_commandPoolCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
 			.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
 			.queueFamilyIndex = u32DeviceQueueFamilyIndices[RE_VK_QUEUE_GRAPHICS_INDEX]
 		};
-		CATCH_SIGNAL(vkCreateCommandPool(vk_hDevice, &vk_commandPoolCreateInfo, nullptr, &vk_hCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX]));
+		vkCreateCommandPool(vk_hDevice, &vk_commandPoolCreateInfo, nullptr, &vk_hCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX]);
 		vk_commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
-		CATCH_SIGNAL(vkCreateCommandPool(vk_hDevice, &vk_commandPoolCreateInfo, nullptr, &vk_hCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_TRANSIENT_INDEX]));
+		vkCreateCommandPool(vk_hDevice, &vk_commandPoolCreateInfo, nullptr, &vk_hCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_TRANSIENT_INDEX]);
 		vk_commandPoolCreateInfo.queueFamilyIndex = u32DeviceQueueFamilyIndices[RE_VK_QUEUE_TRANSFER_INDEX];
-		CATCH_SIGNAL(vkCreateCommandPool(vk_hDevice, &vk_commandPoolCreateInfo, nullptr, &vk_hCommandPools[RE_VK_COMMAND_POOL_TRANSFER_TRANSIENT_INDEX]));
+		vkCreateCommandPool(vk_hDevice, &vk_commandPoolCreateInfo, nullptr, &vk_hCommandPools[RE_VK_COMMAND_POOL_TRANSFER_TRANSIENT_INDEX]);
 		vk_commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-		CATCH_SIGNAL(vkCreateCommandPool(vk_hDevice, &vk_commandPoolCreateInfo, nullptr, &vk_hCommandPools[RE_VK_COMMAND_POOL_TRANSFER_PERSISTENT_INDEX]));
+		vkCreateCommandPool(vk_hDevice, &vk_commandPoolCreateInfo, nullptr, &vk_hCommandPools[RE_VK_COMMAND_POOL_TRANSFER_PERSISTENT_INDEX]);
 		const VkCommandBufferAllocateInfo vk_commandBufferAllocInfo = {
 			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
 			.commandPool = vk_hCommandPools[RE_VK_COMMAND_POOL_TRANSFER_PERSISTENT_INDEX],
 			.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
 			.commandBufferCount = 1U
 		};
-		if (!CHECK_VK_RESULT(vkAllocateCommandBuffers(vk_hDevice, &vk_commandBufferAllocInfo, &vk_hDummyTransferCommandBuffer)))
+		if (!vkAllocateCommandBuffers(vk_hDevice, &vk_commandBufferAllocInfo, &vk_hDummyTransferCommandBuffer))
 			return false;
 		const VkCommandBufferBeginInfo vk_beginRecordingCommandBuffer = {
 			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
 			.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT
 		};
-		if (!CHECK_VK_RESULT(vkBeginCommandBuffer(vk_hDummyTransferCommandBuffer, &vk_beginRecordingCommandBuffer)))
+		if (!vkBeginCommandBuffer(vk_hDummyTransferCommandBuffer, &vk_beginRecordingCommandBuffer))
 			return false;
-		CATCH_SIGNAL(vkEndCommandBuffer(vk_hDummyTransferCommandBuffer));
+		vkEndCommandBuffer(vk_hDummyTransferCommandBuffer);
 		return true;
 	}
 	
@@ -1762,14 +1762,14 @@ namespace RE {
 		if (!vk_hDevice)
 			return;
 		for (uint8_t u8CommandPoolIndex = 0U; u8CommandPoolIndex < RE_VK_COMMAND_POOL_COUNT; u8CommandPoolIndex++) {
-			CATCH_SIGNAL(vkDestroyCommandPool(vk_hDevice, vk_hCommandPools[u8CommandPoolIndex], nullptr));
+			vkDestroyCommandPool(vk_hDevice, vk_hCommandPools[u8CommandPoolIndex], nullptr);
 			vk_hCommandPools[u8CommandPoolIndex] = VK_NULL_HANDLE;
 		}
 		for (uint8_t u8QueueFamilyIndex = 0U; u8QueueFamilyIndex < RE_VK_QUEUE_COUNT; u8QueueFamilyIndex++) {
 			u32DeviceQueueFamilyIndices[u8QueueFamilyIndex] = 0U;
 			vk_hDeviceQueueFamilies[u8QueueFamilyIndex] = VK_NULL_HANDLE;
 		}
-		CATCH_SIGNAL(vkDestroyDevice(vk_hDevice, nullptr));
+		vkDestroyDevice(vk_hDevice, nullptr);
 		vk_hDevice = VK_NULL_HANDLE;
 	}
 
@@ -1779,7 +1779,7 @@ namespace RE {
 		if (vk_hOldSwapchain) {
 			CATCH_SIGNAL(swapchain_destroyed_renderer());
 			for (uint32_t u32SwapchainImageIndex = 0U; u32SwapchainImageIndex < u32SwapchainImageCount; u32SwapchainImageIndex++)
-				CATCH_SIGNAL(vkDestroyImageView(vk_hDevice, vk_phSwapchainImageViews[u32SwapchainImageIndex], nullptr));
+				vkDestroyImageView(vk_hDevice, vk_phSwapchainImageViews[u32SwapchainImageIndex], nullptr);
 			DELETE_ARRAY_SAFELY(vk_phSwapchainImages);
 			DELETE_ARRAY_SAFELY(vk_phSwapchainImageViews);
 		}
@@ -1814,16 +1814,16 @@ namespace RE {
 			vk_swapchainCreateInfo.presentMode = is_bit_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_INDEX) ? VK_PRESENT_MODE_FIFO_KHR : vk_ePresentModeNoVsync;
 		else
 			vk_swapchainCreateInfo.presentMode = is_bit_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_INDEX) ? vk_ePresentModeVsync : vk_ePresentModeNoVsync;
-		if (!CHECK_VK_RESULT(vkCreateSwapchainKHR(vk_hDevice, &vk_swapchainCreateInfo, nullptr, &vk_hSwapchain))) {
+		if (!vkCreateSwapchainKHR(vk_hDevice, &vk_swapchainCreateInfo, nullptr, &vk_hSwapchain)) {
 			RE_FATAL_ERROR("Failed creating Vulkan swapchain");
 			return false;
 		}
 		vk_eSwapchainImageFormat = vk_surfaceFormatSelected.format;
 		if (vk_hOldSwapchain != VK_NULL_HANDLE)
-			CATCH_SIGNAL(vkDestroySwapchainKHR(vk_hDevice, vk_hOldSwapchain, nullptr));
-		CATCH_SIGNAL(vkGetSwapchainImagesKHR(vk_hDevice, vk_hSwapchain, &u32SwapchainImageCount, nullptr));
+			vkDestroySwapchainKHR(vk_hDevice, vk_hOldSwapchain, nullptr);
+		vkGetSwapchainImagesKHR(vk_hDevice, vk_hSwapchain, &u32SwapchainImageCount, nullptr);
 		vk_phSwapchainImages = new VkImage[u32SwapchainImageCount];
-		CATCH_SIGNAL(vkGetSwapchainImagesKHR(vk_hDevice, vk_hSwapchain, &u32SwapchainImageCount, vk_phSwapchainImages));
+		vkGetSwapchainImagesKHR(vk_hDevice, vk_hSwapchain, &u32SwapchainImageCount, vk_phSwapchainImages);
 		// End of creating actual swapchain
 
 		// Create swapchain image views
@@ -1849,7 +1849,7 @@ namespace RE {
 					.layerCount = 1U
 				}
 			};
-			if (!CHECK_VK_RESULT(vkCreateImageView(vk_hDevice, &vk_swapchainImageViewCreateInfo, nullptr, &vk_phSwapchainImageViews[u32SwapchainImageViewsCreated]))) {
+			if (!vkCreateImageView(vk_hDevice, &vk_swapchainImageViewCreateInfo, nullptr, &vk_phSwapchainImageViews[u32SwapchainImageViewsCreated])) {
 				RE_FATAL_ERROR(append_to_string("Failed to create Vulkan image view at index ", u32SwapchainImageViewsCreated));
 				break;
 			}
@@ -1857,10 +1857,10 @@ namespace RE {
 		}
 		if (u32SwapchainImageViewsCreated != u32SwapchainImageCount) {
 			for (uint32_t u32SwapchainImageDeleteIndex = 0U; u32SwapchainImageDeleteIndex < u32SwapchainImageViewsCreated; u32SwapchainImageDeleteIndex++)
-				CATCH_SIGNAL(vkDestroyImageView(vk_hDevice, vk_phSwapchainImageViews[u32SwapchainImageDeleteIndex], nullptr));
+				vkDestroyImageView(vk_hDevice, vk_phSwapchainImageViews[u32SwapchainImageDeleteIndex], nullptr);
 			DELETE_ARRAY_SAFELY(vk_phSwapchainImages);
 			DELETE_ARRAY_SAFELY(vk_phSwapchainImageViews);
-			CATCH_SIGNAL(vkDestroySwapchainKHR(vk_hDevice, vk_hSwapchain, nullptr));
+			vkDestroySwapchainKHR(vk_hDevice, vk_hSwapchain, nullptr);
 			vk_hSwapchain = VK_NULL_HANDLE;
 			return false;
 		}
@@ -1874,15 +1874,15 @@ namespace RE {
 			return;
 		CATCH_SIGNAL(swapchain_destroyed_renderer());
 		for (uint32_t u32SwapchainImageIndex = 0U; u32SwapchainImageIndex < u32SwapchainImageCount; u32SwapchainImageIndex++)
-			CATCH_SIGNAL(vkDestroyImageView(vk_hDevice, vk_phSwapchainImageViews[u32SwapchainImageIndex], nullptr));
+			vkDestroyImageView(vk_hDevice, vk_phSwapchainImageViews[u32SwapchainImageIndex], nullptr);
 		DELETE_ARRAY_SAFELY(vk_phSwapchainImages);
 		DELETE_ARRAY_SAFELY(vk_phSwapchainImageViews);
-		CATCH_SIGNAL(vkDestroySwapchainKHR(vk_hDevice, vk_hSwapchain, nullptr));
+		vkDestroySwapchainKHR(vk_hDevice, vk_hSwapchain, nullptr);
 		vk_hSwapchain = VK_NULL_HANDLE;
 	}
 
 	static bool recreate_swapchain() {
-		CATCH_SIGNAL(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &vk_surfaceCapabilities));
+		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &vk_surfaceCapabilities);
 		WAIT_FOR_IDLE_VULKAN_DEVICE();
 		if (!CATCH_SIGNAL_AND_RETURN(create_swapchain() && swapchain_created_renderer(), bool)) {
 			RE_ERROR("Failed recreating the swapchain");
@@ -1899,9 +1899,9 @@ namespace RE {
 		}
 		CATCH_SIGNAL(select_best_physical_vulkan_device());
 		VkPhysicalDeviceProperties vk_physicalDeviceSelectedProperties;
-		CATCH_SIGNAL(vkGetPhysicalDeviceProperties(vk_hPhysicalDeviceSelected, &vk_physicalDeviceSelectedProperties));
+		vkGetPhysicalDeviceProperties(vk_hPhysicalDeviceSelected, &vk_physicalDeviceSelectedProperties);
 		PRINT_LN(append_to_string("Device selected: ", vk_physicalDeviceSelectedProperties.deviceName).c_str());
-		CATCH_SIGNAL(vkGetPhysicalDeviceMemoryProperties(vk_hPhysicalDeviceSelected, &vk_physicalDeviceMemoryProperties));
+		vkGetPhysicalDeviceMemoryProperties(vk_hPhysicalDeviceSelected, &vk_physicalDeviceMemoryProperties);
 		CATCH_SIGNAL(fetch_surface_infos());
 		CATCH_SIGNAL(select_best_surface_format());
 		if (!create_device() || !create_swapchain()) {

@@ -108,9 +108,9 @@ namespace RE {
 		bool bFailure = false;
 		pcRequiredExtensions[RE_VK_REQUIRED_EXTENSIONS_COUNT - 1U] = Window::pInstance->get_vulkan_required_surface_extension_name();
 		uint32_t u32AvailableExtensionsCount = 0U;
-		CATCH_SIGNAL(pfn_vkEnumerateInstanceExtensionProperties(nullptr, &u32AvailableExtensionsCount, nullptr));
+		vkEnumerateInstanceExtensionProperties(nullptr, &u32AvailableExtensionsCount, nullptr);
 		VkExtensionProperties* vk_pAvailableExtensions = new VkExtensionProperties[u32AvailableExtensionsCount];
-		CATCH_SIGNAL(pfn_vkEnumerateInstanceExtensionProperties(nullptr, &u32AvailableExtensionsCount, vk_pAvailableExtensions));
+		vkEnumerateInstanceExtensionProperties(nullptr, &u32AvailableExtensionsCount, vk_pAvailableExtensions);
 		bool bExtensionsPresent[RE_VK_REQUIRED_EXTENSIONS_COUNT] = {};
 		std::queue<const char*> missingExtensions;
 		PRINT_LN("Available Vulkan instance extensions:");
@@ -134,9 +134,9 @@ namespace RE {
 		}
 
 		uint32_t u32AvailableLayersCount = 0U;
-		CATCH_SIGNAL(pfn_vkEnumerateInstanceLayerProperties(&u32AvailableLayersCount, nullptr));
+		vkEnumerateInstanceLayerProperties(&u32AvailableLayersCount, nullptr);
 		VkLayerProperties* vk_pAvailableLayers = new VkLayerProperties[u32AvailableLayersCount];
-		CATCH_SIGNAL(pfn_vkEnumerateInstanceLayerProperties(&u32AvailableLayersCount, vk_pAvailableLayers));
+		vkEnumerateInstanceLayerProperties(&u32AvailableLayersCount, vk_pAvailableLayers);
 		bool bRequiredLayersPresent[RE_VK_REQUIRED_LAYERS_COUNT] = {};
 		std::queue<const char*>  missingLayers;
 		PRINT_LN("Available Vulkan instance layers:");
@@ -431,9 +431,7 @@ namespace RE {
 		vk_debugCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
 		vk_debugCreateInfo.pfnUserCallback = debug_callback;
 		vk_debugCreateInfo.pUserData = nullptr;
-		VkResult vk_eSuccessResult;
-		CATCH_SIGNAL(vk_eSuccessResult = pfn_vkCreateDebugUtilsMessengerEXT(vk_hInstance, &vk_debugCreateInfo, nullptr, &vk_hDebugMessenger));
-		if (!CHECK_VK_RESULT(vk_eSuccessResult)) {
+		if (!vkCreateDebugUtilsMessengerEXT(vk_hInstance, &vk_debugCreateInfo, nullptr, &vk_hDebugMessenger)) {
 			RE_FATAL_ERROR("Failed creating Vulkan debug messenger for validation layers");
 			return false;
 		}
@@ -482,7 +480,7 @@ namespace RE {
 	}
 	
 	void destroy_vulkan_instance() {
-		CATCH_SIGNAL(pfn_vkDestroyDebugUtilsMessengerEXT(vk_hInstance, vk_hDebugMessenger, nullptr));
+		vkDestroyDebugUtilsMessengerEXT(vk_hInstance, vk_hDebugMessenger, nullptr);
 		vk_hDebugMessenger = VK_NULL_HANDLE;
 		CATCH_SIGNAL(pfn_vkDestroyInstance(vk_hInstance, nullptr));
 		vk_hInstance = VK_NULL_HANDLE;

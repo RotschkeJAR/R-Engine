@@ -1,7 +1,7 @@
 #include "RE_Internal Header.hpp"
 #include "RE_Window.hpp"
 #include "RE_Renderer.hpp"
-#include "RE_Vulkan.hpp"
+#include "RE_Vulkan_Device.hpp"
 #include "RE_Manager.hpp"
 
 namespace RE {

@@ -39,11 +39,12 @@ namespace RE {
 	}
 
 	bool Window_Wayland::create_vulkan_surface(VkSurfaceKHR &vk_rhSurface) const {
-		VkWaylandSurfaceCreateInfoKHR vk_waylandSurfaceCreateInfo = {};
-		vk_waylandSurfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR;
-		vk_waylandSurfaceCreateInfo.display = wl_pDisplay;
-		vk_waylandSurfaceCreateInfo.surface = wl_pSurface;
-		return CHECK_VK_RESULT(vkCreateWaylandSurfaceKHR(vk_hInstance, &vk_waylandSurfaceCreateInfo, nullptr, &vk_rhSurface));
+		const VkWaylandSurfaceCreateInfoKHR vk_waylandSurfaceCreateInfo = {
+			.sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR,
+			.display = wl_pDisplay,
+			.surface = wl_pSurface
+		};
+		return vkCreateWaylandSurfaceKHR(vk_hInstance, &vk_waylandSurfaceCreateInfo, nullptr, &vk_rhSurface);
 	}
 
 	const char* Window_Wayland::get_vulkan_required_surface_extension_name() const {

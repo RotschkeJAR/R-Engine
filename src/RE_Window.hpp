@@ -3,7 +3,7 @@
 
 #include "RE_Internal Header.hpp"
 #include "RE_Input.hpp"
-#include "RE_Vulkan.hpp"
+#include "RE_Vulkan_Device.hpp"
 
 namespace RE {
 

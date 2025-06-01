@@ -1,5 +1,4 @@
 #include "RE_Window.hpp"
-#include "RE_Vulkan.hpp"
 
 namespace RE {
 	

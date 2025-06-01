@@ -1,7 +1,7 @@
 #ifndef __RE_RENDERER_H__
 #define __RE_RENDERER_H__
 
-#include "RE_Vulkan.hpp"
+#include "RE_Vulkan_Device.hpp"
 
 namespace RE {
 

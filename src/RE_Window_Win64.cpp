@@ -179,9 +179,7 @@ namespace RE {
 			RE_FATAL_ERROR("Failed creating window");
 			return;
 		}
-		BOOL win_dpiAwarenessChangedResult;
-		CATCH_SIGNAL(win_dpiAwarenessChangedResult = SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_UNAWARE));
-		if (win_dpiAwarenessChangedResult == FALSE) {
+		if (CATCH_SIGNAL_AND_RETURN(SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_UNAWARE), BOOL) == FALSE) {
 			RE_FATAL_ERROR("Failed telling Windows R-Engine's DPI awareness");
 			return;
 		}

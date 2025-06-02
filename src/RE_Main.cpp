@@ -1,7 +1,7 @@
 #include "RE_Internal Header.hpp"
 #include "RE_Window.hpp"
 #include "RE_Renderer.hpp"
-#include "RE_Vulkan_Device.hpp"
+#include "RE_Render System.hpp"
 #include "RE_Manager.hpp"
 
 namespace RE {
@@ -61,7 +61,7 @@ namespace RE {
 		}
 
 		{
-			if (!init_vulkan_instance() || !init_vulkan_device() || !init_renderer() || bErrorOccured)
+			if (!init_vulkan_instance() || !init_render_system() || !init_renderer() || bErrorOccured)
 				return;
 			std::chrono::high_resolution_clock::time_point currentFrameTime = std::chrono::high_resolution_clock::now(), lastFrameTime;
 			bRunning = true;
@@ -91,7 +91,7 @@ namespace RE {
 			CATCH_SIGNAL(last_game_logic_update());
 			WAIT_FOR_IDLE_VULKAN_DEVICE();
 			CATCH_SIGNAL(destroy_renderer());
-			CATCH_SIGNAL(destroy_vulkan_device());
+			CATCH_SIGNAL(destroy_render_system());
 			CATCH_SIGNAL(destroy_vulkan_instance());
 			fDeltaseconds = 0.0f;
 		}

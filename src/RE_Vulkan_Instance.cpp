@@ -102,8 +102,10 @@ namespace RE {
 		CATCH_SIGNAL(pfn_vkCreateInstance = reinterpret_cast<PFN_vkCreateInstance>(load_func_with_instance(VK_NULL_HANDLE, "vkCreateInstance")));
 		CATCH_SIGNAL(pfn_vkEnumerateInstanceExtensionProperties = reinterpret_cast<PFN_vkEnumerateInstanceExtensionProperties>(load_func_with_instance(VK_NULL_HANDLE, "vkEnumerateInstanceExtensionProperties")));
 		CATCH_SIGNAL(pfn_vkEnumerateInstanceLayerProperties = reinterpret_cast<PFN_vkEnumerateInstanceLayerProperties>(load_func_with_instance(VK_NULL_HANDLE, "vkEnumerateInstanceLayerProperties")));
-		if (!pfn_vkCreateInstance || !pfn_vkEnumerateInstanceExtensionProperties || !pfn_vkEnumerateInstanceLayerProperties)
+		if (!pfn_vkCreateInstance || !pfn_vkEnumerateInstanceExtensionProperties || !pfn_vkEnumerateInstanceLayerProperties) {
+			RE_FATAL_ERROR("Failed loading Vulkan functions, which are essential for creating a Vulkan instance");
 			return false;
+		}
 
 		bool bFailure = false;
 		pcRequiredExtensions[RE_VK_REQUIRED_EXTENSIONS_COUNT - 1U] = Window::pInstance->get_vulkan_required_surface_extension_name();
@@ -138,7 +140,7 @@ namespace RE {
 		VkLayerProperties* vk_pAvailableLayers = new VkLayerProperties[u32AvailableLayersCount];
 		vkEnumerateInstanceLayerProperties(&u32AvailableLayersCount, vk_pAvailableLayers);
 		bool bRequiredLayersPresent[RE_VK_REQUIRED_LAYERS_COUNT] = {};
-		std::queue<const char*>  missingLayers;
+		std::queue<const char*> missingLayers;
 		PRINT_LN("Available Vulkan instance layers:");
 		for (uint32_t u32LayerIndex = 0; u32LayerIndex < u32AvailableLayersCount; u32LayerIndex++) {
 			println(append_to_string("\t", vk_pAvailableLayers[u32LayerIndex].layerName, " (", VK_API_VERSION_MAJOR(vk_pAvailableLayers[u32LayerIndex].specVersion), ".", VK_API_VERSION_MINOR(vk_pAvailableLayers[u32LayerIndex].specVersion), ".",VK_API_VERSION_PATCH(vk_pAvailableLayers[u32LayerIndex].specVersion), " - ", vk_pAvailableLayers[u32LayerIndex].implementationVersion, "): ", vk_pAvailableLayers[u32LayerIndex].description));

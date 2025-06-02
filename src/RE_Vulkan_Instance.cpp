@@ -462,10 +462,14 @@ namespace RE {
 		}
 		uint32_t u32ErrorLevel;
 #define JUMP_TO_ERR(NUM) do {u32ErrorLevel = NUM; goto RE_VK_INSTANCE_INIT_ERR_LABEL;} while(false)
-		if (!CATCH_SIGNAL_AND_RETURN(create_vulkan_instance(), bool))
+		if (!CATCH_SIGNAL_AND_RETURN(create_vulkan_instance(), bool)) {
+			RE_FATAL_ERROR("Failed creating Vulkan instance");
 			JUMP_TO_ERR(0U);
-		if (!CATCH_SIGNAL_AND_RETURN(load_vulkan_1_0_with_instance() && load_vulkan_1_1_with_instance() /* && load_vulkan_1_3_with_instance() */ && load_extension_funcs_with_instance() && setup_validation_layers(), bool))
+		}
+		if (!CATCH_SIGNAL_AND_RETURN(load_vulkan_1_0_with_instance() && load_vulkan_1_1_with_instance() /* && load_vulkan_1_3_with_instance() */ && load_extension_funcs_with_instance() && setup_validation_layers(), bool)) {
+			RE_FATAL_ERROR("Failed loading function pointers to Vulkan");
 			JUMP_TO_ERR(1U);
+		}
 		return true;
 #undef JUMP_TO_ERR
 

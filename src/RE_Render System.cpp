@@ -482,6 +482,53 @@ namespace RE {
 		DELETE_ARRAY_SAFELY(vk_phPhysicalDevicesAvailable);
 	}
 
+	static bool setup_interfaces_to_device() {
+		vkGetDeviceQueue(vk_hDevice, u32DeviceQueueFamilyIndices[RE_VK_QUEUE_GRAPHICS_INDEX], 0, &vk_hDeviceQueueFamilies[RE_VK_QUEUE_GRAPHICS_INDEX]);
+		vkGetDeviceQueue(vk_hDevice, u32DeviceQueueFamilyIndices[RE_VK_QUEUE_PRESENT_INDEX], 0, &vk_hDeviceQueueFamilies[RE_VK_QUEUE_PRESENT_INDEX]);
+		vkGetDeviceQueue(vk_hDevice, u32DeviceQueueFamilyIndices[RE_VK_QUEUE_TRANSFER_INDEX], 0, &vk_hDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX]);
+
+		VkCommandPoolCreateInfo vk_commandPoolCreateInfo = {
+			.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+			.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
+			.queueFamilyIndex = u32DeviceQueueFamilyIndices[RE_VK_QUEUE_GRAPHICS_INDEX]
+		};
+		vkCreateCommandPool(vk_hDevice, &vk_commandPoolCreateInfo, nullptr, &vk_hCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX]);
+		vk_commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+		vkCreateCommandPool(vk_hDevice, &vk_commandPoolCreateInfo, nullptr, &vk_hCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_TRANSIENT_INDEX]);
+		vk_commandPoolCreateInfo.queueFamilyIndex = u32DeviceQueueFamilyIndices[RE_VK_QUEUE_TRANSFER_INDEX];
+		vkCreateCommandPool(vk_hDevice, &vk_commandPoolCreateInfo, nullptr, &vk_hCommandPools[RE_VK_COMMAND_POOL_TRANSFER_TRANSIENT_INDEX]);
+		vk_commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+		vkCreateCommandPool(vk_hDevice, &vk_commandPoolCreateInfo, nullptr, &vk_hCommandPools[RE_VK_COMMAND_POOL_TRANSFER_PERSISTENT_INDEX]);
+		const VkCommandBufferAllocateInfo vk_commandBufferAllocInfo = {
+			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+			.commandPool = vk_hCommandPools[RE_VK_COMMAND_POOL_TRANSFER_PERSISTENT_INDEX],
+			.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+			.commandBufferCount = 1U
+		};
+		if (!vkAllocateCommandBuffers(vk_hDevice, &vk_commandBufferAllocInfo, &vk_hDummyTransferCommandBuffer))
+			return false;
+		const VkCommandBufferBeginInfo vk_beginRecordingCommandBuffer = {
+			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+			.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT
+		};
+		if (!vkBeginCommandBuffer(vk_hDummyTransferCommandBuffer, &vk_beginRecordingCommandBuffer))
+			return false;
+		vkEndCommandBuffer(vk_hDummyTransferCommandBuffer);
+		return true;
+	}
+
+	static void destroy_interfaces_to_device() {
+		vk_hDummyTransferCommandBuffer = VK_NULL_HANDLE;
+		for (uint8_t u8CommandPoolIndex = 0U; u8CommandPoolIndex < RE_VK_COMMAND_POOL_COUNT; u8CommandPoolIndex++) {
+			vkDestroyCommandPool(vk_hDevice, vk_hCommandPools[u8CommandPoolIndex], nullptr);
+			vk_hCommandPools[u8CommandPoolIndex] = VK_NULL_HANDLE;
+		}
+		for (uint8_t u8QueueFamilyIndex = 0U; u8QueueFamilyIndex < RE_VK_QUEUE_COUNT; u8QueueFamilyIndex++) {
+			u32DeviceQueueFamilyIndices[u8QueueFamilyIndex] = 0U;
+			vk_hDeviceQueueFamilies[u8QueueFamilyIndex] = VK_NULL_HANDLE;
+		}
+	}
+
 	static bool create_swapchain() {
 		uint32_t u32ErrorLevel;
 #define JUMP_TO_ERR(NUM) do {u32ErrorLevel = NUM; goto RE_SWAPCHAIN_CREATION_ERR;} while(false)
@@ -628,13 +675,17 @@ namespace RE {
 		CATCH_SIGNAL(select_best_surface_format());
 		if (!CATCH_SIGNAL_AND_RETURN(init_vulkan_device(), bool))
 			JUMP_TO_ERR(2U);
-		if (!CATCH_SIGNAL_AND_RETURN(create_swapchain(), bool))
+		if (!CATCH_SIGNAL_AND_RETURN(setup_interfaces_to_device(), bool))
 			JUMP_TO_ERR(3U);
+		if (!CATCH_SIGNAL_AND_RETURN(create_swapchain(), bool))
+			JUMP_TO_ERR(4U);
 #undef JUMP_TO_ERR
 		return true;
 
 		RE_RENDER_SYSTEM_INIT_ERR:
 		switch(u32ErrorLevel) {
+			case 4U:
+				CATCH_SIGNAL(destroy_interfaces_to_device());
 			case 3U:
 				CATCH_SIGNAL(destroy_vulkan_device());
 			case 2U:
@@ -649,6 +700,7 @@ namespace RE {
 
 	void destroy_render_system() {
 		CATCH_SIGNAL(destroy_swapchain());
+		CATCH_SIGNAL(destroy_interfaces_to_device());
 		CATCH_SIGNAL(destroy_vulkan_device());
 		CATCH_SIGNAL(free_physical_device_list());
 		CATCH_SIGNAL(destroy_surface());

@@ -15,7 +15,17 @@ namespace RE {
 	VkRect2D vk_cameraScissorArea;
 
 	bool init_renderer() {
+		uint32_t u32ErrorLevel;
+#define JUMP_TO_ERR(NUM) do {u32ErrorLevel = NUM; goto RE_VK_RENDERER_INIT_ERR;} while(false)
+
+#undef JUMP_TO_ERR
 		return true;
+
+		RE_VK_RENDERER_INIT_ERR:
+		switch(u32ErrorLevel) {
+			default:
+				return false;
+		}
 	}
 	
 	void destroy_renderer() {

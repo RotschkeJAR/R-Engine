@@ -13,6 +13,7 @@ namespace RE {
 	void execute() {
 		DEFINE_SIGNAL_GUARD(sigGuardMainLoop);
 		std::setlocale(LC_ALL, "");
+		uint32_t u32ErrorLevel = 0U;
 
 		// Create window
 		Window* pWindow = nullptr;
@@ -53,19 +54,22 @@ namespace RE {
 #else
 # warning The targeted OS is unknown, so the engine will terminate immediatly upon execution
 		RE_ERROR("The OS is unknown. The engine can't initialize");
-		return;
+		goto RE_ENGINE_INIT_ERR;
 #endif
-		if (!CATCH_SIGNAL_AND_RETURN(pWindow->is_valid(), bool) || bErrorOccured) {
-			CATCH_SIGNAL(delete pWindow);
-			return;
-		}
+		u32ErrorLevel = 1U;
+		if (!CATCH_SIGNAL_AND_RETURN(pWindow->is_valid() && init_vulkan_instance(), bool))
+			goto RE_ENGINE_INIT_ERR;
+		u32ErrorLevel = 2U;
+		if (!CATCH_SIGNAL_AND_RETURN(init_render_system(), bool))
+			goto RE_ENGINE_INIT_ERR;
+		u32ErrorLevel = 3U;
+		if (!CATCH_SIGNAL_AND_RETURN(init_renderer(), bool))
+			goto RE_ENGINE_INIT_ERR;
+		u32ErrorLevel = 4U;
+		bRunning = true;
 
 		{
-			if (!init_vulkan_instance() || !init_render_system() || !init_renderer() || bErrorOccured)
-				return;
 			std::chrono::high_resolution_clock::time_point currentFrameTime = std::chrono::high_resolution_clock::now(), lastFrameTime;
-			bRunning = true;
-
 			// Game loop
 			while (bRunning) {
 				CATCH_SIGNAL(pWindow->window_proc());
@@ -85,17 +89,27 @@ namespace RE {
 				CATCH_SIGNAL(pWindow->show_window(true));
 				bRunning = !pWindow->should_close() && is_game_valid() && !bErrorOccured;
 			}
-
-			// Termination
-			CATCH_SIGNAL(pWindow->show_window(false));
-			CATCH_SIGNAL(last_game_logic_update());
-			WAIT_FOR_IDLE_VULKAN_DEVICE();
-			CATCH_SIGNAL(destroy_renderer());
-			CATCH_SIGNAL(destroy_render_system());
-			CATCH_SIGNAL(destroy_vulkan_instance());
-			fDeltaseconds = 0.0f;
 		}
-		CATCH_SIGNAL(delete pWindow);
+
+		// Termination
+		CATCH_SIGNAL(pWindow->show_window(false));
+		CATCH_SIGNAL(last_game_logic_update());
+		WAIT_FOR_IDLE_VULKAN_DEVICE();
+
+		RE_ENGINE_INIT_ERR:
+		switch (u32ErrorLevel) {
+			case 4U:
+				CATCH_SIGNAL(destroy_renderer());
+			case 3U:
+				CATCH_SIGNAL(destroy_render_system());
+			case 2U:
+				CATCH_SIGNAL(destroy_vulkan_instance());
+			case 1U:
+				CATCH_SIGNAL(delete pWindow);
+			default:
+				fDeltaseconds = 0.0f;
+				break;
+		}
 	}
 
 	float get_deltaseconds() {

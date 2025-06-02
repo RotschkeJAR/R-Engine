@@ -220,8 +220,8 @@ namespace RE {
 	bool Window_Win64::create_vulkan_surface(VkSurfaceKHR &vk_rhSurface) const {
 		const VkWin32SurfaceCreateInfoKHR vk_win32SurfaceCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR,
-			.hwnd = win_hWindow,
-			.hinstance = win_hInstance
+			.hinstance = win_hInstance,
+			.hwnd = win_hWindow
 		};
 		return vkCreateWin32SurfaceKHR(vk_hInstance, &vk_win32SurfaceCreateInfo, nullptr, &vk_rhSurface);
 	}

@@ -1,6 +1,7 @@
 #include "RE_Renderer.hpp"
 #include "RE_Internal Header.hpp"
 #include "RE_Window.hpp"
+#include "RE_Vulkan_Wrapper Classes.hpp"
 
 #include <thread>
 
@@ -17,7 +18,8 @@ namespace RE {
 	bool init_renderer() {
 		uint32_t u32ErrorLevel;
 #define JUMP_TO_ERR(NUM) do {u32ErrorLevel = NUM; goto RE_VK_RENDERER_INIT_ERR;} while(false)
-
+		const uint32_t u32StagingIndexBufferQueues[] = {RE_VK_QUEUE_TRANSFER_INDEX};
+		Vulkan_Buffer stagingIndexBuffer(1U, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 1U, u32StagingIndexBufferQueues, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 #undef JUMP_TO_ERR
 		return true;
 

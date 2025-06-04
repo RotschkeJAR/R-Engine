@@ -13,7 +13,6 @@ namespace RE {
 	void execute() {
 		DEFINE_SIGNAL_GUARD(sigGuardMainLoop);
 		std::setlocale(LC_ALL, "");
-		uint32_t u32ErrorLevel = 0U;
 
 		// Create window
 		Window* pWindow = nullptr;
@@ -54,62 +53,45 @@ namespace RE {
 #else
 # warning The targeted OS is unknown, so the engine will terminate immediatly upon execution
 		RE_ERROR("The OS is unknown. The engine can't initialize");
-		goto RE_ENGINE_INIT_ERR;
+		return;
 #endif
-		u32ErrorLevel = 1U;
-		if (!CATCH_SIGNAL_AND_RETURN(pWindow->is_valid() && init_vulkan_instance(), bool))
-			goto RE_ENGINE_INIT_ERR;
-		u32ErrorLevel = 2U;
-		if (!CATCH_SIGNAL_AND_RETURN(init_render_system(), bool))
-			goto RE_ENGINE_INIT_ERR;
-		u32ErrorLevel = 3U;
-		if (!CATCH_SIGNAL_AND_RETURN(init_renderer(), bool))
-			goto RE_ENGINE_INIT_ERR;
-		u32ErrorLevel = 4U;
-		bRunning = true;
+		if (CATCH_SIGNAL_AND_RETURN(pWindow->is_valid() && init_vulkan_instance(), bool)) {
+			if (CATCH_SIGNAL_AND_RETURN(init_render_system(), bool)) {
+				if (CATCH_SIGNAL_AND_RETURN(init_renderer(), bool)) {
+					std::chrono::high_resolution_clock::time_point currentFrameTime = std::chrono::high_resolution_clock::now(), lastFrameTime;
 
-		{
-			std::chrono::high_resolution_clock::time_point currentFrameTime = std::chrono::high_resolution_clock::now(), lastFrameTime;
-			// Game loop
-			while (bRunning) {
-				CATCH_SIGNAL(pWindow->window_proc());
-				CATCH_SIGNAL(game_logic_update());
-				if (pWindow->should_render()) {
-					CATCH_SIGNAL(refresh_swapchain());
-					CATCH_SIGNAL(render());
-				} else {
-					// branch avoiding excessive CPU usage, when rendering is ambigious
-					float fTimeToWait = fMinDeltatime - fDeltaseconds;
-					if (fTimeToWait > 0.0f)
-						std::this_thread::sleep_for(std::chrono::duration<float>(fTimeToWait));
+					// Game loop
+					do {
+						CATCH_SIGNAL(pWindow->window_proc());
+						CATCH_SIGNAL(game_logic_update());
+						if (pWindow->should_render()) {
+							CATCH_SIGNAL(refresh_swapchain());
+							CATCH_SIGNAL(render());
+						} else {
+							// branch avoiding excessive CPU usage, when rendering is ambigious
+							float fTimeToWait = fMinDeltatime - fDeltaseconds;
+							if (fTimeToWait > 0.0f)
+								std::this_thread::sleep_for(std::chrono::duration<float>(fTimeToWait));
+						}
+						lastFrameTime = currentFrameTime;
+						currentFrameTime = std::chrono::high_resolution_clock::now();
+						fDeltaseconds = std::chrono::duration_cast<std::chrono::duration<float>>(currentFrameTime - lastFrameTime).count();
+						CATCH_SIGNAL(pWindow->show_window(true));
+						bRunning = !pWindow->should_close() && is_game_valid() && !bErrorOccured;
+					} while (bRunning);
+
+					// Termination
+					CATCH_SIGNAL(pWindow->show_window(false));
+					CATCH_SIGNAL(last_game_logic_update());
+					WAIT_FOR_IDLE_VULKAN_DEVICE();
+					CATCH_SIGNAL(destroy_renderer());
 				}
-				lastFrameTime = currentFrameTime;
-				currentFrameTime = std::chrono::high_resolution_clock::now();
-				fDeltaseconds = std::chrono::duration_cast<std::chrono::duration<float>>(currentFrameTime - lastFrameTime).count();
-				CATCH_SIGNAL(pWindow->show_window(true));
-				bRunning = !pWindow->should_close() && is_game_valid() && !bErrorOccured;
-			}
-		}
-
-		// Termination
-		CATCH_SIGNAL(pWindow->show_window(false));
-		CATCH_SIGNAL(last_game_logic_update());
-		WAIT_FOR_IDLE_VULKAN_DEVICE();
-
-		RE_ENGINE_INIT_ERR:
-		switch (u32ErrorLevel) {
-			case 4U:
-				CATCH_SIGNAL(destroy_renderer());
-			case 3U:
 				CATCH_SIGNAL(destroy_render_system());
-			case 2U:
-				CATCH_SIGNAL(destroy_vulkan_instance());
-			case 1U:
-				CATCH_SIGNAL(delete pWindow);
-			default:
-				fDeltaseconds = 0.0f;
-				break;
+			}
+			CATCH_SIGNAL(destroy_vulkan_instance());
 		}
+		DELETE_SAFELY(pWindow);
+		fDeltaseconds = 0.0f;
 	}
 
 	float get_deltaseconds() {
@@ -117,7 +99,7 @@ namespace RE {
 	}
 
 	float get_fps_rate() {
-		return CATCH_SIGNAL_AND_RETURN((fDeltaseconds > 0.0f ? (1.0f / fDeltaseconds) : 0.0f), float);
+		return fDeltaseconds > 0.0f ? (1.0f / fDeltaseconds) : -1.0f;
 	}
 
 }

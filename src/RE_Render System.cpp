@@ -689,6 +689,7 @@ namespace RE {
 			case 3U:
 				CATCH_SIGNAL(destroy_vulkan_device());
 			case 2U:
+				vk_hPhysicalDeviceSelected = VK_NULL_HANDLE;
 				CATCH_SIGNAL(free_physical_device_list());
 			case 1U:
 				CATCH_SIGNAL(destroy_surface());
@@ -702,6 +703,7 @@ namespace RE {
 		CATCH_SIGNAL(destroy_swapchain());
 		CATCH_SIGNAL(destroy_interfaces_to_device());
 		CATCH_SIGNAL(destroy_vulkan_device());
+		vk_hPhysicalDeviceSelected = VK_NULL_HANDLE;
 		CATCH_SIGNAL(free_physical_device_list());
 		CATCH_SIGNAL(destroy_surface());
 	}

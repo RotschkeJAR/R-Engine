@@ -15,33 +15,32 @@ namespace RE {
 		std::setlocale(LC_ALL, "");
 
 		// Create window
-		Window* pWindow = nullptr;
 #ifdef RE_OS_WINDOWS
-		CATCH_SIGNAL(pWindow = new Window_Win64());
+		CATCH_SIGNAL(Window::pInstance = new Window_Win64());
 #elif defined RE_OS_LINUX
 		{
 			const bool bX11Exists = !is_string_empty(std::getenv("DISPLAY")), bWaylandExists = !is_string_empty(std::getenv("WAYLAND_DISPLAY"));
 			if (bX11Exists) {
-				CATCH_SIGNAL(pWindow = new Window_X11());
-				if (!pWindow->is_valid()) {
-					CATCH_SIGNAL(delete pWindow);
+				CATCH_SIGNAL(Window::pInstance = new Window_X11());
+				if (!Window::pInstance->is_valid()) {
+					CATCH_SIGNAL(delete Window::pInstance);
 					if (bWaylandExists) {
 						RE_NOTE("Failed creating X11 window. Using Wayland instead");
-						CATCH_SIGNAL(pWindow = new Window_Wayland());
+						CATCH_SIGNAL(Window::pInstance = new Window_Wayland());
 					} else {
-						RE_FATAL_ERROR("Failed creating X11 window. No other alternative window compositor exists");
+						RE_FATAL_ERROR("Failed creating X11 window. No other known window compositor exists");
 						return;
 					}
 				}
 			} else if (bWaylandExists) {
-				CATCH_SIGNAL(pWindow = new Window_Wayland());
-				if (!pWindow->is_valid()) {
-					CATCH_SIGNAL(delete pWindow);
+				CATCH_SIGNAL(Window::pInstance = new Window_Wayland());
+				if (!Window::pInstance->is_valid()) {
+					CATCH_SIGNAL(delete Window::pInstance);
 					if (bX11Exists) {
 						RE_NOTE("Failed creating Wayland window. Using X11 instead");
-						CATCH_SIGNAL(pWindow = new Window_X11());
+						CATCH_SIGNAL(Window::pInstance = new Window_X11());
 					} else {
-						RE_FATAL_ERROR("Failed creating Wayland window. No other alternative window compositor exists");
+						RE_FATAL_ERROR("Failed creating Wayland window. No other known window compositor exists");
 						return;
 					}
 				}
@@ -55,16 +54,16 @@ namespace RE {
 		RE_ERROR("The OS is unknown. The engine can't initialize");
 		return;
 #endif
-		if (CATCH_SIGNAL_AND_RETURN(pWindow->is_valid() && init_vulkan_instance(), bool)) {
+		if (CATCH_SIGNAL_AND_RETURN(Window::pInstance->is_valid() && init_vulkan_instance(), bool)) {
 			if (CATCH_SIGNAL_AND_RETURN(init_render_system(), bool)) {
 				if (CATCH_SIGNAL_AND_RETURN(init_renderer(), bool)) {
 					std::chrono::high_resolution_clock::time_point currentFrameTime = std::chrono::high_resolution_clock::now(), lastFrameTime;
 
 					// Game loop
 					do {
-						CATCH_SIGNAL(pWindow->window_proc());
+						CATCH_SIGNAL(Window::pInstance->window_proc());
 						CATCH_SIGNAL(game_logic_update());
-						if (pWindow->should_render()) {
+						if (Window::pInstance->should_render()) {
 							CATCH_SIGNAL(refresh_swapchain());
 							CATCH_SIGNAL(render());
 						} else {
@@ -76,12 +75,12 @@ namespace RE {
 						lastFrameTime = currentFrameTime;
 						currentFrameTime = std::chrono::high_resolution_clock::now();
 						fDeltaseconds = std::chrono::duration_cast<std::chrono::duration<float>>(currentFrameTime - lastFrameTime).count();
-						CATCH_SIGNAL(pWindow->show_window(true));
-						bRunning = !pWindow->should_close() && is_game_valid() && !bErrorOccured;
+						CATCH_SIGNAL(Window::pInstance->show_window(true));
+						bRunning = !Window::pInstance->should_close() && is_game_valid() && !bErrorOccured;
 					} while (bRunning);
 
 					// Termination
-					CATCH_SIGNAL(pWindow->show_window(false));
+					CATCH_SIGNAL(Window::pInstance->show_window(false));
 					CATCH_SIGNAL(last_game_logic_update());
 					WAIT_FOR_IDLE_VULKAN_DEVICE();
 					CATCH_SIGNAL(destroy_renderer());
@@ -90,7 +89,7 @@ namespace RE {
 			}
 			CATCH_SIGNAL(destroy_vulkan_instance());
 		}
-		DELETE_SAFELY(pWindow);
+		DELETE_SAFELY(Window::pInstance);
 		fDeltaseconds = 0.0f;
 	}
 

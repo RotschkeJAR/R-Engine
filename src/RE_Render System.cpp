@@ -659,44 +659,28 @@ namespace RE {
 	}
 
 	bool init_render_system() {
-		uint32_t u32ErrorLevel;
-#define JUMP_TO_ERR(NUM) do {u32ErrorLevel = NUM; goto RE_RENDER_SYSTEM_INIT_ERR;} while(false)
-		DEFINE_SIGNAL_GUARD(sigGuardConstructorRenderSystem);
-		if (!CATCH_SIGNAL_AND_RETURN(create_surface(), bool))
-			JUMP_TO_ERR(0U);
-		if (!CATCH_SIGNAL_AND_RETURN(alloc_physical_device_list(), bool))
-			JUMP_TO_ERR(1U);
-		CATCH_SIGNAL(select_best_physical_vulkan_device());
-		VkPhysicalDeviceProperties vk_physicalDeviceSelectedProperties;
-		vkGetPhysicalDeviceProperties(vk_hPhysicalDeviceSelected, &vk_physicalDeviceSelectedProperties);
-		PRINT_LN(append_to_string("Device selected: ", vk_physicalDeviceSelectedProperties.deviceName).c_str());
-		vkGetPhysicalDeviceMemoryProperties(vk_hPhysicalDeviceSelected, &vk_physicalDeviceMemoryProperties);
-		CATCH_SIGNAL(fetch_surface_infos());
-		CATCH_SIGNAL(select_best_surface_format());
-		if (!CATCH_SIGNAL_AND_RETURN(init_vulkan_device(), bool))
-			JUMP_TO_ERR(2U);
-		if (!CATCH_SIGNAL_AND_RETURN(setup_interfaces_to_device(), bool))
-			JUMP_TO_ERR(3U);
-		if (!CATCH_SIGNAL_AND_RETURN(create_swapchain(), bool))
-			JUMP_TO_ERR(4U);
-#undef JUMP_TO_ERR
-		return true;
-
-		RE_RENDER_SYSTEM_INIT_ERR:
-		switch(u32ErrorLevel) {
-			case 4U:
-				CATCH_SIGNAL(destroy_interfaces_to_device());
-			case 3U:
-				CATCH_SIGNAL(destroy_vulkan_device());
-			case 2U:
-				vk_hPhysicalDeviceSelected = VK_NULL_HANDLE;
+		if (CATCH_SIGNAL_AND_RETURN(create_surface(), bool)) {
+			if (CATCH_SIGNAL_AND_RETURN(alloc_physical_device_list(), bool)) {
+				CATCH_SIGNAL(select_best_physical_vulkan_device());
+				VkPhysicalDeviceProperties vk_physicalDeviceSelectedProperties;
+				vkGetPhysicalDeviceProperties(vk_hPhysicalDeviceSelected, &vk_physicalDeviceSelectedProperties);
+				PRINT_LN(append_to_string("Device selected: ", vk_physicalDeviceSelectedProperties.deviceName).c_str());
+				vkGetPhysicalDeviceMemoryProperties(vk_hPhysicalDeviceSelected, &vk_physicalDeviceMemoryProperties);
+				CATCH_SIGNAL(fetch_surface_infos());
+				CATCH_SIGNAL(select_best_surface_format());
+				if (CATCH_SIGNAL_AND_RETURN(init_vulkan_device(), bool)) {
+					if (CATCH_SIGNAL_AND_RETURN(setup_interfaces_to_device(), bool)) {
+						if (CATCH_SIGNAL_AND_RETURN(create_swapchain(), bool))
+							return true;
+						CATCH_SIGNAL(destroy_interfaces_to_device());
+					}
+					CATCH_SIGNAL(destroy_vulkan_device());
+				}
 				CATCH_SIGNAL(free_physical_device_list());
-			case 1U:
-				CATCH_SIGNAL(destroy_surface());
-			default:
-				RE_ERROR("Failed initializing the render system");
-				return false;
+			}
+			CATCH_SIGNAL(destroy_surface());
 		}
+		return false;
 	}
 
 	void destroy_render_system() {

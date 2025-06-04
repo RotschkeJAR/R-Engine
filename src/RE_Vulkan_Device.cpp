@@ -1212,13 +1212,14 @@ namespace RE {
 
 		VkPhysicalDeviceFeatures vk_physicalDeviceFeaturesEnabled = {};
 
-		VkDeviceCreateInfo vk_deviceCreateInfo = {};
-		vk_deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-		vk_deviceCreateInfo.pQueueCreateInfos = vk_pDeviceQueueCreateInfos;
-		vk_deviceCreateInfo.queueCreateInfoCount = static_cast<uint32_t>(uniqueQueueIndexCount);
-		vk_deviceCreateInfo.enabledExtensionCount = u32PhysicalDeviceExtensionCount;
-		vk_deviceCreateInfo.ppEnabledExtensionNames = static_cast<const char *const *>(pcPhysicalDeviceExtensions);
-		vk_deviceCreateInfo.pEnabledFeatures = &vk_physicalDeviceFeaturesEnabled;
+		VkDeviceCreateInfo vk_deviceCreateInfo = {
+			.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+			.queueCreateInfoCount = static_cast<uint32_t>(uniqueQueueIndexCount),
+			.pQueueCreateInfos = vk_pDeviceQueueCreateInfos,
+			.enabledExtensionCount = u32PhysicalDeviceExtensionCount,
+			.ppEnabledExtensionNames = static_cast<const char *const *>(pcPhysicalDeviceExtensions),
+			.pEnabledFeatures = &vk_physicalDeviceFeaturesEnabled
+		};
 		const bool bCreatedDeviceSuccessfully = vkCreateDevice(vk_hPhysicalDeviceSelected, &vk_deviceCreateInfo, nullptr, &vk_hDevice);
 		DELETE_ARRAY_SAFELY(vk_pDeviceQueueCreateInfos);
 		if (!bCreatedDeviceSuccessfully) {

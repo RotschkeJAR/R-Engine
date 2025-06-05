@@ -2,6 +2,7 @@
 #include "RE_Renderer.hpp"
 #include "RE_Window.hpp"
 #include "RE_Main.hpp"
+#include "RE_Vulkan_Wrapper Functions.hpp"
 
 #include <queue>
 
@@ -587,7 +588,7 @@ namespace RE {
 		{
 			uint32_t u32SwapchainImageViewsCreated = 0U;
 			while (u32SwapchainImageViewsCreated < u32SwapchainImageCount) {
-				if (create_vulkan_image_view(vk_phSwapchainImages[u32SwapchainImageViewsCreated], VK_IMAGE_VIEW_TYPE_2D, vk_eSwapchainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 0U, 1U, 0U, 1U, &vk_phSwapchainImageViews[u32SwapchainImageViewsCreated])) {
+				if (!create_vulkan_image_view(vk_phSwapchainImages[u32SwapchainImageViewsCreated], VK_IMAGE_VIEW_TYPE_2D, vk_eSwapchainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 0U, 1U, 0U, 1U, &vk_phSwapchainImageViews[u32SwapchainImageViewsCreated])) {
 					RE_FATAL_ERROR(append_to_string("Failed to create Vulkan image view at index ", u32SwapchainImageViewsCreated));
 					break;
 				}
@@ -601,6 +602,7 @@ namespace RE {
 				DELETE_ARRAY_SAFELY(vk_phSwapchainImageViews);
 				vkDestroySwapchainKHR(vk_hDevice, vk_hSwapchain, nullptr);
 				vk_hSwapchain = VK_NULL_HANDLE;
+				return false;
 			}
 		} // End of creating swapchain image views
 		return true;

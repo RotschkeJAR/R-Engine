@@ -25,6 +25,8 @@ namespace RE {
 	VkImageView vk_ahWorldRenderImageViews[RE_VK_FRAMES_IN_FLIGHT] = {};
 	VkFramebuffer vk_ahWorldFramebuffers[RE_VK_FRAMES_IN_FLIGHT] = {};
 
+	VkFence vk_ahRenderFence[RE_VK_FRAMES_IN_FLIGHT] = {};
+
 	bool init_renderer() {
 		constexpr uint32_t u32StagingIndexBufferQueueCount = 1U, u32StagingIndexBufferQueues[u32StagingIndexBufferQueueCount] = {RE_VK_QUEUE_TRANSFER_INDEX};
 		Vulkan_Buffer stagingIndexBuffer(RE_VK_INDEX_BUFFER_BYTES, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, u32StagingIndexBufferQueueCount, u32StagingIndexBufferQueues, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);

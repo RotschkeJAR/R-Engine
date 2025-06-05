@@ -31,9 +31,10 @@ namespace RE {
 	VkCommandBuffer vk_hDummyTransferCommandBuffer = VK_NULL_HANDLE;
 
 	uint8_t u8RenderSystemFlags = 0b00000110U;
-#define SWAPCHAIN_DIRTY_INDEX 0
-#define VSYNC_SETTING_INDEX 1
-#define FPS_BOUND_TO_VSYNC_INDEX 2
+#define SWAPCHAIN_DIRTY_BIT 0
+#define VSYNC_SETTING_BIT 1
+#define FPS_BOUND_TO_VSYNC_BIT 2
+#define GRAPHICS_QUEUE_SUPPORTS_TRANSFER_BIT 3
 
 	static void println_vkbool32(const char* pcName, VkBool32 vk_bState) {
 		print("\t\t\t", pcName, ": ");
@@ -441,15 +442,20 @@ namespace RE {
 					if (surfaceSupportExists)
 						bPresentQueueExists = true;
 				}
-				if (!bGraphicsQueueExists && (vk_pPhysicalDeviceQueueFamilyProperties[u32PhysicalDeviceQueueFamilyIndex].queueFlags & VK_QUEUE_GRAPHICS_BIT))
+				if (!bGraphicsQueueExists && (vk_pPhysicalDeviceQueueFamilyProperties[u32PhysicalDeviceQueueFamilyIndex].queueFlags & (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_TRANSFER_BIT))) {
 					bGraphicsQueueExists = true;
-				if (!bTransferQueueExists && (vk_pPhysicalDeviceQueueFamilyProperties[u32PhysicalDeviceQueueFamilyIndex].queueFlags & VK_QUEUE_TRANSFER_BIT))
+					bTransferQueueExists = true;
+				} else if (!bTransferQueueExists && (vk_pPhysicalDeviceQueueFamilyProperties[u32PhysicalDeviceQueueFamilyIndex].queueFlags & VK_QUEUE_TRANSFER_BIT))
 					bTransferQueueExists = true;
 				if (bGraphicsQueueExists && bPresentQueueExists && bTransferQueueExists)
 					break;
 			}
-			if (!bGraphicsQueueExists || !bPresentQueueExists || !bTransferQueueExists)
-				missingFeatures.push("The graphics, presentation or transfer queue doesn't exist");
+			if (!bGraphicsQueueExists)
+				missingFeatures.push("A graphics queue supporting transfers either doesn't exist");
+			if (!bPresentQueueExists)
+				missingFeatures.push("The presentation queue doesn't exist");
+			if (!bTransferQueueExists)
+				missingFeatures.push("A dedicated transfer queue or a graphics queue supporting transfers aswell doesn't exist");
 
 			delete[] vk_pPhysicalDeviceExtensionProperties;
 			delete[] vk_pPhysicalDeviceQueueFamilyProperties;
@@ -484,6 +490,13 @@ namespace RE {
 	}
 
 	static bool setup_interfaces_to_device() {
+		uint32_t u32PhysicalDeviceSelectedQueueFamilyCount;
+		vkGetPhysicalDeviceQueueFamilyProperties(vk_hPhysicalDeviceSelected, &u32PhysicalDeviceSelectedQueueFamilyCount, nullptr);
+		VkQueueFamilyProperties *vk_pPhysicalDeviceSelectedQueueFamilies = new VkQueueFamilyProperties[u32PhysicalDeviceSelectedQueueFamilyCount];
+		vkGetPhysicalDeviceQueueFamilyProperties(vk_hPhysicalDeviceSelected, &u32PhysicalDeviceSelectedQueueFamilyCount, vk_pPhysicalDeviceSelectedQueueFamilies);
+		CATCH_SIGNAL(set_bit<uint8_t>(u8RenderSystemFlags, GRAPHICS_QUEUE_SUPPORTS_TRANSFER_BIT, (vk_pPhysicalDeviceSelectedQueueFamilies[u32DeviceQueueFamilyIndices[RE_VK_QUEUE_GRAPHICS_INDEX]].queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0U));
+		delete[] vk_pPhysicalDeviceSelectedQueueFamilies;
+
 		vkGetDeviceQueue(vk_hDevice, u32DeviceQueueFamilyIndices[RE_VK_QUEUE_GRAPHICS_INDEX], 0, &vk_hDeviceQueueFamilies[RE_VK_QUEUE_GRAPHICS_INDEX]);
 		vkGetDeviceQueue(vk_hDevice, u32DeviceQueueFamilyIndices[RE_VK_QUEUE_PRESENT_INDEX], 0, &vk_hDeviceQueueFamilies[RE_VK_QUEUE_PRESENT_INDEX]);
 		vkGetDeviceQueue(vk_hDevice, u32DeviceQueueFamilyIndices[RE_VK_QUEUE_TRANSFER_INDEX], 0, &vk_hDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX]);
@@ -567,10 +580,10 @@ namespace RE {
 			vk_swapchainCreateInfo.pQueueFamilyIndices = u32SwapchainRelevantQueueIndices;
 		} else
 			vk_swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-		if (is_bit_true<uint8_t>(u8RenderSystemFlags, FPS_BOUND_TO_VSYNC_INDEX))
-			vk_swapchainCreateInfo.presentMode = is_bit_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_INDEX) ? VK_PRESENT_MODE_FIFO_KHR : vk_ePresentModeNoVsync;
+		if (is_bit_true<uint8_t>(u8RenderSystemFlags, FPS_BOUND_TO_VSYNC_BIT))
+			vk_swapchainCreateInfo.presentMode = is_bit_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_BIT) ? VK_PRESENT_MODE_FIFO_KHR : vk_ePresentModeNoVsync;
 		else
-			vk_swapchainCreateInfo.presentMode = is_bit_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_INDEX) ? vk_ePresentModeVsync : vk_ePresentModeNoVsync;
+			vk_swapchainCreateInfo.presentMode = is_bit_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_BIT) ? vk_ePresentModeVsync : vk_ePresentModeNoVsync;
 		if (!vkCreateSwapchainKHR(vk_hDevice, &vk_swapchainCreateInfo, nullptr, &vk_hSwapchain)) {
 			RE_ERROR("Failed creating Vulkan swapchain");
 			return false;
@@ -663,38 +676,42 @@ namespace RE {
 	}
 
 	bool refresh_swapchain() {
-		if (is_bit_true<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_INDEX)) {
+		if (is_bit_true<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_BIT)) {
 			if (!CATCH_SIGNAL_AND_RETURN(recreate_swapchain(), bool))
 				return false;
-			set_bit<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_INDEX, false);
+			set_bit<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_BIT, false);
 		}
 		return true;
 	}
 
 	void mark_swapchain_dirty() {
-		set_bit<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_INDEX, bRunning);
+		set_bit<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_BIT, bRunning);
+	}
+
+	bool does_graphics_queue_support_transfer() {
+		return is_bit_true<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_BIT);
 	}
 
 	void enable_vsync(bool bEnableVsync) {
-		if (is_bit_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_INDEX) != bEnableVsync) {
-			set_bit<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_INDEX, bEnableVsync);
-			set_bit<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_INDEX, bRunning);
+		if (is_bit_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_BIT) != bEnableVsync) {
+			set_bit<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_BIT, bEnableVsync);
+			set_bit<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_BIT, bRunning);
 		}
 	}
 
 	bool is_vsync_enabled() {
-		return is_bit_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_INDEX);
+		return is_bit_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_BIT);
 	}
 
 	void bind_fps_to_vsync(bool bBindFpsToVsync) {
-		if (is_bit_true<uint8_t>(u8RenderSystemFlags, FPS_BOUND_TO_VSYNC_INDEX) != bBindFpsToVsync) {
-			set_bit<uint8_t>(u8RenderSystemFlags, FPS_BOUND_TO_VSYNC_INDEX, bBindFpsToVsync);
-			set_bit<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_INDEX, bRunning);
+		if (is_bit_true<uint8_t>(u8RenderSystemFlags, FPS_BOUND_TO_VSYNC_BIT) != bBindFpsToVsync) {
+			set_bit<uint8_t>(u8RenderSystemFlags, FPS_BOUND_TO_VSYNC_BIT, bBindFpsToVsync);
+			set_bit<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_BIT, bRunning);
 		}
 	}
 
 	bool is_fps_bound_to_vsync() {
-		return is_bit_true<uint8_t>(u8RenderSystemFlags, FPS_BOUND_TO_VSYNC_INDEX);
+		return is_bit_true<uint8_t>(u8RenderSystemFlags, FPS_BOUND_TO_VSYNC_BIT);
 	}
 
 }

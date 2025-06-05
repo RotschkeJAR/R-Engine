@@ -36,6 +36,7 @@ namespace RE {
 	void destroy_render_system();
 	bool refresh_swapchain();
 	void mark_swapchain_dirty();
+	bool does_graphics_queue_support_transfer();
 
 	void enable_vsync(bool bEnableVsync);
 	bool is_vsync_enabled();

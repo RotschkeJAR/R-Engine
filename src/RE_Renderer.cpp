@@ -140,8 +140,26 @@ namespace RE {
 											break;
 										}
 										if (u8WorldRenderImageCollectionCreateIndex == RE_VK_FRAMES_IN_FLIGHT) {
-											rectIndexBufferDataTransferFence.wait_for();
-											return true;
+											const VkFenceCreateInfo vk_renderFenceCreateInfo = {
+												.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+												.flags = VK_FENCE_CREATE_SIGNALED_BIT
+											};
+											uint8_t u8RenderFenceCreateIndex = 0U;
+											while (u8RenderFenceCreateIndex < RE_VK_FRAMES_IN_FLIGHT) {
+												if (!vkCreateFence(vk_hDevice, &vk_renderFenceCreateInfo, nullptr, &vk_ahRenderFence[u8RenderFenceCreateIndex])) {
+													RE_FATAL_ERROR(append_to_string("Failed to create Vulkan render fence at index ", u8RenderFenceCreateIndex));
+													break;
+												}
+												u8RenderFenceCreateIndex++;
+											}
+											if (u8RenderFenceCreateIndex == RE_VK_FRAMES_IN_FLIGHT) {
+												rectIndexBufferDataTransferFence.wait_for();
+												return true;
+											}
+											for (uint8_t u8RenderFenceDeleteIndex = 0U; u8RenderFenceDeleteIndex < u8RenderFenceCreateIndex; u8RenderFenceDeleteIndex++) {
+												vkDestroyFence(vk_hDevice, vk_ahRenderFence[u8RenderFenceDeleteIndex], nullptr);
+												vk_ahRenderFence[u8RenderFenceDeleteIndex] = VK_NULL_HANDLE;
+											}
 										}
 										for (uint8_t u8WorldRenderImageCollectionDeleteIndex = 0U; u8WorldRenderImageCollectionDeleteIndex < u8WorldRenderImageCollectionCreateIndex; u8WorldRenderImageCollectionDeleteIndex++) {
 											vkDestroyFramebuffer(vk_hDevice, vk_ahWorldFramebuffers[u8WorldRenderImageCollectionDeleteIndex], nullptr);
@@ -179,15 +197,17 @@ namespace RE {
 	}
 	
 	void destroy_renderer() {
-		for (uint8_t u8WorldRenderImageCollectionDeleteIndex = 0U; u8WorldRenderImageCollectionDeleteIndex < RE_VK_FRAMES_IN_FLIGHT; u8WorldRenderImageCollectionDeleteIndex++) {
-			vkDestroyFramebuffer(vk_hDevice, vk_ahWorldFramebuffers[u8WorldRenderImageCollectionDeleteIndex], nullptr);
-			vk_ahWorldFramebuffers[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
-			vkDestroyImageView(vk_hDevice, vk_ahWorldRenderImageViews[u8WorldRenderImageCollectionDeleteIndex], nullptr);
-			vk_ahWorldRenderImageViews[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
-			vkFreeMemory(vk_hDevice, vk_ahWorldRenderImageMemories[u8WorldRenderImageCollectionDeleteIndex], nullptr);
-			vk_ahWorldRenderImageMemories[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
-			vkDestroyImage(vk_hDevice, vk_ahWorldRenderImages[u8WorldRenderImageCollectionDeleteIndex], nullptr);
-			vk_ahWorldRenderImages[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
+		for (uint8_t u8FrameInFlightDeleteIndex = 0U; u8FrameInFlightDeleteIndex < RE_VK_FRAMES_IN_FLIGHT; u8FrameInFlightDeleteIndex++) {
+			vkDestroyFence(vk_hDevice, vk_ahRenderFence[u8FrameInFlightDeleteIndex], nullptr);
+			vk_ahRenderFence[u8FrameInFlightDeleteIndex] = VK_NULL_HANDLE;
+			vkDestroyFramebuffer(vk_hDevice, vk_ahWorldFramebuffers[u8FrameInFlightDeleteIndex], nullptr);
+			vk_ahWorldFramebuffers[u8FrameInFlightDeleteIndex] = VK_NULL_HANDLE;
+			vkDestroyImageView(vk_hDevice, vk_ahWorldRenderImageViews[u8FrameInFlightDeleteIndex], nullptr);
+			vk_ahWorldRenderImageViews[u8FrameInFlightDeleteIndex] = VK_NULL_HANDLE;
+			vkFreeMemory(vk_hDevice, vk_ahWorldRenderImageMemories[u8FrameInFlightDeleteIndex], nullptr);
+			vk_ahWorldRenderImageMemories[u8FrameInFlightDeleteIndex] = VK_NULL_HANDLE;
+			vkDestroyImage(vk_hDevice, vk_ahWorldRenderImages[u8FrameInFlightDeleteIndex], nullptr);
+			vk_ahWorldRenderImages[u8FrameInFlightDeleteIndex] = VK_NULL_HANDLE;
 		}
 		vkDestroyRenderPass(vk_hDevice, vk_hWorldRenderPass, nullptr);
 		vkFreeMemory(vk_hDevice, vk_hRectIndexBufferMemory, nullptr);

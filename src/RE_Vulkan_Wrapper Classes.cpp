@@ -23,8 +23,116 @@ namespace RE {
 		vkUnmapMemory(vk_hDevice, vk_hMemory);
 	}
 
+	VkBuffer Vulkan_Buffer::get_buffer() const {
+		return vk_hBuffer;
+	}
+	
+	VkDeviceMemory Vulkan_Buffer::get_memory() const {
+		return vk_hMemory;
+	}
+
 	bool Vulkan_Buffer::is_valid() const {
 		return vk_hBuffer && vk_hMemory;
+	}
+
+	Vulkan_Buffer::operator VkBuffer() const {
+		return get_buffer();
+	}
+
+	Vulkan_Buffer::operator VkDeviceMemory() const {
+		return get_memory();
+	}
+
+
+	
+	Vulkan_CommandBuffer::Vulkan_CommandBuffer(const VkCommandPool vk_hCommandPool, const VkCommandBufferLevel vk_eCommandBufferLevel) : vk_hCommandBuffer(VK_NULL_HANDLE), vk_hCommandPool(vk_hCommandPool) {
+		const VkCommandBufferAllocateInfo vk_commandBufferAllocInfo = {
+			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+			.commandPool = vk_hCommandPool,
+			.level = vk_eCommandBufferLevel,
+			.commandBufferCount = 1U
+		};
+		if (!vkAllocateCommandBuffers(vk_hDevice, &vk_commandBufferAllocInfo, &vk_hCommandBuffer))
+			RE_ERROR(append_to_string("Failed to allocate a new command buffer in command pool ", vk_hCommandPool));
+	}
+	
+	Vulkan_CommandBuffer::~Vulkan_CommandBuffer() {
+		if(!is_valid())
+			return;
+		vkFreeCommandBuffers(vk_hDevice, vk_hCommandPool, 1U, &vk_hCommandBuffer);
+	}
+
+	bool Vulkan_CommandBuffer::begin_recording(const VkCommandBufferUsageFlags vk_eUsageFlags, const VkCommandBufferInheritanceInfo *vk_pInheritanceInfo) const {
+		const VkCommandBufferBeginInfo vk_beginRecordInfo = {
+			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+			.flags = vk_eUsageFlags,
+			.pInheritanceInfo = vk_pInheritanceInfo
+		};
+		const bool bSuccess = vkBeginCommandBuffer(vk_hCommandBuffer, &vk_beginRecordInfo);
+		if (!bSuccess)
+			RE_ERROR(append_to_string("Failed to begin recording command buffer ", vk_hCommandBuffer));
+		return bSuccess;
+	}
+
+	bool Vulkan_CommandBuffer::end_recording() const {
+		const bool bSuccess = vkEndCommandBuffer(vk_hCommandBuffer);
+		if (!bSuccess)
+			RE_ERROR(append_to_string("Failed to finish recording command buffer ", vk_hCommandBuffer));
+		return bSuccess;
+	}
+
+	VkCommandBuffer Vulkan_CommandBuffer::get_command_buffer() const {
+		return vk_hCommandBuffer;
+	}
+
+	VkCommandBuffer* Vulkan_CommandBuffer::get_command_buffer_ptr() {
+		return &vk_hCommandBuffer;
+	}
+
+	bool Vulkan_CommandBuffer::is_valid() const {
+		return vk_hCommandPool && vk_hCommandBuffer;
+	}
+
+	Vulkan_CommandBuffer::operator VkCommandBuffer() const {
+		return get_command_buffer();
+	}
+
+	Vulkan_CommandBuffer::operator VkCommandBuffer*() {
+		return get_command_buffer_ptr();
+	}
+
+
+	
+	Vulkan_Fence::Vulkan_Fence() : Vulkan_Fence(0) {}
+	Vulkan_Fence::Vulkan_Fence(const VkFenceCreateFlags vk_eCreateFlags) : vk_hFence(VK_NULL_HANDLE) {
+		const VkFenceCreateInfo vk_createInfo = {
+			.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+			.flags = vk_eCreateFlags
+		};
+		if (!vkCreateFence(vk_hDevice, &vk_createInfo, nullptr, &vk_hFence))
+			RE_ERROR("Failed to create Vulkan fence");
+	}
+	
+	Vulkan_Fence::~Vulkan_Fence() {
+		if (!is_valid())
+			return;
+		vkDestroyFence(vk_hDevice, vk_hFence, nullptr);
+	}
+
+	bool Vulkan_Fence::wait_for() const {
+		return vkWaitForFences(vk_hDevice, 1U, &vk_hFence, VK_TRUE, std::numeric_limits<uint64_t>::max());
+	}
+
+	VkFence Vulkan_Fence::get_fence() const {
+		return vk_hFence;
+	}
+	
+	bool Vulkan_Fence::is_valid() const {
+		return vk_hFence != VK_NULL_HANDLE;
+	}
+
+	Vulkan_Fence::operator VkFence() const {
+		return get_fence();
 	}
 
 }

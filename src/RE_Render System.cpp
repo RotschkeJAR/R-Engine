@@ -135,7 +135,7 @@ namespace RE {
 		uint32_t u32TotalPhysicalDeviceCount;
 		vkEnumeratePhysicalDevices(vk_hInstance, &u32TotalPhysicalDeviceCount, nullptr);
 		if (!u32TotalPhysicalDeviceCount) {
-			RE_FATAL_ERROR("There aren't any devices supporting Vulkan");
+			RE_FATAL_ERROR("There aren't any physical devices supporting Vulkan");
 			return false;
 		}
 		PRINT_LN("Available GPUs:");
@@ -530,9 +530,6 @@ namespace RE {
 	}
 
 	static bool create_swapchain() {
-		uint32_t u32ErrorLevel;
-#define JUMP_TO_ERR(NUM) do {u32ErrorLevel = NUM; goto RE_SWAPCHAIN_CREATION_ERR;} while(false)
-
 		// Create actual sweapchain
 		const VkSwapchainKHR vk_hOldSwapchain = vk_hSwapchain;
 		if (vk_hOldSwapchain) {
@@ -574,8 +571,8 @@ namespace RE {
 		else
 			vk_swapchainCreateInfo.presentMode = is_bit_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_INDEX) ? vk_ePresentModeVsync : vk_ePresentModeNoVsync;
 		if (!vkCreateSwapchainKHR(vk_hDevice, &vk_swapchainCreateInfo, nullptr, &vk_hSwapchain)) {
-			RE_FATAL_ERROR("Failed creating Vulkan swapchain");
-			JUMP_TO_ERR(0U);
+			RE_ERROR("Failed creating Vulkan swapchain");
+			return false;
 		}
 		vk_eSwapchainImageFormat = vk_surfaceFormatSelected.format;
 		if (vk_hOldSwapchain != VK_NULL_HANDLE)
@@ -590,52 +587,23 @@ namespace RE {
 		{
 			uint32_t u32SwapchainImageViewsCreated = 0U;
 			while (u32SwapchainImageViewsCreated < u32SwapchainImageCount) {
-				VkImageViewCreateInfo vk_swapchainImageViewCreateInfo = {
-					.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-					.image = vk_phSwapchainImages[u32SwapchainImageViewsCreated],
-					.viewType = VK_IMAGE_VIEW_TYPE_2D,
-					.format = vk_eSwapchainImageFormat,
-					.components = {
-						.r = VK_COMPONENT_SWIZZLE_IDENTITY,
-						.g = VK_COMPONENT_SWIZZLE_IDENTITY,
-						.b = VK_COMPONENT_SWIZZLE_IDENTITY,
-						.a = VK_COMPONENT_SWIZZLE_IDENTITY
-					},
-					.subresourceRange = {
-						.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-						.baseMipLevel = 0U,
-						.levelCount = 1U,
-						.baseArrayLayer = 0U,
-						.layerCount = 1U
-					}
-				};
-				if (!vkCreateImageView(vk_hDevice, &vk_swapchainImageViewCreateInfo, nullptr, &vk_phSwapchainImageViews[u32SwapchainImageViewsCreated])) {
+				if (create_vulkan_image_view(vk_phSwapchainImages[u32SwapchainImageViewsCreated], VK_IMAGE_VIEW_TYPE_2D, vk_eSwapchainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 0U, 1U, 0U, 1U, &vk_phSwapchainImageViews[u32SwapchainImageViewsCreated])) {
 					RE_FATAL_ERROR(append_to_string("Failed to create Vulkan image view at index ", u32SwapchainImageViewsCreated));
 					break;
 				}
 				u32SwapchainImageViewsCreated++;
+				continue;
 			}
 			if (u32SwapchainImageViewsCreated != u32SwapchainImageCount) {
 				for (uint32_t u32SwapchainImageDeleteIndex = 0U; u32SwapchainImageDeleteIndex < u32SwapchainImageViewsCreated; u32SwapchainImageDeleteIndex++)
 					vkDestroyImageView(vk_hDevice, vk_phSwapchainImageViews[u32SwapchainImageDeleteIndex], nullptr);
-				JUMP_TO_ERR(1U);
-			}
-		}
-		// End of creating swapchain image views
-
-#undef JUMP_TO_ERR
-		return true;
-
-		RE_SWAPCHAIN_CREATION_ERR:
-		switch (u32ErrorLevel) {
-			case 1U:
 				DELETE_ARRAY_SAFELY(vk_phSwapchainImages);
 				DELETE_ARRAY_SAFELY(vk_phSwapchainImageViews);
 				vkDestroySwapchainKHR(vk_hDevice, vk_hSwapchain, nullptr);
 				vk_hSwapchain = VK_NULL_HANDLE;
-			default:
-				return false;
-		}
+			}
+		} // End of creating swapchain image views
+		return true;
 	}
 	
 	static void destroy_swapchain() {

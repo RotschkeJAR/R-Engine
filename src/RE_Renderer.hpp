@@ -11,6 +11,12 @@ namespace RE {
 	extern Camera *pActiveCamera;
 	extern VkViewport vk_cameraViewportArea;
 	extern VkRect2D vk_cameraScissorArea;
+
+	extern VkBuffer vk_hRectIndexBuffer;
+	extern VkDeviceMemory vk_hRectIndexBufferMemory;
+
+	extern VkRenderPass vk_hWorldRenderPass;
+	extern VkFramebuffer vk_ahWorldFramebuffers[RE_VK_FRAMES_IN_FLIGHT];
 	
 	bool init_renderer();
 	void destroy_renderer();

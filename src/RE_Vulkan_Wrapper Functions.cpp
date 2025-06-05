@@ -3,29 +3,40 @@
 
 namespace RE {
 
-	static std::vector<uint32_t> get_queue_family_indices(const uint32_t u32QueueCount, const uint32_t *pu32Queues) {
+	static std::vector<uint32_t> get_queue_family_indices(const uint32_t u32QueueCount, const uint32_t *pau32Queues) {
 		std::vector<uint32_t> queueFamilies;
 		for (uint32_t u32QueueIndex = 0U; u32QueueIndex < u32QueueCount; u32QueueIndex++)
-			if (std::find(queueFamilies.begin(), queueFamilies.end(), u32DeviceQueueFamilyIndices[pu32Queues[u32QueueIndex]]) == queueFamilies.end())
-				queueFamilies.push_back(u32DeviceQueueFamilyIndices[pu32Queues[u32QueueIndex]]);
+			if (std::find(queueFamilies.begin(), queueFamilies.end(), u32DeviceQueueFamilyIndices[pau32Queues[u32QueueIndex]]) == queueFamilies.end())
+				queueFamilies.push_back(u32DeviceQueueFamilyIndices[pau32Queues[u32QueueIndex]]);
 		return queueFamilies;
 	}
 
-	static uint32_t find_vulkan_device_memory_type(const uint32_t u32MemoryTypeBits, const VkMemoryPropertyFlags vk_eMemoryPropertyFlags) {
+	static bool alloc_required_memory(const VkMemoryRequirements vk_memoryRequirements, const VkMemoryPropertyFlags vk_eMemoryPropertyFlags, VkDeviceMemory *vk_phMemory) {
+		uint32_t u32MemoryTypeIndex = VK_MAX_MEMORY_TYPES;
 		for (uint32_t u32PhysicalDeviceMemoryTypeIndex = 0U; u32PhysicalDeviceMemoryTypeIndex < vk_physicalDeviceMemoryProperties.memoryTypeCount; u32PhysicalDeviceMemoryTypeIndex++)
-			if ((u32MemoryTypeBits & (1U << u32PhysicalDeviceMemoryTypeIndex)) && (vk_physicalDeviceMemoryProperties.memoryTypes[u32PhysicalDeviceMemoryTypeIndex].propertyFlags & vk_eMemoryPropertyFlags) == vk_eMemoryPropertyFlags)
-				return u32PhysicalDeviceMemoryTypeIndex;
-		RE_FATAL_ERROR("Failed to find required memory type");
-		return VK_MAX_MEMORY_TYPES;
+			if ((vk_memoryRequirements.memoryTypeBits & (1U << u32PhysicalDeviceMemoryTypeIndex)) && (vk_physicalDeviceMemoryProperties.memoryTypes[u32PhysicalDeviceMemoryTypeIndex].propertyFlags & vk_eMemoryPropertyFlags) == vk_eMemoryPropertyFlags) {
+				u32MemoryTypeIndex = u32PhysicalDeviceMemoryTypeIndex;
+				break;
+			}
+		if (u32MemoryTypeIndex == VK_MAX_MEMORY_TYPES) {
+			RE_ERROR("Failed to find required memory type");
+			return false;
+		}
+		const VkMemoryAllocateInfo vk_allocInfo = {
+			.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+			.allocationSize = vk_memoryRequirements.size,
+			.memoryTypeIndex = u32MemoryTypeIndex
+		};
+		return vkAllocateMemory(vk_hDevice, &vk_allocInfo, nullptr, vk_phMemory);
 	}
 	
-	bool create_vulkan_buffer(const VkDeviceSize vk_size, const VkBufferUsageFlags vk_eUsages, const uint32_t u32QueueCount, const uint32_t *pu32Queues, const VkMemoryPropertyFlags vk_eMemoryPropertyFlags, VkBuffer *vk_phBuffer, VkDeviceMemory *vk_phMemory) {
+	bool create_vulkan_buffer(const VkDeviceSize vk_size, const VkBufferUsageFlags vk_eUsages, const uint32_t u32QueueCount, const uint32_t *pau32Queues, const VkMemoryPropertyFlags vk_eMemoryPropertyFlags, VkBuffer *vk_phBuffer, VkDeviceMemory *vk_phMemory) {
 		VkBufferCreateInfo vk_createInfo = {
 			.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
 			.size = vk_size,
 			.usage = vk_eUsages
 		};
-		std::vector<uint32_t> queueFamilyIndices = get_queue_family_indices(u32QueueCount, pu32Queues);
+		std::vector<uint32_t> queueFamilyIndices = get_queue_family_indices(u32QueueCount, pau32Queues);
 		if (queueFamilyIndices.size() == 1U)
 			vk_createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		else {
@@ -36,24 +47,104 @@ namespace RE {
 		if (vkCreateBuffer(vk_hDevice, &vk_createInfo, nullptr, vk_phBuffer)) {
 			VkMemoryRequirements vk_memoryRequirements;
 			vkGetBufferMemoryRequirements(vk_hDevice, *vk_phBuffer, &vk_memoryRequirements);
-			const uint32_t u32MemoryTypeIndex = find_vulkan_device_memory_type(vk_memoryRequirements.memoryTypeBits, vk_eMemoryPropertyFlags);
-			if (u32MemoryTypeIndex < VK_MAX_MEMORY_TYPES) {
-				const VkMemoryAllocateInfo vk_allocInfo = {
-					.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-					.allocationSize = vk_memoryRequirements.size,
-					.memoryTypeIndex = u32MemoryTypeIndex
-				};
-				if (vkAllocateMemory(vk_hDevice, &vk_allocInfo, nullptr, vk_phMemory)) {
-					if (vkBindBufferMemory(vk_hDevice, *vk_phBuffer, *vk_phMemory, 0UL))
-						return true;
-					vkFreeMemory(vk_hDevice, *vk_phMemory, nullptr);
-					*vk_phMemory = VK_NULL_HANDLE;
-				}
-			}
+			if (alloc_required_memory(vk_memoryRequirements, vk_eMemoryPropertyFlags, vk_phMemory)) {
+				if (vkBindBufferMemory(vk_hDevice, *vk_phBuffer, *vk_phMemory, 0UL))
+					return true;
+				else
+					RE_ERROR("Failed to bind memory to Vulkan buffer");
+				vkFreeMemory(vk_hDevice, *vk_phMemory, nullptr);
+				*vk_phMemory = VK_NULL_HANDLE;
+			} else
+				RE_ERROR("Failed to allocate memory for Vulkan buffer");
 			vkDestroyBuffer(vk_hDevice, *vk_phBuffer, nullptr);
 			*vk_phBuffer = VK_NULL_HANDLE;
-		}
+		} else
+			RE_ERROR("Failed to create Vulkan buffer");
 		return false;
+	}
+
+	bool create_vulkan_image(const VkImageCreateFlags vk_eCreateFlags, const VkImageType vk_eType, const VkFormat vk_eFormat, const VkExtent3D vk_extent, const uint32_t u32MipLevels, const uint32_t u32ArrayLayerCount, const VkSampleCountFlagBits vk_eSamples, const VkImageTiling vk_eTiling, const VkImageUsageFlags vk_eUsages, const uint32_t u32QueueCount, const uint32_t *pau32Queues, const VkImageLayout vk_eLayout, const VkMemoryPropertyFlags vk_eMemoryPropertyFlags, VkImage *vk_phImage, VkDeviceMemory *vk_phMemory) {
+		VkImageCreateInfo vk_createInfo = {
+			.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+			.flags = vk_eCreateFlags,
+			.imageType = vk_eType,
+			.format = vk_eFormat,
+			.extent = vk_extent,
+			.mipLevels = u32MipLevels,
+			.arrayLayers = u32ArrayLayerCount,
+			.samples = vk_eSamples,
+			.tiling = vk_eTiling,
+			.usage = vk_eUsages,
+			.initialLayout = vk_eLayout
+		};
+		std::vector<uint32_t> queueFamilies = get_queue_family_indices(u32QueueCount, pau32Queues);
+		if (queueFamilies.size() == 1U)
+			vk_createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		else {
+			vk_createInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
+			vk_createInfo.queueFamilyIndexCount = queueFamilies.size();
+			vk_createInfo.pQueueFamilyIndices = queueFamilies.data();
+		}
+		if (vkCreateImage(vk_hDevice, &vk_createInfo, nullptr, vk_phImage)) {
+			VkMemoryRequirements vk_memoryRequirements;
+			vkGetImageMemoryRequirements(vk_hDevice, *vk_phImage, &vk_memoryRequirements);
+			if (alloc_required_memory(vk_memoryRequirements, vk_eMemoryPropertyFlags, vk_phMemory)) {
+				if (vkBindImageMemory(vk_hDevice, *vk_phImage, *vk_phMemory, 0UL))
+					return true;
+				else
+					RE_ERROR("Failed to bind memory to Vulkan image");
+				vkFreeMemory(vk_hDevice, *vk_phMemory, nullptr);
+				*vk_phMemory = VK_NULL_HANDLE;
+			} else
+				RE_ERROR("Failed to allocate memory for Vulkan image");
+			vkDestroyImage(vk_hDevice, *vk_phImage, nullptr);
+			*vk_phImage = VK_NULL_HANDLE;
+		} else
+			RE_ERROR("Failed to create Vulkan image");
+		return false;
+	}
+
+	bool create_vulkan_image_view(const VkImage vk_hImage, const VkImageViewType vk_eType, const VkFormat vk_eFormat, const VkImageAspectFlags vk_eImageAspects, const uint32_t u32BaseMipLevel, const uint32_t u32MipLevelCount, const uint32_t u32BaseArrayLayer, const uint32_t u32ArrayLayerCount, VkImageView *vk_phImageView) {
+		VkImageViewCreateInfo vk_createInfo = {
+			.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+			.image = vk_hImage,
+			.viewType = vk_eType,
+			.format = vk_eFormat,
+			.components = {
+				.r = VK_COMPONENT_SWIZZLE_IDENTITY,
+				.g = VK_COMPONENT_SWIZZLE_IDENTITY,
+				.b = VK_COMPONENT_SWIZZLE_IDENTITY,
+				.a = VK_COMPONENT_SWIZZLE_IDENTITY
+			},
+			.subresourceRange = {
+				.aspectMask = vk_eImageAspects,
+				.baseMipLevel = u32BaseMipLevel,
+				.levelCount = u32MipLevelCount,
+				.baseArrayLayer = u32BaseArrayLayer,
+				.layerCount = u32ArrayLayerCount
+			}
+		};
+		const bool bSuccess = vkCreateImageView(vk_hDevice, &vk_createInfo, nullptr, vk_phImageView);
+		if (!bSuccess)
+			RE_ERROR("Failed to create Vulkan image view");
+		return bSuccess;
+	}
+
+	bool create_vulkan_framebuffer(const VkFramebufferCreateFlags vk_eCreateFlags, const VkRenderPass vk_hRenderPass, const uint32_t u32ImageViewAttachmentCount, const VkImageView *vk_pahImageViews, const uint32_t u32Width, const uint32_t u32Height, const uint32_t u32Layer, VkFramebuffer *vk_phFramebuffer) {
+		const VkFramebufferCreateInfo vk_createInfo = {
+			.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+			.flags = vk_eCreateFlags,
+			.renderPass = vk_hRenderPass,
+			.attachmentCount = u32ImageViewAttachmentCount,
+			.pAttachments = vk_pahImageViews,
+			.width = u32Width,
+			.height = u32Height,
+			.layers = u32Layer
+		};
+		const bool bSuccess = vkCreateFramebuffer(vk_hDevice, &vk_createInfo, nullptr, vk_phFramebuffer);
+		if (!bSuccess)
+			RE_ERROR("Failed to create Vulkan framebuffer");
+		return bSuccess;
 	}
 
 }

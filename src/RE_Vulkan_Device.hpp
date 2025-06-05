@@ -237,7 +237,7 @@ namespace RE {
 #define vkInvalidateMappedMemoryRanges(...) CHECK_VK_RESULT(pfn_vkInvalidateMappedMemoryRanges(__VA_ARGS__))
 #define vkGetDeviceMemoryCommitment(...) FOCUS_FOR_VK_DEBUG(pfn_vkGetDeviceMemoryCommitment(__VA_ARGS__))
 #define vkBindBufferMemory(...) CHECK_VK_RESULT(pfn_vkBindBufferMemory(__VA_ARGS__))
-#define vkBindImageMemory(...) CHECK_VK_RESULT(pfn_vkBindBufferMemory(__VA_ARGS__))
+#define vkBindImageMemory(...) CHECK_VK_RESULT(pfn_vkBindImageMemory(__VA_ARGS__))
 #define vkGetBufferMemoryRequirements(...) FOCUS_FOR_VK_DEBUG(pfn_vkGetBufferMemoryRequirements(__VA_ARGS__))
 #define vkGetImageMemoryRequirements(...) FOCUS_FOR_VK_DEBUG(pfn_vkGetImageMemoryRequirements(__VA_ARGS__))
 #define vkGetImageSparseMemoryRequirements(...) FOCUS_FOR_VK_DEBUG(pfn_vkGetImageSparseMemoryRequirements(__VA_ARGS__))

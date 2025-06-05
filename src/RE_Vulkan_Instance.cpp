@@ -460,29 +460,14 @@ namespace RE {
 			RE_FATAL_ERROR("Failed loading the Vulkan function \"vkGetInstanceProcAddr\" with the OS-specific API");
 			return false;
 		}
-		uint32_t u32ErrorLevel;
-#define JUMP_TO_ERR(NUM) do {u32ErrorLevel = NUM; goto RE_VK_INSTANCE_INIT_ERR_LABEL;} while(false)
-		if (!CATCH_SIGNAL_AND_RETURN(create_vulkan_instance(), bool)) {
-			RE_FATAL_ERROR("Failed creating Vulkan instance");
-			JUMP_TO_ERR(0U);
+		if (CATCH_SIGNAL_AND_RETURN(create_vulkan_instance(), bool)) {
+			if (CATCH_SIGNAL_AND_RETURN(load_vulkan_1_0_with_instance() && load_vulkan_1_1_with_instance() /* && load_vulkan_1_3_with_instance() */ && load_extension_funcs_with_instance() && setup_validation_layers(), bool))
+				return true;
+			unload_all_vulkan_functions_of_instance();
+			CATCH_SIGNAL(pfn_vkDestroyInstance(vk_hInstance, nullptr));
+			vk_hInstance = VK_NULL_HANDLE;
 		}
-		if (!CATCH_SIGNAL_AND_RETURN(load_vulkan_1_0_with_instance() && load_vulkan_1_1_with_instance() /* && load_vulkan_1_3_with_instance() */ && load_extension_funcs_with_instance() && setup_validation_layers(), bool)) {
-			RE_FATAL_ERROR("Failed loading function pointers to Vulkan");
-			JUMP_TO_ERR(1U);
-		}
-		return true;
-#undef JUMP_TO_ERR
-
-		RE_VK_INSTANCE_INIT_ERR_LABEL:
-		switch (u32ErrorLevel) {
-			case 1U:
-				CATCH_SIGNAL(pfn_vkDestroyInstance(vk_hInstance, nullptr));
-				vk_hInstance = VK_NULL_HANDLE;
-			case 0U:
-				unload_all_vulkan_functions_of_instance();
-			default:
-				return false;
-		}
+		return false;
 	}
 	
 	void destroy_vulkan_instance() {

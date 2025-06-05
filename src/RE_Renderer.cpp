@@ -2,6 +2,7 @@
 #include "RE_Internal Header.hpp"
 #include "RE_Window.hpp"
 #include "RE_Vulkan_Wrapper Classes.hpp"
+#include "RE_Vulkan_Wrapper Functions.hpp"
 
 #include <thread>
 
@@ -15,22 +16,47 @@ namespace RE {
 	VkViewport vk_cameraViewportArea;
 	VkRect2D vk_cameraScissorArea;
 
-	bool init_renderer() {
-		uint32_t u32ErrorLevel;
-#define JUMP_TO_ERR(NUM) do {u32ErrorLevel = NUM; goto RE_VK_RENDERER_INIT_ERR;} while(false)
-		const uint32_t u32StagingIndexBufferQueues[] = {RE_VK_QUEUE_TRANSFER_INDEX};
-		Vulkan_Buffer stagingIndexBuffer(1U, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 1U, u32StagingIndexBufferQueues, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-#undef JUMP_TO_ERR
-		return true;
+	VkBuffer vk_hRectIndexBuffer = VK_NULL_HANDLE;
+	VkDeviceMemory vk_hRectIndexBufferMemory = VK_NULL_HANDLE;
 
-		RE_VK_RENDERER_INIT_ERR:
-		switch(u32ErrorLevel) {
-			default:
-				return false;
+	bool init_renderer() {
+		constexpr uint32_t u32StagingIndexBufferQueueCount = 1U, u32StagingIndexBufferQueues[u32StagingIndexBufferQueueCount] = {RE_VK_QUEUE_TRANSFER_INDEX};
+		Vulkan_Buffer stagingIndexBuffer(RE_VK_INDEX_BUFFER_BYTES, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, u32StagingIndexBufferQueueCount, u32StagingIndexBufferQueues, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+		if (stagingIndexBuffer.is_valid()) {
+			std::thread stagingIndexBufferDataInit([&]() {
+				uint16_t *pu16RectIndices;
+				stagingIndexBuffer.map_memory((void**) &pu16RectIndices);
+				for (uint16_t u16RectNumber = 0U; u16RectNumber < RE_VK_RENDERABLE_RECTANGLES_COUNT; u16RectNumber++) {
+					pu16RectIndices[u16RectNumber * 6U + 0U] = u16RectNumber * 4U + 0U;
+					pu16RectIndices[u16RectNumber * 6U + 1U] = u16RectNumber * 4U + 1U;
+					pu16RectIndices[u16RectNumber * 6U + 2U] = u16RectNumber * 4U + 2U;
+					pu16RectIndices[u16RectNumber * 6U + 3U] = u16RectNumber * 4U + 2U;
+					pu16RectIndices[u16RectNumber * 6U + 4U] = u16RectNumber * 4U + 3U;
+					pu16RectIndices[u16RectNumber * 6U + 5U] = u16RectNumber * 4U + 0U;
+				}
+				stagingIndexBuffer.unmap_memory();
+			});
+			constexpr uint32_t u32IndexBufferQueueCount = 2U, u32IndexBufferQueues[u32IndexBufferQueueCount] = {RE_VK_QUEUE_TRANSFER_INDEX, RE_VK_QUEUE_GRAPHICS_INDEX};
+			if (create_vulkan_buffer(RE_VK_INDEX_BUFFER_BYTES, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, u32IndexBufferQueueCount, u32IndexBufferQueues, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_hRectIndexBuffer, &vk_hRectIndexBufferMemory)) {
+				if (true) {
+					stagingIndexBufferDataInit.join();
+					return true;
+				}
+				vkFreeMemory(vk_hDevice, vk_hRectIndexBufferMemory, nullptr);
+				vk_hRectIndexBufferMemory = VK_NULL_HANDLE;
+				vkDestroyBuffer(vk_hDevice, vk_hRectIndexBuffer, nullptr);
+				vk_hRectIndexBuffer = VK_NULL_HANDLE;
+			}
+			stagingIndexBufferDataInit.join();
 		}
+		return false;
 	}
 	
 	void destroy_renderer() {
+		vkFreeMemory(vk_hDevice, vk_hRectIndexBufferMemory, nullptr);
+		vk_hRectIndexBufferMemory = VK_NULL_HANDLE;
+		vkDestroyBuffer(vk_hDevice, vk_hRectIndexBuffer, nullptr);
+		vk_hRectIndexBuffer = VK_NULL_HANDLE;
 	}
 
 	void render() {

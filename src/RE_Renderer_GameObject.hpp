@@ -2,6 +2,8 @@
 #define __RE_RENDERER_GAME_OBJECT_H__
 
 namespace RE {
+
+	extern VkCommandBuffer vk_ahGameObjectSecondaryCommandBuffers[RE_VK_FRAMES_IN_FLIGHT];
 	
 	bool init_gameobject_renderer();
 	void destroy_gameobject_renderer();

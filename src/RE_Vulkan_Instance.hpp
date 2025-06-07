@@ -10,6 +10,9 @@
 #endif
 #define VK_NO_PROTOTYPES
 #include <vulkan/vulkan.h>
+#ifndef VK_API_VERSION_1_2
+# error The Vulkan header should support at least all versions up to 1.2
+#endif
 
 namespace RE {
 	

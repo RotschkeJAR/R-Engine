@@ -16,8 +16,6 @@ namespace RE {
 #define RE_VK_SEMAPHORES_PER_FRAME_COUNT 2U
 #define RE_VK_RENDER_SEMAPHORE_COUNT (RE_VK_FRAMES_IN_FLIGHT * RE_VK_SEMAPHORES_PER_FRAME_COUNT)
 
-#define RE_VK_PRIMARY_COMMAND_BUFFER_COUNT RE_VK_FRAMES_IN_FLIGHT
-
 	Camera *pActiveCamera = nullptr;
 	VkViewport vk_cameraViewportArea;
 	VkRect2D vk_cameraScissorArea;
@@ -34,7 +32,7 @@ namespace RE {
 	VkFence vk_ahRenderFences[RE_VK_FRAMES_IN_FLIGHT] = {};
 	VkSemaphore vk_ahRenderSemaphores[RE_VK_RENDER_SEMAPHORE_COUNT] = {};
 
-	VkCommandBuffer vk_ahRenderCommandBuffers[RE_VK_PRIMARY_COMMAND_BUFFER_COUNT] = {};
+	VkCommandBuffer vk_ahRenderCommandBuffers[RE_VK_FRAMES_IN_FLIGHT] = {};
 
 	bool init_renderer() {
 		constexpr uint32_t u32StagingIndexBufferQueueCount = 1U, u32StagingIndexBufferQueues[u32StagingIndexBufferQueueCount] = {RE_VK_QUEUE_TRANSFER_INDEX};
@@ -173,12 +171,12 @@ namespace RE {
 													}
 													u16RenderSemaphoreCreateIndex++;
 												}
-												if (u16RenderSemaphoreCreateIndex == RE_VK_RENDER_SEMAPHORE_COUNT && CATCH_SIGNAL_AND_RETURN(alloc_vulkan_command_buffers(vk_hCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX], VK_COMMAND_BUFFER_LEVEL_PRIMARY, RE_VK_PRIMARY_COMMAND_BUFFER_COUNT, vk_ahRenderCommandBuffers), bool)) {
+												if (u16RenderSemaphoreCreateIndex == RE_VK_RENDER_SEMAPHORE_COUNT && CATCH_SIGNAL_AND_RETURN(alloc_vulkan_command_buffers(vk_hCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX], VK_COMMAND_BUFFER_LEVEL_PRIMARY, RE_VK_FRAMES_IN_FLIGHT, vk_ahRenderCommandBuffers), bool)) {
 													if (CATCH_SIGNAL_AND_RETURN(init_gameobject_renderer(), bool)) {
 														rectIndexBufferDataTransferFence.wait_for();
 														return true;
 													}
-													vkFreeCommandBuffers(vk_hDevice, vk_hCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX], RE_VK_PRIMARY_COMMAND_BUFFER_COUNT, vk_ahRenderCommandBuffers);
+													vkFreeCommandBuffers(vk_hDevice, vk_hCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX], RE_VK_FRAMES_IN_FLIGHT, vk_ahRenderCommandBuffers);
 												}
 												for (uint16_t u16RenderSemaphoreDeleteIndex = 0U; u16RenderSemaphoreDeleteIndex < u16RenderSemaphoreCreateIndex; u16RenderSemaphoreDeleteIndex++) {
 													vkDestroySemaphore(vk_hDevice, vk_ahRenderSemaphores[u16RenderSemaphoreDeleteIndex], nullptr);
@@ -227,7 +225,7 @@ namespace RE {
 	
 	void destroy_renderer() {
 		CATCH_SIGNAL(destroy_gameobject_renderer());
-		vkFreeCommandBuffers(vk_hDevice, vk_hCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX], RE_VK_PRIMARY_COMMAND_BUFFER_COUNT, vk_ahRenderCommandBuffers);
+		vkFreeCommandBuffers(vk_hDevice, vk_hCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX], RE_VK_FRAMES_IN_FLIGHT, vk_ahRenderCommandBuffers);
 		for (uint16_t u16RenderSemaphoreDeleteIndex = 0U; u16RenderSemaphoreDeleteIndex < RE_VK_RENDER_SEMAPHORE_COUNT; u16RenderSemaphoreDeleteIndex++) {
 			vkDestroySemaphore(vk_hDevice, vk_ahRenderSemaphores[u16RenderSemaphoreDeleteIndex], nullptr);
 			vk_ahRenderSemaphores[u16RenderSemaphoreDeleteIndex] = VK_NULL_HANDLE;

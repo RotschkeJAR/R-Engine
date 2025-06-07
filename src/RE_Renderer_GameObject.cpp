@@ -32,6 +32,11 @@ namespace RE {
 	VkPipelineLayout vk_hGameObjectPipelineLayout = VK_NULL_HANDLE;
 	VkPipeline vk_hGameObjectGraphicsPipeline = VK_NULL_HANDLE;
 
+	VkBuffer vk_hGameObjectStagingVertexBuffer = VK_NULL_HANDLE, vk_ahGameObjectVertexBuffers[RE_VK_FRAMES_IN_FLIGHT] = {};
+	VkDeviceMemory vk_hGameObjectStagingVertexBufferMemory = VK_NULL_HANDLE, vk_ahGameObjectVertexBufferMemories[RE_VK_FRAMES_IN_FLIGHT] = {};
+
+	VkCommandBuffer vk_ahGameObjectSecondaryCommandBuffers[RE_VK_FRAMES_IN_FLIGHT] = {};
+
 	bool init_gameobject_renderer() {
 		if (CATCH_SIGNAL_AND_RETURN(create_vulkan_shader_from_file("shaders/vertex.spv", &vk_hGameObjectVertexShader), bool)) {
 			if (CATCH_SIGNAL_AND_RETURN(create_vulkan_shader_from_file("shaders/fragment.spv", &vk_hGameObjectFragmentShader), bool)) {
@@ -199,9 +204,14 @@ namespace RE {
 						.renderPass = vk_hWorldRenderPass,
 						.subpass = RE_VK_GAME_OBJECT_SUPBASS
 					};
-					if (vkCreateGraphicsPipelines(vk_hDevice, VK_NULL_HANDLE, 1U, &vk_graphicsPipelineCreateInfo, nullptr, &vk_hGameObjectGraphicsPipeline))
-						return true;
-					else
+					if (vkCreateGraphicsPipelines(vk_hDevice, VK_NULL_HANDLE, 1U, &vk_graphicsPipelineCreateInfo, nullptr, &vk_hGameObjectGraphicsPipeline)) {
+						if (CATCH_SIGNAL_AND_RETURN(alloc_vulkan_command_buffers(vk_hCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX], VK_COMMAND_BUFFER_LEVEL_SECONDARY, RE_VK_FRAMES_IN_FLIGHT, vk_ahGameObjectSecondaryCommandBuffers), bool))
+							return true;
+						else
+							RE_FATAL_ERROR("Failed allocating Vulkan secondary command buffers for rendering game objects");
+						vkDestroyPipeline(vk_hDevice, vk_hGameObjectGraphicsPipeline, nullptr);
+						vk_hGameObjectGraphicsPipeline = VK_NULL_HANDLE;
+					} else
 						RE_FATAL_ERROR("Failed creating Vulkan graphics pipeline for rendering game objects");
 					vkDestroyPipelineLayout(vk_hDevice, vk_hGameObjectPipelineLayout, nullptr);
 					vk_hGameObjectPipelineLayout = VK_NULL_HANDLE;
@@ -219,6 +229,7 @@ namespace RE {
 	}
 
 	void destroy_gameobject_renderer() {
+		vkFreeCommandBuffers(vk_hDevice, vk_hCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX], RE_VK_FRAMES_IN_FLIGHT, vk_ahGameObjectSecondaryCommandBuffers);
 		vkDestroyPipeline(vk_hDevice, vk_hGameObjectGraphicsPipeline, nullptr);
 		vk_hGameObjectGraphicsPipeline = VK_NULL_HANDLE;
 		vkDestroyPipelineLayout(vk_hDevice, vk_hGameObjectPipelineLayout, nullptr);

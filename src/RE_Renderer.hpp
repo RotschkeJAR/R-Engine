@@ -8,6 +8,8 @@ namespace RE {
 #define RE_VK_RENDERABLE_RECTANGLES_COUNT 16384U
 #define RE_VK_FRAMES_IN_FLIGHT 2U
 
+#define RE_VK_GAME_OBJECT_SUPBASS 0U
+
 	extern Camera *pActiveCamera;
 	extern VkViewport vk_cameraViewportArea;
 	extern VkRect2D vk_cameraScissorArea;

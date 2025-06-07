@@ -11,7 +11,7 @@ namespace RE {
 
 	typedef uint16_t REindex_t;
 #define RE_VK_INDEX_BUFFER_SIZE RE_VK_RENDERABLE_RECTANGLES_COUNT * 6U
-#define RE_VK_INDEX_BUFFER_BYTES RE_VK_INDEX_BUFFER_SIZE * sizeof(REindex_t)
+#define RE_VK_INDEX_BUFFER_SIZE_BYTES RE_VK_INDEX_BUFFER_SIZE * sizeof(REindex_t)
 
 #define RE_VK_SEMAPHORES_PER_FRAME_COUNT 2U
 #define RE_VK_RENDER_SEMAPHORE_COUNT (RE_VK_FRAMES_IN_FLIGHT * RE_VK_SEMAPHORES_PER_FRAME_COUNT)
@@ -38,10 +38,10 @@ namespace RE {
 
 	bool init_renderer() {
 		constexpr uint32_t u32StagingIndexBufferQueueCount = 1U, u32StagingIndexBufferQueues[u32StagingIndexBufferQueueCount] = {RE_VK_QUEUE_TRANSFER_INDEX};
-		Vulkan_Buffer stagingIndexBuffer(RE_VK_INDEX_BUFFER_BYTES, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, u32StagingIndexBufferQueueCount, u32StagingIndexBufferQueues, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+		Vulkan_Buffer stagingIndexBuffer(RE_VK_INDEX_BUFFER_SIZE_BYTES, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, u32StagingIndexBufferQueueCount, u32StagingIndexBufferQueues, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 		if (stagingIndexBuffer.is_valid()) {
 			std::thread stagingIndexBufferDataInit([&]() {
-				uint16_t *pu16RectIndices;
+				REindex_t *pu16RectIndices;
 				stagingIndexBuffer.map_memory((void**) &pu16RectIndices);
 				for (uint16_t u16RectNumber = 0U; u16RectNumber < RE_VK_RENDERABLE_RECTANGLES_COUNT; u16RectNumber++) {
 					pu16RectIndices[u16RectNumber * 6U + 0U] = u16RectNumber * 4U + 0U;
@@ -54,12 +54,12 @@ namespace RE {
 				stagingIndexBuffer.unmap_memory();
 			});
 			constexpr uint32_t u32IndexBufferQueueCount = 2U, u32IndexBufferQueues[u32IndexBufferQueueCount] = {RE_VK_QUEUE_TRANSFER_INDEX, RE_VK_QUEUE_GRAPHICS_INDEX};
-			if (CATCH_SIGNAL_AND_RETURN(create_vulkan_buffer(RE_VK_INDEX_BUFFER_BYTES, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, u32IndexBufferQueueCount, u32IndexBufferQueues, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_hRectIndexBuffer, &vk_hRectIndexBufferMemory), bool)) {
+			if (CATCH_SIGNAL_AND_RETURN(create_vulkan_buffer(RE_VK_INDEX_BUFFER_SIZE_BYTES, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, u32IndexBufferQueueCount, u32IndexBufferQueues, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_hRectIndexBuffer, &vk_hRectIndexBufferMemory), bool)) {
 				Vulkan_CommandBuffer indexBufferDataTransferCommandBuffer(vk_hCommandPools[RE_VK_COMMAND_POOL_TRANSFER_TRANSIENT_INDEX], VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 				if (indexBufferDataTransferCommandBuffer.is_valid()) {
 					if (indexBufferDataTransferCommandBuffer.begin_recording(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr)) {
 						const VkBufferCopy vk_rectIndexBufferCopy = {
-							.size = RE_VK_INDEX_BUFFER_BYTES
+							.size = RE_VK_INDEX_BUFFER_SIZE_BYTES
 						};
 						vkCmdCopyBuffer(indexBufferDataTransferCommandBuffer, stagingIndexBuffer, vk_hRectIndexBuffer, 1U, &vk_rectIndexBufferCopy);
 						if (indexBufferDataTransferCommandBuffer.end_recording()) {

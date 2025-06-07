@@ -3,7 +3,8 @@
 
 namespace RE {
 	
-	
+	bool init_gameobject_renderer();
+	void destroy_gameobject_renderer();
 
 }
 

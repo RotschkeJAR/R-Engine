@@ -29,6 +29,29 @@ namespace RE {
 		};
 		return vkAllocateMemory(vk_hDevice, &vk_allocInfo, nullptr, vk_phMemory);
 	}
+
+	bool create_vulkan_shader_from_file(const char *pcPathToFile, VkShaderModule *vk_phShader) {
+		std::ifstream shaderBinaryFile(pcPathToFile, std::ios::ate | std::ios::binary);
+		if (!shaderBinaryFile.is_open()) {
+			RE_ERROR(append_to_string("Failed loading SPIR-V shader binaries from file \"", pcPathToFile, "\""));
+			return false;
+		}
+		size_t shaderBinaryFileSize = static_cast<size_t>(shaderBinaryFile.tellg());
+		char *const pacShaderBinary = new char[shaderBinaryFileSize];
+		CATCH_SIGNAL(shaderBinaryFile.seekg(0));
+		CATCH_SIGNAL(shaderBinaryFile.read(pacShaderBinary, shaderBinaryFileSize));
+		CATCH_SIGNAL(shaderBinaryFile.close());
+		const VkShaderModuleCreateInfo vk_createInfo = {
+			.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+			.codeSize = shaderBinaryFileSize,
+			.pCode = reinterpret_cast<const uint32_t*>(pacShaderBinary)
+		};
+		const bool bSuccess = vkCreateShaderModule(vk_hDevice, &vk_createInfo, nullptr, vk_phShader);
+		if (!bSuccess)
+			RE_ERROR(append_to_string("Failed creating Vulkan shader from file \"", pcPathToFile, "\""));
+		delete[] pacShaderBinary;
+		return bSuccess;
+	}
 	
 	bool create_vulkan_buffer(const VkDeviceSize vk_size, const VkBufferUsageFlags vk_eUsages, const uint32_t u32QueueCount, const uint32_t *pau32Queues, const VkMemoryPropertyFlags vk_eMemoryPropertyFlags, VkBuffer *vk_phBuffer, VkDeviceMemory *vk_phMemory) {
 		VkBufferCreateInfo vk_createInfo = {
@@ -47,7 +70,7 @@ namespace RE {
 		if (vkCreateBuffer(vk_hDevice, &vk_createInfo, nullptr, vk_phBuffer)) {
 			VkMemoryRequirements vk_memoryRequirements;
 			vkGetBufferMemoryRequirements(vk_hDevice, *vk_phBuffer, &vk_memoryRequirements);
-			if (alloc_required_memory(vk_memoryRequirements, vk_eMemoryPropertyFlags, vk_phMemory)) {
+			if (CATCH_SIGNAL_AND_RETURN(alloc_required_memory(vk_memoryRequirements, vk_eMemoryPropertyFlags, vk_phMemory), bool)) {
 				if (vkBindBufferMemory(vk_hDevice, *vk_phBuffer, *vk_phMemory, 0UL))
 					return true;
 				else
@@ -88,7 +111,7 @@ namespace RE {
 		if (vkCreateImage(vk_hDevice, &vk_createInfo, nullptr, vk_phImage)) {
 			VkMemoryRequirements vk_memoryRequirements;
 			vkGetImageMemoryRequirements(vk_hDevice, *vk_phImage, &vk_memoryRequirements);
-			if (alloc_required_memory(vk_memoryRequirements, vk_eMemoryPropertyFlags, vk_phMemory)) {
+			if (CATCH_SIGNAL_AND_RETURN(alloc_required_memory(vk_memoryRequirements, vk_eMemoryPropertyFlags, vk_phMemory), bool)) {
 				if (vkBindImageMemory(vk_hDevice, *vk_phImage, *vk_phMemory, 0UL))
 					return true;
 				else
@@ -145,6 +168,25 @@ namespace RE {
 		if (!bSuccess)
 			RE_ERROR("Failed to create Vulkan framebuffer");
 		return bSuccess;
+	}
+
+	bool alloc_vulkan_command_buffers(const VkCommandPool vk_hCommandPool, const VkCommandBufferLevel vk_eLevel, const uint32_t u32Count, VkCommandBuffer *vk_pahCommandBuffer) {
+		const VkCommandBufferAllocateInfo vk_createInfo = {
+			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+			.commandPool = vk_hCommandPool,
+			.level = vk_eLevel,
+			.commandBufferCount = u32Count
+		};
+		return vkAllocateCommandBuffers(vk_hDevice, &vk_createInfo, vk_pahCommandBuffer);
+	}
+
+	bool begin_recording_vulkan_command_buffer(const VkCommandBuffer vk_hCommandBuffer, const VkCommandBufferUsageFlags vk_eUsages, const VkCommandBufferInheritanceInfo *vk_pInheritanceInfo) {
+		const VkCommandBufferBeginInfo vk_beginInfo = {
+			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+			.flags = vk_eUsages,
+			.pInheritanceInfo = vk_pInheritanceInfo
+		};
+		return vkBeginCommandBuffer(vk_hCommandBuffer, &vk_beginInfo);
 	}
 
 }

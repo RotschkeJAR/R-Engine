@@ -3,6 +3,7 @@
 #include "RE_Window.hpp"
 #include "RE_Vulkan_Wrapper Classes.hpp"
 #include "RE_Vulkan_Wrapper Functions.hpp"
+#include "RE_Renderer_GameObject.hpp"
 
 #include <thread>
 
@@ -11,6 +12,11 @@ namespace RE {
 	typedef uint16_t REindex_t;
 #define RE_VK_INDEX_BUFFER_SIZE RE_VK_RENDERABLE_RECTANGLES_COUNT * 6U
 #define RE_VK_INDEX_BUFFER_BYTES RE_VK_INDEX_BUFFER_SIZE * sizeof(REindex_t)
+
+#define RE_VK_SEMAPHORES_PER_FRAME_COUNT 2U
+#define RE_VK_RENDER_SEMAPHORE_COUNT (RE_VK_FRAMES_IN_FLIGHT * RE_VK_SEMAPHORES_PER_FRAME_COUNT)
+
+#define RE_VK_PRIMARY_COMMAND_BUFFER_COUNT RE_VK_FRAMES_IN_FLIGHT
 
 	Camera *pActiveCamera = nullptr;
 	VkViewport vk_cameraViewportArea;
@@ -25,7 +31,10 @@ namespace RE {
 	VkImageView vk_ahWorldRenderImageViews[RE_VK_FRAMES_IN_FLIGHT] = {};
 	VkFramebuffer vk_ahWorldFramebuffers[RE_VK_FRAMES_IN_FLIGHT] = {};
 
-	VkFence vk_ahRenderFence[RE_VK_FRAMES_IN_FLIGHT] = {};
+	VkFence vk_ahRenderFences[RE_VK_FRAMES_IN_FLIGHT] = {};
+	VkSemaphore vk_ahRenderSemaphores[RE_VK_RENDER_SEMAPHORE_COUNT] = {};
+
+	VkCommandBuffer vk_ahRenderCommandBuffers[RE_VK_PRIMARY_COMMAND_BUFFER_COUNT] = {};
 
 	bool init_renderer() {
 		constexpr uint32_t u32StagingIndexBufferQueueCount = 1U, u32StagingIndexBufferQueues[u32StagingIndexBufferQueueCount] = {RE_VK_QUEUE_TRANSFER_INDEX};
@@ -45,7 +54,7 @@ namespace RE {
 				stagingIndexBuffer.unmap_memory();
 			});
 			constexpr uint32_t u32IndexBufferQueueCount = 2U, u32IndexBufferQueues[u32IndexBufferQueueCount] = {RE_VK_QUEUE_TRANSFER_INDEX, RE_VK_QUEUE_GRAPHICS_INDEX};
-			if (create_vulkan_buffer(RE_VK_INDEX_BUFFER_BYTES, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, u32IndexBufferQueueCount, u32IndexBufferQueues, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_hRectIndexBuffer, &vk_hRectIndexBufferMemory)) {
+			if (CATCH_SIGNAL_AND_RETURN(create_vulkan_buffer(RE_VK_INDEX_BUFFER_BYTES, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, u32IndexBufferQueueCount, u32IndexBufferQueues, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_hRectIndexBuffer, &vk_hRectIndexBufferMemory), bool)) {
 				Vulkan_CommandBuffer indexBufferDataTransferCommandBuffer(vk_hCommandPools[RE_VK_COMMAND_POOL_TRANSFER_TRANSIENT_INDEX], VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 				if (indexBufferDataTransferCommandBuffer.is_valid()) {
 					if (indexBufferDataTransferCommandBuffer.begin_recording(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr)) {
@@ -120,9 +129,9 @@ namespace RE {
 										};
 										uint8_t u8WorldRenderImageCollectionCreateIndex = 0U;
 										while (u8WorldRenderImageCollectionCreateIndex < RE_VK_FRAMES_IN_FLIGHT) {
-											if (create_vulkan_image(0, VK_IMAGE_TYPE_2D, vk_eSwapchainImageFormat, vk_worldRenderImageExtent, 1U, 1U, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, u32WorldRenderImageQueueCount, au32WorldRenderImageQueues, VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_ahWorldRenderImages[u8WorldRenderImageCollectionCreateIndex], &vk_ahWorldRenderImageMemories[u8WorldRenderImageCollectionCreateIndex])) {
-												if (create_vulkan_image_view(vk_ahWorldRenderImages[u8WorldRenderImageCollectionCreateIndex], VK_IMAGE_VIEW_TYPE_2D, vk_eSwapchainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 0U, 1U, 0U, 1U, &vk_ahWorldRenderImageViews[u8WorldRenderImageCollectionCreateIndex])) {
-													if (create_vulkan_framebuffer(0, vk_hWorldRenderPass, 1U, &vk_ahWorldRenderImageViews[u8WorldRenderImageCollectionCreateIndex], vk_worldRenderImageExtent.width, vk_worldRenderImageExtent.height, 1U, &vk_ahWorldFramebuffers[u8WorldRenderImageCollectionCreateIndex])) {
+											if (CATCH_SIGNAL_AND_RETURN(create_vulkan_image(0, VK_IMAGE_TYPE_2D, vk_eSwapchainImageFormat, vk_worldRenderImageExtent, 1U, 1U, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, u32WorldRenderImageQueueCount, au32WorldRenderImageQueues, VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_ahWorldRenderImages[u8WorldRenderImageCollectionCreateIndex], &vk_ahWorldRenderImageMemories[u8WorldRenderImageCollectionCreateIndex]), bool)) {
+												if (CATCH_SIGNAL_AND_RETURN(create_vulkan_image_view(vk_ahWorldRenderImages[u8WorldRenderImageCollectionCreateIndex], VK_IMAGE_VIEW_TYPE_2D, vk_eSwapchainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 0U, 1U, 0U, 1U, &vk_ahWorldRenderImageViews[u8WorldRenderImageCollectionCreateIndex]), bool)) {
+													if (CATCH_SIGNAL_AND_RETURN(create_vulkan_framebuffer(0, vk_hWorldRenderPass, 1U, &vk_ahWorldRenderImageViews[u8WorldRenderImageCollectionCreateIndex], vk_worldRenderImageExtent.width, vk_worldRenderImageExtent.height, 1U, &vk_ahWorldFramebuffers[u8WorldRenderImageCollectionCreateIndex]), bool)) {
 														u8WorldRenderImageCollectionCreateIndex++;
 														continue;
 													} else
@@ -144,21 +153,41 @@ namespace RE {
 												.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
 												.flags = VK_FENCE_CREATE_SIGNALED_BIT
 											};
-											uint8_t u8RenderFenceCreateIndex = 0U;
-											while (u8RenderFenceCreateIndex < RE_VK_FRAMES_IN_FLIGHT) {
-												if (!vkCreateFence(vk_hDevice, &vk_renderFenceCreateInfo, nullptr, &vk_ahRenderFence[u8RenderFenceCreateIndex])) {
-													RE_FATAL_ERROR(append_to_string("Failed to create Vulkan render fence at index ", u8RenderFenceCreateIndex));
+											uint8_t u8FrameInFlightCreateIndex = 0U;
+											while (u8FrameInFlightCreateIndex < RE_VK_FRAMES_IN_FLIGHT) {
+												if (!vkCreateFence(vk_hDevice, &vk_renderFenceCreateInfo, nullptr, &vk_ahRenderFences[u8FrameInFlightCreateIndex])) {
+													RE_FATAL_ERROR(append_to_string("Failed to create Vulkan render fence at index ", u8FrameInFlightCreateIndex));
 													break;
 												}
-												u8RenderFenceCreateIndex++;
+												u8FrameInFlightCreateIndex++;
 											}
-											if (u8RenderFenceCreateIndex == RE_VK_FRAMES_IN_FLIGHT) {
-												rectIndexBufferDataTransferFence.wait_for();
-												return true;
+											if (u8FrameInFlightCreateIndex == RE_VK_FRAMES_IN_FLIGHT) {
+												const VkSemaphoreCreateInfo vk_renderSemaphoreCreateInfo = {
+													.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
+												};
+												uint16_t u16RenderSemaphoreCreateIndex = 0U;
+												while (u16RenderSemaphoreCreateIndex < RE_VK_RENDER_SEMAPHORE_COUNT) {
+													if (!vkCreateSemaphore(vk_hDevice, &vk_renderSemaphoreCreateInfo, nullptr, &vk_ahRenderSemaphores[u16RenderSemaphoreCreateIndex])) {
+														RE_FATAL_ERROR(append_to_string("Failed creating Vulkan semaphore at index ", u16RenderSemaphoreCreateIndex));
+														break;
+													}
+													u16RenderSemaphoreCreateIndex++;
+												}
+												if (u16RenderSemaphoreCreateIndex == RE_VK_RENDER_SEMAPHORE_COUNT && CATCH_SIGNAL_AND_RETURN(alloc_vulkan_command_buffers(vk_hCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX], VK_COMMAND_BUFFER_LEVEL_PRIMARY, RE_VK_PRIMARY_COMMAND_BUFFER_COUNT, vk_ahRenderCommandBuffers), bool)) {
+													if (CATCH_SIGNAL_AND_RETURN(init_gameobject_renderer(), bool)) {
+														rectIndexBufferDataTransferFence.wait_for();
+														return true;
+													}
+													vkFreeCommandBuffers(vk_hDevice, vk_hCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX], RE_VK_PRIMARY_COMMAND_BUFFER_COUNT, vk_ahRenderCommandBuffers);
+												}
+												for (uint16_t u16RenderSemaphoreDeleteIndex = 0U; u16RenderSemaphoreDeleteIndex < u16RenderSemaphoreCreateIndex; u16RenderSemaphoreDeleteIndex++) {
+													vkDestroySemaphore(vk_hDevice, vk_ahRenderSemaphores[u16RenderSemaphoreDeleteIndex], nullptr);
+													vk_ahRenderSemaphores[u16RenderSemaphoreDeleteIndex] = VK_NULL_HANDLE;
+												}
 											}
-											for (uint8_t u8RenderFenceDeleteIndex = 0U; u8RenderFenceDeleteIndex < u8RenderFenceCreateIndex; u8RenderFenceDeleteIndex++) {
-												vkDestroyFence(vk_hDevice, vk_ahRenderFence[u8RenderFenceDeleteIndex], nullptr);
-												vk_ahRenderFence[u8RenderFenceDeleteIndex] = VK_NULL_HANDLE;
+											for (uint8_t u8RenderFenceDeleteIndex = 0U; u8RenderFenceDeleteIndex < u8FrameInFlightCreateIndex; u8RenderFenceDeleteIndex++) {
+												vkDestroyFence(vk_hDevice, vk_ahRenderFences[u8RenderFenceDeleteIndex], nullptr);
+												vk_ahRenderFences[u8RenderFenceDeleteIndex] = VK_NULL_HANDLE;
 											}
 										}
 										for (uint8_t u8WorldRenderImageCollectionDeleteIndex = 0U; u8WorldRenderImageCollectionDeleteIndex < u8WorldRenderImageCollectionCreateIndex; u8WorldRenderImageCollectionDeleteIndex++) {
@@ -197,9 +226,15 @@ namespace RE {
 	}
 	
 	void destroy_renderer() {
+		CATCH_SIGNAL(destroy_gameobject_renderer());
+		vkFreeCommandBuffers(vk_hDevice, vk_hCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX], RE_VK_PRIMARY_COMMAND_BUFFER_COUNT, vk_ahRenderCommandBuffers);
+		for (uint16_t u16RenderSemaphoreDeleteIndex = 0U; u16RenderSemaphoreDeleteIndex < RE_VK_RENDER_SEMAPHORE_COUNT; u16RenderSemaphoreDeleteIndex++) {
+			vkDestroySemaphore(vk_hDevice, vk_ahRenderSemaphores[u16RenderSemaphoreDeleteIndex], nullptr);
+			vk_ahRenderSemaphores[u16RenderSemaphoreDeleteIndex] = VK_NULL_HANDLE;
+		}
 		for (uint8_t u8FrameInFlightDeleteIndex = 0U; u8FrameInFlightDeleteIndex < RE_VK_FRAMES_IN_FLIGHT; u8FrameInFlightDeleteIndex++) {
-			vkDestroyFence(vk_hDevice, vk_ahRenderFence[u8FrameInFlightDeleteIndex], nullptr);
-			vk_ahRenderFence[u8FrameInFlightDeleteIndex] = VK_NULL_HANDLE;
+			vkDestroyFence(vk_hDevice, vk_ahRenderFences[u8FrameInFlightDeleteIndex], nullptr);
+			vk_ahRenderFences[u8FrameInFlightDeleteIndex] = VK_NULL_HANDLE;
 			vkDestroyFramebuffer(vk_hDevice, vk_ahWorldFramebuffers[u8FrameInFlightDeleteIndex], nullptr);
 			vk_ahWorldFramebuffers[u8FrameInFlightDeleteIndex] = VK_NULL_HANDLE;
 			vkDestroyImageView(vk_hDevice, vk_ahWorldRenderImageViews[u8FrameInFlightDeleteIndex], nullptr);

@@ -1165,7 +1165,7 @@ namespace RE {
 		for (uint32_t u32PhysicalDeviceQueueFamilyIndex = 0U; u32PhysicalDeviceQueueFamilyIndex < u32PhysicalDeviceQueueFamilyCount; u32PhysicalDeviceQueueFamilyIndex++) {
 			bool bQueueUseful = false;
 			// Get graphics-queue index
-			if (!graphicsQueueIndex.has_value() && (vk_pPhysicalDeviceQueueFamilyProperties[u32PhysicalDeviceQueueFamilyIndex].queueFlags & VK_QUEUE_GRAPHICS_BIT)) {
+			if (!graphicsQueueIndex.has_value() && (vk_pPhysicalDeviceQueueFamilyProperties[u32PhysicalDeviceQueueFamilyIndex].queueFlags & (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_TRANSFER_BIT))) {
 				graphicsQueueIndex = u32PhysicalDeviceQueueFamilyIndex;
 				// Check if graphics queue supports presenting too for better performance
 				VkBool32 surfaceSupportExists;
@@ -1183,7 +1183,7 @@ namespace RE {
 				bQueueUseful = true;
 			}
 			// Get transfer-queue index, but avoid being a graphics queue too
-			if (!transferQueueIndex.has_value() && (vk_pPhysicalDeviceQueueFamilyProperties[u32PhysicalDeviceQueueFamilyIndex].queueFlags & VK_QUEUE_TRANSFER_BIT) && !((vk_pPhysicalDeviceQueueFamilyProperties[u32PhysicalDeviceQueueFamilyIndex].queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0)) {
+			if (!transferQueueIndex.has_value() && (vk_pPhysicalDeviceQueueFamilyProperties[u32PhysicalDeviceQueueFamilyIndex].queueFlags & VK_QUEUE_TRANSFER_BIT) && !(vk_pPhysicalDeviceQueueFamilyProperties[u32PhysicalDeviceQueueFamilyIndex].queueFlags & VK_QUEUE_GRAPHICS_BIT)) {
 				transferQueueIndex = u32PhysicalDeviceQueueFamilyIndex;
 				bQueueUseful = true;
 			}

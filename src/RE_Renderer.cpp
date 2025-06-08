@@ -10,11 +10,8 @@
 namespace RE {
 
 	typedef uint16_t REindex_t;
-#define RE_VK_INDEX_BUFFER_SIZE RE_VK_RENDERABLE_RECTANGLES_COUNT * 6U
-#define RE_VK_INDEX_BUFFER_SIZE_BYTES RE_VK_INDEX_BUFFER_SIZE * sizeof(REindex_t)
-
-#define RE_VK_SEMAPHORES_PER_FRAME_COUNT 2U
-#define RE_VK_RENDER_SEMAPHORE_COUNT (RE_VK_FRAMES_IN_FLIGHT * RE_VK_SEMAPHORES_PER_FRAME_COUNT)
+#define RE_VK_RECT_INDEX_BUFFER_SIZE (RE_VK_RENDERABLE_RECTANGLES_COUNT * 6U)
+#define RE_VK_RECT_INDEX_BUFFER_SIZE_BYTES (RE_VK_RECT_INDEX_BUFFER_SIZE * sizeof(REindex_t))
 
 	Camera *pActiveCamera = nullptr;
 	VkViewport vk_cameraViewportArea;
@@ -30,13 +27,15 @@ namespace RE {
 	VkFramebuffer vk_ahWorldFramebuffers[RE_VK_FRAMES_IN_FLIGHT] = {};
 
 	VkFence vk_ahRenderFences[RE_VK_FRAMES_IN_FLIGHT] = {};
-	VkSemaphore vk_ahRenderSemaphores[RE_VK_RENDER_SEMAPHORE_COUNT] = {};
+	VkSemaphore vk_ahRenderSemaphores[RE_VK_RENDER_SEMAPHORE_COUNT] = {}, *vk_pahPresentSemaphores = nullptr;
 
 	VkCommandBuffer vk_ahRenderCommandBuffers[RE_VK_FRAMES_IN_FLIGHT] = {};
 
+	uint8_t u8CurrentFrameInFlightIndex = 0U;
+
 	bool init_renderer() {
 		constexpr uint32_t u32StagingIndexBufferQueueCount = 1U, u32StagingIndexBufferQueues[u32StagingIndexBufferQueueCount] = {RE_VK_QUEUE_TRANSFER_INDEX};
-		Vulkan_Buffer stagingIndexBuffer(RE_VK_INDEX_BUFFER_SIZE_BYTES, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, u32StagingIndexBufferQueueCount, u32StagingIndexBufferQueues, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+		Vulkan_Buffer stagingIndexBuffer(RE_VK_RECT_INDEX_BUFFER_SIZE_BYTES, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, u32StagingIndexBufferQueueCount, u32StagingIndexBufferQueues, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 		if (stagingIndexBuffer.is_valid()) {
 			std::thread stagingIndexBufferDataInit([&]() {
 				REindex_t *pu16RectIndices;
@@ -52,12 +51,12 @@ namespace RE {
 				stagingIndexBuffer.unmap_memory();
 			});
 			constexpr uint32_t u32IndexBufferQueueCount = 2U, u32IndexBufferQueues[u32IndexBufferQueueCount] = {RE_VK_QUEUE_TRANSFER_INDEX, RE_VK_QUEUE_GRAPHICS_INDEX};
-			if (CATCH_SIGNAL_AND_RETURN(create_vulkan_buffer(RE_VK_INDEX_BUFFER_SIZE_BYTES, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, u32IndexBufferQueueCount, u32IndexBufferQueues, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_hRectIndexBuffer, &vk_hRectIndexBufferMemory), bool)) {
+			if (CATCH_SIGNAL_AND_RETURN(create_vulkan_buffer(RE_VK_RECT_INDEX_BUFFER_SIZE_BYTES, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, u32IndexBufferQueueCount, u32IndexBufferQueues, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_hRectIndexBuffer, &vk_hRectIndexBufferMemory), bool)) {
 				Vulkan_CommandBuffer indexBufferDataTransferCommandBuffer(vk_hCommandPools[RE_VK_COMMAND_POOL_TRANSFER_TRANSIENT_INDEX], VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 				if (indexBufferDataTransferCommandBuffer.is_valid()) {
 					if (indexBufferDataTransferCommandBuffer.begin_recording(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr)) {
 						const VkBufferCopy vk_rectIndexBufferCopy = {
-							.size = RE_VK_INDEX_BUFFER_SIZE_BYTES
+							.size = RE_VK_RECT_INDEX_BUFFER_SIZE_BYTES
 						};
 						vkCmdCopyBuffer(indexBufferDataTransferCommandBuffer, stagingIndexBuffer, vk_hRectIndexBuffer, 1U, &vk_rectIndexBufferCopy);
 						if (indexBufferDataTransferCommandBuffer.end_recording()) {
@@ -80,7 +79,7 @@ namespace RE {
 											.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
 											.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
 											.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-											.finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+											.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
 										}
 									};
 									const VkAttachmentReference vk_worldRenderPassColorAttachments[] = {
@@ -101,7 +100,7 @@ namespace RE {
 									const VkSubpassDependency vk_worldRenderDependencies[u32WorldRenderPassDependencyCount] = {
 										{
 											.srcSubpass = VK_SUBPASS_EXTERNAL,
-											.dstSubpass = 0,
+											.dstSubpass = RE_VK_GAME_OBJECT_SUPBASS,
 											.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
 											.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
 											.srcAccessMask = VK_ACCESS_NONE,
@@ -172,7 +171,7 @@ namespace RE {
 													u16RenderSemaphoreCreateIndex++;
 												}
 												if (u16RenderSemaphoreCreateIndex == RE_VK_RENDER_SEMAPHORE_COUNT && CATCH_SIGNAL_AND_RETURN(alloc_vulkan_command_buffers(vk_hCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX], VK_COMMAND_BUFFER_LEVEL_PRIMARY, RE_VK_FRAMES_IN_FLIGHT, vk_ahRenderCommandBuffers), bool)) {
-													if (CATCH_SIGNAL_AND_RETURN(init_gameobject_renderer(), bool)) {
+													if (CATCH_SIGNAL_AND_RETURN(swapchain_created_renderer() && init_gameobject_renderer(), bool)) {
 														rectIndexBufferDataTransferFence.wait_for();
 														return true;
 													}
@@ -202,24 +201,24 @@ namespace RE {
 									}
 									rectIndexBufferDataTransferFence.wait_for();
 								} else
-									RE_FATAL_ERROR("Failed to submit task to the transfer queue for copying data to the rectangle index buffer on the GPU");
+									RE_FATAL_ERROR("Failed to submit task to the transfer queue for copying data to the Vulkan rectangle index buffer on the GPU");
 							} else
-								RE_FATAL_ERROR("Failed to create fence to wait on finishing tranfer task for rectangle index buffer");
+								RE_FATAL_ERROR("Failed to create Vulkan fence to wait on finishing transfer task for rectangle index buffer data");
 						} else
-							RE_FATAL_ERROR("Failed to finish recording rectangle index buffer");
+							RE_FATAL_ERROR("Failed to finish recording Vulkan rectangle index buffer");
 					} else
-						RE_FATAL_ERROR("Failed to begin recording rectangle index buffer");
+						RE_FATAL_ERROR("Failed to begin recording Vulkan rectangle index buffer");
 				} else
-					RE_FATAL_ERROR("Failed to allocate command buffer to tranfer data for the rectangle index buffer to the GPU");
+					RE_FATAL_ERROR("Failed to allocate Vulkan command buffer to transfer data for the rectangle index buffer to the GPU");
 				vkFreeMemory(vk_hDevice, vk_hRectIndexBufferMemory, nullptr);
 				vk_hRectIndexBufferMemory = VK_NULL_HANDLE;
 				vkDestroyBuffer(vk_hDevice, vk_hRectIndexBuffer, nullptr);
 				vk_hRectIndexBuffer = VK_NULL_HANDLE;
 			} else
-				RE_FATAL_ERROR("Failed to create rectangle index buffer on the GPU");
+				RE_FATAL_ERROR("Failed to create Vulkan rectangle index buffer on the GPU");
 			stagingIndexBufferDataInit.join();
 		} else
-			RE_FATAL_ERROR("Failed to create staging rectangle index buffer");
+			RE_FATAL_ERROR("Failed to create Vulkan staging rectangle index buffer");
 		return false;
 	}
 	
@@ -252,14 +251,35 @@ namespace RE {
 	void render() {
 		if (pActiveCamera)
 			CATCH_SIGNAL(pActiveCamera->update());
-		// TODO: Implement render process
+		/*uint32_t u32NextSwapchainImageIndex;
+		vkAcquireNextImageKHR(vk_hDevice, vk_hSwapchain, std::numeric_limits<uint64_t>::max(), vk_ahRenderSemaphores[u8CurrentFrameInFlightIndex * RE_VK_SEMAPHORES_PER_FRAME_COUNT], VK_NULL_HANDLE, &u32NextSwapchainImageIndex);*/
+		CATCH_SIGNAL(render_gameobjects());
+		vkWaitForFences(vk_hDevice, 1U, &vk_ahRenderFences[u8CurrentFrameInFlightIndex], VK_TRUE, std::numeric_limits<uint64_t>::max());
+		u8CurrentFrameInFlightIndex = (u8CurrentFrameInFlightIndex + 1U) % RE_VK_FRAMES_IN_FLIGHT;
 	}
 
 	bool swapchain_created_renderer() {
+		vk_pahPresentSemaphores = new VkSemaphore[u32SwapchainImageCount];
+		const VkSemaphoreCreateInfo vk_presentSemaphoreCreateInfo = {
+			.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
+		};
+		for (uint32_t u32PresentSemaphoreCreateIndex = 0U; u32PresentSemaphoreCreateIndex < u32SwapchainImageCount; u32PresentSemaphoreCreateIndex++)
+			if (!vkCreateSemaphore(vk_hDevice, &vk_presentSemaphoreCreateInfo, nullptr, &vk_pahPresentSemaphores[u32PresentSemaphoreCreateIndex])) {
+				RE_FATAL_ERROR(append_to_string("Failed creating Vulkan semaphore at index ", u32PresentSemaphoreCreateIndex, " for synchronizing swapchain presentations"));
+				for (uint32_t u32PresentSemaphoreDeleteIndex = 0U; u32PresentSemaphoreDeleteIndex < u32PresentSemaphoreCreateIndex; u32PresentSemaphoreDeleteIndex++)
+					vkDestroySemaphore(vk_hDevice, vk_pahPresentSemaphores[u32PresentSemaphoreDeleteIndex], nullptr);
+				return false;
+			}
 		return true;
 	}
 
 	void swapchain_destroyed_renderer() {
+		if (!vk_pahPresentSemaphores)
+			return;
+		for (uint32_t u32PresentSemaphoreIndex = 0U; u32PresentSemaphoreIndex < u32SwapchainImageCount; u32PresentSemaphoreIndex++)
+			vkDestroySemaphore(vk_hDevice, vk_pahPresentSemaphores[u32PresentSemaphoreIndex], nullptr);
+		delete[] vk_pahPresentSemaphores;
+		vk_pahPresentSemaphores = nullptr;
 	}
 
 	void calculate_render_area() {

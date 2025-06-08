@@ -35,7 +35,9 @@ namespace RE {
 	VkBuffer vk_hGameObjectStagingVertexBuffer = VK_NULL_HANDLE, vk_ahGameObjectVertexBuffers[RE_VK_FRAMES_IN_FLIGHT] = {};
 	VkDeviceMemory vk_hGameObjectStagingVertexBufferMemory = VK_NULL_HANDLE, vk_ahGameObjectVertexBufferMemories[RE_VK_FRAMES_IN_FLIGHT] = {};
 
-	VkCommandBuffer vk_ahGameObjectSecondaryCommandBuffers[RE_VK_FRAMES_IN_FLIGHT] = {};
+	VkCommandBuffer vk_ahGameObjectVertexTransferCommandBuffers[RE_VK_FRAMES_IN_FLIGHT] = {}, vk_ahGameObjectSecondaryCommandBuffers[RE_VK_FRAMES_IN_FLIGHT] = {};
+
+	float *pfGameObjectVertices = nullptr;
 
 	bool init_gameobject_renderer() {
 		if (CATCH_SIGNAL_AND_RETURN(create_vulkan_shader_from_file("shaders/vertex.spv", &vk_hGameObjectVertexShader), bool)) {
@@ -205,10 +207,42 @@ namespace RE {
 						.subpass = RE_VK_GAME_OBJECT_SUPBASS
 					};
 					if (vkCreateGraphicsPipelines(vk_hDevice, VK_NULL_HANDLE, 1U, &vk_graphicsPipelineCreateInfo, nullptr, &vk_hGameObjectGraphicsPipeline)) {
-						if (CATCH_SIGNAL_AND_RETURN(alloc_vulkan_command_buffers(vk_hCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX], VK_COMMAND_BUFFER_LEVEL_SECONDARY, RE_VK_FRAMES_IN_FLIGHT, vk_ahGameObjectSecondaryCommandBuffers), bool))
-							return true;
-						else
-							RE_FATAL_ERROR("Failed allocating Vulkan secondary command buffers for rendering game objects");
+						constexpr uint32_t u32StagingVertexBufferQueueCount = 1U, u32StagingVertexBufferQueues[u32StagingVertexBufferQueueCount] = {RE_VK_QUEUE_TRANSFER_INDEX};
+						if (CATCH_SIGNAL_AND_RETURN(create_vulkan_buffer(RE_VK_VERTEX_BUFFER_SIZE_BYTES, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, u32StagingVertexBufferQueueCount, u32StagingVertexBufferQueues, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &vk_hGameObjectStagingVertexBuffer, &vk_hGameObjectStagingVertexBufferMemory), bool)) {
+							vkMapMemory(vk_hDevice, vk_hGameObjectStagingVertexBufferMemory, 0UL, RE_VK_VERTEX_BUFFER_SIZE_BYTES, 0, (void**) &pfGameObjectVertices);
+							constexpr uint32_t u32VertexBufferQueueCount = 2U, u32VertexBufferQueues[u32VertexBufferQueueCount] = {RE_VK_QUEUE_GRAPHICS_INDEX, RE_VK_QUEUE_TRANSFER_INDEX};
+							uint16_t u16VertexBufferCreateIndex = 0U;
+							while (u16VertexBufferCreateIndex < RE_VK_FRAMES_IN_FLIGHT) {
+								if (!CATCH_SIGNAL_AND_RETURN(create_vulkan_buffer(RE_VK_VERTEX_BUFFER_SIZE_BYTES, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, u32VertexBufferQueueCount, u32VertexBufferQueues, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_ahGameObjectVertexBuffers[u16VertexBufferCreateIndex], &vk_ahGameObjectVertexBufferMemories[u16VertexBufferCreateIndex]), bool)) {
+									RE_FATAL_ERROR(append_to_string("Failed creating Vulkan vertex buffer or allocating buffer memory for rendering game objects at index ", u16VertexBufferCreateIndex));
+									break;
+								}
+								u16VertexBufferCreateIndex++;
+							}
+							if (u16VertexBufferCreateIndex == RE_VK_FRAMES_IN_FLIGHT) {
+								if (CATCH_SIGNAL_AND_RETURN(alloc_vulkan_command_buffers(vk_hCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX], VK_COMMAND_BUFFER_LEVEL_SECONDARY, RE_VK_FRAMES_IN_FLIGHT, vk_ahGameObjectSecondaryCommandBuffers), bool)) {
+									if (CATCH_SIGNAL_AND_RETURN(alloc_vulkan_command_buffers(vk_hCommandPools[RE_VK_COMMAND_POOL_TRANSFER_PERSISTENT_INDEX], VK_COMMAND_BUFFER_LEVEL_PRIMARY, RE_VK_FRAMES_IN_FLIGHT, vk_ahGameObjectVertexTransferCommandBuffers), bool))
+										return true;
+									else
+										RE_FATAL_ERROR("Failed allocating Vulkan command buffers for transfering vertex buffer data for rendering game objects to GPU");
+									vkFreeCommandBuffers(vk_hDevice, vk_hCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX], RE_VK_FRAMES_IN_FLIGHT, vk_ahGameObjectSecondaryCommandBuffers);
+								} else
+									RE_FATAL_ERROR("Failed allocating Vulkan secondary command buffers for rendering game objects");
+							}
+							for (uint16_t u16VertexBufferDeleteIndex = 0U; u16VertexBufferDeleteIndex < u16VertexBufferCreateIndex; u16VertexBufferDeleteIndex++) {
+								vkFreeMemory(vk_hDevice, vk_ahGameObjectVertexBufferMemories[u16VertexBufferDeleteIndex], nullptr);
+								vk_ahGameObjectVertexBufferMemories[u16VertexBufferDeleteIndex] = VK_NULL_HANDLE;
+								vkDestroyBuffer(vk_hDevice, vk_ahGameObjectVertexBuffers[u16VertexBufferDeleteIndex], nullptr);
+								vk_ahGameObjectVertexBuffers[u16VertexBufferDeleteIndex] = VK_NULL_HANDLE;
+							}
+							vkUnmapMemory(vk_hDevice, vk_hGameObjectStagingVertexBufferMemory);
+							pfGameObjectVertices = nullptr;
+							vkFreeMemory(vk_hDevice, vk_hGameObjectStagingVertexBufferMemory, nullptr);
+							vk_hGameObjectStagingVertexBufferMemory = VK_NULL_HANDLE;
+							vkDestroyBuffer(vk_hDevice, vk_hGameObjectStagingVertexBuffer, nullptr);
+							vk_hGameObjectStagingVertexBuffer = VK_NULL_HANDLE;
+						} else
+							RE_FATAL_ERROR("Failed creating Vulkan staging vertex buffer for rendering game objects");
 						vkDestroyPipeline(vk_hDevice, vk_hGameObjectGraphicsPipeline, nullptr);
 						vk_hGameObjectGraphicsPipeline = VK_NULL_HANDLE;
 					} else
@@ -229,7 +263,19 @@ namespace RE {
 	}
 
 	void destroy_gameobject_renderer() {
+		vkUnmapMemory(vk_hDevice, vk_hGameObjectStagingVertexBufferMemory);
+		pfGameObjectVertices = nullptr;
 		vkFreeCommandBuffers(vk_hDevice, vk_hCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX], RE_VK_FRAMES_IN_FLIGHT, vk_ahGameObjectSecondaryCommandBuffers);
+		for (uint16_t u16VertexBufferDeleteIndex = 0U; u16VertexBufferDeleteIndex < RE_VK_FRAMES_IN_FLIGHT; u16VertexBufferDeleteIndex++) {
+			vkFreeMemory(vk_hDevice, vk_ahGameObjectVertexBufferMemories[u16VertexBufferDeleteIndex], nullptr);
+			vk_ahGameObjectVertexBufferMemories[u16VertexBufferDeleteIndex] = VK_NULL_HANDLE;
+			vkDestroyBuffer(vk_hDevice, vk_ahGameObjectVertexBuffers[u16VertexBufferDeleteIndex], nullptr);
+			vk_ahGameObjectVertexBuffers[u16VertexBufferDeleteIndex] = VK_NULL_HANDLE;
+		}
+		vkFreeMemory(vk_hDevice, vk_hGameObjectStagingVertexBufferMemory, nullptr);
+		vk_hGameObjectStagingVertexBufferMemory = VK_NULL_HANDLE;
+		vkDestroyBuffer(vk_hDevice, vk_hGameObjectStagingVertexBuffer, nullptr);
+		vk_hGameObjectStagingVertexBuffer = VK_NULL_HANDLE;
 		vkDestroyPipeline(vk_hDevice, vk_hGameObjectGraphicsPipeline, nullptr);
 		vk_hGameObjectGraphicsPipeline = VK_NULL_HANDLE;
 		vkDestroyPipelineLayout(vk_hDevice, vk_hGameObjectPipelineLayout, nullptr);

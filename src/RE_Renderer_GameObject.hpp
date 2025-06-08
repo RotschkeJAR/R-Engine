@@ -1,6 +1,8 @@
 #ifndef __RE_RENDERER_GAME_OBJECT_H__
 #define __RE_RENDERER_GAME_OBJECT_H__
 
+#include "RE_Render System.hpp"
+
 namespace RE {
 
 	extern VkCommandBuffer vk_ahGameObjectSecondaryCommandBuffers[RE_VK_FRAMES_IN_FLIGHT];

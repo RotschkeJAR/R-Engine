@@ -287,7 +287,76 @@ namespace RE {
 	}
 
 	void render_gameobjects() {
-
+		uint16_t u16GameObjectIndex = 0U;
+		for (GameObject *pObject : gameObjects) {
+			for (uint16_t u16VertexIndex = 0U; u16VertexIndex < 4U; u16VertexIndex++) {
+				const uint16_t u16VertexOffset = u16GameObjectIndex * RE_VK_VERTEX_TOTAL_SIZE * 4U + u16VertexIndex * RE_VK_VERTEX_TOTAL_SIZE;
+				switch (u16VertexIndex) {
+					case 0U:
+						pfGameObjectVertices[u16VertexOffset + RE_VK_VERTEX_POSITION_OFFSET + 0U] = pObject->transform.position[0] - pObject->transform.scale[0];
+						pfGameObjectVertices[u16VertexOffset + RE_VK_VERTEX_POSITION_OFFSET + 1U] = pObject->transform.position[1] + pObject->transform.scale[1];
+						break;
+					case 1U:
+						pfGameObjectVertices[u16VertexOffset + RE_VK_VERTEX_POSITION_OFFSET + 0U] = pObject->transform.position[0] + pObject->transform.scale[0];
+						pfGameObjectVertices[u16VertexOffset + RE_VK_VERTEX_POSITION_OFFSET + 1U] = pObject->transform.position[1] + pObject->transform.scale[1];
+						break;
+					case 2U:
+						pfGameObjectVertices[u16VertexOffset + RE_VK_VERTEX_POSITION_OFFSET + 0U] = pObject->transform.position[0] + pObject->transform.scale[0];
+						pfGameObjectVertices[u16VertexOffset + RE_VK_VERTEX_POSITION_OFFSET + 1U] = pObject->transform.position[1] - pObject->transform.scale[1];
+						break;
+					case 3U:
+						pfGameObjectVertices[u16VertexOffset + RE_VK_VERTEX_POSITION_OFFSET + 0U] = pObject->transform.position[0] - pObject->transform.scale[0];
+						pfGameObjectVertices[u16VertexOffset + RE_VK_VERTEX_POSITION_OFFSET + 1U] = pObject->transform.position[1] - pObject->transform.scale[1];
+						break;
+				}
+				pfGameObjectVertices[u16VertexOffset + RE_VK_VERTEX_POSITION_OFFSET + 2U] = pObject->transform.position[2];
+				pfGameObjectVertices[u16VertexOffset + RE_VK_VERTEX_COLOR_SIZE + 0U] = 1.0f;
+				pfGameObjectVertices[u16VertexOffset + RE_VK_VERTEX_COLOR_SIZE + 1U] = 0.0f;
+				pfGameObjectVertices[u16VertexOffset + RE_VK_VERTEX_COLOR_SIZE + 2U] = 0.0f;
+				pfGameObjectVertices[u16VertexOffset + RE_VK_VERTEX_COLOR_SIZE + 3U] = 1.0f;
+			}
+			u16GameObjectIndex++;
+		}
+		if (!CATCH_SIGNAL_AND_RETURN(begin_recording_vulkan_command_buffer(vk_ahGameObjectVertexTransferCommandBuffers[u8CurrentFrameInFlightIndex], VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr), bool)) {
+			RE_FATAL_ERROR("Failed beginning to record Vulkan command buffer for transferring vertex buffer data to the GPU for rendering game objects");
+			return;
+		}
+		const VkBufferCopy vk_vertexBufferCopy = {
+			.size = RE_VK_VERTEX_TOTAL_SIZE_BYTES * 4U * u16GameObjectIndex
+		};
+		vkCmdCopyBuffer(vk_ahGameObjectVertexTransferCommandBuffers[u8CurrentFrameInFlightIndex], vk_hGameObjectStagingVertexBuffer, vk_ahGameObjectVertexBuffers[u8CurrentFrameInFlightIndex], 1U, &vk_vertexBufferCopy);
+		if (!vkEndCommandBuffer(vk_ahGameObjectVertexTransferCommandBuffers[u8CurrentFrameInFlightIndex])) {
+			RE_FATAL_ERROR("Failed finishing to record Vulkan command buffer for transferring vertex buffer data to the GPU for rendering game objects");
+			return;
+		}
+		if (!submit_to_vulkan_queue(vk_hDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], 0U, nullptr, nullptr, 1U, &vk_ahGameObjectVertexTransferCommandBuffers[u8CurrentFrameInFlightIndex], 1U, &vk_ahRenderSemaphores[u8CurrentFrameInFlightIndex * RE_VK_SEMAPHORES_PER_FRAME_COUNT + 1U], VK_NULL_HANDLE)) {
+			RE_FATAL_ERROR("Failed submitting the task for transferring Vulkan vertex buffer data for rendering game objects to the GPU");
+			return;
+		}
+		const VkCommandBufferInheritanceInfo vk_inheritanceInfo = {
+			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO,
+			.renderPass = vk_hWorldRenderPass,
+			.subpass = RE_VK_GAME_OBJECT_SUPBASS,
+			.framebuffer = vk_ahWorldFramebuffers[u8CurrentFrameInFlightIndex],
+			.occlusionQueryEnable = VK_FALSE,
+			.queryFlags = 0,
+			.pipelineStatistics = 0
+		};
+		if (!CATCH_SIGNAL_AND_RETURN(begin_recording_vulkan_command_buffer(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT, &vk_inheritanceInfo), bool)) {
+			RE_FATAL_ERROR("Failed beginning to record Vulkan secondary command buffer for rendering game objects");
+			return;
+		}
+		vkCmdBindPipeline(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hGameObjectGraphicsPipeline);
+		vkCmdSetViewport(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], 0U, 1U, &vk_cameraViewportArea);
+		vkCmdSetScissor(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], 0U, 1U, &vk_cameraScissorArea);
+		vkCmdBindIndexBuffer(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], vk_hRectIndexBuffer, 0UL, VK_INDEX_TYPE_UINT16);
+		const VkDeviceSize vk_vertexBufferOffsets[] = {0UL};
+		vkCmdBindVertexBuffers(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], 0U, 1U, &vk_ahGameObjectVertexBuffers[u8CurrentFrameInFlightIndex], vk_vertexBufferOffsets);
+		vkCmdDrawIndexed(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], u16GameObjectIndex * 6U, 1U, 0U, 0U, 0U);
+		if (!vkEndCommandBuffer(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex])) {
+			RE_FATAL_ERROR("Failed finishing to record Vulkan secondary command buffer for rendering game objects");
+			return;
+		}
 	}
 
 }

@@ -10,7 +10,7 @@ namespace RE {
 
 #define RE_VK_GAME_OBJECT_SUPBASS 0U
 
-#define RE_VK_SEMAPHORES_PER_FRAME_COUNT 2U
+#define RE_VK_SEMAPHORES_PER_FRAME_COUNT 3U
 #define RE_VK_RENDER_SEMAPHORE_COUNT (RE_VK_FRAMES_IN_FLIGHT * RE_VK_SEMAPHORES_PER_FRAME_COUNT)
 
 	extern Camera *pActiveCamera;
@@ -24,6 +24,8 @@ namespace RE {
 	extern VkFramebuffer vk_ahWorldFramebuffers[RE_VK_FRAMES_IN_FLIGHT];
 
 	extern VkSemaphore vk_ahRenderSemaphores[RE_VK_RENDER_SEMAPHORE_COUNT];
+
+	extern uint8_t u8CurrentFrameInFlightIndex;
 	
 	bool init_renderer();
 	void destroy_renderer();

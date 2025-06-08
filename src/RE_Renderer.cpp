@@ -79,7 +79,7 @@ namespace RE {
 											.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
 											.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
 											.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-											.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+											.finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
 										}
 									};
 									const VkAttachmentReference vk_worldRenderPassColorAttachments[] = {
@@ -251,10 +251,56 @@ namespace RE {
 	void render() {
 		if (pActiveCamera)
 			CATCH_SIGNAL(pActiveCamera->update());
-		/*uint32_t u32NextSwapchainImageIndex;
-		vkAcquireNextImageKHR(vk_hDevice, vk_hSwapchain, std::numeric_limits<uint64_t>::max(), vk_ahRenderSemaphores[u8CurrentFrameInFlightIndex * RE_VK_SEMAPHORES_PER_FRAME_COUNT], VK_NULL_HANDLE, &u32NextSwapchainImageIndex);*/
+		uint32_t u32NextSwapchainImageIndex;
+		vkAcquireNextImageKHR(vk_hDevice, vk_hSwapchain, std::numeric_limits<uint64_t>::max(), vk_ahRenderSemaphores[u8CurrentFrameInFlightIndex * RE_VK_SEMAPHORES_PER_FRAME_COUNT], VK_NULL_HANDLE, &u32NextSwapchainImageIndex);
 		CATCH_SIGNAL(render_gameobjects());
 		vkWaitForFences(vk_hDevice, 1U, &vk_ahRenderFences[u8CurrentFrameInFlightIndex], VK_TRUE, std::numeric_limits<uint64_t>::max());
+		if (!begin_recording_vulkan_command_buffer(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr)) {
+			RE_FATAL_ERROR("Failed beginning to record Vulkan command buffer for rendering everything");
+			return;
+		}
+		const VkClearValue vk_clearValues[] = {
+			{
+				.color = {
+					.float32 = {
+						0.0f,
+						0.0f,
+						0.0f,
+						1.0f
+					}
+				}
+			}
+		};
+		const VkRenderPassBeginInfo vk_renderPassInfo = {
+			.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+			.renderPass = vk_hWorldRenderPass,
+			.framebuffer = vk_ahWorldFramebuffers[u8CurrentFrameInFlightIndex],
+			.renderArea = vk_cameraScissorArea,
+			.clearValueCount = 1U,
+			.pClearValues = vk_clearValues
+		};
+		vkCmdBeginRenderPass(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], &vk_renderPassInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+		vkCmdExecuteCommands(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], 1U, &vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex]);
+		vkCmdEndRenderPass(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex]);
+		if (!vkEndCommandBuffer(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex])) {
+			RE_FATAL_ERROR("Failed finishing to record Vulkan command buffer for rendering everything");
+			return;
+		}
+		vkResetFences(vk_hDevice, 1U, &vk_ahRenderFences[u8CurrentFrameInFlightIndex]);
+		const VkPipelineStageFlags vk_aePipelinesToWaitForBeforeRendering[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT};
+		if (!submit_to_vulkan_queue(vk_hDeviceQueueFamilies[RE_VK_QUEUE_GRAPHICS_INDEX], 2U, &vk_ahRenderSemaphores[u8CurrentFrameInFlightIndex * RE_VK_SEMAPHORES_PER_FRAME_COUNT], vk_aePipelinesToWaitForBeforeRendering, 1U, &vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], 1U, &vk_ahRenderSemaphores[u8CurrentFrameInFlightIndex * RE_VK_SEMAPHORES_PER_FRAME_COUNT + 2U], vk_ahRenderFences[u8CurrentFrameInFlightIndex])) {
+			RE_FATAL_ERROR("Failed submitting the task for rendering everything to the Vulkan GPU");
+			return;
+		}
+		const VkPresentInfoKHR vk_presentInfo = {
+			.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+			.waitSemaphoreCount = 1U,
+			.pWaitSemaphores = &vk_ahRenderSemaphores[u8CurrentFrameInFlightIndex * RE_VK_SEMAPHORES_PER_FRAME_COUNT + 2U],
+			.swapchainCount = 1U,
+			.pSwapchains = &vk_hSwapchain,
+			.pImageIndices = &u32NextSwapchainImageIndex
+		};
+		vkQueuePresentKHR(vk_hDeviceQueueFamilies[RE_VK_QUEUE_PRESENT_INDEX], &vk_presentInfo);
 		u8CurrentFrameInFlightIndex = (u8CurrentFrameInFlightIndex + 1U) % RE_VK_FRAMES_IN_FLIGHT;
 	}
 

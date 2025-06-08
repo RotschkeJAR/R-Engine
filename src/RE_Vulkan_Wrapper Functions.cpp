@@ -189,4 +189,21 @@ namespace RE {
 		return vkBeginCommandBuffer(vk_hCommandBuffer, &vk_beginInfo);
 	}
 
+	bool submit_to_vulkan_queue(const VkQueue vk_hQueue, const uint32_t u32WaitSemaphoreCount, const VkSemaphore *vk_pahWaitSemaphores, const VkPipelineStageFlags *vk_pahWaitOnPipelineStages, const uint32_t u32CommandBufferCount, const VkCommandBuffer *vk_pahCommandBuffers, const uint32_t u32SignalSemaphoreCount, const VkSemaphore *vk_pahSignalSemaphores, const VkFence vk_hFence) {
+		const VkSubmitInfo vk_queueSubmitInfo = {
+			.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+			.waitSemaphoreCount = u32WaitSemaphoreCount,
+			.pWaitSemaphores = vk_pahWaitSemaphores,
+			.pWaitDstStageMask = vk_pahWaitOnPipelineStages,
+			.commandBufferCount = u32CommandBufferCount,
+			.pCommandBuffers = vk_pahCommandBuffers,
+			.signalSemaphoreCount = u32SignalSemaphoreCount,
+			.pSignalSemaphores = vk_pahSignalSemaphores
+		};
+		const bool bSuccess = vkQueueSubmit(vk_hQueue, 1U, &vk_queueSubmitInfo, vk_hFence);
+		if (!bSuccess)
+			RE_ERROR("Failed submitting a task to a Vulkan queue");
+		return bSuccess;
+	}
+
 }

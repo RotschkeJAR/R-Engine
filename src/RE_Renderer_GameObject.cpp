@@ -105,8 +105,8 @@ namespace RE {
 					const VkViewport vk_viewport = {
 						.x = 0.0f,
 						.y = 0.0f,
-						.width = static_cast<float>(vk_swapchainResolution.width),
-						.height = static_cast<float>(vk_swapchainResolution.height),
+						.width = 8.0f,
+						.height = 8.0f,
 						.minDepth = 0.0f,
 						.maxDepth = 1.0f
 					};
@@ -116,8 +116,8 @@ namespace RE {
 							.y = 0
 						},
 						.extent = {
-							.width = 0U,
-							.height = 0U
+							.width = 8U,
+							.height = 8U
 						}
 					};
 					const VkPipelineViewportStateCreateInfo vk_viewportCreateInfo = {
@@ -178,15 +178,15 @@ namespace RE {
 							0.0f
 						}
 					};
-					const VkDynamicState vk_eDynamicStates[RE_VK_DYNAMIC_STATE_COUNT] = {
+					/*const VkDynamicState vk_eDynamicStates[RE_VK_DYNAMIC_STATE_COUNT] = {
 						VK_DYNAMIC_STATE_VIEWPORT,
 						VK_DYNAMIC_STATE_SCISSOR
-					};
+					};*/
 					const VkPipelineDynamicStateCreateInfo vk_dynamicStateCreateInfo = {
 						.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
-						.flags = 0,
+						/*.flags = 0,
 						.dynamicStateCount = RE_VK_DYNAMIC_STATE_COUNT,
-						.pDynamicStates = vk_eDynamicStates
+						.pDynamicStates = vk_eDynamicStates*/
 					};
 					const VkGraphicsPipelineCreateInfo vk_graphicsPipelineCreateInfo = {
 						.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
@@ -349,8 +349,8 @@ namespace RE {
 			return;
 		}
 		vkCmdBindPipeline(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hGameObjectGraphicsPipeline);
-		vkCmdSetViewport(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], 0U, 1U, &vk_cameraViewportArea);
-		vkCmdSetScissor(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], 0U, 1U, &vk_cameraScissorArea);
+		/*vkCmdSetViewport(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], 0U, 1U, &vk_cameraViewportArea);
+		vkCmdSetScissor(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], 0U, 1U, &vk_cameraScissorArea);*/
 		vkCmdBindIndexBuffer(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], vk_hRectIndexBuffer, 0UL, VK_INDEX_TYPE_UINT16);
 		const VkDeviceSize vk_vertexBufferOffsets[] = {0UL};
 		vkCmdBindVertexBuffers(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], 0U, 1U, &vk_ahGameObjectVertexBuffers[u8CurrentFrameInFlightIndex], vk_vertexBufferOffsets);

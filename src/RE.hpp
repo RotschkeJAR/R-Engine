@@ -26,7 +26,7 @@
 
 namespace RE {
 
-#define STRIP_QUOTE_MACRO(T) T
+#define STRIP_QUOTE_MACRO(...) __VA_ARGS__
 
 	enum TerminalColor {
 		RE_TERMINAL_COLOR_BLACK = 0x00,
@@ -199,8 +199,8 @@ namespace RE {
 	}
 	void print_colored(const char* pcContent, TerminalColor eColor, bool bBackgroundColored, bool bBold);
 	void println_colored(const char* pcContent, TerminalColor eColor, bool bBackgroundColored, bool bBold);
-#define PRINT(MSG) print(append_to_string(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE_MACRO(MSG)))
-#define PRINT_LN(MSG) print(append_to_string(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE_MACRO(MSG), "\n"))
+#define PRINT(...) print(append_to_string(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE_MACRO(__VA_ARGS__)))
+#define PRINT_LN(...) print(append_to_string(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE_MACRO(__VA_ARGS__), "\n"))
 	
 	void error(const char* pcFile, const char* pcFunc, uint32_t u32Line, const char* pcDetail, bool bTerminate);
 	void warning(const char* pcFile, const char* pcFunc, uint32_t u32Line, const char* pcDetail);

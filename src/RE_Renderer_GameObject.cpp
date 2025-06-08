@@ -289,31 +289,33 @@ namespace RE {
 	void render_gameobjects() {
 		uint16_t u16GameObjectIndex = 0U;
 		for (GameObject *pObject : gameObjects) {
+			if (pObject->u32SceneParentId != get_current_scene_id())
+				continue;
 			for (uint16_t u16VertexIndex = 0U; u16VertexIndex < 4U; u16VertexIndex++) {
 				const uint16_t u16VertexOffset = u16GameObjectIndex * RE_VK_VERTEX_TOTAL_SIZE * 4U + u16VertexIndex * RE_VK_VERTEX_TOTAL_SIZE;
 				switch (u16VertexIndex) {
 					case 0U:
-						pfGameObjectVertices[u16VertexOffset + RE_VK_VERTEX_POSITION_OFFSET + 0U] = pObject->transform.position[0] - pObject->transform.scale[0];
-						pfGameObjectVertices[u16VertexOffset + RE_VK_VERTEX_POSITION_OFFSET + 1U] = pObject->transform.position[1] + pObject->transform.scale[1];
+						pfGameObjectVertices[u16VertexOffset + 0U] = pObject->transform.position[0] - pObject->transform.scale[0];
+						pfGameObjectVertices[u16VertexOffset + 1U] = pObject->transform.position[1] + pObject->transform.scale[1];
 						break;
 					case 1U:
-						pfGameObjectVertices[u16VertexOffset + RE_VK_VERTEX_POSITION_OFFSET + 0U] = pObject->transform.position[0] + pObject->transform.scale[0];
-						pfGameObjectVertices[u16VertexOffset + RE_VK_VERTEX_POSITION_OFFSET + 1U] = pObject->transform.position[1] + pObject->transform.scale[1];
+						pfGameObjectVertices[u16VertexOffset + 0U] = pObject->transform.position[0] + pObject->transform.scale[0];
+						pfGameObjectVertices[u16VertexOffset + 1U] = pObject->transform.position[1] + pObject->transform.scale[1];
 						break;
 					case 2U:
-						pfGameObjectVertices[u16VertexOffset + RE_VK_VERTEX_POSITION_OFFSET + 0U] = pObject->transform.position[0] + pObject->transform.scale[0];
-						pfGameObjectVertices[u16VertexOffset + RE_VK_VERTEX_POSITION_OFFSET + 1U] = pObject->transform.position[1] - pObject->transform.scale[1];
+						pfGameObjectVertices[u16VertexOffset + 0U] = pObject->transform.position[0] + pObject->transform.scale[0];
+						pfGameObjectVertices[u16VertexOffset + 1U] = pObject->transform.position[1] - pObject->transform.scale[1];
 						break;
 					case 3U:
-						pfGameObjectVertices[u16VertexOffset + RE_VK_VERTEX_POSITION_OFFSET + 0U] = pObject->transform.position[0] - pObject->transform.scale[0];
-						pfGameObjectVertices[u16VertexOffset + RE_VK_VERTEX_POSITION_OFFSET + 1U] = pObject->transform.position[1] - pObject->transform.scale[1];
+						pfGameObjectVertices[u16VertexOffset + 0U] = pObject->transform.position[0] - pObject->transform.scale[0];
+						pfGameObjectVertices[u16VertexOffset + 1U] = pObject->transform.position[1] - pObject->transform.scale[1];
 						break;
 				}
-				pfGameObjectVertices[u16VertexOffset + RE_VK_VERTEX_POSITION_OFFSET + 2U] = pObject->transform.position[2];
-				pfGameObjectVertices[u16VertexOffset + RE_VK_VERTEX_COLOR_SIZE + 0U] = 1.0f;
-				pfGameObjectVertices[u16VertexOffset + RE_VK_VERTEX_COLOR_SIZE + 1U] = 0.0f;
-				pfGameObjectVertices[u16VertexOffset + RE_VK_VERTEX_COLOR_SIZE + 2U] = 0.0f;
-				pfGameObjectVertices[u16VertexOffset + RE_VK_VERTEX_COLOR_SIZE + 3U] = 1.0f;
+				pfGameObjectVertices[u16VertexOffset + 2U] = pObject->transform.position[2];
+				pfGameObjectVertices[u16VertexOffset + 3U] = pObject->spriteRenderer.color[0];
+				pfGameObjectVertices[u16VertexOffset + 4U] = pObject->spriteRenderer.color[1];
+				pfGameObjectVertices[u16VertexOffset + 5U] = pObject->spriteRenderer.color[2];
+				pfGameObjectVertices[u16VertexOffset + 6U] = pObject->spriteRenderer.color[3];
 			}
 			u16GameObjectIndex++;
 		}

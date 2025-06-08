@@ -253,8 +253,8 @@ namespace RE {
 			CATCH_SIGNAL(pActiveCamera->update());
 		uint32_t u32NextSwapchainImageIndex;
 		vkAcquireNextImageKHR(vk_hDevice, vk_hSwapchain, std::numeric_limits<uint64_t>::max(), vk_ahRenderSemaphores[u8CurrentFrameInFlightIndex * RE_VK_SEMAPHORES_PER_FRAME_COUNT], VK_NULL_HANDLE, &u32NextSwapchainImageIndex);
-		CATCH_SIGNAL(render_gameobjects());
 		vkWaitForFences(vk_hDevice, 1U, &vk_ahRenderFences[u8CurrentFrameInFlightIndex], VK_TRUE, std::numeric_limits<uint64_t>::max());
+		CATCH_SIGNAL(render_gameobjects());
 		if (!begin_recording_vulkan_command_buffer(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr)) {
 			RE_FATAL_ERROR("Failed beginning to record Vulkan command buffer for rendering everything");
 			return;
@@ -282,6 +282,79 @@ namespace RE {
 		vkCmdBeginRenderPass(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], &vk_renderPassInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 		vkCmdExecuteCommands(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], 1U, &vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex]);
 		vkCmdEndRenderPass(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex]);
+		const VkImageMemoryBarrier vk_swapchainImageLayoutPrepare = {
+			.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+			.srcAccessMask = VK_ACCESS_NONE,
+			.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+			.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+			.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+			.image = vk_phSwapchainImages[u32NextSwapchainImageIndex],
+			.subresourceRange = {
+				.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+				.baseMipLevel = 0U,
+				.levelCount = 1U,
+				.baseArrayLayer = 0U,
+				.layerCount = 1U
+			}
+		};
+		vkCmdPipelineBarrier(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0U, nullptr, 0U, nullptr, 1U, &vk_swapchainImageLayoutPrepare);
+		const VkImageBlit vk_worldRenderImageBlit = {
+			.srcSubresource = {
+				.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+				.mipLevel = 0U,
+				.baseArrayLayer = 0U,
+				.layerCount = 1U
+			},
+			.srcOffsets = {
+				{
+					.x = 0,
+					.y = static_cast<int32_t>(vk_swapchainResolution.height),
+					.z = 0
+				}, {
+					.x = static_cast<int32_t>(vk_swapchainResolution.width),
+					.y = 0,
+					.z = 1
+				}
+			},
+			.dstSubresource = {
+				.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+				.mipLevel = 0U,
+				.baseArrayLayer = 0U,
+				.layerCount = 1U
+			},
+			.dstOffsets = {
+				{
+					.x = 0,
+					.y = 0,
+					.z = 0
+				}, {
+					.x = static_cast<int32_t>(vk_swapchainResolution.width),
+					.y = static_cast<int32_t>(vk_swapchainResolution.height),
+					.z = 1
+				}
+			}
+		};
+		vkCmdBlitImage(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], vk_ahWorldRenderImages[u8CurrentFrameInFlightIndex], VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, vk_phSwapchainImages[u32NextSwapchainImageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1U, &vk_worldRenderImageBlit, VK_FILTER_NEAREST);
+		const VkImageMemoryBarrier vk_swapchainImageLayoutTransfer = {
+			.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+			.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+			.dstAccessMask = VK_ACCESS_NONE,
+			.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+			.image = vk_phSwapchainImages[u32NextSwapchainImageIndex],
+			.subresourceRange = {
+				.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+				.baseMipLevel = 0U,
+				.levelCount = 1U,
+				.baseArrayLayer = 0U,
+				.layerCount = 1U
+			}
+		};
+		vkCmdPipelineBarrier(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0U, nullptr, 0U, nullptr, 1U, &vk_swapchainImageLayoutTransfer);
 		if (!vkEndCommandBuffer(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex])) {
 			RE_FATAL_ERROR("Failed finishing to record Vulkan command buffer for rendering everything");
 			return;

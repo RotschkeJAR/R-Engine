@@ -90,8 +90,8 @@ class PlayerCamera : public Camera {
 		~PlayerCamera() {}
 		void update() {
 			if (pObjy) {
-				position[0] = pObjy->transform.position[0];
-				position[1] = pObjy->transform.position[1];
+				position[0] = /*pObjy->transform.position[0]*/ 0.0f;
+				position[1] = /*pObjy->transform.position[1]*/ 0.0f;
 			}
 		}
 };

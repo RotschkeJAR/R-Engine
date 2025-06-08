@@ -279,7 +279,7 @@ namespace RE {
 			.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
 			.renderPass = vk_hWorldRenderPass,
 			.framebuffer = vk_ahWorldFramebuffers[u8CurrentFrameInFlightIndex],
-			.renderArea = VkRect2D{{0, 0}, {8U, 8U}},
+			.renderArea = VkRect2D{{0, 0}, vk_worldRenderImageExtent},
 			.clearValueCount = 1U,
 			.pClearValues = vk_clearValues
 		};

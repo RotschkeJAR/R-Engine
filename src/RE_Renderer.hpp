@@ -16,6 +16,7 @@ namespace RE {
 	extern Camera *pActiveCamera;
 	extern VkViewport vk_cameraViewportArea;
 	extern VkRect2D vk_cameraScissorArea;
+	extern VkExtent2D vk_worldRenderImageExtent;
 
 	extern VkBuffer vk_hRectIndexBuffer;
 	extern VkDeviceMemory vk_hRectIndexBufferMemory;

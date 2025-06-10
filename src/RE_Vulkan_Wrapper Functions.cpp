@@ -27,7 +27,7 @@ namespace RE {
 			.allocationSize = vk_memoryRequirements.size,
 			.memoryTypeIndex = u32MemoryTypeIndex
 		};
-		return vkAllocateMemory(vk_hDevice, &vk_allocInfo, nullptr, vk_phMemory);
+		return vkAllocateMemory(vk_hDevice, &vk_allocInfo, nullptr, vk_phMemory) == VK_SUCCESS;
 	}
 
 	bool create_vulkan_shader_from_file(const char *pcPathToFile, VkShaderModule *vk_phShader) {
@@ -46,10 +46,10 @@ namespace RE {
 			.codeSize = shaderBinaryFileSize,
 			.pCode = reinterpret_cast<const uint32_t*>(pacShaderBinary)
 		};
-		const bool bSuccess = vkCreateShaderModule(vk_hDevice, &vk_createInfo, nullptr, vk_phShader);
+		const bool bSuccess = vkCreateShaderModule(vk_hDevice, &vk_createInfo, nullptr, vk_phShader) == VK_SUCCESS;
+		delete[] pacShaderBinary;
 		if (!bSuccess)
 			RE_ERROR(append_to_string("Failed creating Vulkan shader from file \"", pcPathToFile, "\""));
-		delete[] pacShaderBinary;
 		return bSuccess;
 	}
 	
@@ -67,11 +67,11 @@ namespace RE {
 			vk_createInfo.queueFamilyIndexCount = queueFamilyIndices.size();
 			vk_createInfo.pQueueFamilyIndices = queueFamilyIndices.data();
 		}
-		if (vkCreateBuffer(vk_hDevice, &vk_createInfo, nullptr, vk_phBuffer)) {
+		if (vkCreateBuffer(vk_hDevice, &vk_createInfo, nullptr, vk_phBuffer) == VK_SUCCESS) {
 			VkMemoryRequirements vk_memoryRequirements;
 			vkGetBufferMemoryRequirements(vk_hDevice, *vk_phBuffer, &vk_memoryRequirements);
 			if (CATCH_SIGNAL_AND_RETURN(alloc_required_memory(vk_memoryRequirements, vk_eMemoryPropertyFlags, vk_phMemory), bool)) {
-				if (vkBindBufferMemory(vk_hDevice, *vk_phBuffer, *vk_phMemory, 0UL))
+				if (vkBindBufferMemory(vk_hDevice, *vk_phBuffer, *vk_phMemory, 0UL) == VK_SUCCESS)
 					return true;
 				else
 					RE_ERROR("Failed to bind memory to Vulkan buffer");
@@ -108,11 +108,11 @@ namespace RE {
 			vk_createInfo.queueFamilyIndexCount = queueFamilies.size();
 			vk_createInfo.pQueueFamilyIndices = queueFamilies.data();
 		}
-		if (vkCreateImage(vk_hDevice, &vk_createInfo, nullptr, vk_phImage)) {
+		if (vkCreateImage(vk_hDevice, &vk_createInfo, nullptr, vk_phImage) == VK_SUCCESS) {
 			VkMemoryRequirements vk_memoryRequirements;
 			vkGetImageMemoryRequirements(vk_hDevice, *vk_phImage, &vk_memoryRequirements);
 			if (CATCH_SIGNAL_AND_RETURN(alloc_required_memory(vk_memoryRequirements, vk_eMemoryPropertyFlags, vk_phMemory), bool)) {
-				if (vkBindImageMemory(vk_hDevice, *vk_phImage, *vk_phMemory, 0UL))
+				if (vkBindImageMemory(vk_hDevice, *vk_phImage, *vk_phMemory, 0UL) == VK_SUCCESS)
 					return true;
 				else
 					RE_ERROR("Failed to bind memory to Vulkan image");
@@ -147,7 +147,7 @@ namespace RE {
 				.layerCount = u32ArrayLayerCount
 			}
 		};
-		const bool bSuccess = vkCreateImageView(vk_hDevice, &vk_createInfo, nullptr, vk_phImageView);
+		const bool bSuccess = vkCreateImageView(vk_hDevice, &vk_createInfo, nullptr, vk_phImageView) == VK_SUCCESS;
 		if (!bSuccess)
 			RE_ERROR("Failed to create Vulkan image view");
 		return bSuccess;
@@ -164,7 +164,7 @@ namespace RE {
 			.height = u32Height,
 			.layers = u32Layer
 		};
-		const bool bSuccess = vkCreateFramebuffer(vk_hDevice, &vk_createInfo, nullptr, vk_phFramebuffer);
+		const bool bSuccess = vkCreateFramebuffer(vk_hDevice, &vk_createInfo, nullptr, vk_phFramebuffer) == VK_SUCCESS;
 		if (!bSuccess)
 			RE_ERROR("Failed to create Vulkan framebuffer");
 		return bSuccess;
@@ -177,7 +177,7 @@ namespace RE {
 			.level = vk_eLevel,
 			.commandBufferCount = u32Count
 		};
-		return vkAllocateCommandBuffers(vk_hDevice, &vk_createInfo, vk_pahCommandBuffer);
+		return vkAllocateCommandBuffers(vk_hDevice, &vk_createInfo, vk_pahCommandBuffer) == VK_SUCCESS;
 	}
 
 	bool begin_recording_vulkan_command_buffer(const VkCommandBuffer vk_hCommandBuffer, const VkCommandBufferUsageFlags vk_eUsages, const VkCommandBufferInheritanceInfo *vk_pInheritanceInfo) {
@@ -186,7 +186,7 @@ namespace RE {
 			.flags = vk_eUsages,
 			.pInheritanceInfo = vk_pInheritanceInfo
 		};
-		return vkBeginCommandBuffer(vk_hCommandBuffer, &vk_beginInfo);
+		return vkBeginCommandBuffer(vk_hCommandBuffer, &vk_beginInfo) == VK_SUCCESS;
 	}
 
 	bool submit_to_vulkan_queue(const VkQueue vk_hQueue, const uint32_t u32WaitSemaphoreCount, const VkSemaphore *vk_pahWaitSemaphores, const VkPipelineStageFlags *vk_pahWaitOnPipelineStages, const uint32_t u32CommandBufferCount, const VkCommandBuffer *vk_pahCommandBuffers, const uint32_t u32SignalSemaphoreCount, const VkSemaphore *vk_pahSignalSemaphores, const VkFence vk_hFence) {
@@ -200,7 +200,7 @@ namespace RE {
 			.signalSemaphoreCount = u32SignalSemaphoreCount,
 			.pSignalSemaphores = vk_pahSignalSemaphores
 		};
-		const bool bSuccess = vkQueueSubmit(vk_hQueue, 1U, &vk_queueSubmitInfo, vk_hFence);
+		const bool bSuccess = vkQueueSubmit(vk_hQueue, 1U, &vk_queueSubmitInfo, vk_hFence) == VK_SUCCESS;
 		if (!bSuccess)
 			RE_ERROR("Failed submitting a task to a Vulkan queue");
 		return bSuccess;

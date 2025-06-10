@@ -110,13 +110,14 @@ namespace RE {
 		}) (__FILE__, __func__, __LINE__)
 
 	bool check_vulkan_result(const VkResult vk_eResult, const char *const pcFile, const char *const pcFunc, const uint32_t u32Line);
-#define CHECK_VK_RESULT(RESULT) ([&](const char *const pcFile, const char *const pcActualFunc, const uint32_t u32Line) -> bool { \
+#define CHECK_VK_RESULT(RESULT) ([&](const char *const pcFile, const char *const pcActualFunc, const uint32_t u32Line) -> VkResult { \
 			add_to_stack_trace(pcFile, pcActualFunc, u32Line, "\0"); \
 			focus_vulkan_debug_on(pcFile, pcActualFunc, u32Line); \
-			const bool bResult = check_vulkan_result(RESULT, pcFile, pcActualFunc, u32Line); \
+			const VkResult vk_eResult = RESULT; \
+			check_vulkan_result(vk_eResult, pcFile, pcActualFunc, u32Line); \
 			unfocus_vulkan_debug(); \
 			remove_from_stack_trace(); \
-			return bResult; \
+			return vk_eResult; \
 		}) (__FILE__, __func__, __LINE__)
 #define FOCUS_FOR_VK_DEBUG_AND_RETURN(CMD, RETURN_TYPE) ([&](const char *const pcFile, const char *const pcActualFunc, const uint32_t u32Line) -> RETURN_TYPE { \
 			add_to_stack_trace(pcFile, pcActualFunc, u32Line, "\0"); \

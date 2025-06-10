@@ -180,7 +180,7 @@ namespace RE {
 			.enabledExtensionCount = RE_VK_REQUIRED_EXTENSIONS_COUNT,
 			.ppEnabledExtensionNames = pcRequiredExtensions
 		};
-		if (!CHECK_VK_RESULT(pfn_vkCreateInstance(&vk_instanceCreateInfo, nullptr, &vk_hInstance))) {
+		if (CHECK_VK_RESULT(pfn_vkCreateInstance(&vk_instanceCreateInfo, nullptr, &vk_hInstance)) != VK_SUCCESS) {
 			RE_FATAL_ERROR("Failed creating Vulkan instance");
 			return false;
 		}
@@ -433,7 +433,7 @@ namespace RE {
 		vk_debugCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
 		vk_debugCreateInfo.pfnUserCallback = debug_callback;
 		vk_debugCreateInfo.pUserData = nullptr;
-		if (!vkCreateDebugUtilsMessengerEXT(vk_hInstance, &vk_debugCreateInfo, nullptr, &vk_hDebugMessenger)) {
+		if (vkCreateDebugUtilsMessengerEXT(vk_hInstance, &vk_debugCreateInfo, nullptr, &vk_hDebugMessenger) != VK_SUCCESS) {
 			RE_FATAL_ERROR("Failed creating Vulkan debug messenger for validation layers");
 			return false;
 		}

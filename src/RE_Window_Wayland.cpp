@@ -44,7 +44,7 @@ namespace RE {
 			.display = wl_pDisplay,
 			.surface = wl_pSurface
 		};
-		return vkCreateWaylandSurfaceKHR(vk_hInstance, &vk_waylandSurfaceCreateInfo, nullptr, &vk_rhSurface);
+		return vkCreateWaylandSurfaceKHR(vk_hInstance, &vk_waylandSurfaceCreateInfo, nullptr, &vk_rhSurface) == VK_SUCCESS;
 	}
 
 	const char* Window_Wayland::get_vulkan_required_surface_extension_name() const {

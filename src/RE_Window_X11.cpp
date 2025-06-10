@@ -172,7 +172,7 @@ namespace RE {
 			.dpy = x11_pDisplay,
 			.window = x11_hWindow
 		};
-		return vkCreateXlibSurfaceKHR(vk_hInstance, &vk_x11SurfaceCreateInfo, nullptr, &vk_rhSurface);
+		return vkCreateXlibSurfaceKHR(vk_hInstance, &vk_x11SurfaceCreateInfo, nullptr, &vk_rhSurface) == VK_SUCCESS;
 	}
 
 	const char* Window_X11::get_vulkan_required_surface_extension_name() const {

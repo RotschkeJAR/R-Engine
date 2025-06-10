@@ -72,7 +72,7 @@ namespace RE {
 									.pCommandBuffers = indexBufferDataTransferCommandBuffer.get_command_buffer_ptr()
 								};
 								stagingIndexBufferDataInit.join();
-								if (vkQueueSubmit(vk_hDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], 1U, &vk_rectIndexBufferTransferSubmitInfo, rectIndexBufferDataTransferFence)) {
+								if (vkQueueSubmit(vk_hDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], 1U, &vk_rectIndexBufferTransferSubmitInfo, rectIndexBufferDataTransferFence) == VK_SUCCESS) {
 									constexpr uint32_t u32WorldRenderPassAttachmentCount = 1U, u32WorldRenderPassSubpassCount = 1U, u32WorldRenderPassDependencyCount = 1U;
 									const VkAttachmentDescription vk_worldRenderPassAttachments[u32WorldRenderPassAttachmentCount] = {
 										{
@@ -121,7 +121,7 @@ namespace RE {
 										.dependencyCount = u32WorldRenderPassDependencyCount,
 										.pDependencies = vk_worldRenderDependencies
 									};
-									if (vkCreateRenderPass(vk_hDevice, &vk_renderPassCreateInfo, nullptr, &vk_hWorldRenderPass)) {
+									if (vkCreateRenderPass(vk_hDevice, &vk_renderPassCreateInfo, nullptr, &vk_hWorldRenderPass) == VK_SUCCESS) {
 										constexpr uint32_t u32WorldRenderImageQueueCount = 2U, au32WorldRenderImageQueues[u32WorldRenderImageQueueCount] = {RE_VK_QUEUE_GRAPHICS_INDEX, RE_VK_QUEUE_TRANSFER_INDEX};
 										const VkExtent3D vk_worldRenderImageExtent3D = {
 											.width = vk_worldRenderImageExtent.width,
@@ -156,7 +156,7 @@ namespace RE {
 											};
 											uint8_t u8FrameInFlightCreateIndex = 0U;
 											while (u8FrameInFlightCreateIndex < RE_VK_FRAMES_IN_FLIGHT) {
-												if (!vkCreateFence(vk_hDevice, &vk_renderFenceCreateInfo, nullptr, &vk_ahRenderFences[u8FrameInFlightCreateIndex])) {
+												if (vkCreateFence(vk_hDevice, &vk_renderFenceCreateInfo, nullptr, &vk_ahRenderFences[u8FrameInFlightCreateIndex]) != VK_SUCCESS) {
 													RE_FATAL_ERROR(append_to_string("Failed to create Vulkan render fence at index ", u8FrameInFlightCreateIndex));
 													break;
 												}
@@ -168,7 +168,7 @@ namespace RE {
 												};
 												uint16_t u16RenderSemaphoreCreateIndex = 0U;
 												while (u16RenderSemaphoreCreateIndex < RE_VK_RENDER_SEMAPHORE_COUNT) {
-													if (!vkCreateSemaphore(vk_hDevice, &vk_renderSemaphoreCreateInfo, nullptr, &vk_ahRenderSemaphores[u16RenderSemaphoreCreateIndex])) {
+													if (vkCreateSemaphore(vk_hDevice, &vk_renderSemaphoreCreateInfo, nullptr, &vk_ahRenderSemaphores[u16RenderSemaphoreCreateIndex]) != VK_SUCCESS) {
 														RE_FATAL_ERROR(append_to_string("Failed creating Vulkan semaphore at index ", u16RenderSemaphoreCreateIndex));
 														break;
 													}
@@ -257,7 +257,11 @@ namespace RE {
 			CATCH_SIGNAL(pActiveCamera->update());
 		vkWaitForFences(vk_hDevice, 1U, &vk_ahRenderFences[u8CurrentFrameInFlightIndex], VK_TRUE, std::numeric_limits<uint64_t>::max());
 		uint32_t u32NextSwapchainImageIndex;
-		vkAcquireNextImageKHR(vk_hDevice, vk_hSwapchain, std::numeric_limits<uint64_t>::max(), vk_ahRenderSemaphores[u8CurrentFrameInFlightIndex * RE_VK_SEMAPHORES_PER_FRAME_COUNT], VK_NULL_HANDLE, &u32NextSwapchainImageIndex);
+		const VkResult vk_eResult = vkAcquireNextImageKHR(vk_hDevice, vk_hSwapchain, std::numeric_limits<uint64_t>::max(), vk_ahRenderSemaphores[u8CurrentFrameInFlightIndex * RE_VK_SEMAPHORES_PER_FRAME_COUNT], VK_NULL_HANDLE, &u32NextSwapchainImageIndex);
+		if (vk_eResult == VK_SUBOPTIMAL_KHR || vk_eResult == VK_ERROR_OUT_OF_DATE_KHR) {
+			mark_swapchain_dirty();
+			return;
+		}
 		CATCH_SIGNAL(render_gameobjects());
 		if (!begin_recording_vulkan_command_buffer(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr)) {
 			RE_FATAL_ERROR("Failed beginning to record Vulkan command buffer for rendering everything");
@@ -359,13 +363,13 @@ namespace RE {
 			}
 		};
 		vkCmdPipelineBarrier(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0U, nullptr, 0U, nullptr, 1U, &vk_swapchainImageLayoutTransfer);
-		if (!vkEndCommandBuffer(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex])) {
+		if (vkEndCommandBuffer(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex]) != VK_SUCCESS) {
 			RE_FATAL_ERROR("Failed finishing to record Vulkan command buffer for rendering everything");
 			return;
 		}
 		vkResetFences(vk_hDevice, 1U, &vk_ahRenderFences[u8CurrentFrameInFlightIndex]);
 		const VkPipelineStageFlags vk_aePipelinesToWaitForBeforeRendering[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT};
-		if (!submit_to_vulkan_queue(vk_hDeviceQueueFamilies[RE_VK_QUEUE_GRAPHICS_INDEX], 2U, &vk_ahRenderSemaphores[u8CurrentFrameInFlightIndex * RE_VK_SEMAPHORES_PER_FRAME_COUNT], vk_aePipelinesToWaitForBeforeRendering, 1U, &vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], 1U, &vk_ahRenderSemaphores[u8CurrentFrameInFlightIndex * RE_VK_SEMAPHORES_PER_FRAME_COUNT + 2U], vk_ahRenderFences[u8CurrentFrameInFlightIndex])) {
+		if (!CATCH_SIGNAL_AND_RETURN(submit_to_vulkan_queue(vk_hDeviceQueueFamilies[RE_VK_QUEUE_GRAPHICS_INDEX], 2U, &vk_ahRenderSemaphores[u8CurrentFrameInFlightIndex * RE_VK_SEMAPHORES_PER_FRAME_COUNT], vk_aePipelinesToWaitForBeforeRendering, 1U, &vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], 1U, &vk_ahRenderSemaphores[u8CurrentFrameInFlightIndex * RE_VK_SEMAPHORES_PER_FRAME_COUNT + 2U], vk_ahRenderFences[u8CurrentFrameInFlightIndex]), bool)) {
 			RE_FATAL_ERROR("Failed submitting the task for rendering everything to the Vulkan GPU");
 			return;
 		}
@@ -387,7 +391,7 @@ namespace RE {
 			.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
 		};
 		for (uint32_t u32PresentSemaphoreCreateIndex = 0U; u32PresentSemaphoreCreateIndex < u32SwapchainImageCount; u32PresentSemaphoreCreateIndex++)
-			if (!vkCreateSemaphore(vk_hDevice, &vk_presentSemaphoreCreateInfo, nullptr, &vk_pahPresentSemaphores[u32PresentSemaphoreCreateIndex])) {
+			if (vkCreateSemaphore(vk_hDevice, &vk_presentSemaphoreCreateInfo, nullptr, &vk_pahPresentSemaphores[u32PresentSemaphoreCreateIndex]) != VK_SUCCESS) {
 				RE_FATAL_ERROR(append_to_string("Failed creating Vulkan semaphore at index ", u32PresentSemaphoreCreateIndex, " for synchronizing swapchain presentations"));
 				for (uint32_t u32PresentSemaphoreDeleteIndex = 0U; u32PresentSemaphoreDeleteIndex < u32PresentSemaphoreCreateIndex; u32PresentSemaphoreDeleteIndex++)
 					vkDestroySemaphore(vk_hDevice, vk_pahPresentSemaphores[u32PresentSemaphoreDeleteIndex], nullptr);

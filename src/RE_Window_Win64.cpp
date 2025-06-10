@@ -223,7 +223,7 @@ namespace RE {
 			.hinstance = win_hInstance,
 			.hwnd = win_hWindow
 		};
-		return vkCreateWin32SurfaceKHR(vk_hInstance, &vk_win32SurfaceCreateInfo, nullptr, &vk_rhSurface);
+		return vkCreateWin32SurfaceKHR(vk_hInstance, &vk_win32SurfaceCreateInfo, nullptr, &vk_rhSurface) == VK_SUCCESS;
 	}
 
 	const char* Window_Win64::get_vulkan_required_surface_extension_name() const {

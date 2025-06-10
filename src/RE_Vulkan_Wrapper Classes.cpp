@@ -52,7 +52,7 @@ namespace RE {
 			.level = vk_eCommandBufferLevel,
 			.commandBufferCount = 1U
 		};
-		if (!vkAllocateCommandBuffers(vk_hDevice, &vk_commandBufferAllocInfo, &vk_hCommandBuffer))
+		if (vkAllocateCommandBuffers(vk_hDevice, &vk_commandBufferAllocInfo, &vk_hCommandBuffer) != VK_SUCCESS)
 			RE_ERROR(append_to_string("Failed to allocate a new command buffer in command pool ", vk_hCommandPool));
 	}
 	
@@ -68,14 +68,14 @@ namespace RE {
 			.flags = vk_eUsageFlags,
 			.pInheritanceInfo = vk_pInheritanceInfo
 		};
-		const bool bSuccess = vkBeginCommandBuffer(vk_hCommandBuffer, &vk_beginRecordInfo);
+		const bool bSuccess = vkBeginCommandBuffer(vk_hCommandBuffer, &vk_beginRecordInfo) == VK_SUCCESS;
 		if (!bSuccess)
 			RE_ERROR(append_to_string("Failed to begin recording command buffer ", vk_hCommandBuffer));
 		return bSuccess;
 	}
 
 	bool Vulkan_CommandBuffer::end_recording() const {
-		const bool bSuccess = vkEndCommandBuffer(vk_hCommandBuffer);
+		const bool bSuccess = vkEndCommandBuffer(vk_hCommandBuffer) == VK_SUCCESS;
 		if (!bSuccess)
 			RE_ERROR(append_to_string("Failed to finish recording command buffer ", vk_hCommandBuffer));
 		return bSuccess;
@@ -109,7 +109,7 @@ namespace RE {
 			.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
 			.flags = vk_eCreateFlags
 		};
-		if (!vkCreateFence(vk_hDevice, &vk_createInfo, nullptr, &vk_hFence))
+		if (vkCreateFence(vk_hDevice, &vk_createInfo, nullptr, &vk_hFence) != VK_SUCCESS)
 			RE_ERROR("Failed to create Vulkan fence");
 	}
 	

@@ -1220,7 +1220,7 @@ namespace RE {
 			.ppEnabledExtensionNames = static_cast<const char *const *>(pcPhysicalDeviceExtensions),
 			.pEnabledFeatures = &vk_physicalDeviceFeaturesEnabled
 		};
-		const bool bCreatedDeviceSuccessfully = vkCreateDevice(vk_hPhysicalDeviceSelected, &vk_deviceCreateInfo, nullptr, &vk_hDevice);
+		const bool bCreatedDeviceSuccessfully = vkCreateDevice(vk_hPhysicalDeviceSelected, &vk_deviceCreateInfo, nullptr, &vk_hDevice) == VK_SUCCESS;
 		DELETE_ARRAY_SAFELY(vk_pDeviceQueueCreateInfos);
 		if (!bCreatedDeviceSuccessfully) {
 			RE_FATAL_ERROR("Failed creating logical Vulkan device");

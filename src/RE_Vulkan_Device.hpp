@@ -448,11 +448,11 @@ namespace RE {
 #define vkCreateSwapchainKHR(...) CHECK_VK_RESULT(pfn_vkCreateSwapchainKHR(__VA_ARGS__))
 #define vkDestroySwapchainKHR(...) FOCUS_FOR_VK_DEBUG(pfn_vkDestroySwapchainKHR(__VA_ARGS__))
 #define vkGetSwapchainImagesKHR(...) CHECK_VK_RESULT(pfn_vkGetSwapchainImagesKHR(__VA_ARGS__))
-#define vkAcquireNextImageKHR(...) CHECK_VK_RESULT(pfn_vkAcquireNextImageKHR(__VA_ARGS__))
-#define vkQueuePresentKHR(...) CHECK_VK_RESULT(pfn_vkQueuePresentKHR(__VA_ARGS__))
+#define vkAcquireNextImageKHR(...) FOCUS_FOR_VK_DEBUG_AND_RETURN(pfn_vkAcquireNextImageKHR(__VA_ARGS__), VkResult)
+#define vkQueuePresentKHR(...) FOCUS_FOR_VK_DEBUG_AND_RETURN(pfn_vkQueuePresentKHR(__VA_ARGS__), VkResult)
 #define vkGetDeviceGroupPresentCapabilitiesKHR(...) CHECK_VK_RESULT(pfn_vkGetDeviceGroupPresentCapabilitiesKHR(__VA_ARGS__))
 #define vkGetDeviceGroupSurfacePresentModesKHR(...) CHECK_VK_RESULT(pfn_vkGetDeviceGroupSurfacePresentModesKHR(__VA_ARGS__))
-#define vkAcquireNextImage2KHR(...) CHECK_VK_RESULT(pfn_vkAcquireNextImage2KHR(__VA_ARGS__))
+#define vkAcquireNextImage2KHR(...) FOCUS_FOR_VK_DEBUG_AND_RETURN(pfn_vkAcquireNextImage2KHR(__VA_ARGS__), VkResult)
 
 #define WAIT_FOR_IDLE_VULKAN_DEVICE() vkDeviceWaitIdle(vk_hDevice)
 

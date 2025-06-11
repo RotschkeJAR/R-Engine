@@ -331,7 +331,7 @@ namespace RE {
 			RE_FATAL_ERROR("Failed finishing to record Vulkan command buffer for transferring vertex buffer data to the GPU for rendering game objects");
 			return;
 		}
-		if (!CATCH_SIGNAL_AND_RETURN(submit_to_vulkan_queue(vk_hDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], 0U, nullptr, nullptr, 1U, &vk_ahGameObjectVertexTransferCommandBuffers[u8CurrentFrameInFlightIndex], 1U, &vk_ahRenderSemaphores[u8CurrentFrameInFlightIndex * RE_VK_SEMAPHORES_PER_FRAME_COUNT + 1U], VK_NULL_HANDLE), bool)) {
+		if (!CATCH_SIGNAL_AND_RETURN(submit_to_vulkan_queue(vk_hDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], 0U, nullptr, nullptr, 1U, &vk_ahGameObjectVertexTransferCommandBuffers[u8CurrentFrameInFlightIndex], 1U, &vk_ahRenderSemaphores[u8CurrentFrameInFlightIndex * RE_VK_SEMAPHORES_PER_FRAME_COUNT], VK_NULL_HANDLE), bool)) {
 			RE_FATAL_ERROR("Failed submitting the task for transferring Vulkan vertex buffer data for rendering game objects to the GPU");
 			return;
 		}

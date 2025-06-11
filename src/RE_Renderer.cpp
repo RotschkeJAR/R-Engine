@@ -13,6 +13,9 @@ namespace RE {
 #define RE_VK_RECT_INDEX_BUFFER_SIZE (RE_VK_RENDERABLE_RECTANGLES_COUNT * 6U)
 #define RE_VK_RECT_INDEX_BUFFER_SIZE_BYTES (RE_VK_RECT_INDEX_BUFFER_SIZE * sizeof(REindex_t))
 
+#define RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE 2U
+#define RE_VK_SWAPCHAIN_SEMAPHORE_COUNT (u32SwapchainImageCount * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE)
+
 	Camera *pActiveCamera = nullptr;
 	VkViewport vk_cameraViewportArea;
 	VkRect2D vk_cameraScissorArea;
@@ -31,10 +34,11 @@ namespace RE {
 	VkFramebuffer vk_ahWorldFramebuffers[RE_VK_FRAMES_IN_FLIGHT] = {};
 
 	VkFence vk_ahRenderFences[RE_VK_FRAMES_IN_FLIGHT] = {};
-	VkSemaphore vk_ahRenderSemaphores[RE_VK_RENDER_SEMAPHORE_COUNT] = {}, *vk_pahPresentSemaphores = nullptr;
+	VkSemaphore *vk_pahSwapchainSemaphores = nullptr, vk_ahRenderSemaphores[RE_VK_RENDER_SEMAPHORE_COUNT] = {};
 
 	VkCommandBuffer vk_ahRenderCommandBuffers[RE_VK_FRAMES_IN_FLIGHT] = {};
 
+	uint32_t u32SwapchainRenderImageIndex = 0U;
 	uint8_t u8CurrentFrameInFlightIndex = 0U;
 
 	bool init_renderer() {
@@ -257,10 +261,17 @@ namespace RE {
 			CATCH_SIGNAL(pActiveCamera->update());
 		vkWaitForFences(vk_hDevice, 1U, &vk_ahRenderFences[u8CurrentFrameInFlightIndex], VK_TRUE, std::numeric_limits<uint64_t>::max());
 		uint32_t u32NextSwapchainImageIndex;
-		const VkResult vk_eResult = vkAcquireNextImageKHR(vk_hDevice, vk_hSwapchain, std::numeric_limits<uint64_t>::max(), vk_ahRenderSemaphores[u8CurrentFrameInFlightIndex * RE_VK_SEMAPHORES_PER_FRAME_COUNT], VK_NULL_HANDLE, &u32NextSwapchainImageIndex);
-		if (vk_eResult == VK_SUBOPTIMAL_KHR || vk_eResult == VK_ERROR_OUT_OF_DATE_KHR) {
-			mark_swapchain_dirty();
-			return;
+		const VkResult vk_eSwapchainImageAcquireResult = vkAcquireNextImageKHR(vk_hDevice, vk_hSwapchain, std::numeric_limits<uint64_t>::max(), vk_pahSwapchainSemaphores[u32SwapchainRenderImageIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE], VK_NULL_HANDLE, &u32NextSwapchainImageIndex);
+		switch (vk_eSwapchainImageAcquireResult) {
+			case VK_SUCCESS:
+				break;
+			case VK_SUBOPTIMAL_KHR:
+			case VK_ERROR_OUT_OF_DATE_KHR:
+				mark_swapchain_dirty();
+				break;
+			default:
+				check_vulkan_result(vk_eSwapchainImageAcquireResult, __FILE__, __func__, __LINE__);
+				break;
 		}
 		CATCH_SIGNAL(render_gameobjects());
 		if (!begin_recording_vulkan_command_buffer(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr)) {
@@ -369,44 +380,58 @@ namespace RE {
 		}
 		vkResetFences(vk_hDevice, 1U, &vk_ahRenderFences[u8CurrentFrameInFlightIndex]);
 		const VkPipelineStageFlags vk_aePipelinesToWaitForBeforeRendering[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT};
-		if (!CATCH_SIGNAL_AND_RETURN(submit_to_vulkan_queue(vk_hDeviceQueueFamilies[RE_VK_QUEUE_GRAPHICS_INDEX], 2U, &vk_ahRenderSemaphores[u8CurrentFrameInFlightIndex * RE_VK_SEMAPHORES_PER_FRAME_COUNT], vk_aePipelinesToWaitForBeforeRendering, 1U, &vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], 1U, &vk_ahRenderSemaphores[u8CurrentFrameInFlightIndex * RE_VK_SEMAPHORES_PER_FRAME_COUNT + 2U], vk_ahRenderFences[u8CurrentFrameInFlightIndex]), bool)) {
+		const VkSemaphore vk_ahWaitBeforeRenderingSemaphores[2U] = {vk_pahSwapchainSemaphores[u32SwapchainRenderImageIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE], vk_ahRenderSemaphores[u8CurrentFrameInFlightIndex * RE_VK_SEMAPHORES_PER_FRAME_COUNT]};
+		if (!CATCH_SIGNAL_AND_RETURN(submit_to_vulkan_queue(vk_hDeviceQueueFamilies[RE_VK_QUEUE_GRAPHICS_INDEX], 2U, vk_ahWaitBeforeRenderingSemaphores, vk_aePipelinesToWaitForBeforeRendering, 1U, &vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], 1U, &vk_pahSwapchainSemaphores[u32SwapchainRenderImageIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE + 1U], vk_ahRenderFences[u8CurrentFrameInFlightIndex]), bool)) {
 			RE_FATAL_ERROR("Failed submitting the task for rendering everything to the Vulkan GPU");
 			return;
 		}
 		const VkPresentInfoKHR vk_presentInfo = {
 			.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
 			.waitSemaphoreCount = 1U,
-			.pWaitSemaphores = &vk_ahRenderSemaphores[u8CurrentFrameInFlightIndex * RE_VK_SEMAPHORES_PER_FRAME_COUNT + 2U],
+			.pWaitSemaphores = &vk_pahSwapchainSemaphores[u32SwapchainRenderImageIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE + 1U],
 			.swapchainCount = 1U,
 			.pSwapchains = &vk_hSwapchain,
 			.pImageIndices = &u32NextSwapchainImageIndex
 		};
-		vkQueuePresentKHR(vk_hDeviceQueueFamilies[RE_VK_QUEUE_PRESENT_INDEX], &vk_presentInfo);
+		const VkResult vk_eSwapchainPresentResult = vkQueuePresentKHR(vk_hDeviceQueueFamilies[RE_VK_QUEUE_PRESENT_INDEX], &vk_presentInfo);
+		switch (vk_eSwapchainPresentResult) {
+			case VK_SUCCESS:
+				break;
+			case VK_SUBOPTIMAL_KHR:
+			case VK_ERROR_OUT_OF_DATE_KHR:
+				mark_swapchain_dirty();
+				break;
+			default:
+				check_vulkan_result(vk_eSwapchainPresentResult, __FILE__, __func__, __LINE__);
+				break;
+		}
+		u32SwapchainRenderImageIndex = (u32SwapchainRenderImageIndex + 1U) % u32SwapchainImageCount;
 		u8CurrentFrameInFlightIndex = (u8CurrentFrameInFlightIndex + 1U) % RE_VK_FRAMES_IN_FLIGHT;
 	}
 
 	bool swapchain_created_renderer() {
-		vk_pahPresentSemaphores = new VkSemaphore[u32SwapchainImageCount];
 		const VkSemaphoreCreateInfo vk_presentSemaphoreCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
 		};
-		for (uint32_t u32PresentSemaphoreCreateIndex = 0U; u32PresentSemaphoreCreateIndex < u32SwapchainImageCount; u32PresentSemaphoreCreateIndex++)
-			if (vkCreateSemaphore(vk_hDevice, &vk_presentSemaphoreCreateInfo, nullptr, &vk_pahPresentSemaphores[u32PresentSemaphoreCreateIndex]) != VK_SUCCESS) {
-				RE_FATAL_ERROR(append_to_string("Failed creating Vulkan semaphore at index ", u32PresentSemaphoreCreateIndex, " for synchronizing swapchain presentations"));
+		vk_pahSwapchainSemaphores = new VkSemaphore[RE_VK_SWAPCHAIN_SEMAPHORE_COUNT];
+		for (uint32_t u32PresentSemaphoreCreateIndex = 0U; u32PresentSemaphoreCreateIndex < RE_VK_SWAPCHAIN_SEMAPHORE_COUNT; u32PresentSemaphoreCreateIndex++)
+			if (vkCreateSemaphore(vk_hDevice, &vk_presentSemaphoreCreateInfo, nullptr, &vk_pahSwapchainSemaphores[u32PresentSemaphoreCreateIndex]) != VK_SUCCESS) {
+				RE_FATAL_ERROR(append_to_string("Failed creating Vulkan semaphore at index ", u32PresentSemaphoreCreateIndex, " for synchronizing rendering procedures"));
 				for (uint32_t u32PresentSemaphoreDeleteIndex = 0U; u32PresentSemaphoreDeleteIndex < u32PresentSemaphoreCreateIndex; u32PresentSemaphoreDeleteIndex++)
-					vkDestroySemaphore(vk_hDevice, vk_pahPresentSemaphores[u32PresentSemaphoreDeleteIndex], nullptr);
+					vkDestroySemaphore(vk_hDevice, vk_pahSwapchainSemaphores[u32PresentSemaphoreDeleteIndex], nullptr);
+				DELETE_ARRAY_SAFELY(vk_pahSwapchainSemaphores);
 				return false;
+				
 			}
 		return true;
 	}
 
 	void swapchain_destroyed_renderer() {
-		if (!vk_pahPresentSemaphores)
+		if (!vk_pahSwapchainSemaphores)
 			return;
-		for (uint32_t u32PresentSemaphoreIndex = 0U; u32PresentSemaphoreIndex < u32SwapchainImageCount; u32PresentSemaphoreIndex++)
-			vkDestroySemaphore(vk_hDevice, vk_pahPresentSemaphores[u32PresentSemaphoreIndex], nullptr);
-		delete[] vk_pahPresentSemaphores;
-		vk_pahPresentSemaphores = nullptr;
+		for (uint32_t u32PresentSemaphoreDeleteIndex = 0U; u32PresentSemaphoreDeleteIndex < RE_VK_SWAPCHAIN_SEMAPHORE_COUNT; u32PresentSemaphoreDeleteIndex++)
+			vkDestroySemaphore(vk_hDevice, vk_pahSwapchainSemaphores[u32PresentSemaphoreDeleteIndex], nullptr);
+		DELETE_ARRAY_SAFELY(vk_pahSwapchainSemaphores);
 	}
 
 	void calculate_render_area() {

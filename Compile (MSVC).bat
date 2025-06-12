@@ -1,7 +1,7 @@
 @echo off
 SETLOCAL EnableDelayedExpansion
 
-rem Script for compiling with MSVC 2022 x64 native tools
+REM Script for compiling with MSVC 2022 x64 native tools
 
 set SRC=src
 set BIN=bin\MSVC
@@ -14,26 +14,34 @@ set OUT_LIB=%BIN%\RE.lib
 
 call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
 
-del /f *.obj %BIN%\*.obj
+del /f *.obj
+set ERROR=false
 for %%f in (%SRC%\*.cpp) do (
 	%CC% %CFLAG% /c /I"C:\VulkanSDK\Include" "%%f"
-	if %ERRORLEVEL% NEQ 0 (
-		del /f *.obj
-		echo ERROR : Failed compiling engine source code
-		pause
-		exit 1
+	if !ERRORLEVEL! NEQ 0 (
+		set ERROR=true
 	)
 )
+if %ERROR%==true (
+	del /f *.obj
+	echo ERROR : Failed compiling engine source code
+	pause
+	exit /b 1
+)
+del /f %BIN%\*.obj
 move *.obj %BIN%
 lib /NOLOGO /OUT:%OUT_LIB% %BIN%\*.obj
 for %%f in (*.cpp) do (
 	%CC% %CFLAG% /c /I%SRC% *.cpp "%%f"
-	if %ERRORLEVEL% NEQ 0 (
-		del /f *.obj
-		echo ERROR : Failed compiling game source code
-		pause
-		exit 1
+	if !ERRORLEVEL! NEQ 0 (
+		set ERROR=true
 	)
+)
+if %ERROR%==true (
+	del /f *.obj
+	echo ERROR : Failed compiling game source code
+	pause
+	exit /b 1
 )
 link /NOLOGO *.obj %OUT_LIB% %LDFLAG% /OUT:"Game (MSVC; Windows).exe" /SUBSYSTEM:WINDOWS
 if %ERRORLEVEL% NEQ 0 (

@@ -1,7 +1,7 @@
 @echo off
 SETLOCAL EnableDelayedExpansion
 
-rem Script for compiling with LLVM-MinGW 20250430 (LLVM 20.1.4) from https://github.com/mstorsjo/llvm-mingw/releases
+REM Script for compiling with LLVM-MinGW 20250430 (LLVM 20.1.4) from https://github.com/mstorsjo/llvm-mingw/releases
 
 set SRC=src
 set BIN=bin\MinGW
@@ -10,15 +10,20 @@ set CC=g++
 set CFLAG=-std=c++20 -pedantic-errors -Wall -march=x86-64 -m64 -ffast-math -O2 -D_WIN32_WINNT=0x0A00
 set LDFLAG=-lRE -lgdi32 -luser32 -I%SRC% -L%BIN% -static-libgcc -static-libstdc++
 
+del /f *.o
+set ERROR=false
 for %%f in (%SRC%\*.cpp) do (
 	echo %%f
 	%CC% %CFLAG% -c -I"C:\VulkanSDK\Include" "%%f"
-	if %ERRORLEVEL% NEQ 0 (
-		del /f *.o
-		echo ERROR : Failed compiling engine source code
-		pause
-		exit 1
+	if !ERRORLEVEL! NEQ 0 (
+		set ERROR=true
 	)
+)
+if %ERROR%==true (
+	del /f *.o
+	echo ERROR : Failed compiling engine source code
+	pause
+	exit /b 1
 )
 del /f "%BIN%\*.o"
 move *.o %BIN% >nul
@@ -28,12 +33,15 @@ for %%f in (%BIN%\*.o) do (
 for %%f in (*.cpp) do (
 	echo %%f
 	%CC% %CFLAG% -c -I"src" "%%f"
-	if %ERRORLEVEL% NEQ 0 (
-		del /f *.o
-		echo ERROR : Failed compiling game source code
-		pause
-		exit 1
+	if !ERRORLEVEL! NEQ 0 (
+		set ERROR=true
 	)
+)
+if %ERROR%==true (
+	del /f *.o
+	echo ERROR : Failed compiling game source code
+	pause
+	exit /b 1
 )
 for %%f in (*.o) do (
 	set OBJS=!OBJS! %%f

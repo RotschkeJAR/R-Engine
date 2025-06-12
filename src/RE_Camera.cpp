@@ -12,7 +12,7 @@ namespace RE {
 
 	void Camera::update() {}
 
-	void Camera::activate() const {
+	void Camera::activate() {
 		pActiveCamera = this;
 	}
 

@@ -206,4 +206,20 @@ namespace RE {
 		return bSuccess;
 	}
 
+	bool signal_vulkan_semaphores(const uint32_t u32SemaphoreCount, const VkSemaphore *vk_pahSemaphores) {
+		const bool bSuccess = submit_to_vulkan_queue(vk_hDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], 0U, nullptr, nullptr, 1U, &vk_hDummyTransferCommandBuffer, u32SemaphoreCount, vk_pahSemaphores, VK_NULL_HANDLE);
+		if (!bSuccess)
+			RE_ERROR("Failed signaling semaphores");
+		return bSuccess;
+	}
+
+	bool signal_vulkan_fences(const uint32_t u32FenceCount, const VkFence *vk_pahFences) {
+		for (uint32_t u32FenceIndex = 0U; u32FenceIndex < u32FenceCount; u32FenceIndex++)
+			if (!submit_to_vulkan_queue(vk_hDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], 0U, nullptr, nullptr, 1U, &vk_hDummyTransferCommandBuffer, 0U, nullptr, vk_pahFences[u32FenceIndex])) {
+				RE_ERROR(append_to_string("Failed signaling fence at index ", u32FenceIndex));
+				return false;
+			}
+		return true;
+	}
+
 }

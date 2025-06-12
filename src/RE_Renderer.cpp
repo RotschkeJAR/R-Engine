@@ -273,7 +273,8 @@ namespace RE {
 				}
 				break;
 		}
-		CATCH_SIGNAL(render_gameobjects());
+		if (!CATCH_SIGNAL_AND_RETURN(render_gameobjects(), bool))
+			return;
 		if (!begin_recording_vulkan_command_buffer(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr)) {
 			RE_FATAL_ERROR("Failed beginning to record Vulkan command buffer for rendering everything");
 			return;

@@ -32,7 +32,7 @@ namespace RE {
 	void render();
 	bool swapchain_created_renderer();
 	void swapchain_destroyed_renderer();
-	void calculate_render_area();
+	void calculate_world_render_area();
 
 }
 

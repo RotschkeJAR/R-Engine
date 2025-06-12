@@ -624,7 +624,7 @@ namespace RE {
 			Camera(Vector3f &rPosition, Vector2f &rScale);
 			~Camera();
 			virtual void update();
-			void activate() const;
+			void activate();
 			void deactivate() const;
 			bool has_same_transform(const Camera &rCompareCamera) const;
 

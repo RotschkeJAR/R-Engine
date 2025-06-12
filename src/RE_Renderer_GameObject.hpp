@@ -9,7 +9,7 @@ namespace RE {
 	
 	bool init_gameobject_renderer();
 	void destroy_gameobject_renderer();
-	void render_gameobjects();
+	bool render_gameobjects();
 
 }
 

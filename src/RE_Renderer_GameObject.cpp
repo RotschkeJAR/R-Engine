@@ -286,7 +286,7 @@ namespace RE {
 		vk_hGameObjectFragmentShader = VK_NULL_HANDLE;
 	}
 
-	void render_gameobjects() {
+	bool render_gameobjects() {
 		uint16_t u16GameObjectIndex = 0U;
 		for (GameObject *pObject : gameObjects) {
 			if (pObject->u32SceneParentId != get_current_scene_id())
@@ -319,21 +319,26 @@ namespace RE {
 			}
 			u16GameObjectIndex++;
 		}
-		if (!CATCH_SIGNAL_AND_RETURN(begin_recording_vulkan_command_buffer(vk_ahGameObjectVertexTransferCommandBuffers[u8CurrentFrameInFlightIndex], VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr), bool)) {
-			RE_FATAL_ERROR("Failed beginning to record Vulkan command buffer for transferring vertex buffer data to the GPU for rendering game objects");
-			return;
-		}
-		const VkBufferCopy vk_vertexBufferCopy = {
-			.size = RE_VK_VERTEX_TOTAL_SIZE_BYTES * 4U * u16GameObjectIndex
-		};
-		vkCmdCopyBuffer(vk_ahGameObjectVertexTransferCommandBuffers[u8CurrentFrameInFlightIndex], vk_hGameObjectStagingVertexBuffer, vk_ahGameObjectVertexBuffers[u8CurrentFrameInFlightIndex], 1U, &vk_vertexBufferCopy);
-		if (vkEndCommandBuffer(vk_ahGameObjectVertexTransferCommandBuffers[u8CurrentFrameInFlightIndex]) != VK_SUCCESS) {
-			RE_FATAL_ERROR("Failed finishing to record Vulkan command buffer for transferring vertex buffer data to the GPU for rendering game objects");
-			return;
-		}
-		if (!CATCH_SIGNAL_AND_RETURN(submit_to_vulkan_queue(vk_hDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], 0U, nullptr, nullptr, 1U, &vk_ahGameObjectVertexTransferCommandBuffers[u8CurrentFrameInFlightIndex], 1U, &vk_ahRenderSemaphores[u8CurrentFrameInFlightIndex * RE_VK_SEMAPHORES_PER_FRAME_COUNT], VK_NULL_HANDLE), bool)) {
-			RE_FATAL_ERROR("Failed submitting the task for transferring Vulkan vertex buffer data for rendering game objects to the GPU");
-			return;
+		if (u16GameObjectIndex) {
+			if (!CATCH_SIGNAL_AND_RETURN(begin_recording_vulkan_command_buffer(vk_ahGameObjectVertexTransferCommandBuffers[u8CurrentFrameInFlightIndex], VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr), bool)) {
+				RE_FATAL_ERROR("Failed beginning to record Vulkan command buffer for transferring vertex buffer data to the GPU for rendering game objects");
+				return false;
+			}
+			const VkBufferCopy vk_vertexBufferCopy = {
+				.size = RE_VK_VERTEX_TOTAL_SIZE_BYTES * 4U * u16GameObjectIndex
+			};
+			vkCmdCopyBuffer(vk_ahGameObjectVertexTransferCommandBuffers[u8CurrentFrameInFlightIndex], vk_hGameObjectStagingVertexBuffer, vk_ahGameObjectVertexBuffers[u8CurrentFrameInFlightIndex], 1U, &vk_vertexBufferCopy);
+			if (vkEndCommandBuffer(vk_ahGameObjectVertexTransferCommandBuffers[u8CurrentFrameInFlightIndex]) != VK_SUCCESS) {
+				RE_FATAL_ERROR("Failed finishing to record Vulkan command buffer for transferring vertex buffer data to the GPU for rendering game objects");
+				return false;
+			}
+			if (!CATCH_SIGNAL_AND_RETURN(submit_to_vulkan_queue(vk_hDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], 0U, nullptr, nullptr, 1U, &vk_ahGameObjectVertexTransferCommandBuffers[u8CurrentFrameInFlightIndex], 1U, &vk_ahRenderSemaphores[u8CurrentFrameInFlightIndex * RE_VK_SEMAPHORES_PER_FRAME_COUNT], VK_NULL_HANDLE), bool)) {
+				RE_FATAL_ERROR("Failed submitting the task for transferring Vulkan vertex buffer data for rendering game objects to the GPU");
+				return false;
+			}
+		} else if (!signal_vulkan_semaphores(1U, &vk_ahRenderSemaphores[u8CurrentFrameInFlightIndex * RE_VK_SEMAPHORES_PER_FRAME_COUNT])) {
+			RE_FATAL_ERROR("Failed signaling render semaphore synchronizing transferring game object vertices to GPU");
+			return false;
 		}
 		const VkCommandBufferInheritanceInfo vk_inheritanceInfo = {
 			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO,
@@ -346,7 +351,7 @@ namespace RE {
 		};
 		if (!CATCH_SIGNAL_AND_RETURN(begin_recording_vulkan_command_buffer(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT, &vk_inheritanceInfo), bool)) {
 			RE_FATAL_ERROR("Failed beginning to record Vulkan secondary command buffer for rendering game objects");
-			return;
+			return false;
 		}
 		vkCmdBindPipeline(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hGameObjectGraphicsPipeline);
 		const VkViewport vk_viewport = {
@@ -365,8 +370,9 @@ namespace RE {
 		vkCmdDrawIndexed(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], u16GameObjectIndex * 6U, 1U, 0U, 0U, 0U);
 		if (vkEndCommandBuffer(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex]) != VK_SUCCESS) {
 			RE_FATAL_ERROR("Failed finishing to record Vulkan secondary command buffer for rendering game objects");
-			return;
+			return false;
 		}
+		return true;
 	}
 
 }

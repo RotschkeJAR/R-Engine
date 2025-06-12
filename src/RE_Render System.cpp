@@ -560,7 +560,7 @@ namespace RE {
 			DELETE_ARRAY_SAFELY(vk_phSwapchainImages);
 			DELETE_ARRAY_SAFELY(vk_phSwapchainImageViews);
 		}
-		if (vk_surfaceCapabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
+		if (vk_surfaceCapabilities.currentExtent.width != std::numeric_limits<uint32_t>::max() || vk_surfaceCapabilities.currentExtent.height != std::numeric_limits<uint32_t>::max() || vk_surfaceCapabilities.currentExtent.width == 0U || vk_surfaceCapabilities.currentExtent.height == 0U)
 			vk_swapchainResolution = vk_surfaceCapabilities.currentExtent;
 		else {
 			vk_swapchainResolution.width = std::clamp<uint32_t>(windowSize[0], vk_surfaceCapabilities.minImageExtent.width, vk_surfaceCapabilities.maxImageExtent.width);

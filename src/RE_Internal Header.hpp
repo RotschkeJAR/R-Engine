@@ -48,6 +48,7 @@ typedef KeyCode XKeyCode;
 typedef KeySym XKeySym;
 typedef Status XStatus;
 typedef Colormap XColormap;
+# define XConfigureNotify ConfigureNotify
 # define XKeyPress KeyPress
 # define XKeyRelease KeyRelease
 # define XButtonPress ButtonPress

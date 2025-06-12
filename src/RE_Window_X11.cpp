@@ -23,10 +23,10 @@ namespace RE {
 		XVisualInfo x11_visualTemplate = {};
 		x11_visualTemplate.screen = i32DefaultScreen;
 		x11_visualTemplate.c_class = TrueColor;
-		XVisualInfo* x11_availableVisualInfos;
-		CATCH_SIGNAL(x11_availableVisualInfos = XGetVisualInfo(x11_pDisplay, VisualScreenMask | VisualClassMask, &x11_visualTemplate, &i32VisualsCount));
+		XVisualInfo *const x11_availableVisualInfos = CATCH_SIGNAL_AND_RETURN(XGetVisualInfo(x11_pDisplay, VisualScreenMask | VisualClassMask, &x11_visualTemplate, &i32VisualsCount), XVisualInfo*);
 		if (!i32VisualsCount) {
 			RE_ERROR("No visual information available for X11 window creation");
+			CATCH_SIGNAL(XFree(x11_availableVisualInfos));
 			return;
 		}
 		x11_visualInfo = x11_availableVisualInfos[0];
@@ -36,7 +36,7 @@ namespace RE {
 		CATCH_SIGNAL(x11_colormap = XCreateColormap(x11_pDisplay, x11_rootWindow, x11_visualInfo.visual, AllocNone));
 		winAttrib.colormap = x11_colormap;
 		winAttrib.border_pixel = 0;
-		winAttrib.event_mask = ExposureMask | KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ResizeRedirectMask | SubstructureNotifyMask;
+		winAttrib.event_mask = StructureNotifyMask | ExposureMask | KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask;
 		CATCH_SIGNAL(x11_hWindow = XCreateWindow(x11_pDisplay, x11_rootWindow, 0, 0, windowSize[0], windowSize[1], 0, x11_visualInfo.depth, InputOutput, x11_visualInfo.visual, CWColormap | CWEventMask, &winAttrib));
 
 		x11_pSizes->flags = PMinSize | PMaxSize;
@@ -88,10 +88,12 @@ namespace RE {
 			CATCH_SIGNAL(XMapWindow(x11_pDisplay, x11_hWindow));
 		else
 			CATCH_SIGNAL(XUnmapWindow(x11_pDisplay, x11_hWindow));
+		CATCH_SIGNAL(XFlush(x11_pDisplay));
 	}
 
 	void Window_X11::internal_update_title() {
 		CATCH_SIGNAL(XChangeProperty(x11_pDisplay, x11_hWindow, x11_hWindowName, x11_hUTF8, 8, PropModeReplace, reinterpret_cast<const unsigned char*>(pcTitle), std::strlen(pcTitle)));
+		CATCH_SIGNAL(XFlush(x11_pDisplay));
 	}
 
 	void Window_X11::internal_window_proc() {
@@ -105,25 +107,26 @@ namespace RE {
 					if (static_cast<XAtom>(x11_event.xclient.data.l[0]) == x11_hClose)
 						bCloseFlag = true;
 					break;
+				case XConfigureNotify: { /* window resized */
+					const XConfigureEvent x11_configureNotifyEvent = x11_event.xconfigure;
+					CATCH_SIGNAL(update_window_size(static_cast<uint32_t>(x11_configureNotifyEvent.width), static_cast<uint32_t>(x11_configureNotifyEvent.height)));
+					} break;
 				case XKeyPress:
 				case XKeyRelease: {
 					XKeyEvent x11_keyEvent = x11_event.xkey;
 					bool bKeyPressed = x11_keyEvent.type == XKeyPress;
-					XKeyCode x11_scancode = x11_keyEvent.keycode;
+					const XKeyCode x11_scancode = x11_keyEvent.keycode;
+					XKeySym x11_keySym = CATCH_SIGNAL_AND_RETURN(XLookupKeysym(&x11_keyEvent, 0), XKeySym);
 					char cString[5];
-					std::fill(std::begin(cString), std::end(cString), '\0');
-					XKeySym x11_keySym;
-					CATCH_SIGNAL(x11_keySym = XLookupKeysym(&x11_keyEvent, 0));
-					uint8_t u8CharLength;
-					CATCH_SIGNAL(u8CharLength = Xutf8LookupString(x11_hInputContext, &x11_keyEvent, cString, sizeof(cString) - 1, &x11_keySym, nullptr));
+					const uint8_t u8CharLength = CATCH_SIGNAL_AND_RETURN(Xutf8LookupString(x11_hInputContext, &x11_keyEvent, cString, sizeof(cString) - 1, &x11_keySym, nullptr), uint8_t);
 					if (bKeyPressed && u8CharLength)
 						cString[u8CharLength] = '\0';
 					CATCH_SIGNAL(inputMgr.input_event(key_from_virtual_keycode(static_cast<int64_t>(x11_keySym)), static_cast<uint32_t>(x11_scancode), bKeyPressed, false));
 					} break;
 				case XButtonPress:
 				case XButtonRelease: {
-					XButtonEvent x11_buttonEvent = x11_event.xbutton;
-					bool bButtonPressed = x11_buttonEvent.type == XButtonPress;
+					const XButtonEvent x11_buttonEvent = x11_event.xbutton;
+					const bool bButtonPressed = x11_buttonEvent.type == XButtonPress;
 					switch (x11_buttonEvent.button) {
 						case Button1: /* left click */
 							CATCH_SIGNAL(inputMgr.input_event(RE_INPUT_BUTTON_LEFT, 0U, bButtonPressed, false));
@@ -145,7 +148,7 @@ namespace RE {
 					}
 					} break;
 				case XMotionNotify: { /* mouse moved */
-					XMotionEvent x11_motionEvent = x11_event.xmotion;
+					const XMotionEvent x11_motionEvent = x11_event.xmotion;
 					CATCH_SIGNAL(inputMgr.cursor_event(x11_motionEvent.x, x11_motionEvent.y));
 					} break;
 				case XMapNotify: /* window showed or unminimized/restored */
@@ -156,10 +159,6 @@ namespace RE {
 					if (bRunning)
 						bMinimized = true;
 					break;
-				case XResizeRequest: { /* window resized */
-					XResizeRequestEvent x11_resizeEvent = x11_event.xresizerequest;
-					CATCH_SIGNAL(update_window_size(static_cast<uint32_t>(x11_resizeEvent.width), static_cast<uint32_t>(x11_resizeEvent.height)));
-					} break;
 				default:
 					break;
 			}

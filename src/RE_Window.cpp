@@ -10,13 +10,13 @@ namespace RE {
 
 	Window::~Window() {}
 
-	void Window::update_window_size(uint32_t u32NewWidth, uint32_t u32NewHeight) {
+	void Window::update_window_size(const uint32_t u32NewWidth, const uint32_t u32NewHeight) {
 		windowSize[0] = u32NewWidth;
 		windowSize[1] = u32NewHeight;
-		CATCH_SIGNAL(mark_swapchain_dirty());
+		mark_swapchain_dirty();
 	}
 
-	void Window::show_window(bool bShowWindow) {
+	void Window::show_window(const bool bShowWindow) {
 		if (bVisible == bShowWindow || !bValid)
 			return;
 		bVisible = bShowWindow;

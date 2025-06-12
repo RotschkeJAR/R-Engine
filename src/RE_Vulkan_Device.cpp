@@ -127,7 +127,7 @@ namespace RE {
 	PFN_vkCmdExecuteCommands pfn_vkCmdExecuteCommands = nullptr;
 
 	// Vulkan 1.1
-	PFN_vkBindBufferMemory2 pfn_vkBindBufferMemory2 = nullptr;
+	/* PFN_vkBindBufferMemory2 pfn_vkBindBufferMemory2 = nullptr;
 	PFN_vkBindImageMemory2 pfn_vkBindImageMemory2 = nullptr;
 	PFN_vkGetDeviceGroupPeerMemoryFeatures pfn_vkGetDeviceGroupPeerMemoryFeatures = nullptr;
 	PFN_vkCmdSetDeviceMask pfn_vkCmdSetDeviceMask = nullptr;
@@ -142,10 +142,10 @@ namespace RE {
 	PFN_vkCreateDescriptorUpdateTemplate pfn_vkCreateDescriptorUpdateTemplate = nullptr;
 	PFN_vkDestroyDescriptorUpdateTemplate pfn_vkDestroyDescriptorUpdateTemplate = nullptr;
 	PFN_vkUpdateDescriptorSetWithTemplate pfn_vkUpdateDescriptorSetWithTemplate = nullptr;
-	PFN_vkGetDescriptorSetLayoutSupport pfn_vkGetDescriptorSetLayoutSupport = nullptr;
+	PFN_vkGetDescriptorSetLayoutSupport pfn_vkGetDescriptorSetLayoutSupport = nullptr; */
 
 	// Vulkan 1.2
-	PFN_vkCmdDrawIndirectCount pfn_vkCmdDrawIndirectCount = nullptr;
+	/* PFN_vkCmdDrawIndirectCount pfn_vkCmdDrawIndirectCount = nullptr;
 	PFN_vkCmdDrawIndexedIndirectCount pfn_vkCmdDrawIndexedIndirectCount = nullptr;
 	PFN_vkCreateRenderPass2 pfn_vkCreateRenderPass2 = nullptr;
 	PFN_vkCmdBeginRenderPass2 pfn_vkCmdBeginRenderPass2 = nullptr;
@@ -157,10 +157,10 @@ namespace RE {
 	PFN_vkSignalSemaphore pfn_vkSignalSemaphore = nullptr;
 	PFN_vkGetBufferDeviceAddress pfn_vkGetBufferDeviceAddress = nullptr;
 	PFN_vkGetBufferOpaqueCaptureAddress pfn_vkGetBufferOpaqueCaptureAddress = nullptr;
-	PFN_vkGetDeviceMemoryOpaqueCaptureAddress pfn_vkGetDeviceMemoryOpaqueCaptureAddress = nullptr;
+	PFN_vkGetDeviceMemoryOpaqueCaptureAddress pfn_vkGetDeviceMemoryOpaqueCaptureAddress = nullptr; */
 
 	// Vulkan 1.3
-	PFN_vkCreatePrivateDataSlot pfn_vkCreatePrivateDataSlot = nullptr;
+	/* PFN_vkCreatePrivateDataSlot pfn_vkCreatePrivateDataSlot = nullptr;
 	PFN_vkDestroyPrivateDataSlot pfn_vkDestroyPrivateDataSlot = nullptr;
 	PFN_vkSetPrivateData pfn_vkSetPrivateData = nullptr;
 	PFN_vkGetPrivateData pfn_vkGetPrivateData = nullptr;
@@ -195,7 +195,7 @@ namespace RE {
 	PFN_vkCmdSetPrimitiveRestartEnable pfn_vkCmdSetPrimitiveRestartEnable = nullptr;
 	PFN_vkGetDeviceBufferMemoryRequirements pfn_vkGetDeviceBufferMemoryRequirements = nullptr;
 	PFN_vkGetDeviceImageMemoryRequirements pfn_vkGetDeviceImageMemoryRequirements = nullptr;
-	PFN_vkGetDeviceImageSparseMemoryRequirements pfn_vkGetDeviceImageSparseMemoryRequirements = nullptr;
+	PFN_vkGetDeviceImageSparseMemoryRequirements pfn_vkGetDeviceImageSparseMemoryRequirements = nullptr; */
 
 	// Vulkan 1.4
 	/* PFN_vkCmdSetLineStipple pfn_vkCmdSetLineStipple = nullptr;
@@ -604,7 +604,7 @@ namespace RE {
 		return true;
 	}
 
-	static bool load_vulkan_1_1_device() {
+	/* static bool load_vulkan_1_1_device() {
 		pfn_vkBindBufferMemory2 = reinterpret_cast<PFN_vkBindBufferMemory2>(load_func_with_device("vkBindBufferMemory2"));
 		if (!pfn_vkBindBufferMemory2)
 			return false;
@@ -654,9 +654,9 @@ namespace RE {
 		if (!pfn_vkGetDescriptorSetLayoutSupport)
 			return false;
 		return true;
-	}
+	} */
 
-	static bool load_vulkan_1_2_device() {
+	/* static bool load_vulkan_1_2_device() {
 		pfn_vkCmdDrawIndirectCount = reinterpret_cast<PFN_vkCmdDrawIndirectCount>(load_func_with_device("vkCmdDrawIndirectCount"));
 		if (!pfn_vkCmdDrawIndirectCount)
 			return false;
@@ -697,7 +697,7 @@ namespace RE {
 		if (!pfn_vkGetDeviceMemoryOpaqueCaptureAddress)
 			return false;
 		return true;
-	}
+	} */
 
 	/* static bool load_vulkan_1_3_device() {
 		pfn_vkCreatePrivateDataSlot = reinterpret_cast<PFN_vkCreatePrivateDataSlot>(load_func_with_device("vkCreatePrivateDataSlot"));
@@ -1043,7 +1043,7 @@ namespace RE {
 		pfn_vkCmdExecuteCommands = nullptr;
 
 		// Vulkan 1.1
-		pfn_vkBindBufferMemory2 = nullptr;
+		/* pfn_vkBindBufferMemory2 = nullptr;
 		pfn_vkBindImageMemory2 = nullptr;
 		pfn_vkGetDeviceGroupPeerMemoryFeatures = nullptr;
 		pfn_vkCmdSetDeviceMask = nullptr;
@@ -1058,10 +1058,10 @@ namespace RE {
 		pfn_vkCreateDescriptorUpdateTemplate = nullptr;
 		pfn_vkDestroyDescriptorUpdateTemplate = nullptr;
 		pfn_vkUpdateDescriptorSetWithTemplate = nullptr;
-		pfn_vkGetDescriptorSetLayoutSupport = nullptr;
+		pfn_vkGetDescriptorSetLayoutSupport = nullptr; */
 
 		// Vulkan 1.2
-		pfn_vkCmdDrawIndirectCount = nullptr;
+		/* pfn_vkCmdDrawIndirectCount = nullptr;
 		pfn_vkCmdDrawIndexedIndirectCount = nullptr;
 		pfn_vkCreateRenderPass2 = nullptr;
 		pfn_vkCmdBeginRenderPass2 = nullptr;
@@ -1073,7 +1073,7 @@ namespace RE {
 		pfn_vkSignalSemaphore = nullptr;
 		pfn_vkGetBufferDeviceAddress = nullptr;
 		pfn_vkGetBufferOpaqueCaptureAddress = nullptr;
-		pfn_vkGetDeviceMemoryOpaqueCaptureAddress = nullptr;
+		pfn_vkGetDeviceMemoryOpaqueCaptureAddress = nullptr; */
 
 		// Vulkan 1.3
 		/* pfn_vkCreatePrivateDataSlot = nullptr;
@@ -1227,7 +1227,7 @@ namespace RE {
 			return false;
 		}
 
-		if (!CATCH_SIGNAL_AND_RETURN(load_vulkan_1_0_device() && load_vulkan_1_1_device() && load_vulkan_1_2_device() /* && load_vulkan_1_3_device() && load_vulkan_1_4_device() */ && load_extension_funcs_with_device(), bool)) {
+		if (!CATCH_SIGNAL_AND_RETURN(load_vulkan_1_0_device() /* && load_vulkan_1_1_device() && load_vulkan_1_2_device() && load_vulkan_1_3_device() && load_vulkan_1_4_device() */ && load_extension_funcs_with_device(), bool)) {
 			unload_all_vulkan_functions_of_device();
 			destroy_vulkan_device();
 			return false;

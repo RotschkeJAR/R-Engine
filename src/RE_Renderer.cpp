@@ -350,8 +350,8 @@ namespace RE {
 					.y = vk_worldRenderArea.offset.y,
 					.z = 0
 				}, {
-					.x = static_cast<int32_t>(vk_worldRenderArea.extent.width),
-					.y = static_cast<int32_t>(vk_worldRenderArea.extent.height),
+					.x = static_cast<int32_t>(vk_worldRenderArea.offset.x + vk_worldRenderArea.extent.width),
+					.y = static_cast<int32_t>(vk_worldRenderArea.offset.y + vk_worldRenderArea.extent.height),
 					.z = 1
 				}
 			}
@@ -435,11 +435,12 @@ namespace RE {
 	}
 
 	void calculate_world_render_area() {
-		const float fCameraScale = std::min(vk_swapchainResolution.width / static_cast<float>(vk_worldRenderImageExtent.width), vk_swapchainResolution.height / static_cast<float>(vk_worldRenderImageExtent.height));
-		vk_worldRenderArea.extent.width = static_cast<uint32_t>(std::round(vk_worldRenderImageExtent.width * fCameraScale));
-		vk_worldRenderArea.extent.height = static_cast<uint32_t>(std::round(vk_worldRenderImageExtent.height * fCameraScale));
-		vk_worldRenderArea.offset.x = static_cast<int32_t>(vk_swapchainResolution.width - vk_worldRenderArea.extent.width);
-		vk_worldRenderArea.offset.y = static_cast<int32_t>(vk_swapchainResolution.height - vk_worldRenderArea.extent.height);
+		const float fWorldScale = std::min(vk_swapchainResolution.width / static_cast<float>(vk_worldRenderImageExtent.width), vk_swapchainResolution.height / static_cast<float>(vk_worldRenderImageExtent.height));
+		vk_worldRenderArea.extent.width = static_cast<uint32_t>(std::round(vk_worldRenderImageExtent.width * fWorldScale));
+		vk_worldRenderArea.extent.height = static_cast<uint32_t>(std::round(vk_worldRenderImageExtent.height * fWorldScale));
+		vk_worldRenderArea.offset.x = static_cast<int32_t>(std::round((vk_swapchainResolution.width - vk_worldRenderArea.extent.width) / 2.0f));
+		vk_worldRenderArea.offset.y = static_cast<int32_t>(std::round((vk_swapchainResolution.height - vk_worldRenderArea.extent.height) / 2.0f));
+		PRINT_LN("Camera scale: ", fWorldScale, " | Swapchain resolution: ", vk_swapchainResolution.width, ", ", vk_swapchainResolution.height, " | World render area offset: ", vk_worldRenderArea.offset.x, ", ", vk_worldRenderArea.offset.y, "; extent: ", vk_worldRenderArea.extent.width, ", ", vk_worldRenderArea.extent.height);
 	}
 
 }

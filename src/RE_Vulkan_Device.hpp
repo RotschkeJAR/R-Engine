@@ -130,7 +130,7 @@ namespace RE {
 	extern PFN_vkCmdExecuteCommands pfn_vkCmdExecuteCommands;
 
 	// Vulkan 1.1
-	extern PFN_vkBindBufferMemory2 pfn_vkBindBufferMemory2;
+	/* extern PFN_vkBindBufferMemory2 pfn_vkBindBufferMemory2;
 	extern PFN_vkBindImageMemory2 pfn_vkBindImageMemory2;
 	extern PFN_vkGetDeviceGroupPeerMemoryFeatures pfn_vkGetDeviceGroupPeerMemoryFeatures;
 	extern PFN_vkCmdSetDeviceMask pfn_vkCmdSetDeviceMask;
@@ -145,10 +145,10 @@ namespace RE {
 	extern PFN_vkCreateDescriptorUpdateTemplate pfn_vkCreateDescriptorUpdateTemplate;
 	extern PFN_vkDestroyDescriptorUpdateTemplate pfn_vkDestroyDescriptorUpdateTemplate;
 	extern PFN_vkUpdateDescriptorSetWithTemplate pfn_vkUpdateDescriptorSetWithTemplate;
-	extern PFN_vkGetDescriptorSetLayoutSupport pfn_vkGetDescriptorSetLayoutSupport;
+	extern PFN_vkGetDescriptorSetLayoutSupport pfn_vkGetDescriptorSetLayoutSupport; */
 
 	// Vulkan 1.2
-	extern PFN_vkCmdDrawIndirectCount pfn_vkCmdDrawIndirectCount;
+	/* extern PFN_vkCmdDrawIndirectCount pfn_vkCmdDrawIndirectCount;
 	extern PFN_vkCmdDrawIndexedIndirectCount pfn_vkCmdDrawIndexedIndirectCount;
 	extern PFN_vkCreateRenderPass2 pfn_vkCreateRenderPass2;
 	extern PFN_vkCmdBeginRenderPass2 pfn_vkCmdBeginRenderPass2;
@@ -160,7 +160,7 @@ namespace RE {
 	extern PFN_vkSignalSemaphore pfn_vkSignalSemaphore;
 	extern PFN_vkGetBufferDeviceAddress pfn_vkGetBufferDeviceAddress;
 	extern PFN_vkGetBufferOpaqueCaptureAddress pfn_vkGetBufferOpaqueCaptureAddress;
-	extern PFN_vkGetDeviceMemoryOpaqueCaptureAddress pfn_vkGetDeviceMemoryOpaqueCaptureAddress;
+	extern PFN_vkGetDeviceMemoryOpaqueCaptureAddress pfn_vkGetDeviceMemoryOpaqueCaptureAddress; */
 
 	// Vulkan 1.3
 	/* extern PFN_vkCreatePrivateDataSlot pfn_vkCreatePrivateDataSlot;
@@ -346,7 +346,7 @@ namespace RE {
 #define vkCmdExecuteCommands(...) FOCUS_FOR_VK_DEBUG(pfn_vkCmdExecuteCommands(__VA_ARGS__))
 
 // Vulkan 1.1
-#define vkBindBufferMemory2(...) CHECK_VK_RESULT(pfn_vkBindBufferMemory2(__VA_ARGS__))
+/* #define vkBindBufferMemory2(...) CHECK_VK_RESULT(pfn_vkBindBufferMemory2(__VA_ARGS__))
 #define vkBindImageMemory2(...) CHECK_VK_RESULT(pfn_vkBindImageMemory2(__VA_ARGS__))
 #define vkGetDeviceGroupPeerMemoryFeatures(...) FOCUS_FOR_VK_DEBUG(pfn_vkGetDeviceGroupPeerMemoryFeatures(__VA_ARGS__))
 #define vkCmdSetDeviceMask(...) FOCUS_FOR_VK_DEBUG(pfn_vkCmdSetDeviceMask(__VA_ARGS__))
@@ -361,10 +361,10 @@ namespace RE {
 #define vkCreateDescriptorUpdateTemplate(...) CHECK_VK_RESULT(pfn_vkCreateDescriptorUpdateTemplate(__VA_ARGS__))
 #define vkDestroyDescriptorUpdateTemplate(...) FOCUS_FOR_VK_DEBUG(pfn_vkDestroyDescriptorUpdateTemplate(__VA_ARGS__))
 #define vkUpdateDescriptorSetWithTemplate(...) FOCUS_FOR_VK_DEBUG(pfn_vkUpdateDescriptorSetWithTemplate(__VA_ARGS__))
-#define vkGetDescriptorSetLayoutSupport(...) FOCUS_FOR_VK_DEBUG(pfn_vkGetDescriptorSetLayoutSupport(__VA_ARGS__))
+#define vkGetDescriptorSetLayoutSupport(...) FOCUS_FOR_VK_DEBUG(pfn_vkGetDescriptorSetLayoutSupport(__VA_ARGS__)) */
 
 // Vulkan 1.2
-#define vkCmdDrawIndirectCount(...) FOCUS_FOR_VK_DEBUG(pfn_vkCmdDrawIndirectCount(__VA_ARGS__))
+/* #define vkCmdDrawIndirectCount(...) FOCUS_FOR_VK_DEBUG(pfn_vkCmdDrawIndirectCount(__VA_ARGS__))
 #define vkCmdDrawIndexedIndirectCount(...) FOCUS_FOR_VK_DEBUG(pfn_vkCmdDrawIndexedIndirectCount(__VA_ARGS__))
 #define vkCreateRenderPass2(...) CHECK_VK_RESULT(pfn_vkCreateRenderPass2(__VA_ARGS__))
 #define vkCmdBeginRenderPass2(...) FOCUS_FOR_VK_DEBUG(pfn_vkCmdBeginRenderPass2(__VA_ARGS__))
@@ -376,7 +376,7 @@ namespace RE {
 #define vkSignalSemaphore(...) CHECK_VK_RESULT(pfn_vkSignalSemaphore(__VA_ARGS__))
 #define vkGetBufferDeviceAddress(...) FOCUS_FOR_VK_DEBUG_AND_RETURN(pfn_vkGetBufferDeviceAddress(__VA_ARGS__), VkDeviceAddress)
 #define vkGetBufferOpaqueCaptureAddress(...) FOCUS_FOR_VK_DEBUG_AND_RETURN(pfn_vkGetBufferOpaqueCaptureAddress(__VA_ARGS__), uint64_t)
-#define vkGetDeviceMemoryOpaqueCaptureAddress(...) FOCUS_FOR_VK_DEBUG_AND_RETURN(pfn_vkGetDeviceMemoryOpaqueCaptureAddress(__VA_ARGS__), uint64_t)
+#define vkGetDeviceMemoryOpaqueCaptureAddress(...) FOCUS_FOR_VK_DEBUG_AND_RETURN(pfn_vkGetDeviceMemoryOpaqueCaptureAddress(__VA_ARGS__), uint64_t) */
 
 // Vulkan 1.3
 /* #define vkCreatePrivateDataSlot(...) CHECK_VK_RESULT(pfn_vkCreatePrivateDataSlot(__VA_ARGS__))

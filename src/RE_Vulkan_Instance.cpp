@@ -37,7 +37,7 @@ namespace RE {
 	PFN_vkEnumerateDeviceLayerProperties pfn_vkEnumerateDeviceLayerProperties = nullptr;
 
 	// Vulkan 1.1
-	PFN_vkEnumerateInstanceVersion pfn_vkEnumerateInstanceVersion = nullptr;
+	/* PFN_vkEnumerateInstanceVersion pfn_vkEnumerateInstanceVersion = nullptr;
 	PFN_vkEnumeratePhysicalDeviceGroups pfn_vkEnumeratePhysicalDeviceGroups = nullptr;
 	PFN_vkGetPhysicalDeviceFeatures2 pfn_vkGetPhysicalDeviceFeatures2 = nullptr;
 	PFN_vkGetPhysicalDeviceProperties2 pfn_vkGetPhysicalDeviceProperties2 = nullptr;
@@ -48,7 +48,7 @@ namespace RE {
 	PFN_vkGetPhysicalDeviceSparseImageFormatProperties2 pfn_vkGetPhysicalDeviceSparseImageFormatProperties2 = nullptr;
 	PFN_vkGetPhysicalDeviceExternalBufferProperties pfn_vkGetPhysicalDeviceExternalBufferProperties = nullptr;
 	PFN_vkGetPhysicalDeviceExternalFenceProperties pfn_vkGetPhysicalDeviceExternalFenceProperties = nullptr;
-	PFN_vkGetPhysicalDeviceExternalSemaphoreProperties pfn_vkGetPhysicalDeviceExternalSemaphoreProperties = nullptr;
+	PFN_vkGetPhysicalDeviceExternalSemaphoreProperties pfn_vkGetPhysicalDeviceExternalSemaphoreProperties = nullptr; */
 
 	// Vulkan 1.3
 	PFN_vkGetPhysicalDeviceToolProperties pfn_vkGetPhysicalDeviceToolProperties = nullptr;
@@ -170,7 +170,7 @@ namespace RE {
 			.applicationVersion = VK_MAKE_API_VERSION(0, 1, 0, 0),
 			.pEngineName = "R-Engine",
 			.engineVersion = VK_MAKE_API_VERSION(0, 1, 0, 0),
-			.apiVersion = VK_API_VERSION_1_2
+			.apiVersion = VK_API_VERSION_1_0
 		};
 		VkInstanceCreateInfo vk_instanceCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
@@ -237,7 +237,7 @@ namespace RE {
 		return true;
 	}
 
-	static bool load_vulkan_1_1_with_instance() {
+	/* static bool load_vulkan_1_1_with_instance() {
 		pfn_vkEnumerateInstanceVersion = reinterpret_cast<PFN_vkEnumerateInstanceVersion>(load_func_with_instance(nullptr, "vkEnumerateInstanceVersion"));
 		if (!pfn_vkEnumerateInstanceVersion)
 			return false;
@@ -275,7 +275,7 @@ namespace RE {
 		if (!pfn_vkGetPhysicalDeviceExternalSemaphoreProperties)
 			return false;
 		return true;
-	}
+	} */
 
 	/* static bool load_vulkan_1_3_with_instance() {
 		pfn_vkGetPhysicalDeviceToolProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceToolProperties>(load_func("vkGetPhysicalDeviceToolProperties"));
@@ -366,7 +366,7 @@ namespace RE {
 		pfn_vkEnumerateInstanceLayerProperties = nullptr;
 		pfn_vkEnumerateDeviceLayerProperties = nullptr;
 		pfn_vkGetPhysicalDeviceSparseImageFormatProperties = nullptr;
-		pfn_vkEnumerateInstanceVersion = nullptr;
+		/*pfn_vkEnumerateInstanceVersion = nullptr;
 		pfn_vkEnumeratePhysicalDeviceGroups = nullptr;
 		pfn_vkGetPhysicalDeviceFeatures2 = nullptr;
 		pfn_vkGetPhysicalDeviceProperties2 = nullptr;
@@ -378,7 +378,7 @@ namespace RE {
 		pfn_vkGetPhysicalDeviceExternalBufferProperties = nullptr;
 		pfn_vkGetPhysicalDeviceExternalFenceProperties = nullptr;
 		pfn_vkGetPhysicalDeviceExternalSemaphoreProperties = nullptr;
-		pfn_vkGetPhysicalDeviceToolProperties = nullptr;
+		pfn_vkGetPhysicalDeviceToolProperties = nullptr; */
 		pfn_vkSetDebugUtilsObjectNameEXT = nullptr;
 		pfn_vkSetDebugUtilsObjectTagEXT = nullptr;
 		pfn_vkCreateDebugUtilsMessengerEXT = nullptr;
@@ -461,7 +461,7 @@ namespace RE {
 			return false;
 		}
 		if (CATCH_SIGNAL_AND_RETURN(create_vulkan_instance(), bool)) {
-			if (CATCH_SIGNAL_AND_RETURN(load_vulkan_1_0_with_instance() && load_vulkan_1_1_with_instance() /* && load_vulkan_1_3_with_instance() */ && load_extension_funcs_with_instance() && setup_validation_layers(), bool))
+			if (CATCH_SIGNAL_AND_RETURN(load_vulkan_1_0_with_instance() /* && load_vulkan_1_1_with_instance() && load_vulkan_1_3_with_instance() */ && load_extension_funcs_with_instance() && setup_validation_layers(), bool))
 				return true;
 			unload_all_vulkan_functions_of_instance();
 			CATCH_SIGNAL(pfn_vkDestroyInstance(vk_hInstance, nullptr));

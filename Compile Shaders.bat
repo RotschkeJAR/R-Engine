@@ -3,7 +3,7 @@
 set SH=shaders
 
 set SC=glslc
-set SFLAG=--target-env=vulkan1.2 --target-spv=spv1.5 -O
+set SFLAG=--target-env=vulkan1.0 --target-spv=spv1.0 -O
 
 set VERT_GL=%SH%\vertex.glsl
 set FRAG_GL=%SH%\fragment.glsl

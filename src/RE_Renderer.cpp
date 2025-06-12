@@ -440,7 +440,6 @@ namespace RE {
 		vk_worldRenderArea.extent.height = static_cast<uint32_t>(std::round(vk_worldRenderImageExtent.height * fWorldScale));
 		vk_worldRenderArea.offset.x = static_cast<int32_t>(std::round((vk_swapchainResolution.width - vk_worldRenderArea.extent.width) / 2.0f));
 		vk_worldRenderArea.offset.y = static_cast<int32_t>(std::round((vk_swapchainResolution.height - vk_worldRenderArea.extent.height) / 2.0f));
-		PRINT_LN("Camera scale: ", fWorldScale, " | Swapchain resolution: ", vk_swapchainResolution.width, ", ", vk_swapchainResolution.height, " | World render area offset: ", vk_worldRenderArea.offset.x, ", ", vk_worldRenderArea.offset.y, "; extent: ", vk_worldRenderArea.extent.width, ", ", vk_worldRenderArea.extent.height);
 	}
 
 }

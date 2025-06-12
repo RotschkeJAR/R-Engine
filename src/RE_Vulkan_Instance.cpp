@@ -710,7 +710,7 @@ namespace RE {
 			default:
 				break;
 		}
-		error(pcFile, pcFunc, u32Line, append_to_string("The recently called Vulkan function threw an error: ", pcErrName, "\n", pcErrDetail).c_str(), false);
+		println_colored(append_to_string("[", pcFile, ", ", u32Line, " in \"", pcFunc, "\"] ", pcErrName, " : ", pcErrDetail).c_str(), RE_TERMINAL_COLOR_RED, false, false);
 		return false;
 	}
 

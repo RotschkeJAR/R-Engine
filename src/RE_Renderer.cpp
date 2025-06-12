@@ -17,11 +17,10 @@ namespace RE {
 #define RE_VK_SWAPCHAIN_SEMAPHORE_COUNT (u32SwapchainImageCount * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE)
 
 	Camera *pActiveCamera = nullptr;
-	VkViewport vk_cameraViewportArea;
-	VkRect2D vk_cameraScissorArea;
+	VkRect2D vk_worldRenderArea;
 	VkExtent2D vk_worldRenderImageExtent = {
-		.width = 600,
-		.height = 400
+		.width = 600U,
+		.height = 400U
 	};
 
 	VkBuffer vk_hRectIndexBuffer = VK_NULL_HANDLE;
@@ -263,14 +262,15 @@ namespace RE {
 		uint32_t u32NextSwapchainImageIndex;
 		const VkResult vk_eSwapchainImageAcquireResult = vkAcquireNextImageKHR(vk_hDevice, vk_hSwapchain, std::numeric_limits<uint64_t>::max(), vk_pahSwapchainSemaphores[u32SwapchainRenderImageIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE], VK_NULL_HANDLE, &u32NextSwapchainImageIndex);
 		switch (vk_eSwapchainImageAcquireResult) {
-			case VK_SUCCESS:
-				break;
 			case VK_SUBOPTIMAL_KHR:
 			case VK_ERROR_OUT_OF_DATE_KHR:
 				mark_swapchain_dirty();
-				break;
+				return;
 			default:
-				check_vulkan_result(vk_eSwapchainImageAcquireResult, __FILE__, __func__, __LINE__);
+				if (!check_vulkan_result(vk_eSwapchainImageAcquireResult, __FILE__, __func__, __LINE__)) {
+					RE_FATAL_ERROR("Failed to get next presentable swapchain image index");
+					return;
+				}
 				break;
 		}
 		CATCH_SIGNAL(render_gameobjects());
@@ -345,12 +345,12 @@ namespace RE {
 			},
 			.dstOffsets = {
 				{
-					.x = 0,
-					.y = 0,
+					.x = vk_worldRenderArea.offset.x,
+					.y = vk_worldRenderArea.offset.y,
 					.z = 0
 				}, {
-					.x = static_cast<int32_t>(vk_swapchainResolution.width),
-					.y = static_cast<int32_t>(vk_swapchainResolution.height),
+					.x = static_cast<int32_t>(vk_worldRenderArea.extent.width),
+					.y = static_cast<int32_t>(vk_worldRenderArea.extent.height),
 					.z = 1
 				}
 			}
@@ -395,14 +395,13 @@ namespace RE {
 		};
 		const VkResult vk_eSwapchainPresentResult = vkQueuePresentKHR(vk_hDeviceQueueFamilies[RE_VK_QUEUE_PRESENT_INDEX], &vk_presentInfo);
 		switch (vk_eSwapchainPresentResult) {
-			case VK_SUCCESS:
-				break;
 			case VK_SUBOPTIMAL_KHR:
 			case VK_ERROR_OUT_OF_DATE_KHR:
 				mark_swapchain_dirty();
 				break;
 			default:
-				check_vulkan_result(vk_eSwapchainPresentResult, __FILE__, __func__, __LINE__);
+				if (!check_vulkan_result(vk_eSwapchainPresentResult, __FILE__, __func__, __LINE__))
+					RE_FATAL_ERROR("Failed to submit presentable Vulkan swapchain image");
 				break;
 		}
 		u32SwapchainRenderImageIndex = (u32SwapchainRenderImageIndex + 1U) % u32SwapchainImageCount;
@@ -421,8 +420,8 @@ namespace RE {
 					vkDestroySemaphore(vk_hDevice, vk_pahSwapchainSemaphores[u32PresentSemaphoreDeleteIndex], nullptr);
 				DELETE_ARRAY_SAFELY(vk_pahSwapchainSemaphores);
 				return false;
-				
 			}
+		calculate_world_render_area();
 		return true;
 	}
 
@@ -434,23 +433,12 @@ namespace RE {
 		DELETE_ARRAY_SAFELY(vk_pahSwapchainSemaphores);
 	}
 
-	void calculate_render_area() {
-		if (pActiveCamera) {
-			const float fCameraScale = std::min(vk_swapchainResolution.width / pActiveCamera->scale[0], vk_swapchainResolution.height / pActiveCamera->scale[1]);
-			vk_cameraViewportArea.width = std::round(pActiveCamera->scale[0] * fCameraScale);
-			vk_cameraViewportArea.height = std::round(pActiveCamera->scale[1] * fCameraScale);
-			vk_cameraViewportArea.x = std::round((vk_swapchainResolution.width - vk_cameraViewportArea.width) / 2.0f);
-			vk_cameraViewportArea.y = std::round((vk_swapchainResolution.height - vk_cameraViewportArea.height) / 2.0f);
-		} else {
-			vk_cameraViewportArea.width = vk_swapchainResolution.width;
-			vk_cameraViewportArea.height = vk_swapchainResolution.height;
-			vk_cameraViewportArea.x = 0.0f;
-			vk_cameraViewportArea.y = 0.0f;
-		}
-		vk_cameraScissorArea.extent.width = vk_cameraViewportArea.width;
-		vk_cameraScissorArea.extent.height = vk_cameraViewportArea.height;
-		vk_cameraScissorArea.offset.x = vk_cameraViewportArea.x;
-		vk_cameraScissorArea.offset.y = vk_cameraViewportArea.y;
+	void calculate_world_render_area() {
+		const float fCameraScale = std::min(vk_swapchainResolution.width / static_cast<float>(vk_worldRenderImageExtent.width), vk_swapchainResolution.height / static_cast<float>(vk_worldRenderImageExtent.height));
+		vk_worldRenderArea.extent.width = static_cast<uint32_t>(std::round(vk_worldRenderImageExtent.width * fCameraScale));
+		vk_worldRenderArea.extent.height = static_cast<uint32_t>(std::round(vk_worldRenderImageExtent.height * fCameraScale));
+		vk_worldRenderArea.offset.x = static_cast<int32_t>(vk_swapchainResolution.width - vk_worldRenderArea.extent.width);
+		vk_worldRenderArea.offset.y = static_cast<int32_t>(vk_swapchainResolution.height - vk_worldRenderArea.extent.height);
 	}
 
 }

@@ -14,8 +14,7 @@ namespace RE {
 #define RE_VK_RENDER_SEMAPHORE_COUNT (RE_VK_FRAMES_IN_FLIGHT * RE_VK_SEMAPHORES_PER_FRAME_COUNT)
 
 	extern Camera *pActiveCamera;
-	extern VkViewport vk_cameraViewportArea;
-	extern VkRect2D vk_cameraScissorArea;
+	extern VkRect2D vk_worldRenderArea;
 	extern VkExtent2D vk_worldRenderImageExtent;
 
 	extern VkBuffer vk_hRectIndexBuffer;

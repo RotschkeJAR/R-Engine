@@ -12,9 +12,8 @@ namespace RE {
 
 	void Camera::update() {}
 
-	void Camera::activate() {
+	void Camera::activate() const {
 		pActiveCamera = this;
-		calculate_render_area();
 	}
 
 	void Camera::deactivate() const {

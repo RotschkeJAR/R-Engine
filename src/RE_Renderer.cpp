@@ -350,8 +350,8 @@ namespace RE {
 					.y = vk_worldRenderArea.offset.y,
 					.z = 0
 				}, {
-					.x = static_cast<int32_t>(vk_worldRenderArea.offset.x + vk_worldRenderArea.extent.width),
-					.y = static_cast<int32_t>(vk_worldRenderArea.offset.y + vk_worldRenderArea.extent.height),
+					.x = std::clamp<int32_t>(vk_worldRenderArea.offset.x + static_cast<int32_t>(vk_worldRenderArea.extent.width) + 1, 1, vk_swapchainResolution.width),
+					.y = std::clamp<int32_t>(vk_worldRenderArea.offset.y + static_cast<int32_t>(vk_worldRenderArea.extent.height) + 1, 1, vk_swapchainResolution.height),
 					.z = 1
 				}
 			}

@@ -405,10 +405,10 @@ namespace RE {
 		TerminalColor eConsoleColor = RE_TERMINAL_COLOR_WHITE;
 		switch (vk_eSeverityFlagBits) {
 			case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
-				eConsoleColor = RE_TERMINAL_COLOR_RED;
+				eConsoleColor = RE_TERMINAL_COLOR_BRIGHT_RED;
 				break;
 			case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-				eConsoleColor = RE_TERMINAL_COLOR_YELLOW;
+				eConsoleColor = RE_TERMINAL_COLOR_BRIGHT_YELLOW;
 				break;
 			case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
 				eConsoleColor = RE_TERMINAL_COLOR_BRIGHT_BLACK;
@@ -418,12 +418,14 @@ namespace RE {
 		}
 		if (!u32VulkanDebugFocusCount) {
 			if (pcVulkanDebugFocusOnFile && pcVulkanDebugFocusOnFunc && u32VulkanDebugFocusOnLine)
-				println_colored(append_to_string("Vulkan validation layers triggered in ", pcVulkanDebugFocusOnFile, ", in function \"", pcVulkanDebugFocusOnFunc, "\", at line ", u32VulkanDebugFocusOnLine, ":").c_str(), eConsoleColor, false, false);
+				println("Vulkan validation layers triggered in ", pcVulkanDebugFocusOnFile, ", in function \"", pcVulkanDebugFocusOnFunc, "\", at line ", u32VulkanDebugFocusOnLine, ":");
 			else
-				println_colored("Vulkan validation layers triggered", eConsoleColor, false, false);
+				println("Vulkan validation layers triggered at an unknown location:");
 		}
 		u32VulkanDebugFocusCount++;
-		println_colored(append_to_string("\t[", vk_pCallbackData->pMessageIdName, "] ", vk_pCallbackData->pMessage).c_str(), eConsoleColor, false, false);
+		print("\t");
+		print_colored(append_to_string("[", vk_pCallbackData->pMessageIdName, "]").c_str(), eConsoleColor, false, false);
+		println_colored(append_to_string(" ", vk_pCallbackData->pMessage).c_str(), RE_TERMINAL_COLOR_BRIGHT_WHITE, false, false);
 		return VK_FALSE;
 	}
 
@@ -710,7 +712,8 @@ namespace RE {
 			default:
 				break;
 		}
-		println_colored(append_to_string("[", pcFile, ", ", u32Line, " in \"", pcFunc, "\"] ", pcErrName, " : ", pcErrDetail).c_str(), RE_TERMINAL_COLOR_RED, false, false);
+		print(pcFile, " (line ", u32Line, "): ");
+		println_colored(append_to_string(pcErrName, ": ", pcErrDetail).c_str(), RE_TERMINAL_COLOR_BRIGHT_RED, false, false);
 		return false;
 	}
 

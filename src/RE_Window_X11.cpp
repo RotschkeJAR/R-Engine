@@ -177,6 +177,13 @@ namespace RE {
 	const char* Window_X11::get_vulkan_required_surface_extension_name() const {
 		return VK_KHR_XLIB_SURFACE_EXTENSION_NAME;
 	}
+
+	void Window_X11::post_rendering_window_proc() {
+	}
+
+	WindowType Window_X11::get_window_type() const {
+		return WindowType::X11;
+	}
 #endif /* RE_OS_LINUX */
 
 }

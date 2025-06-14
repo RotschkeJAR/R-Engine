@@ -587,10 +587,10 @@ namespace RE {
 			vk_swapchainCreateInfo.pQueueFamilyIndices = u32SwapchainRelevantQueueIndices;
 		} else
 			vk_swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-		if (is_bit_true<uint8_t>(u8RenderSystemFlags, FPS_BOUND_TO_VSYNC_BIT))
-			vk_swapchainCreateInfo.presentMode = is_bit_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_BIT) ? VK_PRESENT_MODE_FIFO_KHR : vk_ePresentModeNoVsync;
+		if (is_bit_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_BIT))
+			vk_swapchainCreateInfo.presentMode = is_bit_true<uint8_t>(u8RenderSystemFlags, FPS_BOUND_TO_VSYNC_BIT) ? VK_PRESENT_MODE_FIFO_KHR : vk_ePresentModeVsync;
 		else
-			vk_swapchainCreateInfo.presentMode = is_bit_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_BIT) ? vk_ePresentModeVsync : vk_ePresentModeNoVsync;
+			vk_swapchainCreateInfo.presentMode = vk_ePresentModeNoVsync;
 		if (vkCreateSwapchainKHR(vk_hDevice, &vk_swapchainCreateInfo, nullptr, &vk_hSwapchain) != VK_SUCCESS) {
 			RE_ERROR("Failed creating Vulkan swapchain");
 			return false;

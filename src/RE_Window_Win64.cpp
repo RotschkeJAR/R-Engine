@@ -8,26 +8,26 @@ namespace RE {
 # define WINDOW_STYLE_FLAGS (WS_SIZEBOX | WS_MAXIMIZEBOX | WS_MINIMIZEBOX | WS_CAPTION | WS_SYSMENU)
 # define RE_WM_MAXIMIZED WM_APP
 	HINSTANCE Window_Win64::win_hInstance = nullptr;
-	Window_Win64* pWin64 = nullptr;
+	Window_Win64* pWindowWin64 = nullptr;
 
 	LRESULT CALLBACK windows_window_proc(HWND win_hWndParam, UINT win_uMsg, WPARAM win_wParam, LPARAM win_lParam) {
-		if (!pWin64)
+		if (!pWindowWin64)
 			RE_ERROR("Window process function has been called when no window is active");
-		else if (pWin64->win_hWindow != win_hWndParam && bRunning)
-			RE_ERROR(append_to_string("Window process function has been called by another window (actual: ", pWin64->win_hWindow, "; passed to procedure: ", win_hWndParam, ")"));
+		else if (pWindowWin64->win_hWindow != win_hWndParam && bRunning)
+			RE_ERROR(append_to_string("Window process function has been called by another window (actual: ", pWindowWin64->win_hWindow, "; passed to procedure: ", win_hWndParam, ")"));
 		else {
 			switch (win_uMsg) {
 				case WM_SIZE: /* resized */
 					RECT win_contentRect;
 					CATCH_SIGNAL(GetClientRect(win_hWndParam, &win_contentRect));
-					pWin64->bMinimized = win_wParam == SIZE_MINIMIZED;
-					pWin64->bMaximized = win_wParam == SIZE_MAXIMIZED;
-					if (pWin64->bMaximized)
+					pWindowWin64->bMinimized = win_wParam == SIZE_MINIMIZED;
+					pWindowWin64->bMaximized = win_wParam == SIZE_MAXIMIZED;
+					if (pWindowWin64->bMaximized)
 						PostMessageW(win_hWndParam, RE_WM_MAXIMIZED, (WPARAM) 0, (LPARAM) 0);
-					CATCH_SIGNAL(pWin64->update_window_size(static_cast<uint32_t>(win_contentRect.right - win_contentRect.left), static_cast<uint32_t>(win_contentRect.bottom - win_contentRect.top)));
+					CATCH_SIGNAL(pWindowWin64->update_window_size(static_cast<uint32_t>(win_contentRect.right - win_contentRect.left), static_cast<uint32_t>(win_contentRect.bottom - win_contentRect.top)));
 					return 0;
 				case WM_CLOSE: /* close */
-					pWin64->bCloseFlag = true;
+					pWindowWin64->bCloseFlag = true;
 					return 0;
 				case WM_DESTROY: /* destroy window */
 					CATCH_SIGNAL(PostQuitMessage(0));
@@ -42,7 +42,7 @@ namespace RE {
 					CATCH_SIGNAL(win_monitorInfoRetrieved = GetMonitorInfoW(MonitorFromWindow(win_hWndParam, MONITOR_DEFAULTTOPRIMARY), &win_monitorInfo));
 					if (win_monitorInfoRetrieved) {
 						const Vector2i monitorSize(win_monitorInfo.rcWork.right - win_monitorInfo.rcWork.left, win_monitorInfo.rcWork.bottom - win_monitorInfo.rcWork.top);
-						if (!pWin64->bMaximized) {
+						if (!pWindowWin64->bMaximized) {
 							win_windowSizeLimits->ptMaxTrackSize.x = std::abs(monitorSize[0] + MAX_WINDOW_WIDTH_RELATIVE_TO_MONITOR);
 							win_windowSizeLimits->ptMaxTrackSize.y = std::abs(monitorSize[1] + MAX_WINDOW_HEIGHT_RELATIVE_TO_MONITOR);
 						} else {
@@ -67,7 +67,7 @@ namespace RE {
 						case VK_SHIFT: // Have to be differentiated between left and right
 						case VK_CONTROL:
 						case VK_MENU:
-							win_virtualKeyCode = LOWORD(MapVirtualKeyExW(win_extScancode, MAPVK_VSC_TO_VK_EX, pWin64->win_keyboardLayout));
+							win_virtualKeyCode = LOWORD(MapVirtualKeyExW(win_extScancode, MAPVK_VSC_TO_VK_EX, pWindowWin64->win_keyboardLayout));
 							break;
 						case VK_LWIN: // Ignore Windows-keys
 						case VK_RWIN:
@@ -80,52 +80,52 @@ namespace RE {
 							break;
 					}
 					BOOL win_keyReleased = (win_keyFlags & KF_UP) == KF_UP;
-					CATCH_SIGNAL(pWin64->inputMgr.input_event(key_from_virtual_keycode(static_cast<int64_t>(win_virtualKeyCode)), static_cast<uint32_t>(win_extScancode), !static_cast<bool>(win_keyReleased), bFallbackToInput));
+					CATCH_SIGNAL(pWindowWin64->inputMgr.input_event(key_from_virtual_keycode(static_cast<int64_t>(win_virtualKeyCode)), static_cast<uint32_t>(win_extScancode), !static_cast<bool>(win_keyReleased), bFallbackToInput));
 					} return 0;
 				case WM_CHAR: {
 					//wchar_t wCharacter[2] = {static_cast<wchar_t>(win_wParam), L'\0'};
 					} return 0;
 				case WM_LBUTTONDOWN: /* left mouse button pressed */
-					CATCH_SIGNAL(pWin64->inputMgr.input_event(RE_INPUT_BUTTON_LEFT, 0U, true, false));
+					CATCH_SIGNAL(pWindowWin64->inputMgr.input_event(RE_INPUT_BUTTON_LEFT, 0U, true, false));
 					CATCH_SIGNAL(SetCapture(win_hWndParam));
 					return 0;
 				case WM_LBUTTONUP: /* left mouse button released */
-					CATCH_SIGNAL(pWin64->inputMgr.input_event(RE_INPUT_BUTTON_LEFT, 0U, false, false));
+					CATCH_SIGNAL(pWindowWin64->inputMgr.input_event(RE_INPUT_BUTTON_LEFT, 0U, false, false));
 					CATCH_SIGNAL(ReleaseCapture());
 					return 0;
 				case WM_RBUTTONDOWN: /* right mouse button pressed */
-					CATCH_SIGNAL(pWin64->inputMgr.input_event(RE_INPUT_BUTTON_RIGHT, 0U, true, false));
+					CATCH_SIGNAL(pWindowWin64->inputMgr.input_event(RE_INPUT_BUTTON_RIGHT, 0U, true, false));
 					CATCH_SIGNAL(SetCapture(win_hWndParam));
 					return 0;
 				case WM_RBUTTONUP: /* right mouse button released */
-					CATCH_SIGNAL(pWin64->inputMgr.input_event(RE_INPUT_BUTTON_RIGHT, 0U, false, false));
+					CATCH_SIGNAL(pWindowWin64->inputMgr.input_event(RE_INPUT_BUTTON_RIGHT, 0U, false, false));
 					CATCH_SIGNAL(ReleaseCapture());
 					return 0;
 				case WM_MBUTTONDOWN: /* middle mouse button pressed */
-					CATCH_SIGNAL(pWin64->inputMgr.input_event(RE_INPUT_BUTTON_MIDDLE, 0U, true, false));
+					CATCH_SIGNAL(pWindowWin64->inputMgr.input_event(RE_INPUT_BUTTON_MIDDLE, 0U, true, false));
 					CATCH_SIGNAL(SetCapture(win_hWndParam));
 					return 0;
 				case WM_MBUTTONUP: /* middle mouse button released */
-					CATCH_SIGNAL(pWin64->inputMgr.input_event(RE_INPUT_BUTTON_MIDDLE, 0U, false, false));
+					CATCH_SIGNAL(pWindowWin64->inputMgr.input_event(RE_INPUT_BUTTON_MIDDLE, 0U, false, false));
 					CATCH_SIGNAL(ReleaseCapture());
 					return 0;
 				case WM_MOUSEMOVE: { /* mouse moved */
 					const int32_t i32XPos = GET_X_LPARAM(win_lParam);
 					const int32_t i32YPos = GET_Y_LPARAM(win_lParam);
-					CATCH_SIGNAL(pWin64->inputMgr.cursor_event(i32XPos, i32YPos));
+					CATCH_SIGNAL(pWindowWin64->inputMgr.cursor_event(i32XPos, i32YPos));
 					} return 0;
 				case WM_SETCURSOR:
 					if (LOWORD(win_lParam) == HTCLIENT) {
-						CATCH_SIGNAL(SetCursor(pWin64->win_hCursor));
+						CATCH_SIGNAL(SetCursor(pWindowWin64->win_hCursor));
 						return TRUE;
 					}
 					break;
 				case WM_MOUSEWHEEL: { /* mouse wheel used/scrolled */
 					const int32_t deltaMouseWheel = GET_WHEEL_DELTA_WPARAM(win_wParam);
 					if (deltaMouseWheel > 0)
-						CATCH_SIGNAL(pWin64->inputMgr.input_event(RE_INPUT_SCROLL_UP, 0U, true, false));
+						CATCH_SIGNAL(pWindowWin64->inputMgr.input_event(RE_INPUT_SCROLL_UP, 0U, true, false));
 					else
-						CATCH_SIGNAL(pWin64->inputMgr.input_event(RE_INPUT_SCROLL_DOWN, 0U, true, false));
+						CATCH_SIGNAL(pWindowWin64->inputMgr.input_event(RE_INPUT_SCROLL_DOWN, 0U, true, false));
 					} return 0;
 				case RE_WM_MAXIMIZED: {
 					MONITORINFO win_monitorInfo = {};
@@ -149,11 +149,11 @@ namespace RE {
 	}
 	
 	Window_Win64::Window_Win64() : win_hWindow(nullptr), win_hCursor(LoadCursor(nullptr, IDC_ARROW)), win_keyboardLayout(GetKeyboardLayout(0)) {
-		if (pWin64) {
+		if (pWindowWin64) {
 			RE_FATAL_ERROR("An instance of the class \"Window_Win64\" has already been constructed. Discarding new one");
 			return;
 		}
-		pWin64 = this;
+		pWindowWin64 = this;
 		if (!win_hInstance)
 			CATCH_SIGNAL(win_hInstance = GetModuleHandle(nullptr));
 		if (!win_hInstance) {
@@ -187,11 +187,11 @@ namespace RE {
 	}
 	
 	Window_Win64::~Window_Win64() {
-		if (pWin64 != this)
+		if (pWindowWin64 != this)
 			return;
 		CATCH_SIGNAL(DestroyWindow(win_hWindow));
 		CATCH_SIGNAL(UnregisterClassW(WINDOW_CLASS_NAME, win_hInstance));
-		pWin64 = nullptr;
+		pWindowWin64 = nullptr;
 	}
 
 	void Window_Win64::internal_show_window() {
@@ -230,12 +230,19 @@ namespace RE {
 		return VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
 	}
 
+	void Window_Win64::post_rendering_window_proc() {
+	}
+
 	HWND Window_Win64::get_hwindow() const {
 		return win_hWindow;
 	}
 
 	void set_hinstance(HINSTANCE win_hInstance) {
 		Window_Win64::win_hInstance = win_hInstance;
+	}
+
+	WindowType Window_Win64::get_window_type() const {
+		return WindowType::Windows;
 	}
 #endif /* RE_OS_WINDOWS */
 

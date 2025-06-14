@@ -18,43 +18,13 @@ namespace RE {
 #ifdef RE_OS_WINDOWS
 		CATCH_SIGNAL(Window::pInstance = new Window_Win64());
 #elif defined RE_OS_LINUX
-		{
-			const bool bX11Exists = !is_string_empty(std::getenv("DISPLAY")), bWaylandExists = !is_string_empty(std::getenv("WAYLAND_DISPLAY"));
-			if (bX11Exists) {
-				CATCH_SIGNAL(Window::pInstance = new Window_X11());
-				if (!Window::pInstance->is_valid()) {
-					CATCH_SIGNAL(delete Window::pInstance);
-					if (bWaylandExists) {
-						RE_NOTE("Failed creating X11 window. Using Wayland instead");
-						CATCH_SIGNAL(Window::pInstance = new Window_Wayland());
-					} else {
-						RE_FATAL_ERROR("Failed creating X11 window. No other known window compositor exists");
-						return;
-					}
-				}
-			} else if (bWaylandExists) {
-				CATCH_SIGNAL(Window::pInstance = new Window_Wayland());
-				if (!Window::pInstance->is_valid()) {
-					CATCH_SIGNAL(delete Window::pInstance);
-					if (bX11Exists) {
-						RE_NOTE("Failed creating Wayland window. Using X11 instead");
-						CATCH_SIGNAL(Window::pInstance = new Window_X11());
-					} else {
-						RE_FATAL_ERROR("Failed creating Wayland window. No other known window compositor exists");
-						return;
-					}
-				}
-			} else {
-				RE_FATAL_ERROR("There aren't any window compositors installed, that is supported by the engine");
-				return;
-			}
-		}
+		CATCH_SIGNAL(Window::pInstance = new Window_X11());
 #else
 # warning The targeted OS is unknown, so the engine will terminate immediatly upon execution
 		RE_FATAL_ERROR("The OS is unknown. The engine can't initialize");
 		return;
 #endif
-		if (CATCH_SIGNAL_AND_RETURN(Window::pInstance->is_valid() && init_vulkan_instance(), bool)) {
+		if (CATCH_SIGNAL_AND_RETURN(Window::pInstance && Window::pInstance->is_valid() && init_vulkan_instance(), bool)) {
 			if (CATCH_SIGNAL_AND_RETURN(init_render_system(), bool)) {
 				if (CATCH_SIGNAL_AND_RETURN(init_renderer(), bool)) {
 					std::chrono::high_resolution_clock::time_point currentFrameTime = std::chrono::high_resolution_clock::now(), lastFrameTime;

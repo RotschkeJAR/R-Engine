@@ -405,6 +405,7 @@ namespace RE {
 					RE_FATAL_ERROR("Failed to submit presentable Vulkan swapchain image");
 				break;
 		}
+		CATCH_SIGNAL(Window::pInstance->post_rendering_window_proc());
 		u32SwapchainRenderImageIndex = (u32SwapchainRenderImageIndex + 1U) % u32SwapchainImageCount;
 		u8CurrentFrameInFlightIndex = (u8CurrentFrameInFlightIndex + 1U) % RE_VK_FRAMES_IN_FLIGHT;
 	}

@@ -1,9 +1,11 @@
 SRC          = src
+LIB          = lib
 BIN          = bin
+LIB_BIN      = $(BIN)/lib
 SH           = shaders
 
 CC           = g++
-CFLAG        = -m64 -march=x86-64 -pedantic-errors -Wall -ffast-math -std=c++20
+CFLAG        = -m64 -march=x86-64 -pedantic-errors -Wall -ffast-math
 LDFLAG       = -lRE -I$(SRC) -I/usr/ -L$(BIN) -lX11 -lwayland-client
 
 SC           = glslc
@@ -32,13 +34,18 @@ $(RE): $(SRC)/*
 	@if [ "$(wildcard $(BIN)/*.gch)" != "" ]; then \
 		mv $(BIN)/*.gch $(SRC); \
 	fi
-	@$(CC) $(CFLAG) -c $(SRC)/*.cpp -I"$(HOME)/Vulkan SDK/x86_64/include" || (rm -f *.o; exit 1)
+	@$(CC) $(CFLAG) -std=c++20 -x c++ -c $(SRC)/*.cpp -I$(LIB) -I"$(HOME)/Vulkan SDK/x86_64/include" || (rm -f *.o; exit 1)
 	@mv *.o $(BIN)
 	@if [ "$(wildcard $(SRC)/*.gch)" != "" ]; then \
 		mv $(SRC)/*.gch $(BIN); \
 	fi
 	-@rm -f $(RE)
-	@ar rs "$(RE)" $(BIN)/*.o || (rm -f $(RE); exit 1)
+	@ar rs "$(RE)" $(BIN)/*.o $(LIB_BIN)/*.o || (rm -f $(RE); exit 1)
+
+compile_libraries: $(LIB)/*
+	@rm -f *.o $(LIB_BIN)/*.o
+	@$(CC) $(CFLAG) -std=c2x -x c -c $(LIB)/*.c || (rm -f *.o; exit 1)
+	@mv *.o $(LIB_BIN)
 
 compile_shaders: $(SH)/*
 	-@rm -f $(SH)/*.spv

@@ -4,6 +4,9 @@
 #include "RE_Internal Header.hpp"
 #include "RE_Input.hpp"
 #include "RE_Vulkan_Device.hpp"
+#ifdef RE_OS_LINUX
+# include <xdg-shell-client-protocol.h>
+#endif
 
 namespace RE {
 
@@ -12,9 +15,16 @@ namespace RE {
 #define MAX_WINDOW_WIDTH_RELATIVE_TO_MONITOR -100
 #define MAX_WINDOW_HEIGHT_RELATIVE_TO_MONITOR -100
 
+	enum WindowType {
+		Windows,
+		X11,
+		Wayland
+	};
+
 	extern Vector2u windowSize;
 	
 	class Window {
+
 		protected:
 			InputMgr inputMgr;
 			const char* pcTitle;
@@ -37,9 +47,11 @@ namespace RE {
 			virtual bool create_vulkan_surface(VkSurfaceKHR &vk_rhSurface) const = 0;
 			virtual const char* get_vulkan_required_surface_extension_name() const = 0;
 			void window_proc();
+			virtual void post_rendering_window_proc() = 0;
 			bool should_close() const;
-			bool should_render() const;
+			virtual bool should_render();
 			bool is_valid() const;
+			virtual WindowType get_window_type() const = 0;
 
 		friend class InputMgr;
 	};
@@ -63,7 +75,9 @@ namespace RE {
 			~Window_Win64();
 			bool create_vulkan_surface(VkSurfaceKHR &vk_rhSurface) const;
 			const char* get_vulkan_required_surface_extension_name() const;
+			void post_rendering_window_proc();
 			HWND get_hwindow() const;
+			WindowType get_window_type() const;
 
 		friend LRESULT CALLBACK windows_window_proc(HWND win_hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	};
@@ -92,6 +106,8 @@ namespace RE {
 			~Window_X11();
 			bool create_vulkan_surface(VkSurfaceKHR &vk_rhSurface) const;
 			const char* get_vulkan_required_surface_extension_name() const;
+			void post_rendering_window_proc();
+			WindowType get_window_type() const;
 	};
 
 	class Window_Wayland final : public Window {
@@ -99,6 +115,13 @@ namespace RE {
 			wl_registry *wl_pRegistry;
 			wl_compositor *wl_pCompositor;
 			wl_surface *wl_pSurface;
+			xdg_wm_base *xdg_pWindowBase;
+			xdg_surface *xdg_pSurface;
+			xdg_toplevel *xdg_pToplevel;
+			bool bShouldRenderFrame;
+			
+			void register_next_ready_frame_callback();
+			void commit_surface();
 			
 		protected:
 			void internal_window_proc();
@@ -112,6 +135,12 @@ namespace RE {
 			~Window_Wayland();
 			bool create_vulkan_surface(VkSurfaceKHR &vk_rhSurface) const;
 			const char* get_vulkan_required_surface_extension_name() const;
+			void post_rendering_window_proc();
+			bool should_render() override;
+			WindowType get_window_type() const;
+
+		friend void registry_handle_global(void *pData, wl_registry *wl_pRegistry, uint32_t u32Name, const char *pcInterface, uint32_t u32Version);
+		friend void wayland_frame_ready(void *pData, wl_callback *wl_pCallback, uint32_t u32Serial);
 	};
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 

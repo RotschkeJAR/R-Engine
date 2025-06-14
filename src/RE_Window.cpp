@@ -39,7 +39,7 @@ namespace RE {
 		return bCloseFlag;
 	}
 
-	bool Window::should_render() const {
+	bool Window::should_render() {
 		return !bMinimized && bVisible;
 	}
 

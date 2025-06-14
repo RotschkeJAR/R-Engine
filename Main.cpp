@@ -117,6 +117,7 @@ class First : public Scene {
 				set_next_scene(second);
 			else if (refresh.is_pressed())
 				trigger.update_input();
+			PRINT_LN(get_fps_rate());
 		}
 		void end() {}
 };

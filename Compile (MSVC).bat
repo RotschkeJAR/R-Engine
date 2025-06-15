@@ -7,7 +7,7 @@ set SRC=src
 set BIN=bin\MSVC
 
 set CC=cl
-set CFLAG=/nologo /EHsc /std:c++20 /W1 /D_WIN32_WINNT=0x0A00 /favor:blend
+set CFLAG=/nologo /EHsc /TP /std:c++20 /W1 /D_WIN32_WINNT=0x0A00 /favor:blend /MP3
 set LDFLAG=gdi32.lib user32.lib
 
 set OUT_LIB=%BIN%\RE.lib
@@ -30,7 +30,7 @@ if %ERROR%==true (
 )
 del /f %BIN%\*.obj
 move *.obj %BIN%
-lib /NOLOGO /OUT:%OUT_LIB% %BIN%\*.obj
+lib /NOLOGO /OUT:%OUT_LIB% %BIN%\*.obj %BIN%\lib\*.obj
 for %%f in (*.cpp) do (
 	%CC% %CFLAG% /c /I%SRC% *.cpp "%%f"
 	if !ERRORLEVEL! NEQ 0 (

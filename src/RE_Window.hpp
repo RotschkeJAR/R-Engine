@@ -4,9 +4,6 @@
 #include "RE_Internal Header.hpp"
 #include "RE_Input.hpp"
 #include "RE_Vulkan_Device.hpp"
-#ifdef RE_OS_LINUX
-# include <xdg-shell-client-protocol.h>
-#endif
 
 namespace RE {
 

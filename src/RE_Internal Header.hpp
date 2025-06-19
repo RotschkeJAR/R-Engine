@@ -37,6 +37,7 @@
 # include <X11/keysym.h>
 # include <X11/XKBlib.h>
 # include <wayland-client.h>
+# include <xdg-shell-client-protocol.h>
 # include <dlfcn.h>
 typedef Display XDisplay;
 typedef Window XWindow;

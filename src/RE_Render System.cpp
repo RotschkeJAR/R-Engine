@@ -641,11 +641,15 @@ namespace RE {
 	static bool recreate_swapchain() {
 		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &vk_surfaceCapabilities);
 		WAIT_FOR_IDLE_VULKAN_DEVICE();
-		if (!CATCH_SIGNAL_AND_RETURN(create_swapchain() && swapchain_created_renderer(), bool)) {
-			RE_ERROR("Failed recreating the swapchain");
-			return false;
-		}
-		return true;
+		if (CATCH_SIGNAL_AND_RETURN(create_swapchain(), bool)) {
+			if (CATCH_SIGNAL_AND_RETURN(swapchain_created_renderer(), bool))
+				return true;
+			else
+				RE_ERROR("Failed notifying the renderer for recreated Vulkan swapchain");
+			CATCH_SIGNAL(destroy_swapchain());
+		} else
+			RE_ERROR("Failed recreating the Vulkan swapchain");
+		return false;
 	}
 
 	bool init_render_system() {
@@ -674,7 +678,8 @@ namespace RE {
 	}
 
 	void destroy_render_system() {
-		CATCH_SIGNAL(destroy_swapchain());
+		if (vk_hSwapchain)
+			CATCH_SIGNAL(destroy_swapchain());
 		CATCH_SIGNAL(destroy_interfaces_to_device());
 		CATCH_SIGNAL(destroy_vulkan_device());
 		vk_hPhysicalDeviceSelected = VK_NULL_HANDLE;
@@ -684,9 +689,9 @@ namespace RE {
 
 	bool refresh_swapchain() {
 		if (is_bit_true<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_BIT)) {
+			set_bit<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_BIT, false);
 			if (!CATCH_SIGNAL_AND_RETURN(recreate_swapchain(), bool))
 				return false;
-			set_bit<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_BIT, false);
 		}
 		return true;
 	}

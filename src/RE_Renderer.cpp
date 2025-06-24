@@ -10,9 +10,9 @@
 namespace RE {
 
 	enum ScreenPercentage {
-		CONST_IMG_SIZE,
-		SWAPCHAIN_EQUAL,
-		SWAPCHAIN_PERCENTAGE
+		SCREEN_PERCENTAGE_CONST_IMG_SIZE,
+		SCREEN_PERCENTAGE_SWAPCHAIN_EQUAL,
+		SCREEN_PERCENTAGE_SWAPCHAIN_PERCENTAGE
 	};
 
 	typedef uint16_t REindex_t;
@@ -29,11 +29,8 @@ namespace RE {
 		.height = 400U
 	};
 
-	ScreenPercentage eScreenPercentage = SWAPCHAIN_EQUAL;
-	static union {
-		VkExtent2D vk_constWorldRenderImageExtent;
-		float fScreenPercentage;
-	};
+	ScreenPercentage eScreenPercentage = SCREEN_PERCENTAGE_SWAPCHAIN_EQUAL;
+	float fScreenPercentage;
 
 	VkBuffer vk_hRectIndexBuffer = VK_NULL_HANDLE;
 	VkDeviceMemory vk_hRectIndexBufferMemory = VK_NULL_HANDLE;
@@ -54,11 +51,11 @@ namespace RE {
 
 	static bool create_world_render_images() {
 		switch (eScreenPercentage) {
-			case SWAPCHAIN_EQUAL:
+			case SCREEN_PERCENTAGE_SWAPCHAIN_EQUAL:
 				vk_worldRenderImageExtent.width = vk_swapchainResolution.width;
 				vk_worldRenderImageExtent.height = vk_swapchainResolution.height;
 				break;
-			case SWAPCHAIN_PERCENTAGE:
+			case SCREEN_PERCENTAGE_SWAPCHAIN_PERCENTAGE:
 				vk_worldRenderImageExtent.width = static_cast<uint32_t>(std::round(vk_swapchainResolution.width * fScreenPercentage));
 				vk_worldRenderImageExtent.height = static_cast<uint32_t>(std::round(vk_swapchainResolution.height * fScreenPercentage));
 				break;
@@ -117,6 +114,14 @@ namespace RE {
 			vk_ahWorldRenderImageViews[u32PresentSemaphoreDeleteIndex] = VK_NULL_HANDLE;
 			vk_ahWorldRenderImageMemories[u32PresentSemaphoreDeleteIndex] = VK_NULL_HANDLE;
 			vk_ahWorldRenderImages[u32PresentSemaphoreDeleteIndex] = VK_NULL_HANDLE;
+		}
+	}
+
+	static void recreate_world_render_images() {
+		if (vk_hDevice != VK_NULL_HANDLE) {
+			WAIT_FOR_IDLE_VULKAN_DEVICE();
+			CATCH_SIGNAL(create_world_render_images());
+			CATCH_SIGNAL(destroy_world_render_images());
 		}
 	}
 
@@ -213,7 +218,7 @@ namespace RE {
 										.pDependencies = vk_worldRenderDependencies
 									};
 									if (vkCreateRenderPass(vk_hDevice, &vk_renderPassCreateInfo, nullptr, &vk_hWorldRenderPass) == VK_SUCCESS) {
-										if (eScreenPercentage != CONST_IMG_SIZE || CATCH_SIGNAL_AND_RETURN(create_world_render_images(), bool)) {
+										if (eScreenPercentage != SCREEN_PERCENTAGE_CONST_IMG_SIZE || CATCH_SIGNAL_AND_RETURN(create_world_render_images(), bool)) {
 											const VkFenceCreateInfo vk_renderFenceCreateInfo = {
 												.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
 												.flags = VK_FENCE_CREATE_SIGNALED_BIT
@@ -254,7 +259,7 @@ namespace RE {
 												vkDestroyFence(vk_hDevice, vk_ahRenderFences[u8RenderFenceDeleteIndex], nullptr);
 												vk_ahRenderFences[u8RenderFenceDeleteIndex] = VK_NULL_HANDLE;
 											}
-											if (eScreenPercentage == CONST_IMG_SIZE)
+											if (eScreenPercentage == SCREEN_PERCENTAGE_CONST_IMG_SIZE)
 												CATCH_SIGNAL(destroy_world_render_images());
 										}
 										vkDestroyRenderPass(vk_hDevice, vk_hWorldRenderPass, nullptr);
@@ -294,7 +299,8 @@ namespace RE {
 			vkDestroyFence(vk_hDevice, vk_ahRenderFences[u8RenderFenceDeleteIndex], nullptr);
 			vk_ahRenderFences[u8RenderFenceDeleteIndex] = VK_NULL_HANDLE;
 		}
-		CATCH_SIGNAL(destroy_world_render_images());
+		if (eScreenPercentage == SCREEN_PERCENTAGE_CONST_IMG_SIZE)
+			CATCH_SIGNAL(destroy_world_render_images());make
 		vkDestroyRenderPass(vk_hDevice, vk_hWorldRenderPass, nullptr);
 		vkFreeMemory(vk_hDevice, vk_hRectIndexBufferMemory, nullptr);
 		vk_hRectIndexBufferMemory = VK_NULL_HANDLE;
@@ -470,7 +476,7 @@ namespace RE {
 				DELETE_ARRAY_SAFELY(vk_pahSwapchainSemaphores);
 				return false;
 			}
-		if (eScreenPercentage != CONST_IMG_SIZE)
+		if (eScreenPercentage != SCREEN_PERCENTAGE_CONST_IMG_SIZE)
 			CATCH_SIGNAL(create_world_render_images());
 		calculate_world_render_area();
 		return true;
@@ -482,8 +488,26 @@ namespace RE {
 		for (uint32_t u32PresentSemaphoreDeleteIndex = 0U; u32PresentSemaphoreDeleteIndex < RE_VK_SWAPCHAIN_SEMAPHORE_COUNT; u32PresentSemaphoreDeleteIndex++)
 			vkDestroySemaphore(vk_hDevice, vk_pahSwapchainSemaphores[u32PresentSemaphoreDeleteIndex], nullptr);
 		DELETE_ARRAY_SAFELY(vk_pahSwapchainSemaphores);
-		if (eScreenPercentage != CONST_IMG_SIZE)
+		if (eScreenPercentage != SCREEN_PERCENTAGE_CONST_IMG_SIZE)
 			CATCH_SIGNAL(destroy_world_render_images());
+	}
+
+	void set_const_screen_size(const uint32_t u32Width, const uint32_t u32Height) {
+		eScreenPercentage = SCREEN_PERCENTAGE_CONST_IMG_SIZE;
+		vk_worldRenderImageExtent.width = u32Width;
+		vk_worldRenderImageExtent.height = u32Height;
+		CATCH_SIGNAL(recreate_world_render_images());
+	}
+
+	void set_screen_percentage(const float fPercentage) {
+		eScreenPercentage = fPercentage == 1.0f ? SCREEN_PERCENTAGE_SWAPCHAIN_EQUAL : SCREEN_PERCENTAGE_SWAPCHAIN_PERCENTAGE;
+		fScreenPercentage = fPercentage;
+		CATCH_SIGNAL(recreate_world_render_images());
+	}
+
+	void reset_screen_size() {
+		eScreenPercentage = SCREEN_PERCENTAGE_SWAPCHAIN_EQUAL;
+		CATCH_SIGNAL(recreate_world_render_images());
 	}
 
 }

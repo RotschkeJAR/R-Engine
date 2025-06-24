@@ -126,6 +126,7 @@ int main_func() {
 	show_message_box_on_error(false);
 	bind_fps_to_vsync(true);
 	SignalCatcher sigCatcher;
+	reset_screen_size();
 	First first;
 	second = new Second();
 	set_next_scene(&first);

@@ -710,6 +710,10 @@ namespace RE {
 	void bind_fps_to_vsync(bool bBindFpsToVsync);
 	bool is_fps_bound_to_vsync();
 
+	void set_const_screen_size(const uint32_t u32Width, const uint32_t u32Height);
+	void set_screen_percentage(const float fPercentage);
+	void reset_screen_size();
+
 #ifdef RE_OS_WINDOWS
 	void set_hinstance(HINSTANCE win_hInstance);
 #endif

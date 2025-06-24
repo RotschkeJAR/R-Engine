@@ -30,11 +30,11 @@ namespace RE {
 	VkCommandPool vk_hCommandPools[RE_VK_COMMAND_POOL_COUNT] = {};
 	VkCommandBuffer vk_hDummyTransferCommandBuffer = VK_NULL_HANDLE;
 
-	uint8_t u8RenderSystemFlags = 0b00000110U;
 #define SWAPCHAIN_DIRTY_BIT 0
 #define VSYNC_SETTING_BIT 1
 #define FPS_BOUND_TO_VSYNC_BIT 2
 #define GRAPHICS_QUEUE_SUPPORTS_TRANSFER_BIT 3
+	uint8_t u8RenderSystemFlags = (1U << VSYNC_SETTING_BIT) | (1U << FPS_BOUND_TO_VSYNC_BIT);
 
 	static void println_vkbool32(const char* pcName, VkBool32 vk_bState) {
 		print("\t\t\t", pcName, ": ");

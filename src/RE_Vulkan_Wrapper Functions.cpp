@@ -6,8 +6,8 @@ namespace RE {
 	static std::vector<uint32_t> get_queue_family_indices(const uint32_t u32QueueCount, const uint32_t *pau32Queues) {
 		std::vector<uint32_t> queueFamilies;
 		for (uint32_t u32QueueIndex = 0U; u32QueueIndex < u32QueueCount; u32QueueIndex++)
-			if (std::find(queueFamilies.begin(), queueFamilies.end(), u32DeviceQueueFamilyIndices[pau32Queues[u32QueueIndex]]) == queueFamilies.end())
-				queueFamilies.push_back(u32DeviceQueueFamilyIndices[pau32Queues[u32QueueIndex]]);
+			if (std::find(queueFamilies.begin(), queueFamilies.end(), au32DeviceQueueFamilyIndices[pau32Queues[u32QueueIndex]]) == queueFamilies.end())
+				queueFamilies.push_back(au32DeviceQueueFamilyIndices[pau32Queues[u32QueueIndex]]);
 		return queueFamilies;
 	}
 
@@ -170,6 +170,48 @@ namespace RE {
 		return bSuccess;
 	}
 
+	bool create_pipeline_layout(const uint32_t u32DescriptorSetLayoutCount, const VkDescriptorSetLayout *vk_pahDescriptorSetLayouts, const uint32_t u32PushConstRangeCount, const VkPushConstantRange *vk_pahPushConstRanges, const VkPipelineLayoutCreateFlags vk_eCreateFlags, VkPipelineLayout *vk_phPipelineLayout) {
+		const VkPipelineLayoutCreateInfo vk_pipelineLayoutCreateInfo = {
+			.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+			.flags = 0,
+			.setLayoutCount = u32DescriptorSetLayoutCount,
+			.pSetLayouts = vk_pahDescriptorSetLayouts,
+			.pushConstantRangeCount = u32PushConstRangeCount,
+			.pPushConstantRanges = vk_pahPushConstRanges
+		};
+		return vkCreatePipelineLayout(vk_hDevice, &vk_pipelineLayoutCreateInfo, nullptr, vk_phPipelineLayout) == VK_SUCCESS;
+	}
+
+	bool create_descriptor_set_layout(const uint32_t u32DescriptorSetLayoutBindingCount, const VkDescriptorSetLayoutBinding *vk_paDescriptorSetLayoutBindings, const VkDescriptorSetLayoutCreateFlags vk_eCreateFlags, VkDescriptorSetLayout *vk_phDescriptorSetLayout) {
+		const VkDescriptorSetLayoutCreateInfo vk_descriptorSetLayoutCreateInfo = {
+			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+			.flags = vk_eCreateFlags,
+			.bindingCount = u32DescriptorSetLayoutBindingCount,
+			.pBindings = vk_paDescriptorSetLayoutBindings
+		};
+		return vkCreateDescriptorSetLayout(vk_hDevice, &vk_descriptorSetLayoutCreateInfo, nullptr, vk_phDescriptorSetLayout) == VK_SUCCESS;
+	}
+
+	bool create_descriptor_pool(const uint32_t u32PoolSizeCounts, const VkDescriptorPoolSize *vk_paDescriptorPoolSizes, const uint32_t u32MaxSets, VkDescriptorPool *vk_phDescriptorPool) {
+		const VkDescriptorPoolCreateInfo vk_descriptorPoolCreateInfo = {
+			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+			.maxSets = u32MaxSets,
+			.poolSizeCount = u32PoolSizeCounts,
+			.pPoolSizes = vk_paDescriptorPoolSizes
+		};
+		return vkCreateDescriptorPool(vk_hDevice, &vk_descriptorPoolCreateInfo, nullptr, vk_phDescriptorPool) == VK_SUCCESS;
+	}
+
+	bool alloc_descriptor_set(const VkDescriptorPool vk_hDescriptorPool, const uint32_t u32SetCount, const VkDescriptorSetLayout *vk_pahDescriptorSetLayouts, VkDescriptorSet *vk_pahDescriptorSet) {
+		const VkDescriptorSetAllocateInfo vk_descriptorSetAllocInfo = {
+			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+			.descriptorPool = vk_hDescriptorPool,
+			.descriptorSetCount = u32SetCount,
+			.pSetLayouts = vk_pahDescriptorSetLayouts
+		};
+		return vkAllocateDescriptorSets(vk_hDevice, &vk_descriptorSetAllocInfo, vk_pahDescriptorSet) == VK_SUCCESS;
+	}
+
 	bool alloc_vulkan_command_buffers(const VkCommandPool vk_hCommandPool, const VkCommandBufferLevel vk_eLevel, const uint32_t u32Count, VkCommandBuffer *vk_pahCommandBuffer) {
 		const VkCommandBufferAllocateInfo vk_createInfo = {
 			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
@@ -207,7 +249,7 @@ namespace RE {
 	}
 
 	bool signal_vulkan_semaphores(const uint32_t u32SemaphoreCount, const VkSemaphore *vk_pahSemaphores) {
-		const bool bSuccess = submit_to_vulkan_queue(vk_hDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], 0U, nullptr, nullptr, 1U, &vk_hDummyTransferCommandBuffer, u32SemaphoreCount, vk_pahSemaphores, VK_NULL_HANDLE);
+		const bool bSuccess = submit_to_vulkan_queue(vk_ahDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], 0U, nullptr, nullptr, 1U, &vk_hDummyTransferCommandBuffer, u32SemaphoreCount, vk_pahSemaphores, VK_NULL_HANDLE);
 		if (!bSuccess)
 			RE_ERROR("Failed signaling semaphores");
 		return bSuccess;
@@ -215,7 +257,7 @@ namespace RE {
 
 	bool signal_vulkan_fences(const uint32_t u32FenceCount, const VkFence *vk_pahFences) {
 		for (uint32_t u32FenceIndex = 0U; u32FenceIndex < u32FenceCount; u32FenceIndex++)
-			if (!submit_to_vulkan_queue(vk_hDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], 0U, nullptr, nullptr, 1U, &vk_hDummyTransferCommandBuffer, 0U, nullptr, vk_pahFences[u32FenceIndex])) {
+			if (!submit_to_vulkan_queue(vk_ahDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], 0U, nullptr, nullptr, 1U, &vk_hDummyTransferCommandBuffer, 0U, nullptr, vk_pahFences[u32FenceIndex])) {
 				RE_ERROR(append_to_string("Failed signaling fence at index ", u32FenceIndex));
 				return false;
 			}

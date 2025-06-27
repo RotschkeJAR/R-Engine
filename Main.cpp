@@ -85,13 +85,28 @@ class Background : public GameObject {
 };
 
 class PlayerCamera : public Camera {
+	private:
+		InputAction zoomerIn, zoomerOut, deletor;
+		bool activationToggle;
+
 	public:
-		PlayerCamera() {}
+		PlayerCamera() : zoomerIn(RE_INPUT_SCROLL_UP), zoomerOut(RE_INPUT_SCROLL_DOWN), deletor(RE_INPUT_KEY_Q), activationToggle(true) {}
 		~PlayerCamera() {}
 		void update() {
 			if (pObjy) {
-				position[0] = /*pObjy->transform.position[0]*/ 0.0f;
-				position[1] = /*pObjy->transform.position[1]*/ 0.0f;
+				position[0] = pObjy->transform.position[0];
+				position[1] = pObjy->transform.position[1];
+			}
+			if (zoomerIn.is_down())
+				view[0] -= get_deltaseconds();
+			else if (zoomerOut.is_down())
+				view[0] += get_deltaseconds();
+			else if (deletor.is_pressed()) {
+				if (activationToggle)
+					deactivate();
+				else
+					activate();
+				activationToggle = !activationToggle;
 			}
 		}
 };
@@ -106,8 +121,8 @@ class First : public Scene {
 		First() : Scene(1) {}
 		~First() {}
 		void start() {
-			playerCam.scale[0] = 1.0f;
-			playerCam.scale[1] = 1.0f;
+			playerCam.view[0] = 1.0f;
+			playerCam.view[1] = 1.0f;
 			playerCam.activate();
 			trigger.change_input(RE_INPUT_KEY_NUMPAD_ENTER);
 			refresh.change_input(RE_INPUT_KEY_ESCAPE);
@@ -117,7 +132,7 @@ class First : public Scene {
 				set_next_scene(second);
 			else if (refresh.is_pressed())
 				trigger.update_input();
-			PRINT_LN(get_fps_rate());
+			//PRINT_LN(get_fps_rate());
 		}
 		void end() {}
 };

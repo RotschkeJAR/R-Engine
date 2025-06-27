@@ -619,9 +619,12 @@ namespace RE {
 			Vector3f position;
 			Vector2f scale;
 
+			Vector2f view;
+
 			Camera();
 			Camera(Vector3f &rPosition);
 			Camera(Vector3f &rPosition, Vector2f &rScale);
+			Camera(Vector3f &rPosition, Vector2f &rScale, Vector2f &rView);
 			~Camera();
 			virtual void update();
 			void activate();
@@ -663,6 +666,7 @@ namespace RE {
 			bool is_button();
 			bool is_key();
 
+			// Queries engine to set its input to the next user input
 			void update_input();
 			bool is_updating();
 			void cancel_update();

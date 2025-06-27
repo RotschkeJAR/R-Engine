@@ -19,11 +19,18 @@ namespace RE {
 #define RE_VK_RECT_INDEX_BUFFER_SIZE (RE_VK_RENDERABLE_RECTANGLES_COUNT * 6U)
 #define RE_VK_RECT_INDEX_BUFFER_SIZE_BYTES (RE_VK_RECT_INDEX_BUFFER_SIZE * sizeof(REindex_t))
 
+#define RE_VK_CAMERA_UNIFORM_BUFFER_SIZE (4UL * 4UL * 2UL)
+#define RE_VK_CAMERA_UNIFORM_BUFFER_SIZE_BYTES (RE_VK_CAMERA_UNIFORM_BUFFER_SIZE * sizeof(float))
+
 #define RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE 2U
 #define RE_VK_SWAPCHAIN_SEMAPHORE_COUNT (u32SwapchainImageCount * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE)
 
 	Camera *pActiveCamera = nullptr;
-	VkRect2D vk_worldRenderArea;
+	VkViewport vk_cameraViewport = {
+		.minDepth = 0.0f,
+		.maxDepth = 1.0f
+	};
+	VkRect2D vk_cameraScissor;
 	VkExtent2D vk_worldRenderImageExtent = {
 		.width = 600U,
 		.height = 400U
@@ -34,6 +41,15 @@ namespace RE {
 
 	VkBuffer vk_hRectIndexBuffer = VK_NULL_HANDLE;
 	VkDeviceMemory vk_hRectIndexBufferMemory = VK_NULL_HANDLE;
+
+	VkDescriptorSetLayout vk_hWorldCameraDescriptorSetLayout = VK_NULL_HANDLE;
+	VkDescriptorPool vk_hWorldCameraDescriptorPool = VK_NULL_HANDLE;
+	VkDescriptorSet vk_ahWorldCameraDescriptorSets[RE_VK_FRAMES_IN_FLIGHT] = {};
+	VkBuffer vk_ahWorldCameraUniformBuffers[RE_VK_FRAMES_IN_FLIGHT] = {};
+	VkDeviceMemory vk_ahWorldCameraUniformBufferMemories[RE_VK_FRAMES_IN_FLIGHT] = {};
+	float *apafCameraUniformData[RE_VK_FRAMES_IN_FLIGHT] = {};
+
+	VkPipelineLayout vk_hWorldBasicPipelineLayout = VK_NULL_HANDLE;
 
 	VkRenderPass vk_hWorldRenderPass = VK_NULL_HANDLE;
 	VkImage vk_ahWorldRenderImages[RE_VK_FRAMES_IN_FLIGHT] = {};
@@ -125,148 +141,269 @@ namespace RE {
 		}
 	}
 
-	static void calculate_world_render_area() {
-		const float fWorldScale = std::min(vk_swapchainResolution.width / static_cast<float>(vk_worldRenderImageExtent.width), vk_swapchainResolution.height / static_cast<float>(vk_worldRenderImageExtent.height));
-		vk_worldRenderArea.extent.width = static_cast<uint32_t>(std::round(vk_worldRenderImageExtent.width * fWorldScale));
-		vk_worldRenderArea.extent.height = static_cast<uint32_t>(std::round(vk_worldRenderImageExtent.height * fWorldScale));
-		vk_worldRenderArea.offset.x = static_cast<int32_t>(std::round((vk_swapchainResolution.width - vk_worldRenderArea.extent.width) / 2.0f));
-		vk_worldRenderArea.offset.y = static_cast<int32_t>(std::round((vk_swapchainResolution.height - vk_worldRenderArea.extent.height) / 2.0f));
+	static void calculate_world_render_area_with_camera() {
+		DEFINE_SIGNAL_GUARD(sigCamAccess);
+		const float a2fCamScale[2] = {
+			std::abs(pActiveCamera->view[0]),
+			std::abs(pActiveCamera->view[1])
+		};
+		const float fCameraScale = std::abs(std::min(vk_worldRenderImageExtent.width / a2fCamScale[0], vk_worldRenderImageExtent.height / a2fCamScale[1]));
+		vk_cameraViewport.width = a2fCamScale[0] * fCameraScale;
+		vk_cameraViewport.height = a2fCamScale[1] * fCameraScale;
+		vk_cameraViewport.x = (vk_worldRenderImageExtent.width - vk_cameraViewport.width) / 2.0f;
+		vk_cameraViewport.y = (vk_worldRenderImageExtent.height - vk_cameraViewport.height) / 2.0f;
+		vk_cameraScissor.offset.x = static_cast<int32_t>(std::round(vk_cameraViewport.x));
+		vk_cameraScissor.offset.y = static_cast<int32_t>(std::round(vk_cameraViewport.y));
+		vk_cameraScissor.extent.width = static_cast<int32_t>(std::round(vk_cameraViewport.width));
+		vk_cameraScissor.extent.height = static_cast<int32_t>(std::round(vk_cameraViewport.height));
+	}
+
+	static void update_camera_descriptor_set(const uint8_t u8FrameInFlightIndex) {
+		const VkDescriptorBufferInfo vk_cameraUniformBufferToDescriptorSet = {
+			.buffer = vk_ahWorldCameraUniformBuffers[u8FrameInFlightIndex],
+			.offset = 0UL,
+			.range = RE_VK_CAMERA_UNIFORM_BUFFER_SIZE_BYTES
+		};
+		const VkWriteDescriptorSet vk_writeToCameraDescriptorSet = {
+			.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+			.dstSet = vk_ahWorldCameraDescriptorSets[u8FrameInFlightIndex],
+			.dstBinding = 0U,
+			.dstArrayElement = 0U,
+			.descriptorCount = 1U,
+			.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+			.pBufferInfo = &vk_cameraUniformBufferToDescriptorSet
+		};
+		vkUpdateDescriptorSets(vk_hDevice, 1U, &vk_writeToCameraDescriptorSet, 0U, nullptr);
+	}
+
+	static void update_camera_uniform_buffer() {
+		DEFINE_SIGNAL_GUARD(sigCamAccess);
+		apafCameraUniformData[u8CurrentFrameInFlightIndex][12] = -pActiveCamera->position[0];
+		apafCameraUniformData[u8CurrentFrameInFlightIndex][13] = -pActiveCamera->position[1];
+		apafCameraUniformData[u8CurrentFrameInFlightIndex][14] = -pActiveCamera->position[2];
+		const float a2fCamScale[2] = {
+			std::abs(pActiveCamera->view[0]),
+			std::abs(pActiveCamera->view[1])
+		};
+		const float fLeft = pActiveCamera->position[0] - a2fCamScale[0],
+			fRight = pActiveCamera->position[0] + a2fCamScale[0],
+			fTop = pActiveCamera->position[1] + a2fCamScale[1],
+			fBottom = pActiveCamera->position[1] - a2fCamScale[1],
+			fNear = 0.0f,
+			fFar = 1.0f;
+		apafCameraUniformData[u8CurrentFrameInFlightIndex][16] = 2.0f / (fRight - fLeft);
+		apafCameraUniformData[u8CurrentFrameInFlightIndex][21] = 2.0f / (fTop - fBottom);
+		apafCameraUniformData[u8CurrentFrameInFlightIndex][26] = 1.0f / (fNear - fFar);
+		/*apafCameraUniformData[u8CurrentFrameInFlightIndex][28] = -(fRight + fLeft) / (fRight - fLeft);
+		apafCameraUniformData[u8CurrentFrameInFlightIndex][29] = -(fTop + fBottom) / (fTop - fBottom);
+		apafCameraUniformData[u8CurrentFrameInFlightIndex][30] = fNear / (fFar - fNear);*/
+		CATCH_SIGNAL(update_camera_descriptor_set(u8CurrentFrameInFlightIndex));
 	}
 
 	bool init_renderer() {
-		constexpr uint32_t u32StagingIndexBufferQueueCount = 1U, u32StagingIndexBufferQueues[u32StagingIndexBufferQueueCount] = {RE_VK_QUEUE_TRANSFER_INDEX};
-		Vulkan_Buffer stagingIndexBuffer(RE_VK_RECT_INDEX_BUFFER_SIZE_BYTES, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, u32StagingIndexBufferQueueCount, u32StagingIndexBufferQueues, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+		constexpr uint32_t u32StagingIndexBufferQueueCount = 1U, au32StagingIndexBufferQueues[u32StagingIndexBufferQueueCount] = {RE_VK_QUEUE_TRANSFER_INDEX};
+		Vulkan_Buffer stagingIndexBuffer(RE_VK_RECT_INDEX_BUFFER_SIZE_BYTES, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, u32StagingIndexBufferQueueCount, au32StagingIndexBufferQueues, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 		if (stagingIndexBuffer.is_valid()) {
 			std::thread stagingIndexBufferDataInit([&]() {
-				REindex_t *pu16RectIndices;
-				stagingIndexBuffer.map_memory((void**) &pu16RectIndices);
+				REindex_t *pau16RectIndices;
+				stagingIndexBuffer.map_memory((void**) &pau16RectIndices);
 				for (uint16_t u16RectNumber = 0U; u16RectNumber < RE_VK_RENDERABLE_RECTANGLES_COUNT; u16RectNumber++) {
-					pu16RectIndices[u16RectNumber * 6U + 0U] = u16RectNumber * 4U + 0U;
-					pu16RectIndices[u16RectNumber * 6U + 1U] = u16RectNumber * 4U + 1U;
-					pu16RectIndices[u16RectNumber * 6U + 2U] = u16RectNumber * 4U + 2U;
-					pu16RectIndices[u16RectNumber * 6U + 3U] = u16RectNumber * 4U + 2U;
-					pu16RectIndices[u16RectNumber * 6U + 4U] = u16RectNumber * 4U + 3U;
-					pu16RectIndices[u16RectNumber * 6U + 5U] = u16RectNumber * 4U + 0U;
+					pau16RectIndices[u16RectNumber * 6U + 0U] = u16RectNumber * 4U + 0U;
+					pau16RectIndices[u16RectNumber * 6U + 1U] = u16RectNumber * 4U + 1U;
+					pau16RectIndices[u16RectNumber * 6U + 2U] = u16RectNumber * 4U + 2U;
+					pau16RectIndices[u16RectNumber * 6U + 3U] = u16RectNumber * 4U + 2U;
+					pau16RectIndices[u16RectNumber * 6U + 4U] = u16RectNumber * 4U + 3U;
+					pau16RectIndices[u16RectNumber * 6U + 5U] = u16RectNumber * 4U + 0U;
 				}
 				stagingIndexBuffer.unmap_memory();
 			});
-			constexpr uint32_t u32IndexBufferQueueCount = 2U, u32IndexBufferQueues[u32IndexBufferQueueCount] = {RE_VK_QUEUE_TRANSFER_INDEX, RE_VK_QUEUE_GRAPHICS_INDEX};
-			if (CATCH_SIGNAL_AND_RETURN(create_vulkan_buffer(RE_VK_RECT_INDEX_BUFFER_SIZE_BYTES, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, u32IndexBufferQueueCount, u32IndexBufferQueues, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_hRectIndexBuffer, &vk_hRectIndexBufferMemory), bool)) {
-				Vulkan_CommandBuffer indexBufferDataTransferCommandBuffer(vk_hCommandPools[RE_VK_COMMAND_POOL_TRANSFER_TRANSIENT_INDEX], VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+			constexpr uint32_t u32IndexBufferQueueCount = 2U, au32IndexBufferQueues[u32IndexBufferQueueCount] = {RE_VK_QUEUE_TRANSFER_INDEX, RE_VK_QUEUE_GRAPHICS_INDEX};
+			if (CATCH_SIGNAL_AND_RETURN(create_vulkan_buffer(RE_VK_RECT_INDEX_BUFFER_SIZE_BYTES, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, u32IndexBufferQueueCount, au32IndexBufferQueues, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_hRectIndexBuffer, &vk_hRectIndexBufferMemory), bool)) {
+				Vulkan_CommandBuffer indexBufferDataTransferCommandBuffer(vk_ahCommandPools[RE_VK_COMMAND_POOL_TRANSFER_TRANSIENT_INDEX], VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 				if (indexBufferDataTransferCommandBuffer.is_valid()) {
 					if (indexBufferDataTransferCommandBuffer.begin_recording(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr)) {
-						const VkBufferCopy vk_rectIndexBufferCopy = {
+						constexpr VkBufferCopy vk_rectIndexBufferCopy = {
 							.size = RE_VK_RECT_INDEX_BUFFER_SIZE_BYTES
 						};
 						vkCmdCopyBuffer(indexBufferDataTransferCommandBuffer, stagingIndexBuffer, vk_hRectIndexBuffer, 1U, &vk_rectIndexBufferCopy);
 						if (indexBufferDataTransferCommandBuffer.end_recording()) {
 							Vulkan_Fence rectIndexBufferDataTransferFence;
 							if (rectIndexBufferDataTransferFence.is_valid()) {
-								const VkSubmitInfo vk_rectIndexBufferTransferSubmitInfo = {
-									.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-									.commandBufferCount = 1U,
-									.pCommandBuffers = indexBufferDataTransferCommandBuffer.get_command_buffer_ptr()
-								};
-								CATCH_SIGNAL(stagingIndexBufferDataInit.join());
-								if (vkQueueSubmit(vk_hDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], 1U, &vk_rectIndexBufferTransferSubmitInfo, rectIndexBufferDataTransferFence) == VK_SUCCESS) {
-									constexpr uint32_t u32WorldRenderPassAttachmentCount = 1U, u32WorldRenderPassSubpassCount = 1U, u32WorldRenderPassDependencyCount = 1U;
-									const VkAttachmentDescription vk_worldRenderPassAttachments[u32WorldRenderPassAttachmentCount] = {
-										{
-											.format = vk_eSwapchainImageFormat,
-											.samples = VK_SAMPLE_COUNT_1_BIT,
-											.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-											.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-											.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-											.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-											.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-											.finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-										}
-									};
-									const VkAttachmentReference vk_worldRenderPassColorAttachments[] = {
-										{
-											.attachment = 0U,
-											.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-										}
-									};
-									const VkSubpassDescription vk_worldRenderSubpasses[u32WorldRenderPassSubpassCount] = {
-										{
-											.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
-											.inputAttachmentCount = 0U,
-											.pInputAttachments = nullptr,
-											.colorAttachmentCount = 1U,
-											.pColorAttachments = &vk_worldRenderPassColorAttachments[0]
-										}
-									};
-									const VkSubpassDependency vk_worldRenderDependencies[u32WorldRenderPassDependencyCount] = {
-										{
-											.srcSubpass = VK_SUBPASS_EXTERNAL,
-											.dstSubpass = RE_VK_GAME_OBJECT_SUPBASS,
-											.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-											.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-											.srcAccessMask = VK_ACCESS_NONE,
-											.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-											.dependencyFlags = 0
-										}
-									};
-									const VkRenderPassCreateInfo vk_renderPassCreateInfo = {
-										.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
-										.attachmentCount = u32WorldRenderPassAttachmentCount,
-										.pAttachments = vk_worldRenderPassAttachments,
-										.subpassCount = u32WorldRenderPassSubpassCount,
-										.pSubpasses = vk_worldRenderSubpasses,
-										.dependencyCount = u32WorldRenderPassDependencyCount,
-										.pDependencies = vk_worldRenderDependencies
-									};
-									if (vkCreateRenderPass(vk_hDevice, &vk_renderPassCreateInfo, nullptr, &vk_hWorldRenderPass) == VK_SUCCESS) {
-										if (eScreenPercentage != SCREEN_PERCENTAGE_CONST_IMG_SIZE || CATCH_SIGNAL_AND_RETURN(create_world_render_images(), bool)) {
-											const VkFenceCreateInfo vk_renderFenceCreateInfo = {
-												.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
-												.flags = VK_FENCE_CREATE_SIGNALED_BIT
-											};
-											uint8_t u8FrameInFlightCreateIndex = 0U;
-											while (u8FrameInFlightCreateIndex < RE_VK_FRAMES_IN_FLIGHT) {
-												if (vkCreateFence(vk_hDevice, &vk_renderFenceCreateInfo, nullptr, &vk_ahRenderFences[u8FrameInFlightCreateIndex]) != VK_SUCCESS) {
-													RE_FATAL_ERROR(append_to_string("Failed to create Vulkan render fence at index ", u8FrameInFlightCreateIndex));
-													break;
-												}
-												u8FrameInFlightCreateIndex++;
-											}
-											if (u8FrameInFlightCreateIndex == RE_VK_FRAMES_IN_FLIGHT) {
-												const VkSemaphoreCreateInfo vk_renderSemaphoreCreateInfo = {
-													.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
-												};
-												uint16_t u16RenderSemaphoreCreateIndex = 0U;
-												while (u16RenderSemaphoreCreateIndex < RE_VK_RENDER_SEMAPHORE_COUNT) {
-													if (vkCreateSemaphore(vk_hDevice, &vk_renderSemaphoreCreateInfo, nullptr, &vk_ahRenderSemaphores[u16RenderSemaphoreCreateIndex]) != VK_SUCCESS) {
-														RE_FATAL_ERROR(append_to_string("Failed creating Vulkan semaphore at index ", u16RenderSemaphoreCreateIndex));
-														break;
-													}
-													u16RenderSemaphoreCreateIndex++;
-												}
-												if (u16RenderSemaphoreCreateIndex == RE_VK_RENDER_SEMAPHORE_COUNT && CATCH_SIGNAL_AND_RETURN(alloc_vulkan_command_buffers(vk_hCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX], VK_COMMAND_BUFFER_LEVEL_PRIMARY, RE_VK_FRAMES_IN_FLIGHT, vk_ahRenderCommandBuffers), bool)) {
-													if (CATCH_SIGNAL_AND_RETURN(swapchain_created_renderer() && init_gameobject_renderer(), bool)) {
-														rectIndexBufferDataTransferFence.wait_for();
-														return true;
-													}
-													vkFreeCommandBuffers(vk_hDevice, vk_hCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX], RE_VK_FRAMES_IN_FLIGHT, vk_ahRenderCommandBuffers);
-												}
-												for (uint16_t u16RenderSemaphoreDeleteIndex = 0U; u16RenderSemaphoreDeleteIndex < u16RenderSemaphoreCreateIndex; u16RenderSemaphoreDeleteIndex++) {
-													vkDestroySemaphore(vk_hDevice, vk_ahRenderSemaphores[u16RenderSemaphoreDeleteIndex], nullptr);
-													vk_ahRenderSemaphores[u16RenderSemaphoreDeleteIndex] = VK_NULL_HANDLE;
-												}
-											}
-											for (uint8_t u8RenderFenceDeleteIndex = 0U; u8RenderFenceDeleteIndex < u8FrameInFlightCreateIndex; u8RenderFenceDeleteIndex++) {
-												vkDestroyFence(vk_hDevice, vk_ahRenderFences[u8RenderFenceDeleteIndex], nullptr);
-												vk_ahRenderFences[u8RenderFenceDeleteIndex] = VK_NULL_HANDLE;
-											}
-											if (eScreenPercentage == SCREEN_PERCENTAGE_CONST_IMG_SIZE)
-												CATCH_SIGNAL(destroy_world_render_images());
-										}
-										vkDestroyRenderPass(vk_hDevice, vk_hWorldRenderPass, nullptr);
+								constexpr uint32_t u32DescriptorSetLayoutBindingCount = 1U;
+								constexpr VkDescriptorSetLayoutBinding vk_aDescriptorSetLayoutBindings[u32DescriptorSetLayoutBindingCount] = {
+									{
+										.binding = 0U,
+										.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+										.descriptorCount = 1U,
+										.stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+										.pImmutableSamplers = nullptr
 									}
-									rectIndexBufferDataTransferFence.wait_for();
+								};
+								if (CATCH_SIGNAL_AND_RETURN(create_descriptor_set_layout(u32DescriptorSetLayoutBindingCount, vk_aDescriptorSetLayoutBindings, 0, &vk_hWorldCameraDescriptorSetLayout), bool)) {
+									constexpr uint32_t u32DescriptorPoolSizeCount = 1U;
+									constexpr VkDescriptorPoolSize vk_aDescriptorPoolSizes[u32DescriptorPoolSizeCount] = {
+										{
+											.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+											.descriptorCount = RE_VK_FRAMES_IN_FLIGHT
+										}
+									};
+									if (create_descriptor_pool(u32DescriptorPoolSizeCount, vk_aDescriptorPoolSizes, RE_VK_FRAMES_IN_FLIGHT, &vk_hWorldCameraDescriptorPool)) {
+										VkDescriptorSetLayout vk_ahDescriptorSetLayouts[RE_VK_FRAMES_IN_FLIGHT];
+										std::fill(std::begin(vk_ahDescriptorSetLayouts), std::end(vk_ahDescriptorSetLayouts), vk_hWorldCameraDescriptorSetLayout);
+										if (alloc_descriptor_set(vk_hWorldCameraDescriptorPool, RE_VK_FRAMES_IN_FLIGHT, vk_ahDescriptorSetLayouts, vk_ahWorldCameraDescriptorSets)) {
+											if (create_pipeline_layout(1U, &vk_hWorldCameraDescriptorSetLayout, 0U, nullptr, 0, &vk_hWorldBasicPipelineLayout)) {
+												constexpr uint32_t u32WorldRenderPassAttachmentCount = 1U, u32WorldRenderPassSubpassCount = 1U, u32WorldRenderPassDependencyCount = 1U;
+												const VkAttachmentDescription vk_worldRenderPassAttachments[u32WorldRenderPassAttachmentCount] = {
+													{
+														.format = vk_eSwapchainImageFormat,
+														.samples = VK_SAMPLE_COUNT_1_BIT,
+														.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+														.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+														.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+														.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+														.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+														.finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+													}
+												};
+												const VkAttachmentReference vk_worldRenderPassColorAttachments[] = {
+													{
+														.attachment = 0U,
+														.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+													}
+												};
+												const VkSubpassDescription vk_worldRenderSubpasses[u32WorldRenderPassSubpassCount] = {
+													{
+														.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
+														.inputAttachmentCount = 0U,
+														.pInputAttachments = nullptr,
+														.colorAttachmentCount = 1U,
+														.pColorAttachments = &vk_worldRenderPassColorAttachments[0]
+													}
+												};
+												const VkSubpassDependency vk_worldRenderDependencies[u32WorldRenderPassDependencyCount] = {
+													{
+														.srcSubpass = VK_SUBPASS_EXTERNAL,
+														.dstSubpass = RE_VK_GAME_OBJECT_SUPBASS,
+														.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+														.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+														.srcAccessMask = VK_ACCESS_NONE,
+														.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+														.dependencyFlags = 0
+													}
+												};
+												const VkRenderPassCreateInfo vk_renderPassCreateInfo = {
+													.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
+													.attachmentCount = u32WorldRenderPassAttachmentCount,
+													.pAttachments = vk_worldRenderPassAttachments,
+													.subpassCount = u32WorldRenderPassSubpassCount,
+													.pSubpasses = vk_worldRenderSubpasses,
+													.dependencyCount = u32WorldRenderPassDependencyCount,
+													.pDependencies = vk_worldRenderDependencies
+												};
+												if (vkCreateRenderPass(vk_hDevice, &vk_renderPassCreateInfo, nullptr, &vk_hWorldRenderPass) == VK_SUCCESS) {
+													if (eScreenPercentage != SCREEN_PERCENTAGE_CONST_IMG_SIZE || CATCH_SIGNAL_AND_RETURN(create_world_render_images(), bool)) {
+														constexpr uint32_t u32CameraUniformBufferQueueCount = 1U, au32CameraUniformBufferQueues[u32CameraUniformBufferQueueCount] = {RE_VK_QUEUE_GRAPHICS_INDEX};
+														const VkFenceCreateInfo vk_renderFenceCreateInfo = {
+															.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+															.flags = VK_FENCE_CREATE_SIGNALED_BIT
+														};
+														uint8_t u8FrameInFlightCreateIndex = 0U;
+														while (u8FrameInFlightCreateIndex < RE_VK_FRAMES_IN_FLIGHT) {
+															if (!create_vulkan_buffer(RE_VK_CAMERA_UNIFORM_BUFFER_SIZE_BYTES, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, u32CameraUniformBufferQueueCount, au32CameraUniformBufferQueues, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &vk_ahWorldCameraUniformBuffers[u8FrameInFlightCreateIndex], &vk_ahWorldCameraUniformBufferMemories[u8FrameInFlightCreateIndex])) {
+																RE_FATAL_ERROR(append_to_string("Failed to create Vulkan uniform buffer at index ", u8FrameInFlightCreateIndex));
+																break;
+															}
+															vkMapMemory(vk_hDevice, vk_ahWorldCameraUniformBufferMemories[u8FrameInFlightCreateIndex], 0UL, RE_VK_CAMERA_UNIFORM_BUFFER_SIZE_BYTES, 0, (void**) &apafCameraUniformData[u8FrameInFlightCreateIndex]);
+															std::fill(apafCameraUniformData[u8FrameInFlightCreateIndex], apafCameraUniformData[u8FrameInFlightCreateIndex] + RE_VK_CAMERA_UNIFORM_BUFFER_SIZE_BYTES, 0.0f);
+															apafCameraUniformData[u8FrameInFlightCreateIndex][0] = 1.0f;
+															apafCameraUniformData[u8FrameInFlightCreateIndex][5] = 1.0f;
+															apafCameraUniformData[u8FrameInFlightCreateIndex][10] = 1.0f;
+															apafCameraUniformData[u8FrameInFlightCreateIndex][15] = 1.0f;
+															apafCameraUniformData[u8FrameInFlightCreateIndex][16] = 1.0f;
+															apafCameraUniformData[u8FrameInFlightCreateIndex][21] = 1.0f;
+															apafCameraUniformData[u8FrameInFlightCreateIndex][26] = 1.0f;
+															apafCameraUniformData[u8FrameInFlightCreateIndex][31] = 1.0f;
+															CATCH_SIGNAL(update_camera_descriptor_set(u8FrameInFlightCreateIndex));
+															if (vkCreateFence(vk_hDevice, &vk_renderFenceCreateInfo, nullptr, &vk_ahRenderFences[u8FrameInFlightCreateIndex]) != VK_SUCCESS) {
+																RE_FATAL_ERROR(append_to_string("Failed to create Vulkan render fence at index ", u8FrameInFlightCreateIndex));
+																vkUnmapMemory(vk_hDevice, vk_ahWorldCameraUniformBufferMemories[u8FrameInFlightCreateIndex]);
+																vkFreeMemory(vk_hDevice, vk_ahWorldCameraUniformBufferMemories[u8FrameInFlightCreateIndex], nullptr);
+																vkDestroyBuffer(vk_hDevice, vk_ahWorldCameraUniformBuffers[u8FrameInFlightCreateIndex], nullptr);
+																apafCameraUniformData[u8FrameInFlightCreateIndex] = nullptr;
+																vk_ahWorldCameraUniformBufferMemories[u8FrameInFlightCreateIndex] = VK_NULL_HANDLE;
+																vk_ahWorldCameraUniformBuffers[u8FrameInFlightCreateIndex] = VK_NULL_HANDLE;
+																break;
+															}
+															u8FrameInFlightCreateIndex++;
+														}
+														if (u8FrameInFlightCreateIndex == RE_VK_FRAMES_IN_FLIGHT) {
+															const VkSemaphoreCreateInfo vk_renderSemaphoreCreateInfo = {
+																.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
+															};
+															uint16_t u16RenderSemaphoreCreateIndex = 0U;
+															while (u16RenderSemaphoreCreateIndex < RE_VK_RENDER_SEMAPHORE_COUNT) {
+																if (vkCreateSemaphore(vk_hDevice, &vk_renderSemaphoreCreateInfo, nullptr, &vk_ahRenderSemaphores[u16RenderSemaphoreCreateIndex]) != VK_SUCCESS) {
+																	RE_FATAL_ERROR(append_to_string("Failed creating Vulkan semaphore at index ", u16RenderSemaphoreCreateIndex));
+																	break;
+																}
+																u16RenderSemaphoreCreateIndex++;
+															}
+															if (u16RenderSemaphoreCreateIndex == RE_VK_RENDER_SEMAPHORE_COUNT && CATCH_SIGNAL_AND_RETURN(alloc_vulkan_command_buffers(vk_ahCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX], VK_COMMAND_BUFFER_LEVEL_PRIMARY, RE_VK_FRAMES_IN_FLIGHT, vk_ahRenderCommandBuffers), bool)) {
+																const VkSubmitInfo vk_rectIndexBufferTransferSubmitInfo = {
+																	.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+																	.commandBufferCount = 1U,
+																	.pCommandBuffers = indexBufferDataTransferCommandBuffer.get_command_buffer_ptr()
+																};
+																CATCH_SIGNAL(stagingIndexBufferDataInit.join());
+																if (vkQueueSubmit(vk_ahDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], 1U, &vk_rectIndexBufferTransferSubmitInfo, rectIndexBufferDataTransferFence) == 	VK_SUCCESS) {
+																	if (CATCH_SIGNAL_AND_RETURN(swapchain_created_renderer() && init_gameobject_renderer(), bool)) {
+																		rectIndexBufferDataTransferFence.wait_for();
+																		return true;
+																	}
+																	rectIndexBufferDataTransferFence.wait_for();
+																} else
+																	RE_FATAL_ERROR("Failed to submit task to the transfer queue for copying data to the Vulkan rectangle index buffer on the GPU");
+																vkFreeCommandBuffers(vk_hDevice, vk_ahCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX], RE_VK_FRAMES_IN_FLIGHT, vk_ahRenderCommandBuffers);
+																std::fill(std::begin(vk_ahRenderCommandBuffers), std::end(vk_ahRenderCommandBuffers), VK_NULL_HANDLE);
+															}
+															for (uint16_t u16RenderSemaphoreDeleteIndex = 0U; u16RenderSemaphoreDeleteIndex < u16RenderSemaphoreCreateIndex; u16RenderSemaphoreDeleteIndex++) {
+																vkDestroySemaphore(vk_hDevice, vk_ahRenderSemaphores[u16RenderSemaphoreDeleteIndex], nullptr);
+																vk_ahRenderSemaphores[u16RenderSemaphoreDeleteIndex] = VK_NULL_HANDLE;
+															}
+														}
+														for (uint8_t u8FrameInFlightDeleteIndex = 0U; u8FrameInFlightDeleteIndex < u8FrameInFlightCreateIndex; u8FrameInFlightDeleteIndex++) {
+															vkUnmapMemory(vk_hDevice, vk_ahWorldCameraUniformBufferMemories[u8FrameInFlightDeleteIndex]);
+															vkFreeMemory(vk_hDevice, vk_ahWorldCameraUniformBufferMemories[u8FrameInFlightDeleteIndex], nullptr);
+															vkDestroyBuffer(vk_hDevice, vk_ahWorldCameraUniformBuffers[u8FrameInFlightDeleteIndex], nullptr);
+															vkDestroyFence(vk_hDevice, vk_ahRenderFences[u8FrameInFlightDeleteIndex], nullptr);
+															apafCameraUniformData[u8FrameInFlightDeleteIndex] = nullptr;
+															vk_ahWorldCameraUniformBufferMemories[u8FrameInFlightDeleteIndex] = VK_NULL_HANDLE;
+															vk_ahWorldCameraUniformBuffers[u8FrameInFlightDeleteIndex] = VK_NULL_HANDLE;
+															vk_ahRenderFences[u8FrameInFlightDeleteIndex] = VK_NULL_HANDLE;
+														}
+														if (eScreenPercentage == SCREEN_PERCENTAGE_CONST_IMG_SIZE)
+															CATCH_SIGNAL(destroy_world_render_images());
+													}
+													vkDestroyRenderPass(vk_hDevice, vk_hWorldRenderPass, nullptr);
+													vk_hWorldRenderPass = VK_NULL_HANDLE;
+												} else
+													RE_FATAL_ERROR("Failed to create Vulkan render pass");
+												vkDestroyPipelineLayout(vk_hDevice, vk_hWorldBasicPipelineLayout, nullptr);
+												vk_hWorldBasicPipelineLayout = VK_NULL_HANDLE;
+											} else
+												RE_FATAL_ERROR("Failed to create basic Vulkan world render pipeline layout");
+											vkFreeDescriptorSets(vk_hDevice, vk_hWorldCameraDescriptorPool, RE_VK_FRAMES_IN_FLIGHT, vk_ahWorldCameraDescriptorSets);
+											std::fill(std::begin(vk_ahWorldCameraDescriptorSets), std::end(vk_ahWorldCameraDescriptorSets), VK_NULL_HANDLE);
+										} else
+											RE_FATAL_ERROR("Failed allocating Vulkan descriptor set for camera uniform buffer");
+										vkDestroyDescriptorPool(vk_hDevice, vk_hWorldCameraDescriptorPool, nullptr);
+										vk_hWorldCameraDescriptorPool = VK_NULL_HANDLE;
+									} else
+										RE_FATAL_ERROR("Failed to create Vulkan descriptor pool for camera uniform buffer");
+									vkDestroyDescriptorSetLayout(vk_hDevice, vk_hWorldCameraDescriptorSetLayout, nullptr);
+									vk_hWorldCameraDescriptorSetLayout = VK_NULL_HANDLE;
 								} else
-									RE_FATAL_ERROR("Failed to submit task to the transfer queue for copying data to the Vulkan rectangle index buffer on the GPU");
+									RE_FATAL_ERROR("Failed to create Vulkan descriptor set layout for camera uniform buffer");
 							} else
 								RE_FATAL_ERROR("Failed to create Vulkan fence to wait on finishing transfer task for rectangle index buffer data");
 						} else
@@ -276,8 +413,8 @@ namespace RE {
 				} else
 					RE_FATAL_ERROR("Failed to allocate Vulkan command buffer to transfer data for the rectangle index buffer to the GPU");
 				vkFreeMemory(vk_hDevice, vk_hRectIndexBufferMemory, nullptr);
-				vk_hRectIndexBufferMemory = VK_NULL_HANDLE;
 				vkDestroyBuffer(vk_hDevice, vk_hRectIndexBuffer, nullptr);
+				vk_hRectIndexBufferMemory = VK_NULL_HANDLE;
 				vk_hRectIndexBuffer = VK_NULL_HANDLE;
 			} else
 				RE_FATAL_ERROR("Failed to create Vulkan rectangle index buffer on the GPU");
@@ -290,21 +427,35 @@ namespace RE {
 	
 	void destroy_renderer() {
 		CATCH_SIGNAL(destroy_gameobject_renderer());
-		vkFreeCommandBuffers(vk_hDevice, vk_hCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX], RE_VK_FRAMES_IN_FLIGHT, vk_ahRenderCommandBuffers);
+		vkFreeCommandBuffers(vk_hDevice, vk_ahCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX], RE_VK_FRAMES_IN_FLIGHT, vk_ahRenderCommandBuffers);
 		for (uint16_t u16RenderSemaphoreDeleteIndex = 0U; u16RenderSemaphoreDeleteIndex < RE_VK_RENDER_SEMAPHORE_COUNT; u16RenderSemaphoreDeleteIndex++) {
 			vkDestroySemaphore(vk_hDevice, vk_ahRenderSemaphores[u16RenderSemaphoreDeleteIndex], nullptr);
 			vk_ahRenderSemaphores[u16RenderSemaphoreDeleteIndex] = VK_NULL_HANDLE;
 		}
-		for (uint8_t u8RenderFenceDeleteIndex = 0U; u8RenderFenceDeleteIndex < RE_VK_FRAMES_IN_FLIGHT; u8RenderFenceDeleteIndex++) {
-			vkDestroyFence(vk_hDevice, vk_ahRenderFences[u8RenderFenceDeleteIndex], nullptr);
-			vk_ahRenderFences[u8RenderFenceDeleteIndex] = VK_NULL_HANDLE;
+		for (uint8_t u8FrameInFlightDeleteIndex = 0U; u8FrameInFlightDeleteIndex < RE_VK_FRAMES_IN_FLIGHT; u8FrameInFlightDeleteIndex++) {
+			vkUnmapMemory(vk_hDevice, vk_ahWorldCameraUniformBufferMemories[u8FrameInFlightDeleteIndex]);
+			vkFreeMemory(vk_hDevice, vk_ahWorldCameraUniformBufferMemories[u8FrameInFlightDeleteIndex], nullptr);
+			vkDestroyBuffer(vk_hDevice, vk_ahWorldCameraUniformBuffers[u8FrameInFlightDeleteIndex], nullptr);
+			vkDestroyFence(vk_hDevice, vk_ahRenderFences[u8FrameInFlightDeleteIndex], nullptr);
+			apafCameraUniformData[u8FrameInFlightDeleteIndex] = nullptr;
+			vk_ahWorldCameraUniformBufferMemories[u8FrameInFlightDeleteIndex] = VK_NULL_HANDLE;
+			vk_ahWorldCameraUniformBuffers[u8FrameInFlightDeleteIndex] = VK_NULL_HANDLE;
+			vk_ahRenderFences[u8FrameInFlightDeleteIndex] = VK_NULL_HANDLE;
 		}
 		if (eScreenPercentage == SCREEN_PERCENTAGE_CONST_IMG_SIZE)
-			CATCH_SIGNAL(destroy_world_render_images());make
+			CATCH_SIGNAL(destroy_world_render_images());
 		vkDestroyRenderPass(vk_hDevice, vk_hWorldRenderPass, nullptr);
+		vkDestroyPipelineLayout(vk_hDevice, vk_hWorldBasicPipelineLayout, nullptr);
+		vkDestroyDescriptorPool(vk_hDevice, vk_hWorldCameraDescriptorPool, nullptr);
+		vkDestroyDescriptorSetLayout(vk_hDevice, vk_hWorldCameraDescriptorSetLayout, nullptr);
 		vkFreeMemory(vk_hDevice, vk_hRectIndexBufferMemory, nullptr);
-		vk_hRectIndexBufferMemory = VK_NULL_HANDLE;
 		vkDestroyBuffer(vk_hDevice, vk_hRectIndexBuffer, nullptr);
+		std::fill(std::begin(vk_ahRenderCommandBuffers), std::end(vk_ahRenderCommandBuffers), VK_NULL_HANDLE);
+		vk_hWorldRenderPass = VK_NULL_HANDLE;
+		vk_hWorldBasicPipelineLayout = VK_NULL_HANDLE;
+		vk_hWorldCameraDescriptorSetLayout = VK_NULL_HANDLE;
+		vk_hWorldCameraDescriptorPool = VK_NULL_HANDLE;
+		vk_hRectIndexBufferMemory = VK_NULL_HANDLE;
 		vk_hRectIndexBuffer = VK_NULL_HANDLE;
 	}
 
@@ -326,13 +477,33 @@ namespace RE {
 				}
 				break;
 		}
+		if (pActiveCamera) {
+			if (pActiveCamera->view[0] && pActiveCamera->view[1]) {
+				CATCH_SIGNAL(calculate_world_render_area_with_camera());
+				CATCH_SIGNAL(update_camera_uniform_buffer());
+			} else {
+				RE_WARNING(append_to_string("The camera's view shouldn't contain any zeros: ", pActiveCamera->view, "; using old camera data instead"));
+				const VkCopyDescriptorSet vk_copyCameraDescriptorSet = {
+					.sType = VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET,
+					.srcSet = vk_ahWorldCameraDescriptorSets[u8CurrentFrameInFlightIndex == 0U ? (RE_VK_FRAMES_IN_FLIGHT - 1U) : (u8CurrentFrameInFlightIndex - 1U)],
+					.srcBinding = 0U,
+					.srcArrayElement = 0U,
+					.dstSet = vk_ahWorldCameraDescriptorSets[u8CurrentFrameInFlightIndex],
+					.dstBinding = 0U,
+					.dstArrayElement = 0U,
+					.descriptorCount = 1U
+				};
+				vkUpdateDescriptorSets(vk_hDevice, 0U, nullptr, 1U, &vk_copyCameraDescriptorSet);
+			}
+		}
 		if (!CATCH_SIGNAL_AND_RETURN(render_gameobjects(), bool))
 			return;
 		if (!begin_recording_vulkan_command_buffer(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr)) {
 			RE_FATAL_ERROR("Failed beginning to record Vulkan command buffer for rendering everything");
 			return;
 		}
-		const VkClearValue vk_clearValues[] = {
+		constexpr uint32_t u32ClearValueCount = 1U;
+		const VkClearValue vk_aClearValues[u32ClearValueCount] = {
 			{
 				.color = {
 					.float32 = {
@@ -349,8 +520,8 @@ namespace RE {
 			.renderPass = vk_hWorldRenderPass,
 			.framebuffer = vk_ahWorldFramebuffers[u8CurrentFrameInFlightIndex],
 			.renderArea = VkRect2D{{0, 0}, vk_worldRenderImageExtent},
-			.clearValueCount = 1U,
-			.pClearValues = vk_clearValues
+			.clearValueCount = u32ClearValueCount,
+			.pClearValues = vk_aClearValues
 		};
 		vkCmdBeginRenderPass(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], &vk_renderPassInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 		vkCmdExecuteCommands(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], 1U, &vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex]);
@@ -363,7 +534,7 @@ namespace RE {
 			.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-			.image = vk_phSwapchainImages[u32NextSwapchainImageIndex],
+			.image = vk_pahSwapchainImages[u32NextSwapchainImageIndex],
 			.subresourceRange = {
 				.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 				.baseMipLevel = 0U,
@@ -399,17 +570,17 @@ namespace RE {
 			},
 			.dstOffsets = {
 				{
-					.x = vk_worldRenderArea.offset.x,
-					.y = vk_worldRenderArea.offset.y,
+					.x = 0,
+					.y = 0,
 					.z = 0
 				}, {
-					.x = std::clamp<int32_t>(vk_worldRenderArea.offset.x + static_cast<int32_t>(vk_worldRenderArea.extent.width) + 1, 1, vk_swapchainResolution.width),
-					.y = std::clamp<int32_t>(vk_worldRenderArea.offset.y + static_cast<int32_t>(vk_worldRenderArea.extent.height) + 1, 1, vk_swapchainResolution.height),
+					.x = static_cast<int32_t>(vk_swapchainResolution.width),
+					.y = static_cast<int32_t>(vk_swapchainResolution.height),
 					.z = 1
 				}
 			}
 		};
-		vkCmdBlitImage(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], vk_ahWorldRenderImages[u8CurrentFrameInFlightIndex], VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, vk_phSwapchainImages[u32NextSwapchainImageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1U, &vk_worldRenderImageBlit, VK_FILTER_LINEAR);
+		vkCmdBlitImage(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], vk_ahWorldRenderImages[u8CurrentFrameInFlightIndex], VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, vk_pahSwapchainImages[u32NextSwapchainImageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1U, &vk_worldRenderImageBlit, VK_FILTER_LINEAR);
 		const VkImageMemoryBarrier vk_swapchainImageLayoutTransfer = {
 			.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
 			.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
@@ -418,7 +589,7 @@ namespace RE {
 			.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
 			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-			.image = vk_phSwapchainImages[u32NextSwapchainImageIndex],
+			.image = vk_pahSwapchainImages[u32NextSwapchainImageIndex],
 			.subresourceRange = {
 				.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 				.baseMipLevel = 0U,
@@ -435,7 +606,7 @@ namespace RE {
 		vkResetFences(vk_hDevice, 1U, &vk_ahRenderFences[u8CurrentFrameInFlightIndex]);
 		const VkPipelineStageFlags vk_aePipelinesToWaitForBeforeRendering[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT};
 		const VkSemaphore vk_ahWaitBeforeRenderingSemaphores[2U] = {vk_pahSwapchainSemaphores[u32SwapchainRenderImageIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE], vk_ahRenderSemaphores[u8CurrentFrameInFlightIndex * RE_VK_SEMAPHORES_PER_FRAME_COUNT]};
-		if (!CATCH_SIGNAL_AND_RETURN(submit_to_vulkan_queue(vk_hDeviceQueueFamilies[RE_VK_QUEUE_GRAPHICS_INDEX], 2U, vk_ahWaitBeforeRenderingSemaphores, vk_aePipelinesToWaitForBeforeRendering, 1U, &vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], 1U, &vk_pahSwapchainSemaphores[u32SwapchainRenderImageIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE + 1U], vk_ahRenderFences[u8CurrentFrameInFlightIndex]), bool)) {
+		if (!CATCH_SIGNAL_AND_RETURN(submit_to_vulkan_queue(vk_ahDeviceQueueFamilies[RE_VK_QUEUE_GRAPHICS_INDEX], 2U, vk_ahWaitBeforeRenderingSemaphores, vk_aePipelinesToWaitForBeforeRendering, 1U, &vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], 1U, &vk_pahSwapchainSemaphores[u32SwapchainRenderImageIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE + 1U], vk_ahRenderFences[u8CurrentFrameInFlightIndex]), bool)) {
 			RE_FATAL_ERROR("Failed submitting the task for rendering everything to the Vulkan GPU");
 			return;
 		}
@@ -447,7 +618,7 @@ namespace RE {
 			.pSwapchains = &vk_hSwapchain,
 			.pImageIndices = &u32NextSwapchainImageIndex
 		};
-		const VkResult vk_eSwapchainPresentResult = vkQueuePresentKHR(vk_hDeviceQueueFamilies[RE_VK_QUEUE_PRESENT_INDEX], &vk_presentInfo);
+		const VkResult vk_eSwapchainPresentResult = vkQueuePresentKHR(vk_ahDeviceQueueFamilies[RE_VK_QUEUE_PRESENT_INDEX], &vk_presentInfo);
 		switch (vk_eSwapchainPresentResult) {
 			case VK_SUBOPTIMAL_KHR:
 			case VK_ERROR_OUT_OF_DATE_KHR:
@@ -478,7 +649,16 @@ namespace RE {
 			}
 		if (eScreenPercentage != SCREEN_PERCENTAGE_CONST_IMG_SIZE)
 			CATCH_SIGNAL(create_world_render_images());
-		calculate_world_render_area();
+		if (!pActiveCamera) {
+			vk_cameraViewport.width = vk_worldRenderImageExtent.width;
+			vk_cameraViewport.height = vk_worldRenderImageExtent.height;
+			vk_cameraViewport.x = 0.0f;
+			vk_cameraViewport.y = 0.0f;
+			vk_cameraScissor.offset.x = 0;
+			vk_cameraScissor.offset.y = 0;
+			vk_cameraScissor.extent.width = vk_worldRenderImageExtent.width;
+			vk_cameraScissor.extent.height = vk_worldRenderImageExtent.height;
+		}
 		return true;
 	}
 
@@ -490,6 +670,20 @@ namespace RE {
 		DELETE_ARRAY_SAFELY(vk_pahSwapchainSemaphores);
 		if (eScreenPercentage != SCREEN_PERCENTAGE_CONST_IMG_SIZE)
 			CATCH_SIGNAL(destroy_world_render_images());
+	}
+
+	void attach_camera(Camera *const pCamera) {
+		pActiveCamera = pCamera;
+		if (!pActiveCamera) {
+			vk_cameraViewport.width = vk_worldRenderImageExtent.width;
+			vk_cameraViewport.height = vk_worldRenderImageExtent.height;
+			vk_cameraViewport.x = 0.0f;
+			vk_cameraViewport.y = 0.0f;
+			vk_cameraScissor.offset.x = 0;
+			vk_cameraScissor.offset.y = 0;
+			vk_cameraScissor.extent.width = vk_worldRenderImageExtent.width;
+			vk_cameraScissor.extent.height = vk_worldRenderImageExtent.height;
+		}
 	}
 
 	void set_const_screen_size(const uint32_t u32Width, const uint32_t u32Height) {

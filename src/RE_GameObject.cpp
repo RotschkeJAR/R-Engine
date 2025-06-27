@@ -7,21 +7,21 @@ namespace RE {
 		newGameObjects.push_back(this);
 	}
 	GameObject::~GameObject() {
-		std::vector<GameObject*>::iterator iteratorToGameObject;
+		std::vector<GameObject*>::iterator iterator;
 		if (!gameObjects.empty()) {
-			iteratorToGameObject = std::find(gameObjects.begin(), gameObjects.end(), this);
-			if (iteratorToGameObject != gameObjects.end())
-				gameObjects.erase(iteratorToGameObject);
+			iterator = std::find(gameObjects.begin(), gameObjects.end(), this);
+			if (iterator == gameObjects.end())
+				RE_WARNING(append_to_string("The game object ", this, " has been deleted without being marked deletable before. May skip updating a game object or cause segmentation violation"));
 		}
 		if (!newGameObjects.empty()) {
-			iteratorToGameObject = std::find(newGameObjects.begin(), newGameObjects.end(), this);
-			if (iteratorToGameObject != newGameObjects.end())
-				newGameObjects.erase(iteratorToGameObject);
+			iterator = std::find(newGameObjects.begin(), newGameObjects.end(), this);
+			if (iterator == newGameObjects.end())
+				newGameObjects.erase(iterator);
 		}
 		if (!deletableGameObjects.empty()) {
-			iteratorToGameObject = std::find(deletableGameObjects.begin(), deletableGameObjects.end(), this);
-			if (iteratorToGameObject != deletableGameObjects.end())
-				deletableGameObjects.erase(iteratorToGameObject);
+			iterator = std::find(deletableGameObjects.begin(), deletableGameObjects.end(), this);
+			if (iterator == deletableGameObjects.end())
+				deletableGameObjects.erase(iterator);
 		}
 	}
 

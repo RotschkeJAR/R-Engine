@@ -19,17 +19,17 @@ namespace RE {
 	// Attributes initialized at beginning and rarely changed
 	extern VkPhysicalDevice vk_hPhysicalDeviceSelected;
 	extern VkPhysicalDeviceMemoryProperties vk_physicalDeviceMemoryProperties;
-	extern VkQueue vk_hDeviceQueueFamilies[RE_VK_QUEUE_COUNT];
-	extern uint32_t u32DeviceQueueFamilyIndices[RE_VK_QUEUE_COUNT];
+	extern VkQueue vk_ahDeviceQueueFamilies[RE_VK_QUEUE_COUNT];
+	extern uint32_t au32DeviceQueueFamilyIndices[RE_VK_QUEUE_COUNT];
 	extern VkSurfaceKHR vk_hSurface;
 	extern VkSurfaceFormatKHR vk_surfaceFormatSelected;
 	extern VkSwapchainKHR vk_hSwapchain;
 	extern VkFormat vk_eSwapchainImageFormat;
 	extern VkExtent2D vk_swapchainResolution;
 	extern uint32_t u32SwapchainImageCount;
-	extern VkImage *vk_phSwapchainImages;
-	extern VkImageView *vk_phSwapchainImageViews;
-	extern VkCommandPool vk_hCommandPools[RE_VK_COMMAND_POOL_COUNT];
+	extern VkImage *vk_pahSwapchainImages;
+	extern VkImageView *vk_pahSwapchainImageViews;
+	extern VkCommandPool vk_ahCommandPools[RE_VK_COMMAND_POOL_COUNT];
 	extern VkCommandBuffer vk_hDummyTransferCommandBuffer;
 	
 	bool init_render_system();

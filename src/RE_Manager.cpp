@@ -1,5 +1,6 @@
 #include "RE_Manager.hpp"
 #include "RE_Main.hpp"
+#include "RE_Renderer.hpp"
 
 namespace RE {
 

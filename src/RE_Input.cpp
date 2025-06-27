@@ -169,7 +169,7 @@ namespace RE {
 		CATCH_SIGNAL(prevCursorPosition.copy_from(cursorPosition));
 		std::copy(std::begin(u8KeyBuffer), std::end(u8KeyBuffer), std::begin(u8PrevKeyBuffer));
 		u8PrevSpecialInputBuffer = u8SpecialInputBuffer;
-		set_bits<uint8_t>(u8SpecialInputBuffer, RE_INPUT_SCROLL_UP, RE_INPUT_SCROLL_DOWN, false);
+		set_bits<uint8_t>(u8SpecialInputBuffer, RE_INPUT_SCROLL_UP, RE_INPUT_SCROLL_DOWN + 1, false);
 	}
 
 	bool is_key_down(const Input eInput, const uint32_t u32Scancode) {

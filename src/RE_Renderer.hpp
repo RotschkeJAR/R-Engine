@@ -14,11 +14,17 @@ namespace RE {
 #define RE_VK_RENDER_SEMAPHORE_COUNT (RE_VK_FRAMES_IN_FLIGHT * RE_VK_SEMAPHORES_PER_FRAME_COUNT)
 
 	extern Camera *pActiveCamera;
-	extern VkRect2D vk_worldRenderArea;
+	extern VkViewport vk_cameraViewport;
+	extern VkRect2D vk_cameraScissor;
 	extern VkExtent2D vk_worldRenderImageExtent;
 
 	extern VkBuffer vk_hRectIndexBuffer;
 	extern VkDeviceMemory vk_hRectIndexBufferMemory;
+
+	extern VkDescriptorSetLayout vk_hWorldDescriptorSetLayout;
+	extern VkDescriptorSet vk_ahWorldCameraDescriptorSets[RE_VK_FRAMES_IN_FLIGHT];
+
+	extern VkPipelineLayout vk_hWorldBasicPipelineLayout;
 
 	extern VkRenderPass vk_hWorldRenderPass;
 	extern VkFramebuffer vk_ahWorldFramebuffers[RE_VK_FRAMES_IN_FLIGHT];
@@ -32,6 +38,7 @@ namespace RE {
 	void render();
 	bool swapchain_created_renderer();
 	void swapchain_destroyed_renderer();
+	void attach_camera(Camera *const pCamera);
 
 }
 

@@ -11,7 +11,6 @@ namespace RE {
 	float fDeltaseconds = 0.0f, fMinDeltatime = 1.0f / 60.0f;
 
 	void execute() {
-		DEFINE_SIGNAL_GUARD(sigGuardMainLoop);
 		std::setlocale(LC_ALL, "");
 
 		// Create window

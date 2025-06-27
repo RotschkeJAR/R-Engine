@@ -182,8 +182,8 @@ namespace RE {
 		apafCameraUniformData[u8CurrentFrameInFlightIndex][13] = -pActiveCamera->position[1];
 		apafCameraUniformData[u8CurrentFrameInFlightIndex][14] = -pActiveCamera->position[2];
 		const float a2fCamScale[2] = {
-			std::abs(pActiveCamera->view[0]),
-			std::abs(pActiveCamera->view[1])
+			std::abs(pActiveCamera->view[0]) / 2.0f,
+			std::abs(pActiveCamera->view[1]) / 2.0f
 		};
 		const float fLeft = pActiveCamera->position[0] - a2fCamScale[0],
 			fRight = pActiveCamera->position[0] + a2fCamScale[0],
@@ -191,8 +191,8 @@ namespace RE {
 			fBottom = pActiveCamera->position[1] - a2fCamScale[1],
 			fNear = 0.0f,
 			fFar = 1.0f;
-		apafCameraUniformData[u8CurrentFrameInFlightIndex][16] = 2.0f / (fRight - fLeft);
-		apafCameraUniformData[u8CurrentFrameInFlightIndex][21] = 2.0f / (fTop - fBottom);
+		apafCameraUniformData[u8CurrentFrameInFlightIndex][16] = 2.0f / (fRight - fLeft) * sign(pActiveCamera->view[0]);
+		apafCameraUniformData[u8CurrentFrameInFlightIndex][21] = 2.0f / (fTop - fBottom) * sign(pActiveCamera->view[1]);
 		apafCameraUniformData[u8CurrentFrameInFlightIndex][26] = 1.0f / (fNear - fFar);
 		/*apafCameraUniformData[u8CurrentFrameInFlightIndex][28] = -(fRight + fLeft) / (fRight - fLeft);
 		apafCameraUniformData[u8CurrentFrameInFlightIndex][29] = -(fTop + fBottom) / (fTop - fBottom);

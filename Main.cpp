@@ -86,11 +86,11 @@ class Background : public GameObject {
 
 class PlayerCamera : public Camera {
 	private:
-		InputAction zoomerIn, zoomerOut, deletor;
+		InputAction zoomerIn, zoomerOut;
 		bool activationToggle;
 
 	public:
-		PlayerCamera() : zoomerIn(RE_INPUT_SCROLL_UP), zoomerOut(RE_INPUT_SCROLL_DOWN), deletor(RE_INPUT_KEY_Q), activationToggle(true) {}
+		PlayerCamera() : zoomerIn(RE_INPUT_SCROLL_UP), zoomerOut(RE_INPUT_SCROLL_DOWN), activationToggle(true) {}
 		~PlayerCamera() {}
 		void update() {
 			if (pObjy) {
@@ -101,13 +101,6 @@ class PlayerCamera : public Camera {
 				view[0] -= get_deltaseconds();
 			else if (zoomerOut.is_down())
 				view[0] += get_deltaseconds();
-			else if (deletor.is_pressed()) {
-				if (activationToggle)
-					deactivate();
-				else
-					activate();
-				activationToggle = !activationToggle;
-			}
 		}
 };
 
@@ -116,9 +109,10 @@ class First : public Scene {
 		Background background;
 		Objy objy;
 		PlayerCamera playerCam;
-		InputAction trigger, refresh;
+		InputAction trigger, refresh, camActivator;
+		bool bCamActive;
 
-		First() : Scene(1) {}
+		First() : Scene(1), bCamActive(true) {}
 		~First() {}
 		void start() {
 			playerCam.view[0] = 1.0f;
@@ -126,12 +120,20 @@ class First : public Scene {
 			playerCam.activate();
 			trigger.change_input(RE_INPUT_KEY_NUMPAD_ENTER);
 			refresh.change_input(RE_INPUT_KEY_ESCAPE);
+			camActivator.change_input(RE_INPUT_KEY_Q);
 		}
 		void update() {
 			if (trigger.is_pressed())
 				set_next_scene(second);
 			else if (refresh.is_pressed())
 				trigger.update_input();
+			else if (camActivator.is_pressed()) {
+				if (!bCamActive)
+					playerCam.activate();
+				else
+					playerCam.deactivate();
+				bCamActive = !bCamActive;
+			}
 			//PRINT_LN(get_fps_rate());
 		}
 		void end() {}

@@ -12,6 +12,7 @@ namespace RE {
 	VkPhysicalDevice *vk_pahPhysicalDevicesAvailable = nullptr;
 	uint32_t u32PhysicalDevicesAvailableCount = 0U;
 	VkPhysicalDevice vk_hPhysicalDeviceSelected = VK_NULL_HANDLE;
+	VkPhysicalDeviceLimits vk_physicalDeviceLimits = {};
 	VkPhysicalDeviceMemoryProperties vk_physicalDeviceMemoryProperties = {};
 	VkQueue vk_ahDeviceQueueFamilies[RE_VK_QUEUE_COUNT] = {};
 	uint32_t au32DeviceQueueFamilyIndices[RE_VK_QUEUE_COUNT] = {};
@@ -659,6 +660,7 @@ namespace RE {
 				VkPhysicalDeviceProperties vk_physicalDeviceSelectedProperties;
 				vkGetPhysicalDeviceProperties(vk_hPhysicalDeviceSelected, &vk_physicalDeviceSelectedProperties);
 				PRINT_LN(append_to_string("Device selected: ", vk_physicalDeviceSelectedProperties.deviceName).c_str());
+				vk_physicalDeviceLimits = vk_physicalDeviceSelectedProperties.limits;
 				vkGetPhysicalDeviceMemoryProperties(vk_hPhysicalDeviceSelected, &vk_physicalDeviceMemoryProperties);
 				CATCH_SIGNAL(fetch_surface_infos());
 				CATCH_SIGNAL(select_best_surface_format());

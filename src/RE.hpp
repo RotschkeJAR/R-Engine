@@ -409,6 +409,11 @@ namespace RE {
 	std::string bitmask_to_string(const T bitmask) {
 		return bitmask_to_string(bitmask, true);
 	}
+	
+	template <typename T>
+	T sign(const T value) {
+		return (static_cast<T>(0.0) < value) - (value < static_cast<T>(0.0));
+	}
 
 	template <typename T, uint32_t u32Dimensions>
 	class Vector final {

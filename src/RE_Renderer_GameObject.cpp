@@ -275,24 +275,28 @@ namespace RE {
 		for (GameObject *pObject : gameObjects) {
 			if (pObject->u32SceneParentId != get_current_scene_id())
 				continue;
+			const float a2fObjectScale[2] = {
+				pObject->transform.scale[0] / 2.0f,
+				pObject->transform.scale[1] / 2.0f
+			};
 			for (uint16_t u16VertexIndex = 0U; u16VertexIndex < 4U; u16VertexIndex++) {
 				const uint16_t u16VertexOffset = u16GameObjectIndex * RE_VK_VERTEX_TOTAL_SIZE * 4U + u16VertexIndex * RE_VK_VERTEX_TOTAL_SIZE;
 				switch (u16VertexIndex) {
 					case 0U:
-						pafGameObjectVertices[u16VertexOffset + 0U] = pObject->transform.position[0] - pObject->transform.scale[0];
-						pafGameObjectVertices[u16VertexOffset + 1U] = pObject->transform.position[1] + pObject->transform.scale[1];
+						pafGameObjectVertices[u16VertexOffset + 0U] = pObject->transform.position[0] - a2fObjectScale[0];
+						pafGameObjectVertices[u16VertexOffset + 1U] = pObject->transform.position[1] + a2fObjectScale[1];
 						break;
 					case 1U:
-						pafGameObjectVertices[u16VertexOffset + 0U] = pObject->transform.position[0] + pObject->transform.scale[0];
-						pafGameObjectVertices[u16VertexOffset + 1U] = pObject->transform.position[1] + pObject->transform.scale[1];
+						pafGameObjectVertices[u16VertexOffset + 0U] = pObject->transform.position[0] + a2fObjectScale[0];
+						pafGameObjectVertices[u16VertexOffset + 1U] = pObject->transform.position[1] + a2fObjectScale[1];
 						break;
 					case 2U:
-						pafGameObjectVertices[u16VertexOffset + 0U] = pObject->transform.position[0] + pObject->transform.scale[0];
-						pafGameObjectVertices[u16VertexOffset + 1U] = pObject->transform.position[1] - pObject->transform.scale[1];
+						pafGameObjectVertices[u16VertexOffset + 0U] = pObject->transform.position[0] + a2fObjectScale[0];
+						pafGameObjectVertices[u16VertexOffset + 1U] = pObject->transform.position[1] - a2fObjectScale[1];
 						break;
 					case 3U:
-						pafGameObjectVertices[u16VertexOffset + 0U] = pObject->transform.position[0] - pObject->transform.scale[0];
-						pafGameObjectVertices[u16VertexOffset + 1U] = pObject->transform.position[1] - pObject->transform.scale[1];
+						pafGameObjectVertices[u16VertexOffset + 0U] = pObject->transform.position[0] - a2fObjectScale[0];
+						pafGameObjectVertices[u16VertexOffset + 1U] = pObject->transform.position[1] - a2fObjectScale[1];
 						break;
 				}
 				pafGameObjectVertices[u16VertexOffset + 2U] = pObject->transform.position[2];

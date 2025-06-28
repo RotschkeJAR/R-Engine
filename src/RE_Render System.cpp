@@ -33,9 +33,8 @@ namespace RE {
 
 #define SWAPCHAIN_DIRTY_BIT 0
 #define VSYNC_SETTING_BIT 1
-#define FPS_BOUND_TO_VSYNC_BIT 2
-#define GRAPHICS_QUEUE_SUPPORTS_TRANSFER_BIT 3
-	uint8_t u8RenderSystemFlags = (1U << VSYNC_SETTING_BIT) | (1U << FPS_BOUND_TO_VSYNC_BIT);
+#define GRAPHICS_QUEUE_SUPPORTS_TRANSFER_BIT 2
+	uint8_t u8RenderSystemFlags = 1U << VSYNC_SETTING_BIT;
 
 	static void println_vkbool32(const char* pcName, VkBool32 vk_bState) {
 		print("\t\t\t", pcName, ": ");
@@ -589,7 +588,7 @@ namespace RE {
 		} else
 			vk_swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		if (is_bit_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_BIT))
-			vk_swapchainCreateInfo.presentMode = is_bit_true<uint8_t>(u8RenderSystemFlags, FPS_BOUND_TO_VSYNC_BIT) ? VK_PRESENT_MODE_FIFO_KHR : vk_ePresentModeVsync;
+			vk_swapchainCreateInfo.presentMode = vk_ePresentModeVsync;
 		else
 			vk_swapchainCreateInfo.presentMode = vk_ePresentModeNoVsync;
 		if (vkCreateSwapchainKHR(vk_hDevice, &vk_swapchainCreateInfo, nullptr, &vk_hSwapchain) != VK_SUCCESS) {
@@ -715,17 +714,6 @@ namespace RE {
 
 	bool is_vsync_enabled() {
 		return is_bit_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_BIT);
-	}
-
-	void bind_fps_to_vsync(bool bBindFpsToVsync) {
-		if (is_bit_true<uint8_t>(u8RenderSystemFlags, FPS_BOUND_TO_VSYNC_BIT) != bBindFpsToVsync) {
-			set_bit<uint8_t>(u8RenderSystemFlags, FPS_BOUND_TO_VSYNC_BIT, bBindFpsToVsync);
-			set_bit<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_BIT, bRunning);
-		}
-	}
-
-	bool is_fps_bound_to_vsync() {
-		return is_bit_true<uint8_t>(u8RenderSystemFlags, FPS_BOUND_TO_VSYNC_BIT);
 	}
 
 }

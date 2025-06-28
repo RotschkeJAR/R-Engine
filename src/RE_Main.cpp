@@ -27,6 +27,7 @@ namespace RE {
 			if (CATCH_SIGNAL_AND_RETURN(init_render_system(), bool)) {
 				if (CATCH_SIGNAL_AND_RETURN(init_renderer(), bool)) {
 					std::chrono::high_resolution_clock::time_point currentFrameTime = std::chrono::high_resolution_clock::now(), lastFrameTime;
+					CATCH_SIGNAL(Window::pInstance->show_window(true));
 
 					// Game loop
 					do {
@@ -35,16 +36,14 @@ namespace RE {
 						if (Window::pInstance->should_render()) {
 							CATCH_SIGNAL(refresh_swapchain());
 							CATCH_SIGNAL(render());
-						} else {
-							// branch avoiding excessive CPU usage, when rendering is ambigious
-							float fTimeToWait = fMinDeltatime - fDeltaseconds;
-							if (fTimeToWait > 0.0f)
-								std::this_thread::sleep_for(std::chrono::duration<float>(fTimeToWait));
 						}
+
 						lastFrameTime = currentFrameTime;
 						currentFrameTime = std::chrono::high_resolution_clock::now();
 						fDeltaseconds = std::chrono::duration_cast<std::chrono::duration<float>>(currentFrameTime - lastFrameTime).count();
-						CATCH_SIGNAL(Window::pInstance->show_window(true));
+						const float fTimeToWait = fMinDeltatime - fDeltaseconds;
+						if (fTimeToWait > 0.0f)
+							std::this_thread::sleep_for(std::chrono::duration<float>(fTimeToWait));
 						bRunning = !Window::pInstance->should_close() && is_game_valid() && !bErrorOccured;
 					} while (bRunning);
 
@@ -64,6 +63,10 @@ namespace RE {
 
 	float get_deltaseconds() {
 		return fDeltaseconds;
+	}
+
+	void set_fps_limit(const uint32_t u32MaxFramesPerSecond) {
+		fMinDeltatime = u32MaxFramesPerSecond ? (1.0f / static_cast<float>(u32MaxFramesPerSecond)) : -1.0f;
 	}
 
 	float get_fps_rate() {

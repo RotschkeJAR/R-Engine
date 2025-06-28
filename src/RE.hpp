@@ -697,6 +697,7 @@ namespace RE {
 
 	void execute();
 	float get_deltaseconds();
+	void set_fps_limit(const uint32_t u32MaxFramesPerSecond);
 	float get_fps_rate();
 
 	void mark_delete(GameObject* pGameObject);
@@ -716,8 +717,6 @@ namespace RE {
 
 	void enable_vsync(bool bEnableVsync);
 	bool is_vsync_enabled();
-	void bind_fps_to_vsync(bool bBindFpsToVsync);
-	bool is_fps_bound_to_vsync();
 
 	void set_const_screen_size(const uint32_t u32Width, const uint32_t u32Height);
 	void set_screen_percentage(const float fPercentage);

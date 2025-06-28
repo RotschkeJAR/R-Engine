@@ -141,7 +141,7 @@ class First : public Scene {
 
 int main_func() {
 	show_message_box_on_error(false);
-	bind_fps_to_vsync(true);
+	set_fps_limit(60U);
 	SignalCatcher sigCatcher;
 	reset_screen_size();
 	First first;

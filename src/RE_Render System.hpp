@@ -40,8 +40,6 @@ namespace RE {
 
 	void enable_vsync(bool bEnableVsync);
 	bool is_vsync_enabled();
-	void bind_fps_to_vsync(bool bBindFpsToVsync);
-	bool is_fps_bound_to_vsync();
 
 }
 

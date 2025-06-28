@@ -24,14 +24,15 @@ OUT          = Game
 .PHONY: all, compile_shaders, update_git, fetch_git
 
 all:
+	@make --no-print-directory $(LIB_BIN)/*
 	@make --no-print-directory $(RE)
+	@make --no-print-directory $(SH)/*.spv
 	@make --no-print-directory $(OUT)
 
 $(OUT): $(RE) *.cpp
 	@$(CC) $(CFLAG) -o "$(OUT)" *.cpp $(LDFLAG)
 
-$(RE): $(SRC)/* $(LIB)/* $(LIB_SPEC)/*
-	@make --no-print-directory $(LIB_BIN)/*
+$(RE): $(SRC)/*
 	-@rm -f *.o $(BIN)/*.o
 	@if [ "$(wildcard $(BIN)/*.gch)" != "" ]; then \
 		mv $(BIN)/*.gch $(SRC); \
@@ -60,7 +61,7 @@ $(LIB_BIN)/*: $(LIB)/* $(LIB_SPEC)/*
 	fi
 	@mv *.o $(LIB_BIN)
 
-compile_shaders: $(SH)/*
+$(SH)/*.spv: $(SH)/*.glsl
 	-@rm -f $(SH)/*.spv
 	-@if [ -f "$(VERT_GL)" ]; then \
 		$(SC) $(SFLAG) -x glsl -fshader-stage=vertex -o $(SH)/vertex.spv $(VERT_GL); \

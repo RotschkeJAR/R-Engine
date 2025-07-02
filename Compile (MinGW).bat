@@ -14,7 +14,7 @@ del /f *.o
 set ERROR=false
 for %%f in (%SRC%\*.cpp) do (
 	echo %%f
-	%CC% %CFLAG% -c -I"C:\VulkanSDK\Include" "%%f"
+	%CC% %CFLAG% -c -I "C:\VulkanSDK\Include" -I lib "%%f"
 	if !ERRORLEVEL! NEQ 0 (
 		set ERROR=true
 	)

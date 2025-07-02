@@ -2,7 +2,7 @@
 
 namespace RE {
 	
-	SpriteRenderer::SpriteRenderer() {}
+	SpriteRenderer::SpriteRenderer() : color(), pTexture(nullptr) {}
 	SpriteRenderer::~SpriteRenderer() {}
 
 }

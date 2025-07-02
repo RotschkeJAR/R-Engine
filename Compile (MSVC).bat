@@ -17,7 +17,7 @@ call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build
 del /f *.obj
 set ERROR=false
 for %%f in (%SRC%\*.cpp) do (
-	%CC% %CFLAG% /MP4 /c /I"C:\VulkanSDK\Include" "%%f"
+	%CC% %CFLAG% /MP4 /c /I "C:\VulkanSDK\Include" /I lib "%%f"
 	if !ERRORLEVEL! NEQ 0 (
 		set ERROR=true
 	)

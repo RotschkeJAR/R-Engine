@@ -534,9 +534,21 @@ namespace RE {
 	typedef Vector<uint32_t, 3U> Vector3u;
 	typedef Vector<uint32_t, 4U> Vector4u;
 
+	class Texture final {
+		private:
+			void *a2pData[2];
+			
+		public:
+			Texture() = delete;
+			Texture(const char *pcPathToImage);
+			~Texture();
+
+			bool is_valid() const;
+	};
+
 	class Color final {
 		private:
-			float channels[4];
+			float a4fChannels[4];
 
 		public:
 			Color();
@@ -545,6 +557,15 @@ namespace RE {
 			void set_channel(const uint8_t u8ChannelIndex, const float fNormal);
 			void copy_from(const Color &rCopyColor);
 			bool equals(const Color &rCompareColor) const;
+
+			void set_red(const float fRed);
+			float get_red() const;
+			void set_green(const float fGreen);
+			float get_green() const;
+			void set_blue(const float fBlue);
+			float get_blue() const;
+			void set_alpha(const float fAlpha);
+			float get_alpha() const;
 
 			float operator [](const uint32_t u32ChannelIndex) const;
 			void operator =(const Color &rCopyColor);
@@ -573,6 +594,7 @@ namespace RE {
 	class SpriteRenderer final {
 		public:
 			Color color;
+			Texture *pTexture;
 
 			SpriteRenderer();
 			~SpriteRenderer();

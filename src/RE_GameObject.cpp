@@ -1,10 +1,14 @@
 #include "RE_Internal Header.hpp"
 #include "RE_Manager.hpp"
+#include "RE_Main.hpp"
 
 namespace RE {
 	
 	GameObject::GameObject(uint32_t u32OwnId, uint32_t u32SceneParentId) : u32OwnId(u32OwnId), u32SceneParentId(u32SceneParentId) {
-		newGameObjects.push_back(this);
+		if (bRunning)
+			newGameObjects.push_back(this);
+		else
+			gameObjects.push_back(this);
 	}
 	GameObject::~GameObject() {
 		std::vector<GameObject*>::iterator iterator;

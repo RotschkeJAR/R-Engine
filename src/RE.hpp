@@ -534,18 +534,6 @@ namespace RE {
 	typedef Vector<uint32_t, 3U> Vector3u;
 	typedef Vector<uint32_t, 4U> Vector4u;
 
-	class Texture final {
-		private:
-			void *a2pData[2];
-			
-		public:
-			Texture() = delete;
-			Texture(const char *pcPathToImage);
-			~Texture();
-
-			bool is_valid() const;
-	};
-
 	class Color final {
 		private:
 			float a4fChannels[4];
@@ -594,7 +582,6 @@ namespace RE {
 	class SpriteRenderer final {
 		public:
 			Color color;
-			Texture *pTexture;
 
 			SpriteRenderer();
 			~SpriteRenderer();

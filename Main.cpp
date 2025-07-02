@@ -59,7 +59,6 @@ class Objy : public GameObject {
 		}
 		void start(Scene* pStartingScene) {
 			PRINT_LN("start objy");
-			spriteRenderer.pTexture = new Texture("rsc\\cat.png");
 		}
 		void update(Scene* pCurrentScene) {
 			bool randomResult = rng.random_bool(0.2);
@@ -72,7 +71,6 @@ class Objy : public GameObject {
 		}
 		void end(Scene* pEndingScene) {
 			PRINT_LN(append_to_string(hits, ", ", misses).c_str());
-			DELETE_SAFELY(spriteRenderer.pTexture);
 		}
 };
 

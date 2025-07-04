@@ -197,22 +197,22 @@ namespace RE {
 	void println(T... content) {
 		print(content..., "\n");
 	}
-	void print_colored(const char* pcContent, TerminalColor eColor, bool bBackgroundColored, bool bBold);
-	void println_colored(const char* pcContent, TerminalColor eColor, bool bBackgroundColored, bool bBold);
+	void print_colored(const char* pcContent, const TerminalColor eColor, const bool bBackgroundColored, const bool bBold);
+	void println_colored(const char* pcContent, const TerminalColor eColor, const bool bBackgroundColored, const bool bBold);
 #define PRINT(...) print(append_to_string(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE_MACRO(__VA_ARGS__)))
 #define PRINT_LN(...) print(append_to_string(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE_MACRO(__VA_ARGS__), "\n"))
 	
-	void error(const char* pcFile, const char* pcFunc, uint32_t u32Line, const char* pcDetail, bool bTerminate);
-	void warning(const char* pcFile, const char* pcFunc, uint32_t u32Line, const char* pcDetail);
-	void note(const char* pcFile, const char* pcFunc, uint32_t u32Line, const char* pcDetail);
+	void error(const char* pcFile, const char* pcFunc, const uint32_t u32Line, const char* pcDetail, const bool bTerminate);
+	void warning(const char* pcFile, const char* pcFunc, const uint32_t u32Line, const char* pcDetail);
+	void note(const char* pcFile, const char* pcFunc, const uint32_t u32Line, const char* pcDetail);
 #define FATAL_ERROR(T) error(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(T), true)
 #define ERROR(T) error(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(T), false)
 #define WARNING(T) warning(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(T))
 #define NOTE(T) note(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(T))
-	void enable_colorful_printing(bool bEnable);
-	void treat_warnings_as_errors(bool bEnable);
-	void make_errors_always_fatal(bool bEnable);
-	void show_message_box_on_error(bool bEnable);
+	void enable_colorful_printing(const bool bEnable);
+	void treat_warnings_as_errors(const bool bEnable);
+	void make_errors_always_fatal(const bool bEnable);
+	void show_message_box_on_error(const bool bEnable);
 	
 	class SignalCatcher final {
 		public:
@@ -220,11 +220,11 @@ namespace RE {
 			~SignalCatcher();
 	};
 
-	void add_to_stack_trace(const char* pcFile, const char* pcMethod, uint32_t u32Line, const char* pcDetails);
+	void add_to_stack_trace(const char* pcFile, const char* pcMethod, const uint32_t u32Line, const char* pcDetails);
 	void remove_from_stack_trace();
 	class SignalGuard final {
 		public:
-			SignalGuard(const char* pcFile, const char* pcFunc, uint32_t u32Line, const char* pcDetails);
+			SignalGuard(const char* pcFile, const char* pcFunc, const uint32_t u32Line, const char* pcDetails);
 			~SignalGuard();
 	};
 #define DEFINE_SIGNAL_GUARD_DETAILED(NAME, DETAILS) SignalGuard NAME(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(DETAILS))
@@ -280,7 +280,7 @@ namespace RE {
 	std::string get_app_name();
 
 	template <typename T>
-	constexpr T nth_root(T n, T value) {
+	constexpr T nth_root(const T n, const T value) {
 		static_assert(n > 0, "The 0th root is forbidden for causing undefined behaviour");
 		if (!n) {
 			FATAL_ERROR("The value of n shouldn't be zero in an nth root");
@@ -292,7 +292,7 @@ namespace RE {
 	}
 
 	template <typename T>
-	std::string array_to_string(T arrayToPrint[], const uint32_t u32ArrayLength) {
+	std::string array_to_string(const T arrayToPrint[], const uint32_t u32ArrayLength) {
 		std::stringstream ss("");
 		ss << '{';
 		for (uint32_t u32Index = 0U; u32Index < u32ArrayLength; u32Index++) {
@@ -305,7 +305,7 @@ namespace RE {
 	}
 
 	template <typename T>
-	std::string hexadecimal_to_string(T number, bool bCutZeros) {
+	std::string hexadecimal_to_string(T number, const bool bCutZeros) {
 		DEFINE_SIGNAL_GUARD(sigGuardHexadecimalToString);
 		std::stringstream ss("");
 		if (number < static_cast<T>(0.0))
@@ -333,7 +333,7 @@ namespace RE {
 	}
 
 	template <typename T>
-	std::string hexadecimal_to_string(T number) {
+	std::string hexadecimal_to_string(const T number) {
 		return hexadecimal_to_string<T>(number, true);
 	}
 
@@ -701,30 +701,30 @@ namespace RE {
 	float get_cursor_normal_position_x();
 	float get_cursor_normal_position_y();
 
-	Input map_scancode_to_input(uint32_t u32Scancode);
-	uint32_t map_input_to_scancode(Input eInput);
+	Input map_scancode_to_input(const uint32_t u32Scancode);
+	uint32_t map_input_to_scancode(const Input eInput);
 
 	void execute();
 	float get_deltaseconds();
 	void set_fps_limit(const uint32_t u32MaxFramesPerSecond);
 	float get_fps_rate();
 
-	void mark_delete(GameObject* pGameObject);
-#define MARK_SAFE_DELETE(GAME_OBJECT_POINTER) CATCH_SIGNAL( do { \
-			markDelete(GAME_OBJECT_POINTER); \
-			GAME_OBJECT_POINTER = nullptr; \
-		} while (false) )
+	void mark_deletable(GameObject* pGameObject);
+#define MARK_DELETABLE_SAFELY(GAME_OBJECT_POINTER) ([&](GameObject *&rpDeletableGameObject) { \
+			CATCH_SIGNAL(mark_deletable(rpDeletableGameObject)); \
+			rpDeletableGameObject = nullptr; \
+		} (GAME_OBJECT_POINTER))
 	
 	void set_next_scene(Scene* pNextSceneParam);
 	bool is_next_scene_set();
 	Scene* get_current_scene();
 	uint32_t get_current_scene_id();
-	bool is_scene_current(uint32_t u32SceneId);
+	bool is_scene_current(const uint32_t u32SceneId);
 	Scene* get_next_scene();
 	uint32_t get_next_scene_id();
-	bool is_scene_next(uint32_t u32SceneId);
+	bool is_scene_next(const uint32_t u32SceneId);
 
-	void enable_vsync(bool bEnableVsync);
+	void enable_vsync(const bool bEnableVsync);
 	bool is_vsync_enabled();
 
 	void set_const_screen_size(const uint32_t u32Width, const uint32_t u32Height);

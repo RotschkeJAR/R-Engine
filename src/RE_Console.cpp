@@ -12,9 +12,9 @@ namespace RE {
 #define ERRORS_ALWAYS_FATAL 2
 #define SHOW_MSG_BOX 3
 
-	uint8_t u8ConsoleSettings = 0b00001001U;
+	uint8_t u8ConsoleSettings = (1U << PRINT_COLORS) | (1U << SHOW_MSG_BOX);
 
-	std::string escape_code_to_string(TerminalColor eColor, bool bBackgroundColored, bool bBold) {
+	static std::string escape_code_to_string(const TerminalColor eColor, const bool bBackgroundColored, const bool bBold) {
 		if (!is_bit_true<uint8_t>(u8ConsoleSettings, PRINT_COLORS))
 			return "";
 		uint32_t u32Id = static_cast<uint32_t>(eColor);
@@ -32,7 +32,7 @@ namespace RE {
 		return result;
 	}
 
-	void print_error_msg(const char* pcFile, const char* pcFunc, uint32_t u32Line, const char* pcDetail) {
+	static void print_error_msg(const char* pcFile, const char* pcFunc, const uint32_t u32Line, const char* pcDetail) {
 		print(" : ");
 		print_colored(pcFile, RE_TERMINAL_COLOR_BRIGHT_WHITE, false, true);
 		println(" (line ", u32Line, "; in function \"", pcFunc, "\")");
@@ -41,15 +41,15 @@ namespace RE {
 			println("\t", get_line(pcDetail, u32Line));
 	}
 
-	void print_colored(const char* pcContent, TerminalColor eColor, bool bBackgroundColored, bool bBold) {
+	void print_colored(const char* pcContent, const TerminalColor eColor, const bool bBackgroundColored, const bool bBold) {
 		print(escape_code_to_string(eColor, bBackgroundColored, bBold), pcContent, DEFAULT_COLOR);
 	}
 
-	void println_colored(const char* pcContent, TerminalColor eColor, bool bBackgroundColored, bool bBold) {
+	void println_colored(const char* pcContent, const TerminalColor eColor, const bool bBackgroundColored, const bool bBold) {
 		println(escape_code_to_string(eColor, bBackgroundColored, bBold), pcContent, DEFAULT_COLOR);
 	}
 	
-	void error(const char* pcFile, const char* pcFunc, uint32_t u32Line, const char* pcDetail, bool bTerminate) {
+	void error(const char* pcFile, const char* pcFunc, const uint32_t u32Line, const char* pcDetail, const bool bTerminate) {
 		print_colored("ERROR", RE_TERMINAL_COLOR_RED, false, false);
 		print_error_msg(pcFile, pcFunc, u32Line, pcDetail);
 		bool bFatal = bTerminate || is_bit_true<uint8_t>(u8ConsoleSettings, ERRORS_ALWAYS_FATAL);
@@ -66,7 +66,7 @@ namespace RE {
 		}
 	}
 
-	void warning(const char* pcFile, const char* pcFunc, uint32_t u32Line, const char* pcDetail) {
+	void warning(const char* pcFile, const char* pcFunc, const uint32_t u32Line, const char* pcDetail) {
 		if (is_bit_true<uint8_t>(u8ConsoleSettings, TREAT_WARNING_AS_ERROR))
 			error(pcFile, pcFunc, u32Line, pcDetail, false);
 		else {
@@ -75,24 +75,24 @@ namespace RE {
 		}
 	}
 
-	void note(const char* pcFile, const char* pcFunc, uint32_t u32Line, const char* pcDetail) {
+	void note(const char* pcFile, const char* pcFunc, const uint32_t u32Line, const char* pcDetail) {
 		print_colored("NOTE", RE_TERMINAL_COLOR_WHITE, false, false);
 		print_error_msg(pcFile, pcFunc, u32Line, pcDetail);
 	}
 
-	void enable_colorful_printing(bool bEnable) {
+	void enable_colorful_printing(const bool bEnable) {
 		set_bit<uint8_t>(u8ConsoleSettings, PRINT_COLORS, bEnable);
 	}
 
-	void treat_warnings_as_errors(bool bEnable) {
+	void treat_warnings_as_errors(const bool bEnable) {
 		set_bit<uint8_t>(u8ConsoleSettings, TREAT_WARNING_AS_ERROR, bEnable);
 	}
 
-	void make_errors_always_fatal(bool bEnable) {
+	void make_errors_always_fatal(const bool bEnable) {
 		set_bit<uint8_t>(u8ConsoleSettings, ERRORS_ALWAYS_FATAL, bEnable);
 	}
 
-	void show_message_box_on_error(bool bEnable) {
+	void show_message_box_on_error(const bool bEnable) {
 		set_bit<uint8_t>(u8ConsoleSettings, SHOW_MSG_BOX, bEnable);
 	}
 

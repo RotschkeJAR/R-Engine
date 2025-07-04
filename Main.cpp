@@ -87,10 +87,9 @@ class Background : public GameObject {
 class PlayerCamera : public Camera {
 	private:
 		InputAction zoomerIn, zoomerOut;
-		bool activationToggle;
 
 	public:
-		PlayerCamera() : zoomerIn(RE_INPUT_SCROLL_UP), zoomerOut(RE_INPUT_SCROLL_DOWN), activationToggle(true) {}
+		PlayerCamera() : zoomerIn(RE_INPUT_SCROLL_UP), zoomerOut(RE_INPUT_SCROLL_DOWN) {}
 		~PlayerCamera() {}
 		void update() {
 			if (pObjy) {

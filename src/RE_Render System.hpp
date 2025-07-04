@@ -38,7 +38,7 @@ namespace RE {
 	void mark_swapchain_dirty();
 	bool does_graphics_queue_support_transfer();
 
-	void enable_vsync(bool bEnableVsync);
+	void enable_vsync(const bool bEnableVsync);
 	bool is_vsync_enabled();
 
 }

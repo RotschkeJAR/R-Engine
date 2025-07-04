@@ -705,7 +705,7 @@ namespace RE {
 		return is_bit_true<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_BIT);
 	}
 
-	void enable_vsync(bool bEnableVsync) {
+	void enable_vsync(const bool bEnableVsync) {
 		if (is_bit_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_BIT) != bEnableVsync) {
 			set_bit<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_BIT, bEnableVsync);
 			set_bit<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_BIT, bRunning);

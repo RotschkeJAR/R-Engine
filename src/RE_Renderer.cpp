@@ -3,7 +3,7 @@
 #include "RE_Window.hpp"
 #include "RE_Vulkan_Wrapper Classes.hpp"
 #include "RE_Vulkan_Wrapper Functions.hpp"
-#include "RE_Renderer_GameObject.hpp"
+#include "RE_Renderer_Opaque_GameObject.hpp"
 
 #include <thread>
 
@@ -413,7 +413,7 @@ namespace RE {
 															if (vkQueueSubmit(vk_ahDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], 1U, &vk_rectIndexBufferTransferSubmitInfo, rectIndexBufferDataTransferFence) == VK_SUCCESS) {
 																if (eScreenPercentage != SCREEN_PERCENTAGE_CONST_IMG_SIZE || CATCH_SIGNAL_AND_RETURN(create_world_render_images(), bool)) {
 																	if (CATCH_SIGNAL_AND_RETURN(swapchain_created_renderer(), bool)) {
-																		if (CATCH_SIGNAL_AND_RETURN(init_gameobject_renderer(), bool)) {
+																		if (CATCH_SIGNAL_AND_RETURN(init_opaque_gameobject_renderer(), bool)) {
 																			rectIndexBufferDataTransferFence.wait_for();
 																			return true;
 																		}
@@ -488,7 +488,7 @@ namespace RE {
 	}
 	
 	void destroy_renderer() {
-		CATCH_SIGNAL(destroy_gameobject_renderer());
+		CATCH_SIGNAL(destroy_opaque_gameobject_renderer());
 		vkFreeCommandBuffers(vk_hDevice, vk_ahCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX], RE_VK_FRAMES_IN_FLIGHT, vk_ahRenderCommandBuffers);
 		for (uint16_t u16RenderSemaphoreDeleteIndex = 0U; u16RenderSemaphoreDeleteIndex < RE_VK_RENDER_SEMAPHORE_COUNT; u16RenderSemaphoreDeleteIndex++) {
 			vkDestroySemaphore(vk_hDevice, vk_ahRenderSemaphores[u16RenderSemaphoreDeleteIndex], nullptr);
@@ -564,7 +564,7 @@ namespace RE {
 				vkUpdateDescriptorSets(vk_hDevice, 0U, nullptr, 1U, &vk_copyCameraDescriptorSet);
 			}
 		}
-		if (!CATCH_SIGNAL_AND_RETURN(render_gameobjects(), bool))
+		if (!CATCH_SIGNAL_AND_RETURN(render_opaque_gameobjects(), bool))
 			return;
 		if (!begin_recording_vulkan_command_buffer(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr)) {
 			RE_FATAL_ERROR("Failed beginning to record Vulkan command buffer for rendering everything");
@@ -597,7 +597,7 @@ namespace RE {
 			.pClearValues = vk_aClearValues
 		};
 		vkCmdBeginRenderPass(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], &vk_renderPassInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
-		vkCmdExecuteCommands(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], 1U, &vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex]);
+		vkCmdExecuteCommands(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], 1U, &vk_ahOpaqueGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex]);
 		vkCmdEndRenderPass(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex]);
 		CATCH_SIGNAL(vk_cmd_transit_image(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, VK_ACCESS_NONE, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, vk_pahSwapchainImages[u32NextSwapchainImageIndex], VK_IMAGE_ASPECT_COLOR_BIT));
 		const VkImageBlit vk_worldRenderImageBlit = {

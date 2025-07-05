@@ -2,8 +2,6 @@
 #include "RE_Manager.hpp"
 #include "RE_Vulkan_Wrapper Functions.hpp"
 
-#include <queue>
-
 namespace RE {
 
 #define RE_VK_VERTEX_COUNT (RE_VK_RENDERABLE_RECTANGLES_COUNT * 4U)
@@ -11,7 +9,7 @@ namespace RE {
 #define RE_VK_VERTEX_POSITION_SIZE_BYTES (RE_VK_VERTEX_POSITION_SIZE * sizeof(float))
 #define RE_VK_VERTEX_POSITION_OFFSET 0U
 #define RE_VK_VERTEX_POSITION_OFFSET_BYTES (RE_VK_VERTEX_POSITION_OFFSET * sizeof(float))
-#define RE_VK_VERTEX_COLOR_SIZE 4U
+#define RE_VK_VERTEX_COLOR_SIZE 3U
 #define RE_VK_VERTEX_COLOR_SIZE_BYTES (RE_VK_VERTEX_COLOR_SIZE * sizeof(float))
 #define RE_VK_VERTEX_COLOR_OFFSET RE_VK_VERTEX_POSITION_SIZE
 #define RE_VK_VERTEX_COLOR_OFFSET_BYTES (RE_VK_VERTEX_COLOR_OFFSET * sizeof(float))
@@ -30,32 +28,32 @@ namespace RE {
 #define RE_VK_COLOR_BLEND_ATTACHMENT_COUNT 1U
 #define RE_VK_DYNAMIC_STATE_COUNT 2U
 
-	VkShaderModule vk_hGameObjectVertexShader = VK_NULL_HANDLE, vk_hGameObjectFragmentShader = VK_NULL_HANDLE;
-	VkPipeline vk_hGameObjectGraphicsPipeline = VK_NULL_HANDLE;
+	VkShaderModule vk_hOpaqueGameObjectVertexShader = VK_NULL_HANDLE, vk_hOpaqueGameObjectFragmentShader = VK_NULL_HANDLE;
+	VkPipeline vk_hOpaqueGameObjectGraphicsPipeline = VK_NULL_HANDLE;
 
-	VkBuffer vk_hGameObjectStagingVertexBuffer = VK_NULL_HANDLE, vk_ahGameObjectVertexBuffers[RE_VK_FRAMES_IN_FLIGHT] = {}, vk_hTransparentGameObjectStagingVertexBuffer = VK_NULL_HANDLE, vk_ahTransparentGameObjectVertexBuffers[RE_VK_FRAMES_IN_FLIGHT] = {};
-	VkDeviceMemory vk_hGameObjectStagingVertexBufferMemory = VK_NULL_HANDLE, vk_ahGameObjectVertexBufferMemories[RE_VK_FRAMES_IN_FLIGHT] = {}, vk_hTransparentGameObjectStagingVertexBufferMemory = VK_NULL_HANDLE, vk_ahTransparentGameObjectVertexBufferMemories[RE_VK_FRAMES_IN_FLIGHT] = {};
+	VkBuffer vk_hOpaqueGameObjectStagingVertexBuffer = VK_NULL_HANDLE, vk_ahOpaqueGameObjectVertexBuffers[RE_VK_FRAMES_IN_FLIGHT] = {};
+	VkDeviceMemory vk_hOpaqueGameObjectStagingVertexBufferMemory = VK_NULL_HANDLE, vk_ahOpaqueGameObjectVertexBufferMemories[RE_VK_FRAMES_IN_FLIGHT] = {};
 
-	VkCommandBuffer vk_ahGameObjectVertexTransferCommandBuffers[RE_VK_FRAMES_IN_FLIGHT] = {}, vk_ahGameObjectSecondaryCommandBuffers[RE_VK_FRAMES_IN_FLIGHT] = {};
+	VkCommandBuffer vk_ahOpaqueGameObjectVertexTransferCommandBuffers[RE_VK_FRAMES_IN_FLIGHT] = {}, vk_ahOpaqueGameObjectSecondaryCommandBuffers[RE_VK_FRAMES_IN_FLIGHT] = {};
 
-	float *pafGameObjectVertices = nullptr, *pafTransparentGameObjectVertices = nullptr;
+	float *pafOpaqueGameObjectVertices = nullptr;
 
-	bool init_gameobject_renderer() {
-		if (CATCH_SIGNAL_AND_RETURN(create_vulkan_shader_from_file("shaders/vertex.spv", &vk_hGameObjectVertexShader), bool)) {
-			if (CATCH_SIGNAL_AND_RETURN(create_vulkan_shader_from_file("shaders/fragment.spv", &vk_hGameObjectFragmentShader), bool)) {
+	bool init_opaque_gameobject_renderer() {
+		if (CATCH_SIGNAL_AND_RETURN(create_vulkan_shader_from_file("shaders/gameobject_opaque_vertex.glsl.spv", &vk_hOpaqueGameObjectVertexShader), bool)) {
+			if (CATCH_SIGNAL_AND_RETURN(create_vulkan_shader_from_file("shaders/gameobject_opaque_fragment.glsl.spv", &vk_hOpaqueGameObjectFragmentShader), bool)) {
 				const VkPipelineShaderStageCreateInfo vk_shaderStages[RE_VK_SHADER_STAGE_COUNT] = {
 					{
 						.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
 						.flags = 0,
 						.stage = VK_SHADER_STAGE_VERTEX_BIT,
-						.module = vk_hGameObjectVertexShader,
+						.module = vk_hOpaqueGameObjectVertexShader,
 						.pName = "main",
 						.pSpecializationInfo = nullptr
 					}, {
 						.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
 						.flags = 0,
 						.stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-						.module = vk_hGameObjectFragmentShader,
+						.module = vk_hOpaqueGameObjectFragmentShader,
 						.pName = "main",
 						.pSpecializationInfo = nullptr
 					},
@@ -76,7 +74,7 @@ namespace RE {
 					}, {
 						.location = 1U,
 						.binding = 0U,
-						.format = VK_FORMAT_R32G32B32A32_SFLOAT,
+						.format = VK_FORMAT_R32G32B32_SFLOAT,
 						.offset = RE_VK_VERTEX_COLOR_OFFSET_BYTES
 					}
 				};
@@ -227,14 +225,14 @@ namespace RE {
 					.renderPass = vk_hWorldRenderPass,
 					.subpass = RE_VK_GAME_OBJECT_SUPBASS
 				};
-				if (vkCreateGraphicsPipelines(vk_hDevice, VK_NULL_HANDLE, 1U, &vk_graphicsPipelineCreateInfo, nullptr, &vk_hGameObjectGraphicsPipeline) == VK_SUCCESS) {
+				if (vkCreateGraphicsPipelines(vk_hDevice, VK_NULL_HANDLE, 1U, &vk_graphicsPipelineCreateInfo, nullptr, &vk_hOpaqueGameObjectGraphicsPipeline) == VK_SUCCESS) {
 					constexpr uint32_t u32StagingVertexBufferQueueCount = 1U, u32StagingVertexBufferQueues[u32StagingVertexBufferQueueCount] = {RE_VK_QUEUE_TRANSFER_INDEX};
-					if (CATCH_SIGNAL_AND_RETURN(create_vulkan_buffer(RE_VK_VERTEX_BUFFER_SIZE_BYTES, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, u32StagingVertexBufferQueueCount, u32StagingVertexBufferQueues, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &vk_hGameObjectStagingVertexBuffer, &vk_hGameObjectStagingVertexBufferMemory), bool)) {
-						vkMapMemory(vk_hDevice, vk_hGameObjectStagingVertexBufferMemory, 0UL, RE_VK_VERTEX_BUFFER_SIZE_BYTES, 0, (void**) &pafGameObjectVertices);
+					if (CATCH_SIGNAL_AND_RETURN(create_vulkan_buffer(RE_VK_VERTEX_BUFFER_SIZE_BYTES, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, u32StagingVertexBufferQueueCount, u32StagingVertexBufferQueues, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &vk_hOpaqueGameObjectStagingVertexBuffer, &vk_hOpaqueGameObjectStagingVertexBufferMemory), bool)) {
+						vkMapMemory(vk_hDevice, vk_hOpaqueGameObjectStagingVertexBufferMemory, 0UL, RE_VK_VERTEX_BUFFER_SIZE_BYTES, 0, (void**) &pafOpaqueGameObjectVertices);
 						constexpr uint32_t u32VertexBufferQueueCount = 2U, u32VertexBufferQueues[u32VertexBufferQueueCount] = {RE_VK_QUEUE_GRAPHICS_INDEX, RE_VK_QUEUE_TRANSFER_INDEX};
 						uint16_t u16VertexBufferCreateIndex = 0U;
 						while (u16VertexBufferCreateIndex < RE_VK_FRAMES_IN_FLIGHT) {
-							if (CATCH_SIGNAL_AND_RETURN(create_vulkan_buffer(RE_VK_VERTEX_BUFFER_SIZE_BYTES, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, u32VertexBufferQueueCount, u32VertexBufferQueues, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_ahGameObjectVertexBuffers[u16VertexBufferCreateIndex], &vk_ahGameObjectVertexBufferMemories[u16VertexBufferCreateIndex]), bool)) {
+							if (CATCH_SIGNAL_AND_RETURN(create_vulkan_buffer(RE_VK_VERTEX_BUFFER_SIZE_BYTES, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, u32VertexBufferQueueCount, u32VertexBufferQueues, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_ahOpaqueGameObjectVertexBuffers[u16VertexBufferCreateIndex], &vk_ahOpaqueGameObjectVertexBufferMemories[u16VertexBufferCreateIndex]), bool)) {
 								u16VertexBufferCreateIndex++;
 								continue;
 							} else
@@ -243,7 +241,7 @@ namespace RE {
 						}
 						if (u16VertexBufferCreateIndex == RE_VK_FRAMES_IN_FLIGHT) {
 							if (CATCH_SIGNAL_AND_RETURN(alloc_vulkan_command_buffers(vk_ahCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX], VK_COMMAND_BUFFER_LEVEL_SECONDARY, RE_VK_FRAMES_IN_FLIGHT, vk_ahGameObjectSecondaryCommandBuffers), bool)) {
-								if (CATCH_SIGNAL_AND_RETURN(alloc_vulkan_command_buffers(vk_ahCommandPools[RE_VK_COMMAND_POOL_TRANSFER_PERSISTENT_INDEX], VK_COMMAND_BUFFER_LEVEL_PRIMARY, RE_VK_FRAMES_IN_FLIGHT, vk_ahGameObjectVertexTransferCommandBuffers), bool))
+								if (CATCH_SIGNAL_AND_RETURN(alloc_vulkan_command_buffers(vk_ahCommandPools[RE_VK_COMMAND_POOL_TRANSFER_PERSISTENT_INDEX], VK_COMMAND_BUFFER_LEVEL_PRIMARY, RE_VK_FRAMES_IN_FLIGHT, vk_ahOpaqueGameObjectVertexTransferCommandBuffers), bool))
 									return true;
 								else
 									RE_FATAL_ERROR("Failed allocating Vulkan command buffers for transfering vertex buffer data for rendering game objects to GPU");
@@ -252,57 +250,57 @@ namespace RE {
 								RE_FATAL_ERROR("Failed allocating Vulkan secondary command buffers for rendering game objects");
 						}
 						for (uint16_t u16VertexBufferDeleteIndex = 0U; u16VertexBufferDeleteIndex < u16VertexBufferCreateIndex; u16VertexBufferDeleteIndex++) {
-							vkFreeMemory(vk_hDevice, vk_ahGameObjectVertexBufferMemories[u16VertexBufferDeleteIndex], nullptr);
-							vkDestroyBuffer(vk_hDevice, vk_ahGameObjectVertexBuffers[u16VertexBufferDeleteIndex], nullptr);
-							vk_ahGameObjectVertexBufferMemories[u16VertexBufferDeleteIndex] = VK_NULL_HANDLE;
-							vk_ahGameObjectVertexBuffers[u16VertexBufferDeleteIndex] = VK_NULL_HANDLE;
+							vkFreeMemory(vk_hDevice, vk_ahOpaqueGameObjectVertexBufferMemories[u16VertexBufferDeleteIndex], nullptr);
+							vkDestroyBuffer(vk_hDevice, vk_ahOpaqueGameObjectVertexBuffers[u16VertexBufferDeleteIndex], nullptr);
+							vk_ahOpaqueGameObjectVertexBufferMemories[u16VertexBufferDeleteIndex] = VK_NULL_HANDLE;
+							vk_ahOpaqueGameObjectVertexBuffers[u16VertexBufferDeleteIndex] = VK_NULL_HANDLE;
 						}
-						vkUnmapMemory(vk_hDevice, vk_hGameObjectStagingVertexBufferMemory);
-						vkFreeMemory(vk_hDevice, vk_hGameObjectStagingVertexBufferMemory, nullptr);
-						vkDestroyBuffer(vk_hDevice, vk_hGameObjectStagingVertexBuffer, nullptr);
+						vkUnmapMemory(vk_hDevice, vk_hOpaqueGameObjectStagingVertexBufferMemory);
+						vkFreeMemory(vk_hDevice, vk_hOpaqueGameObjectStagingVertexBufferMemory, nullptr);
+						vkDestroyBuffer(vk_hDevice, vk_hOpaqueGameObjectStagingVertexBuffer, nullptr);
 					} else
 						RE_FATAL_ERROR("Failed creating Vulkan staging vertex buffer for rendering game objects");
-					vkDestroyPipeline(vk_hDevice, vk_hGameObjectGraphicsPipeline, nullptr);
+					vkDestroyPipeline(vk_hDevice, vk_hOpaqueGameObjectGraphicsPipeline, nullptr);
 				} else
 					RE_FATAL_ERROR("Failed creating Vulkan pipeline layout for rendering game objects");
-				vkDestroyShaderModule(vk_hDevice, vk_hGameObjectFragmentShader, nullptr);
+				vkDestroyShaderModule(vk_hDevice, vk_hOpaqueGameObjectFragmentShader, nullptr);
 			} else
 				RE_FATAL_ERROR("Failed creating Vulkan fragment shader for rendering game objects");
-			vkDestroyShaderModule(vk_hDevice, vk_hGameObjectVertexShader, nullptr);
+			vkDestroyShaderModule(vk_hDevice, vk_hOpaqueGameObjectVertexShader, nullptr);
 		} else
 			RE_FATAL_ERROR("Failed creating Vulkan vertex shader for rendering game objects");
-		pafGameObjectVertices = nullptr;
-		vk_hGameObjectStagingVertexBufferMemory = VK_NULL_HANDLE;
-		vk_hGameObjectStagingVertexBuffer = VK_NULL_HANDLE;
-		vk_hGameObjectGraphicsPipeline = VK_NULL_HANDLE;
-		vk_hGameObjectFragmentShader = VK_NULL_HANDLE;
-		vk_hGameObjectVertexShader = VK_NULL_HANDLE;
+		pafOpaqueGameObjectVertices = nullptr;
+		vk_hOpaqueGameObjectStagingVertexBufferMemory = VK_NULL_HANDLE;
+		vk_hOpaqueGameObjectStagingVertexBuffer = VK_NULL_HANDLE;
+		vk_hOpaqueGameObjectGraphicsPipeline = VK_NULL_HANDLE;
+		vk_hOpaqueGameObjectFragmentShader = VK_NULL_HANDLE;
+		vk_hOpaqueGameObjectVertexShader = VK_NULL_HANDLE;
 		return false;
 	}
 
-	void destroy_gameobject_renderer() {
+	void destroy_opaque_gameobject_renderer() {
 		vkFreeCommandBuffers(vk_hDevice, vk_ahCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX], RE_VK_FRAMES_IN_FLIGHT, vk_ahGameObjectSecondaryCommandBuffers);
 		for (uint16_t u16VertexBufferDeleteIndex = 0U; u16VertexBufferDeleteIndex < RE_VK_FRAMES_IN_FLIGHT; u16VertexBufferDeleteIndex++) {
-			vkFreeMemory(vk_hDevice, vk_ahGameObjectVertexBufferMemories[u16VertexBufferDeleteIndex], nullptr);
-			vkDestroyBuffer(vk_hDevice, vk_ahGameObjectVertexBuffers[u16VertexBufferDeleteIndex], nullptr);
-			vk_ahGameObjectVertexBufferMemories[u16VertexBufferDeleteIndex] = VK_NULL_HANDLE;
-			vk_ahGameObjectVertexBuffers[u16VertexBufferDeleteIndex] = VK_NULL_HANDLE;
+			vkFreeMemory(vk_hDevice, vk_ahOpaqueGameObjectVertexBufferMemories[u16VertexBufferDeleteIndex], nullptr);
+			vkDestroyBuffer(vk_hDevice, vk_ahOpaqueGameObjectVertexBuffers[u16VertexBufferDeleteIndex], nullptr);
+			vk_ahOpaqueGameObjectVertexBufferMemories[u16VertexBufferDeleteIndex] = VK_NULL_HANDLE;
+			vk_ahOpaqueGameObjectVertexBuffers[u16VertexBufferDeleteIndex] = VK_NULL_HANDLE;
 		}
-		vkUnmapMemory(vk_hDevice, vk_hGameObjectStagingVertexBufferMemory);
-		vkFreeMemory(vk_hDevice, vk_hGameObjectStagingVertexBufferMemory, nullptr);
-		vkDestroyBuffer(vk_hDevice, vk_hGameObjectStagingVertexBuffer, nullptr);
-		vkDestroyPipeline(vk_hDevice, vk_hGameObjectGraphicsPipeline, nullptr);
-		vkDestroyShaderModule(vk_hDevice, vk_hGameObjectVertexShader, nullptr);
-		vkDestroyShaderModule(vk_hDevice, vk_hGameObjectFragmentShader, nullptr);
-		pafGameObjectVertices = nullptr;
-		vk_hGameObjectStagingVertexBufferMemory = VK_NULL_HANDLE;
-		vk_hGameObjectStagingVertexBuffer = VK_NULL_HANDLE;
-		vk_hGameObjectGraphicsPipeline = VK_NULL_HANDLE;
-		vk_hGameObjectVertexShader = VK_NULL_HANDLE;
-		vk_hGameObjectFragmentShader = VK_NULL_HANDLE;
+		vkUnmapMemory(vk_hDevice, vk_hOpaqueGameObjectStagingVertexBufferMemory);
+		vkFreeMemory(vk_hDevice, vk_hOpaqueGameObjectStagingVertexBufferMemory, nullptr);
+		vkDestroyBuffer(vk_hDevice, vk_hOpaqueGameObjectStagingVertexBuffer, nullptr);
+		vkDestroyPipeline(vk_hDevice, vk_hOpaqueGameObjectGraphicsPipeline, nullptr);
+		vkDestroyShaderModule(vk_hDevice, vk_hOpaqueGameObjectVertexShader, nullptr);
+		vkDestroyShaderModule(vk_hDevice, vk_hOpaqueGameObjectFragmentShader, nullptr);
+		pafOpaqueGameObjectVertices = nullptr;
+		vk_hOpaqueGameObjectStagingVertexBufferMemory = VK_NULL_HANDLE;
+		vk_hOpaqueGameObjectStagingVertexBuffer = VK_NULL_HANDLE;
+		vk_hOpaqueGameObjectGraphicsPipeline = VK_NULL_HANDLE;
+		vk_hOpaqueGameObjectVertexShader = VK_NULL_HANDLE;
+		vk_hOpaqueGameObjectFragmentShader = VK_NULL_HANDLE;
 	}
 
-	bool render_gameobjects() {
+	bool render_opaque_gameobjects() {
 		uint16_t u16GameObjectIndex = 0U;
 		for (GameObject *pObject : gameObjects) {
 			if (pObject->u32SceneParentId != get_current_scene_id())
@@ -319,45 +317,44 @@ namespace RE {
 				const uint16_t u16VertexOffset = u16GameObjectIndex * RE_VK_VERTEX_TOTAL_SIZE * 4U + u16VertexIndex * RE_VK_VERTEX_TOTAL_SIZE;
 				switch (u16VertexIndex) {
 					case 0U:
-						pafGameObjectVertices[u16VertexOffset + 0U] = pObject->transform.position[0] - a2fObjectScale[0];
-						pafGameObjectVertices[u16VertexOffset + 1U] = pObject->transform.position[1] + a2fObjectScale[1];
+						pafOpaqueGameObjectVertices[u16VertexOffset + 0U] = pObject->transform.position[0] - a2fObjectScale[0];
+						pafOpaqueGameObjectVertices[u16VertexOffset + 1U] = pObject->transform.position[1] + a2fObjectScale[1];
 						break;
 					case 1U:
-						pafGameObjectVertices[u16VertexOffset + 0U] = pObject->transform.position[0] + a2fObjectScale[0];
-						pafGameObjectVertices[u16VertexOffset + 1U] = pObject->transform.position[1] + a2fObjectScale[1];
+						pafOpaqueGameObjectVertices[u16VertexOffset + 0U] = pObject->transform.position[0] + a2fObjectScale[0];
+						pafOpaqueGameObjectVertices[u16VertexOffset + 1U] = pObject->transform.position[1] + a2fObjectScale[1];
 						break;
 					case 2U:
-						pafGameObjectVertices[u16VertexOffset + 0U] = pObject->transform.position[0] + a2fObjectScale[0];
-						pafGameObjectVertices[u16VertexOffset + 1U] = pObject->transform.position[1] - a2fObjectScale[1];
+						pafOpaqueGameObjectVertices[u16VertexOffset + 0U] = pObject->transform.position[0] + a2fObjectScale[0];
+						pafOpaqueGameObjectVertices[u16VertexOffset + 1U] = pObject->transform.position[1] - a2fObjectScale[1];
 						break;
 					case 3U:
-						pafGameObjectVertices[u16VertexOffset + 0U] = pObject->transform.position[0] - a2fObjectScale[0];
-						pafGameObjectVertices[u16VertexOffset + 1U] = pObject->transform.position[1] - a2fObjectScale[1];
+						pafOpaqueGameObjectVertices[u16VertexOffset + 0U] = pObject->transform.position[0] - a2fObjectScale[0];
+						pafOpaqueGameObjectVertices[u16VertexOffset + 1U] = pObject->transform.position[1] - a2fObjectScale[1];
 						break;
 				}
-				pafGameObjectVertices[u16VertexOffset + 2U] = pObject->transform.position[2];
-				pafGameObjectVertices[u16VertexOffset + 3U] = pObject->spriteRenderer.color[0];
-				pafGameObjectVertices[u16VertexOffset + 4U] = pObject->spriteRenderer.color[1];
-				pafGameObjectVertices[u16VertexOffset + 5U] = pObject->spriteRenderer.color[2];
-				pafGameObjectVertices[u16VertexOffset + 6U] = pObject->spriteRenderer.color[3];
+				pafOpaqueGameObjectVertices[u16VertexOffset + 2U] = pObject->transform.position[2];
+				pafOpaqueGameObjectVertices[u16VertexOffset + 3U] = pObject->spriteRenderer.color[0];
+				pafOpaqueGameObjectVertices[u16VertexOffset + 4U] = pObject->spriteRenderer.color[1];
+				pafOpaqueGameObjectVertices[u16VertexOffset + 5U] = pObject->spriteRenderer.color[2];
 			}
 			u16GameObjectIndex++;
 		}
 
 		if (u16GameObjectIndex) {
-			if (!CATCH_SIGNAL_AND_RETURN(begin_recording_vulkan_command_buffer(vk_ahGameObjectVertexTransferCommandBuffers[u8CurrentFrameInFlightIndex], VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr), bool)) {
+			if (!CATCH_SIGNAL_AND_RETURN(begin_recording_vulkan_command_buffer(vk_ahOpaqueGameObjectVertexTransferCommandBuffers[u8CurrentFrameInFlightIndex], VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr), bool)) {
 				RE_FATAL_ERROR("Failed beginning to record Vulkan command buffer for transferring vertex buffer data to the GPU for rendering game objects");
 				return false;
 			}
 			const VkBufferCopy vk_vertexBufferCopy = {
 				.size = RE_VK_VERTEX_TOTAL_SIZE_BYTES * 4U * u16GameObjectIndex
 			};
-			vkCmdCopyBuffer(vk_ahGameObjectVertexTransferCommandBuffers[u8CurrentFrameInFlightIndex], vk_hGameObjectStagingVertexBuffer, vk_ahGameObjectVertexBuffers[u8CurrentFrameInFlightIndex], 1U, &vk_vertexBufferCopy);
-			if (vkEndCommandBuffer(vk_ahGameObjectVertexTransferCommandBuffers[u8CurrentFrameInFlightIndex]) != VK_SUCCESS) {
+			vkCmdCopyBuffer(vk_ahOpaqueGameObjectVertexTransferCommandBuffers[u8CurrentFrameInFlightIndex], vk_hOpaqueGameObjectStagingVertexBuffer, vk_ahOpaqueGameObjectVertexBuffers[u8CurrentFrameInFlightIndex], 1U, &vk_vertexBufferCopy);
+			if (vkEndCommandBuffer(vk_ahOpaqueGameObjectVertexTransferCommandBuffers[u8CurrentFrameInFlightIndex]) != VK_SUCCESS) {
 				RE_FATAL_ERROR("Failed finishing to record Vulkan command buffer for transferring vertex buffer data to the GPU for rendering game objects");
 				return false;
 			}
-			if (!CATCH_SIGNAL_AND_RETURN(submit_to_vulkan_queue(vk_ahDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], 0U, nullptr, nullptr, 1U, &vk_ahGameObjectVertexTransferCommandBuffers[u8CurrentFrameInFlightIndex], 1U, &vk_ahRenderSemaphores[u8CurrentFrameInFlightIndex * RE_VK_SEMAPHORES_PER_FRAME_COUNT], VK_NULL_HANDLE), bool)) {
+			if (!CATCH_SIGNAL_AND_RETURN(submit_to_vulkan_queue(vk_ahDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], 0U, nullptr, nullptr, 1U, &vk_ahOpaqueGameObjectVertexTransferCommandBuffers[u8CurrentFrameInFlightIndex], 1U, &vk_ahRenderSemaphores[u8CurrentFrameInFlightIndex * RE_VK_SEMAPHORES_PER_FRAME_COUNT], VK_NULL_HANDLE), bool)) {
 				RE_FATAL_ERROR("Failed submitting the task for transferring Vulkan vertex buffer data for rendering game objects to the GPU");
 				return false;
 			}
@@ -379,14 +376,14 @@ namespace RE {
 			return false;
 		}
 		if (u16GameObjectIndex) {
-			vkCmdBindPipeline(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hGameObjectGraphicsPipeline);
+			vkCmdBindPipeline(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hOpaqueGameObjectGraphicsPipeline);
 			vkCmdSetViewport(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], 0U, 1U, &vk_cameraViewport);
 			vkCmdSetScissor(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], 0U, 1U, &vk_cameraScissor);
 			vkCmdBindIndexBuffer(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], vk_hRectIndexBuffer, 0UL, VK_INDEX_TYPE_UINT16);
 			vkCmdBindDescriptorSets(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hWorldBasicPipelineLayout, 0U, 1U, &vk_ahWorldCameraDescriptorSets[u8CurrentFrameInFlightIndex], 0U, nullptr);
 			constexpr uint32_t u32VertexBufferCount = 1U;
 			constexpr VkDeviceSize vk_vertexBufferOffsets[u32VertexBufferCount] = {0UL};
-			vkCmdBindVertexBuffers(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], 0U, u32VertexBufferCount, &vk_ahGameObjectVertexBuffers[u8CurrentFrameInFlightIndex], vk_vertexBufferOffsets);
+			vkCmdBindVertexBuffers(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], 0U, u32VertexBufferCount, &vk_ahOpaqueGameObjectVertexBuffers[u8CurrentFrameInFlightIndex], vk_vertexBufferOffsets);
 			vkCmdDrawIndexed(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], u16GameObjectIndex * 6U, 1U, 0U, 0U, 0U);
 		}
 		if (vkEndCommandBuffer(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex]) != VK_SUCCESS) {

@@ -115,9 +115,11 @@ namespace RE {
 		vkEnumerateInstanceExtensionProperties(nullptr, &u32AvailableExtensionsCount, vk_pAvailableExtensions);
 		bool bExtensionsPresent[RE_VK_REQUIRED_EXTENSIONS_COUNT] = {};
 		std::queue<const char*> missingExtensions;
-		PRINT_LN("Available Vulkan instance extensions:");
+		if (is_verbose_behaviour_enabled())
+			PRINT_LN("Available Vulkan instance extensions:");
 		for (uint32_t u32ExtensionIndex = 0U; u32ExtensionIndex < u32AvailableExtensionsCount; u32ExtensionIndex++) {
-			println(append_to_string("\t", vk_pAvailableExtensions[u32ExtensionIndex].extensionName, " (", VK_API_VERSION_MAJOR(vk_pAvailableExtensions[u32ExtensionIndex].specVersion), ".",VK_API_VERSION_MINOR(vk_pAvailableExtensions[u32ExtensionIndex].specVersion), ".", VK_API_VERSION_PATCH(vk_pAvailableExtensions[u32ExtensionIndex].specVersion), ")"));
+			if (is_verbose_behaviour_enabled())
+				println(append_to_string("\t", vk_pAvailableExtensions[u32ExtensionIndex].extensionName, " (", VK_API_VERSION_MAJOR(vk_pAvailableExtensions[u32ExtensionIndex].specVersion), ".",VK_API_VERSION_MINOR(vk_pAvailableExtensions[u32ExtensionIndex].specVersion), ".", VK_API_VERSION_PATCH(vk_pAvailableExtensions[u32ExtensionIndex].specVersion), ")"));
 			for (uint8_t u8RequiredExtensionIndex = 0U; u8RequiredExtensionIndex < RE_VK_REQUIRED_EXTENSIONS_COUNT; u8RequiredExtensionIndex++)
 				if (are_string_contents_equal(vk_pAvailableExtensions[u32ExtensionIndex].extensionName, pcRequiredExtensions[u8RequiredExtensionIndex]))
 					bExtensionsPresent[u8RequiredExtensionIndex] = true;
@@ -141,9 +143,11 @@ namespace RE {
 		vkEnumerateInstanceLayerProperties(&u32AvailableLayersCount, vk_pAvailableLayers);
 		bool bRequiredLayersPresent[RE_VK_REQUIRED_LAYERS_COUNT] = {};
 		std::queue<const char*> missingLayers;
-		PRINT_LN("Available Vulkan instance layers:");
+		if (is_verbose_behaviour_enabled())
+			PRINT_LN("Available Vulkan instance layers:");
 		for (uint32_t u32LayerIndex = 0; u32LayerIndex < u32AvailableLayersCount; u32LayerIndex++) {
-			println(append_to_string("\t", vk_pAvailableLayers[u32LayerIndex].layerName, " (", VK_API_VERSION_MAJOR(vk_pAvailableLayers[u32LayerIndex].specVersion), ".", VK_API_VERSION_MINOR(vk_pAvailableLayers[u32LayerIndex].specVersion), ".",VK_API_VERSION_PATCH(vk_pAvailableLayers[u32LayerIndex].specVersion), " - ", vk_pAvailableLayers[u32LayerIndex].implementationVersion, "): ", vk_pAvailableLayers[u32LayerIndex].description));
+			if (is_verbose_behaviour_enabled())
+				println(append_to_string("\t", vk_pAvailableLayers[u32LayerIndex].layerName, " (", VK_API_VERSION_MAJOR(vk_pAvailableLayers[u32LayerIndex].specVersion), ".", VK_API_VERSION_MINOR(vk_pAvailableLayers[u32LayerIndex].specVersion), ".",VK_API_VERSION_PATCH(vk_pAvailableLayers[u32LayerIndex].specVersion), " - ", vk_pAvailableLayers[u32LayerIndex].implementationVersion, "): ", vk_pAvailableLayers[u32LayerIndex].description));
 			for (uint8_t u8RequiredLayerIndex = 0U; u8RequiredLayerIndex < RE_VK_REQUIRED_LAYERS_COUNT; u8RequiredLayerIndex++)
 				if (are_string_contents_equal(vk_pAvailableLayers[u32LayerIndex].layerName, pcRequiredLayers[u8RequiredLayerIndex]))
 					bRequiredLayersPresent[u8RequiredLayerIndex] = true;

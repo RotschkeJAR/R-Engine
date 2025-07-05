@@ -20,6 +20,8 @@ namespace RE {
 	void treat_warnings_as_errors(const bool bEnable);
 	void make_errors_always_fatal(const bool bEnable);
 	void show_message_box_on_error(const bool bEnable);
+	void enable_verbosity(const bool bEnable);
+	bool is_verbose_behaviour_enabled();
 
 }
 

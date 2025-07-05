@@ -140,7 +140,8 @@ namespace RE {
 			RE_FATAL_ERROR("There aren't any physical devices supporting Vulkan");
 			return false;
 		}
-		PRINT_LN("Available GPUs:");
+		if (is_verbose_behaviour_enabled())
+			PRINT_LN("Available GPUs:");
 		VkPhysicalDevice *const vk_phTotalPhysicalDevice = new VkPhysicalDevice[u32TotalPhysicalDeviceCount];
 		vkEnumeratePhysicalDevices(vk_hInstance, &u32TotalPhysicalDeviceCount, vk_phTotalPhysicalDevice);
 		std::queue<VkPhysicalDevice> suitablePhysicalDevices;
@@ -167,7 +168,7 @@ namespace RE {
 			VkSurfaceCapabilitiesKHR vk_physicalDeviceSurfaceCapabilities;
 			vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk_hPhysicalDevice, vk_hSurface, &vk_physicalDeviceSurfaceCapabilities);
 
-			{ // Prints information about physical device to console
+			if (is_verbose_behaviour_enabled()) { // Prints information about physical device to console
 				print("\t", vk_physicalDeviceProperties.deviceName, " [Driver version: ", VK_VERSION_MAJOR(vk_physicalDeviceProperties.driverVersion), '.', VK_VERSION_MINOR(vk_physicalDeviceProperties.driverVersion), '.', VK_VERSION_PATCH(vk_physicalDeviceProperties.driverVersion), "; Device type: ");
 				switch (vk_physicalDeviceProperties.deviceType) {
 					case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
@@ -402,7 +403,6 @@ namespace RE {
 				println("\t\t\tsupportedCompositeAlpha: ", bitmask_to_string(vk_physicalDeviceSurfaceCapabilities.supportedCompositeAlpha));
 				println("\t\t\tsupportedUsageFlags: ", bitmask_to_string(vk_physicalDeviceSurfaceCapabilities.supportedUsageFlags));
 			} // End of printing information about physical device to console
-
 
 			std::queue<const char*> missingFeatures;
 

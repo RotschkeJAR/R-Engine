@@ -15,6 +15,13 @@ namespace RE {
 				CATCH_SIGNAL_DETAILED(pObj->update(pCurrentScene), append_to_string("Game Object ", pObj, ", ID: ", pObj->u32OwnId).c_str());
 	}
 
+	static void end_proc() {
+		CATCH_SIGNAL_DETAILED(pCurrentScene->end(), append_to_string("Ending scene ", pCurrentScene, ", ID: ", pCurrentScene->u32Id).c_str());
+		for (GameObject *pObj : gameObjects)
+			if (is_object_active(pObj))
+				CATCH_SIGNAL_DETAILED(pObj->end(pCurrentScene), append_to_string("Ending game object ", pObj, ", ID: ", pObj->u32OwnId).c_str());
+	}
+
 	static void delete_proc() {
 		bDeletingMarkedGameObjects = true;
 		for (GameObject *pObj : deletableGameObjects)
@@ -35,12 +42,8 @@ namespace RE {
 	void game_logic_update() {
 		if (pNextScene != pCurrentScene && pNextScene) {
 			// End old scene
-			if (pCurrentScene) {
-				CATCH_SIGNAL_DETAILED(pCurrentScene->end(), append_to_string("Ending scene ", pCurrentScene, ", ID: ", pCurrentScene->u32Id).c_str());
-				for (GameObject *pObj : gameObjects)
-					if (is_object_active(pObj))
-						CATCH_SIGNAL_DETAILED(pObj->end(pCurrentScene), append_to_string("Ending game object ", pObj, ", ID: ", pObj->u32OwnId).c_str());
-			}
+			if (pCurrentScene)
+				CATCH_SIGNAL(end_proc());
 			CATCH_SIGNAL(delete_proc());
 
 			pCurrentScene = pNextScene;

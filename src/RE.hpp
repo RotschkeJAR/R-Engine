@@ -209,10 +209,6 @@ namespace RE {
 #define ERROR(T) error(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(T), false)
 #define WARNING(T) warning(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(T))
 #define NOTE(T) note(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(T))
-	void enable_colorful_printing(const bool bEnable);
-	void treat_warnings_as_errors(const bool bEnable);
-	void make_errors_always_fatal(const bool bEnable);
-	void show_message_box_on_error(const bool bEnable);
 	
 	class SignalCatcher final {
 		public:
@@ -324,7 +320,7 @@ namespace RE {
 				if (u32HexadecimalCharacterIndex < 10U)
 					ss << u32HexadecimalCharacterIndex;
 				else
-					ss << static_cast<char>(u32HexadecimalCharacterIndex - 10U + static_cast<uint32_t>('A'));
+					ss << static_cast<char>(u32HexadecimalCharacterIndex - 10U + static_cast<uint32_t>('a'));
 			}
 		}
 		if (!bNumbersPresent)
@@ -695,26 +691,39 @@ namespace RE {
 
 			bool has_valid_input_values();
 	};
+	
+	// Console
+	void enable_colorful_printing(const bool bEnable);
+	void treat_warnings_as_errors(const bool bEnable);
+	void make_errors_always_fatal(const bool bEnable);
+	void show_message_box_on_error(const bool bEnable);
+	void enable_verbosity(const bool bEnable);
+	bool is_verbose_behaviour_enabled();
 
+	// Cursor input
 	int32_t get_cursor_position_x();
 	int32_t get_cursor_position_y();
 	float get_cursor_normal_position_x();
 	float get_cursor_normal_position_y();
 
+	// Keyboard input
 	Input map_scancode_to_input(const uint32_t u32Scancode);
 	uint32_t map_input_to_scancode(const Input eInput);
 
+	// Program execution
 	void execute();
 	float get_deltaseconds();
 	void set_fps_limit(const uint32_t u32MaxFramesPerSecond);
 	float get_fps_rate();
 
+	// Game object deletion
 	void mark_deletable(GameObject* pGameObject);
 #define MARK_DELETABLE_SAFELY(GAME_OBJECT_POINTER) ([&](GameObject *&rpDeletableGameObject) { \
 			CATCH_SIGNAL(mark_deletable(rpDeletableGameObject)); \
 			rpDeletableGameObject = nullptr; \
 		} (GAME_OBJECT_POINTER))
 	
+	// Manager
 	void set_next_scene(Scene* pNextSceneParam);
 	bool is_next_scene_set();
 	Scene* get_current_scene();
@@ -724,9 +733,11 @@ namespace RE {
 	uint32_t get_next_scene_id();
 	bool is_scene_next(const uint32_t u32SceneId);
 
+	// Render system
 	void enable_vsync(const bool bEnableVsync);
 	bool is_vsync_enabled();
 
+	// Renderer
 	void set_const_screen_size(const uint32_t u32Width, const uint32_t u32Height);
 	void set_screen_percentage(const float fPercentage);
 	void reset_screen_size();

@@ -12,7 +12,7 @@ namespace RE {
 		if (!gameObjects.empty()) {
 			it = std::find(gameObjects.begin(), gameObjects.end(), this);
 			if (it != gameObjects.end()) {
-				if (!bDeletingMarkedGameObjects)
+				if (!bDeletingMarkedGameObjects && bRunning)
 					RE_ERROR(append_to_string("The game object ", this, " (ID: ", u32OwnId, ", Scene parent ID: ", u32SceneParentId, ") hasn't been marked deletable. This may cause skipping a game object or segmentation violation"));
 				gameObjects.erase(it);
 			}

@@ -11,6 +11,7 @@ namespace RE {
 #define TREAT_WARNING_AS_ERROR 1
 #define ERRORS_ALWAYS_FATAL 2
 #define SHOW_MSG_BOX 3
+#define VERBOSE_BEHAVIOUR 4
 
 	uint8_t u8ConsoleSettings = (1U << PRINT_COLORS) | (1U << SHOW_MSG_BOX);
 
@@ -56,13 +57,13 @@ namespace RE {
 		if (bFatal) {
 			bErrorOccured = true;
 			println_colored("Terminating...", RE_TERMINAL_COLOR_BRIGHT_BLACK, false, false);
-		}
-		if (is_bit_true<uint8_t>(u8ConsoleSettings, SHOW_MSG_BOX)) {
+			if (is_bit_true<uint8_t>(u8ConsoleSettings, SHOW_MSG_BOX)) {
 #ifdef RE_OS_WINDOWS
-			MessageBoxW(Window::pInstance ? static_cast<Window_Win64*>(Window::pInstance)->get_hwindow() : nullptr, append_to_wstring(L"in file ", pcFile, L" in function ", pcFunc, L" at line ", u32Line, L"\n", pcDetail).c_str(), bFatal ? L"Fatal Error" : L"Error", MB_OK | MB_ICONERROR);
+				MessageBoxW(Window::pInstance ? static_cast<Window_Win64*>(Window::pInstance)->get_hwindow() : nullptr, append_to_wstring(L"In file ", pcFile, L" in function ", pcFunc, L" at line ", u32Line, L"\n", pcDetail).c_str(), L"Fatal Error", MB_OK | MB_ICONERROR);
 #elif defined RE_OS_LINUX
-			// TODO: Create message box on Linux, when error occurs
+				// TODO: Create message box on Linux, when error occurs
 #endif
+			}
 		}
 	}
 
@@ -94,6 +95,14 @@ namespace RE {
 
 	void show_message_box_on_error(const bool bEnable) {
 		set_bit<uint8_t>(u8ConsoleSettings, SHOW_MSG_BOX, bEnable);
+	}
+
+	void enable_verbosity(const bool bEnable) {
+		set_bit<uint8_t>(u8ConsoleSettings, VERBOSE_BEHAVIOUR, bEnable);
+	}
+
+	bool is_verbose_behaviour_enabled() {
+		return is_bit_true<uint8_t>(u8ConsoleSettings, VERBOSE_BEHAVIOUR);
 	}
 
 }

@@ -36,7 +36,7 @@ namespace RE {
 	extern PFN_vkEnumerateDeviceLayerProperties pfn_vkEnumerateDeviceLayerProperties;
 
 	// Vulkan 1.1
-	/* extern PFN_vkEnumerateInstanceVersion pfn_vkEnumerateInstanceVersion;
+	extern PFN_vkEnumerateInstanceVersion pfn_vkEnumerateInstanceVersion;
 	extern PFN_vkEnumeratePhysicalDeviceGroups pfn_vkEnumeratePhysicalDeviceGroups;
 	extern PFN_vkGetPhysicalDeviceFeatures2 pfn_vkGetPhysicalDeviceFeatures2;
 	extern PFN_vkGetPhysicalDeviceProperties2 pfn_vkGetPhysicalDeviceProperties2;
@@ -47,10 +47,10 @@ namespace RE {
 	extern PFN_vkGetPhysicalDeviceSparseImageFormatProperties2 pfn_vkGetPhysicalDeviceSparseImageFormatProperties2;
 	extern PFN_vkGetPhysicalDeviceExternalBufferProperties pfn_vkGetPhysicalDeviceExternalBufferProperties;
 	extern PFN_vkGetPhysicalDeviceExternalFenceProperties pfn_vkGetPhysicalDeviceExternalFenceProperties;
-	extern PFN_vkGetPhysicalDeviceExternalSemaphoreProperties pfn_vkGetPhysicalDeviceExternalSemaphoreProperties; */
+	extern PFN_vkGetPhysicalDeviceExternalSemaphoreProperties pfn_vkGetPhysicalDeviceExternalSemaphoreProperties;
 
 	// Vulkan 1.3
-	/* extern PFN_vkGetPhysicalDeviceToolProperties pfn_vkGetPhysicalDeviceToolProperties; */
+	extern PFN_vkGetPhysicalDeviceToolProperties pfn_vkGetPhysicalDeviceToolProperties;
 
 	// Debug Messages
 	extern PFN_vkSetDebugUtilsObjectNameEXT pfn_vkSetDebugUtilsObjectNameEXT;
@@ -161,7 +161,7 @@ namespace RE {
 #define vkGetPhysicalDeviceExternalSemaphoreProperties(...) FOCUS_FOR_VK_DEBUG(pfn_vkGetPhysicalDeviceExternalSemaphoreProperties(__VA_ARGS__))
 
 // Vulkan 1.3
-/* #define vkGetPhysicalDeviceToolProperties(...) CHECK_VK_RESULT(pfn_vkGetPhysicalDeviceToolProperties(__VA_ARGS__)) */
+#define vkGetPhysicalDeviceToolProperties(...) CHECK_VK_RESULT(pfn_vkGetPhysicalDeviceToolProperties(__VA_ARGS__))
 
 // Debug extension
 #define vkSetDebugUtilsObjectNameEXT(...) CHECK_VK_RESULT(pfn_vkSetDebugUtilsObjectNameEXT(__VA_ARGS__))

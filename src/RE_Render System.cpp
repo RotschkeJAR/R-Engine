@@ -8,6 +8,9 @@
 
 namespace RE {
 
+#define ALLOWED_DEPTH_STENCIL_BUFFER_FORMAT_COUNT 3U
+#define ALLOWED_DEPTH_STENCIL_BUFFER_FORMATS {VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D16_UNORM_S8_UINT}
+
 	// Attributes initialized at beginning and rarely changed
 	VkPhysicalDevice *vk_pahPhysicalDevicesAvailable = nullptr;
 	uint32_t u32PhysicalDevicesAvailableCount = 0U;
@@ -30,6 +33,7 @@ namespace RE {
 	VkImageView *vk_pahSwapchainImageViews = nullptr;
 	VkCommandPool vk_ahCommandPools[RE_VK_COMMAND_POOL_COUNT] = {};
 	VkCommandBuffer vk_hDummyTransferCommandBuffer = VK_NULL_HANDLE;
+	VkFormat vk_eDepthStencilBufferFormat = VK_FORMAT_UNDEFINED;
 
 #define SWAPCHAIN_DIRTY_BIT 0
 #define VSYNC_SETTING_BIT 1
@@ -457,6 +461,12 @@ namespace RE {
 			if (!bTransferQueueExists)
 				missingFeatures.push("A dedicated transfer queue or a graphics queue supporting transfers aswell doesn't exist");
 
+			// Check if depth & stencil buffers are supported
+			constexpr VkFormat vk_aeDepthStencilFormats[ALLOWED_DEPTH_STENCIL_BUFFER_FORMAT_COUNT] = ALLOWED_DEPTH_STENCIL_BUFFER_FORMATS;
+			const VkFormat vk_eSupportedDepthStencilBufferFormat = CATCH_SIGNAL_AND_RETURN(find_supported_image_format_on_physical_vulkan_device(vk_hPhysicalDevice, ALLOWED_DEPTH_STENCIL_BUFFER_FORMAT_COUNT, vk_aeDepthStencilFormats, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT), VkFormat);
+			if (vk_eSupportedDepthStencilBufferFormat == VK_FORMAT_UNDEFINED)
+				missingFeatures.push("Unseperated depth and stencil buffers aren't supported");
+
 			delete[] vk_pPhysicalDeviceExtensionProperties;
 			delete[] vk_pPhysicalDeviceQueueFamilyProperties;
 			if (!missingFeatures.empty()) {
@@ -656,11 +666,15 @@ namespace RE {
 		if (CATCH_SIGNAL_AND_RETURN(create_surface(), bool)) {
 			if (CATCH_SIGNAL_AND_RETURN(alloc_physical_device_list(), bool)) {
 				CATCH_SIGNAL(select_best_physical_vulkan_device());
+
 				VkPhysicalDeviceProperties vk_physicalDeviceSelectedProperties;
 				vkGetPhysicalDeviceProperties(vk_hPhysicalDeviceSelected, &vk_physicalDeviceSelectedProperties);
 				PRINT_LN(append_to_string("Device selected: ", vk_physicalDeviceSelectedProperties.deviceName).c_str());
 				vk_physicalDeviceLimits = vk_physicalDeviceSelectedProperties.limits;
 				vkGetPhysicalDeviceMemoryProperties(vk_hPhysicalDeviceSelected, &vk_physicalDeviceMemoryProperties);
+				constexpr VkFormat vk_aeDepthStencilFormats[ALLOWED_DEPTH_STENCIL_BUFFER_FORMAT_COUNT] = ALLOWED_DEPTH_STENCIL_BUFFER_FORMATS;
+				vk_eDepthStencilBufferFormat = CATCH_SIGNAL_AND_RETURN(find_supported_image_format(ALLOWED_DEPTH_STENCIL_BUFFER_FORMAT_COUNT, vk_aeDepthStencilFormats, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT), VkFormat);
+
 				CATCH_SIGNAL(fetch_surface_infos());
 				CATCH_SIGNAL(select_best_surface_format());
 				if (CATCH_SIGNAL_AND_RETURN(init_vulkan_device(), bool)) {

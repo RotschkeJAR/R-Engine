@@ -86,6 +86,30 @@ namespace RE {
 		return false;
 	}
 
+	VkFormat find_supported_image_format_on_physical_vulkan_device(const VkPhysicalDevice vk_hPhysicalDevice, const uint32_t u32FormatCandidateCount, const VkFormat *vk_paeFormatCandidates, const VkImageTiling vk_eImgTiling, const VkFormatFeatureFlags vk_eRequiredFeature) {
+		for (uint32_t u32FormatCandidateIndex = 0U; u32FormatCandidateIndex < u32FormatCandidateCount; u32FormatCandidateIndex++) {
+			VkFormatProperties vk_formatProperties;
+			vkGetPhysicalDeviceFormatProperties(vk_hPhysicalDevice, vk_paeFormatCandidates[u32FormatCandidateIndex], &vk_formatProperties);
+			switch (vk_eImgTiling) {
+				case VK_IMAGE_TILING_OPTIMAL:
+					if ((vk_formatProperties.optimalTilingFeatures & vk_eRequiredFeature) == vk_eRequiredFeature)
+						return CATCH_SIGNAL_AND_RETURN(vk_paeFormatCandidates[u32FormatCandidateIndex], VkFormat);
+					break;
+				case VK_IMAGE_TILING_LINEAR:
+					if ((vk_formatProperties.linearTilingFeatures & vk_eRequiredFeature) == vk_eRequiredFeature)
+						return CATCH_SIGNAL_AND_RETURN(vk_paeFormatCandidates[u32FormatCandidateIndex], VkFormat);
+					break;
+				default:
+					break;
+			}
+		}
+		return VK_FORMAT_UNDEFINED;
+	}
+
+	VkFormat find_supported_image_format(const uint32_t u32FormatCandidateCount, const VkFormat *vk_paeFormatCandidates, const VkImageTiling vk_eImgTiling, const VkFormatFeatureFlags vk_eRequiredFeature) {
+		return CATCH_SIGNAL_AND_RETURN(find_supported_image_format_on_physical_vulkan_device(vk_hPhysicalDeviceSelected, u32FormatCandidateCount, vk_paeFormatCandidates, vk_eImgTiling, vk_eRequiredFeature), VkFormat);
+	}
+
 	bool create_vulkan_image(const VkImageCreateFlags vk_eCreateFlags, const VkImageType vk_eType, const VkFormat vk_eFormat, const VkExtent3D vk_extent, const uint32_t u32MipLevels, const uint32_t u32ArrayLayerCount, const VkSampleCountFlagBits vk_eSamples, const VkImageTiling vk_eTiling, const VkImageUsageFlags vk_eUsages, const uint32_t u32QueueCount, const uint32_t *pau32Queues, const VkImageLayout vk_eLayout, const VkMemoryPropertyFlags vk_eMemoryPropertyFlags, VkImage *vk_phImage, VkDeviceMemory *vk_phMemory) {
 		VkImageCreateInfo vk_createInfo = {
 			.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
@@ -262,6 +286,84 @@ namespace RE {
 				return false;
 			}
 		return true;
+	}
+
+	void vk_cmd_transit_image(const VkCommandBuffer vk_hCommandBuffer, const VkPipelineStageFlags vk_eSrcStageFlags, const VkPipelineStageFlags vk_eDstStageFlags, const VkDependencyFlags vk_eDependencyFlags, const VkAccessFlags vk_eSrcAccessFlags, const VkAccessFlags vk_eDstAccessFlags, const VkImageLayout vk_eOldLayout, const VkImageLayout vk_eNewLayout, const uint32_t u32SrcQueueIndex, const uint32_t u32DstQueueIndex, const VkImage vk_hImage, const VkImageAspectFlags vk_eAspectFlags, const uint32_t u32BaseMipLevel, const uint32_t u32MipLevelCount, const uint32_t u32BaseArrayLayer, const uint32_t u32ArrayLayerCount) {
+		const VkImageMemoryBarrier vk_imageTransit = {
+			.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+			.srcAccessMask = vk_eSrcAccessFlags,
+			.dstAccessMask = vk_eDstAccessFlags,
+			.oldLayout = vk_eOldLayout,
+			.newLayout = vk_eNewLayout,
+			.srcQueueFamilyIndex = u32SrcQueueIndex != VK_QUEUE_FAMILY_IGNORED ? *get_queue_family_indices(1U, &u32SrcQueueIndex).begin() : VK_QUEUE_FAMILY_IGNORED,
+			.dstQueueFamilyIndex = u32DstQueueIndex != VK_QUEUE_FAMILY_IGNORED ? *get_queue_family_indices(1U, &u32DstQueueIndex).begin() : VK_QUEUE_FAMILY_IGNORED,
+			.image = vk_hImage,
+			.subresourceRange = {
+				.aspectMask = vk_eAspectFlags,
+				.baseMipLevel = u32BaseMipLevel,
+				.levelCount = u32MipLevelCount,
+				.baseArrayLayer = u32BaseArrayLayer,
+				.layerCount = u32ArrayLayerCount
+			}
+		};
+		vkCmdPipelineBarrier(vk_hCommandBuffer, vk_eSrcStageFlags, vk_eDstStageFlags, vk_eDependencyFlags, 0U, nullptr, 0U, nullptr, 1U, &vk_imageTransit);
+	}
+
+	bool transit_image(const uint32_t u32QueueIndex, const VkPipelineStageFlags vk_eSrcStageFlags, const VkPipelineStageFlags vk_eDstStageFlags, const VkDependencyFlags vk_eDependencyFlags, const VkAccessFlags vk_eSrcAccessFlags, const VkAccessFlags vk_eDstAccessFlags, const VkImageLayout vk_eOldLayout, const VkImageLayout vk_eNewLayout, const uint32_t u32SrcQueueIndex, const uint32_t u32DstQueueIndex, const VkImage vk_hImage, const VkImageAspectFlags vk_eAspectFlags, const uint32_t u32BaseMipLevel, const uint32_t u32MipLevelCount, const uint32_t u32BaseArrayLayer, const uint32_t u32ArrayLayerCount, VkCommandBuffer *vk_phCommandBufferToFree, VkFence *vk_phFence) {
+		if (!vk_phCommandBufferToFree) {
+			RE_ERROR("No pointer to command buffer attribute has been provided");
+			return false;
+		}
+		if (vk_phFence) {
+			const VkFenceCreateInfo vk_fenceCreateInfo = {
+				.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+				.flags = 0
+			};
+			if (vkCreateFence(vk_hDevice, &vk_fenceCreateInfo, nullptr, vk_phFence) != VK_SUCCESS)
+				*vk_phFence = VK_NULL_HANDLE;
+		}
+		uint32_t u32CommandPoolIndex;
+		switch (u32QueueIndex) {
+			case RE_VK_QUEUE_GRAPHICS_INDEX:
+				u32CommandPoolIndex = RE_VK_COMMAND_POOL_GRAPHICS_TRANSIENT_INDEX;
+				break;
+			case RE_VK_QUEUE_TRANSFER_INDEX:
+				u32CommandPoolIndex = RE_VK_COMMAND_POOL_TRANSFER_TRANSIENT_INDEX;
+				break;
+			default:
+				RE_ERROR(append_to_string("Failed to find the command pool for the queue. The queue's index is ", u32QueueIndex).c_str());
+				if (vk_phFence && *vk_phFence) {
+					vkDestroyFence(vk_hDevice, *vk_phFence, nullptr);
+					*vk_phFence = VK_NULL_HANDLE;
+				}
+				return false;
+		}
+		if (alloc_vulkan_command_buffers(vk_ahCommandPools[u32CommandPoolIndex], VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1U, vk_phCommandBufferToFree)) {
+			if (begin_recording_vulkan_command_buffer(*vk_phCommandBufferToFree, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr)) {
+				vk_cmd_transit_image(*vk_phCommandBufferToFree, vk_eSrcStageFlags, vk_eDstStageFlags, vk_eDependencyFlags, vk_eSrcAccessFlags, vk_eDstAccessFlags, vk_eOldLayout, vk_eNewLayout, u32SrcQueueIndex, u32DstQueueIndex, vk_hImage, vk_eAspectFlags, u32BaseMipLevel, u32MipLevelCount, u32BaseArrayLayer, u32ArrayLayerCount);
+				if (vkEndCommandBuffer(*vk_phCommandBufferToFree) == VK_SUCCESS) {
+					if (vk_phFence && *vk_phFence) {
+						if (CATCH_SIGNAL_AND_RETURN(submit_to_vulkan_queue(vk_ahDeviceQueueFamilies[u32QueueIndex], 0U, nullptr, nullptr, 1U, vk_phCommandBufferToFree, 0U, nullptr, *vk_phFence), bool))
+							return true;
+						else
+							RE_ERROR("Failed to submit Vulkan command buffer to transit image and signal a fence");
+					} else {
+						if (CATCH_SIGNAL_AND_RETURN(submit_to_vulkan_queue(vk_ahDeviceQueueFamilies[u32QueueIndex], 0U, nullptr, nullptr, 1U, vk_phCommandBufferToFree, 0U, nullptr, VK_NULL_HANDLE), bool)) {
+							vkQueueWaitIdle(vk_ahDeviceQueueFamilies[u32QueueIndex]);
+							vkFreeCommandBuffers(vk_hDevice, vk_ahCommandPools[u32CommandPoolIndex], 1U, vk_phCommandBufferToFree);
+							*vk_phCommandBufferToFree = VK_NULL_HANDLE;
+							return true;
+						} else
+							RE_ERROR("Failed to submit Vulkan command buffer to transit image without signaling a fence");
+					}
+				} else
+					RE_ERROR("Failed to finish recording Vulkan command buffer for transitting an image");
+			} else
+				RE_ERROR("Failed to begin recording Vulkan command buffer for transitting an image");
+			vkFreeCommandBuffers(vk_hDevice, vk_ahCommandPools[u32CommandPoolIndex], 1U, vk_phCommandBufferToFree);
+			*vk_phCommandBufferToFree = VK_NULL_HANDLE;
+		}
+		return false;
 	}
 
 }

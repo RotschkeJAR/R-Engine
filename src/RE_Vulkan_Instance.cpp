@@ -2,6 +2,10 @@
 #include "RE_Window.hpp"
 #include "RE_Main.hpp"
 
+#ifndef VK_VERSION_1_3
+# error The Vulkan header should support 1.3 or later
+#endif
+
 #include <queue>
 
 namespace RE {
@@ -37,7 +41,7 @@ namespace RE {
 	PFN_vkEnumerateDeviceLayerProperties pfn_vkEnumerateDeviceLayerProperties = nullptr;
 
 	// Vulkan 1.1
-	/* PFN_vkEnumerateInstanceVersion pfn_vkEnumerateInstanceVersion = nullptr;
+	PFN_vkEnumerateInstanceVersion pfn_vkEnumerateInstanceVersion = nullptr;
 	PFN_vkEnumeratePhysicalDeviceGroups pfn_vkEnumeratePhysicalDeviceGroups = nullptr;
 	PFN_vkGetPhysicalDeviceFeatures2 pfn_vkGetPhysicalDeviceFeatures2 = nullptr;
 	PFN_vkGetPhysicalDeviceProperties2 pfn_vkGetPhysicalDeviceProperties2 = nullptr;
@@ -48,7 +52,7 @@ namespace RE {
 	PFN_vkGetPhysicalDeviceSparseImageFormatProperties2 pfn_vkGetPhysicalDeviceSparseImageFormatProperties2 = nullptr;
 	PFN_vkGetPhysicalDeviceExternalBufferProperties pfn_vkGetPhysicalDeviceExternalBufferProperties = nullptr;
 	PFN_vkGetPhysicalDeviceExternalFenceProperties pfn_vkGetPhysicalDeviceExternalFenceProperties = nullptr;
-	PFN_vkGetPhysicalDeviceExternalSemaphoreProperties pfn_vkGetPhysicalDeviceExternalSemaphoreProperties = nullptr; */
+	PFN_vkGetPhysicalDeviceExternalSemaphoreProperties pfn_vkGetPhysicalDeviceExternalSemaphoreProperties = nullptr;
 
 	// Vulkan 1.3
 	PFN_vkGetPhysicalDeviceToolProperties pfn_vkGetPhysicalDeviceToolProperties = nullptr;
@@ -164,19 +168,19 @@ namespace RE {
 				missingLayers.pop();
 			} while (!missingLayers.empty());
 		}
-
 		if (bFailure)
 			return false;
+
 		std::string strAppName = get_app_name();
-		VkApplicationInfo vk_appInfo = {
+		const VkApplicationInfo vk_appInfo = {
 			.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
 			.pApplicationName = strAppName.c_str(),
 			.applicationVersion = VK_MAKE_API_VERSION(0, 1, 0, 0),
 			.pEngineName = "R-Engine",
 			.engineVersion = VK_MAKE_API_VERSION(0, 1, 0, 0),
-			.apiVersion = VK_API_VERSION_1_0
+			.apiVersion = VK_API_VERSION_1_3
 		};
-		VkInstanceCreateInfo vk_instanceCreateInfo = {
+		const VkInstanceCreateInfo vk_instanceCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
 			.pApplicationInfo = &vk_appInfo,
 			.enabledLayerCount = RE_VK_REQUIRED_LAYERS_COUNT,
@@ -241,7 +245,7 @@ namespace RE {
 		return true;
 	}
 
-	/* static bool load_vulkan_1_1_with_instance() {
+	static bool load_vulkan_1_1_with_instance() {
 		pfn_vkEnumerateInstanceVersion = reinterpret_cast<PFN_vkEnumerateInstanceVersion>(load_func_with_instance(nullptr, "vkEnumerateInstanceVersion"));
 		if (!pfn_vkEnumerateInstanceVersion)
 			return false;
@@ -279,14 +283,14 @@ namespace RE {
 		if (!pfn_vkGetPhysicalDeviceExternalSemaphoreProperties)
 			return false;
 		return true;
-	} */
+	}
 
-	/* static bool load_vulkan_1_3_with_instance() {
+	static bool load_vulkan_1_3_with_instance() {
 		pfn_vkGetPhysicalDeviceToolProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceToolProperties>(load_func("vkGetPhysicalDeviceToolProperties"));
 		if (!pfn_vkGetPhysicalDeviceToolProperties)
 			return false;
 		return true;
-	} */
+	}
 
 	static bool load_extension_funcs_with_instance() {
 		pfn_vkSetDebugUtilsObjectNameEXT = reinterpret_cast<PFN_vkSetDebugUtilsObjectNameEXT>(load_func("vkSetDebugUtilsObjectNameEXT"));
@@ -352,6 +356,7 @@ namespace RE {
 
 	// Avoids dangling pointers (don't remove!)
 	static void unload_all_vulkan_functions_of_instance() {
+		// Vulkan 1.0
 		pfn_vkCreateInstance = nullptr;
 		pfn_vkDestroyInstance = nullptr;
 		pfn_vkEnumeratePhysicalDevices = nullptr;
@@ -370,7 +375,9 @@ namespace RE {
 		pfn_vkEnumerateInstanceLayerProperties = nullptr;
 		pfn_vkEnumerateDeviceLayerProperties = nullptr;
 		pfn_vkGetPhysicalDeviceSparseImageFormatProperties = nullptr;
-		/*pfn_vkEnumerateInstanceVersion = nullptr;
+
+		// Vulkan 1.1
+		pfn_vkEnumerateInstanceVersion = nullptr;
 		pfn_vkEnumeratePhysicalDeviceGroups = nullptr;
 		pfn_vkGetPhysicalDeviceFeatures2 = nullptr;
 		pfn_vkGetPhysicalDeviceProperties2 = nullptr;
@@ -382,24 +389,33 @@ namespace RE {
 		pfn_vkGetPhysicalDeviceExternalBufferProperties = nullptr;
 		pfn_vkGetPhysicalDeviceExternalFenceProperties = nullptr;
 		pfn_vkGetPhysicalDeviceExternalSemaphoreProperties = nullptr;
-		pfn_vkGetPhysicalDeviceToolProperties = nullptr; */
+
+		// Vulkan 1.3
+		pfn_vkGetPhysicalDeviceToolProperties = nullptr;
+
+		// Debug Messages
 		pfn_vkSetDebugUtilsObjectNameEXT = nullptr;
 		pfn_vkSetDebugUtilsObjectTagEXT = nullptr;
 		pfn_vkCreateDebugUtilsMessengerEXT = nullptr;
 		pfn_vkDestroyDebugUtilsMessengerEXT = nullptr;
 		pfn_vkSubmitDebugUtilsMessageEXT = nullptr;
+		// Surface
 		pfn_vkDestroySurfaceKHR = nullptr;
 		pfn_vkGetPhysicalDeviceSurfaceSupportKHR = nullptr;
 		pfn_vkGetPhysicalDeviceSurfaceCapabilitiesKHR = nullptr;
 		pfn_vkGetPhysicalDeviceSurfaceFormatsKHR = nullptr;
 		pfn_vkGetPhysicalDeviceSurfacePresentModesKHR = nullptr;
+		// Swapchain
 		pfn_vkGetPhysicalDevicePresentRectanglesKHR = nullptr;
 #ifdef RE_OS_WINDOWS
+		// Win32-Surface
 		pfn_vkCreateWin32SurfaceKHR = nullptr;
 		pfn_vkGetPhysicalDeviceWin32PresentationSupportKHR = nullptr;
 #elif defined RE_OS_LINUX
+		// Wayland-Surface
 		pfn_vkCreateWaylandSurfaceKHR = nullptr;
 		pfn_vkGetPhysicalDeviceWaylandPresentationSupportKHR = nullptr;
+		// X11-Surface
 		pfn_vkCreateXlibSurfaceKHR = nullptr;
 		pfn_vkGetPhysicalDeviceXlibPresentationSupportKHR = nullptr;
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
@@ -467,7 +483,7 @@ namespace RE {
 			return false;
 		}
 		if (CATCH_SIGNAL_AND_RETURN(create_vulkan_instance(), bool)) {
-			if (CATCH_SIGNAL_AND_RETURN(load_vulkan_1_0_with_instance() /* && load_vulkan_1_1_with_instance() && load_vulkan_1_3_with_instance() */ && load_extension_funcs_with_instance() && setup_validation_layers(), bool))
+			if (CATCH_SIGNAL_AND_RETURN(load_vulkan_1_0_with_instance() && load_vulkan_1_1_with_instance() && load_vulkan_1_3_with_instance() && load_extension_funcs_with_instance() && setup_validation_layers(), bool))
 				return true;
 			unload_all_vulkan_functions_of_instance();
 			CATCH_SIGNAL(pfn_vkDestroyInstance(vk_hInstance, nullptr));

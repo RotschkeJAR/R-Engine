@@ -31,6 +31,7 @@ namespace RE {
 	extern VkImageView *vk_pahSwapchainImageViews;
 	extern VkCommandPool vk_ahCommandPools[RE_VK_COMMAND_POOL_COUNT];
 	extern VkCommandBuffer vk_hDummyTransferCommandBuffer;
+	extern VkFormat vk_eDepthStencilBufferFormat;
 	
 	bool init_render_system();
 	void destroy_render_system();

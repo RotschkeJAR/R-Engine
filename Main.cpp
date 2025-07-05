@@ -51,6 +51,7 @@ class Objy : public GameObject {
 
 		Objy() : GameObject(1, 1), left(RE_INPUT_KEY_ARROW_LEFT), right(RE_INPUT_KEY_ARROW_RIGHT), up(RE_INPUT_KEY_ARROW_UP), down(RE_INPUT_KEY_ARROW_DOWN), hits(0UL), misses(0UL) {
 			pObjy = this;
+			transform.position[2] = -0.5f;
 			transform.scale[0] = 0.1f;
 			transform.scale[1] = 0.1f;
 		}
@@ -77,10 +78,12 @@ class Objy : public GameObject {
 class Background : public GameObject {
 	public:
 		Background() : GameObject(2, 1) {
+			transform.position[2] = 0.5f;
 			transform.scale[0] = 1.0f;
 			transform.scale[1] = 1.0f;
-			spriteRenderer.color.set_channel(1U, 0.0f);
-			spriteRenderer.color.set_channel(2U, 0.0f);
+			spriteRenderer.color.set_green(0.0f);
+			spriteRenderer.color.set_blue(0.0f);
+			spriteRenderer.color.set_alpha(0.4f);
 		}
 };
 

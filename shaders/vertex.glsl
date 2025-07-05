@@ -12,5 +12,6 @@ layout (binding = 0) uniform CameraUniformBuffer {
 
 void main() {
 	gl_Position = camUniform.projection * camUniform.view * vec4(inPosition, 1.0);
+	gl_Position.z = (gl_Position.z + 1.0) * 0.5;
 	outColor = inColor;
 }

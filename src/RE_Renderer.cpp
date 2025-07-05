@@ -189,8 +189,8 @@ namespace RE {
 			fRight = pActiveCamera->position[0] + a2fCamScale[0],
 			fTop = pActiveCamera->position[1] + a2fCamScale[1],
 			fBottom = pActiveCamera->position[1] - a2fCamScale[1],
-			fNear = 0.0f,
-			fFar = 1.0f;
+			fNear = 1.0f,
+			fFar = -1.0f;
 		apafCameraUniformData[u8CurrentFrameInFlightIndex][16] = 2.0f / (fRight - fLeft) * sign(pActiveCamera->view[0]);
 		apafCameraUniformData[u8CurrentFrameInFlightIndex][21] = 2.0f / (fTop - fBottom) * sign(pActiveCamera->view[1]);
 		apafCameraUniformData[u8CurrentFrameInFlightIndex][26] = 1.0f / (fNear - fFar);

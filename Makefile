@@ -63,20 +63,14 @@ $(LIB_BIN)/*: $(LIB)/* $(LIB_SPEC)/*
 
 $(SH)/*.spv: $(SH)/*.glsl
 	-@rm -f $(SH)/*.spv
-	-@if [ -f "$(VERT_GL)" ]; then \
-		$(SC) $(SFLAG) -x glsl -fshader-stage=vertex -o $(SH)/vertex.spv $(VERT_GL); \
-	elif [ -f "$(VERT_HL)" ]; then \
-		$(SC) $(SFLAG) -x hlsl -fshader-stage=vertex -o $(SH)/vertex.spv $(VERT_HL); \
-	else \
-		echo "No vertex shader code found!"; \
-	fi
-	-@if [ -f "$(FRAG_GL)" ]; then \
-		$(SC) $(SFLAG) -x glsl -fshader-stage=fragment -o $(SH)/fragment.spv $(FRAG_GL); \
-	elif [ -f "$(FRAG_HL)" ]; then \
-		$(SC) $(SFLAG) -x hlsl -fshader-stage=fragment -o $(SH)/fragment.spv $(FRAG_HL); \
-	else \
-		echo "No fragment shader code found!"; \
-	fi
+	@for vertexShader in $(SH)/*_vertex.glsl; do \
+		echo $${vertexShader}; \
+		$(SC) $(SFLAG) -x glsl -fshader-stage=vertex -o $${vertexShader}.spv $${vertexShader}; \
+	done
+	@for fragmentShader in $(SH)/*_fragment.glsl; do \
+		echo $${fragmentShader}; \
+		$(SC) $(SFLAG) -x glsl -fshader-stage=fragment -o $${fragmentShader}.spv $${fragmentShader}; \
+	done
 
 update_git:
 	@git add .

@@ -75,6 +75,23 @@ class Objy : public GameObject {
 		}
 };
 
+class OC : public GameObject {
+	public:
+		OC() : GameObject(3, 1) {
+			transform.position[0] = 2.0f;
+			transform.position[1] = 2.0f;
+			transform.position[2] = 0.8f;
+			transform.scale[0] = 4.0f;
+			transform.scale[1] = 4.0f;
+			spriteRenderer.color.set_red(0.0f);
+			spriteRenderer.color.set_green(0.0f);
+		}
+		~OC() {}
+		void start(Scene *pStartingScene) {}
+		void update(Scene *pCurrentScene) {}
+		void end(Scene *pEndingScene) {}
+};
+
 class Background : public GameObject {
 	public:
 		Background() : GameObject(2, 1) {
@@ -110,6 +127,7 @@ class First : public Scene {
 	public:
 		Background background;
 		Objy objy;
+		OC another;
 		PlayerCamera playerCam;
 		InputAction trigger, refresh, camActivator;
 		bool bCamActive;

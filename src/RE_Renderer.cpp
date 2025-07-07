@@ -4,10 +4,13 @@
 #include "RE_Vulkan_Wrapper Classes.hpp"
 #include "RE_Vulkan_Wrapper Functions.hpp"
 #include "RE_Renderer_Opaque_GameObject.hpp"
+#include "RE_Renderer_Transparent_GameObject.hpp"
 
 #include <thread>
 
 namespace RE {
+
+#define GET_VULKAN_MATRIX_ELEMENT_INDEX(COLUMN, LINE) (COLUMN * 4U + LINE)
 
 	enum ScreenPercentage {
 		SCREEN_PERCENTAGE_CONST_IMG_SIZE,
@@ -19,7 +22,12 @@ namespace RE {
 #define RE_VK_RECT_INDEX_BUFFER_SIZE (RE_VK_RENDERABLE_RECTANGLES_COUNT * 6U)
 #define RE_VK_RECT_INDEX_BUFFER_SIZE_BYTES (RE_VK_RECT_INDEX_BUFFER_SIZE * sizeof(REindex_t))
 
-#define RE_VK_CAMERA_UNIFORM_BUFFER_SIZE (4UL * 4UL * 2UL)
+#define RE_VK_VIEW_MATRIX_SIZE (4U * 4U)
+#define RE_VK_VIEW_MATRIX_OFFSET 0U
+#define RE_VK_PROJECTION_MATRIX_SIZE (4U * 4U)
+#define RE_VK_PROJECTION_MATRIX_OFFSET RE_VK_VIEW_MATRIX_SIZE
+
+#define RE_VK_CAMERA_UNIFORM_BUFFER_SIZE (RE_VK_VIEW_MATRIX_SIZE + RE_VK_PROJECTION_MATRIX_SIZE)
 #define RE_VK_CAMERA_UNIFORM_BUFFER_SIZE_BYTES (RE_VK_CAMERA_UNIFORM_BUFFER_SIZE * sizeof(float))
 
 #define RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE 2U
@@ -214,9 +222,9 @@ namespace RE {
 
 	static void update_camera_uniform_buffer() {
 		DEFINE_SIGNAL_GUARD(sigCamAccess);
-		apafCameraUniformData[u8CurrentFrameInFlightIndex][12] = -pActiveCamera->position[0];
-		apafCameraUniformData[u8CurrentFrameInFlightIndex][13] = -pActiveCamera->position[1];
-		apafCameraUniformData[u8CurrentFrameInFlightIndex][14] = -pActiveCamera->position[2];
+		apafCameraUniformData[u8CurrentFrameInFlightIndex][RE_VK_VIEW_MATRIX_OFFSET + GET_VULKAN_MATRIX_ELEMENT_INDEX(3, 0)] = -pActiveCamera->position[0];
+		apafCameraUniformData[u8CurrentFrameInFlightIndex][RE_VK_VIEW_MATRIX_OFFSET + GET_VULKAN_MATRIX_ELEMENT_INDEX(3, 1)] = -pActiveCamera->position[1];
+		apafCameraUniformData[u8CurrentFrameInFlightIndex][RE_VK_VIEW_MATRIX_OFFSET + GET_VULKAN_MATRIX_ELEMENT_INDEX(3, 2)] = -pActiveCamera->position[2];
 		const float a2fCamScale[2] = {
 			std::abs(pActiveCamera->view[0]) / 2.0f,
 			std::abs(pActiveCamera->view[1]) / 2.0f
@@ -227,12 +235,12 @@ namespace RE {
 			fBottom = pActiveCamera->position[1] - a2fCamScale[1],
 			fNear = 1.0f,
 			fFar = -1.0f;
-		apafCameraUniformData[u8CurrentFrameInFlightIndex][16] = 2.0f / (fRight - fLeft) * sign(pActiveCamera->view[0]);
-		apafCameraUniformData[u8CurrentFrameInFlightIndex][21] = 2.0f / (fTop - fBottom) * sign(pActiveCamera->view[1]);
-		apafCameraUniformData[u8CurrentFrameInFlightIndex][26] = 1.0f / (fNear - fFar);
-		/*apafCameraUniformData[u8CurrentFrameInFlightIndex][28] = -(fRight + fLeft) / (fRight - fLeft);
-		apafCameraUniformData[u8CurrentFrameInFlightIndex][29] = -(fTop + fBottom) / (fTop - fBottom);
-		apafCameraUniformData[u8CurrentFrameInFlightIndex][30] = fNear / (fFar - fNear);*/
+		apafCameraUniformData[u8CurrentFrameInFlightIndex][RE_VK_PROJECTION_MATRIX_OFFSET + GET_VULKAN_MATRIX_ELEMENT_INDEX(0, 0)] = 2.0f / (fRight - fLeft) * sign(pActiveCamera->view[0]);
+		apafCameraUniformData[u8CurrentFrameInFlightIndex][RE_VK_PROJECTION_MATRIX_OFFSET + GET_VULKAN_MATRIX_ELEMENT_INDEX(1, 1)] = 2.0f / (fTop - fBottom) * sign(pActiveCamera->view[1]);
+		apafCameraUniformData[u8CurrentFrameInFlightIndex][RE_VK_PROJECTION_MATRIX_OFFSET + GET_VULKAN_MATRIX_ELEMENT_INDEX(2, 2)] = 1.0f / (fNear - fFar);
+		/*apafCameraUniformData[u8CurrentFrameInFlightIndex][RE_VK_PROJECTION_MATRIX_OFFSET + GET_VULKAN_MATRIX_ELEMENT_INDEX(3, 0)] = -(fRight + fLeft) / (fRight - fLeft);
+		apafCameraUniformData[u8CurrentFrameInFlightIndex][RE_VK_PROJECTION_MATRIX_OFFSET + GET_VULKAN_MATRIX_ELEMENT_INDEX(3, 1)] = -(fTop + fBottom) / (fTop - fBottom);
+		apafCameraUniformData[u8CurrentFrameInFlightIndex][RE_VK_PROJECTION_MATRIX_OFFSET + GET_VULKAN_MATRIX_ELEMENT_INDEX(3, 2)] = fNear / (fFar - fNear);*/
 		CATCH_SIGNAL(update_camera_descriptor_set(u8CurrentFrameInFlightIndex));
 	}
 
@@ -304,8 +312,8 @@ namespace RE {
 														.samples = VK_SAMPLE_COUNT_1_BIT,
 														.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
 														.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-														.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-														.stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE,
+														.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+														.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
 														.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
 														.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
 													}
@@ -328,14 +336,14 @@ namespace RE {
 														.inputAttachmentCount = 0U,
 														.pInputAttachments = nullptr,
 														.colorAttachmentCount = 1U,
-														.pColorAttachments = vk_worldRenderPassColorAttachments,
-														.pDepthStencilAttachment = vk_worldRenderPassDepthStencilAttachments
+														.pColorAttachments = &vk_worldRenderPassColorAttachments[0],
+														.pDepthStencilAttachment = &vk_worldRenderPassDepthStencilAttachments[0]
 													}
 												};
 												const VkSubpassDependency vk_worldRenderDependencies[u32WorldRenderPassDependencyCount] = {
 													{
 														.srcSubpass = VK_SUBPASS_EXTERNAL,
-														.dstSubpass = RE_VK_GAME_OBJECT_SUPBASS,
+														.dstSubpass = RE_VK_OPAQUE_GAME_OBJECT_SUPBASS,
 														.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
 														.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
 														.srcAccessMask = VK_ACCESS_NONE,
@@ -366,14 +374,14 @@ namespace RE {
 														}
 														vkMapMemory(vk_hDevice, vk_ahWorldCameraUniformBufferMemories[u8FrameInFlightCreateIndex], 0UL, RE_VK_CAMERA_UNIFORM_BUFFER_SIZE_BYTES, 0, (void**) &apafCameraUniformData[u8FrameInFlightCreateIndex]);
 														std::fill(apafCameraUniformData[u8FrameInFlightCreateIndex], apafCameraUniformData[u8FrameInFlightCreateIndex] + RE_VK_CAMERA_UNIFORM_BUFFER_SIZE_BYTES, 0.0f);
-														apafCameraUniformData[u8FrameInFlightCreateIndex][0] = 1.0f;
-														apafCameraUniformData[u8FrameInFlightCreateIndex][5] = 1.0f;
-														apafCameraUniformData[u8FrameInFlightCreateIndex][10] = 1.0f;
-														apafCameraUniformData[u8FrameInFlightCreateIndex][15] = 1.0f;
-														apafCameraUniformData[u8FrameInFlightCreateIndex][16] = 1.0f;
-														apafCameraUniformData[u8FrameInFlightCreateIndex][21] = 1.0f;
-														apafCameraUniformData[u8FrameInFlightCreateIndex][26] = 1.0f;
-														apafCameraUniformData[u8FrameInFlightCreateIndex][31] = 1.0f;
+														apafCameraUniformData[u8FrameInFlightCreateIndex][RE_VK_VIEW_MATRIX_OFFSET + GET_VULKAN_MATRIX_ELEMENT_INDEX(0, 0)] = 1.0f;
+														apafCameraUniformData[u8FrameInFlightCreateIndex][RE_VK_VIEW_MATRIX_OFFSET + GET_VULKAN_MATRIX_ELEMENT_INDEX(1, 1)] = 1.0f;
+														apafCameraUniformData[u8FrameInFlightCreateIndex][RE_VK_VIEW_MATRIX_OFFSET + GET_VULKAN_MATRIX_ELEMENT_INDEX(2, 2)] = 1.0f;
+														apafCameraUniformData[u8FrameInFlightCreateIndex][RE_VK_VIEW_MATRIX_OFFSET + GET_VULKAN_MATRIX_ELEMENT_INDEX(3, 3)] = 1.0f;
+														apafCameraUniformData[u8FrameInFlightCreateIndex][RE_VK_PROJECTION_MATRIX_OFFSET + GET_VULKAN_MATRIX_ELEMENT_INDEX(0, 0)] = 1.0f;
+														apafCameraUniformData[u8FrameInFlightCreateIndex][RE_VK_PROJECTION_MATRIX_OFFSET + GET_VULKAN_MATRIX_ELEMENT_INDEX(1, 1)] = 1.0f;
+														apafCameraUniformData[u8FrameInFlightCreateIndex][RE_VK_PROJECTION_MATRIX_OFFSET + GET_VULKAN_MATRIX_ELEMENT_INDEX(2, 2)] = 1.0f;
+														apafCameraUniformData[u8FrameInFlightCreateIndex][RE_VK_PROJECTION_MATRIX_OFFSET + GET_VULKAN_MATRIX_ELEMENT_INDEX(3, 3)] = 1.0f;
 														CATCH_SIGNAL(update_camera_descriptor_set(u8FrameInFlightCreateIndex));
 														if (vkCreateFence(vk_hDevice, &vk_renderFenceCreateInfo, nullptr, &vk_ahRenderFences[u8FrameInFlightCreateIndex]) == VK_SUCCESS) {
 															u8FrameInFlightCreateIndex++;
@@ -414,8 +422,11 @@ namespace RE {
 																if (eScreenPercentage != SCREEN_PERCENTAGE_CONST_IMG_SIZE || CATCH_SIGNAL_AND_RETURN(create_world_render_images(), bool)) {
 																	if (CATCH_SIGNAL_AND_RETURN(swapchain_created_renderer(), bool)) {
 																		if (CATCH_SIGNAL_AND_RETURN(init_opaque_gameobject_renderer(), bool)) {
-																			rectIndexBufferDataTransferFence.wait_for();
-																			return true;
+																			if (CATCH_SIGNAL_AND_RETURN(init_transparent_game_object_renderer(), bool)) {
+																				rectIndexBufferDataTransferFence.wait_for();
+																				return true;
+																			}
+																			CATCH_SIGNAL(destroy_opaque_gameobject_renderer());
 																		}
 																		CATCH_SIGNAL(swapchain_destroyed_renderer());
 																	}
@@ -451,7 +462,7 @@ namespace RE {
 													RE_FATAL_ERROR("Failed to create Vulkan render pass");
 												vkDestroyPipelineLayout(vk_hDevice, vk_hWorldBasicPipelineLayout, nullptr);
 											} else
-												RE_FATAL_ERROR("Failed to create basic Vulkan world render pipeline layout");
+												RE_FATAL_ERROR("Failed to create basic Vulkan pipeline layout for rendering the world");
 											vkFreeDescriptorSets(vk_hDevice, vk_hWorldCameraDescriptorPool, RE_VK_FRAMES_IN_FLIGHT, vk_ahWorldCameraDescriptorSets);
 											std::fill(std::begin(vk_ahWorldCameraDescriptorSets), std::end(vk_ahWorldCameraDescriptorSets), VK_NULL_HANDLE);
 										} else
@@ -488,6 +499,7 @@ namespace RE {
 	}
 	
 	void destroy_renderer() {
+		CATCH_SIGNAL(destroy_transparent_game_object_renderer());
 		CATCH_SIGNAL(destroy_opaque_gameobject_renderer());
 		vkFreeCommandBuffers(vk_hDevice, vk_ahCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX], RE_VK_FRAMES_IN_FLIGHT, vk_ahRenderCommandBuffers);
 		for (uint16_t u16RenderSemaphoreDeleteIndex = 0U; u16RenderSemaphoreDeleteIndex < RE_VK_RENDER_SEMAPHORE_COUNT; u16RenderSemaphoreDeleteIndex++) {
@@ -564,7 +576,7 @@ namespace RE {
 				vkUpdateDescriptorSets(vk_hDevice, 0U, nullptr, 1U, &vk_copyCameraDescriptorSet);
 			}
 		}
-		if (!CATCH_SIGNAL_AND_RETURN(render_opaque_gameobjects(), bool))
+		if (!CATCH_SIGNAL_AND_RETURN(render_opaque_gameobjects() && render_transparent_game_object(), bool))
 			return;
 		if (!begin_recording_vulkan_command_buffer(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr)) {
 			RE_FATAL_ERROR("Failed beginning to record Vulkan command buffer for rendering everything");
@@ -592,12 +604,16 @@ namespace RE {
 			.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
 			.renderPass = vk_hWorldRenderPass,
 			.framebuffer = vk_ahWorldFramebuffers[u8CurrentFrameInFlightIndex],
-			.renderArea = VkRect2D{{0, 0}, vk_worldRenderImageExtent},
+			.renderArea = VkRect2D{
+				VkOffset2D{0, 0}, 
+				vk_worldRenderImageExtent
+			},
 			.clearValueCount = u32ClearValueCount,
 			.pClearValues = vk_aClearValues
 		};
 		vkCmdBeginRenderPass(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], &vk_renderPassInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 		vkCmdExecuteCommands(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], 1U, &vk_ahOpaqueGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex]);
+		vkCmdExecuteCommands(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], 1U, &vk_ahTransparentGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex]);
 		vkCmdEndRenderPass(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex]);
 		CATCH_SIGNAL(vk_cmd_transit_image(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, VK_ACCESS_NONE, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, vk_pahSwapchainImages[u32NextSwapchainImageIndex], VK_IMAGE_ASPECT_COLOR_BIT));
 		const VkImageBlit vk_worldRenderImageBlit = {
@@ -643,9 +659,18 @@ namespace RE {
 			return;
 		}
 		vkResetFences(vk_hDevice, 1U, &vk_ahRenderFences[u8CurrentFrameInFlightIndex]);
-		const VkPipelineStageFlags vk_aePipelinesToWaitForBeforeRendering[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT};
-		const VkSemaphore vk_ahWaitBeforeRenderingSemaphores[2U] = {vk_pahSwapchainSemaphores[u32SwapchainRenderImageIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE], vk_ahRenderSemaphores[u8CurrentFrameInFlightIndex * RE_VK_SEMAPHORES_PER_FRAME_COUNT]};
-		if (!CATCH_SIGNAL_AND_RETURN(submit_to_vulkan_queue(vk_ahDeviceQueueFamilies[RE_VK_QUEUE_GRAPHICS_INDEX], 2U, vk_ahWaitBeforeRenderingSemaphores, vk_aePipelinesToWaitForBeforeRendering, 1U, &vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], 1U, &vk_pahSwapchainSemaphores[u32SwapchainRenderImageIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE + 1U], vk_ahRenderFences[u8CurrentFrameInFlightIndex]), bool)) {
+		constexpr uint32_t u32RenderSemaphoresToWaitForCount = 3U;
+		constexpr VkPipelineStageFlags vk_aePipelinesToWaitForBeforeRendering[u32RenderSemaphoresToWaitForCount] = {
+			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 
+			VK_PIPELINE_STAGE_TRANSFER_BIT, 
+			VK_PIPELINE_STAGE_TRANSFER_BIT
+		};
+		const VkSemaphore vk_ahWaitForSemaphoresBeforeRendering[u32RenderSemaphoresToWaitForCount] = {
+			vk_pahSwapchainSemaphores[u32SwapchainRenderImageIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE], 
+			vk_ahRenderSemaphores[u8CurrentFrameInFlightIndex * RE_VK_SEMAPHORES_PER_FRAME_COUNT + RE_VK_OPAQUE_GAME_OBJECT_SEMAPHORE_INDEX], 
+			vk_ahRenderSemaphores[u8CurrentFrameInFlightIndex * RE_VK_SEMAPHORES_PER_FRAME_COUNT + RE_VK_TRANSPARENT_GAME_OBJECT_SEMAPHORE_INDEX]
+		};
+		if (!CATCH_SIGNAL_AND_RETURN(submit_to_vulkan_queue(vk_ahDeviceQueueFamilies[RE_VK_QUEUE_GRAPHICS_INDEX], u32RenderSemaphoresToWaitForCount, vk_ahWaitForSemaphoresBeforeRendering, vk_aePipelinesToWaitForBeforeRendering, 1U, &vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], 1U, &vk_pahSwapchainSemaphores[u32SwapchainRenderImageIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE + 1U], vk_ahRenderFences[u8CurrentFrameInFlightIndex]), bool)) {
 			RE_FATAL_ERROR("Failed submitting the task for rendering everything to the Vulkan GPU");
 			return;
 		}

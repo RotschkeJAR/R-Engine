@@ -15,8 +15,8 @@ namespace RE {
 
 	void handle_signal(int32_t signalId) {
 		if (signalAlreadyCaught) {
-			println_colored("\nThe signal handler has been called again. Terminating instantly", RE_TERMINAL_COLOR_RED, true, false);
-			std::exit(signalId);
+			println_colored("\nThe signal handler has been called again. Killing itself...\nIf this application doesn't terminate, you have to kill it manually", RE_TERMINAL_COLOR_RED, true, false);
+			std::raise(SIGKILL);
 		}
 		signalAlreadyCaught = true;
 		switch (signalId) {

@@ -232,18 +232,16 @@ namespace RE {
 				.occlusionQueryEnable = VK_FALSE
 			};
 			if (CATCH_SIGNAL_AND_RETURN(begin_recording_vulkan_command_buffer(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT, &vk_inheritanceInfo), bool)) {
-				vkCmdBindPipeline(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hOpaqueGameObjectGraphicsPipeline);
 				vkCmdSetViewport(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], 0U, 1U, &vk_cameraViewport);
 				vkCmdSetScissor(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], 0U, 1U, &vk_cameraScissor);
 				vkCmdBindDescriptorSets(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hWorldBasicPipelineLayout, 0U, 1U, &vk_ahWorldCameraDescriptorSets[u8CurrentFrameInFlightIndex], 0U, nullptr);
 				vkCmdBindIndexBuffer(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], vk_hRectIndexBuffer, 0UL, VK_INDEX_TYPE_UINT16);
+
+				vkCmdBindPipeline(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hOpaqueGameObjectGraphicsPipeline);
 				CATCH_SIGNAL(render_opaque_game_objects());
 				vkCmdBindPipeline(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hTransparentGameObjectPipeline);
-				vkCmdSetViewport(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], 0U, 1U, &vk_cameraViewport);
-				vkCmdSetScissor(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], 0U, 1U, &vk_cameraScissor);
-				vkCmdBindDescriptorSets(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hWorldBasicPipelineLayout, 0U, 1U, &vk_ahWorldCameraDescriptorSets[u8CurrentFrameInFlightIndex], 0U, nullptr);
-				vkCmdBindIndexBuffer(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], vk_hRectIndexBuffer, 0UL, VK_INDEX_TYPE_UINT16);
 				CATCH_SIGNAL(render_transparent_game_objects());
+				
 				if (vkEndCommandBuffer(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex]) == VK_SUCCESS)
 					bSuccess = true;
 				else

@@ -232,7 +232,7 @@ namespace RE {
 			fRight = pActiveCamera->position[0] + a2fCamScale[0],
 			fTop = pActiveCamera->position[1] + a2fCamScale[1],
 			fBottom = pActiveCamera->position[1] - a2fCamScale[1],
-			fNear = 100000.0f,
+			fNear = 10.0f,
 			fFar = -fNear;
 		apafCameraUniformData[u8CurrentFrameInFlightIndex][RE_VK_PROJECTION_MATRIX_OFFSET + GET_VULKAN_MATRIX_ELEMENT_INDEX(0, 0)] = 2.0f / (fRight - fLeft) * sign(pActiveCamera->view[0]);
 		apafCameraUniformData[u8CurrentFrameInFlightIndex][RE_VK_PROJECTION_MATRIX_OFFSET + GET_VULKAN_MATRIX_ELEMENT_INDEX(1, 1)] = 2.0f / (fTop - fBottom) * sign(pActiveCamera->view[1]);

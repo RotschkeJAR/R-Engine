@@ -5,8 +5,6 @@
 #include "RE_RenderBatch_GameObject.hpp"
 
 namespace RE {
-
-	class RenderBatch_GameObject;
 	
 	class Batch_GameObject {
 		private:
@@ -31,11 +29,10 @@ namespace RE {
 			void update();
 			void end();
 
-			void render_opaque();
-			void render_transparent();
-
 		friend bool init_game_object_render_batches();
 		friend void destroy_game_object_render_batches();
+		friend void render_opaque_game_objects();
+		friend void render_transparent_game_objects();
 	};
 
 	void add_to_game_object_batch(GameObject *const pGameObject);

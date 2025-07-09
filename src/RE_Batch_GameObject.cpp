@@ -63,14 +63,6 @@ namespace RE {
 			CATCH_SIGNAL_DETAILED(apGameObjects[u16Index]->end(pCurrentScene), append_to_string("GameObject ", apGameObjects[u16Index], ", Index ", u16Index).c_str());
 	}
 
-	void Batch_GameObject::render_opaque() {
-		renderBatch.render_opaque();
-	}
-
-	void Batch_GameObject::render_transparent() {
-		renderBatch.render_transparent();
-	}
-
 
 	void add_to_game_object_batch(GameObject *const pGameObject) {
 		size_t batchIndex = 0U;
@@ -142,12 +134,12 @@ namespace RE {
 
 	void render_opaque_game_objects() {
 		for (Batch_GameObject *const pBatch : gameObjectBatchList)
-			CATCH_SIGNAL(pBatch->render_opaque());
+			CATCH_SIGNAL(pBatch->renderBatch.render_opaque());
 	}
 
 	void render_transparent_game_objects() {
 		for (Batch_GameObject *const pBatch : gameObjectBatchList)
-			CATCH_SIGNAL(pBatch->render_transparent());
+			CATCH_SIGNAL(pBatch->renderBatch.render_transparent());
 	}
 
 }

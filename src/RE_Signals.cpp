@@ -13,10 +13,14 @@ namespace RE {
 	std::stack<AppLocation> stackTrace;
 	bool signalAlreadyCaught = false;
 
-	void handle_signal(int32_t signalId) {
+	void handle_signal(const int32_t signalId) {
 		if (signalAlreadyCaught) {
 			println_colored("\nThe signal handler has been called again. Killing itself...\nIf this application doesn't terminate, you have to kill it manually", RE_TERMINAL_COLOR_RED, true, false);
+#ifdef RE_OS_WINDOWS
+			TerminateProcess(GetCurrentProcess(), static_cast<UINT>(signalId));
+#elif defined RE_OS_LINUX
 			std::raise(SIGKILL);
+#endif
 		}
 		signalAlreadyCaught = true;
 		switch (signalId) {

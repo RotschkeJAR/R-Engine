@@ -253,7 +253,7 @@ namespace RE {
 		} while (false) )
 
 	template <class... T>
-	std::string append_to_string(T... strings) {
+	[[nodiscard]] std::string append_to_string(T... strings) {
 		std::stringstream ss("");
 		(ss << ... << strings);
 		return std::string(ss.str());
@@ -648,18 +648,20 @@ namespace RE {
 
 	class GameObject {
 		public:
-			const uint32_t u32OwnId;
-			const uint32_t u32SceneParentId;
 			Transform transform;
 			SpriteRenderer spriteRenderer;
+			const uint32_t u32OwnId;
+			const uint32_t u32SceneParentId;
 
 			GameObject() = delete;
-			GameObject(uint32_t u32OwnId, uint32_t u32SceneParentId);
+			GameObject(const uint32_t u32OwnId, const uint32_t u32SceneParentId);
 			virtual ~GameObject();
 
-			virtual void start(Scene* pStartingScene);
-			virtual void update(Scene* pCurrentScene);
-			virtual void end(Scene* pEndingScene);
+			void mark_deletable();
+
+			virtual void start(Scene *const pStartingScene);
+			virtual void update(Scene *const pCurrentScene);
+			virtual void end(Scene *const pEndingScene);
 	};
 
 	class InputAction {
@@ -669,27 +671,27 @@ namespace RE {
 
 		public:
 			InputAction();
-			InputAction(Input eInput);
-			InputAction(uint32_t u32KeyScancode);
+			InputAction(const Input eInput);
+			InputAction(const uint32_t u32KeyScancode);
 			~InputAction();
-			bool is_scroll_wheel();
-			bool is_button();
-			bool is_key();
+			bool is_scroll_wheel() const;
+			bool is_button() const;
+			bool is_key() const;
 
 			// Queries engine to set its input to the next user input
 			void update_input();
-			bool is_updating();
-			void cancel_update();
+			bool is_updating() const;
+			void cancel_update() const;
 			static bool can_update();
 
-			void change_input(Input eInput);
-			void change_scancode(uint32_t u32NewScancode);
+			void change_input(const Input eInput);
+			void change_scancode(const uint32_t u32NewScancode);
 
-			bool is_pressed();
-			bool is_down();
-			bool is_released();
+			bool is_pressed() const;
+			bool is_down() const;
+			bool is_released() const;
 
-			bool has_valid_input_values();
+			bool has_valid_input_values() const;
 	};
 	
 	// Console
@@ -715,13 +717,6 @@ namespace RE {
 	float get_deltaseconds();
 	void set_fps_limit(const uint32_t u32MaxFramesPerSecond);
 	float get_fps_rate();
-
-	// Game object deletion
-	void mark_deletable(GameObject* pGameObject);
-#define MARK_DELETABLE_SAFELY(GAME_OBJECT_POINTER) ([&](GameObject *&rpDeletableGameObject) { \
-			CATCH_SIGNAL(mark_deletable(rpDeletableGameObject)); \
-			rpDeletableGameObject = nullptr; \
-		} (GAME_OBJECT_POINTER))
 	
 	// Manager
 	void set_next_scene(Scene* pNextSceneParam);

@@ -80,7 +80,7 @@ class OC : public GameObject {
 		OC() : GameObject(3, 1) {
 			transform.position[0] = 2.0f;
 			transform.position[1] = 2.0f;
-			transform.position[2] = 0.8f;
+			transform.position[2] = 1.8f;
 			transform.scale[0] = 4.0f;
 			transform.scale[1] = 4.0f;
 			spriteRenderer.color.set_red(0.0f);

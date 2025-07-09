@@ -232,8 +232,8 @@ namespace RE {
 			fRight = pActiveCamera->position[0] + a2fCamScale[0],
 			fTop = pActiveCamera->position[1] + a2fCamScale[1],
 			fBottom = pActiveCamera->position[1] - a2fCamScale[1],
-			fNear = 1.0f,
-			fFar = -1.0f;
+			fNear = 100000.0f,
+			fFar = -fNear;
 		apafCameraUniformData[u8CurrentFrameInFlightIndex][RE_VK_PROJECTION_MATRIX_OFFSET + GET_VULKAN_MATRIX_ELEMENT_INDEX(0, 0)] = 2.0f / (fRight - fLeft) * sign(pActiveCamera->view[0]);
 		apafCameraUniformData[u8CurrentFrameInFlightIndex][RE_VK_PROJECTION_MATRIX_OFFSET + GET_VULKAN_MATRIX_ELEMENT_INDEX(1, 1)] = 2.0f / (fTop - fBottom) * sign(pActiveCamera->view[1]);
 		apafCameraUniformData[u8CurrentFrameInFlightIndex][RE_VK_PROJECTION_MATRIX_OFFSET + GET_VULKAN_MATRIX_ELEMENT_INDEX(2, 2)] = 1.0f / (fNear - fFar);
@@ -653,16 +653,14 @@ namespace RE {
 			return;
 		}
 		vkResetFences(vk_hDevice, 1U, &vk_ahRenderFences[u8CurrentFrameInFlightIndex]);
-		constexpr uint32_t u32RenderSemaphoresToWaitForCount = 3U;
+		constexpr uint32_t u32RenderSemaphoresToWaitForCount = 1U + RE_VK_SEMAPHORES_PER_FRAME_COUNT;
 		constexpr VkPipelineStageFlags vk_aePipelinesToWaitForBeforeRendering[u32RenderSemaphoresToWaitForCount] = {
 			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 
-			VK_PIPELINE_STAGE_TRANSFER_BIT, 
 			VK_PIPELINE_STAGE_TRANSFER_BIT
 		};
 		const VkSemaphore vk_ahWaitForSemaphoresBeforeRendering[u32RenderSemaphoresToWaitForCount] = {
 			vk_pahSwapchainSemaphores[u32SwapchainRenderImageIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE], 
-			vk_ahRenderSemaphores[u8CurrentFrameInFlightIndex * RE_VK_SEMAPHORES_PER_FRAME_COUNT + RE_VK_OPAQUE_GAME_OBJECT_SEMAPHORE_INDEX], 
-			vk_ahRenderSemaphores[u8CurrentFrameInFlightIndex * RE_VK_SEMAPHORES_PER_FRAME_COUNT + RE_VK_TRANSPARENT_GAME_OBJECT_SEMAPHORE_INDEX]
+			vk_ahRenderSemaphores[u8CurrentFrameInFlightIndex * RE_VK_SEMAPHORES_PER_FRAME_COUNT + RE_VK_TRANSFER_GAME_OBJECT_VERTICES_SEMAPHORE_INDEX]
 		};
 		if (!CATCH_SIGNAL_AND_RETURN(submit_to_vulkan_queue(vk_ahDeviceQueueFamilies[RE_VK_QUEUE_GRAPHICS_INDEX], u32RenderSemaphoresToWaitForCount, vk_ahWaitForSemaphoresBeforeRendering, vk_aePipelinesToWaitForBeforeRendering, 1U, &vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], 1U, &vk_pahSwapchainSemaphores[u32SwapchainRenderImageIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE + 1U], vk_ahRenderFences[u8CurrentFrameInFlightIndex]), bool)) {
 			RE_FATAL_ERROR("Failed submitting the task for rendering everything to the Vulkan GPU");

@@ -1,37 +1,34 @@
 #include "RE_Manager.hpp"
 #include "RE_Main.hpp"
-#include "RE_Renderer.hpp"
+#include "RE_Batch_GameObject.hpp"
 
 namespace RE {
 
 	Scene *pCurrentScene = nullptr, *pNextScene = nullptr;
-	std::vector<GameObject*> gameObjects, deletableGameObjects, newGameObjects;
+	std::vector<GameObject*> newGameObjects, deletableGameObjects;
 	bool bDeletingMarkedGameObjects = false;
 
 	static void update_proc() {
 		CATCH_SIGNAL_DETAILED(pCurrentScene->update(), append_to_string("Scene ID: ", pCurrentScene->u32Id).c_str());
-		for (GameObject *pObj : gameObjects)
-			if (is_object_active(pObj))
-				CATCH_SIGNAL_DETAILED(pObj->update(pCurrentScene), append_to_string("Game Object ", pObj, ", ID: ", pObj->u32OwnId).c_str());
+		CATCH_SIGNAL(update_game_objects());
 	}
 
 	static void end_proc() {
 		CATCH_SIGNAL_DETAILED(pCurrentScene->end(), append_to_string("Ending scene ", pCurrentScene, ", ID: ", pCurrentScene->u32Id).c_str());
-		for (GameObject *pObj : gameObjects)
-			if (is_object_active(pObj))
-				CATCH_SIGNAL_DETAILED(pObj->end(pCurrentScene), append_to_string("Ending game object ", pObj, ", ID: ", pObj->u32OwnId).c_str());
+		CATCH_SIGNAL(end_game_objects());
 	}
 
 	static void delete_proc() {
 		bDeletingMarkedGameObjects = true;
-		for (GameObject *pObj : deletableGameObjects)
-			delete pObj;
+		for (GameObject *const pObject : deletableGameObjects)
+			CATCH_SIGNAL_DETAILED(delete pObject, append_to_string("GameObject: ", pObject).c_str());
 		deletableGameObjects.clear();
 		bDeletingMarkedGameObjects = false;
 	}
 
 	static void add_proc() {
-		gameObjects.insert(gameObjects.end(), newGameObjects.begin(), newGameObjects.end());
+		for (GameObject *const pObject : newGameObjects)
+			CATCH_SIGNAL(add_to_game_object_batch(pObject));
 		newGameObjects.clear();
 	}
 
@@ -44,15 +41,14 @@ namespace RE {
 			// End old scene
 			if (pCurrentScene)
 				CATCH_SIGNAL(end_proc());
-			CATCH_SIGNAL(delete_proc());
+			while (!deletableGameObjects.empty())
+				CATCH_SIGNAL(delete_proc());
 
 			pCurrentScene = pNextScene;
 
 			// Start new scene and game objects
 			CATCH_SIGNAL_DETAILED(pCurrentScene->start(), append_to_string("Starting scene ", pCurrentScene, ", ID: ", pCurrentScene->u32Id).c_str());
-			for (GameObject *pObj : gameObjects)
-				if (is_object_active(pObj))
-					CATCH_SIGNAL_DETAILED(pObj->start(pCurrentScene), append_to_string("Starting game object ", pObj, ", ID: ", pObj->u32OwnId).c_str());
+			CATCH_SIGNAL(start_game_objects());
 
 			// Start newly added game objects
 			bool bNewGameObjectsAdded;
@@ -68,8 +64,10 @@ namespace RE {
 			return;
 		}
 		CATCH_SIGNAL(update_proc());
-		CATCH_SIGNAL(delete_proc());
-		CATCH_SIGNAL(add_proc());
+		while (!deletableGameObjects.empty())
+			CATCH_SIGNAL(delete_proc());
+		while (!newGameObjects.empty())
+			CATCH_SIGNAL(add_proc());
 	}
 
 	void last_game_logic_update() {
@@ -84,23 +82,20 @@ namespace RE {
 		return pCurrentScene || (!pCurrentScene && pNextScene);
 	}
 
-	void mark_deletable(GameObject *pGameObject) {
-		if (!bRunning)
+	void mark_game_object_deletable(GameObject *const pGameObject) {
+		if (!bRunning || bDeletingMarkedGameObjects)
 			delete pGameObject;
 		else {
-			std::vector<GameObject*>::iterator it = std::find(gameObjects.begin(), gameObjects.end(), pGameObject);
-			if (it == gameObjects.end()) {
-				it = std::find(newGameObjects.begin(), newGameObjects.end(), pGameObject);
-				if (it != std::end(newGameObjects))
-					newGameObjects.erase(it);
-				else
-					RE_NOTE(append_to_string("The game object ", pGameObject, " is not in the game objects list. In case it had been constructed before the main-function started executing, it is always be discarded"));
+			std::vector<GameObject*>::iterator it = std::find(newGameObjects.begin(), newGameObjects.end(), pGameObject);
+			if (it != newGameObjects.end()) {
+				newGameObjects.erase(it);
+				delete pGameObject;
 			} else
 				deletableGameObjects.push_back(pGameObject);
 		}
 	}
 
-	void set_next_scene(Scene *pNextSceneParam) {
+	void set_next_scene(Scene *const pNextSceneParam) {
 		if (!pNextSceneParam)
 			return;
 		else if (CATCH_SIGNAL_AND_RETURN(!pNextSceneParam->u32Id, bool)) {
@@ -119,7 +114,7 @@ namespace RE {
 	}
 
 	uint32_t get_current_scene_id() {
-		Scene *pCurrentScene = get_current_scene();
+		Scene *const pCurrentScene = get_current_scene();
 		return pCurrentScene ? CATCH_SIGNAL_AND_RETURN(pCurrentScene->u32Id, uint32_t) : 0U;
 	}
 
@@ -132,7 +127,7 @@ namespace RE {
 	}
 
 	uint32_t get_next_scene_id() {
-		Scene *pNextScene = get_next_scene();
+		Scene *const pNextScene = get_next_scene();
 		return pNextScene ? CATCH_SIGNAL_AND_RETURN(pNextScene->u32Id, uint32_t) : 0U;
 	}
 

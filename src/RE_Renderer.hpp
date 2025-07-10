@@ -14,7 +14,7 @@ namespace RE {
 #define RE_VK_TRANSFER_GAME_OBJECT_VERTICES_SEMAPHORE_INDEX 0U
 #define RE_VK_RENDER_SEMAPHORE_COUNT (RE_VK_FRAMES_IN_FLIGHT * RE_VK_SEMAPHORES_PER_FRAME_COUNT)
 
-	extern Camera *pActiveCamera;
+	extern const Camera *pActiveCamera;
 	extern VkViewport vk_cameraViewport;
 	extern VkRect2D vk_cameraScissor;
 	extern VkExtent2D vk_worldRenderImageExtent;
@@ -39,7 +39,7 @@ namespace RE {
 	void render();
 	bool swapchain_created_renderer();
 	void swapchain_destroyed_renderer();
-	void attach_camera(Camera *const pCamera);
+	void attach_camera(const Camera *const pCamera);
 
 }
 

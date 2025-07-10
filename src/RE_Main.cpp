@@ -12,6 +12,10 @@ namespace RE {
 
 	void execute() {
 		std::setlocale(LC_ALL, "");
+		if (!are_scenes_present()) {
+			RE_ERROR("The aren't any scenes yet. The engine won't launch");
+			return;
+		}
 
 		// Create window
 #ifdef RE_OS_WINDOWS
@@ -28,9 +32,10 @@ namespace RE {
 				if (CATCH_SIGNAL_AND_RETURN(init_renderer(), bool)) {
 					std::chrono::high_resolution_clock::time_point currentFrameTime = std::chrono::high_resolution_clock::now(), lastFrameTime;
 					CATCH_SIGNAL(Window::pInstance->show_window(true));
+					bRunning = true;
 
 					// Game loop
-					do {
+					while (!Window::pInstance->should_close() && are_scenes_present() && !bErrorOccured) {
 						CATCH_SIGNAL(Window::pInstance->window_proc());
 						CATCH_SIGNAL(game_logic_update());
 						if (Window::pInstance->should_render()) {
@@ -44,10 +49,10 @@ namespace RE {
 						const float fTimeToWait = fMinDeltatime - fDeltaseconds;
 						if (fTimeToWait > 0.0f)
 							std::this_thread::sleep_for(std::chrono::duration<float>(fTimeToWait));
-						bRunning = !Window::pInstance->should_close() && is_game_valid() && !bErrorOccured;
-					} while (bRunning);
+					}
 
 					// Termination
+					bRunning = false;
 					CATCH_SIGNAL(Window::pInstance->show_window(false));
 					CATCH_SIGNAL(last_game_logic_update());
 					WAIT_FOR_IDLE_VULKAN_DEVICE();

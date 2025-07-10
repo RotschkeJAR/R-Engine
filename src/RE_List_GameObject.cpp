@@ -1,70 +1,31 @@
-#include "RE_Batch_GameObject.hpp"
+#include "RE_List_GameObject.hpp"
 #include "RE_Manager.hpp"
+#include "RE_ListBatch_GameObject.hpp"
+#include "RE_Main.hpp"
 
 #include <list>
 
 namespace RE {
 	
+	std::vector<GameObject*> newGameObjects, deletableGameObjects;
 	std::list<Batch_GameObject*> gameObjectBatchList;
+	bool bDeletingMarkedGameObjects = false;
 
-	Batch_GameObject::Batch_GameObject() : renderBatch(*this), u16Count(0U) {}
-	Batch_GameObject::~Batch_GameObject() {}
-
-	void Batch_GameObject::add(GameObject *const pGameObject) {
-		apGameObjects[u16Count] = pGameObject;
-		u16Count++;
-	}
-	
-	bool Batch_GameObject::remove(const GameObject *const pGameObject) {
-		for (uint16_t u16Index = 0U; u16Index < u16Count; u16Index++)
-			if (CATCH_SIGNAL_AND_RETURN(apGameObjects[u16Index] == pGameObject, bool)) {
-				u16Count--;
-				CATCH_SIGNAL(apGameObjects[u16Index] = apGameObjects[u16Count]);
-				return true;
-			}
-		return false;
-	}
-	
-	bool Batch_GameObject::contains(const GameObject *const pGameObject) const  {
-		for (uint16_t u16Index = 0U; u16Index < u16Count; u16Index++)
-			if (CATCH_SIGNAL_AND_RETURN(apGameObjects[u16Index] == pGameObject, bool))
-				return true;
-		return false;
-	}
-	
-	GameObject* Batch_GameObject::get(const uint16_t u16Index) {
-		return apGameObjects[u16Index];
-	}
-	
-	uint16_t Batch_GameObject::size() const {
-		return u16Count;
-	}
-	
-	bool Batch_GameObject::empty() const {
-		return !u16Count;
+	void add_new_game_objects() {
+		for (GameObject *const pObject : newGameObjects)
+			CATCH_SIGNAL(add_game_object(pObject));
+		newGameObjects.clear();
 	}
 
-	bool Batch_GameObject::has_space() const {
-		return u16Count < RE_VK_RENDERABLE_RECTANGLES_COUNT;
+	void delete_marked_game_objects() {
+		bDeletingMarkedGameObjects = true;
+		for (GameObject *const pObject : deletableGameObjects)
+			CATCH_SIGNAL_DETAILED(delete pObject, append_to_string("GameObject: ", pObject).c_str());
+		deletableGameObjects.clear();
+		bDeletingMarkedGameObjects = false;
 	}
 
-	void Batch_GameObject::start() {
-		for (uint16_t u16Index = 0U; u16Index < u16Count; u16Index++)
-			CATCH_SIGNAL_DETAILED(apGameObjects[u16Index]->start(pCurrentScene), append_to_string("GameObject ", apGameObjects[u16Index], ", Index ", u16Index).c_str());
-	}
-	
-	void Batch_GameObject::update() {
-		for (uint16_t u16Index = 0U; u16Index < u16Count; u16Index++)
-			CATCH_SIGNAL_DETAILED(apGameObjects[u16Index]->update(pCurrentScene), append_to_string("GameObject ", apGameObjects[u16Index], ", Index ", u16Index).c_str());
-	}
-	
-	void Batch_GameObject::end() {
-		for (uint16_t u16Index = 0U; u16Index < u16Count; u16Index++)
-			CATCH_SIGNAL_DETAILED(apGameObjects[u16Index]->end(pCurrentScene), append_to_string("GameObject ", apGameObjects[u16Index], ", Index ", u16Index).c_str());
-	}
-
-
-	void add_to_game_object_batch(GameObject *const pGameObject) {
+	void add_game_object(GameObject *const pGameObject) {
 		size_t batchIndex = 0U;
 		for (Batch_GameObject *pBatch : gameObjectBatchList) {
 			if (pBatch->has_space()) {
@@ -80,7 +41,7 @@ namespace RE {
 		}
 	}
 	
-	void remove_from_game_object_batch(const GameObject *const pGameObject) {
+	void remove_game_object(const GameObject *const pGameObject) {
 		for (Batch_GameObject *pBatch : gameObjectBatchList)
 			if (CATCH_SIGNAL_AND_RETURN(pBatch->remove(pGameObject), bool)) {
 				if (pBatch->empty()) {
@@ -89,6 +50,19 @@ namespace RE {
 				}
 				break;
 			}
+	}
+
+	void mark_game_object_deletable(GameObject *const pGameObject) {
+		if (!bRunning || bDeletingMarkedGameObjects)
+			delete pGameObject;
+		else {
+			std::vector<GameObject*>::iterator it = std::find(newGameObjects.begin(), newGameObjects.end(), pGameObject);
+			if (it != newGameObjects.end()) {
+				newGameObjects.erase(it);
+				delete pGameObject;
+			} else
+				deletableGameObjects.push_back(pGameObject);
+		}
 	}
 
 	void start_game_objects() {

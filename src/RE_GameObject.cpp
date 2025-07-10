@@ -1,7 +1,7 @@
 #include "RE_Internal Header.hpp"
 #include "RE_Manager.hpp"
 #include "RE_Main.hpp"
-#include "RE_Batch_GameObject.hpp"
+#include "RE_List_GameObject.hpp"
 
 namespace RE {
 	
@@ -9,7 +9,7 @@ namespace RE {
 		newGameObjects.push_back(this);
 	}
 	GameObject::~GameObject() {
-		CATCH_SIGNAL(remove_from_game_object_batch(this));
+		CATCH_SIGNAL(remove_game_object(this));
 	}
 
 	void GameObject::mark_deletable() {

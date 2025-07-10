@@ -616,8 +616,12 @@ namespace RE {
 			const uint32_t u32Id;
 
 			Scene() = delete;
-			Scene(uint32_t u32Id);
+			Scene(const uint32_t u32Id);
 			virtual ~Scene();
+
+			bool is_current_scene() const;
+			void set_next_scene();
+			bool is_next_scene() const;
 
 			virtual void start();
 			virtual void update();
@@ -635,9 +639,9 @@ namespace RE {
 			Camera(Vector3f &rPosition);
 			Camera(Vector3f &rPosition, Vector2f &rScale);
 			Camera(Vector3f &rPosition, Vector2f &rScale, Vector2f &rView);
-			~Camera();
+			virtual ~Camera();
 			virtual void update();
-			void activate();
+			void activate() const;
 			void deactivate() const;
 			bool has_same_transform(const Camera &rCompareCamera) const;
 
@@ -724,6 +728,7 @@ namespace RE {
 	Scene* get_current_scene();
 	uint32_t get_current_scene_id();
 	bool is_scene_current(const uint32_t u32SceneId);
+
 	Scene* get_next_scene();
 	uint32_t get_next_scene_id();
 	bool is_scene_next(const uint32_t u32SceneId);

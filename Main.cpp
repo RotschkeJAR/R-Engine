@@ -51,7 +51,7 @@ class Objy : public GameObject {
 
 		Objy() : GameObject(1, 1), left(RE_INPUT_KEY_ARROW_LEFT), right(RE_INPUT_KEY_ARROW_RIGHT), up(RE_INPUT_KEY_ARROW_UP), down(RE_INPUT_KEY_ARROW_DOWN), hits(0UL), misses(0UL) {
 			pObjy = this;
-			transform.position[2] = -0.5f;
+			transform.position[2] = 4.5f;
 			transform.scale[0] = 0.1f;
 			transform.scale[1] = 0.1f;
 		}
@@ -67,8 +67,8 @@ class Objy : public GameObject {
 				hits++;
 			else
 				misses++;
-			transform.position[0] += (right.is_down() - left.is_down()) * 0.5f * get_deltaseconds();
-			transform.position[1] += (up.is_down() - down.is_down()) * 0.5f * get_deltaseconds();
+			transform.position[0] += (right.is_down() - left.is_down()) * 0.62f * get_deltaseconds();
+			transform.position[1] += (up.is_down() - down.is_down()) * 0.62f * get_deltaseconds();
 		}
 		void end(Scene* pEndingScene) {
 			PRINT_LN(append_to_string(hits, ", ", misses).c_str());
@@ -78,11 +78,11 @@ class Objy : public GameObject {
 class OC : public GameObject {
 	public:
 		OC() : GameObject(3, 1) {
-			transform.position[0] = 2.0f;
-			transform.position[1] = 2.0f;
-			transform.position[2] = 1.8f;
-			transform.scale[0] = 4.0f;
-			transform.scale[1] = 4.0f;
+			transform.position[0] = 0.5f;
+			transform.position[1] = 0.5f;
+			transform.position[2] = 0.0f;
+			transform.scale[0] = 1.0f;
+			transform.scale[1] = 1.0f;
 			spriteRenderer.color.set_red(0.0f);
 			spriteRenderer.color.set_green(0.0f);
 		}
@@ -109,7 +109,10 @@ class PlayerCamera : public Camera {
 		InputAction zoomerIn, zoomerOut;
 
 	public:
-		PlayerCamera() : zoomerIn(RE_INPUT_SCROLL_UP), zoomerOut(RE_INPUT_SCROLL_DOWN) {}
+		PlayerCamera() : zoomerIn(RE_INPUT_SCROLL_UP), zoomerOut(RE_INPUT_SCROLL_DOWN) {
+			view[0] = 1.33f;
+			view[1] = view[0];
+		}
 		~PlayerCamera() {}
 		void update() {
 			if (pObjy) {
@@ -135,8 +138,6 @@ class First : public Scene {
 		First() : Scene(1), bCamActive(true) {}
 		~First() {}
 		void start() {
-			playerCam.view[0] = 1.0f;
-			playerCam.view[1] = 1.0f;
 			playerCam.activate();
 			trigger.change_input(RE_INPUT_KEY_NUMPAD_ENTER);
 			refresh.change_input(RE_INPUT_KEY_ESCAPE);
@@ -144,7 +145,7 @@ class First : public Scene {
 		}
 		void update() {
 			if (trigger.is_pressed())
-				set_next_scene(second);
+				set_next_scene();
 			else if (refresh.is_pressed())
 				trigger.update_input();
 			else if (camActivator.is_pressed()) {

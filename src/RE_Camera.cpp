@@ -13,7 +13,7 @@ namespace RE {
 
 	void Camera::update() {}
 
-	void Camera::activate() {
+	void Camera::activate() const {
 		attach_camera(this);
 	}
 

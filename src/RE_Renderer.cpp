@@ -32,7 +32,7 @@ namespace RE {
 #define RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE 2U
 #define RE_VK_SWAPCHAIN_SEMAPHORE_COUNT (u32SwapchainImageCount * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE)
 
-	Camera *pActiveCamera = nullptr;
+	const Camera *pActiveCamera = nullptr;
 	VkViewport vk_cameraViewport = {
 		.minDepth = 0.0f,
 		.maxDepth = 1.0f
@@ -535,8 +535,6 @@ namespace RE {
 	}
 
 	void render() {
-		if (pActiveCamera)
-			CATCH_SIGNAL(pActiveCamera->update());
 		vkWaitForFences(vk_hDevice, 1U, &vk_ahRenderFences[u8CurrentFrameInFlightIndex], VK_TRUE, std::numeric_limits<uint64_t>::max());
 		uint32_t u32NextSwapchainImageIndex;
 		const VkResult vk_eSwapchainImageAcquireResult = vkAcquireNextImageKHR(vk_hDevice, vk_hSwapchain, std::numeric_limits<uint64_t>::max(), vk_pahSwapchainSemaphores[u32SwapchainRenderImageIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE], VK_NULL_HANDLE, &u32NextSwapchainImageIndex);
@@ -728,7 +726,7 @@ namespace RE {
 			CATCH_SIGNAL(destroy_world_render_images());
 	}
 
-	void attach_camera(Camera *const pCamera) {
+	void attach_camera(const Camera *const pCamera) {
 		pActiveCamera = pCamera;
 		if (!pActiveCamera) {
 			vk_cameraViewport.width = vk_worldRenderImageExtent.width;

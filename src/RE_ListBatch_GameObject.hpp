@@ -35,18 +35,6 @@ namespace RE {
 		friend void render_transparent_game_objects();
 	};
 
-	void add_to_game_object_batch(GameObject *const pGameObject);
-	void remove_from_game_object_batch(const GameObject *const pGameObject);
-
-	void start_game_objects();
-	void update_game_objects();
-	void end_game_objects();
-
-	bool init_game_object_render_batches();
-	void destroy_game_object_render_batches();
-	void render_opaque_game_objects();
-	void render_transparent_game_objects();
-
 }
 
 #endif /* __RE_BATCH_GAME_OBJECT_H__ */

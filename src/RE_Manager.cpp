@@ -1,12 +1,10 @@
 #include "RE_Manager.hpp"
 #include "RE_Main.hpp"
-#include "RE_Batch_GameObject.hpp"
+#include "RE_List_GameObject.hpp"
 
 namespace RE {
 
 	Scene *pCurrentScene = nullptr, *pNextScene = nullptr;
-	std::vector<GameObject*> newGameObjects, deletableGameObjects;
-	bool bDeletingMarkedGameObjects = false;
 
 	static void update_proc() {
 		CATCH_SIGNAL_DETAILED(pCurrentScene->update(), append_to_string("Scene ID: ", pCurrentScene->u32Id).c_str());
@@ -19,17 +17,11 @@ namespace RE {
 	}
 
 	static void delete_proc() {
-		bDeletingMarkedGameObjects = true;
-		for (GameObject *const pObject : deletableGameObjects)
-			CATCH_SIGNAL_DETAILED(delete pObject, append_to_string("GameObject: ", pObject).c_str());
-		deletableGameObjects.clear();
-		bDeletingMarkedGameObjects = false;
+		CATCH_SIGNAL(delete_marked_game_objects());
 	}
 
 	static void add_proc() {
-		for (GameObject *const pObject : newGameObjects)
-			CATCH_SIGNAL(add_to_game_object_batch(pObject));
-		newGameObjects.clear();
+		CATCH_SIGNAL(add_new_game_objects());
 	}
 
 	bool is_object_active(const GameObject *pGameObject) {
@@ -78,21 +70,8 @@ namespace RE {
 		pNextScene = nullptr;
 	}
 
-	bool is_game_valid() {
+	bool are_scenes_present() {
 		return pCurrentScene || (!pCurrentScene && pNextScene);
-	}
-
-	void mark_game_object_deletable(GameObject *const pGameObject) {
-		if (!bRunning || bDeletingMarkedGameObjects)
-			delete pGameObject;
-		else {
-			std::vector<GameObject*>::iterator it = std::find(newGameObjects.begin(), newGameObjects.end(), pGameObject);
-			if (it != newGameObjects.end()) {
-				newGameObjects.erase(it);
-				delete pGameObject;
-			} else
-				deletableGameObjects.push_back(pGameObject);
-		}
 	}
 
 	void set_next_scene(Scene *const pNextSceneParam) {

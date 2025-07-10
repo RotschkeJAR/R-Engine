@@ -1,14 +1,24 @@
 #include "RE_Internal Header.hpp"
 #include "RE_Renderer.hpp"
+#include "RE_List_Camera.hpp"
 
 namespace RE {
 	
-	Camera::Camera() : scale(1.0f, 1.0f), view(10.0f, 10.0f) {}
-	Camera::Camera(Vector3f &rPosition) : position(rPosition), scale(1.0f, 1.0f), view(10.0f, 10.0f) {}
-	Camera::Camera(Vector3f &rPosition, Vector2f &rScale) : position(rPosition), scale(rScale), view(10.0f, 10.0f) {}
-	Camera::Camera(Vector3f &rPosition, Vector2f &rScale, Vector2f &rView) : position(rPosition), scale(rScale), view(rView) {}
+	Camera::Camera() : scale(1.0f, 1.0f), view(10.0f, 10.0f) {
+		newCameras.push_back(this);
+	}
+	Camera::Camera(Vector3f &rPosition) : position(rPosition), scale(1.0f, 1.0f), view(10.0f, 10.0f) {
+		newCameras.push_back(this);
+	}
+	Camera::Camera(Vector3f &rPosition, Vector2f &rScale) : position(rPosition), scale(rScale), view(10.0f, 10.0f) {
+		newCameras.push_back(this);
+	}
+	Camera::Camera(Vector3f &rPosition, Vector2f &rScale, Vector2f &rView) : position(rPosition), scale(rScale), view(rView) {
+		newCameras.push_back(this);
+	}
 	Camera::~Camera() {
 		deactivate();
+		CATCH_SIGNAL(remove_camera(this));
 	}
 
 	void Camera::update() {}
@@ -20,6 +30,10 @@ namespace RE {
 	void Camera::deactivate() const {
 		if (pActiveCamera == this)
 			attach_camera(nullptr);
+	}
+
+	void Camera::mark_deletable() {
+		CATCH_SIGNAL(mark_camera_deletable(this));
 	}
 	
 	bool Camera::has_same_transform(const Camera &rCompareCamera) const {

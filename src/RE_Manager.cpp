@@ -1,6 +1,7 @@
 #include "RE_Manager.hpp"
 #include "RE_Main.hpp"
 #include "RE_List_GameObject.hpp"
+#include "RE_List_Camera.hpp"
 
 namespace RE {
 
@@ -9,19 +10,23 @@ namespace RE {
 	static void update_proc() {
 		CATCH_SIGNAL_DETAILED(pCurrentScene->update(), append_to_string("Scene ID: ", pCurrentScene->u32Id).c_str());
 		CATCH_SIGNAL(update_game_objects());
+		CATCH_SIGNAL(update_cameras());
 	}
 
 	static void end_proc() {
 		CATCH_SIGNAL_DETAILED(pCurrentScene->end(), append_to_string("Ending scene ", pCurrentScene, ", ID: ", pCurrentScene->u32Id).c_str());
 		CATCH_SIGNAL(end_game_objects());
+		CATCH_SIGNAL(end_cameras());
 	}
 
 	static void delete_proc() {
 		CATCH_SIGNAL(delete_marked_game_objects());
+		CATCH_SIGNAL(delete_marked_cameras());
 	}
 
 	static void add_proc() {
 		CATCH_SIGNAL(add_new_game_objects());
+		CATCH_SIGNAL(add_new_cameras());
 	}
 
 	bool is_object_active(const GameObject *pGameObject) {
@@ -41,16 +46,17 @@ namespace RE {
 			// Start new scene and game objects
 			CATCH_SIGNAL_DETAILED(pCurrentScene->start(), append_to_string("Starting scene ", pCurrentScene, ", ID: ", pCurrentScene->u32Id).c_str());
 			CATCH_SIGNAL(start_game_objects());
+			CATCH_SIGNAL(start_cameras());
 
-			// Start newly added game objects
-			bool bNewGameObjectsAdded;
+			// Start newly added objects
+			bool bNewObjectsAdded;
 			do {
 				for (GameObject *pObj : newGameObjects)
 					if (is_object_active(pObj))
 						CATCH_SIGNAL_DETAILED(pObj->start(pCurrentScene), append_to_string("Starting new game object ", pObj, ", ID: ", pObj->u32OwnId).c_str());
-				bNewGameObjectsAdded = !newGameObjects.empty();
+				bNewObjectsAdded = !newGameObjects.empty();
 				CATCH_SIGNAL(add_proc());
-			} while (bNewGameObjectsAdded);
+			} while (bNewObjectsAdded);
 		} else if (!pCurrentScene) {
 			RE_ERROR("There is no active scene at the moment");
 			return;

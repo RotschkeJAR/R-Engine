@@ -5,11 +5,11 @@
 
 namespace RE {
 
-	class Batch_GameObject;
+	class ListBatch_GameObject;
 	
 	class RenderBatch_GameObject {
 		private:
-			Batch_GameObject &rGameObjectBatch;
+			ListBatch_GameObject &rGameObjectBatch;
 			VkBuffer vk_hStagingVertexBuffer, vk_ahVertexBuffers[RE_VK_FRAMES_IN_FLIGHT];
 			VkDeviceMemory vk_hStagingVertexBufferMemory, vk_ahVertexBufferMemories[RE_VK_FRAMES_IN_FLIGHT];
 			float *pafVertices;
@@ -18,7 +18,7 @@ namespace RE {
 
 		public:
 			RenderBatch_GameObject() = delete;
-			RenderBatch_GameObject(Batch_GameObject &rGameObjectBatch);
+			RenderBatch_GameObject(ListBatch_GameObject &rGameObjectBatch);
 			~RenderBatch_GameObject();
 			bool init();
 			void destroy();

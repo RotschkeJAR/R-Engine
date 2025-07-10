@@ -6,15 +6,15 @@
 
 namespace RE {
 	
-	class Batch_GameObject {
+	class ListBatch_GameObject final {
 		private:
 			GameObject *apGameObjects[RE_VK_RENDERABLE_RECTANGLES_COUNT];
 			RenderBatch_GameObject renderBatch;
 			uint16_t u16Count;
 
 		public:
-			Batch_GameObject();
-			~Batch_GameObject();
+			ListBatch_GameObject();
+			~ListBatch_GameObject();
 
 			void add(GameObject *const pGameObject);
 			bool remove(const GameObject *const pGameObject);

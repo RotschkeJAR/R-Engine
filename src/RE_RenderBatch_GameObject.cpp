@@ -6,7 +6,7 @@
 
 namespace RE {
 	
-	RenderBatch_GameObject::RenderBatch_GameObject(Batch_GameObject &rGameObjectBatch) : rGameObjectBatch(rGameObjectBatch), vk_hStagingVertexBuffer(VK_NULL_HANDLE), vk_ahVertexBuffers{}, vk_hStagingVertexBufferMemory(VK_NULL_HANDLE), vk_ahVertexBufferMemories{}, pafVertices(nullptr), vk_transparentVerticesOffsetBytes(0UL), u16TransparentCount(0U) {
+	RenderBatch_GameObject::RenderBatch_GameObject(ListBatch_GameObject &rGameObjectBatch) : rGameObjectBatch(rGameObjectBatch), vk_hStagingVertexBuffer(VK_NULL_HANDLE), vk_ahVertexBuffers{}, vk_hStagingVertexBufferMemory(VK_NULL_HANDLE), vk_ahVertexBufferMemories{}, pafVertices(nullptr), vk_transparentVerticesOffsetBytes(0UL), u16TransparentCount(0U) {
 		if (vk_hDevice)
 			CATCH_SIGNAL(init());
 	}

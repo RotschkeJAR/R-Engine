@@ -643,6 +643,7 @@ namespace RE {
 			virtual void update();
 			void activate() const;
 			void deactivate() const;
+			void mark_deletable();
 			bool has_same_transform(const Camera &rCompareCamera) const;
 
 			void operator =(const Camera &rCopyCamera);

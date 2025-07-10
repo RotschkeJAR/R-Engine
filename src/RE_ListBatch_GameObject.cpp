@@ -5,15 +5,15 @@
 
 namespace RE {
 
-	Batch_GameObject::Batch_GameObject() : renderBatch(*this), u16Count(0U) {}
-	Batch_GameObject::~Batch_GameObject() {}
+	ListBatch_GameObject::ListBatch_GameObject() : renderBatch(*this), u16Count(0U) {}
+	ListBatch_GameObject::~ListBatch_GameObject() {}
 
-	void Batch_GameObject::add(GameObject *const pGameObject) {
+	void ListBatch_GameObject::add(GameObject *const pGameObject) {
 		apGameObjects[u16Count] = pGameObject;
 		u16Count++;
 	}
 	
-	bool Batch_GameObject::remove(const GameObject *const pGameObject) {
+	bool ListBatch_GameObject::remove(const GameObject *const pGameObject) {
 		for (uint16_t u16Index = 0U; u16Index < u16Count; u16Index++)
 			if (CATCH_SIGNAL_AND_RETURN(apGameObjects[u16Index] == pGameObject, bool)) {
 				u16Count--;
@@ -23,40 +23,40 @@ namespace RE {
 		return false;
 	}
 	
-	bool Batch_GameObject::contains(const GameObject *const pGameObject) const  {
+	bool ListBatch_GameObject::contains(const GameObject *const pGameObject) const  {
 		for (uint16_t u16Index = 0U; u16Index < u16Count; u16Index++)
 			if (CATCH_SIGNAL_AND_RETURN(apGameObjects[u16Index] == pGameObject, bool))
 				return true;
 		return false;
 	}
 	
-	GameObject* Batch_GameObject::get(const uint16_t u16Index) {
+	GameObject* ListBatch_GameObject::get(const uint16_t u16Index) {
 		return apGameObjects[u16Index];
 	}
 	
-	uint16_t Batch_GameObject::size() const {
+	uint16_t ListBatch_GameObject::size() const {
 		return u16Count;
 	}
 	
-	bool Batch_GameObject::empty() const {
+	bool ListBatch_GameObject::empty() const {
 		return !u16Count;
 	}
 
-	bool Batch_GameObject::has_space() const {
+	bool ListBatch_GameObject::has_space() const {
 		return u16Count < RE_VK_RENDERABLE_RECTANGLES_COUNT;
 	}
 
-	void Batch_GameObject::start() {
+	void ListBatch_GameObject::start() {
 		for (uint16_t u16Index = 0U; u16Index < u16Count; u16Index++)
 			CATCH_SIGNAL_DETAILED(apGameObjects[u16Index]->start(pCurrentScene), append_to_string("GameObject ", apGameObjects[u16Index], ", Index ", u16Index).c_str());
 	}
 	
-	void Batch_GameObject::update() {
+	void ListBatch_GameObject::update() {
 		for (uint16_t u16Index = 0U; u16Index < u16Count; u16Index++)
 			CATCH_SIGNAL_DETAILED(apGameObjects[u16Index]->update(pCurrentScene), append_to_string("GameObject ", apGameObjects[u16Index], ", Index ", u16Index).c_str());
 	}
 	
-	void Batch_GameObject::end() {
+	void ListBatch_GameObject::end() {
 		for (uint16_t u16Index = 0U; u16Index < u16Count; u16Index++)
 			CATCH_SIGNAL_DETAILED(apGameObjects[u16Index]->end(pCurrentScene), append_to_string("GameObject ", apGameObjects[u16Index], ", Index ", u16Index).c_str());
 	}

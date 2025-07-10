@@ -1,6 +1,6 @@
 #include "RE_List_Camera.hpp"
 #include "RE_ListBatch_Camera.hpp"
-#include "RE_Main.cpp"
+#include "RE_Main.hpp"
 
 #include <list>
 

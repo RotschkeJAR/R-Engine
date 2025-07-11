@@ -550,24 +550,21 @@ namespace RE {
 				}
 				break;
 		}
-		if (pActiveCamera) {
-			if (pActiveCamera->view[0] && pActiveCamera->view[1]) {
-				CATCH_SIGNAL(calculate_world_render_area_with_camera());
-				CATCH_SIGNAL(update_camera_uniform_buffer());
-			} else {
-				RE_WARNING(append_to_string("The camera's view shouldn't contain any zeros: ", pActiveCamera->view, "; using old camera data instead"));
-				const VkCopyDescriptorSet vk_copyCameraDescriptorSet = {
-					.sType = VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET,
-					.srcSet = vk_ahWorldCameraDescriptorSets[u8CurrentFrameInFlightIndex == 0U ? (RE_VK_FRAMES_IN_FLIGHT - 1U) : (u8CurrentFrameInFlightIndex - 1U)],
-					.srcBinding = 0U,
-					.srcArrayElement = 0U,
-					.dstSet = vk_ahWorldCameraDescriptorSets[u8CurrentFrameInFlightIndex],
-					.dstBinding = 0U,
-					.dstArrayElement = 0U,
-					.descriptorCount = 1U
-				};
-				vkUpdateDescriptorSets(vk_hDevice, 0U, nullptr, 1U, &vk_copyCameraDescriptorSet);
-			}
+		if (pActiveCamera && pActiveCamera->view[0] && pActiveCamera->view[1]) {
+			CATCH_SIGNAL(calculate_world_render_area_with_camera());
+			CATCH_SIGNAL(update_camera_uniform_buffer());
+		} else {
+			const VkCopyDescriptorSet vk_copyCameraDescriptorSet = {
+				.sType = VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET,
+				.srcSet = vk_ahWorldCameraDescriptorSets[u8CurrentFrameInFlightIndex == 0U ? (RE_VK_FRAMES_IN_FLIGHT - 1U) : (u8CurrentFrameInFlightIndex - 1U)],
+				.srcBinding = 0U,
+				.srcArrayElement = 0U,
+				.dstSet = vk_ahWorldCameraDescriptorSets[u8CurrentFrameInFlightIndex],
+				.dstBinding = 0U,
+				.dstArrayElement = 0U,
+				.descriptorCount = 1U
+			};
+			vkUpdateDescriptorSets(vk_hDevice, 0U, nullptr, 1U, &vk_copyCameraDescriptorSet);
 		}
 		if (!CATCH_SIGNAL_AND_RETURN(render_game_objects(), bool))
 			return;

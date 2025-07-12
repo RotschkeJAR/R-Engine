@@ -5,12 +5,12 @@
 
 namespace RE {
 
-	void print_colored(const char* pcContent, const TerminalColor eColor, const bool bBackgroundColored, const bool bBold);
-	void println_colored(const char* pcContent, const TerminalColor eColor, const bool bBackgroundColored, const bool bBold);
+	void print_colored(const char *const pcContent, const TerminalColor eColor, const bool bBackgroundColored, const bool bBold);
+	void println_colored(const char *const pcContent, const TerminalColor eColor, const bool bBackgroundColored, const bool bBold);
 	
-	void error(const char* pcFile, const char* pcFunc, const uint32_t u32Line, const char* pcDetail, const bool bTerminate);
-	void warning(const char* pcFile, const char* pcFunc, const uint32_t u32Line, const char* pcDetail);
-	void note(const char* pcFile, const char* pcFunc, const uint32_t u32Line, const char* pcDetail);
+	void error(const char *const pcFile, const char *const pcFunc, const uint32_t u32Line, const char *const pcDetail, const bool bTerminate);
+	void warning(const char *const pcFile, const char *const pcFunc, const uint32_t u32Line, const char *const pcDetail);
+	void note(const char *const pcFile, const char *const pcFunc, const uint32_t u32Line, const char *const pcDetail);
 #define RE_FATAL_ERROR(T) error(__FILE__, __func__, __LINE__, append_to_string("[R-Engine] ", STRIP_QUOTE_MACRO(T)).c_str(), true)
 #define RE_ERROR(T) error(__FILE__, __func__, __LINE__, append_to_string("[R-Engine] ", STRIP_QUOTE_MACRO(T)).c_str(), false)
 #define RE_WARNING(T) warning(__FILE__, __func__, __LINE__, append_to_string("[R-Engine] ", STRIP_QUOTE_MACRO(T)).c_str())

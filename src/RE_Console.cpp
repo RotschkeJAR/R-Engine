@@ -44,7 +44,7 @@ namespace RE {
 		return result;
 	}
 
-	static void print_error_msg(const char* pcFile, const char* pcFunc, const uint32_t u32Line, const char* pcDetail) {
+	static void print_error_msg(const char *const pcFile, const char *const pcFunc, const uint32_t u32Line, const char *const pcDetail) {
 		print(" : ");
 		print_colored(pcFile, RE_TERMINAL_COLOR_BRIGHT_WHITE, false, true);
 		println(" (line ", u32Line, "; in function \"", pcFunc, "\")");
@@ -53,15 +53,15 @@ namespace RE {
 			println("\t", get_line(pcDetail, u32Line));
 	}
 
-	void print_colored(const char* pcContent, const TerminalColor eColor, const bool bBackgroundColored, const bool bBold) {
+	void print_colored(const char *const pcContent, const TerminalColor eColor, const bool bBackgroundColored, const bool bBold) {
 		print(escape_code_to_string(eColor, bBackgroundColored, bBold), pcContent, DEFAULT_COLOR);
 	}
 
-	void println_colored(const char* pcContent, const TerminalColor eColor, const bool bBackgroundColored, const bool bBold) {
+	void println_colored(const char *const pcContent, const TerminalColor eColor, const bool bBackgroundColored, const bool bBold) {
 		println(escape_code_to_string(eColor, bBackgroundColored, bBold), pcContent, DEFAULT_COLOR);
 	}
 	
-	void error(const char* pcFile, const char* pcFunc, const uint32_t u32Line, const char* pcDetail, const bool bTerminate) {
+	void error(const char *const pcFile, const char *const pcFunc, const uint32_t u32Line, const char *const pcDetail, const bool bTerminate) {
 		print_time();
 		print_colored("ERROR", RE_TERMINAL_COLOR_RED, false, false);
 		print_error_msg(pcFile, pcFunc, u32Line, pcDetail);
@@ -79,7 +79,7 @@ namespace RE {
 		}
 	}
 
-	void warning(const char* pcFile, const char* pcFunc, const uint32_t u32Line, const char* pcDetail) {
+	void warning(const char *const pcFile, const char *const pcFunc, const uint32_t u32Line, const char *const pcDetail) {
 		if (is_bit_true<uint8_t>(u8ConsoleSettings, TREAT_WARNING_AS_ERROR))
 			error(pcFile, pcFunc, u32Line, pcDetail, false);
 		else {
@@ -89,7 +89,7 @@ namespace RE {
 		}
 	}
 
-	void note(const char* pcFile, const char* pcFunc, const uint32_t u32Line, const char* pcDetail) {
+	void note(const char *const pcFile, const char *const pcFunc, const uint32_t u32Line, const char *const pcDetail) {
 		print_time();
 		print_colored("NOTE", RE_TERMINAL_COLOR_WHITE, false, false);
 		print_error_msg(pcFile, pcFunc, u32Line, pcDetail);

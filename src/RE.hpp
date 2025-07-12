@@ -197,14 +197,14 @@ namespace RE {
 	void println(T... content) {
 		print(content..., "\n");
 	}
-	void print_colored(const char* pcContent, const TerminalColor eColor, const bool bBackgroundColored, const bool bBold);
-	void println_colored(const char* pcContent, const TerminalColor eColor, const bool bBackgroundColored, const bool bBold);
+	void print_colored(const char *const pcContent, const TerminalColor eColor, const bool bBackgroundColored, const bool bBold);
+	void println_colored(const char *const pcContent, const TerminalColor eColor, const bool bBackgroundColored, const bool bBold);
 #define PRINT(...) print(append_to_string(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE_MACRO(__VA_ARGS__)))
 #define PRINT_LN(...) print(append_to_string(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE_MACRO(__VA_ARGS__), "\n"))
 	
-	void error(const char* pcFile, const char* pcFunc, const uint32_t u32Line, const char* pcDetail, const bool bTerminate);
-	void warning(const char* pcFile, const char* pcFunc, const uint32_t u32Line, const char* pcDetail);
-	void note(const char* pcFile, const char* pcFunc, const uint32_t u32Line, const char* pcDetail);
+	void error(const char *const pcFile, const char *const pcFunc, const uint32_t u32Line, const char *const pcDetail, const bool bTerminate);
+	void warning(const char *const pcFile, const char *const pcFunc, const uint32_t u32Line, const char *const pcDetail);
+	void note(const char *const pcFile, const char *const pcFunc, const uint32_t u32Line, const char *const pcDetail);
 #define FATAL_ERROR(T) error(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(T), true)
 #define ERROR(T) error(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(T), false)
 #define WARNING(T) warning(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(T))
@@ -216,11 +216,11 @@ namespace RE {
 			~SignalCatcher();
 	};
 
-	void add_to_stack_trace(const char* pcFile, const char* pcMethod, const uint32_t u32Line, const char* pcDetails);
+	void add_to_stack_trace(const char *const pcFile, const char *const pcMethod, const uint32_t u32Line, const char *const pcDetails);
 	void remove_from_stack_trace();
 	class SignalGuard final {
 		public:
-			SignalGuard(const char* pcFile, const char* pcFunc, const uint32_t u32Line, const char* pcDetails);
+			SignalGuard(const char *const pcFile, const char *const pcFunc, const uint32_t u32Line, const char *const pcDetails);
 			~SignalGuard();
 	};
 #define DEFINE_SIGNAL_GUARD_DETAILED(NAME, DETAILS) SignalGuard NAME(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(DETAILS))
@@ -724,7 +724,7 @@ namespace RE {
 	float get_fps_rate();
 	
 	// Manager
-	void set_next_scene(Scene* pNextSceneParam);
+	void set_next_scene(Scene *const pNextSceneParam);
 	bool is_next_scene_set();
 	Scene* get_current_scene();
 	uint32_t get_current_scene_id();

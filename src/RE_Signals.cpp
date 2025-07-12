@@ -86,7 +86,7 @@ namespace RE {
 		std::signal(SIGINT, SIG_DFL);
 	}
 
-	void add_to_stack_trace(const char* pcFile, const char* pcMethod, uint32_t u32Line, const char* pcDetails) {
+	void add_to_stack_trace(const char *const pcFile, const char *const pcMethod, uint32_t u32Line, const char *const pcDetails) {
 		AppLocation newTrace = {};
 		newTrace.pcFile = pcFile;
 		newTrace.pcMethod = pcMethod;

@@ -5,11 +5,6 @@ namespace RE {
 
 #define FAILURE_INDEX -1
 
-	struct KeyInfo {
-		uint32_t u32Scancode;
-		Input eInput;
-	};
-
 	uint32_t u32Scancodes[MAXIMUM_PHYSICAL_KEYS] = {};
 	Input eInputs[MAXIMUM_PHYSICAL_KEYS] = {};
 	uint8_t u8KeyBuffer[KEY_BUFFER_SIZE] = {}, u8PrevKeyBuffer[KEY_BUFFER_SIZE] = {}; // Keyboard
@@ -139,8 +134,8 @@ namespace RE {
 						const uint8_t u8LowerIndex = i - 1U;
 						u32Scancodes[i] = u32Scancodes[u8LowerIndex];
 						eInputs[i] = eInputs[u8LowerIndex];
-						set_bit<uint8_t>(u8KeyBuffer[u8LowerIndex / 8U], u8LowerIndex % 8U, is_bit_true<uint8_t>(u8KeyBuffer[i / 8U], i % 8U));
-						set_bit<uint8_t>(u8PrevKeyBuffer[u8LowerIndex / 8U], u8LowerIndex % 8U, is_bit_true<uint8_t>(u8PrevKeyBuffer[i / 8U], i % 8U));
+						set_bit<uint8_t>(u8KeyBuffer[i / 8U], i % 8U, is_bit_true<uint8_t>(u8KeyBuffer[u8LowerIndex / 8U], u8LowerIndex % 8U));
+						set_bit<uint8_t>(u8PrevKeyBuffer[i / 8U], i % 8U, is_bit_true<uint8_t>(u8PrevKeyBuffer[u8LowerIndex / 8U], u8LowerIndex % 8U));
 					}
 					u32Scancodes[u8InsertionIndex] = u32EnteredScancode;
 					eInputs[u8InsertionIndex] = eEnteredInput;

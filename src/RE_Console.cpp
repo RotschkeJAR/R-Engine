@@ -3,6 +3,8 @@
 #include "RE_Main.hpp"
 #include "RE_Window.hpp"
 
+#include <time.h>
+
 namespace RE {
 
 #define DEFAULT_COLOR "\033[0m"
@@ -12,8 +14,17 @@ namespace RE {
 #define ERRORS_ALWAYS_FATAL 2
 #define SHOW_MSG_BOX 3
 #define VERBOSE_BEHAVIOUR 4
+#define LOG_TIME 5
 
-	uint8_t u8ConsoleSettings = (1U << PRINT_COLORS) | (1U << SHOW_MSG_BOX);
+	uint8_t u8ConsoleSettings = (1U << PRINT_COLORS) | (1U << SHOW_MSG_BOX) | (1U << LOG_TIME);
+
+	static void print_time() {
+		if (!is_bit_true<uint8_t>(u8ConsoleSettings, LOG_TIME))
+			return;
+		const std::time_t timePoint = std::time(nullptr);
+		const std::string sTimeString(std::ctime(&timePoint));
+		print("[", sTimeString.substr(0U, sTimeString.size() - 1U), "] ");
+	}
 
 	static std::string escape_code_to_string(const TerminalColor eColor, const bool bBackgroundColored, const bool bBold) {
 		if (!is_bit_true<uint8_t>(u8ConsoleSettings, PRINT_COLORS))
@@ -51,6 +62,7 @@ namespace RE {
 	}
 	
 	void error(const char* pcFile, const char* pcFunc, const uint32_t u32Line, const char* pcDetail, const bool bTerminate) {
+		print_time();
 		print_colored("ERROR", RE_TERMINAL_COLOR_RED, false, false);
 		print_error_msg(pcFile, pcFunc, u32Line, pcDetail);
 		bool bFatal = bTerminate || is_bit_true<uint8_t>(u8ConsoleSettings, ERRORS_ALWAYS_FATAL);
@@ -71,12 +83,14 @@ namespace RE {
 		if (is_bit_true<uint8_t>(u8ConsoleSettings, TREAT_WARNING_AS_ERROR))
 			error(pcFile, pcFunc, u32Line, pcDetail, false);
 		else {
+			print_time();
 			print_colored("WARNING", RE_TERMINAL_COLOR_BRIGHT_YELLOW, false, false);
 			print_error_msg(pcFile, pcFunc, u32Line, pcDetail);
 		}
 	}
 
 	void note(const char* pcFile, const char* pcFunc, const uint32_t u32Line, const char* pcDetail) {
+		print_time();
 		print_colored("NOTE", RE_TERMINAL_COLOR_WHITE, false, false);
 		print_error_msg(pcFile, pcFunc, u32Line, pcDetail);
 	}
@@ -103,6 +117,10 @@ namespace RE {
 
 	bool is_verbose_behaviour_enabled() {
 		return is_bit_true<uint8_t>(u8ConsoleSettings, VERBOSE_BEHAVIOUR);
+	}
+
+	void enable_time_logging(const bool bEnable) {
+		set_bit<uint8_t>(u8ConsoleSettings, LOG_TIME, bEnable);
 	}
 
 }

@@ -26,6 +26,7 @@ namespace RE {
 		print("[", sTimeString.substr(0U, sTimeString.size() - 1U), "] ");
 	}
 
+	[[nodiscard]]
 	static std::string escape_code_to_string(const TerminalColor eColor, const bool bBackgroundColored, const bool bBold) {
 		if (!is_bit_true<uint8_t>(u8ConsoleSettings, PRINT_COLORS))
 			return "";
@@ -84,7 +85,7 @@ namespace RE {
 			error(pcFile, pcFunc, u32Line, pcDetail, false);
 		else {
 			print_time();
-			print_colored("WARNING", RE_TERMINAL_COLOR_BRIGHT_YELLOW, false, false);
+			print_colored("WARNING", RE_TERMINAL_COLOR_YELLOW, false, false);
 			print_error_msg(pcFile, pcFunc, u32Line, pcDetail);
 		}
 	}
@@ -115,6 +116,7 @@ namespace RE {
 		set_bit<uint8_t>(u8ConsoleSettings, VERBOSE_BEHAVIOUR, bEnable);
 	}
 
+	[[nodiscard]]
 	bool is_verbose_behaviour_enabled() {
 		return is_bit_true<uint8_t>(u8ConsoleSettings, VERBOSE_BEHAVIOUR);
 	}

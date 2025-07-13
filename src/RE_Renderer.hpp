@@ -21,6 +21,9 @@ namespace RE {
 
 	extern VkSampleCountFlagBits vk_eMsaaCount;
 
+	extern VkBool32 vk_bSampleShadingEnabled;
+	extern float fSampleShadingRate;
+
 	extern VkBuffer vk_hRectIndexBuffer;
 	extern VkDeviceMemory vk_hRectIndexBufferMemory;
 
@@ -35,7 +38,7 @@ namespace RE {
 	extern VkSemaphore vk_ahRenderSemaphores[RE_VK_RENDER_SEMAPHORE_COUNT];
 
 	extern uint8_t u8CurrentFrameInFlightIndex;
-	
+
 	bool init_renderer();
 	void destroy_renderer();
 	void render();

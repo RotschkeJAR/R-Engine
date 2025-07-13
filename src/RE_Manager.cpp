@@ -29,6 +29,7 @@ namespace RE {
 		CATCH_SIGNAL(add_new_cameras());
 	}
 
+	[[nodiscard]]
 	bool is_object_active(const GameObject *pGameObject) {
 		return CATCH_SIGNAL_AND_RETURN(!pGameObject->u32SceneParentId || pGameObject->u32SceneParentId == pCurrentScene->u32Id, bool);
 	}
@@ -76,6 +77,7 @@ namespace RE {
 		pNextScene = nullptr;
 	}
 
+	[[nodiscard]]
 	bool are_scenes_present() {
 		return pCurrentScene || (!pCurrentScene && pNextScene);
 	}
@@ -90,32 +92,39 @@ namespace RE {
 		pNextScene = pNextSceneParam;
 	}
 
+	[[nodiscard]]
 	bool is_next_scene_set() {
 		return pCurrentScene != pNextScene && pNextScene;
 	}
 
+	[[nodiscard]]
 	Scene* get_current_scene() {
 		return pCurrentScene;
 	}
 
+	[[nodiscard]]
 	uint32_t get_current_scene_id() {
 		Scene *const pCurrentScene = get_current_scene();
 		return pCurrentScene ? CATCH_SIGNAL_AND_RETURN(pCurrentScene->u32Id, uint32_t) : 0U;
 	}
 
+	[[nodiscard]]
 	bool is_scene_current(const uint32_t u32SceneId) {
 		return get_current_scene() && get_current_scene_id() == u32SceneId;
 	}
 
+	[[nodiscard]]
 	Scene* get_next_scene() {
 		return pNextScene;
 	}
 
+	[[nodiscard]]
 	uint32_t get_next_scene_id() {
 		Scene *const pNextScene = get_next_scene();
 		return pNextScene ? CATCH_SIGNAL_AND_RETURN(pNextScene->u32Id, uint32_t) : 0U;
 	}
 
+	[[nodiscard]]
 	bool is_scene_next(const uint32_t u32SceneId) {
 		return get_next_scene() && get_next_scene_id() == u32SceneId;
 	}

@@ -66,6 +66,7 @@ namespace RE {
 		fDeltaseconds = 0.0f;
 	}
 
+	[[nodiscard]]
 	float get_deltaseconds() {
 		return fDeltaseconds;
 	}
@@ -74,6 +75,7 @@ namespace RE {
 		fMinDeltatime = u32MaxFramesPerSecond ? (1.0f / static_cast<float>(u32MaxFramesPerSecond)) : -1.0f;
 	}
 
+	[[nodiscard]]
 	float get_fps_rate() {
 		return fDeltaseconds > 0.0f ? (1.0f / fDeltaseconds) : -1.0f;
 	}

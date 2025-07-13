@@ -264,13 +264,15 @@ namespace RE {
 		} while (false) )
 
 	template <class... T>
-	[[nodiscard]] std::string append_to_string(T... strings) {
+	[[nodiscard]]
+	std::string append_to_string(T... strings) {
 		std::stringstream ss("");
 		(ss << ... << strings);
 		return std::string(ss.str());
 	}
 
 	template <class... T>
+	[[nodiscard]]
 	std::wstring append_to_wstring(T... strings) {
 		std::wstringstream wss(L"");
 		(wss << ... << strings);
@@ -287,6 +289,7 @@ namespace RE {
 	std::string get_app_name();
 
 	template <typename T>
+	[[nodiscard]]
 	constexpr T nth_root(const T n, const T value) {
 		static_assert(n > 0, "The 0th root is forbidden for causing undefined behaviour");
 		if (!n) {
@@ -299,6 +302,7 @@ namespace RE {
 	}
 
 	template <typename T>
+	[[nodiscard]]
 	std::string array_to_string(const T arrayToPrint[], const uint32_t u32ArrayLength) {
 		std::stringstream ss("");
 		ss << '{';
@@ -312,6 +316,7 @@ namespace RE {
 	}
 
 	template <typename T>
+	[[nodiscard]]
 	std::string hexadecimal_to_string(T number, const bool bCutZeros) {
 		DEFINE_SIGNAL_GUARD(sigGuardHexadecimalToString);
 		std::stringstream ss("");
@@ -340,15 +345,18 @@ namespace RE {
 	}
 
 	template <typename T>
+	[[nodiscard]]
 	std::string hexadecimal_to_string(const T number) {
 		return hexadecimal_to_string<T>(number, true);
 	}
 
 	template <typename... T>
+	[[nodiscard]]
 	constexpr uint64_t gen_bitmask(T... bits) {
 		return (... | (1UL << static_cast<uint64_t>(bits)));
 	}
 
+	[[nodiscard]]
 	constexpr uint64_t gen_bitmask_in_range(const uint64_t u64Begin, const uint64_t u64End) {
 		if (u64Begin > u64End) {
 			FATAL_ERROR(append_to_string("Start (", u64Begin, ") of the range is larger than end (", u64End, ")").c_str());
@@ -362,11 +370,13 @@ namespace RE {
 	}
 
 	template <typename T>
+	[[nodiscard]]
 	constexpr bool is_bit_true(const T value, const T bit) {
 		return (value & gen_bitmask<T>(bit)) != static_cast<T>(0);
 	}
 
 	template <typename T>
+	[[nodiscard]]
 	constexpr bool are_bits_true_in_range(const T value, const T begin, const T end) {
 		if (begin > end) {
 			FATAL_ERROR(append_to_string("Start (", begin, ") of the range is larger than end (", end, ")").c_str());
@@ -401,6 +411,7 @@ namespace RE {
 	}
 
 	template <typename T>
+	[[nodiscard]]
 	std::string bitmask_to_string(const T bitmask, const bool bWithSpace) {
 		std::stringstream strResult("");
 		constexpr T bits = sizeof(T) * 8;
@@ -413,11 +424,13 @@ namespace RE {
 	}
 
 	template <typename T>
+	[[nodiscard]]
 	std::string bitmask_to_string(const T bitmask) {
 		return bitmask_to_string(bitmask, true);
 	}
 	
 	template <typename T>
+	[[nodiscard]]
 	T sign(const T value) {
 		return (static_cast<T>(0.0) < value) - (value < static_cast<T>(0.0));
 	}
@@ -431,7 +444,7 @@ namespace RE {
 
 			Vector() : data{} {}
 			template <typename P, uint32_t u32CopyDimensions>
-			Vector(Vector<P, u32CopyDimensions> &rCopyVector) {
+			Vector(const Vector<P, u32CopyDimensions> &rCopyVector) {
 				if (u32Dimensions != u32CopyDimensions)
 					WARNING(append_to_string("The coordinates of this vector with ", u32Dimensions, " dimensions were copied from a vector with ", u32CopyDimensions, " dimensions").c_str());
 				for (uint32_t u32CoordinateIndex = 0U; u32CoordinateIndex < u32CopyDimensions && u32CoordinateIndex < u32Dimensions; u32CoordinateIndex++)
@@ -447,6 +460,7 @@ namespace RE {
 			}
 			~Vector() {}
 
+			[[nodiscard]]
 			T sum() const {
 				T sum = static_cast<T>(0.0);
 				for (T coord : data)
@@ -454,6 +468,7 @@ namespace RE {
 				return sum;
 			}
 
+			[[nodiscard]]
 			T area() const {
 				T result = static_cast<T>(1.0);
 				for (T coord : data)
@@ -461,6 +476,7 @@ namespace RE {
 				return result;
 			}
 
+			[[nodiscard]]
 			T length() const {
 				T result;
 				CATCH_SIGNAL(result = nth_root<T>(static_cast<T>(u32Dimensions), sum()));
@@ -480,6 +496,7 @@ namespace RE {
 					data[u32Index] = rCopyVector[u32Index];
 			}
 
+			[[nodiscard]]
 			bool equals(const Vector &rCompareVector) const {
 				if (u32Dimensions != rCompareVector.get_dimensions())
 					return false;
@@ -489,6 +506,7 @@ namespace RE {
 				return true;
 			}
 
+			[[nodiscard]]
 			constexpr uint32_t get_dimensions() const {
 				return u32Dimensions;
 			}
@@ -499,6 +517,7 @@ namespace RE {
 				return data[u32Index];
 			}
 
+			[[nodiscard]]
 			T operator [](const uint32_t u32Index) const {
 				if (u32Index >= u32Dimensions)
 					FATAL_ERROR(append_to_string("Index ", u32Index, " is out of bounds: [0, ", u32Dimensions, ")").c_str());
@@ -509,10 +528,12 @@ namespace RE {
 				copy_from(rCopyVector);
 			}
 
+			[[nodiscard]]
 			bool operator ==(const Vector &rCompareVector) const {
 				return equals(rCompareVector);
 			}
 
+			[[nodiscard]]
 			bool operator !=(const Vector &rCompareVector) const {
 				return !equals(rCompareVector);
 			}
@@ -551,20 +572,28 @@ namespace RE {
 			~Color();
 			void set_channel(const uint8_t u8ChannelIndex, const float fNormal);
 			void copy_from(const Color &rCopyColor);
+			[[nodiscard]]
 			bool equals(const Color &rCompareColor) const;
 
 			void set_red(const float fRed);
+			[[nodiscard]]
 			float get_red() const;
 			void set_green(const float fGreen);
+			[[nodiscard]]
 			float get_green() const;
 			void set_blue(const float fBlue);
+			[[nodiscard]]
 			float get_blue() const;
 			void set_alpha(const float fAlpha);
+			[[nodiscard]]
 			float get_alpha() const;
 
+			[[nodiscard]]
 			float operator [](const uint32_t u32ChannelIndex) const;
 			void operator =(const Color &rCopyColor);
+			[[nodiscard]]
 			bool operator ==(const Color &rCompareColor) const;
+			[[nodiscard]]
 			bool operator !=(const Color &rCompareColor) const;
 	};
 
@@ -579,10 +608,13 @@ namespace RE {
 			~Transform();
 			void reset_position();
 			void copy_from(const Transform &rCopyTransform);
+			[[nodiscard]]
 			bool equals(const Transform &rCompareTransform) const;
 
 			void operator =(const Transform &rCopyTransform);
+			[[nodiscard]]
 			bool operator ==(const Transform &rCompareTransform) const;
+			[[nodiscard]]
 			bool operator !=(const Transform &rCompareTransform) const;
 	};
 
@@ -600,25 +632,31 @@ namespace RE {
 
 		public:
 			RandomNumberGenerator();
-			RandomNumberGenerator(uint32_t u32Seed);
+			RandomNumberGenerator(const uint32_t u32Seed);
 			~RandomNumberGenerator();
-			void set_seed(uint32_t newSeed);
+			void set_seed(const uint32_t newSeed);
 
 			template <typename T>
-			T random(T min, T max) {
+			[[nodiscard]]
+			T random(const T min, const T max) {
 				std::uniform_int_distribution<T> range(min, max);
 				return range(rng);
 			}
 			template <typename T>
-			T random(T max) {
+			[[nodiscard]]
+			T random(const T max) {
 				return random<T>(static_cast<T>(0.0), max);
 			}
 			template <typename T>
+			[[nodiscard]]
 			T random() {
 				return random<T>(std::numeric_limits<T>::max());
 			}
+			[[nodiscard]]
 			bool random_bool();
-			bool random_bool(double dChance);
+			[[nodiscard]]
+			bool random_bool(const double dChance);
+			[[nodiscard]]
 			double random_percentage();
 	};
 
@@ -647,18 +685,21 @@ namespace RE {
 			Vector2f view;
 
 			Camera();
-			Camera(Vector3f &rPosition);
-			Camera(Vector3f &rPosition, Vector2f &rScale);
-			Camera(Vector3f &rPosition, Vector2f &rScale, Vector2f &rView);
+			Camera(const Vector3f &rPosition);
+			Camera(const Vector3f &rPosition, const Vector2f &rScale);
+			Camera(const Vector3f &rPosition, const Vector2f &rScale, const Vector2f &rView);
 			virtual ~Camera();
 			virtual void update();
 			void activate() const;
 			void deactivate() const;
 			void mark_deletable();
+			[[nodiscard]]
 			bool has_same_transform(const Camera &rCompareCamera) const;
 
 			void operator =(const Camera &rCopyCamera);
+			[[nodiscard]]
 			bool operator ==(const Camera &rCompareCamera) const;
+			[[nodiscard]]
 			bool operator !=(const Camera &rCompareCamera) const;
 	};
 
@@ -690,23 +731,32 @@ namespace RE {
 			InputAction(const Input eInput);
 			InputAction(const uint32_t u32KeyScancode);
 			~InputAction();
+			[[nodiscard]]
 			bool is_scroll_wheel() const;
+			[[nodiscard]]
 			bool is_button() const;
+			[[nodiscard]]
 			bool is_key() const;
 
 			// Queries engine to set its input to the next user input
 			void update_input();
+			[[nodiscard]]
 			bool is_updating() const;
 			void cancel_update() const;
+			[[nodiscard]]
 			static bool can_update();
 
 			void change_input(const Input eInput);
 			void change_scancode(const uint32_t u32NewScancode);
 
+			[[nodiscard]]
 			bool is_pressed() const;
+			[[nodiscard]]
 			bool is_down() const;
+			[[nodiscard]]
 			bool is_released() const;
 
+			[[nodiscard]]
 			bool has_valid_input_values() const;
 	};
 	
@@ -716,37 +766,54 @@ namespace RE {
 	void make_errors_always_fatal(const bool bEnable);
 	void show_message_box_on_error(const bool bEnable);
 	void enable_verbosity(const bool bEnable);
+	[[nodiscard]]
 	bool is_verbose_behaviour_enabled();
 
 	// Cursor input
+	[[nodiscard]]
 	int32_t get_cursor_position_x();
+	[[nodiscard]]
 	int32_t get_cursor_position_y();
+	[[nodiscard]]
 	float get_cursor_normal_position_x();
+	[[nodiscard]]
 	float get_cursor_normal_position_y();
 
 	// Keyboard input
+	[[nodiscard]]
 	Input map_scancode_to_input(const uint32_t u32Scancode);
+	[[nodiscard]]
 	uint32_t map_input_to_scancode(const Input eInput);
 
 	// Program execution
 	void execute();
+	[[nodiscard]]
 	float get_deltaseconds();
 	void set_fps_limit(const uint32_t u32MaxFramesPerSecond);
+	[[nodiscard]]
 	float get_fps_rate();
 	
 	// Manager
 	void set_next_scene(Scene *const pNextSceneParam);
+	[[nodiscard]]
 	bool is_next_scene_set();
+	[[nodiscard]]
 	Scene* get_current_scene();
+	[[nodiscard]]
 	uint32_t get_current_scene_id();
+	[[nodiscard]]
 	bool is_scene_current(const uint32_t u32SceneId);
 
+	[[nodiscard]]
 	Scene* get_next_scene();
+	[[nodiscard]]
 	uint32_t get_next_scene_id();
+	[[nodiscard]]
 	bool is_scene_next(const uint32_t u32SceneId);
 
 	// Render system
 	void enable_vsync(const bool bEnableVsync);
+	[[nodiscard]]
 	bool is_vsync_enabled();
 
 	// Renderer
@@ -754,6 +821,17 @@ namespace RE {
 	void set_screen_percentage(const float fPercentage);
 	void reset_screen_size();
 	void set_msaa_mode(const MsaaMode eNewMsaaMode);
+	[[nodiscard]]
+	bool is_msaa_mode_supported(const MsaaMode eMsaaMode);
+	[[nodiscard]]
+	MsaaMode get_highest_supported_msaa_mode();
+	void enable_sample_shading(const bool bEnable);
+	[[nodiscard]]
+	bool is_sample_shading_enabled();
+	void set_sample_shading_rate(const float fNewSampleShadingRate);
+	[[nodiscard]]
+	float get_sample_shading_rate();
+
 
 #ifdef RE_OS_WINDOWS
 	void set_hinstance(HINSTANCE win_hInstance);

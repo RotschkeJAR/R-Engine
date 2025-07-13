@@ -16,6 +16,7 @@ namespace RE {
 	uint32_t u32PhysicalDevicesAvailableCount = 0U;
 	VkPhysicalDevice vk_hPhysicalDeviceSelected = VK_NULL_HANDLE;
 	VkPhysicalDeviceLimits vk_physicalDeviceLimits = {};
+	VkPhysicalDeviceFeatures vk_physicalDeviceFeatures = {};
 	VkPhysicalDeviceMemoryProperties vk_physicalDeviceMemoryProperties = {};
 	VkQueue vk_ahDeviceQueueFamilies[RE_VK_QUEUE_COUNT] = {};
 	uint32_t au32DeviceQueueFamilyIndices[RE_VK_QUEUE_COUNT] = {};
@@ -34,6 +35,7 @@ namespace RE {
 	VkCommandPool vk_ahCommandPools[RE_VK_COMMAND_POOL_COUNT] = {};
 	VkCommandBuffer vk_hDummyTransferCommandBuffer = VK_NULL_HANDLE;
 	VkFormat vk_eDepthStencilBufferFormat = VK_FORMAT_UNDEFINED;
+	VkSampleCountFlags vk_eAllowedSamples = VK_SAMPLE_COUNT_1_BIT;
 
 #define SWAPCHAIN_DIRTY_BIT 0
 #define VSYNC_SETTING_BIT 1
@@ -172,6 +174,10 @@ namespace RE {
 			VkSurfaceCapabilitiesKHR vk_physicalDeviceSurfaceCapabilities;
 			vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk_hPhysicalDevice, vk_hSurface, &vk_physicalDeviceSurfaceCapabilities);
 
+			// Fetch supported GPU features
+			VkPhysicalDeviceFeatures vk_physicalDeviceFeaturesAvailable;
+			vkGetPhysicalDeviceFeatures(vk_hPhysicalDevice, &vk_physicalDeviceFeaturesAvailable);
+
 			if (is_verbose_behaviour_enabled()) { // Prints information about physical device to console
 				print("\t", vk_physicalDeviceProperties.deviceName, " [Driver version: ", VK_VERSION_MAJOR(vk_physicalDeviceProperties.driverVersion), '.', VK_VERSION_MINOR(vk_physicalDeviceProperties.driverVersion), '.', VK_VERSION_PATCH(vk_physicalDeviceProperties.driverVersion), "; Device type: ");
 				switch (vk_physicalDeviceProperties.deviceType) {
@@ -237,8 +243,6 @@ namespace RE {
 #undef PRINT_COMMA
 					println();
 				}
-				VkPhysicalDeviceFeatures vk_physicalDeviceFeaturesAvailable;
-				vkGetPhysicalDeviceFeatures(vk_hPhysicalDevice, &vk_physicalDeviceFeaturesAvailable);
 				println("\t\tFeatures supported by the GPU device:");
 				println_vkbool32("robustBufferAccess", vk_physicalDeviceFeaturesAvailable.robustBufferAccess);
 				println_vkbool32("fullDrawIndexUint32", vk_physicalDeviceFeaturesAvailable.fullDrawIndexUint32);
@@ -408,7 +412,7 @@ namespace RE {
 				println("\t\t\tsupportedUsageFlags: ", bitmask_to_string(vk_physicalDeviceSurfaceCapabilities.supportedUsageFlags));
 			} // End of printing information about physical device to console
 
-			std::queue<const char*> missingFeatures;
+			std::queue<const char*> missingFeatures, optionalFeaturesMissing;
 
 			// Check if there are surface formats defined
 			uint32_t u32PhysicalDeviceSurfaceFormatCount;
@@ -425,6 +429,10 @@ namespace RE {
 			// Check if swapchain images support the required image usages
 			if ((vk_physicalDeviceSurfaceCapabilities.supportedUsageFlags & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) == 0 || (vk_physicalDeviceSurfaceCapabilities.supportedUsageFlags & VK_IMAGE_USAGE_TRANSFER_DST_BIT) == 0)
 				missingFeatures.push("Swapchain images neither support being used for color attachments and/or transfer operations");
+
+			// Check if sample shading is supported
+			if (vk_physicalDeviceFeaturesAvailable.sampleRateShading == VK_FALSE)
+				optionalFeaturesMissing.push("Sample shading is not supported on this GPU");
 
 			// Check if the required extensions exist
 			bool bSwapchainExtists = false;
@@ -671,9 +679,11 @@ namespace RE {
 				vkGetPhysicalDeviceProperties(vk_hPhysicalDeviceSelected, &vk_physicalDeviceSelectedProperties);
 				PRINT_LN(append_to_string("Device selected: ", vk_physicalDeviceSelectedProperties.deviceName).c_str());
 				vk_physicalDeviceLimits = vk_physicalDeviceSelectedProperties.limits;
+				vkGetPhysicalDeviceFeatures(vk_hPhysicalDeviceSelected, &vk_physicalDeviceFeatures);
 				vkGetPhysicalDeviceMemoryProperties(vk_hPhysicalDeviceSelected, &vk_physicalDeviceMemoryProperties);
 				constexpr VkFormat vk_aeDepthStencilFormats[ALLOWED_DEPTH_STENCIL_BUFFER_FORMAT_COUNT] = ALLOWED_DEPTH_STENCIL_BUFFER_FORMATS;
 				vk_eDepthStencilBufferFormat = CATCH_SIGNAL_AND_RETURN(find_supported_image_format(ALLOWED_DEPTH_STENCIL_BUFFER_FORMAT_COUNT, vk_aeDepthStencilFormats, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT), VkFormat);
+				vk_eAllowedSamples = vk_physicalDeviceLimits.framebufferColorSampleCounts & vk_physicalDeviceLimits.framebufferDepthSampleCounts & vk_physicalDeviceLimits.framebufferStencilSampleCounts;
 
 				CATCH_SIGNAL(fetch_surface_infos());
 				CATCH_SIGNAL(select_best_surface_format());
@@ -726,6 +736,7 @@ namespace RE {
 		}
 	}
 
+	[[nodiscard]]
 	bool is_vsync_enabled() {
 		return is_bit_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_BIT);
 	}

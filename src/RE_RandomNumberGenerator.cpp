@@ -11,10 +11,10 @@ namespace RE {
 			rng.seed(time(nullptr));
 		}
 	}
-	RandomNumberGenerator::RandomNumberGenerator(uint32_t u32Seed) : rng(u32Seed) {}
+	RandomNumberGenerator::RandomNumberGenerator(const uint32_t u32Seed) : rng(u32Seed) {}
 	RandomNumberGenerator::~RandomNumberGenerator() {}
 
-	void RandomNumberGenerator::set_seed(uint32_t newSeed) {
+	void RandomNumberGenerator::set_seed(const uint32_t newSeed) {
 		rng.seed(newSeed);
 	}
 
@@ -22,7 +22,7 @@ namespace RE {
 		return static_cast<bool>(random<uint16_t>() & 1U);
 	}
 
-	bool RandomNumberGenerator::random_bool(double dChance) {
+	bool RandomNumberGenerator::random_bool(const double dChance) {
 		return random_percentage() <= dChance;
 	}
 

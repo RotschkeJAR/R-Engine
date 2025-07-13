@@ -1,6 +1,8 @@
 #include "RE_Vulkan_Device.hpp"
 #include "RE_Render System.hpp"
 
+#include <queue>
+
 namespace RE {
 
 	VkDevice vk_hDevice = VK_NULL_HANDLE;
@@ -1198,30 +1200,45 @@ namespace RE {
 			transferQueueIndex = graphicsQueueIndex.value();
 		constexpr float fQueuePriority = 1.0f;
 		const size_t uniqueQueueIndexCount = uniqueQueueIndices.size();
-		VkDeviceQueueCreateInfo *vk_pDeviceQueueCreateInfos = new VkDeviceQueueCreateInfo[uniqueQueueIndexCount];
+		VkDeviceQueueCreateInfo *const vk_paDeviceQueueCreateInfos = new VkDeviceQueueCreateInfo[uniqueQueueIndexCount];
 		uint32_t u32UniqueQueueIndexIndex = 0U;
 		for (uint32_t u32UniqueQueueIndex : uniqueQueueIndices) {
-			vk_pDeviceQueueCreateInfos[u32UniqueQueueIndexIndex].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-			vk_pDeviceQueueCreateInfos[u32UniqueQueueIndexIndex].pNext = nullptr;
-			vk_pDeviceQueueCreateInfos[u32UniqueQueueIndexIndex].flags = 0;
-			vk_pDeviceQueueCreateInfos[u32UniqueQueueIndexIndex].queueFamilyIndex = u32UniqueQueueIndex;
-			vk_pDeviceQueueCreateInfos[u32UniqueQueueIndexIndex].queueCount = 1U;
-			vk_pDeviceQueueCreateInfos[u32UniqueQueueIndexIndex].pQueuePriorities = &fQueuePriority;
+			vk_paDeviceQueueCreateInfos[u32UniqueQueueIndexIndex].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+			vk_paDeviceQueueCreateInfos[u32UniqueQueueIndexIndex].pNext = nullptr;
+			vk_paDeviceQueueCreateInfos[u32UniqueQueueIndexIndex].flags = 0;
+			vk_paDeviceQueueCreateInfos[u32UniqueQueueIndexIndex].queueFamilyIndex = u32UniqueQueueIndex;
+			vk_paDeviceQueueCreateInfos[u32UniqueQueueIndexIndex].queueCount = 1U;
+			vk_paDeviceQueueCreateInfos[u32UniqueQueueIndexIndex].pQueuePriorities = &fQueuePriority;
 			u32UniqueQueueIndexIndex++;
 		}
 
-		VkPhysicalDeviceFeatures vk_physicalDeviceFeaturesEnabled = {};
+		const VkPhysicalDeviceFeatures vk_physicalDeviceFeaturesEnabled = {
+			.sampleRateShading = vk_physicalDeviceFeatures.sampleRateShading
+		};
+
+		std::queue<const char*> optionalFeaturesMissing;
+
+		if (vk_physicalDeviceFeatures.sampleRateShading == VK_FALSE)
+			optionalFeaturesMissing.push("Sample shading");
+
+		if (!optionalFeaturesMissing.empty()) {
+			println_colored(append_to_string("The selected GPU doesn't support the following optional features:").c_str(), RE_TERMINAL_COLOR_BRIGHT_YELLOW, false, true);
+			do {
+				println_colored(append_to_string(" - ", optionalFeaturesMissing.front()).c_str(), RE_TERMINAL_COLOR_BRIGHT_YELLOW, false, true);
+				optionalFeaturesMissing.pop();
+			} while (!optionalFeaturesMissing.empty());
+		}
 
 		const VkDeviceCreateInfo vk_deviceCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
 			.queueCreateInfoCount = static_cast<uint32_t>(uniqueQueueIndexCount),
-			.pQueueCreateInfos = vk_pDeviceQueueCreateInfos,
+			.pQueueCreateInfos = vk_paDeviceQueueCreateInfos,
 			.enabledExtensionCount = u32PhysicalDeviceExtensionCount,
 			.ppEnabledExtensionNames = static_cast<const char *const *>(pcPhysicalDeviceExtensions),
 			.pEnabledFeatures = &vk_physicalDeviceFeaturesEnabled
 		};
 		const bool bCreatedDeviceSuccessfully = vkCreateDevice(vk_hPhysicalDeviceSelected, &vk_deviceCreateInfo, nullptr, &vk_hDevice) == VK_SUCCESS;
-		DELETE_ARRAY_SAFELY(vk_pDeviceQueueCreateInfos);
+		delete[] vk_paDeviceQueueCreateInfos;
 		if (!bCreatedDeviceSuccessfully) {
 			RE_FATAL_ERROR("Failed creating logical Vulkan device");
 			return false;

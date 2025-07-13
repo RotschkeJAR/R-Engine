@@ -6,7 +6,7 @@ namespace RE {
 	static std::vector<uint32_t> get_queue_family_indices(const uint32_t u32QueueCount, const uint32_t *pau32Queues) {
 		std::vector<uint32_t> queueFamilies;
 		for (uint32_t u32QueueIndex = 0U; u32QueueIndex < u32QueueCount; u32QueueIndex++)
-			if (std::find(queueFamilies.begin(), queueFamilies.end(), au32DeviceQueueFamilyIndices[pau32Queues[u32QueueIndex]]) == queueFamilies.end())
+			if (pau32Queues[u32QueueIndex] != VK_QUEUE_FAMILY_IGNORED && std::find(queueFamilies.begin(), queueFamilies.end(), au32DeviceQueueFamilyIndices[pau32Queues[u32QueueIndex]]) == queueFamilies.end())
 				queueFamilies.push_back(au32DeviceQueueFamilyIndices[pau32Queues[u32QueueIndex]]);
 		return queueFamilies;
 	}
@@ -289,14 +289,15 @@ namespace RE {
 	}
 
 	void vk_cmd_transit_image(const VkCommandBuffer vk_hCommandBuffer, const VkPipelineStageFlags vk_eSrcStageFlags, const VkPipelineStageFlags vk_eDstStageFlags, const VkDependencyFlags vk_eDependencyFlags, const VkAccessFlags vk_eSrcAccessFlags, const VkAccessFlags vk_eDstAccessFlags, const VkImageLayout vk_eOldLayout, const VkImageLayout vk_eNewLayout, const uint32_t u32SrcQueueIndex, const uint32_t u32DstQueueIndex, const VkImage vk_hImage, const VkImageAspectFlags vk_eAspectFlags, const uint32_t u32BaseMipLevel, const uint32_t u32MipLevelCount, const uint32_t u32BaseArrayLayer, const uint32_t u32ArrayLayerCount) {
+		std::vector<uint32_t> srcQueues = get_queue_family_indices(1U, &u32SrcQueueIndex), dstQueues = get_queue_family_indices(1U, &u32DstQueueIndex);
 		const VkImageMemoryBarrier vk_imageTransit = {
 			.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
 			.srcAccessMask = vk_eSrcAccessFlags,
 			.dstAccessMask = vk_eDstAccessFlags,
 			.oldLayout = vk_eOldLayout,
 			.newLayout = vk_eNewLayout,
-			.srcQueueFamilyIndex = u32SrcQueueIndex != VK_QUEUE_FAMILY_IGNORED ? *get_queue_family_indices(1U, &u32SrcQueueIndex).begin() : VK_QUEUE_FAMILY_IGNORED,
-			.dstQueueFamilyIndex = u32DstQueueIndex != VK_QUEUE_FAMILY_IGNORED ? *get_queue_family_indices(1U, &u32DstQueueIndex).begin() : VK_QUEUE_FAMILY_IGNORED,
+			.srcQueueFamilyIndex = u32SrcQueueIndex != VK_QUEUE_FAMILY_IGNORED ? *srcQueues.begin() : VK_QUEUE_FAMILY_IGNORED,
+			.dstQueueFamilyIndex = u32DstQueueIndex != VK_QUEUE_FAMILY_IGNORED ? *dstQueues.begin() : VK_QUEUE_FAMILY_IGNORED,
 			.image = vk_hImage,
 			.subresourceRange = {
 				.aspectMask = vk_eAspectFlags,

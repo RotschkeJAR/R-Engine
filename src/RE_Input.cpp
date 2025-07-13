@@ -14,6 +14,7 @@ namespace RE {
 	InputAction *pUpdateInputObject = nullptr;
 	InputMgr *InputMgr::pInstance = nullptr;
 
+	[[nodiscard]]
 	static int16_t get_index_for_scancode(const uint32_t u32SearchedScancode) {
 		uint32_t u32MinIndex = 0U;
 		uint32_t u32MaxIndex = u8NumberOfKeys > 0U ? (u8NumberOfKeys - 1U) : 0U;
@@ -32,6 +33,7 @@ namespace RE {
 		return FAILURE_INDEX;
 	}
 
+	[[nodiscard]]
 	static int16_t get_index_for_input(const Input eSearchedInput) {
 		for (uint32_t i = 0U; i < u8NumberOfKeys; i++)
 			if (eInputs[i] == eSearchedInput)
@@ -39,7 +41,8 @@ namespace RE {
 		return FAILURE_INDEX;
 	}
 
-	static bool process_request(const Input eInput, const uint32_t u32Scancode, const bool bRequestForPast) {
+	[[nodiscard]]
+	static bool check_key_down_state(const Input eInput, const uint32_t u32Scancode, const bool bRequestForPast) {
 		switch (eInput) {
 			case RE_INPUT_SCROLL_UP:
 			case RE_INPUT_SCROLL_DOWN:
@@ -167,30 +170,37 @@ namespace RE {
 		set_bits<uint8_t>(u8SpecialInputBuffer, RE_INPUT_SCROLL_UP, RE_INPUT_SCROLL_DOWN + 1, false);
 	}
 
+	[[nodiscard]]
 	bool is_key_down(const Input eInput, const uint32_t u32Scancode) {
-		return process_request(eInput, u32Scancode, false);
+		return check_key_down_state(eInput, u32Scancode, false);
 	}
 	
+	[[nodiscard]]
 	bool was_key_down(const Input eInput, const uint32_t u32Scancode) {
-		return process_request(eInput, u32Scancode, true);
+		return check_key_down_state(eInput, u32Scancode, true);
 	}
 
+	[[nodiscard]]
 	int32_t get_cursor_position_x() {
 		return cursorPosition[0];
 	}
 
+	[[nodiscard]]
 	int32_t get_cursor_position_y() {
 		return cursorPosition[1];
 	}
 
+	[[nodiscard]]
 	float get_cursor_normal_position_x() {
 		return cursorPosition[0] / static_cast<float>(windowSize[0]);
 	}
 
+	[[nodiscard]]
 	float get_cursor_normal_position_y() {
 		return cursorPosition[1] / static_cast<float>(windowSize[1]);
 	}
 
+	[[nodiscard]]
 	Input map_scancode_to_input(const uint32_t u32Scancode) {
 		if (u32Scancode) {
 			int16_t i16Index = get_index_for_scancode(u32Scancode);
@@ -200,6 +210,7 @@ namespace RE {
 		return RE_INPUT_UNKNOWN;
 	}
 
+	[[nodiscard]]
 	uint32_t map_input_to_scancode(const Input eInput) {
 		if (eInput >= RE_INPUT_KEY_SPACE && eInput < RE_INPUT_MAX_ENUM) {
 			int16_t i16Index = get_index_for_input(eInput);

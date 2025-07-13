@@ -22,16 +22,10 @@ namespace RE {
 			void update_input_buffers();
 	};
 
+	[[nodiscard]]
 	bool is_key_down(const Input eInput, const uint32_t u32Scancode);
+	[[nodiscard]]
 	bool was_key_down(const Input eInput, const uint32_t u32Scancode);
-
-	int32_t get_cursor_position_x();
-	int32_t get_cursor_position_y();
-	float get_cursor_normal_position_x();
-	float get_cursor_normal_position_y();
-
-	Input map_scancode_to_input(const uint32_t u32Scancode);
-	uint32_t map_input_to_scancode(const Input eInput);
 
 }
 

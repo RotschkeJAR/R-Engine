@@ -7,13 +7,13 @@ namespace RE {
 	Camera::Camera() : scale(1.0f, 1.0f), view(10.0f, 10.0f) {
 		newCameras.push_back(this);
 	}
-	Camera::Camera(Vector3f &rPosition) : position(rPosition), scale(1.0f, 1.0f), view(10.0f, 10.0f) {
+	Camera::Camera(const Vector3f &rPosition) : position(rPosition), scale(1.0f, 1.0f), view(10.0f, 10.0f) {
 		newCameras.push_back(this);
 	}
-	Camera::Camera(Vector3f &rPosition, Vector2f &rScale) : position(rPosition), scale(rScale), view(10.0f, 10.0f) {
+	Camera::Camera(const Vector3f &rPosition, const Vector2f &rScale) : position(rPosition), scale(rScale), view(10.0f, 10.0f) {
 		newCameras.push_back(this);
 	}
-	Camera::Camera(Vector3f &rPosition, Vector2f &rScale, Vector2f &rView) : position(rPosition), scale(rScale), view(rView) {
+	Camera::Camera(const Vector3f &rPosition, const Vector2f &rScale, const Vector2f &rView) : position(rPosition), scale(rScale), view(rView) {
 		newCameras.push_back(this);
 	}
 	Camera::~Camera() {
@@ -47,7 +47,7 @@ namespace RE {
 		scale = rCopyCamera.scale;
 		view = rCopyCamera.view;
 	}
-	
+
 	bool Camera::operator ==(const Camera &rCompareCamera) const {
 		return has_same_transform(rCompareCamera);
 	}

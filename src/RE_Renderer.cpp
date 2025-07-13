@@ -50,6 +50,9 @@ namespace RE {
 	VkImage vk_ahSingleSampledWorldRenderImages[RE_VK_FRAMES_IN_FLIGHT] = {};
 	VkDeviceMemory vk_ahSignleSampledWorldRenderImageMemories[RE_VK_FRAMES_IN_FLIGHT] = {};
 
+	VkBool32 vk_bSampleShadingEnabled = VK_FALSE;
+	float fSampleShadingRate = 0.0f;
+
 	VkBuffer vk_hRectIndexBuffer = VK_NULL_HANDLE;
 	VkDeviceMemory vk_hRectIndexBufferMemory = VK_NULL_HANDLE;
 
@@ -276,8 +279,8 @@ namespace RE {
 	static void recreate_world_render_images() {
 		if (vk_hDevice != VK_NULL_HANDLE) {
 			WAIT_FOR_IDLE_VULKAN_DEVICE();
-			CATCH_SIGNAL(create_world_render_images());
 			CATCH_SIGNAL(destroy_world_render_images());
+			CATCH_SIGNAL(create_world_render_images());
 		}
 	}
 
@@ -813,36 +816,41 @@ namespace RE {
 	}
 
 	void set_msaa_mode(const MsaaMode eNewMsaaMode) {
-		VkSampleCountFlagBits vk_eNewMsaaCount;
-		switch (eNewMsaaMode) {
+		MsaaMode eNextMsaaMode = eNewMsaaMode;
+		while (!is_msaa_mode_supported(eNextMsaaMode) && eNextMsaaMode != RE_MSAA_MODE_1)
+			eNextMsaaMode = static_cast<MsaaMode>(static_cast<uint8_t>(eNextMsaaMode) - 1U);
+		if (eNewMsaaMode != eNextMsaaMode)
+			RE_WARNING(append_to_string("MSAA mode ", std::pow(2, static_cast<int32_t>(eNewMsaaMode)), " is not supported on this GPU and dropped down to ", std::pow(2, static_cast<int32_t>(eNextMsaaMode))));
+		VkSampleCountFlagBits vk_eNewSampleCount;
+		switch (eNextMsaaMode) {
 			case RE_MSAA_MODE_1:
-				vk_eNewMsaaCount = VK_SAMPLE_COUNT_1_BIT;
+				vk_eNewSampleCount = VK_SAMPLE_COUNT_1_BIT;
 				break;
 			case RE_MSAA_MODE_2:
-				vk_eNewMsaaCount = VK_SAMPLE_COUNT_2_BIT;
+				vk_eNewSampleCount = VK_SAMPLE_COUNT_2_BIT;
 				break;
 			case RE_MSAA_MODE_4:
-				vk_eNewMsaaCount = VK_SAMPLE_COUNT_4_BIT;
+				vk_eNewSampleCount = VK_SAMPLE_COUNT_4_BIT;
 				break;
 			case RE_MSAA_MODE_8:
-				vk_eNewMsaaCount = VK_SAMPLE_COUNT_8_BIT;
+				vk_eNewSampleCount = VK_SAMPLE_COUNT_8_BIT;
 				break;
 			case RE_MSAA_MODE_16:
-				vk_eNewMsaaCount = VK_SAMPLE_COUNT_16_BIT;
+				vk_eNewSampleCount = VK_SAMPLE_COUNT_16_BIT;
 				break;
 			case RE_MSAA_MODE_32:
-				vk_eNewMsaaCount = VK_SAMPLE_COUNT_32_BIT;
+				vk_eNewSampleCount = VK_SAMPLE_COUNT_32_BIT;
 				break;
 			case RE_MSAA_MODE_64:
-				vk_eNewMsaaCount = VK_SAMPLE_COUNT_64_BIT;
+				vk_eNewSampleCount = VK_SAMPLE_COUNT_64_BIT;
 				break;
 		}
-		if (vk_eNewMsaaCount == vk_eMsaaCount || !vk_hDevice)
+		if (vk_eNewSampleCount == vk_eMsaaCount || vk_hDevice == VK_NULL_HANDLE)
 			return;
 		WAIT_FOR_IDLE_VULKAN_DEVICE();
 		CATCH_SIGNAL(destroy_world_render_images());
 		vkDestroyRenderPass(vk_hDevice, vk_hWorldRenderPass, nullptr);
-		vk_eMsaaCount = vk_eNewMsaaCount;
+		vk_eMsaaCount = vk_eNewSampleCount;
 		if (create_render_pass()) {
 			if (CATCH_SIGNAL_AND_RETURN(create_world_render_images(), bool)) {
 				if (CATCH_SIGNAL_AND_RETURN(recreate_game_object_render_pipelines(), bool))
@@ -852,6 +860,70 @@ namespace RE {
 			vkDestroyRenderPass(vk_hDevice, vk_hWorldRenderPass, nullptr);
 		}
 		vk_hWorldRenderPass = VK_NULL_HANDLE;
+	}
+
+	[[nodiscard]]
+	bool is_msaa_mode_supported(const MsaaMode eMsaaMode) {
+		switch (eMsaaMode) {
+			case RE_MSAA_MODE_1:
+				return (vk_eAllowedSamples & VK_SAMPLE_COUNT_1_BIT) == VK_SAMPLE_COUNT_1_BIT;
+			case RE_MSAA_MODE_2:
+				return (vk_eAllowedSamples & VK_SAMPLE_COUNT_2_BIT) == VK_SAMPLE_COUNT_2_BIT;
+			case RE_MSAA_MODE_4:
+				return (vk_eAllowedSamples & VK_SAMPLE_COUNT_4_BIT) == VK_SAMPLE_COUNT_4_BIT;
+			case RE_MSAA_MODE_8:
+				return (vk_eAllowedSamples & VK_SAMPLE_COUNT_8_BIT) == VK_SAMPLE_COUNT_8_BIT;
+			case RE_MSAA_MODE_16:
+				return (vk_eAllowedSamples & VK_SAMPLE_COUNT_16_BIT) == VK_SAMPLE_COUNT_16_BIT;
+			case RE_MSAA_MODE_32:
+				return (vk_eAllowedSamples & VK_SAMPLE_COUNT_32_BIT) == VK_SAMPLE_COUNT_32_BIT;
+			case RE_MSAA_MODE_64:
+				return (vk_eAllowedSamples & VK_SAMPLE_COUNT_64_BIT) == VK_SAMPLE_COUNT_64_BIT;
+			default:
+				return false;
+		}
+	}
+
+	[[nodiscard]]
+	MsaaMode get_highest_supported_msaa_mode() {
+		for (uint8_t u8MsaaModeIndex = static_cast<uint8_t>(RE_MSAA_MODE_64); u8MsaaModeIndex > 0U; u8MsaaModeIndex--) {
+			const MsaaMode eMsaaMode = static_cast<MsaaMode>(u8MsaaModeIndex);
+			if (is_msaa_mode_supported(eMsaaMode))
+				return eMsaaMode;
+		}
+		return RE_MSAA_MODE_1;
+	}
+
+	void enable_sample_shading(const bool bEnable) {
+		if ((vk_bSampleShadingEnabled == VK_TRUE ? true : false) == bEnable)
+			return;
+		vk_bSampleShadingEnabled = bEnable ? VK_TRUE : VK_FALSE;
+		if (vk_hDevice == VK_NULL_HANDLE)
+			return;
+		WAIT_FOR_IDLE_VULKAN_DEVICE();
+		CATCH_SIGNAL(recreate_game_object_render_pipelines());
+	}
+
+	[[nodiscard]]
+	bool is_sample_shading_enabled() {
+		return vk_bSampleShadingEnabled == VK_TRUE;
+	}
+
+	void set_sample_shading_rate(const float fNewSampleShadingRate) {
+		if (fSampleShadingRate == fNewSampleShadingRate)
+			return;
+		if (fNewSampleShadingRate < 0.0f || fNewSampleShadingRate > 1.0f) {
+			RE_ERROR(append_to_string("Sample shading rate should be in range between 0 and 1, but was ", fNewSampleShadingRate, ". Request to change it has been discarded"));
+			return;
+		}
+		fSampleShadingRate = fNewSampleShadingRate;
+		WAIT_FOR_IDLE_VULKAN_DEVICE();
+		CATCH_SIGNAL(recreate_game_object_render_pipelines());
+	}
+
+	[[nodiscard]]
+	float get_sample_shading_rate() {
+		return fSampleShadingRate;
 	}
 
 }

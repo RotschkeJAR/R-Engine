@@ -20,6 +20,7 @@ namespace RE {
 		return false;
 	}
 	
+	[[nodiscard]]
 	bool ListBatch_Camera::contains(const Camera *const pCamera) const {
 		for (uint8_t u8Index = 0U; u8Index < u8Count; u8Index++)
 			if (apCameras[u8Index] == pCamera)
@@ -27,18 +28,22 @@ namespace RE {
 		return false;
 	}
 	
+	[[nodiscard]]
 	Camera* ListBatch_Camera::get(const uint8_t u8Index) {
 		return apCameras[u8Index];
 	}
 
+	[[nodiscard]]
 	uint8_t ListBatch_Camera::size() const {
 		return u8Count;
 	}
 	
+	[[nodiscard]]
 	bool ListBatch_Camera::empty() const {
 		return !u8Count;
 	}
 	
+	[[nodiscard]]
 	bool ListBatch_Camera::has_space() const {
 		return u8Count < MAX_CAMERAS_PER_BATCH;
 	}

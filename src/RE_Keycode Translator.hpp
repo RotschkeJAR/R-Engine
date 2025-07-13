@@ -10,7 +10,9 @@ namespace RE {
 # define VK_Z 0x5A
 # define VK_0 0x30
 # define VK_9 0x39
-	constexpr int64_t virtual_keycode_from_key(Input eKey) {
+
+	[[nodiscard]]
+	constexpr int64_t virtual_keycode_from_key(const Input eKey) {
 		switch (eKey) {
 			case RE_INPUT_KEY_SPACE:
 				return VK_SPACE;
@@ -115,6 +117,7 @@ namespace RE {
 		}
 	}
 
+	[[nodiscard]]
 	constexpr Input key_from_virtual_keycode(int64_t i64VirtualKeyCode) {
 		switch (i64VirtualKeyCode) {
 			case VK_SPACE:
@@ -224,7 +227,10 @@ namespace RE {
 					return RE_INPUT_UNKNOWN;
 		}
 	}
+
 #elif defined RE_OS_LINUX
+
+	[[nodiscard]]
 	constexpr int64_t virtual_keycode_from_key(Input eKey) {
 		switch (eKey) {
 			case RE_INPUT_KEY_SPACE:
@@ -331,6 +337,7 @@ namespace RE {
 		}
 	}
 
+	[[nodiscard]]
 	constexpr Input key_from_virtual_keycode(int64_t i64VirtualKeyCode) {
 		switch (i64VirtualKeyCode) {
 			case XK_space:
@@ -479,6 +486,7 @@ namespace RE {
 					return RE_INPUT_UNKNOWN;
 		}
 	}
+	
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 
 }

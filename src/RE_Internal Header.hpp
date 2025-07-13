@@ -20,6 +20,7 @@
 #include "RE_Console.hpp"
 
 #ifdef RE_OS_WINDOWS
+
 # define UNICODE
 # ifdef _MSC_VER
 #  define NOMINMAX
@@ -29,7 +30,9 @@
 # include <windows.h>
 # include <shellscalingapi.h>
 # include <windowsx.h>
+
 #elif defined RE_OS_LINUX
+
 # include <X11/Xlib.h>
 # include <X11/Xutil.h>
 # include <X11/Xatom.h>
@@ -63,6 +66,7 @@ typedef Colormap XColormap;
 # define XNoSymbol NoSymbol
 # define XFalse False
 # define XSuccess Success
+
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 
 namespace RE {}

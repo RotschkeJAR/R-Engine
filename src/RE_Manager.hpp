@@ -7,9 +7,11 @@ namespace RE {
 
 	extern Scene *pCurrentScene, *pNextScene;
 
+	[[nodiscard]]
 	bool is_object_active(const GameObject* pGameObject);
 	void game_logic_update();
 	void last_game_logic_update();
+	[[nodiscard]]
 	bool are_scenes_present();
 
 }

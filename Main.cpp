@@ -143,7 +143,7 @@ class First : public Scene {
 			refresh.change_input(RE_INPUT_KEY_ESCAPE);
 			camActivator.change_input(RE_INPUT_KEY_Q);
 			msaaUpgrader.change_input(RE_INPUT_KEY_SPACE);
-			CATCH_SIGNAL(set_msaa_mode(RE_MSAA_MODE_1));
+			CATCH_SIGNAL(set_msaa_mode(RE_MSAA_MODE_8));
 		}
 		void update() {
 			if (trigger.is_pressed())

@@ -18,11 +18,16 @@ namespace RE {
 
 			void add(Camera *const pCamera);
 			bool remove(const Camera *const pCamera);
+			[[nodiscard]]
 			bool contains(const Camera *const pCamera) const;
+			[[nodiscard]]
 			Camera* get(const uint8_t u8Index);
 
+			[[nodiscard]]
 			uint8_t size() const;
+			[[nodiscard]]
 			bool empty() const;
+			[[nodiscard]]
 			bool has_space() const;
 
 			void update();

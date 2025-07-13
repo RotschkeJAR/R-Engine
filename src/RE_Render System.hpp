@@ -19,6 +19,7 @@ namespace RE {
 	// Attributes initialized at beginning and rarely changed
 	extern VkPhysicalDevice vk_hPhysicalDeviceSelected;
 	extern VkPhysicalDeviceLimits vk_physicalDeviceLimits;
+	extern VkPhysicalDeviceFeatures vk_physicalDeviceFeatures;
 	extern VkPhysicalDeviceMemoryProperties vk_physicalDeviceMemoryProperties;
 	extern VkQueue vk_ahDeviceQueueFamilies[RE_VK_QUEUE_COUNT];
 	extern uint32_t au32DeviceQueueFamilyIndices[RE_VK_QUEUE_COUNT];
@@ -33,15 +34,13 @@ namespace RE {
 	extern VkCommandPool vk_ahCommandPools[RE_VK_COMMAND_POOL_COUNT];
 	extern VkCommandBuffer vk_hDummyTransferCommandBuffer;
 	extern VkFormat vk_eDepthStencilBufferFormat;
-	
+	extern VkSampleCountFlags vk_eAllowedSamples;
+
 	bool init_render_system();
 	void destroy_render_system();
 	bool refresh_swapchain();
 	void mark_swapchain_dirty();
 	bool does_graphics_queue_support_transfer();
-
-	void enable_vsync(const bool bEnableVsync);
-	bool is_vsync_enabled();
 
 }
 

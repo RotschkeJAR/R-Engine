@@ -125,8 +125,8 @@ namespace RE {
 		const VkPipelineMultisampleStateCreateInfo vk_multisamplingCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
 			.rasterizationSamples = vk_eMsaaCount,
-			.sampleShadingEnable = VK_FALSE,
-			.minSampleShading = 0.0f,
+			.sampleShadingEnable = vk_bSampleShadingEnabled,
+			.minSampleShading = fSampleShadingRate,
 			.pSampleMask = nullptr,
 			.alphaToCoverageEnable = VK_FALSE,
 			.alphaToOneEnable = VK_FALSE

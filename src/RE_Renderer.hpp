@@ -19,6 +19,8 @@ namespace RE {
 	extern VkRect2D vk_cameraScissor;
 	extern VkExtent2D vk_worldRenderImageExtent;
 
+	extern VkSampleCountFlagBits vk_eMsaaCount;
+
 	extern VkBuffer vk_hRectIndexBuffer;
 	extern VkDeviceMemory vk_hRectIndexBufferMemory;
 

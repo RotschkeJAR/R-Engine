@@ -178,6 +178,17 @@ namespace RE {
 		RE_INPUT_MAX_ENUM = 0x79
 	};
 
+	enum MsaaMode {
+		RE_MSAA_MODE_1,
+		RE_MSAA_MODE_2,
+		RE_MSAA_MODE_4,
+		RE_MSAA_MODE_8,
+		RE_MSAA_MODE_16,
+		RE_MSAA_MODE_32,
+		RE_MSAA_MODE_64,
+		RE_MSAA_MODE_DISABLED = RE_MSAA_MODE_1
+	};
+
 	template <class... T>
 	void print(T... content) {
 		if constexpr (sizeof...(content) == 0)
@@ -742,6 +753,7 @@ namespace RE {
 	void set_const_screen_size(const uint32_t u32Width, const uint32_t u32Height);
 	void set_screen_percentage(const float fPercentage);
 	void reset_screen_size();
+	void set_msaa_mode(const MsaaMode eNewMsaaMode);
 
 #ifdef RE_OS_WINDOWS
 	void set_hinstance(HINSTANCE win_hInstance);

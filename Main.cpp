@@ -132,16 +132,18 @@ class First : public Scene {
 		Objy objy;
 		OC another;
 		PlayerCamera playerCam;
-		InputAction trigger, refresh, camActivator;
-		bool bCamActive;
+		InputAction trigger, refresh, camActivator, msaaUpgrader;
+		bool bCamActive, bMsaaEight;
 
-		First() : Scene(1), bCamActive(true) {}
+		First() : Scene(1), bCamActive(true), bMsaaEight(true) {}
 		~First() {}
 		void start() {
 			playerCam.activate();
 			trigger.change_input(RE_INPUT_KEY_NUMPAD_ENTER);
 			refresh.change_input(RE_INPUT_KEY_ESCAPE);
 			camActivator.change_input(RE_INPUT_KEY_Q);
+			msaaUpgrader.change_input(RE_INPUT_KEY_SPACE);
+			CATCH_SIGNAL(set_msaa_mode(RE_MSAA_MODE_1));
 		}
 		void update() {
 			if (trigger.is_pressed())
@@ -154,6 +156,9 @@ class First : public Scene {
 				else
 					playerCam.deactivate();
 				bCamActive = !bCamActive;
+			} else if (msaaUpgrader.is_pressed()) {
+				CATCH_SIGNAL(set_msaa_mode(bMsaaEight ? RE_MSAA_MODE_8 : RE_MSAA_MODE_1));
+				bMsaaEight = !bMsaaEight;
 			}
 			//PRINT_LN(get_fps_rate());
 		}

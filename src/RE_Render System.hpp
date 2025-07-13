@@ -18,6 +18,7 @@ namespace RE {
 	
 	// Attributes initialized at beginning and rarely changed
 	extern VkPhysicalDevice vk_hPhysicalDeviceSelected;
+	extern VkPhysicalDeviceLimits vk_physicalDeviceLimits;
 	extern VkPhysicalDeviceMemoryProperties vk_physicalDeviceMemoryProperties;
 	extern VkQueue vk_ahDeviceQueueFamilies[RE_VK_QUEUE_COUNT];
 	extern uint32_t au32DeviceQueueFamilyIndices[RE_VK_QUEUE_COUNT];

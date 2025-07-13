@@ -37,6 +37,8 @@ namespace RE {
 	void destroy_game_object_renderer();
 	bool render_game_objects();
 
+	bool recreate_game_object_render_pipelines();
+
 }
 
 #endif /* __RE_RENDERER_OPAQUE_GAME_OBJECT_H__ */

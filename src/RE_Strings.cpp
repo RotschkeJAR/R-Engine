@@ -3,22 +3,22 @@
 namespace RE {
 
 	[[nodiscard]]
-	bool is_string_empty(const char* pcString) {
+	bool is_string_empty(const char *const pcString) {
 		return !pcString || pcString[0] == '\0';
 	}
 
 	[[nodiscard]]
-	uint32_t get_string_length_safely(const char* pcString) {
+	uint32_t get_string_length_safely(const char *const pcString) {
 		return pcString ? std::strlen(pcString) : 0U;
 	}
 
 	[[nodiscard]]
-	bool are_string_contents_equal(const char *pcString1, const char *pcString2) {
+	bool are_string_contents_equal(const char *const pcString1, const char *const pcString2) {
 		return pcString1 && pcString2 && std::strcmp(pcString1, pcString2) == 0U;
 	}
 
 	[[nodiscard]]
-	uint32_t get_line_count(const char* pcString) {
+	uint32_t get_line_count(const char *const pcString) {
 		if (is_string_empty(pcString))
 			return 0;
 		uint32_t u32Lines = 1, u32CharacterIndex = 0;
@@ -36,7 +36,7 @@ namespace RE {
 	}
 
 	[[nodiscard]]
-	std::string get_line(const char* pcString, uint32_t u32Line) {
+	std::string get_line(const char *const pcString, const uint32_t u32Line) {
 		uint32_t u32CurrentLine = 0U, u32CharacterIndex = 0U;
 		std::stringstream resultStream("");
 		bool bReachedEndOfString = false;
@@ -68,7 +68,7 @@ namespace RE {
 	}
 	
 	[[nodiscard]]
-	std::string convert_wide_chars_to_utf8(const wchar_t* pwcString) {
+	std::string convert_wide_chars_to_utf8(const wchar_t *const pwcString) {
 		const uint32_t u32StringSize = std::wcslen(pwcString) + 1U;
 		std::string strConverted("", u32StringSize);
 		std::wcstombs(&strConverted[0], pwcString, u32StringSize);
@@ -76,7 +76,7 @@ namespace RE {
 	}
 
 	[[nodiscard]]
-	std::wstring convert_chars_to_wide(const char* pcString) {
+	std::wstring convert_chars_to_wide(const char *const pcString) {
 		const uint32_t u32StringSize = std::strlen(pcString) + 1U;
 		std::wstring wstrConverted(L"", u32StringSize);
 		std::mbstowcs(&wstrConverted[0], pcString, u32StringSize);
@@ -85,7 +85,7 @@ namespace RE {
 
 	[[nodiscard]]
 	std::string get_app_name() {
-		std::string strAppName("Unknown app name");
+		std::string strAppName("");
 #ifdef RE_OS_WINDOWS
 # define PATH_SIZE 500
 		wchar_t wcBuffer[PATH_SIZE] = {0};
@@ -93,6 +93,7 @@ namespace RE {
 			strAppName = convert_wide_chars_to_utf8(wcBuffer);
 		else
 			RE_ERROR("Failed retrieving the file name of the application");
+# undef PATH_SIZE
 #elif defined RE_OS_LINUX
 		std::ifstream fileStream("/proc/self/comm");
 		if (fileStream.is_open())

@@ -280,28 +280,28 @@ namespace RE {
 	}
 
 	[[nodiscard]]
-	bool is_string_empty(const char *pcString);
+	bool is_string_empty(const char *const pcString);
 	[[nodiscard]]
-	uint32_t get_string_length_safely(const char *pcString);
+	uint32_t get_string_length_safely(const char *const pcString);
 	[[nodiscard]]
-	bool are_string_contents_equal(const char *pcString1, const char *pcString2);
+	bool are_string_contents_equal(const char *const pcString1, const char *const pcString2);
 	[[nodiscard]]
-	uint32_t get_line_count(const char *pcString);
+	uint32_t get_line_count(const char *const pcString);
 	[[nodiscard]]
-	std::string get_line(const char *pcString, uint32_t u32Line);
+	std::string get_line(const char *const pcString, const uint32_t u32Line);
 	[[nodiscard]]
-	std::string convert_wide_chars_to_utf8(const wchar_t *pwcString);
+	std::string convert_wide_chars_to_utf8(const wchar_t *const pwcString);
 	[[nodiscard]]
-	std::wstring convert_chars_to_wide(const char *pcString);
+	std::wstring convert_chars_to_wide(const char *const pcString);
 	[[nodiscard]]
 	std::string get_app_name();
 
 	template <typename T>
 	[[nodiscard]]
 	constexpr T nth_root(const T n, const T value) {
-		static_assert(n > 0, "The 0th root is forbidden for causing undefined behaviour");
-		if (!n) {
-			FATAL_ERROR("The value of n shouldn't be zero in an nth root");
+		static_assert(n > 0, "The 0th or negative root is forbidden for causing undefined behaviour");
+		if (n <= static_cast<T>(0.0)) {
+			FATAL_ERROR("The value of n shouldn't be zero or negative in an nth root");
 			return static_cast<T>(0.0);
 		}
 		T result = static_cast<T>(0.0);

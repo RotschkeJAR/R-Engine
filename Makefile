@@ -21,7 +21,7 @@ FRAG_HL      = $(SH)/fragment.hlsl
 RE           = $(BIN)/libRE.a
 OUT          = Game
 
-.PHONY: all, compile_shaders, update_git, fetch_git
+.PHONY: all, update_git, fetch_git
 
 all:
 	@make --no-print-directory $(LIB_BIN)/*

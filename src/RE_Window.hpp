@@ -42,12 +42,17 @@ namespace RE {
 			void show_window(const bool bShowWindow);
 			void set_window_title(const char* pNewTitle);
 			virtual bool create_vulkan_surface(VkSurfaceKHR &vk_rhSurface) const = 0;
+			[[nodiscard]]
 			virtual const char* get_vulkan_required_surface_extension_name() const = 0;
 			void window_proc();
 			virtual void post_rendering_window_proc() = 0;
+			[[nodiscard]]
 			bool should_close() const;
+			[[nodiscard]]
 			virtual bool should_render();
+			[[nodiscard]]
 			bool is_valid() const;
+			[[nodiscard]]
 			virtual WindowType get_window_type() const = 0;
 
 		friend class InputMgr;
@@ -71,9 +76,12 @@ namespace RE {
 			Window_Win64();
 			~Window_Win64();
 			bool create_vulkan_surface(VkSurfaceKHR &vk_rhSurface) const;
+			[[nodiscard]]
 			const char* get_vulkan_required_surface_extension_name() const;
 			void post_rendering_window_proc();
+			[[nodiscard]]
 			HWND get_hwindow() const;
+			[[nodiscard]]
 			WindowType get_window_type() const;
 
 		friend LRESULT CALLBACK windows_window_proc(HWND win_hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -102,8 +110,10 @@ namespace RE {
 			Window_X11();
 			~Window_X11();
 			bool create_vulkan_surface(VkSurfaceKHR &vk_rhSurface) const;
+			[[nodiscard]]
 			const char* get_vulkan_required_surface_extension_name() const;
 			void post_rendering_window_proc();
+			[[nodiscard]]
 			WindowType get_window_type() const;
 	};
 
@@ -131,9 +141,12 @@ namespace RE {
 			Window_Wayland();
 			~Window_Wayland();
 			bool create_vulkan_surface(VkSurfaceKHR &vk_rhSurface) const;
+			[[nodiscard]]
 			const char* get_vulkan_required_surface_extension_name() const;
 			void post_rendering_window_proc();
+			[[nodiscard]]
 			bool should_render() override;
+			[[nodiscard]]
 			WindowType get_window_type() const;
 
 		friend void registry_handle_global(void *pData, wl_registry *wl_pRegistry, uint32_t u32Name, const char *pcInterface, uint32_t u32Version);

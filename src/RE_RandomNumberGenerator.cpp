@@ -18,14 +18,17 @@ namespace RE {
 		rng.seed(newSeed);
 	}
 
+	[[nodiscard]]
 	bool RandomNumberGenerator::random_bool() {
 		return static_cast<bool>(random<uint16_t>() & 1U);
 	}
 
+	[[nodiscard]]
 	bool RandomNumberGenerator::random_bool(const double dChance) {
 		return random_percentage() <= dChance;
 	}
 
+	[[nodiscard]]
 	double RandomNumberGenerator::random_percentage() {
 		return static_cast<double>(random<uint32_t>()) / std::numeric_limits<uint32_t>::max();
 	}

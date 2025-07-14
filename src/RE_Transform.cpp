@@ -17,6 +17,7 @@ namespace RE {
 		scale.copy_from(rCopyTransform.scale);
 	}
 	
+	[[nodiscard]]
 	bool Transform::equals(const Transform &rCompareTransform) const {
 		return position.equals(rCompareTransform.position) && scale.equals(rCompareTransform.scale);
 	}
@@ -25,10 +26,12 @@ namespace RE {
 		copy_from(rCopyTransform);
 	}
 	
+	[[nodiscard]]
 	bool Transform::operator ==(const Transform &rCompareTransform) const {
 		return equals(rCompareTransform);
 	}
 	
+	[[nodiscard]]
 	bool Transform::operator !=(const Transform &rCompareTransform) const {
 		return !equals(rCompareTransform);
 	}

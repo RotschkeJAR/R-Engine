@@ -20,6 +20,7 @@ namespace RE {
 		}
 	}
 
+	[[nodiscard]]
 	bool Scene::is_current_scene() const {
 		return this == get_current_scene();
 	}
@@ -28,6 +29,7 @@ namespace RE {
 		RE::set_next_scene(this);
 	}
 	
+	[[nodiscard]]
 	bool Scene::is_next_scene() const {
 		return this == get_next_scene();
 	}

@@ -23,22 +23,27 @@ namespace RE {
 		vkUnmapMemory(vk_hDevice, vk_hMemory);
 	}
 
+	[[nodiscard]]
 	VkBuffer Vulkan_Buffer::get_buffer() const {
 		return vk_hBuffer;
 	}
 	
+	[[nodiscard]]
 	VkDeviceMemory Vulkan_Buffer::get_memory() const {
 		return vk_hMemory;
 	}
 
+	[[nodiscard]]
 	bool Vulkan_Buffer::is_valid() const {
 		return vk_hBuffer && vk_hMemory;
 	}
 
+	[[nodiscard]]
 	Vulkan_Buffer::operator VkBuffer() const {
 		return get_buffer();
 	}
 
+	[[nodiscard]]
 	Vulkan_Buffer::operator VkDeviceMemory() const {
 		return get_memory();
 	}
@@ -81,22 +86,27 @@ namespace RE {
 		return bSuccess;
 	}
 
+	[[nodiscard]]
 	VkCommandBuffer Vulkan_CommandBuffer::get_command_buffer() const {
 		return vk_hCommandBuffer;
 	}
 
+	[[nodiscard]]
 	VkCommandBuffer* Vulkan_CommandBuffer::get_command_buffer_ptr() {
 		return &vk_hCommandBuffer;
 	}
 
+	[[nodiscard]]
 	bool Vulkan_CommandBuffer::is_valid() const {
 		return vk_hCommandPool && vk_hCommandBuffer;
 	}
 
+	[[nodiscard]]
 	Vulkan_CommandBuffer::operator VkCommandBuffer() const {
 		return get_command_buffer();
 	}
 
+	[[nodiscard]]
 	Vulkan_CommandBuffer::operator VkCommandBuffer*() {
 		return get_command_buffer_ptr();
 	}
@@ -123,14 +133,17 @@ namespace RE {
 		return vkWaitForFences(vk_hDevice, 1U, &vk_hFence, VK_TRUE, std::numeric_limits<uint64_t>::max());
 	}
 
+	[[nodiscard]]
 	VkFence Vulkan_Fence::get_fence() const {
 		return vk_hFence;
 	}
 	
+	[[nodiscard]]
 	bool Vulkan_Fence::is_valid() const {
 		return vk_hFence != VK_NULL_HANDLE;
 	}
 
+	[[nodiscard]]
 	Vulkan_Fence::operator VkFence() const {
 		return get_fence();
 	}

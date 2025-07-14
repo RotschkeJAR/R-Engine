@@ -19,11 +19,16 @@ namespace RE {
 
 			bool map_memory(void **ppData) const;
 			void unmap_memory() const;
+			[[nodiscard]]
 			VkBuffer get_buffer() const;
+			[[nodiscard]]
 			VkDeviceMemory get_memory() const;
+			[[nodiscard]]
 			bool is_valid() const;
 
+			[[nodiscard]]
 			operator VkBuffer() const;
+			[[nodiscard]]
 			operator VkDeviceMemory() const;
 	};
 
@@ -40,11 +45,16 @@ namespace RE {
 
 			bool begin_recording(const VkCommandBufferUsageFlags vk_eUsageFlags, const VkCommandBufferInheritanceInfo *vk_pInheritanceInfo) const;
 			bool end_recording() const;
+			[[nodiscard]]
 			VkCommandBuffer get_command_buffer() const;
+			[[nodiscard]]
 			VkCommandBuffer* get_command_buffer_ptr();
+			[[nodiscard]]
 			bool is_valid() const;
 
+			[[nodiscard]]
 			operator VkCommandBuffer() const;
+			[[nodiscard]]
 			operator VkCommandBuffer*();
 	};
 
@@ -58,9 +68,12 @@ namespace RE {
 			~Vulkan_Fence();
 
 			bool wait_for() const;
+			[[nodiscard]]
 			VkFence get_fence() const;
+			[[nodiscard]]
 			bool is_valid() const;
 
+			[[nodiscard]]
 			operator VkFence() const;
 	};
 

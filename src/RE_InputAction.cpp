@@ -11,14 +11,17 @@ namespace RE {
 			pUpdateInputObject = nullptr;
 	}
 
+	[[nodiscard]]
 	bool InputAction::is_scroll_wheel() const {
 		return eInput == RE_INPUT_SCROLL_UP || eInput == RE_INPUT_SCROLL_DOWN;
 	}
-	
+
+	[[nodiscard]]
 	bool InputAction::is_button() const {
 		return eInput >= RE_INPUT_BUTTON_LEFT && eInput <= RE_INPUT_BUTTON_MIDDLE;
 	}
-	
+
+	[[nodiscard]]
 	bool InputAction::is_key() const {
 		return u32KeyScancode || (eInput >= RE_INPUT_KEY_SPACE && eInput < RE_INPUT_MAX_ENUM);
 	}
@@ -28,6 +31,7 @@ namespace RE {
 			pUpdateInputObject = this;
 	}
 
+	[[nodiscard]]
 	bool InputAction::is_updating() const {
 		return pUpdateInputObject == this;
 	}
@@ -37,6 +41,7 @@ namespace RE {
 			pUpdateInputObject = nullptr;
 	}
 
+	[[nodiscard]]
 	bool InputAction::can_update() {
 		return !pUpdateInputObject;
 	}
@@ -55,18 +60,22 @@ namespace RE {
 		eInput = map_scancode_to_input(u32NewScancode);
 	}
 
+	[[nodiscard]]
 	bool InputAction::is_pressed() const {
 		return has_valid_input_values() ? (is_key_down(eInput, u32KeyScancode) && !was_key_down(eInput, u32KeyScancode)) : false;
 	}
 
+	[[nodiscard]]
 	bool InputAction::is_down() const {
 		return has_valid_input_values() ? is_key_down(eInput, u32KeyScancode) : false;
 	}
 
+	[[nodiscard]]
 	bool InputAction::is_released() const {
 		return has_valid_input_values() ? (!is_key_down(eInput, u32KeyScancode) && was_key_down(eInput, u32KeyScancode)) : false;
 	}
 
+	[[nodiscard]]
 	bool InputAction::has_valid_input_values() const {
 		return u32KeyScancode || (eInput > RE_INPUT_UNKNOWN && eInput < RE_INPUT_MAX_ENUM);
 	}

@@ -134,6 +134,7 @@ namespace RE {
 		return vkCreateWaylandSurfaceKHR(vk_hInstance, &vk_waylandSurfaceCreateInfo, nullptr, &vk_rhSurface) == VK_SUCCESS;
 	}
 
+	[[nodiscard]]
 	const char* Window_Wayland::get_vulkan_required_surface_extension_name() const {
 		return VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME;
 	}
@@ -142,6 +143,7 @@ namespace RE {
 		CATCH_SIGNAL(commit_surface());
 	}
 
+	[[nodiscard]]
 	bool Window_Wayland::should_render() {
 		if (bShouldRenderFrame) {
 			bShouldRenderFrame = false;
@@ -151,6 +153,7 @@ namespace RE {
 			return false;
 	}
 
+	[[nodiscard]]
 	WindowType Window_Wayland::get_window_type() const {
 		return WindowType::Wayland;
 	}

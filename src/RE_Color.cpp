@@ -28,6 +28,7 @@ namespace RE {
 			a4fChannels[u8Channel] = rCopyColor.a4fChannels[u8Channel];
 	}
 	
+	[[nodiscard]]
 	bool Color::equals(const Color &rCompareColor) const {
 		for (uint8_t u8Channel = 0U; u8Channel < 4U; u8Channel++)
 			if (a4fChannels[u8Channel] != rCompareColor.a4fChannels[u8Channel])
@@ -39,6 +40,7 @@ namespace RE {
 		a4fChannels[0] = CLAMP_CHANNEL_VALUE(fRed);
 	}
 	
+	[[nodiscard]]
 	float Color::get_red() const {
 		return a4fChannels[0];
 	}
@@ -47,6 +49,7 @@ namespace RE {
 		a4fChannels[1] = CLAMP_CHANNEL_VALUE(fGreen);
 	}
 	
+	[[nodiscard]]
 	float Color::get_green() const {
 		return a4fChannels[1];
 	}
@@ -55,6 +58,7 @@ namespace RE {
 		a4fChannels[2] = CLAMP_CHANNEL_VALUE(fBlue);
 	}
 	
+	[[nodiscard]]
 	float Color::get_blue() const {
 		return a4fChannels[2];
 	}
@@ -63,10 +67,12 @@ namespace RE {
 		a4fChannels[3] = CLAMP_CHANNEL_VALUE(fAlpha);
 	}
 	
+	[[nodiscard]]
 	float Color::get_alpha() const {
 		return a4fChannels[3];
 	}
 
+	[[nodiscard]]
 	float Color::operator [](const uint32_t u32ChannelIndex) const {
 		if (u32ChannelIndex < 4)
 			return a4fChannels[u32ChannelIndex];
@@ -80,10 +86,12 @@ namespace RE {
 		copy_from(rCopyColor);
 	}
 	
+	[[nodiscard]]
 	bool Color::operator ==(const Color &rCompareColor) const {
 		return equals(rCompareColor);
 	}
 	
+	[[nodiscard]]
 	bool Color::operator !=(const Color &rCompareColor) const {
 		return equals(rCompareColor);
 	}

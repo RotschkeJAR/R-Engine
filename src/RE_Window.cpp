@@ -35,14 +35,17 @@ namespace RE {
 		CATCH_SIGNAL(internal_window_proc());
 	}
 
+	[[nodiscard]]
 	bool Window::should_close() const {
 		return bCloseFlag;
 	}
 
+	[[nodiscard]]
 	bool Window::should_render() {
 		return !bMinimized && bVisible;
 	}
 
+	[[nodiscard]]
 	bool Window::is_valid() const {
 		return bValid;
 	}

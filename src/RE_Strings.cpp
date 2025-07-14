@@ -2,18 +2,22 @@
 
 namespace RE {
 
+	[[nodiscard]]
 	bool is_string_empty(const char* pcString) {
 		return !pcString || pcString[0] == '\0';
 	}
 
+	[[nodiscard]]
 	uint32_t get_string_length_safely(const char* pcString) {
 		return pcString ? std::strlen(pcString) : 0U;
 	}
 
+	[[nodiscard]]
 	bool are_string_contents_equal(const char *pcString1, const char *pcString2) {
 		return pcString1 && pcString2 && std::strcmp(pcString1, pcString2) == 0U;
 	}
 
+	[[nodiscard]]
 	uint32_t get_line_count(const char* pcString) {
 		if (is_string_empty(pcString))
 			return 0;
@@ -31,6 +35,7 @@ namespace RE {
 		}
 	}
 
+	[[nodiscard]]
 	std::string get_line(const char* pcString, uint32_t u32Line) {
 		uint32_t u32CurrentLine = 0U, u32CharacterIndex = 0U;
 		std::stringstream resultStream("");
@@ -62,6 +67,7 @@ namespace RE {
 		return std::string(resultStream.str());
 	}
 	
+	[[nodiscard]]
 	std::string convert_wide_chars_to_utf8(const wchar_t* pwcString) {
 		const uint32_t u32StringSize = std::wcslen(pwcString) + 1U;
 		std::string strConverted("", u32StringSize);
@@ -69,6 +75,7 @@ namespace RE {
 		return strConverted;
 	}
 
+	[[nodiscard]]
 	std::wstring convert_chars_to_wide(const char* pcString) {
 		const uint32_t u32StringSize = std::strlen(pcString) + 1U;
 		std::wstring wstrConverted(L"", u32StringSize);
@@ -76,6 +83,7 @@ namespace RE {
 		return wstrConverted;
 	}
 
+	[[nodiscard]]
 	std::string get_app_name() {
 		std::string strAppName("Unknown app name");
 #ifdef RE_OS_WINDOWS

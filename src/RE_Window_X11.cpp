@@ -174,6 +174,7 @@ namespace RE {
 		return vkCreateXlibSurfaceKHR(vk_hInstance, &vk_x11SurfaceCreateInfo, nullptr, &vk_rhSurface) == VK_SUCCESS;
 	}
 
+	[[nodiscard]]
 	const char* Window_X11::get_vulkan_required_surface_extension_name() const {
 		return VK_KHR_XLIB_SURFACE_EXTENSION_NAME;
 	}
@@ -181,6 +182,7 @@ namespace RE {
 	void Window_X11::post_rendering_window_proc() {
 	}
 
+	[[nodiscard]]
 	WindowType Window_X11::get_window_type() const {
 		return WindowType::X11;
 	}

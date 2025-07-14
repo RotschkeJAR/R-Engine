@@ -226,6 +226,7 @@ namespace RE {
 		return vkCreateWin32SurfaceKHR(vk_hInstance, &vk_win32SurfaceCreateInfo, nullptr, &vk_rhSurface) == VK_SUCCESS;
 	}
 
+	[[nodiscard]]
 	const char* Window_Win64::get_vulkan_required_surface_extension_name() const {
 		return VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
 	}
@@ -233,6 +234,7 @@ namespace RE {
 	void Window_Win64::post_rendering_window_proc() {
 	}
 
+	[[nodiscard]]
 	HWND Window_Win64::get_hwindow() const {
 		return win_hWindow;
 	}
@@ -241,6 +243,7 @@ namespace RE {
 		Window_Win64::win_hInstance = win_hInstance;
 	}
 
+	[[nodiscard]]
 	WindowType Window_Win64::get_window_type() const {
 		return WindowType::Windows;
 	}

@@ -726,7 +726,7 @@ namespace RE {
 	}
 
 	bool does_graphics_queue_support_transfer() {
-		return is_bit_true<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_BIT);
+		return is_bit_true<uint8_t>(u8RenderSystemFlags, GRAPHICS_QUEUE_SUPPORTS_TRANSFER_BIT);
 	}
 
 	void enable_vsync(const bool bEnableVsync) {

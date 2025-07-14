@@ -36,6 +36,7 @@ namespace RE {
 		CATCH_SIGNAL(mark_camera_deletable(this));
 	}
 	
+	[[nodiscard]]
 	bool Camera::has_same_transform(const Camera &rCompareCamera) const {
 		return position == rCompareCamera.position 
 			&& scale == rCompareCamera.scale 
@@ -48,10 +49,12 @@ namespace RE {
 		view = rCopyCamera.view;
 	}
 
+	[[nodiscard]]
 	bool Camera::operator ==(const Camera &rCompareCamera) const {
 		return has_same_transform(rCompareCamera);
 	}
-	
+
+	[[nodiscard]]
 	bool Camera::operator !=(const Camera &rCompareCamera) const {
 		return !has_same_transform(rCompareCamera);
 	}

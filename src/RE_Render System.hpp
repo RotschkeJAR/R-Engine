@@ -34,7 +34,6 @@ namespace RE {
 	extern VkCommandPool vk_ahCommandPools[RE_VK_COMMAND_POOL_COUNT];
 	extern VkCommandBuffer vk_hDummyTransferCommandBuffer;
 	extern VkFormat vk_eDepthStencilBufferFormat;
-	extern VkSampleCountFlags vk_eAllowedSamples;
 
 	bool init_render_system();
 	void destroy_render_system();

@@ -51,7 +51,7 @@ namespace RE {
 	VkDeviceMemory vk_ahSignleSampledWorldRenderImageMemories[RE_VK_FRAMES_IN_FLIGHT] = {};
 
 	VkBool32 vk_bSampleShadingEnabled = VK_FALSE;
-	float fSampleShadingRate = 0.0f;
+	float fSampleShadingRate = 0.2f;
 
 	VkBuffer vk_hRectIndexBuffer = VK_NULL_HANDLE;
 	VkDeviceMemory vk_hRectIndexBufferMemory = VK_NULL_HANDLE;
@@ -864,6 +864,7 @@ namespace RE {
 
 	[[nodiscard]]
 	bool is_msaa_mode_supported(const MsaaMode eMsaaMode) {
+		const VkSampleCountFlags vk_eAllowedSamples = vk_physicalDeviceLimits.framebufferColorSampleCounts & vk_physicalDeviceLimits.framebufferDepthSampleCounts & vk_physicalDeviceLimits.framebufferStencilSampleCounts;
 		switch (eMsaaMode) {
 			case RE_MSAA_MODE_1:
 				return (vk_eAllowedSamples & VK_SAMPLE_COUNT_1_BIT) == VK_SAMPLE_COUNT_1_BIT;
@@ -882,6 +883,24 @@ namespace RE {
 			default:
 				return false;
 		}
+	}
+
+	void get_supported_msaa_modes(const uint8_t u8ListLength, MsaaMode *const peSupportedMsaaModes, uint8_t *const pu8SupportedMsaaModeCount) {
+		uint8_t u8Index = 0U;
+		for (uint8_t u8MsaaModeIndex = 0U; u8MsaaModeIndex < static_cast<uint8_t>(RE_MSAA_MODE_64) && u8Index < u8ListLength; u8MsaaModeIndex++) {
+			const MsaaMode eMsaaMode = static_cast<MsaaMode>(u8MsaaModeIndex);
+			if (is_msaa_mode_supported(eMsaaMode)) {
+				if (peSupportedMsaaModes)
+					peSupportedMsaaModes[u8Index] = eMsaaMode;
+				u8Index++;
+			}
+		}
+		if (pu8SupportedMsaaModeCount)
+			*pu8SupportedMsaaModeCount = u8Index;
+		if (!peSupportedMsaaModes)
+			return;
+		for (uint8_t u8RemainsOfListIndex = u8Index; u8RemainsOfListIndex < u8ListLength; u8RemainsOfListIndex++)
+			peSupportedMsaaModes[u8RemainsOfListIndex] = RE_MSAA_MODE_1;
 	}
 
 	[[nodiscard]]
@@ -915,8 +934,11 @@ namespace RE {
 		if (fNewSampleShadingRate < 0.0f || fNewSampleShadingRate > 1.0f) {
 			RE_ERROR(append_to_string("Sample shading rate should be in range between 0 and 1, but was ", fNewSampleShadingRate, ". Request to change it has been discarded"));
 			return;
-		}
-		fSampleShadingRate = fNewSampleShadingRate;
+		} else if (fNewSampleShadingRate == 0.0f) {
+			RE_WARNING("Sample shading rate of zero disables sample shading. The engine will ignore this new rate and disable it instead");
+			vk_bSampleShadingEnabled = VK_FALSE;
+		} else
+			fSampleShadingRate = fNewSampleShadingRate;
 		WAIT_FOR_IDLE_VULKAN_DEVICE();
 		CATCH_SIGNAL(recreate_game_object_render_pipelines());
 	}

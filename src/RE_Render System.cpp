@@ -35,7 +35,6 @@ namespace RE {
 	VkCommandPool vk_ahCommandPools[RE_VK_COMMAND_POOL_COUNT] = {};
 	VkCommandBuffer vk_hDummyTransferCommandBuffer = VK_NULL_HANDLE;
 	VkFormat vk_eDepthStencilBufferFormat = VK_FORMAT_UNDEFINED;
-	VkSampleCountFlags vk_eAllowedSamples = VK_SAMPLE_COUNT_1_BIT;
 
 #define SWAPCHAIN_DIRTY_BIT 0
 #define VSYNC_SETTING_BIT 1
@@ -683,7 +682,6 @@ namespace RE {
 				vkGetPhysicalDeviceMemoryProperties(vk_hPhysicalDeviceSelected, &vk_physicalDeviceMemoryProperties);
 				constexpr VkFormat vk_aeDepthStencilFormats[ALLOWED_DEPTH_STENCIL_BUFFER_FORMAT_COUNT] = ALLOWED_DEPTH_STENCIL_BUFFER_FORMATS;
 				vk_eDepthStencilBufferFormat = CATCH_SIGNAL_AND_RETURN(find_supported_image_format(ALLOWED_DEPTH_STENCIL_BUFFER_FORMAT_COUNT, vk_aeDepthStencilFormats, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT), VkFormat);
-				vk_eAllowedSamples = vk_physicalDeviceLimits.framebufferColorSampleCounts & vk_physicalDeviceLimits.framebufferDepthSampleCounts & vk_physicalDeviceLimits.framebufferStencilSampleCounts;
 
 				CATCH_SIGNAL(fetch_surface_infos());
 				CATCH_SIGNAL(select_best_surface_format());

@@ -239,7 +239,7 @@ namespace RE {
 		return win_hWindow;
 	}
 
-	void set_hinstance(HINSTANCE win_hInstance) {
+	void set_hinstance(const HINSTANCE win_hInstance) {
 		Window_Win64::win_hInstance = win_hInstance;
 	}
 

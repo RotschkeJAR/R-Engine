@@ -842,7 +842,7 @@ namespace RE {
 
 
 #ifdef RE_OS_WINDOWS
-	void set_hinstance(HINSTANCE win_hInstance);
+	void set_hinstance(const HINSTANCE win_hInstance);
 #endif
 
 }

@@ -44,7 +44,7 @@ namespace RE {
 	void render();
 	bool swapchain_created_renderer();
 	void swapchain_destroyed_renderer();
-	void attach_camera(const Camera *const pCamera);
+	void attach_camera(const Camera *pCamera);
 
 }
 

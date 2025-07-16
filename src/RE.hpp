@@ -190,7 +190,7 @@ namespace RE {
 	};
 
 	template <class... T>
-	void print(T... content) {
+	void print(const T... content) {
 		if constexpr (sizeof...(content) == 0)
 			return;
 		([&]() {
@@ -208,14 +208,14 @@ namespace RE {
 	void println(T... content) {
 		print(content..., "\n");
 	}
-	void print_colored(const char *const pcContent, const TerminalColor eColor, const bool bBackgroundColored, const bool bBold);
-	void println_colored(const char *const pcContent, const TerminalColor eColor, const bool bBackgroundColored, const bool bBold);
+	void print_colored(const char *pcContent, TerminalColor eColor, bool bBackgroundColored, bool bBold);
+	void println_colored(const char *pcContent, TerminalColor eColor, bool bBackgroundColored, bool bBold);
 #define PRINT(...) print(append_to_string(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE_MACRO(__VA_ARGS__)))
 #define PRINT_LN(...) print(append_to_string(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE_MACRO(__VA_ARGS__), "\n"))
 	
-	void error(const char *const pcFile, const char *const pcFunc, const uint32_t u32Line, const char *const pcDetail, const bool bTerminate);
-	void warning(const char *const pcFile, const char *const pcFunc, const uint32_t u32Line, const char *const pcDetail);
-	void note(const char *const pcFile, const char *const pcFunc, const uint32_t u32Line, const char *const pcDetail);
+	void error(const char *pcFile, const char *pcFunc, uint32_t u32Line, const char *pcDetail, bool bTerminate);
+	void warning(const char *pcFile, const char *pcFunc, uint32_t u32Line, const char *pcDetail);
+	void note(const char *pcFile, const char *pcFunc, uint32_t u32Line, const char *pcDetail);
 #define FATAL_ERROR(T) error(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(T), true)
 #define ERROR(T) error(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(T), false)
 #define WARNING(T) warning(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(T))
@@ -227,11 +227,11 @@ namespace RE {
 			~SignalCatcher();
 	};
 
-	void add_to_stack_trace(const char *const pcFile, const char *const pcMethod, const uint32_t u32Line, const char *const pcDetails);
+	void add_to_stack_trace(const char *pcFile, const char *pcMethod, uint32_t u32Line, const char *pcDetails);
 	void remove_from_stack_trace();
 	class SignalGuard final {
 		public:
-			SignalGuard(const char *const pcFile, const char *const pcFunc, const uint32_t u32Line, const char *const pcDetails);
+			SignalGuard(const char *pcFile, const char *pcFunc, uint32_t u32Line, const char *pcDetails);
 			~SignalGuard();
 	};
 #define DEFINE_SIGNAL_GUARD_DETAILED(NAME, DETAILS) SignalGuard NAME(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(DETAILS))
@@ -280,19 +280,19 @@ namespace RE {
 	}
 
 	[[nodiscard]]
-	bool is_string_empty(const char *const pcString);
+	bool is_string_empty(const char *pcString);
 	[[nodiscard]]
-	uint32_t get_string_length_safely(const char *const pcString);
+	uint32_t get_string_length_safely(const char *pcString);
 	[[nodiscard]]
-	bool are_string_contents_equal(const char *const pcString1, const char *const pcString2);
+	bool are_string_contents_equal(const char *pcString1, const char *pcString2);
 	[[nodiscard]]
-	uint32_t get_line_count(const char *const pcString);
+	uint32_t get_line_count(const char *pcString);
 	[[nodiscard]]
-	std::string get_line(const char *const pcString, const uint32_t u32Line);
+	std::string get_line(const char *pcString, uint32_t u32Line);
 	[[nodiscard]]
-	std::string convert_wide_chars_to_utf8(const wchar_t *const pwcString);
+	std::string convert_wide_chars_to_utf8(const wchar_t *pwcString);
 	[[nodiscard]]
-	std::wstring convert_chars_to_wide(const char *const pcString);
+	std::wstring convert_chars_to_wide(const char *pcString);
 	[[nodiscard]]
 	std::string get_app_name();
 
@@ -578,26 +578,26 @@ namespace RE {
 			Color();
 			Color(Color &rCopyColor);
 			~Color();
-			void set_channel(const uint8_t u8ChannelIndex, const float fNormal);
+			void set_channel(uint8_t u8ChannelIndex, float fNormal);
 			void copy_from(const Color &rCopyColor);
 			[[nodiscard]]
 			bool equals(const Color &rCompareColor) const;
 
-			void set_red(const float fRed);
+			void set_red(float fRed);
 			[[nodiscard]]
 			float get_red() const;
-			void set_green(const float fGreen);
+			void set_green(float fGreen);
 			[[nodiscard]]
 			float get_green() const;
-			void set_blue(const float fBlue);
+			void set_blue(float fBlue);
 			[[nodiscard]]
 			float get_blue() const;
-			void set_alpha(const float fAlpha);
+			void set_alpha(float fAlpha);
 			[[nodiscard]]
 			float get_alpha() const;
 
 			[[nodiscard]]
-			float operator [](const uint32_t u32ChannelIndex) const;
+			float operator [](uint32_t u32ChannelIndex) const;
 			void operator =(const Color &rCopyColor);
 			[[nodiscard]]
 			bool operator ==(const Color &rCompareColor) const;
@@ -642,17 +642,17 @@ namespace RE {
 			RandomNumberGenerator();
 			RandomNumberGenerator(const uint32_t u32Seed);
 			~RandomNumberGenerator();
-			void set_seed(const uint32_t newSeed);
+			void set_seed(uint32_t newSeed);
 
 			template <typename T>
 			[[nodiscard]]
-			T random(const T min, const T max) {
+			T random(T min, T max) {
 				std::uniform_int_distribution<T> range(min, max);
 				return range(rng);
 			}
 			template <typename T>
 			[[nodiscard]]
-			T random(const T max) {
+			T random(T max) {
 				return random<T>(static_cast<T>(0.0), max);
 			}
 			template <typename T>
@@ -663,7 +663,7 @@ namespace RE {
 			[[nodiscard]]
 			bool random_bool();
 			[[nodiscard]]
-			bool random_bool(const double dChance);
+			bool random_bool(double dChance);
 			[[nodiscard]]
 			double random_percentage();
 	};
@@ -673,7 +673,7 @@ namespace RE {
 			const uint32_t u32Id;
 
 			Scene() = delete;
-			Scene(const uint32_t u32Id);
+			Scene(uint32_t u32Id);
 			virtual ~Scene();
 
 			bool is_current_scene() const;
@@ -719,7 +719,7 @@ namespace RE {
 			const uint32_t u32SceneParentId;
 
 			GameObject() = delete;
-			GameObject(const uint32_t u32OwnId, const uint32_t u32SceneParentId);
+			GameObject(uint32_t u32OwnId, uint32_t u32SceneParentId);
 			virtual ~GameObject();
 
 			void mark_deletable();
@@ -736,8 +736,8 @@ namespace RE {
 
 		public:
 			InputAction();
-			InputAction(const Input eInput);
-			InputAction(const uint32_t u32KeyScancode);
+			InputAction(Input eInput);
+			InputAction(uint32_t u32KeyScancode);
 			~InputAction();
 			[[nodiscard]]
 			bool is_scroll_wheel() const;
@@ -754,8 +754,8 @@ namespace RE {
 			[[nodiscard]]
 			static bool can_update();
 
-			void change_input(const Input eInput);
-			void change_scancode(const uint32_t u32NewScancode);
+			void change_input(Input eInput);
+			void change_scancode(uint32_t u32NewScancode);
 
 			[[nodiscard]]
 			bool is_pressed() const;
@@ -763,17 +763,18 @@ namespace RE {
 			bool is_down() const;
 			[[nodiscard]]
 			bool is_released() const;
+			void reset_input_state() const;
 
 			[[nodiscard]]
 			bool has_valid_input_values() const;
 	};
 	
 	// Console
-	void enable_colorful_printing(const bool bEnable);
-	void treat_warnings_as_errors(const bool bEnable);
-	void make_errors_always_fatal(const bool bEnable);
-	void show_message_box_on_error(const bool bEnable);
-	void enable_verbosity(const bool bEnable);
+	void enable_colorful_printing(bool bEnable);
+	void treat_warnings_as_errors(bool bEnable);
+	void make_errors_always_fatal(bool bEnable);
+	void show_message_box_on_error(bool bEnable);
+	void enable_verbosity(bool bEnable);
 	[[nodiscard]]
 	bool is_verbose_behaviour_enabled();
 
@@ -786,18 +787,23 @@ namespace RE {
 	float get_cursor_normal_position_x();
 	[[nodiscard]]
 	float get_cursor_normal_position_y();
+	void reset_mouse_input();
 
 	// Keyboard input
 	[[nodiscard]]
-	Input map_scancode_to_input(const uint32_t u32Scancode);
+	Input map_scancode_to_input(uint32_t u32Scancode);
 	[[nodiscard]]
-	uint32_t map_input_to_scancode(const Input eInput);
+	uint32_t map_input_to_scancode(Input eInput);
+	void reset_keyboard_input();
+
+	// Input
+	void reset_all_input();
 
 	// Program execution
 	void execute();
 	[[nodiscard]]
 	float get_deltaseconds();
-	void set_fps_limit(const uint32_t u32MaxFramesPerSecond);
+	void set_fps_limit(uint32_t u32MaxFramesPerSecond);
 	[[nodiscard]]
 	float get_fps_rate();
 	
@@ -810,39 +816,39 @@ namespace RE {
 	[[nodiscard]]
 	uint32_t get_current_scene_id();
 	[[nodiscard]]
-	bool is_scene_current(const uint32_t u32SceneId);
+	bool is_scene_current(uint32_t u32SceneId);
 
 	[[nodiscard]]
 	Scene* get_next_scene();
 	[[nodiscard]]
 	uint32_t get_next_scene_id();
 	[[nodiscard]]
-	bool is_scene_next(const uint32_t u32SceneId);
+	bool is_scene_next(uint32_t u32SceneId);
 
 	// Render system
-	void enable_vsync(const bool bEnableVsync);
+	void enable_vsync(bool bEnableVsync);
 	[[nodiscard]]
 	bool is_vsync_enabled();
 
 	// Renderer
-	void set_const_screen_size(const uint32_t u32Width, const uint32_t u32Height);
-	void set_screen_percentage(const float fPercentage);
+	void set_const_screen_size(uint32_t u32Width, uint32_t u32Height);
+	void set_screen_percentage(float fPercentage);
 	void reset_screen_size();
-	void set_msaa_mode(const MsaaMode eNewMsaaMode);
+	void set_msaa_mode(MsaaMode eNewMsaaMode);
 	[[nodiscard]]
-	bool is_msaa_mode_supported(const MsaaMode eMsaaMode);
+	bool is_msaa_mode_supported(MsaaMode eMsaaMode);
 	[[nodiscard]]
 	MsaaMode get_highest_supported_msaa_mode();
-	void enable_sample_shading(const bool bEnable);
+	void enable_sample_shading(bool bEnable);
 	[[nodiscard]]
 	bool is_sample_shading_enabled();
-	void set_sample_shading_rate(const float fNewSampleShadingRate);
+	void set_sample_shading_rate(float fNewSampleShadingRate);
 	[[nodiscard]]
 	float get_sample_shading_rate();
 
 
 #ifdef RE_OS_WINDOWS
-	void set_hinstance(const HINSTANCE win_hInstance);
+	void set_hinstance(HINSTANCE win_hInstance);
 #endif
 
 }

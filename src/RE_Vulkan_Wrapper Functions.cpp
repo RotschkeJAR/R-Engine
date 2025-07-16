@@ -3,7 +3,7 @@
 
 namespace RE {
 
-	static std::vector<uint32_t> get_queue_family_indices(const uint32_t u32QueueCount, const uint32_t *pau32Queues) {
+	static std::vector<uint32_t> get_queue_family_indices(const uint32_t u32QueueCount, const uint32_t *const pau32Queues) {
 		std::vector<uint32_t> queueFamilies;
 		for (uint32_t u32QueueIndex = 0U; u32QueueIndex < u32QueueCount; u32QueueIndex++)
 			if (pau32Queues[u32QueueIndex] != VK_QUEUE_FAMILY_IGNORED && std::find(queueFamilies.begin(), queueFamilies.end(), au32DeviceQueueFamilyIndices[pau32Queues[u32QueueIndex]]) == queueFamilies.end())
@@ -11,7 +11,7 @@ namespace RE {
 		return queueFamilies;
 	}
 
-	static bool alloc_required_memory(const VkMemoryRequirements vk_memoryRequirements, const VkMemoryPropertyFlags vk_eMemoryPropertyFlags, VkDeviceMemory *vk_phMemory) {
+	static bool alloc_required_memory(const VkMemoryRequirements vk_memoryRequirements, const VkMemoryPropertyFlags vk_eMemoryPropertyFlags, VkDeviceMemory *const vk_phMemory) {
 		uint32_t u32MemoryTypeIndex = VK_MAX_MEMORY_TYPES;
 		for (uint32_t u32PhysicalDeviceMemoryTypeIndex = 0U; u32PhysicalDeviceMemoryTypeIndex < vk_physicalDeviceMemoryProperties.memoryTypeCount; u32PhysicalDeviceMemoryTypeIndex++)
 			if ((vk_memoryRequirements.memoryTypeBits & (1U << u32PhysicalDeviceMemoryTypeIndex)) && (vk_physicalDeviceMemoryProperties.memoryTypes[u32PhysicalDeviceMemoryTypeIndex].propertyFlags & vk_eMemoryPropertyFlags) == vk_eMemoryPropertyFlags) {
@@ -30,7 +30,7 @@ namespace RE {
 		return vkAllocateMemory(vk_hDevice, &vk_allocInfo, nullptr, vk_phMemory) == VK_SUCCESS;
 	}
 
-	bool create_vulkan_shader_from_file(const char *pcPathToFile, VkShaderModule *vk_phShader) {
+	bool create_vulkan_shader_from_file(const char *const pcPathToFile, VkShaderModule *const vk_phShader) {
 		std::ifstream shaderBinaryFile(pcPathToFile, std::ios::ate | std::ios::binary);
 		if (!shaderBinaryFile.is_open()) {
 			RE_ERROR(append_to_string("Failed loading SPIR-V shader binaries from file \"", pcPathToFile, "\""));
@@ -53,7 +53,7 @@ namespace RE {
 		return bSuccess;
 	}
 	
-	bool create_vulkan_buffer(const VkDeviceSize vk_size, const VkBufferUsageFlags vk_eUsages, const uint32_t u32QueueCount, const uint32_t *pau32Queues, const VkMemoryPropertyFlags vk_eMemoryPropertyFlags, VkBuffer *vk_phBuffer, VkDeviceMemory *vk_phMemory) {
+	bool create_vulkan_buffer(const VkDeviceSize vk_size, const VkBufferUsageFlags vk_eUsages, const uint32_t u32QueueCount, const uint32_t *const pau32Queues, const VkMemoryPropertyFlags vk_eMemoryPropertyFlags, VkBuffer *const vk_phBuffer, VkDeviceMemory *const vk_phMemory) {
 		VkBufferCreateInfo vk_createInfo = {
 			.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
 			.size = vk_size,
@@ -86,7 +86,7 @@ namespace RE {
 		return false;
 	}
 
-	VkFormat find_supported_image_format_on_physical_vulkan_device(const VkPhysicalDevice vk_hPhysicalDevice, const uint32_t u32FormatCandidateCount, const VkFormat *vk_paeFormatCandidates, const VkImageTiling vk_eImgTiling, const VkFormatFeatureFlags vk_eRequiredFeature) {
+	VkFormat find_supported_image_format_on_physical_vulkan_device(const VkPhysicalDevice vk_hPhysicalDevice, const uint32_t u32FormatCandidateCount, const VkFormat *const vk_paeFormatCandidates, const VkImageTiling vk_eImgTiling, const VkFormatFeatureFlags vk_eRequiredFeature) {
 		for (uint32_t u32FormatCandidateIndex = 0U; u32FormatCandidateIndex < u32FormatCandidateCount; u32FormatCandidateIndex++) {
 			VkFormatProperties vk_formatProperties;
 			vkGetPhysicalDeviceFormatProperties(vk_hPhysicalDevice, vk_paeFormatCandidates[u32FormatCandidateIndex], &vk_formatProperties);
@@ -106,11 +106,11 @@ namespace RE {
 		return VK_FORMAT_UNDEFINED;
 	}
 
-	VkFormat find_supported_image_format(const uint32_t u32FormatCandidateCount, const VkFormat *vk_paeFormatCandidates, const VkImageTiling vk_eImgTiling, const VkFormatFeatureFlags vk_eRequiredFeature) {
+	VkFormat find_supported_image_format(const uint32_t u32FormatCandidateCount, const VkFormat *const vk_paeFormatCandidates, const VkImageTiling vk_eImgTiling, const VkFormatFeatureFlags vk_eRequiredFeature) {
 		return CATCH_SIGNAL_AND_RETURN(find_supported_image_format_on_physical_vulkan_device(vk_hPhysicalDeviceSelected, u32FormatCandidateCount, vk_paeFormatCandidates, vk_eImgTiling, vk_eRequiredFeature), VkFormat);
 	}
 
-	bool create_vulkan_image(const VkImageCreateFlags vk_eCreateFlags, const VkImageType vk_eType, const VkFormat vk_eFormat, const VkExtent3D vk_extent, const uint32_t u32MipLevels, const uint32_t u32ArrayLayerCount, const VkSampleCountFlagBits vk_eSamples, const VkImageTiling vk_eTiling, const VkImageUsageFlags vk_eUsages, const uint32_t u32QueueCount, const uint32_t *pau32Queues, const VkImageLayout vk_eLayout, const VkMemoryPropertyFlags vk_eMemoryPropertyFlags, VkImage *vk_phImage, VkDeviceMemory *vk_phMemory) {
+	bool create_vulkan_image(const VkImageCreateFlags vk_eCreateFlags, const VkImageType vk_eType, const VkFormat vk_eFormat, const VkExtent3D vk_extent, const uint32_t u32MipLevels, const uint32_t u32ArrayLayerCount, const VkSampleCountFlagBits vk_eSamples, const VkImageTiling vk_eTiling, const VkImageUsageFlags vk_eUsages, const uint32_t u32QueueCount, const uint32_t *const pau32Queues, const VkImageLayout vk_eLayout, const VkMemoryPropertyFlags vk_eMemoryPropertyFlags, VkImage *const vk_phImage, VkDeviceMemory *const vk_phMemory) {
 		VkImageCreateInfo vk_createInfo = {
 			.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
 			.flags = vk_eCreateFlags,
@@ -151,7 +151,7 @@ namespace RE {
 		return false;
 	}
 
-	bool create_vulkan_image_view(const VkImage vk_hImage, const VkImageViewType vk_eType, const VkFormat vk_eFormat, const VkImageAspectFlags vk_eImageAspects, const uint32_t u32BaseMipLevel, const uint32_t u32MipLevelCount, const uint32_t u32BaseArrayLayer, const uint32_t u32ArrayLayerCount, VkImageView *vk_phImageView) {
+	bool create_vulkan_image_view(const VkImage vk_hImage, const VkImageViewType vk_eType, const VkFormat vk_eFormat, const VkImageAspectFlags vk_eImageAspects, const uint32_t u32BaseMipLevel, const uint32_t u32MipLevelCount, const uint32_t u32BaseArrayLayer, const uint32_t u32ArrayLayerCount, VkImageView *const vk_phImageView) {
 		VkImageViewCreateInfo vk_createInfo = {
 			.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
 			.image = vk_hImage,
@@ -177,7 +177,7 @@ namespace RE {
 		return bSuccess;
 	}
 
-	bool create_vulkan_framebuffer(const VkFramebufferCreateFlags vk_eCreateFlags, const VkRenderPass vk_hRenderPass, const uint32_t u32ImageViewAttachmentCount, const VkImageView *vk_pahImageViews, const uint32_t u32Width, const uint32_t u32Height, const uint32_t u32Layer, VkFramebuffer *vk_phFramebuffer) {
+	bool create_vulkan_framebuffer(const VkFramebufferCreateFlags vk_eCreateFlags, const VkRenderPass vk_hRenderPass, const uint32_t u32ImageViewAttachmentCount, const VkImageView *const vk_pahImageViews, const uint32_t u32Width, const uint32_t u32Height, const uint32_t u32Layer, VkFramebuffer *const vk_phFramebuffer) {
 		const VkFramebufferCreateInfo vk_createInfo = {
 			.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
 			.flags = vk_eCreateFlags,
@@ -194,7 +194,7 @@ namespace RE {
 		return bSuccess;
 	}
 
-	bool create_pipeline_layout(const uint32_t u32DescriptorSetLayoutCount, const VkDescriptorSetLayout *vk_pahDescriptorSetLayouts, const uint32_t u32PushConstRangeCount, const VkPushConstantRange *vk_pahPushConstRanges, const VkPipelineLayoutCreateFlags vk_eCreateFlags, VkPipelineLayout *vk_phPipelineLayout) {
+	bool create_pipeline_layout(const uint32_t u32DescriptorSetLayoutCount, const VkDescriptorSetLayout *const vk_pahDescriptorSetLayouts, const uint32_t u32PushConstRangeCount, const VkPushConstantRange *const vk_pahPushConstRanges, const VkPipelineLayoutCreateFlags vk_eCreateFlags, VkPipelineLayout *const vk_phPipelineLayout) {
 		const VkPipelineLayoutCreateInfo vk_pipelineLayoutCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
 			.flags = 0,
@@ -206,7 +206,7 @@ namespace RE {
 		return vkCreatePipelineLayout(vk_hDevice, &vk_pipelineLayoutCreateInfo, nullptr, vk_phPipelineLayout) == VK_SUCCESS;
 	}
 
-	bool create_descriptor_set_layout(const uint32_t u32DescriptorSetLayoutBindingCount, const VkDescriptorSetLayoutBinding *vk_paDescriptorSetLayoutBindings, const VkDescriptorSetLayoutCreateFlags vk_eCreateFlags, VkDescriptorSetLayout *vk_phDescriptorSetLayout) {
+	bool create_descriptor_set_layout(const uint32_t u32DescriptorSetLayoutBindingCount, const VkDescriptorSetLayoutBinding *const vk_paDescriptorSetLayoutBindings, const VkDescriptorSetLayoutCreateFlags vk_eCreateFlags, VkDescriptorSetLayout *const vk_phDescriptorSetLayout) {
 		const VkDescriptorSetLayoutCreateInfo vk_descriptorSetLayoutCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
 			.flags = vk_eCreateFlags,
@@ -216,7 +216,7 @@ namespace RE {
 		return vkCreateDescriptorSetLayout(vk_hDevice, &vk_descriptorSetLayoutCreateInfo, nullptr, vk_phDescriptorSetLayout) == VK_SUCCESS;
 	}
 
-	bool create_descriptor_pool(const uint32_t u32PoolSizeCounts, const VkDescriptorPoolSize *vk_paDescriptorPoolSizes, const uint32_t u32MaxSets, VkDescriptorPool *vk_phDescriptorPool) {
+	bool create_descriptor_pool(const uint32_t u32PoolSizeCounts, const VkDescriptorPoolSize *const vk_paDescriptorPoolSizes, const uint32_t u32MaxSets, VkDescriptorPool *const vk_phDescriptorPool) {
 		const VkDescriptorPoolCreateInfo vk_descriptorPoolCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
 			.maxSets = u32MaxSets,
@@ -226,7 +226,7 @@ namespace RE {
 		return vkCreateDescriptorPool(vk_hDevice, &vk_descriptorPoolCreateInfo, nullptr, vk_phDescriptorPool) == VK_SUCCESS;
 	}
 
-	bool alloc_descriptor_set(const VkDescriptorPool vk_hDescriptorPool, const uint32_t u32SetCount, const VkDescriptorSetLayout *vk_pahDescriptorSetLayouts, VkDescriptorSet *vk_pahDescriptorSet) {
+	bool alloc_descriptor_set(const VkDescriptorPool vk_hDescriptorPool, const uint32_t u32SetCount, const VkDescriptorSetLayout *const vk_pahDescriptorSetLayouts, VkDescriptorSet *const vk_pahDescriptorSet) {
 		const VkDescriptorSetAllocateInfo vk_descriptorSetAllocInfo = {
 			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
 			.descriptorPool = vk_hDescriptorPool,
@@ -236,7 +236,7 @@ namespace RE {
 		return vkAllocateDescriptorSets(vk_hDevice, &vk_descriptorSetAllocInfo, vk_pahDescriptorSet) == VK_SUCCESS;
 	}
 
-	bool alloc_vulkan_command_buffers(const VkCommandPool vk_hCommandPool, const VkCommandBufferLevel vk_eLevel, const uint32_t u32Count, VkCommandBuffer *vk_pahCommandBuffer) {
+	bool alloc_vulkan_command_buffers(const VkCommandPool vk_hCommandPool, const VkCommandBufferLevel vk_eLevel, const uint32_t u32Count, VkCommandBuffer *const vk_pahCommandBuffer) {
 		const VkCommandBufferAllocateInfo vk_createInfo = {
 			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
 			.commandPool = vk_hCommandPool,
@@ -246,7 +246,7 @@ namespace RE {
 		return vkAllocateCommandBuffers(vk_hDevice, &vk_createInfo, vk_pahCommandBuffer) == VK_SUCCESS;
 	}
 
-	bool begin_recording_vulkan_command_buffer(const VkCommandBuffer vk_hCommandBuffer, const VkCommandBufferUsageFlags vk_eUsages, const VkCommandBufferInheritanceInfo *vk_pInheritanceInfo) {
+	bool begin_recording_vulkan_command_buffer(const VkCommandBuffer vk_hCommandBuffer, const VkCommandBufferUsageFlags vk_eUsages, const VkCommandBufferInheritanceInfo *const vk_pInheritanceInfo) {
 		const VkCommandBufferBeginInfo vk_beginInfo = {
 			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
 			.flags = vk_eUsages,
@@ -255,7 +255,7 @@ namespace RE {
 		return vkBeginCommandBuffer(vk_hCommandBuffer, &vk_beginInfo) == VK_SUCCESS;
 	}
 
-	bool submit_to_vulkan_queue(const VkQueue vk_hQueue, const uint32_t u32WaitSemaphoreCount, const VkSemaphore *vk_pahWaitSemaphores, const VkPipelineStageFlags *vk_pahWaitOnPipelineStages, const uint32_t u32CommandBufferCount, const VkCommandBuffer *vk_pahCommandBuffers, const uint32_t u32SignalSemaphoreCount, const VkSemaphore *vk_pahSignalSemaphores, const VkFence vk_hFence) {
+	bool submit_to_vulkan_queue(const VkQueue vk_hQueue, const uint32_t u32WaitSemaphoreCount, const VkSemaphore *const vk_pahWaitSemaphores, const VkPipelineStageFlags *const vk_pahWaitOnPipelineStages, const uint32_t u32CommandBufferCount, const VkCommandBuffer *const vk_pahCommandBuffers, const uint32_t u32SignalSemaphoreCount, const VkSemaphore *const vk_pahSignalSemaphores, const VkFence vk_hFence) {
 		const VkSubmitInfo vk_queueSubmitInfo = {
 			.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
 			.waitSemaphoreCount = u32WaitSemaphoreCount,
@@ -272,14 +272,14 @@ namespace RE {
 		return bSuccess;
 	}
 
-	bool signal_vulkan_semaphores(const uint32_t u32SemaphoreCount, const VkSemaphore *vk_pahSemaphores) {
+	bool signal_vulkan_semaphores(const uint32_t u32SemaphoreCount, const VkSemaphore *const vk_pahSemaphores) {
 		const bool bSuccess = submit_to_vulkan_queue(vk_ahDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], 0U, nullptr, nullptr, 1U, &vk_hDummyTransferCommandBuffer, u32SemaphoreCount, vk_pahSemaphores, VK_NULL_HANDLE);
 		if (!bSuccess)
 			RE_ERROR("Failed signaling semaphores");
 		return bSuccess;
 	}
 
-	bool signal_vulkan_fences(const uint32_t u32FenceCount, const VkFence *vk_pahFences) {
+	bool signal_vulkan_fences(const uint32_t u32FenceCount, const VkFence *const vk_pahFences) {
 		for (uint32_t u32FenceIndex = 0U; u32FenceIndex < u32FenceCount; u32FenceIndex++)
 			if (!submit_to_vulkan_queue(vk_ahDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], 0U, nullptr, nullptr, 1U, &vk_hDummyTransferCommandBuffer, 0U, nullptr, vk_pahFences[u32FenceIndex])) {
 				RE_ERROR(append_to_string("Failed signaling fence at index ", u32FenceIndex));

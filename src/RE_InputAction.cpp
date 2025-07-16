@@ -75,6 +75,10 @@ namespace RE {
 		return has_valid_input_values() ? (!is_key_down(eInput, u32KeyScancode) && was_key_down(eInput, u32KeyScancode)) : false;
 	}
 
+	void InputAction::reset_input_state() const {
+		reset_input_at(eInput, u32KeyScancode);
+	}
+
 	[[nodiscard]]
 	bool InputAction::has_valid_input_values() const {
 		return u32KeyScancode || (eInput > RE_INPUT_UNKNOWN && eInput < RE_INPUT_MAX_ENUM);

@@ -7,39 +7,39 @@ namespace RE {
 
 	bool create_vulkan_shader_from_file(const char *pcPathToFile, VkShaderModule *vk_phShader);
 	
-	bool create_vulkan_buffer(const VkDeviceSize vk_size, const VkBufferUsageFlags vk_eUsages, const uint32_t u32QueueCount, const uint32_t *pau32Queues, const VkMemoryPropertyFlags vk_eMemoryPropertyFlags, VkBuffer *vk_phBuffer, VkDeviceMemory *vk_phMemory);
+	bool create_vulkan_buffer(VkDeviceSize vk_size, VkBufferUsageFlags vk_eUsages, uint32_t u32QueueCount, const uint32_t *pau32Queues, VkMemoryPropertyFlags vk_eMemoryPropertyFlags, VkBuffer *vk_phBuffer, VkDeviceMemory *vk_phMemory);
 
-	VkFormat find_supported_image_format_on_physical_vulkan_device(const VkPhysicalDevice vk_hPhysicalDevice, const uint32_t u32FormatCandidateCount, const VkFormat *vk_paeFormatCandidates, const VkImageTiling vk_eImgTiling, const VkFormatFeatureFlags vk_eRequiredFeature);
+	VkFormat find_supported_image_format_on_physical_vulkan_device(VkPhysicalDevice vk_hPhysicalDevice, uint32_t u32FormatCandidateCount, const VkFormat *vk_paeFormatCandidates, VkImageTiling vk_eImgTiling, VkFormatFeatureFlags vk_eRequiredFeature);
 
-	VkFormat find_supported_image_format(const uint32_t u32FormatCandidateCount, const VkFormat *vk_paeFormatCandidates, const VkImageTiling vk_eImgTiling, const VkFormatFeatureFlags vk_eRequiredFeature);
+	VkFormat find_supported_image_format(uint32_t u32FormatCandidateCount, const VkFormat *vk_paeFormatCandidates, VkImageTiling vk_eImgTiling, VkFormatFeatureFlags vk_eRequiredFeature);
 
-	bool create_vulkan_image(const VkImageCreateFlags vk_eCreateFlags, const VkImageType vk_eType, const VkFormat vk_eFormat, const VkExtent3D vk_extent, const uint32_t u32MipLevels, const uint32_t u32ArrayLayerCount, const VkSampleCountFlagBits vk_eSamples, const VkImageTiling vk_eTiling, const VkImageUsageFlags vk_eUsages, const uint32_t u32QueueCount, const uint32_t *pau32Queues, const VkImageLayout vk_eLayout, const VkMemoryPropertyFlags vk_eMemoryPropertyFlags, VkImage *vk_phImage, VkDeviceMemory *vk_phMemory);
+	bool create_vulkan_image(VkImageCreateFlags vk_eCreateFlags, VkImageType vk_eType, VkFormat vk_eFormat, VkExtent3D vk_extent, uint32_t u32MipLevels, uint32_t u32ArrayLayerCount, VkSampleCountFlagBits vk_eSamples, VkImageTiling vk_eTiling, VkImageUsageFlags vk_eUsages, uint32_t u32QueueCount, const uint32_t *pau32Queues, VkImageLayout vk_eLayout, VkMemoryPropertyFlags vk_eMemoryPropertyFlags, VkImage *vk_phImage, VkDeviceMemory *vk_phMemory);
 
-	bool create_vulkan_image_view(const VkImage vk_hImage, const VkImageViewType vk_eType, const VkFormat vk_eFormat, const VkImageAspectFlags vk_eImageAspects, const uint32_t u32BaseMipLevel, const uint32_t u32MipLevelCount, const uint32_t u32BaseArrayLayer, const uint32_t u32ArrayLayerCount, VkImageView *vk_phImageView);
+	bool create_vulkan_image_view(VkImage vk_hImage, VkImageViewType vk_eType, VkFormat vk_eFormat, VkImageAspectFlags vk_eImageAspects, uint32_t u32BaseMipLevel, uint32_t u32MipLevelCount, uint32_t u32BaseArrayLayer, uint32_t u32ArrayLayerCount, VkImageView *vk_phImageView);
 
-	bool create_vulkan_framebuffer(const VkFramebufferCreateFlags vk_eCreateFlags, const VkRenderPass vk_hRenderPass, const uint32_t u32ImageViewAttachmentCount, const VkImageView *vk_pahImageViews, const uint32_t u32Width, const uint32_t u32Height, const uint32_t u32Layer, VkFramebuffer *vk_phFramebuffer);
+	bool create_vulkan_framebuffer(VkFramebufferCreateFlags vk_eCreateFlags, VkRenderPass vk_hRenderPass, uint32_t u32ImageViewAttachmentCount, const VkImageView *vk_pahImageViews, uint32_t u32Width, uint32_t u32Height, uint32_t u32Layer, VkFramebuffer *vk_phFramebuffer);
 
-	bool create_pipeline_layout(const uint32_t u32DescriptorSetLayoutCount, const VkDescriptorSetLayout *vk_pahDescriptorSetLayouts, const uint32_t u32PushConstRangeCount, const VkPushConstantRange *vk_pahPushConstRanges, const VkPipelineLayoutCreateFlags vk_eCreateFlags, VkPipelineLayout *vk_phPipelineLayout);
+	bool create_pipeline_layout(uint32_t u32DescriptorSetLayoutCount, const VkDescriptorSetLayout *vk_pahDescriptorSetLayouts, uint32_t u32PushConstRangeCount, const VkPushConstantRange *vk_pahPushConstRanges, VkPipelineLayoutCreateFlags vk_eCreateFlags, VkPipelineLayout *vk_phPipelineLayout);
 
-	bool create_descriptor_set_layout(const uint32_t u32DescriptorSetLayoutBindingCount, const VkDescriptorSetLayoutBinding *vk_paDescriptorSetLayoutBindings, const VkDescriptorSetLayoutCreateFlags vk_eCreateFlags, VkDescriptorSetLayout *vk_phDescriptorSetLayout);
+	bool create_descriptor_set_layout(uint32_t u32DescriptorSetLayoutBindingCount, const VkDescriptorSetLayoutBinding *vk_paDescriptorSetLayoutBindings, VkDescriptorSetLayoutCreateFlags vk_eCreateFlags, VkDescriptorSetLayout *vk_phDescriptorSetLayout);
 
-	bool create_descriptor_pool(const uint32_t u32PoolSizeCounts, const VkDescriptorPoolSize *vk_paDescriptorPoolSizes, const uint32_t u32MaxSets, VkDescriptorPool *vk_phDescriptorPool);
+	bool create_descriptor_pool(uint32_t u32PoolSizeCounts, const VkDescriptorPoolSize *vk_paDescriptorPoolSizes, uint32_t u32MaxSets, VkDescriptorPool *vk_phDescriptorPool);
 
-	bool alloc_descriptor_set(const VkDescriptorPool vk_hDescriptorPool, const uint32_t u32SetCount, const VkDescriptorSetLayout *vk_pahDescriptorSetLayouts, VkDescriptorSet *vk_pahDescriptorSet);
+	bool alloc_descriptor_set(VkDescriptorPool vk_hDescriptorPool, uint32_t u32SetCount, const VkDescriptorSetLayout *vk_pahDescriptorSetLayouts, VkDescriptorSet *vk_pahDescriptorSet);
 
-	bool alloc_vulkan_command_buffers(const VkCommandPool vk_hCommandPool, const VkCommandBufferLevel vk_eLevel, const uint32_t u32Count, VkCommandBuffer *vk_pahCommandBuffer);
+	bool alloc_vulkan_command_buffers(VkCommandPool vk_hCommandPool, VkCommandBufferLevel vk_eLevel, uint32_t u32Count, VkCommandBuffer *vk_pahCommandBuffer);
 
-	bool begin_recording_vulkan_command_buffer(const VkCommandBuffer vk_hCommandBuffer, const VkCommandBufferUsageFlags vk_eUsages, const VkCommandBufferInheritanceInfo *vk_pInheritanceInfo);
+	bool begin_recording_vulkan_command_buffer(VkCommandBuffer vk_hCommandBuffer, VkCommandBufferUsageFlags vk_eUsages, const VkCommandBufferInheritanceInfo *vk_pInheritanceInfo);
 
-	bool submit_to_vulkan_queue(const VkQueue vk_hQueue, const uint32_t u32WaitSemaphoreCount, const VkSemaphore *vk_pahWaitSemaphores, const VkPipelineStageFlags *vk_pahWaitOnPipelineStages, const uint32_t u32CommandBufferCount, const VkCommandBuffer *vk_pahCommandBuffers, const uint32_t u32SignalSemaphoreCount, const VkSemaphore *vk_pahSignalSemaphores, const VkFence vk_hFence);
+	bool submit_to_vulkan_queue(VkQueue vk_hQueue, uint32_t u32WaitSemaphoreCount, const VkSemaphore *vk_pahWaitSemaphores, const VkPipelineStageFlags *vk_pahWaitOnPipelineStages, uint32_t u32CommandBufferCount, const VkCommandBuffer *vk_pahCommandBuffers, uint32_t u32SignalSemaphoreCount, const VkSemaphore *vk_pahSignalSemaphores, VkFence vk_hFence);
 
-	bool signal_vulkan_semaphores(const uint32_t u32SemaphoreCount, const VkSemaphore *vk_pahSemaphores);
+	bool signal_vulkan_semaphores(uint32_t u32SemaphoreCount, const VkSemaphore *vk_pahSemaphores);
 
-	bool signal_vulkan_fences(const uint32_t u32FenceCount, const VkFence *vk_pahFences);
+	bool signal_vulkan_fences(uint32_t u32FenceCount, const VkFence *vk_pahFences);
 
-	void vk_cmd_transit_image(const VkCommandBuffer vk_hCommandBuffer, const VkPipelineStageFlags vk_eSrcStageFlags, const VkPipelineStageFlags vk_eDstStageFlags, const VkDependencyFlags vk_eDependencyFlags, const VkAccessFlags vk_eSrcAccessFlags, const VkAccessFlags vk_eDstAccessFlags, const VkImageLayout vk_eOldLayout, const VkImageLayout vk_eNewLayout, const uint32_t u32SrcQueueIndex, const uint32_t u32DstQueueIndex, const VkImage vk_hImage, const VkImageAspectFlags vk_eAspectFlags, const uint32_t u32BaseMipLevel = 0U, const uint32_t u32MipLevelCount = 1U, const uint32_t u32BaseArrayLayer = 0U, const uint32_t u32ArrayLayerCount = 1U);
+	void vk_cmd_transit_image(VkCommandBuffer vk_hCommandBuffer, VkPipelineStageFlags vk_eSrcStageFlags, VkPipelineStageFlags vk_eDstStageFlags, VkDependencyFlags vk_eDependencyFlags, VkAccessFlags vk_eSrcAccessFlags, VkAccessFlags vk_eDstAccessFlags, VkImageLayout vk_eOldLayout, VkImageLayout vk_eNewLayout, uint32_t u32SrcQueueIndex, uint32_t u32DstQueueIndex, VkImage vk_hImage, VkImageAspectFlags vk_eAspectFlags, uint32_t u32BaseMipLevel = 0U, uint32_t u32MipLevelCount = 1U, uint32_t u32BaseArrayLayer = 0U, uint32_t u32ArrayLayerCount = 1U);
 
-	bool transit_image(const uint32_t u32QueueIndex, const VkPipelineStageFlags vk_eSrcStageFlags, const VkPipelineStageFlags vk_eDstStageFlags, const VkDependencyFlags vk_eDependencyFlags, const VkAccessFlags vk_eSrcAccessFlags, const VkAccessFlags vk_eDstAccessFlags, const VkImageLayout vk_eOldLayout, const VkImageLayout vk_eNewLayout, const uint32_t u32SrcQueueIndex, const uint32_t u32DstQueueIndex, const VkImage vk_hImage, const VkImageAspectFlags vk_eAspectFlags, const uint32_t u32BaseMipLevel, const uint32_t u32MipLevelCount, const uint32_t u32BaseArrayLayer, const uint32_t u32ArrayLayerCount, VkCommandBuffer *vk_phCommandBufferToFree, VkFence *vk_phFence);
+	bool transit_image(uint32_t u32QueueIndex, VkPipelineStageFlags vk_eSrcStageFlags, VkPipelineStageFlags vk_eDstStageFlags, VkDependencyFlags vk_eDependencyFlags, VkAccessFlags vk_eSrcAccessFlags, VkAccessFlags vk_eDstAccessFlags, VkImageLayout vk_eOldLayout, VkImageLayout vk_eNewLayout, uint32_t u32SrcQueueIndex, uint32_t u32DstQueueIndex, VkImage vk_hImage, VkImageAspectFlags vk_eAspectFlags, uint32_t u32BaseMipLevel, uint32_t u32MipLevelCount, uint32_t u32BaseArrayLayer, uint32_t u32ArrayLayerCount, VkCommandBuffer *vk_phCommandBufferToFree, VkFence *vk_phFence);
 
 }
 

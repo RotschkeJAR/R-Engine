@@ -9,9 +9,9 @@ namespace RE {
 
 	void add_new_cameras();
 	void delete_marked_cameras();
-	void add_camera(Camera *const pCamera);
-	void remove_camera(const Camera *const pCamera);
-	void mark_camera_deletable(Camera *const pCamera);
+	void add_camera(Camera *pCamera);
+	void remove_camera(const Camera *pCamera);
+	void mark_camera_deletable(Camera *pCamera);
 
 	void start_cameras();
 	void update_cameras();

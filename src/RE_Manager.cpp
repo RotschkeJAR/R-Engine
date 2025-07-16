@@ -30,7 +30,7 @@ namespace RE {
 	}
 
 	[[nodiscard]]
-	bool is_object_active(const GameObject *pGameObject) {
+	bool is_object_active(const GameObject *const pGameObject) {
 		return CATCH_SIGNAL_AND_RETURN(!pGameObject->u32SceneParentId || pGameObject->u32SceneParentId == pCurrentScene->u32Id, bool);
 	}
 
@@ -52,7 +52,7 @@ namespace RE {
 			// Start newly added objects
 			bool bNewObjectsAdded;
 			do {
-				for (GameObject *pObj : newGameObjects)
+				for (GameObject *const pObj : newGameObjects)
 					if (is_object_active(pObj))
 						CATCH_SIGNAL_DETAILED(pObj->start(pCurrentScene), append_to_string("Starting new game object ", pObj, ", ID: ", pObj->u32OwnId).c_str());
 				bNewObjectsAdded = !newGameObjects.empty();

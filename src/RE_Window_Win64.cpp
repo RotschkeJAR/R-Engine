@@ -80,39 +80,39 @@ namespace RE {
 							break;
 					}
 					BOOL win_keyReleased = (win_keyFlags & KF_UP) == KF_UP;
-					CATCH_SIGNAL(pWindowWin64->inputMgr.input_event(key_from_virtual_keycode(static_cast<int64_t>(win_virtualKeyCode)), static_cast<uint32_t>(win_extScancode), !static_cast<bool>(win_keyReleased), bFallbackToInput));
+					CATCH_SIGNAL(input_event(key_from_virtual_keycode(static_cast<int64_t>(win_virtualKeyCode)), static_cast<uint32_t>(win_extScancode), !static_cast<bool>(win_keyReleased), bFallbackToInput));
 					} return 0;
 				case WM_CHAR: {
 					//wchar_t wCharacter[2] = {static_cast<wchar_t>(win_wParam), L'\0'};
 					} return 0;
 				case WM_LBUTTONDOWN: /* left mouse button pressed */
-					CATCH_SIGNAL(pWindowWin64->inputMgr.input_event(RE_INPUT_BUTTON_LEFT, 0U, true, false));
+					CATCH_SIGNAL(input_event(RE_INPUT_BUTTON_LEFT, 0U, true, false));
 					CATCH_SIGNAL(SetCapture(win_hWndParam));
 					return 0;
 				case WM_LBUTTONUP: /* left mouse button released */
-					CATCH_SIGNAL(pWindowWin64->inputMgr.input_event(RE_INPUT_BUTTON_LEFT, 0U, false, false));
+					CATCH_SIGNAL(input_event(RE_INPUT_BUTTON_LEFT, 0U, false, false));
 					CATCH_SIGNAL(ReleaseCapture());
 					return 0;
 				case WM_RBUTTONDOWN: /* right mouse button pressed */
-					CATCH_SIGNAL(pWindowWin64->inputMgr.input_event(RE_INPUT_BUTTON_RIGHT, 0U, true, false));
+					CATCH_SIGNAL(input_event(RE_INPUT_BUTTON_RIGHT, 0U, true, false));
 					CATCH_SIGNAL(SetCapture(win_hWndParam));
 					return 0;
 				case WM_RBUTTONUP: /* right mouse button released */
-					CATCH_SIGNAL(pWindowWin64->inputMgr.input_event(RE_INPUT_BUTTON_RIGHT, 0U, false, false));
+					CATCH_SIGNAL(input_event(RE_INPUT_BUTTON_RIGHT, 0U, false, false));
 					CATCH_SIGNAL(ReleaseCapture());
 					return 0;
 				case WM_MBUTTONDOWN: /* middle mouse button pressed */
-					CATCH_SIGNAL(pWindowWin64->inputMgr.input_event(RE_INPUT_BUTTON_MIDDLE, 0U, true, false));
+					CATCH_SIGNAL(input_event(RE_INPUT_BUTTON_MIDDLE, 0U, true, false));
 					CATCH_SIGNAL(SetCapture(win_hWndParam));
 					return 0;
 				case WM_MBUTTONUP: /* middle mouse button released */
-					CATCH_SIGNAL(pWindowWin64->inputMgr.input_event(RE_INPUT_BUTTON_MIDDLE, 0U, false, false));
+					CATCH_SIGNAL(input_event(RE_INPUT_BUTTON_MIDDLE, 0U, false, false));
 					CATCH_SIGNAL(ReleaseCapture());
 					return 0;
 				case WM_MOUSEMOVE: { /* mouse moved */
 					const int32_t i32XPos = GET_X_LPARAM(win_lParam);
 					const int32_t i32YPos = GET_Y_LPARAM(win_lParam);
-					CATCH_SIGNAL(pWindowWin64->inputMgr.cursor_event(i32XPos, i32YPos));
+					CATCH_SIGNAL(cursor_event(i32XPos, i32YPos));
 					} return 0;
 				case WM_SETCURSOR:
 					if (LOWORD(win_lParam) == HTCLIENT) {
@@ -123,9 +123,9 @@ namespace RE {
 				case WM_MOUSEWHEEL: { /* mouse wheel used/scrolled */
 					const int32_t deltaMouseWheel = GET_WHEEL_DELTA_WPARAM(win_wParam);
 					if (deltaMouseWheel > 0)
-						CATCH_SIGNAL(pWindowWin64->inputMgr.input_event(RE_INPUT_SCROLL_UP, 0U, true, false));
+						CATCH_SIGNAL(input_event(RE_INPUT_SCROLL_UP, 0U, true, false));
 					else
-						CATCH_SIGNAL(pWindowWin64->inputMgr.input_event(RE_INPUT_SCROLL_DOWN, 0U, true, false));
+						CATCH_SIGNAL(input_event(RE_INPUT_SCROLL_DOWN, 0U, true, false));
 					} return 0;
 				case RE_WM_MAXIMIZED: {
 					MONITORINFO win_monitorInfo = {};

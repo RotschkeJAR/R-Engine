@@ -14,7 +14,7 @@ namespace RE {
 			const VkDeviceSize vk_size;
 
 			Vulkan_Buffer() = delete;
-			Vulkan_Buffer(const VkDeviceSize vk_size, const VkBufferUsageFlags vk_eUsages, const uint32_t u32QueueCount, const uint32_t *pu32Queues, const VkMemoryPropertyFlags vk_eMemoryPropertyFlags);
+			Vulkan_Buffer(VkDeviceSize vk_size, VkBufferUsageFlags vk_eUsages, uint32_t u32QueueCount, const uint32_t *pu32Queues, VkMemoryPropertyFlags vk_eMemoryPropertyFlags);
 			~Vulkan_Buffer();
 
 			bool map_memory(void **ppData) const;
@@ -40,10 +40,10 @@ namespace RE {
 			const VkCommandPool vk_hCommandPool;
 
 			Vulkan_CommandBuffer() = delete;
-			Vulkan_CommandBuffer(const VkCommandPool vk_hCommandPool, const VkCommandBufferLevel vk_eCommandBufferLevel);
+			Vulkan_CommandBuffer(VkCommandPool vk_hCommandPool, VkCommandBufferLevel vk_eCommandBufferLevel);
 			~Vulkan_CommandBuffer();
 
-			bool begin_recording(const VkCommandBufferUsageFlags vk_eUsageFlags, const VkCommandBufferInheritanceInfo *vk_pInheritanceInfo) const;
+			bool begin_recording(VkCommandBufferUsageFlags vk_eUsageFlags, const VkCommandBufferInheritanceInfo *vk_pInheritanceInfo) const;
 			bool end_recording() const;
 			[[nodiscard]]
 			VkCommandBuffer get_command_buffer() const;
@@ -64,7 +64,7 @@ namespace RE {
 
 		public:
 			Vulkan_Fence();
-			Vulkan_Fence(const VkFenceCreateFlags vk_eCreateFlags);
+			Vulkan_Fence(VkFenceCreateFlags vk_eCreateFlags);
 			~Vulkan_Fence();
 
 			bool wait_for() const;

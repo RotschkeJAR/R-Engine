@@ -23,7 +23,6 @@ namespace RE {
 	class Window {
 
 		protected:
-			InputMgr inputMgr;
 			const char* pcTitle;
 			bool bVisible, bMinimized, bMaximized;
 			bool bCloseFlag;
@@ -32,14 +31,14 @@ namespace RE {
 			virtual void internal_window_proc() = 0;
 			virtual void internal_show_window() = 0;
 			virtual void internal_update_title() = 0;
-			void update_window_size(const uint32_t usNewWidth, const uint32_t usNewHeight);
+			void update_window_size(uint32_t usNewWidth, uint32_t usNewHeight);
 
 		public:
 			static Window* pInstance;
 
 			Window();
 			virtual ~Window();
-			void show_window(const bool bShowWindow);
+			void show_window(bool bShowWindow);
 			void set_window_title(const char* pNewTitle);
 			virtual bool create_vulkan_surface(VkSurfaceKHR &vk_rhSurface) const = 0;
 			[[nodiscard]]

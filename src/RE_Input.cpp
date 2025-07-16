@@ -3,16 +3,18 @@
 
 namespace RE {
 
+#define MAXIMUM_PHYSICAL_KEYS 150
+#define KEY_BUFFER_SIZE (MAXIMUM_PHYSICAL_KEYS / 8 + (MAXIMUM_PHYSICAL_KEYS % 8 > 0 ? 1 : 0))
+
 #define FAILURE_INDEX -1
 
 	uint32_t u32Scancodes[MAXIMUM_PHYSICAL_KEYS] = {};
 	Input eInputs[MAXIMUM_PHYSICAL_KEYS] = {};
 	uint8_t u8KeyBuffer[KEY_BUFFER_SIZE] = {}, u8PrevKeyBuffer[KEY_BUFFER_SIZE] = {}; // Keyboard
 	uint8_t u8NumberOfKeys = 0U;
-	uint8_t u8SpecialInputBuffer = 0U, u8PrevSpecialInputBuffer = 0U; // Scrolling and mouse buttons
+	uint8_t u8MouseInputBuffer = 0U, u8PrevMouseInputBuffer = 0U; // Scrolling and mouse buttons
 	Vector2i cursorPosition, prevCursorPosition;
 	InputAction *pUpdateInputObject = nullptr;
-	InputMgr *InputMgr::pInstance = nullptr;
 
 	[[nodiscard]]
 	static int16_t get_index_for_scancode(const uint32_t u32SearchedScancode) {
@@ -35,7 +37,7 @@ namespace RE {
 
 	[[nodiscard]]
 	static int16_t get_index_for_input(const Input eSearchedInput) {
-		for (uint32_t i = 0U; i < u8NumberOfKeys; i++)
+		for (uint8_t i = 0U; i < u8NumberOfKeys; i++)
 			if (eInputs[i] == eSearchedInput)
 				return static_cast<int16_t>(i);
 		return FAILURE_INDEX;
@@ -49,7 +51,7 @@ namespace RE {
 			case RE_INPUT_BUTTON_LEFT:
 			case RE_INPUT_BUTTON_RIGHT:
 			case RE_INPUT_BUTTON_MIDDLE:
-				return bRequestForPast ? is_bit_true<uint8_t>(u8PrevSpecialInputBuffer, static_cast<uint8_t>(eInput - RE_INPUT_SCROLL_UP)) : is_bit_true<uint8_t>(u8SpecialInputBuffer, static_cast<uint8_t>(eInput - RE_INPUT_SCROLL_UP));
+				return bRequestForPast ? is_bit_true<uint8_t>(u8PrevMouseInputBuffer, static_cast<uint8_t>(eInput - RE_INPUT_SCROLL_UP)) : is_bit_true<uint8_t>(u8MouseInputBuffer, static_cast<uint8_t>(eInput - RE_INPUT_SCROLL_UP));
 			default:
 				int16_t i16KeyIndex = FAILURE_INDEX;
 				if (u32Scancode)
@@ -62,32 +64,14 @@ namespace RE {
 		}
 	}
 
-	InputMgr::InputMgr() {
-		if (pInstance) {
-			RE_FATAL_ERROR("An instance of the class \"InputMgr\" has already been constructed");
-			return;
-		}
-		pInstance = this;
-	}
-
-	InputMgr::~InputMgr() {
-		if (pInstance != this)
-			return;
-		pInstance = nullptr;
-		u8SpecialInputBuffer = 0U;
-		u8PrevSpecialInputBuffer = 0U;
-		std::fill(std::begin(u8KeyBuffer), std::end(u8KeyBuffer), 0U);
-		std::fill(std::begin(u8PrevKeyBuffer), std::end(u8PrevKeyBuffer), 0U);
-	}
-
-	void InputMgr::input_event(const Input eEnteredInput, const uint32_t u32EnteredScancode, const bool bPressed, const bool bFallbackToInput) {
+	void input_event(const Input eEnteredInput, const uint32_t u32EnteredScancode, const bool bPressed, const bool bFallbackToInput) {
 		switch (eEnteredInput) {
 			case RE_INPUT_SCROLL_UP:
 			case RE_INPUT_SCROLL_DOWN:
 			case RE_INPUT_BUTTON_LEFT:
 			case RE_INPUT_BUTTON_RIGHT:
 			case RE_INPUT_BUTTON_MIDDLE:
-				CATCH_SIGNAL(set_bit<uint8_t>(u8SpecialInputBuffer, static_cast<uint8_t>(eEnteredInput - RE_INPUT_SCROLL_UP), bPressed));
+				CATCH_SIGNAL(set_bit<uint8_t>(u8MouseInputBuffer, static_cast<uint8_t>(eEnteredInput - RE_INPUT_SCROLL_UP), bPressed));
 				if (pUpdateInputObject && bPressed) {
 					pUpdateInputObject->change_input(eEnteredInput);
 					pUpdateInputObject = nullptr;
@@ -158,16 +142,16 @@ namespace RE {
 		}
 	}
 
-	void InputMgr::cursor_event(const int32_t i32X, const int32_t i32Y) {
+	void cursor_event(const int32_t i32X, const int32_t i32Y) {
 		cursorPosition[0] = i32X;
 		cursorPosition[1] = i32Y;
 	}
 
-	void InputMgr::update_input_buffers() {
+	void update_input_buffers() {
 		CATCH_SIGNAL(prevCursorPosition.copy_from(cursorPosition));
 		std::copy(std::begin(u8KeyBuffer), std::end(u8KeyBuffer), std::begin(u8PrevKeyBuffer));
-		u8PrevSpecialInputBuffer = u8SpecialInputBuffer;
-		set_bits<uint8_t>(u8SpecialInputBuffer, RE_INPUT_SCROLL_UP, RE_INPUT_SCROLL_DOWN + 1, false);
+		u8PrevMouseInputBuffer = u8MouseInputBuffer;
+		set_bits<uint8_t>(u8MouseInputBuffer, RE_INPUT_SCROLL_UP, RE_INPUT_SCROLL_DOWN + 1, false);
 	}
 
 	[[nodiscard]]
@@ -218,6 +202,47 @@ namespace RE {
 				return u32Scancodes[i16Index];
 		}
 		return 0U;
+	}
+
+	void reset_input_at(const Input eInput, const uint32_t u32Scancode) {
+		switch (eInput) {
+			case RE_INPUT_SCROLL_UP:
+			case RE_INPUT_SCROLL_DOWN:
+			case RE_INPUT_BUTTON_LEFT:
+			case RE_INPUT_BUTTON_RIGHT:
+			case RE_INPUT_BUTTON_MIDDLE: {
+				const int16_t i16Index = get_index_for_input(eInput);
+				set_bit<uint8_t>(u8MouseInputBuffer, i16Index, false);
+				set_bit<uint8_t>(u8PrevMouseInputBuffer, i16Index, false);
+				} break;
+			default:
+				int16_t i16KeyIndex = FAILURE_INDEX;
+				if (u32Scancode)
+					i16KeyIndex = get_index_for_scancode(u32Scancode);
+				if (i16KeyIndex == FAILURE_INDEX && eInput != RE_INPUT_UNKNOWN)
+					i16KeyIndex = get_index_for_input(eInput);
+				if (i16KeyIndex == FAILURE_INDEX)
+					return;
+				set_bit<uint8_t>(u8KeyBuffer[i16KeyIndex / 8], i16KeyIndex % 8, false);
+				set_bit<uint8_t>(u8PrevKeyBuffer[i16KeyIndex / 8], i16KeyIndex % 8, false);
+				break;
+		}
+	}
+
+	void reset_mouse_input() {
+		u8MouseInputBuffer = 0U;
+		u8PrevMouseInputBuffer = 0U;
+		cursorPosition = prevCursorPosition;
+	}
+
+	void reset_keyboard_input() {
+		std::fill(std::begin(u8KeyBuffer), std::end(u8KeyBuffer), 0U);
+		std::fill(std::begin(u8PrevKeyBuffer), std::end(u8PrevKeyBuffer), 0U);
+	}
+
+	void reset_all_input() {
+		reset_keyboard_input();
+		reset_mouse_input();
 	}
 
 }

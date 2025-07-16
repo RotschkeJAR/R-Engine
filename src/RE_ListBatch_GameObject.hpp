@@ -16,10 +16,10 @@ namespace RE {
 			ListBatch_GameObject();
 			~ListBatch_GameObject();
 
-			void add(GameObject *const pGameObject);
-			bool remove(const GameObject *const pGameObject);
-			bool contains(const GameObject *const pGameObject) const;
-			GameObject* get(const uint16_t u16Index);
+			void add(GameObject *pGameObject);
+			bool remove(const GameObject *pGameObject);
+			bool contains(const GameObject *pGameObject) const;
+			GameObject* get(uint16_t u16Index);
 
 			uint16_t size() const;
 			bool empty() const;

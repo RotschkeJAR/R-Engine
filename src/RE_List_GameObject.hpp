@@ -9,9 +9,9 @@ namespace RE {
 	
 	void add_new_game_objects();
 	void delete_marked_game_objects();
-	void add_game_object(GameObject *const pGameObject);
-	void remove_game_object(const GameObject *const pGameObject);
-	void mark_game_object_deletable(GameObject *const pGameObject);
+	void add_game_object(GameObject *pGameObject);
+	void remove_game_object(const GameObject *pGameObject);
+	void mark_game_object_deletable(GameObject *pGameObject);
 
 	void start_game_objects();
 	void update_game_objects();

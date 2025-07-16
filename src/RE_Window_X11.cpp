@@ -121,7 +121,7 @@ namespace RE {
 					const uint8_t u8CharLength = CATCH_SIGNAL_AND_RETURN(Xutf8LookupString(x11_hInputContext, &x11_keyEvent, cString, sizeof(cString) - 1, &x11_keySym, nullptr), uint8_t);
 					if (bKeyPressed && u8CharLength)
 						cString[u8CharLength] = '\0';
-					CATCH_SIGNAL(inputMgr.input_event(key_from_virtual_keycode(static_cast<int64_t>(x11_keySym)), static_cast<uint32_t>(x11_scancode), bKeyPressed, false));
+					CATCH_SIGNAL(input_event(key_from_virtual_keycode(static_cast<int64_t>(x11_keySym)), static_cast<uint32_t>(x11_scancode), bKeyPressed, false));
 					} break;
 				case XButtonPress:
 				case XButtonRelease: {
@@ -129,19 +129,19 @@ namespace RE {
 					const bool bButtonPressed = x11_buttonEvent.type == XButtonPress;
 					switch (x11_buttonEvent.button) {
 						case Button1: /* left click */
-							CATCH_SIGNAL(inputMgr.input_event(RE_INPUT_BUTTON_LEFT, 0U, bButtonPressed, false));
+							CATCH_SIGNAL(input_event(RE_INPUT_BUTTON_LEFT, 0U, bButtonPressed, false));
 							break;
 						case Button2: /* middle click */
-							CATCH_SIGNAL(inputMgr.input_event(RE_INPUT_BUTTON_MIDDLE, 0U, bButtonPressed, false));
+							CATCH_SIGNAL(input_event(RE_INPUT_BUTTON_MIDDLE, 0U, bButtonPressed, false));
 							break;
 						case Button3: /* right click */
-							CATCH_SIGNAL(inputMgr.input_event(RE_INPUT_BUTTON_RIGHT, 0U, bButtonPressed, false));
+							CATCH_SIGNAL(input_event(RE_INPUT_BUTTON_RIGHT, 0U, bButtonPressed, false));
 							break;
 						case Button4: /* up scroll */
-							CATCH_SIGNAL(inputMgr.input_event(RE_INPUT_SCROLL_UP, 0U, true, false));
+							CATCH_SIGNAL(input_event(RE_INPUT_SCROLL_UP, 0U, true, false));
 							break;
 						case Button5: /* down scroll */
-							CATCH_SIGNAL(inputMgr.input_event(RE_INPUT_SCROLL_DOWN, 0U, true, false));
+							CATCH_SIGNAL(input_event(RE_INPUT_SCROLL_DOWN, 0U, true, false));
 							break;
 						default:
 							break;
@@ -149,7 +149,7 @@ namespace RE {
 					} break;
 				case XMotionNotify: { /* mouse moved */
 					const XMotionEvent x11_motionEvent = x11_event.xmotion;
-					CATCH_SIGNAL(inputMgr.cursor_event(x11_motionEvent.x, x11_motionEvent.y));
+					CATCH_SIGNAL(cursor_event(x11_motionEvent.x, x11_motionEvent.y));
 					} break;
 				case XMapNotify: /* window showed or unminimized/restored */
 					if (bRunning)

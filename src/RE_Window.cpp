@@ -23,7 +23,7 @@ namespace RE {
 		CATCH_SIGNAL(internal_show_window());
 	}
 
-	void Window::set_window_title(const char* pNewTitle) {
+	void Window::set_window_title(const char *const pNewTitle) {
 		if (std::strcmp(pcTitle, pNewTitle) == 0 || !bValid)
 			return;
 		pcTitle = pNewTitle;
@@ -31,7 +31,7 @@ namespace RE {
 	}
 
 	void Window::window_proc() {
-		CATCH_SIGNAL(inputMgr.update_input_buffers());
+		CATCH_SIGNAL(update_input_buffers());
 		CATCH_SIGNAL(internal_window_proc());
 	}
 

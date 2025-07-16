@@ -16,12 +16,12 @@ namespace RE {
 			ListBatch_Camera();
 			~ListBatch_Camera();
 
-			void add(Camera *const pCamera);
-			bool remove(const Camera *const pCamera);
+			void add(Camera *pCamera);
+			bool remove(const Camera *pCamera);
 			[[nodiscard]]
-			bool contains(const Camera *const pCamera) const;
+			bool contains(const Camera *pCamera) const;
 			[[nodiscard]]
-			Camera* get(const uint8_t u8Index);
+			Camera* get(uint8_t u8Index);
 
 			[[nodiscard]]
 			uint8_t size() const;

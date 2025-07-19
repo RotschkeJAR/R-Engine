@@ -640,19 +640,19 @@ namespace RE {
 
 		public:
 			RandomNumberGenerator();
-			RandomNumberGenerator(const uint32_t u32Seed);
+			RandomNumberGenerator(uint32_t u32Seed);
 			~RandomNumberGenerator();
 			void set_seed(uint32_t newSeed);
 
 			template <typename T>
 			[[nodiscard]]
-			T random(T min, T max) {
+			T random(const T min, const T max) {
 				std::uniform_int_distribution<T> range(min, max);
 				return range(rng);
 			}
 			template <typename T>
 			[[nodiscard]]
-			T random(T max) {
+			T random(const T max) {
 				return random<T>(static_cast<T>(0.0), max);
 			}
 			template <typename T>
@@ -724,9 +724,9 @@ namespace RE {
 
 			void mark_deletable();
 
-			virtual void start(Scene *const pStartingScene);
-			virtual void update(Scene *const pCurrentScene);
-			virtual void end(Scene *const pEndingScene);
+			virtual void start(Scene *pStartingScene);
+			virtual void update(Scene *pCurrentScene);
+			virtual void end(Scene *pEndingScene);
 	};
 
 	class InputAction {
@@ -808,7 +808,7 @@ namespace RE {
 	float get_fps_rate();
 	
 	// Manager
-	void set_next_scene(Scene *const pNextSceneParam);
+	void set_next_scene(Scene *pNextSceneParam);
 	[[nodiscard]]
 	bool is_next_scene_set();
 	[[nodiscard]]

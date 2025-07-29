@@ -837,6 +837,7 @@ namespace RE {
 	void set_msaa_mode(MsaaMode eNewMsaaMode);
 	[[nodiscard]]
 	bool is_msaa_mode_supported(MsaaMode eMsaaMode);
+	void get_supported_msaa_modes(uint8_t u8ListLength, MsaaMode *peSupportedMsaaModes, uint8_t *pu8SupportedMsaaModeCount);
 	[[nodiscard]]
 	MsaaMode get_highest_supported_msaa_mode();
 	void enable_sample_shading(bool bEnable);

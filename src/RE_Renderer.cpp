@@ -886,6 +886,8 @@ namespace RE {
 	}
 
 	void get_supported_msaa_modes(const uint8_t u8ListLength, MsaaMode *const peSupportedMsaaModes, uint8_t *const pu8SupportedMsaaModeCount) {
+		if (!peSupportedMsaaModes || !u8ListLength)
+			return;
 		uint8_t u8Index = 0U;
 		for (uint8_t u8MsaaModeIndex = 0U; u8MsaaModeIndex < static_cast<uint8_t>(RE_MSAA_MODE_64) && u8Index < u8ListLength; u8MsaaModeIndex++) {
 			const MsaaMode eMsaaMode = static_cast<MsaaMode>(u8MsaaModeIndex);
@@ -897,10 +899,6 @@ namespace RE {
 		}
 		if (pu8SupportedMsaaModeCount)
 			*pu8SupportedMsaaModeCount = u8Index;
-		if (!peSupportedMsaaModes)
-			return;
-		for (uint8_t u8RemainsOfListIndex = u8Index; u8RemainsOfListIndex < u8ListLength; u8RemainsOfListIndex++)
-			peSupportedMsaaModes[u8RemainsOfListIndex] = RE_MSAA_MODE_1;
 	}
 
 	[[nodiscard]]

@@ -144,6 +144,7 @@ class First : public Scene {
 			camActivator.change_input(RE_INPUT_KEY_Q);
 			msaaUpgrader.change_input(RE_INPUT_KEY_SPACE);
 			CATCH_SIGNAL(set_msaa_mode(RE_MSAA_MODE_8));
+			CATCH_SIGNAL(set_const_screen_size(480, 640));
 		}
 		void update() {
 			if (trigger.is_pressed())
@@ -157,8 +158,8 @@ class First : public Scene {
 					playerCam.deactivate();
 				bCamActive = !bCamActive;
 			} else if (msaaUpgrader.is_pressed()) {
-				CATCH_SIGNAL(set_msaa_mode(bMsaaEight ? RE_MSAA_MODE_8 : RE_MSAA_MODE_1));
 				bMsaaEight = !bMsaaEight;
+				CATCH_SIGNAL(set_msaa_mode(bMsaaEight ? RE_MSAA_MODE_8 : RE_MSAA_MODE_1));
 			}
 			//PRINT_LN(get_fps_rate());
 		}

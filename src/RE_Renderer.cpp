@@ -48,7 +48,7 @@ namespace RE {
 
 	VkSampleCountFlagBits vk_eMsaaCount = VK_SAMPLE_COUNT_1_BIT;
 	VkImage vk_ahSingleSampledWorldRenderImages[RE_VK_FRAMES_IN_FLIGHT] = {};
-	VkDeviceMemory vk_ahSignleSampledWorldRenderImageMemories[RE_VK_FRAMES_IN_FLIGHT] = {};
+	VkDeviceMemory vk_ahSingleSampledWorldRenderImageMemories[RE_VK_FRAMES_IN_FLIGHT] = {};
 
 	VkBool32 vk_bSampleShadingEnabled = VK_FALSE;
 	float fSampleShadingRate = 0.2f;
@@ -188,7 +188,7 @@ namespace RE {
 								constexpr uint32_t u32FramebufferImageViewCount = 2U;
 								const VkImageView vk_ahFramebufferImageViews[u32FramebufferImageViewCount] = {vk_ahWorldRenderImageViews[u8WorldRenderImageCollectionCreateIndex], vk_ahWorldDepthStencilImageViews[u8WorldRenderImageCollectionCreateIndex]};
 								if (CATCH_SIGNAL_AND_RETURN(create_vulkan_framebuffer(0, vk_hWorldRenderPass, u32FramebufferImageViewCount, vk_ahFramebufferImageViews, vk_worldRenderImageExtent.width, vk_worldRenderImageExtent.height, 1U, &vk_ahWorldFramebuffers[u8WorldRenderImageCollectionCreateIndex]), bool)) {
-									if (ARE_MSAA_AND_SCREEN_PERCENTAGE_MODIFIED() && !CATCH_SIGNAL_AND_RETURN(create_vulkan_image(0, VK_IMAGE_TYPE_2D, vk_eSwapchainImageFormat, vk_worldRenderImageExtent3D, 1U, 1U, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, u32GraphicsQueueOnlyCount, au32GraphicsQueueOnly, VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_ahSingleSampledWorldRenderImages[u8WorldRenderImageCollectionCreateIndex], &vk_ahSignleSampledWorldRenderImageMemories[u8WorldRenderImageCollectionCreateIndex]), bool))
+									if (ARE_MSAA_AND_SCREEN_PERCENTAGE_MODIFIED() && !CATCH_SIGNAL_AND_RETURN(create_vulkan_image(0, VK_IMAGE_TYPE_2D, vk_eSwapchainImageFormat, vk_worldRenderImageExtent3D, 1U, 1U, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, u32GraphicsQueueOnlyCount, au32GraphicsQueueOnly, VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_ahSingleSampledWorldRenderImages[u8WorldRenderImageCollectionCreateIndex], &vk_ahSingleSampledWorldRenderImageMemories[u8WorldRenderImageCollectionCreateIndex]), bool))
 										RE_FATAL_ERROR(append_to_string("Failed to create Vulkan image at index ", u8WorldRenderImageCollectionCreateIndex, " to store single sampled image of the rendered world"));
 									else {
 										u8WorldRenderImageCollectionCreateIndex++;
@@ -212,7 +212,7 @@ namespace RE {
 				vkDestroyImage(vk_hDevice, vk_ahWorldRenderImages[u8WorldRenderImageCollectionCreateIndex], nullptr);
 			} else
 				RE_FATAL_ERROR(append_to_string("Failed creating Vulkan GPU-side image at index ", u8WorldRenderImageCollectionCreateIndex, " for world rendering"));
-			vk_ahSignleSampledWorldRenderImageMemories[u8WorldRenderImageCollectionCreateIndex] = VK_NULL_HANDLE;
+			vk_ahSingleSampledWorldRenderImageMemories[u8WorldRenderImageCollectionCreateIndex] = VK_NULL_HANDLE;
 			vk_ahSingleSampledWorldRenderImages[u8WorldRenderImageCollectionCreateIndex] = VK_NULL_HANDLE;
 			vk_ahWorldDepthStencilImageViews[u8WorldRenderImageCollectionCreateIndex] = VK_NULL_HANDLE;
 			vk_ahWorldDepthStencilImageMemories[u8WorldRenderImageCollectionCreateIndex] = VK_NULL_HANDLE;
@@ -226,7 +226,7 @@ namespace RE {
 			return true;
 		for (uint8_t u8WorldRenderImageCollectionDeleteIndex = 0U; u8WorldRenderImageCollectionDeleteIndex < u8WorldRenderImageCollectionCreateIndex; u8WorldRenderImageCollectionDeleteIndex++) {
 			if (vk_eMsaaCount != VK_SAMPLE_COUNT_1_BIT) {
-				vkFreeMemory(vk_hDevice, vk_ahSignleSampledWorldRenderImageMemories[u8WorldRenderImageCollectionDeleteIndex], nullptr);
+				vkFreeMemory(vk_hDevice, vk_ahSingleSampledWorldRenderImageMemories[u8WorldRenderImageCollectionDeleteIndex], nullptr);
 				vkDestroyImage(vk_hDevice, vk_ahSingleSampledWorldRenderImages[u8WorldRenderImageCollectionDeleteIndex], nullptr);
 			}
 			vkDestroyFramebuffer(vk_hDevice, vk_ahWorldFramebuffers[u8WorldRenderImageCollectionDeleteIndex], nullptr);
@@ -236,7 +236,7 @@ namespace RE {
 			vkDestroyImageView(vk_hDevice, vk_ahWorldRenderImageViews[u8WorldRenderImageCollectionDeleteIndex], nullptr);
 			vkFreeMemory(vk_hDevice, vk_ahWorldRenderImageMemories[u8WorldRenderImageCollectionDeleteIndex], nullptr);
 			vkDestroyImage(vk_hDevice, vk_ahWorldRenderImages[u8WorldRenderImageCollectionDeleteIndex], nullptr);
-			vk_ahSignleSampledWorldRenderImageMemories[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
+			vk_ahSingleSampledWorldRenderImageMemories[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
 			vk_ahSingleSampledWorldRenderImages[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
 			vk_ahWorldFramebuffers[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
 			vk_ahWorldDepthStencilImageViews[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
@@ -252,7 +252,7 @@ namespace RE {
 	static void destroy_world_render_images() {
 		for (uint32_t u8WorldRenderImageCollectionDeleteIndex = 0U; u8WorldRenderImageCollectionDeleteIndex < RE_VK_FRAMES_IN_FLIGHT; u8WorldRenderImageCollectionDeleteIndex++) {
 			if (ARE_MSAA_AND_SCREEN_PERCENTAGE_MODIFIED()) {
-				vkFreeMemory(vk_hDevice, vk_ahSignleSampledWorldRenderImageMemories[u8WorldRenderImageCollectionDeleteIndex], nullptr);
+				vkFreeMemory(vk_hDevice, vk_ahSingleSampledWorldRenderImageMemories[u8WorldRenderImageCollectionDeleteIndex], nullptr);
 				vkDestroyImage(vk_hDevice, vk_ahSingleSampledWorldRenderImages[u8WorldRenderImageCollectionDeleteIndex], nullptr);
 			}
 			vkDestroyFramebuffer(vk_hDevice, vk_ahWorldFramebuffers[u8WorldRenderImageCollectionDeleteIndex], nullptr);
@@ -262,7 +262,7 @@ namespace RE {
 			vkDestroyImageView(vk_hDevice, vk_ahWorldRenderImageViews[u8WorldRenderImageCollectionDeleteIndex], nullptr);
 			vkFreeMemory(vk_hDevice, vk_ahWorldRenderImageMemories[u8WorldRenderImageCollectionDeleteIndex], nullptr);
 			vkDestroyImage(vk_hDevice, vk_ahWorldRenderImages[u8WorldRenderImageCollectionDeleteIndex], nullptr);
-			vk_ahSignleSampledWorldRenderImageMemories[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
+			vk_ahSingleSampledWorldRenderImageMemories[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
 			vk_ahSingleSampledWorldRenderImages[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
 			vk_ahWorldFramebuffers[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
 			vk_ahWorldDepthStencilImageViews[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;

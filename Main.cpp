@@ -144,7 +144,7 @@ class First : public Scene {
 			camActivator.change_input(RE_INPUT_KEY_Q);
 			msaaUpgrader.change_input(RE_INPUT_KEY_SPACE);
 			CATCH_SIGNAL(set_msaa_mode(RE_MSAA_MODE_8));
-			CATCH_SIGNAL(set_const_screen_size(480, 640));
+			CATCH_SIGNAL(set_screen_percentage(0.75f));
 		}
 		void update() {
 			if (trigger.is_pressed())

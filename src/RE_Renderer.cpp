@@ -648,11 +648,11 @@ namespace RE {
 			.srcOffsets = {
 				{
 					.x = 0,
-					.y = 0,
+					.y = static_cast<int32_t>(vk_worldRenderImageExtent.height),
 					.z = 0
 				}, {
 					.x = static_cast<int32_t>(vk_worldRenderImageExtent.width),
-					.y = static_cast<int32_t>(vk_worldRenderImageExtent.height),
+					.y = 0,
 					.z = 1
 				}
 			},

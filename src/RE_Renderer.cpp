@@ -225,7 +225,7 @@ namespace RE {
 		if (u8WorldRenderImageCollectionCreateIndex == RE_VK_FRAMES_IN_FLIGHT)
 			return true;
 		for (uint8_t u8WorldRenderImageCollectionDeleteIndex = 0U; u8WorldRenderImageCollectionDeleteIndex < u8WorldRenderImageCollectionCreateIndex; u8WorldRenderImageCollectionDeleteIndex++) {
-			if (vk_eMsaaCount != VK_SAMPLE_COUNT_1_BIT) {
+			if (ARE_MSAA_AND_SCREEN_PERCENTAGE_MODIFIED()) {
 				vkFreeMemory(vk_hDevice, vk_ahSingleSampledWorldRenderImageMemories[u8WorldRenderImageCollectionDeleteIndex], nullptr);
 				vkDestroyImage(vk_hDevice, vk_ahSingleSampledWorldRenderImages[u8WorldRenderImageCollectionDeleteIndex], nullptr);
 			}

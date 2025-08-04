@@ -11,33 +11,33 @@ namespace RE {
 	uint32_t u32Scancodes[MAXIMUM_PHYSICAL_KEYS] = {};
 	Input eInputs[MAXIMUM_PHYSICAL_KEYS] = {};
 	uint8_t u8KeyBuffer[KEY_BUFFER_SIZE] = {}, u8PrevKeyBuffer[KEY_BUFFER_SIZE] = {}; // Keyboard
-	uint8_t u8NumberOfKeys = 0U;
-	uint8_t u8MouseInputBuffer = 0U, u8PrevMouseInputBuffer = 0U; // Scrolling and mouse buttons
+	uint8_t u8NumberOfKeys = 0;
+	uint8_t u8MouseInputBuffer = 0, u8PrevMouseInputBuffer = 0; // Scrolling and mouse buttons
 	Vector2i cursorPosition, prevCursorPosition;
 	InputAction *pUpdateInputObject = nullptr;
 
 	[[nodiscard]]
 	static int16_t get_index_for_scancode(const uint32_t u32SearchedScancode) {
-		uint32_t u32MinIndex = 0U;
-		uint32_t u32MaxIndex = u8NumberOfKeys > 0U ? (u8NumberOfKeys - 1U) : 0U;
+		uint32_t u32MinIndex = 0;
+		uint32_t u32MaxIndex = u8NumberOfKeys > 0 ? (u8NumberOfKeys - 1) : 0;
 		while (u32MinIndex <= u32MaxIndex) {
-			const uint32_t u32CurrentIndex = u32MinIndex + (u32MaxIndex - u32MinIndex) / 2U;
+			const uint32_t u32CurrentIndex = u32MinIndex + (u32MaxIndex - u32MinIndex) / 2;
 			const uint32_t u32CurrentScancode = u32Scancodes[u32CurrentIndex];
 			if (u32CurrentScancode == u32SearchedScancode)
 				return static_cast<int16_t>(u32CurrentIndex);
 			else if (u32SearchedScancode < u32CurrentScancode) {
 				if (u32CurrentIndex == u32MinIndex)
 					return FAILURE_INDEX;
-				u32MaxIndex = u32CurrentIndex - 1U;
+				u32MaxIndex = u32CurrentIndex - 1;
 			} else
-				u32MinIndex = u32CurrentIndex + 1U;
+				u32MinIndex = u32CurrentIndex + 1;
 		}
 		return FAILURE_INDEX;
 	}
 
 	[[nodiscard]]
 	static int16_t get_index_for_input(const Input eSearchedInput) {
-		for (uint8_t i = 0U; i < u8NumberOfKeys; i++)
+		for (uint8_t i = 0; i < u8NumberOfKeys; i++)
 			if (eInputs[i] == eSearchedInput)
 				return static_cast<int16_t>(i);
 		return FAILURE_INDEX;
@@ -51,7 +51,7 @@ namespace RE {
 			case RE_INPUT_BUTTON_LEFT:
 			case RE_INPUT_BUTTON_RIGHT:
 			case RE_INPUT_BUTTON_MIDDLE:
-				return bRequestForPast ? is_bit_true<uint8_t>(u8PrevMouseInputBuffer, static_cast<uint8_t>(eInput - RE_INPUT_SCROLL_UP)) : is_bit_true<uint8_t>(u8MouseInputBuffer, static_cast<uint8_t>(eInput - RE_INPUT_SCROLL_UP));
+				return is_bit_true<uint8_t>(bRequestForPast ? u8PrevMouseInputBuffer : u8MouseInputBuffer, static_cast<uint8_t>(eInput - RE_INPUT_SCROLL_UP));
 			default:
 				int16_t i16KeyIndex = FAILURE_INDEX;
 				if (u32Scancode)
@@ -60,7 +60,7 @@ namespace RE {
 					i16KeyIndex = get_index_for_input(eInput);
 				if (i16KeyIndex == FAILURE_INDEX)
 					return false;
-				return bRequestForPast ? is_bit_true<uint8_t>(u8PrevKeyBuffer[i16KeyIndex / 8], i16KeyIndex % 8) : is_bit_true<uint8_t>(u8KeyBuffer[i16KeyIndex / 8], i16KeyIndex % 8);
+				return is_bit_true<uint8_t>(bRequestForPast ? u8PrevKeyBuffer[i16KeyIndex / 8] : u8KeyBuffer[i16KeyIndex / 8], i16KeyIndex % 8);
 		}
 	}
 

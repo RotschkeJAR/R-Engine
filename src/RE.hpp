@@ -1,7 +1,7 @@
 #ifndef __RE_H__
 #define __RE_H__
 
-#if defined(_WIN32) || defined(_MSC_VER)
+#if defined(_WIN64) || defined(_MSC_VER)
 # define RE_OS_WINDOWS 1
 # define NOGDI
 # ifdef _MSC_VER

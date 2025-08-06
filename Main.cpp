@@ -132,32 +132,28 @@ class First : public Scene {
 		Objy objy;
 		OC another;
 		PlayerCamera playerCam;
-		InputAction trigger, refresh, camActivator, msaaUpgrader;
+		InputAction trigger;
 		bool bCamActive, bMsaaEight;
 
-		First() : Scene(1), bCamActive(true), bMsaaEight(true) {}
+		First() : Scene(1), trigger(RE_INPUT_KEY_NUMPAD_ENTER), bCamActive(true), bMsaaEight(true) {}
 		~First() {}
 		void start() {
 			playerCam.activate();
-			trigger.change_input(RE_INPUT_KEY_NUMPAD_ENTER);
-			refresh.change_input(RE_INPUT_KEY_ESCAPE);
-			camActivator.change_input(RE_INPUT_KEY_Q);
-			msaaUpgrader.change_input(RE_INPUT_KEY_SPACE);
 			CATCH_SIGNAL(set_msaa_mode(RE_MSAA_MODE_8));
 			CATCH_SIGNAL(set_screen_percentage(0.75f));
 		}
 		void update() {
 			if (trigger.is_pressed())
 				set_next_scene();
-			else if (refresh.is_pressed())
+			else if (is_pressed(RE_INPUT_KEY_ESCAPE, 0))
 				trigger.update_input();
-			else if (camActivator.is_pressed()) {
+			else if (is_pressed(RE_INPUT_KEY_Q, 0)) {
 				if (!bCamActive)
 					playerCam.activate();
 				else
 					playerCam.deactivate();
 				bCamActive = !bCamActive;
-			} else if (msaaUpgrader.is_pressed()) {
+			} else if (is_pressed(RE_INPUT_KEY_SPACE, 0)) {
 				bMsaaEight = !bMsaaEight;
 				CATCH_SIGNAL(set_msaa_mode(bMsaaEight ? RE_MSAA_MODE_8 : RE_MSAA_MODE_1));
 			}

@@ -3,9 +3,9 @@
 
 namespace RE {
 	
-	InputAction::InputAction() : u32KeyScancode(0U), eInput(RE_INPUT_UNKNOWN) {}
-	InputAction::InputAction(const Input eInput) : u32KeyScancode(map_input_to_scancode(eInput)), eInput(eInput) {}
-	InputAction::InputAction(const uint32_t u32KeyScancode) : u32KeyScancode(u32KeyScancode), eInput(map_scancode_to_input(u32KeyScancode)) {}
+	InputAction::InputAction() : u32KeyScancode(0), eInput(RE_INPUT_UNKNOWN) {}
+	InputAction::InputAction(const Input eInput) : u32KeyScancode(0), eInput(eInput) {}
+	InputAction::InputAction(const uint32_t u32KeyScancode) : u32KeyScancode(u32KeyScancode), eInput(RE_INPUT_UNKNOWN) {}
 	InputAction::~InputAction() {
 		if (is_updating())
 			pUpdateInputObject = nullptr;
@@ -13,17 +13,22 @@ namespace RE {
 
 	[[nodiscard]]
 	bool InputAction::is_scroll_wheel() const {
-		return eInput == RE_INPUT_SCROLL_UP || eInput == RE_INPUT_SCROLL_DOWN;
+		return is_scroll_input(eInput);
 	}
 
 	[[nodiscard]]
 	bool InputAction::is_button() const {
-		return eInput >= RE_INPUT_BUTTON_LEFT && eInput <= RE_INPUT_BUTTON_MIDDLE;
+		return is_button_input(eInput);
+	}
+
+	[[nodiscard]]
+	bool InputAction::is_mouse() const {
+		return is_mouse_input(eInput);
 	}
 
 	[[nodiscard]]
 	bool InputAction::is_key() const {
-		return u32KeyScancode || (eInput >= RE_INPUT_KEY_SPACE && eInput < RE_INPUT_MAX_ENUM);
+		return is_key_input(eInput) || (u32KeyScancode && map_scancode_to_input(u32KeyScancode) != RE_INPUT_UNKNOWN);
 	}
 
 	void InputAction::update_input() {
@@ -46,18 +51,14 @@ namespace RE {
 		return !pUpdateInputObject;
 	}
 
-	void InputAction::change_input(const Input eNewInput) {
-		if (eInput == eNewInput)
-			return;
+	void InputAction::change_to_input(const Input eNewInput) {
 		eInput = eNewInput;
-		u32KeyScancode = map_input_to_scancode(eNewInput);
+		u32KeyScancode = 0;
 	}
 
-	void InputAction::change_scancode(const uint32_t u32NewScancode) {
-		if (u32KeyScancode == u32NewScancode)
-			return;
+	void InputAction::change_to_scancode(const uint32_t u32NewScancode) {
 		u32KeyScancode = u32NewScancode;
-		eInput = map_scancode_to_input(u32NewScancode);
+		eInput = RE_INPUT_UNKNOWN;
 	}
 
 	[[nodiscard]]

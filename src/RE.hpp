@@ -764,6 +764,8 @@ namespace RE {
 			[[nodiscard]]
 			bool is_button() const;
 			[[nodiscard]]
+			bool is_mouse() const;
+			[[nodiscard]]
 			bool is_key() const;
 
 			// Queries engine to set its input to the next user input
@@ -774,8 +776,8 @@ namespace RE {
 			[[nodiscard]]
 			static bool can_update();
 
-			void change_input(Input eInput);
-			void change_scancode(uint32_t u32NewScancode);
+			void change_to_input(Input eInput);
+			void change_to_scancode(uint32_t u32NewScancode);
 
 			[[nodiscard]]
 			bool is_down() const;

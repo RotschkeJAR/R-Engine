@@ -61,7 +61,7 @@ namespace RE {
 
 	template<AskingState eStateToCheck>
 	[[nodiscard]]
-	static bool get_state(const Input eInput, const uint32_t u32Scancode) {
+	static bool get_state_of_user_input(const Input eInput, const uint32_t u32Scancode) {
 		switch (eInput) {
 			case RE_INPUT_SCROLL_UP:
 			case RE_INPUT_SCROLL_DOWN:
@@ -114,7 +114,7 @@ namespace RE {
 			case RE_INPUT_BUTTON_MIDDLE:
 				CATCH_SIGNAL(set_bit<uint8_t>(u8MouseBuffer, static_cast<uint8_t>(eEnteredInput - RE_INPUT_SCROLL_UP), bPressed));
 				if (pUpdateInputObject && bPressed) {
-					pUpdateInputObject->change_input(eEnteredInput);
+					pUpdateInputObject->change_to_input(eEnteredInput);
 					pUpdateInputObject = nullptr;
 				}
 				break;
@@ -179,9 +179,9 @@ namespace RE {
 				}
 				if (pUpdateInputObject && bPressed) {
 					if (u32EnteredScancode)
-						pUpdateInputObject->change_scancode(u32EnteredScancode);
+						pUpdateInputObject->change_to_scancode(u32EnteredScancode);
 					else
-						pUpdateInputObject->change_input(eEnteredInput);
+						pUpdateInputObject->change_to_input(eEnteredInput);
 					pUpdateInputObject = nullptr;
 				}
 				break;
@@ -202,27 +202,27 @@ namespace RE {
 
 	[[nodiscard]]
 	bool is_down(const Input eInput, const uint32_t u32Scancode) {
-		return get_state<ASKING_STATE_PRESENT>(eInput, u32Scancode);
+		return get_state_of_user_input<ASKING_STATE_PRESENT>(eInput, u32Scancode);
 	}
 	
 	[[nodiscard]]
 	bool was_down(const Input eInput, const uint32_t u32Scancode) {
-		return get_state<ASKING_STATE_PAST>(eInput, u32Scancode);
+		return get_state_of_user_input<ASKING_STATE_PAST>(eInput, u32Scancode);
 	}
 
 	[[nodiscard]]
 	bool is_pressed(const Input eInput, const uint32_t u32Scancode) {
-		return get_state<ASKING_STATE_PRESSED>(eInput, u32Scancode);
+		return get_state_of_user_input<ASKING_STATE_PRESSED>(eInput, u32Scancode);
 	}
 
 	[[nodiscard]]
 	bool is_released(const Input eInput, const uint32_t u32Scancode) {
-		return get_state<ASKING_STATE_RELEASED>(eInput, u32Scancode);
+		return get_state_of_user_input<ASKING_STATE_RELEASED>(eInput, u32Scancode);
 	}
 
 	[[nodiscard]]
 	bool is_held_down(const Input eInput, const uint32_t u32Scancode) {
-		return get_state<ASKING_STATE_BOTH>(eInput, u32Scancode);
+		return get_state_of_user_input<ASKING_STATE_BOTH>(eInput, u32Scancode);
 	}
 
 	[[nodiscard]]
@@ -260,8 +260,10 @@ namespace RE {
 
 	[[nodiscard]]
 	uint32_t map_input_to_scancode(const Input eInput) {
-		if (eInput >= RE_INPUT_KEY_SPACE && eInput < RE_INPUT_MAX_ENUM)
-			return au32Scancodes[au8InputToKeyBufferIndexTable[key_input_to_uint8(eInput)] - KEY_BUFFER_OFFSET];
+		if (eInput >= RE_INPUT_KEY_SPACE && eInput < RE_INPUT_MAX_ENUM) {
+			const uint8_t u8Index = au8InputToKeyBufferIndexTable[key_input_to_uint8(eInput)];
+			return u8Index > 0 ? au32Scancodes[u8Index - KEY_BUFFER_OFFSET] : 0;
+		}
 		return 0;
 	}
 

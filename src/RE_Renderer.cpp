@@ -9,7 +9,7 @@
 
 namespace RE {
 
-#define GET_VULKAN_MATRIX_ELEMENT_INDEX(COLUMN, LINE) (COLUMN * 4U + LINE)
+#define GET_VULKAN_MATRIX_ELEMENT_INDEX(COLUMN, LINE) (COLUMN * 4 + LINE)
 
 	enum ScreenPercentage {
 		SCREEN_PERCENTAGE_CONST_IMG_SIZE,
@@ -18,18 +18,18 @@ namespace RE {
 	};
 
 	typedef uint16_t REindex_t;
-#define RE_VK_RECT_INDEX_BUFFER_SIZE (RE_VK_RENDERABLE_RECTANGLES_COUNT * 6U)
+#define RE_VK_RECT_INDEX_BUFFER_SIZE (RE_VK_RENDERABLE_RECTANGLES_COUNT * 6)
 #define RE_VK_RECT_INDEX_BUFFER_SIZE_BYTES (RE_VK_RECT_INDEX_BUFFER_SIZE * sizeof(REindex_t))
 
-#define RE_VK_VIEW_MATRIX_SIZE (4U * 4U)
-#define RE_VK_VIEW_MATRIX_OFFSET 0U
-#define RE_VK_PROJECTION_MATRIX_SIZE (4U * 4U)
+#define RE_VK_VIEW_MATRIX_SIZE (4 * 4)
+#define RE_VK_VIEW_MATRIX_OFFSET 0
+#define RE_VK_PROJECTION_MATRIX_SIZE (4 * 4)
 #define RE_VK_PROJECTION_MATRIX_OFFSET RE_VK_VIEW_MATRIX_SIZE
 
 #define RE_VK_CAMERA_UNIFORM_BUFFER_SIZE (RE_VK_VIEW_MATRIX_SIZE + RE_VK_PROJECTION_MATRIX_SIZE)
 #define RE_VK_CAMERA_UNIFORM_BUFFER_SIZE_BYTES (RE_VK_CAMERA_UNIFORM_BUFFER_SIZE * sizeof(float))
 
-#define RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE 2U
+#define RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE 2
 #define RE_VK_SWAPCHAIN_SEMAPHORE_COUNT (u32SwapchainImageCount * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE)
 
 	const Camera *pActiveCamera = nullptr;
@@ -39,16 +39,16 @@ namespace RE {
 	};
 	VkRect2D vk_cameraScissor;
 	VkExtent2D vk_worldRenderImageExtent = {
-		.width = 600U,
-		.height = 400U
+		.width = 600,
+		.height = 400
 	};
 
 	ScreenPercentage eScreenPercentage = SCREEN_PERCENTAGE_SWAPCHAIN_EQUAL;
 	float fScreenPercentage;
 
 	VkSampleCountFlagBits vk_eMsaaCount = VK_SAMPLE_COUNT_1_BIT;
-	VkImage vk_ahSingleSampledWorldRenderImages[RE_VK_FRAMES_IN_FLIGHT] = {};
-	VkDeviceMemory vk_ahSingleSampledWorldRenderImageMemories[RE_VK_FRAMES_IN_FLIGHT] = {};
+	std::array<VkImage, RE_VK_FRAMES_IN_FLIGHT> vk_ahSingleSampledWorldRenderImages = {};
+	std::array<VkDeviceMemory, RE_VK_FRAMES_IN_FLIGHT> vk_ahSingleSampledWorldRenderImageMemories = {};
 
 	VkBool32 vk_bSampleShadingEnabled = VK_FALSE;
 	float fSampleShadingRate = 0.2f;
@@ -58,36 +58,37 @@ namespace RE {
 
 	VkDescriptorSetLayout vk_hWorldCameraDescriptorSetLayout = VK_NULL_HANDLE;
 	VkDescriptorPool vk_hWorldCameraDescriptorPool = VK_NULL_HANDLE;
-	VkDescriptorSet vk_ahWorldCameraDescriptorSets[RE_VK_FRAMES_IN_FLIGHT] = {};
-	VkBuffer vk_ahWorldCameraUniformBuffers[RE_VK_FRAMES_IN_FLIGHT] = {};
-	VkDeviceMemory vk_ahWorldCameraUniformBufferMemories[RE_VK_FRAMES_IN_FLIGHT] = {};
-	float *apafCameraUniformData[RE_VK_FRAMES_IN_FLIGHT] = {};
+	std::array<VkDescriptorSet, RE_VK_FRAMES_IN_FLIGHT> vk_ahWorldCameraDescriptorSets = {};
+	std::array<VkBuffer, RE_VK_FRAMES_IN_FLIGHT> vk_ahWorldCameraUniformBuffers = {};
+	std::array<VkDeviceMemory, RE_VK_FRAMES_IN_FLIGHT> vk_ahWorldCameraUniformBufferMemories = {};
+	std::array<float*, RE_VK_FRAMES_IN_FLIGHT> apafCameraUniformData = {};
 
 	VkPipelineLayout vk_hWorldBasicPipelineLayout = VK_NULL_HANDLE;
 
-	VkImage vk_ahWorldDepthStencilImages[RE_VK_FRAMES_IN_FLIGHT] = {};
-	VkDeviceMemory vk_ahWorldDepthStencilImageMemories[RE_VK_FRAMES_IN_FLIGHT] = {};
-	VkImageView vk_ahWorldDepthStencilImageViews[RE_VK_FRAMES_IN_FLIGHT] = {};
+	std::array<VkImage, RE_VK_FRAMES_IN_FLIGHT> vk_ahWorldDepthStencilImages = {};
+	std::array<VkDeviceMemory, RE_VK_FRAMES_IN_FLIGHT> vk_ahWorldDepthStencilImageMemories = {};
+	std::array<VkImageView, RE_VK_FRAMES_IN_FLIGHT> vk_ahWorldDepthStencilImageViews = {};
 
 	VkRenderPass vk_hWorldRenderPass = VK_NULL_HANDLE;
-	VkImage vk_ahWorldRenderImages[RE_VK_FRAMES_IN_FLIGHT] = {};
-	VkDeviceMemory vk_ahWorldRenderImageMemories[RE_VK_FRAMES_IN_FLIGHT] = {};
-	VkImageView vk_ahWorldRenderImageViews[RE_VK_FRAMES_IN_FLIGHT] = {};
-	VkFramebuffer vk_ahWorldFramebuffers[RE_VK_FRAMES_IN_FLIGHT] = {};
+	std::array<VkImage, RE_VK_FRAMES_IN_FLIGHT> vk_ahWorldRenderImages = {};
+	std::array<VkDeviceMemory, RE_VK_FRAMES_IN_FLIGHT> vk_ahWorldRenderImageMemories = {};
+	std::array<VkImageView, RE_VK_FRAMES_IN_FLIGHT> vk_ahWorldRenderImageViews = {};
+	std::array<VkFramebuffer, RE_VK_FRAMES_IN_FLIGHT> vk_ahWorldFramebuffers = {};
 
-	VkFence vk_ahRenderFences[RE_VK_FRAMES_IN_FLIGHT] = {};
-	VkSemaphore *vk_pahSwapchainSemaphores = nullptr, vk_ahRenderSemaphores[RE_VK_RENDER_SEMAPHORE_COUNT] = {};
+	std::array<VkFence, RE_VK_FRAMES_IN_FLIGHT> vk_ahRenderFences = {};
+	VkSemaphore *vk_pahSwapchainSemaphores = nullptr;
+	std::array<VkSemaphore, RE_VK_RENDER_SEMAPHORE_COUNT> vk_ahRenderSemaphores = {};
 
-	VkCommandBuffer vk_ahRenderCommandBuffers[RE_VK_FRAMES_IN_FLIGHT] = {};
+	std::array<VkCommandBuffer, RE_VK_FRAMES_IN_FLIGHT> vk_ahRenderCommandBuffers = {};
 
-	uint32_t u32SwapchainRenderImageIndex = 0U;
-	uint8_t u8CurrentFrameInFlightIndex = 0U;
+	uint32_t u32SwapchainRenderImageIndex = 0;
+	uint8_t u8CurrentFrameInFlightIndex = 0;
 
 #define ARE_MSAA_AND_SCREEN_PERCENTAGE_MODIFIED() (vk_eMsaaCount != VK_SAMPLE_COUNT_1_BIT && eScreenPercentage != SCREEN_PERCENTAGE_SWAPCHAIN_EQUAL)
 
 	static bool create_render_pass() {
-		constexpr uint32_t u32WorldRenderPassAttachmentCount = 2U, u32WorldRenderPassSubpassCount = 1U, u32WorldRenderPassDependencyCount = 1U;
-		const VkAttachmentDescription vk_worldRenderPassAttachments[u32WorldRenderPassAttachmentCount] = {
+		constexpr uint32_t u32WorldRenderPassAttachmentCount = 2, u32WorldRenderPassSubpassCount = 1, u32WorldRenderPassDependencyCount = 1;
+		const std::array<VkAttachmentDescription, u32WorldRenderPassAttachmentCount> vk_aWorldRenderPassAttachments = {{
 			{
 				.format = vk_eSwapchainImageFormat,
 				.samples = vk_eMsaaCount,
@@ -107,30 +108,30 @@ namespace RE {
 				.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
 				.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
 			}
-		};
-		const VkAttachmentReference vk_worldRenderPassColorAttachments[] = {
+		}};
+		const std::array<VkAttachmentReference, 1> vk_aWorldRenderPassColorAttachments = {{
 			{
-				.attachment = 0U,
+				.attachment = 0,
 				.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
 			}
-		};
-		const VkAttachmentReference vk_worldRenderPassDepthStencilAttachments[] = {
+		}};
+		const std::array<VkAttachmentReference, 1> vk_aWorldRenderPassDepthStencilAttachments = {{
 			{
-				.attachment = 1U,
+				.attachment = 1,
 				.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
 			}
-		};
-		const VkSubpassDescription vk_worldRenderSubpasses[u32WorldRenderPassSubpassCount] = {
+		}};
+		const std::array<VkSubpassDescription, u32WorldRenderPassSubpassCount> vk_aWorldRenderSubpasses = {{
 			{
 				.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
-				.inputAttachmentCount = 0U,
+				.inputAttachmentCount = 0,
 				.pInputAttachments = nullptr,
-				.colorAttachmentCount = 1U,
-				.pColorAttachments = &vk_worldRenderPassColorAttachments[0],
-				.pDepthStencilAttachment = &vk_worldRenderPassDepthStencilAttachments[0]
+				.colorAttachmentCount = 1,
+				.pColorAttachments = &vk_aWorldRenderPassColorAttachments[0],
+				.pDepthStencilAttachment = &vk_aWorldRenderPassDepthStencilAttachments[0]
 			}
-		};
-		const VkSubpassDependency vk_worldRenderDependencies[u32WorldRenderPassDependencyCount] = {
+		}};
+		const std::array<VkSubpassDependency, u32WorldRenderPassDependencyCount> vk_aWorldRenderDependencies = {{
 			{
 				.srcSubpass = VK_SUBPASS_EXTERNAL,
 				.dstSubpass = RE_VK_GAME_OBJECT_SUPBASS,
@@ -140,15 +141,15 @@ namespace RE {
 				.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
 				.dependencyFlags = 0
 			}
-		};
+		}};
 		const VkRenderPassCreateInfo vk_renderPassCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
 			.attachmentCount = u32WorldRenderPassAttachmentCount,
-			.pAttachments = vk_worldRenderPassAttachments,
+			.pAttachments = vk_aWorldRenderPassAttachments.data(),
 			.subpassCount = u32WorldRenderPassSubpassCount,
-			.pSubpasses = vk_worldRenderSubpasses,
+			.pSubpasses = vk_aWorldRenderSubpasses.data(),
 			.dependencyCount = u32WorldRenderPassDependencyCount,
-			.pDependencies = vk_worldRenderDependencies
+			.pDependencies = vk_aWorldRenderDependencies.data()
 		};
 		if (vkCreateRenderPass(vk_hDevice, &vk_renderPassCreateInfo, nullptr, &vk_hWorldRenderPass) != VK_SUCCESS) {
 			RE_FATAL_ERROR("Failed to create Vulkan render pass");
@@ -175,20 +176,21 @@ namespace RE {
 			.height = vk_worldRenderImageExtent.height,
 			.depth = 1U
 		};
-		constexpr uint32_t u32WorldRenderImageQueueCount = 2U, au32WorldRenderImageQueues[u32WorldRenderImageQueueCount] = {RE_VK_QUEUE_GRAPHICS_INDEX, RE_VK_QUEUE_TRANSFER_INDEX};
-		uint8_t u8WorldRenderImageCollectionCreateIndex = 0U;
+		constexpr uint32_t u32WorldRenderImageQueueCount = 2;
+		const std::array<uint32_t, u32WorldRenderImageQueueCount> au32WorldRenderImageQueues = {RE_VK_QUEUE_GRAPHICS_INDEX, RE_VK_QUEUE_TRANSFER_INDEX};
+		uint8_t u8WorldRenderImageCollectionCreateIndex = 0;
 		while (u8WorldRenderImageCollectionCreateIndex < RE_VK_FRAMES_IN_FLIGHT) {
-			if (CATCH_SIGNAL_AND_RETURN(create_vulkan_image(0, VK_IMAGE_TYPE_2D, vk_eSwapchainImageFormat, vk_worldRenderImageExtent3D, 1U, 1U, vk_eMsaaCount, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, u32WorldRenderImageQueueCount, au32WorldRenderImageQueues, VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_ahWorldRenderImages[u8WorldRenderImageCollectionCreateIndex], &vk_ahWorldRenderImageMemories[u8WorldRenderImageCollectionCreateIndex]), bool)) {
-				if (CATCH_SIGNAL_AND_RETURN(create_vulkan_image_view(vk_ahWorldRenderImages[u8WorldRenderImageCollectionCreateIndex], VK_IMAGE_VIEW_TYPE_2D, vk_eSwapchainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 0U, 1U, 0U, 1U, &vk_ahWorldRenderImageViews[u8WorldRenderImageCollectionCreateIndex]), bool)) {
-					constexpr uint32_t u32GraphicsQueueOnlyCount = 1U, au32GraphicsQueueOnly[u32GraphicsQueueOnlyCount] = {RE_VK_QUEUE_GRAPHICS_INDEX};
-					if (CATCH_SIGNAL_AND_RETURN(create_vulkan_image(0, VK_IMAGE_TYPE_2D, vk_eDepthStencilBufferFormat, vk_worldRenderImageExtent3D, 1U, 1U, vk_eMsaaCount, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, u32GraphicsQueueOnlyCount, au32GraphicsQueueOnly, VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_ahWorldDepthStencilImages[u8WorldRenderImageCollectionCreateIndex], &vk_ahWorldDepthStencilImageMemories[u8WorldRenderImageCollectionCreateIndex]), bool)) {
-						if (CATCH_SIGNAL_AND_RETURN(create_vulkan_image_view(vk_ahWorldDepthStencilImages[u8WorldRenderImageCollectionCreateIndex], VK_IMAGE_VIEW_TYPE_2D, vk_eDepthStencilBufferFormat, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0U, 1U, 0U, 1U, &vk_ahWorldDepthStencilImageViews[u8WorldRenderImageCollectionCreateIndex]), bool)) {
+			if (CATCH_SIGNAL_AND_RETURN(create_vulkan_image(0, VK_IMAGE_TYPE_2D, vk_eSwapchainImageFormat, vk_worldRenderImageExtent3D, 1, 1, vk_eMsaaCount, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, u32WorldRenderImageQueueCount, au32WorldRenderImageQueues.data(), VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_ahWorldRenderImages[u8WorldRenderImageCollectionCreateIndex], &vk_ahWorldRenderImageMemories[u8WorldRenderImageCollectionCreateIndex]), bool)) {
+				if (CATCH_SIGNAL_AND_RETURN(create_vulkan_image_view(vk_ahWorldRenderImages[u8WorldRenderImageCollectionCreateIndex], VK_IMAGE_VIEW_TYPE_2D, vk_eSwapchainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1, &vk_ahWorldRenderImageViews[u8WorldRenderImageCollectionCreateIndex]), bool)) {
+					constexpr uint32_t u32GraphicsQueueOnlyCount = 1, au32GraphicsQueueOnly[u32GraphicsQueueOnlyCount] = {RE_VK_QUEUE_GRAPHICS_INDEX};
+					if (CATCH_SIGNAL_AND_RETURN(create_vulkan_image(0, VK_IMAGE_TYPE_2D, vk_eDepthStencilBufferFormat, vk_worldRenderImageExtent3D, 1, 1, vk_eMsaaCount, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, u32GraphicsQueueOnlyCount, au32GraphicsQueueOnly, VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_ahWorldDepthStencilImages[u8WorldRenderImageCollectionCreateIndex], &vk_ahWorldDepthStencilImageMemories[u8WorldRenderImageCollectionCreateIndex]), bool)) {
+						if (CATCH_SIGNAL_AND_RETURN(create_vulkan_image_view(vk_ahWorldDepthStencilImages[u8WorldRenderImageCollectionCreateIndex], VK_IMAGE_VIEW_TYPE_2D, vk_eDepthStencilBufferFormat, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1, &vk_ahWorldDepthStencilImageViews[u8WorldRenderImageCollectionCreateIndex]), bool)) {
 							VkCommandBuffer vk_hDepthStencilBufferTransitCommandBuffer;
-							if (CATCH_SIGNAL_AND_RETURN(transit_image(RE_VK_QUEUE_GRAPHICS_INDEX, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, 0, VK_ACCESS_NONE, VK_ACCESS_NONE, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, vk_ahWorldDepthStencilImages[u8WorldRenderImageCollectionCreateIndex], VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0U, 1U, 0U, 1U, &vk_hDepthStencilBufferTransitCommandBuffer, nullptr), bool)) {
-								constexpr uint32_t u32FramebufferImageViewCount = 2U;
+							if (CATCH_SIGNAL_AND_RETURN(transit_image(RE_VK_QUEUE_GRAPHICS_INDEX, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, 0, VK_ACCESS_NONE, VK_ACCESS_NONE, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, vk_ahWorldDepthStencilImages[u8WorldRenderImageCollectionCreateIndex], VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1, &vk_hDepthStencilBufferTransitCommandBuffer, nullptr), bool)) {
+								constexpr uint32_t u32FramebufferImageViewCount = 2;
 								const VkImageView vk_ahFramebufferImageViews[u32FramebufferImageViewCount] = {vk_ahWorldRenderImageViews[u8WorldRenderImageCollectionCreateIndex], vk_ahWorldDepthStencilImageViews[u8WorldRenderImageCollectionCreateIndex]};
-								if (CATCH_SIGNAL_AND_RETURN(create_vulkan_framebuffer(0, vk_hWorldRenderPass, u32FramebufferImageViewCount, vk_ahFramebufferImageViews, vk_worldRenderImageExtent.width, vk_worldRenderImageExtent.height, 1U, &vk_ahWorldFramebuffers[u8WorldRenderImageCollectionCreateIndex]), bool)) {
-									if (ARE_MSAA_AND_SCREEN_PERCENTAGE_MODIFIED() && !CATCH_SIGNAL_AND_RETURN(create_vulkan_image(0, VK_IMAGE_TYPE_2D, vk_eSwapchainImageFormat, vk_worldRenderImageExtent3D, 1U, 1U, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, u32GraphicsQueueOnlyCount, au32GraphicsQueueOnly, VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_ahSingleSampledWorldRenderImages[u8WorldRenderImageCollectionCreateIndex], &vk_ahSingleSampledWorldRenderImageMemories[u8WorldRenderImageCollectionCreateIndex]), bool))
+								if (CATCH_SIGNAL_AND_RETURN(create_vulkan_framebuffer(0, vk_hWorldRenderPass, u32FramebufferImageViewCount, vk_ahFramebufferImageViews, vk_worldRenderImageExtent.width, vk_worldRenderImageExtent.height, 1, &vk_ahWorldFramebuffers[u8WorldRenderImageCollectionCreateIndex]), bool)) {
+									if (ARE_MSAA_AND_SCREEN_PERCENTAGE_MODIFIED() && !CATCH_SIGNAL_AND_RETURN(create_vulkan_image(0, VK_IMAGE_TYPE_2D, vk_eSwapchainImageFormat, vk_worldRenderImageExtent3D, 1, 1, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, u32GraphicsQueueOnlyCount, au32GraphicsQueueOnly, VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_ahSingleSampledWorldRenderImages[u8WorldRenderImageCollectionCreateIndex], &vk_ahSingleSampledWorldRenderImageMemories[u8WorldRenderImageCollectionCreateIndex]), bool))
 										RE_FATAL_ERROR(append_to_string("Failed to create Vulkan image at index ", u8WorldRenderImageCollectionCreateIndex, " to store single sampled image of the rendered world"));
 									else {
 										u8WorldRenderImageCollectionCreateIndex++;
@@ -224,7 +226,7 @@ namespace RE {
 		}
 		if (u8WorldRenderImageCollectionCreateIndex == RE_VK_FRAMES_IN_FLIGHT)
 			return true;
-		for (uint8_t u8WorldRenderImageCollectionDeleteIndex = 0U; u8WorldRenderImageCollectionDeleteIndex < u8WorldRenderImageCollectionCreateIndex; u8WorldRenderImageCollectionDeleteIndex++) {
+		for (uint8_t u8WorldRenderImageCollectionDeleteIndex = 0; u8WorldRenderImageCollectionDeleteIndex < u8WorldRenderImageCollectionCreateIndex; u8WorldRenderImageCollectionDeleteIndex++) {
 			if (ARE_MSAA_AND_SCREEN_PERCENTAGE_MODIFIED()) {
 				vkFreeMemory(vk_hDevice, vk_ahSingleSampledWorldRenderImageMemories[u8WorldRenderImageCollectionDeleteIndex], nullptr);
 				vkDestroyImage(vk_hDevice, vk_ahSingleSampledWorldRenderImages[u8WorldRenderImageCollectionDeleteIndex], nullptr);
@@ -250,7 +252,7 @@ namespace RE {
 	}
 
 	static void destroy_world_render_images() {
-		for (uint32_t u8WorldRenderImageCollectionDeleteIndex = 0U; u8WorldRenderImageCollectionDeleteIndex < RE_VK_FRAMES_IN_FLIGHT; u8WorldRenderImageCollectionDeleteIndex++) {
+		for (uint32_t u8WorldRenderImageCollectionDeleteIndex = 0; u8WorldRenderImageCollectionDeleteIndex < RE_VK_FRAMES_IN_FLIGHT; u8WorldRenderImageCollectionDeleteIndex++) {
 			if (ARE_MSAA_AND_SCREEN_PERCENTAGE_MODIFIED()) {
 				vkFreeMemory(vk_hDevice, vk_ahSingleSampledWorldRenderImageMemories[u8WorldRenderImageCollectionDeleteIndex], nullptr);
 				vkDestroyImage(vk_hDevice, vk_ahSingleSampledWorldRenderImages[u8WorldRenderImageCollectionDeleteIndex], nullptr);
@@ -302,19 +304,19 @@ namespace RE {
 	static void update_camera_descriptor_set(const uint8_t u8FrameInFlightIndex) {
 		const VkDescriptorBufferInfo vk_cameraUniformBufferToDescriptorSet = {
 			.buffer = vk_ahWorldCameraUniformBuffers[u8FrameInFlightIndex],
-			.offset = 0UL,
+			.offset = 0,
 			.range = RE_VK_CAMERA_UNIFORM_BUFFER_SIZE_BYTES
 		};
 		const VkWriteDescriptorSet vk_writeToCameraDescriptorSet = {
 			.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 			.dstSet = vk_ahWorldCameraDescriptorSets[u8FrameInFlightIndex],
-			.dstBinding = 0U,
-			.dstArrayElement = 0U,
-			.descriptorCount = 1U,
+			.dstBinding = 0,
+			.dstArrayElement = 0,
+			.descriptorCount = 1,
 			.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 			.pBufferInfo = &vk_cameraUniformBufferToDescriptorSet
 		};
-		vkUpdateDescriptorSets(vk_hDevice, 1U, &vk_writeToCameraDescriptorSet, 0U, nullptr);
+		vkUpdateDescriptorSets(vk_hDevice, 1, &vk_writeToCameraDescriptorSet, 0, nullptr);
 	}
 
 	static void update_camera_uniform_buffer() {
@@ -348,17 +350,17 @@ namespace RE {
 			std::thread stagingIndexBufferDataInit([&]() {
 				REindex_t *pau16RectIndices;
 				stagingIndexBuffer.map_memory((void**) &pau16RectIndices);
-				for (uint16_t u16RectNumber = 0U; u16RectNumber < RE_VK_RENDERABLE_RECTANGLES_COUNT; u16RectNumber++) {
-					pau16RectIndices[u16RectNumber * 6U + 0U] = u16RectNumber * 4U + 0U;
-					pau16RectIndices[u16RectNumber * 6U + 1U] = u16RectNumber * 4U + 1U;
-					pau16RectIndices[u16RectNumber * 6U + 2U] = u16RectNumber * 4U + 2U;
-					pau16RectIndices[u16RectNumber * 6U + 3U] = u16RectNumber * 4U + 2U;
-					pau16RectIndices[u16RectNumber * 6U + 4U] = u16RectNumber * 4U + 3U;
-					pau16RectIndices[u16RectNumber * 6U + 5U] = u16RectNumber * 4U + 0U;
+				for (uint16_t u16RectNumber = 0; u16RectNumber < RE_VK_RENDERABLE_RECTANGLES_COUNT; u16RectNumber++) {
+					pau16RectIndices[u16RectNumber * 6 + 0] = u16RectNumber * 4 + 0;
+					pau16RectIndices[u16RectNumber * 6 + 1] = u16RectNumber * 4 + 1;
+					pau16RectIndices[u16RectNumber * 6 + 2] = u16RectNumber * 4 + 2;
+					pau16RectIndices[u16RectNumber * 6 + 3] = u16RectNumber * 4 + 2;
+					pau16RectIndices[u16RectNumber * 6 + 4] = u16RectNumber * 4 + 3;
+					pau16RectIndices[u16RectNumber * 6 + 5] = u16RectNumber * 4 + 0;
 				}
 				stagingIndexBuffer.unmap_memory();
 			});
-			constexpr uint32_t u32IndexBufferQueueCount = 2U, au32IndexBufferQueues[u32IndexBufferQueueCount] = {RE_VK_QUEUE_TRANSFER_INDEX, RE_VK_QUEUE_GRAPHICS_INDEX};
+			constexpr uint32_t u32IndexBufferQueueCount = 2, au32IndexBufferQueues[u32IndexBufferQueueCount] = {RE_VK_QUEUE_TRANSFER_INDEX, RE_VK_QUEUE_GRAPHICS_INDEX};
 			if (CATCH_SIGNAL_AND_RETURN(create_vulkan_buffer(RE_VK_RECT_INDEX_BUFFER_SIZE_BYTES, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, u32IndexBufferQueueCount, au32IndexBufferQueues, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_hRectIndexBuffer, &vk_hRectIndexBufferMemory), bool)) {
 				Vulkan_CommandBuffer indexBufferDataTransferCommandBuffer(vk_ahCommandPools[RE_VK_COMMAND_POOL_TRANSFER_TRANSIENT_INDEX], VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 				if (indexBufferDataTransferCommandBuffer.is_valid()) {
@@ -366,46 +368,47 @@ namespace RE {
 						constexpr VkBufferCopy vk_rectIndexBufferCopy = {
 							.size = RE_VK_RECT_INDEX_BUFFER_SIZE_BYTES
 						};
-						vkCmdCopyBuffer(indexBufferDataTransferCommandBuffer, stagingIndexBuffer, vk_hRectIndexBuffer, 1U, &vk_rectIndexBufferCopy);
+						vkCmdCopyBuffer(indexBufferDataTransferCommandBuffer, stagingIndexBuffer, vk_hRectIndexBuffer, 1, &vk_rectIndexBufferCopy);
 						if (indexBufferDataTransferCommandBuffer.end_recording()) {
 							Vulkan_Fence rectIndexBufferDataTransferFence;
 							if (rectIndexBufferDataTransferFence.is_valid()) {
-								constexpr uint32_t u32DescriptorSetLayoutBindingCount = 1U;
-								constexpr VkDescriptorSetLayoutBinding vk_aDescriptorSetLayoutBindings[u32DescriptorSetLayoutBindingCount] = {
+								constexpr uint32_t u32DescriptorSetLayoutBindingCount = 1;
+								const std::array<VkDescriptorSetLayoutBinding, u32DescriptorSetLayoutBindingCount> vk_aDescriptorSetLayoutBindings = {{
 									{
-										.binding = 0U,
+										.binding = 0,
 										.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-										.descriptorCount = 1U,
+										.descriptorCount = 1,
 										.stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
 										.pImmutableSamplers = nullptr
 									}
-								};
-								if (CATCH_SIGNAL_AND_RETURN(create_descriptor_set_layout(u32DescriptorSetLayoutBindingCount, vk_aDescriptorSetLayoutBindings, 0, &vk_hWorldCameraDescriptorSetLayout), bool)) {
-									constexpr uint32_t u32DescriptorPoolSizeCount = 1U;
-									constexpr VkDescriptorPoolSize vk_aDescriptorPoolSizes[u32DescriptorPoolSizeCount] = {
+								}};
+								if (CATCH_SIGNAL_AND_RETURN(create_descriptor_set_layout(u32DescriptorSetLayoutBindingCount, vk_aDescriptorSetLayoutBindings.data(), 0, &vk_hWorldCameraDescriptorSetLayout), bool)) {
+									constexpr uint32_t u32DescriptorPoolSizeCount = 1;
+									const std::array<VkDescriptorPoolSize, u32DescriptorPoolSizeCount> vk_aDescriptorPoolSizes = {{
 										{
 											.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 											.descriptorCount = RE_VK_FRAMES_IN_FLIGHT
 										}
-									};
-									if (create_descriptor_pool(u32DescriptorPoolSizeCount, vk_aDescriptorPoolSizes, RE_VK_FRAMES_IN_FLIGHT, &vk_hWorldCameraDescriptorPool)) {
+									}};
+									if (create_descriptor_pool(u32DescriptorPoolSizeCount, vk_aDescriptorPoolSizes.data(), RE_VK_FRAMES_IN_FLIGHT, &vk_hWorldCameraDescriptorPool)) {
 										VkDescriptorSetLayout vk_ahDescriptorSetLayouts[RE_VK_FRAMES_IN_FLIGHT];
 										std::fill(std::begin(vk_ahDescriptorSetLayouts), std::end(vk_ahDescriptorSetLayouts), vk_hWorldCameraDescriptorSetLayout);
-										if (alloc_descriptor_set(vk_hWorldCameraDescriptorPool, RE_VK_FRAMES_IN_FLIGHT, vk_ahDescriptorSetLayouts, vk_ahWorldCameraDescriptorSets)) {
-											if (create_pipeline_layout(1U, &vk_hWorldCameraDescriptorSetLayout, 0U, nullptr, 0, &vk_hWorldBasicPipelineLayout)) {
+										if (alloc_descriptor_set(vk_hWorldCameraDescriptorPool, RE_VK_FRAMES_IN_FLIGHT, vk_ahDescriptorSetLayouts, vk_ahWorldCameraDescriptorSets.data())) {
+											if (create_pipeline_layout(1, &vk_hWorldCameraDescriptorSetLayout, 0, nullptr, 0, &vk_hWorldBasicPipelineLayout)) {
 												if (create_render_pass()) {
-													constexpr uint32_t u32CameraUniformBufferQueueCount = 1U, au32CameraUniformBufferQueues[u32CameraUniformBufferQueueCount] = {RE_VK_QUEUE_GRAPHICS_INDEX};
+													constexpr uint32_t u32CameraUniformBufferQueueCount = 1U;
+													const std::array<uint32_t, u32CameraUniformBufferQueueCount> au32CameraUniformBufferQueues = {RE_VK_QUEUE_GRAPHICS_INDEX};
 													const VkFenceCreateInfo vk_renderFenceCreateInfo = {
 														.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
 														.flags = VK_FENCE_CREATE_SIGNALED_BIT
 													};
-													uint8_t u8FrameInFlightCreateIndex = 0U;
+													uint8_t u8FrameInFlightCreateIndex = 0;
 													while (u8FrameInFlightCreateIndex < RE_VK_FRAMES_IN_FLIGHT) {
-														if (!create_vulkan_buffer(RE_VK_CAMERA_UNIFORM_BUFFER_SIZE_BYTES, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, u32CameraUniformBufferQueueCount, au32CameraUniformBufferQueues, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &vk_ahWorldCameraUniformBuffers[u8FrameInFlightCreateIndex], &vk_ahWorldCameraUniformBufferMemories[u8FrameInFlightCreateIndex])) {
+														if (!create_vulkan_buffer(RE_VK_CAMERA_UNIFORM_BUFFER_SIZE_BYTES, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, u32CameraUniformBufferQueueCount, au32CameraUniformBufferQueues.data(), VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &vk_ahWorldCameraUniformBuffers[u8FrameInFlightCreateIndex], &vk_ahWorldCameraUniformBufferMemories[u8FrameInFlightCreateIndex])) {
 															RE_FATAL_ERROR(append_to_string("Failed to create Vulkan uniform buffer at index ", u8FrameInFlightCreateIndex));
 															break;
 														}
-														vkMapMemory(vk_hDevice, vk_ahWorldCameraUniformBufferMemories[u8FrameInFlightCreateIndex], 0UL, RE_VK_CAMERA_UNIFORM_BUFFER_SIZE_BYTES, 0, (void**) &apafCameraUniformData[u8FrameInFlightCreateIndex]);
+														vkMapMemory(vk_hDevice, vk_ahWorldCameraUniformBufferMemories[u8FrameInFlightCreateIndex], 0, RE_VK_CAMERA_UNIFORM_BUFFER_SIZE_BYTES, 0, (void**) &apafCameraUniformData[u8FrameInFlightCreateIndex]);
 														std::fill(apafCameraUniformData[u8FrameInFlightCreateIndex], apafCameraUniformData[u8FrameInFlightCreateIndex] + RE_VK_CAMERA_UNIFORM_BUFFER_SIZE_BYTES, 0.0f);
 														apafCameraUniformData[u8FrameInFlightCreateIndex][RE_VK_VIEW_MATRIX_OFFSET + GET_VULKAN_MATRIX_ELEMENT_INDEX(0, 0)] = 1.0f;
 														apafCameraUniformData[u8FrameInFlightCreateIndex][RE_VK_VIEW_MATRIX_OFFSET + GET_VULKAN_MATRIX_ELEMENT_INDEX(1, 1)] = 1.0f;
@@ -436,7 +439,7 @@ namespace RE {
 														const VkSemaphoreCreateInfo vk_renderSemaphoreCreateInfo = {
 															.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
 														};
-														uint16_t u16RenderSemaphoreCreateIndex = 0U;
+														uint16_t u16RenderSemaphoreCreateIndex = 0;
 														while (u16RenderSemaphoreCreateIndex < RE_VK_RENDER_SEMAPHORE_COUNT) {
 															if (vkCreateSemaphore(vk_hDevice, &vk_renderSemaphoreCreateInfo, nullptr, &vk_ahRenderSemaphores[u16RenderSemaphoreCreateIndex]) != VK_SUCCESS) {
 																RE_FATAL_ERROR(append_to_string("Failed creating Vulkan semaphore at index ", u16RenderSemaphoreCreateIndex));
@@ -444,14 +447,14 @@ namespace RE {
 															}
 															u16RenderSemaphoreCreateIndex++;
 														}
-														if (u16RenderSemaphoreCreateIndex == RE_VK_RENDER_SEMAPHORE_COUNT && CATCH_SIGNAL_AND_RETURN(alloc_vulkan_command_buffers(vk_ahCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX], VK_COMMAND_BUFFER_LEVEL_PRIMARY, RE_VK_FRAMES_IN_FLIGHT, vk_ahRenderCommandBuffers), bool)) {
+														if (u16RenderSemaphoreCreateIndex == RE_VK_RENDER_SEMAPHORE_COUNT && CATCH_SIGNAL_AND_RETURN(alloc_vulkan_command_buffers(vk_ahCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX], VK_COMMAND_BUFFER_LEVEL_PRIMARY, RE_VK_FRAMES_IN_FLIGHT, vk_ahRenderCommandBuffers.data()), bool)) {
 															const VkSubmitInfo vk_rectIndexBufferTransferSubmitInfo = {
 																.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
 																.commandBufferCount = 1U,
 																.pCommandBuffers = indexBufferDataTransferCommandBuffer.get_command_buffer_ptr()
 															};
 															CATCH_SIGNAL(stagingIndexBufferDataInit.join());
-															if (vkQueueSubmit(vk_ahDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], 1U, &vk_rectIndexBufferTransferSubmitInfo, rectIndexBufferDataTransferFence) == VK_SUCCESS) {
+															if (vkQueueSubmit(vk_ahDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], 1, &vk_rectIndexBufferTransferSubmitInfo, rectIndexBufferDataTransferFence) == VK_SUCCESS) {
 																if (eScreenPercentage != SCREEN_PERCENTAGE_CONST_IMG_SIZE || CATCH_SIGNAL_AND_RETURN(create_world_render_images(), bool)) {
 																	if (CATCH_SIGNAL_AND_RETURN(swapchain_created_renderer(), bool)) {
 																		if (CATCH_SIGNAL_AND_RETURN(init_game_object_renderer(), bool)) {
@@ -466,7 +469,7 @@ namespace RE {
 																rectIndexBufferDataTransferFence.wait_for();
 															} else
 																RE_FATAL_ERROR("Failed to submit task to the transfer queue for copying data to the Vulkan rectangle index buffer on the GPU");
-															vkFreeCommandBuffers(vk_hDevice, vk_ahCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX], RE_VK_FRAMES_IN_FLIGHT, vk_ahRenderCommandBuffers);
+															vkFreeCommandBuffers(vk_hDevice, vk_ahCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX], RE_VK_FRAMES_IN_FLIGHT, vk_ahRenderCommandBuffers.data());
 															std::fill(std::begin(vk_ahRenderCommandBuffers), std::end(vk_ahRenderCommandBuffers), VK_NULL_HANDLE);
 														}
 														for (uint16_t u16RenderSemaphoreDeleteIndex = 0U; u16RenderSemaphoreDeleteIndex < u16RenderSemaphoreCreateIndex; u16RenderSemaphoreDeleteIndex++) {
@@ -492,8 +495,8 @@ namespace RE {
 												vkDestroyPipelineLayout(vk_hDevice, vk_hWorldBasicPipelineLayout, nullptr);
 											} else
 												RE_FATAL_ERROR("Failed to create basic Vulkan pipeline layout for rendering the world");
-											vkFreeDescriptorSets(vk_hDevice, vk_hWorldCameraDescriptorPool, RE_VK_FRAMES_IN_FLIGHT, vk_ahWorldCameraDescriptorSets);
-											std::fill(std::begin(vk_ahWorldCameraDescriptorSets), std::end(vk_ahWorldCameraDescriptorSets), VK_NULL_HANDLE);
+											vkFreeDescriptorSets(vk_hDevice, vk_hWorldCameraDescriptorPool, RE_VK_FRAMES_IN_FLIGHT, vk_ahWorldCameraDescriptorSets.data());
+											vk_ahWorldCameraDescriptorSets.fill(VK_NULL_HANDLE);
 										} else
 											RE_FATAL_ERROR("Failed allocating Vulkan descriptor set for camera uniform buffer");
 										vkDestroyDescriptorPool(vk_hDevice, vk_hWorldCameraDescriptorPool, nullptr);
@@ -529,12 +532,12 @@ namespace RE {
 	
 	void destroy_renderer() {
 		CATCH_SIGNAL(destroy_game_object_renderer());
-		vkFreeCommandBuffers(vk_hDevice, vk_ahCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX], RE_VK_FRAMES_IN_FLIGHT, vk_ahRenderCommandBuffers);
-		for (uint16_t u16RenderSemaphoreDeleteIndex = 0U; u16RenderSemaphoreDeleteIndex < RE_VK_RENDER_SEMAPHORE_COUNT; u16RenderSemaphoreDeleteIndex++) {
+		vkFreeCommandBuffers(vk_hDevice, vk_ahCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX], RE_VK_FRAMES_IN_FLIGHT, vk_ahRenderCommandBuffers.data());
+		for (uint16_t u16RenderSemaphoreDeleteIndex = 0; u16RenderSemaphoreDeleteIndex < RE_VK_RENDER_SEMAPHORE_COUNT; u16RenderSemaphoreDeleteIndex++) {
 			vkDestroySemaphore(vk_hDevice, vk_ahRenderSemaphores[u16RenderSemaphoreDeleteIndex], nullptr);
 			vk_ahRenderSemaphores[u16RenderSemaphoreDeleteIndex] = VK_NULL_HANDLE;
 		}
-		for (uint8_t u8FrameInFlightDeleteIndex = 0U; u8FrameInFlightDeleteIndex < RE_VK_FRAMES_IN_FLIGHT; u8FrameInFlightDeleteIndex++) {
+		for (uint8_t u8FrameInFlightDeleteIndex = 0; u8FrameInFlightDeleteIndex < RE_VK_FRAMES_IN_FLIGHT; u8FrameInFlightDeleteIndex++) {
 			vkDestroyImageView(vk_hDevice, vk_ahWorldDepthStencilImageViews[u8FrameInFlightDeleteIndex], nullptr);
 			vkFreeMemory(vk_hDevice, vk_ahWorldDepthStencilImageMemories[u8FrameInFlightDeleteIndex], nullptr);
 			vkDestroyImage(vk_hDevice, vk_ahWorldDepthStencilImages[u8FrameInFlightDeleteIndex], nullptr);
@@ -558,7 +561,7 @@ namespace RE {
 		vkDestroyDescriptorSetLayout(vk_hDevice, vk_hWorldCameraDescriptorSetLayout, nullptr);
 		vkFreeMemory(vk_hDevice, vk_hRectIndexBufferMemory, nullptr);
 		vkDestroyBuffer(vk_hDevice, vk_hRectIndexBuffer, nullptr);
-		std::fill(std::begin(vk_ahRenderCommandBuffers), std::end(vk_ahRenderCommandBuffers), VK_NULL_HANDLE);
+		vk_ahRenderCommandBuffers.fill(VK_NULL_HANDLE);
 		vk_hWorldRenderPass = VK_NULL_HANDLE;
 		vk_hWorldBasicPipelineLayout = VK_NULL_HANDLE;
 		vk_hWorldCameraDescriptorSetLayout = VK_NULL_HANDLE;
@@ -568,7 +571,7 @@ namespace RE {
 	}
 
 	void render() {
-		vkWaitForFences(vk_hDevice, 1U, &vk_ahRenderFences[u8CurrentFrameInFlightIndex], VK_TRUE, std::numeric_limits<uint64_t>::max());
+		vkWaitForFences(vk_hDevice, 1, &vk_ahRenderFences[u8CurrentFrameInFlightIndex], VK_TRUE, std::numeric_limits<uint64_t>::max());
 		uint32_t u32NextSwapchainImageIndex;
 		const VkResult vk_eSwapchainImageAcquireResult = vkAcquireNextImageKHR(vk_hDevice, vk_hSwapchain, std::numeric_limits<uint64_t>::max(), vk_pahSwapchainSemaphores[u32SwapchainRenderImageIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE], VK_NULL_HANDLE, &u32NextSwapchainImageIndex);
 		switch (vk_eSwapchainImageAcquireResult) {
@@ -589,15 +592,15 @@ namespace RE {
 		} else {
 			const VkCopyDescriptorSet vk_copyCameraDescriptorSet = {
 				.sType = VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET,
-				.srcSet = vk_ahWorldCameraDescriptorSets[u8CurrentFrameInFlightIndex == 0U ? (RE_VK_FRAMES_IN_FLIGHT - 1U) : (u8CurrentFrameInFlightIndex - 1U)],
-				.srcBinding = 0U,
-				.srcArrayElement = 0U,
+				.srcSet = vk_ahWorldCameraDescriptorSets[u8CurrentFrameInFlightIndex == 0 ? (RE_VK_FRAMES_IN_FLIGHT - 1) : (u8CurrentFrameInFlightIndex - 1)],
+				.srcBinding = 0,
+				.srcArrayElement = 0,
 				.dstSet = vk_ahWorldCameraDescriptorSets[u8CurrentFrameInFlightIndex],
-				.dstBinding = 0U,
-				.dstArrayElement = 0U,
-				.descriptorCount = 1U
+				.dstBinding = 0,
+				.dstArrayElement = 0,
+				.descriptorCount = 1
 			};
-			vkUpdateDescriptorSets(vk_hDevice, 0U, nullptr, 1U, &vk_copyCameraDescriptorSet);
+			vkUpdateDescriptorSets(vk_hDevice, 0, nullptr, 1, &vk_copyCameraDescriptorSet);
 		}
 		if (!CATCH_SIGNAL_AND_RETURN(render_game_objects(), bool))
 			return;
@@ -605,8 +608,8 @@ namespace RE {
 			RE_FATAL_ERROR("Failed beginning to record Vulkan command buffer for rendering everything");
 			return;
 		}
-		constexpr uint32_t u32ClearValueCount = 2U;
-		const VkClearValue vk_aClearValues[u32ClearValueCount] = {
+		constexpr uint32_t u32ClearValueCount = 2;
+		const std::array<VkClearValue, u32ClearValueCount> vk_aClearValues = {{
 			{
 				.color = {
 					.float32 = {
@@ -619,10 +622,10 @@ namespace RE {
 			}, {
 				.depthStencil = {
 					.depth = 0.0f,
-					.stencil = 0U
+					.stencil = 0
 				}
 			}
-		};
+		}};
 		const VkRenderPassBeginInfo vk_renderPassInfo = {
 			.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
 			.renderPass = vk_hWorldRenderPass,
@@ -632,18 +635,18 @@ namespace RE {
 				vk_worldRenderImageExtent
 			},
 			.clearValueCount = u32ClearValueCount,
-			.pClearValues = vk_aClearValues
+			.pClearValues = vk_aClearValues.data()
 		};
 		vkCmdBeginRenderPass(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], &vk_renderPassInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
-		vkCmdExecuteCommands(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], 1U, &vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex]);
+		vkCmdExecuteCommands(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], 1, &vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex]);
 		vkCmdEndRenderPass(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex]);
 		CATCH_SIGNAL(vk_cmd_transit_image(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, VK_ACCESS_NONE, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, vk_pahSwapchainImages[u32NextSwapchainImageIndex], VK_IMAGE_ASPECT_COLOR_BIT));
 		const VkImageBlit vk_worldRenderImageBlit = {
 			.srcSubresource = {
 				.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-				.mipLevel = 0U,
-				.baseArrayLayer = 0U,
-				.layerCount = 1U
+				.mipLevel = 0,
+				.baseArrayLayer = 0,
+				.layerCount = 1
 			},
 			.srcOffsets = {
 				{
@@ -658,9 +661,9 @@ namespace RE {
 			},
 			.dstSubresource = {
 				.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-				.mipLevel = 0U,
-				.baseArrayLayer = 0U,
-				.layerCount = 1U
+				.mipLevel = 0,
+				.baseArrayLayer = 0,
+				.layerCount = 1
 			},
 			.dstOffsets = {
 				{
@@ -678,55 +681,55 @@ namespace RE {
 			const VkImageResolve vk_worldRenderImageResolve = {
 				.srcSubresource = {
 					.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-					.mipLevel = 0U,
-					.baseArrayLayer = 0U,
-					.layerCount = 1U
+					.mipLevel = 0,
+					.baseArrayLayer = 0,
+					.layerCount = 1
 				},
 				.dstSubresource = {
 					.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-					.mipLevel = 0U,
-					.baseArrayLayer = 0U,
-					.layerCount = 1U
+					.mipLevel = 0,
+					.baseArrayLayer = 0,
+					.layerCount = 1
 				},
 				.extent = {
 					.width = vk_worldRenderImageExtent.width,
 					.height = vk_worldRenderImageExtent.height,
-					.depth = 1U
+					.depth = 1
 				}
 			};
 			if (eScreenPercentage != SCREEN_PERCENTAGE_SWAPCHAIN_EQUAL) {
 				CATCH_SIGNAL(vk_cmd_transit_image(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, VK_ACCESS_NONE, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, vk_ahSingleSampledWorldRenderImages[u8CurrentFrameInFlightIndex], VK_IMAGE_ASPECT_COLOR_BIT));
-				vkCmdResolveImage(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], vk_ahWorldRenderImages[u8CurrentFrameInFlightIndex], VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, vk_ahSingleSampledWorldRenderImages[u8CurrentFrameInFlightIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1U, &vk_worldRenderImageResolve);
+				vkCmdResolveImage(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], vk_ahWorldRenderImages[u8CurrentFrameInFlightIndex], VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, vk_ahSingleSampledWorldRenderImages[u8CurrentFrameInFlightIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &vk_worldRenderImageResolve);
 				CATCH_SIGNAL(vk_cmd_transit_image(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, vk_ahSingleSampledWorldRenderImages[u8CurrentFrameInFlightIndex], VK_IMAGE_ASPECT_COLOR_BIT));
-				vkCmdBlitImage(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], vk_ahSingleSampledWorldRenderImages[u8CurrentFrameInFlightIndex], VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, vk_pahSwapchainImages[u32NextSwapchainImageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1U, &vk_worldRenderImageBlit, VK_FILTER_LINEAR);
+				vkCmdBlitImage(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], vk_ahSingleSampledWorldRenderImages[u8CurrentFrameInFlightIndex], VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, vk_pahSwapchainImages[u32NextSwapchainImageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &vk_worldRenderImageBlit, VK_FILTER_LINEAR);
 			} else
-				vkCmdResolveImage(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], vk_ahWorldRenderImages[u8CurrentFrameInFlightIndex], VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, vk_pahSwapchainImages[u32NextSwapchainImageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1U, &vk_worldRenderImageResolve);
+				vkCmdResolveImage(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], vk_ahWorldRenderImages[u8CurrentFrameInFlightIndex], VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, vk_pahSwapchainImages[u32NextSwapchainImageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &vk_worldRenderImageResolve);
 		} else
-			vkCmdBlitImage(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], vk_ahWorldRenderImages[u8CurrentFrameInFlightIndex], VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, vk_pahSwapchainImages[u32NextSwapchainImageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1U, &vk_worldRenderImageBlit, VK_FILTER_LINEAR);
+			vkCmdBlitImage(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], vk_ahWorldRenderImages[u8CurrentFrameInFlightIndex], VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, vk_pahSwapchainImages[u32NextSwapchainImageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &vk_worldRenderImageBlit, VK_FILTER_LINEAR);
 		CATCH_SIGNAL(vk_cmd_transit_image(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_NONE, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, vk_pahSwapchainImages[u32NextSwapchainImageIndex], VK_IMAGE_ASPECT_COLOR_BIT));
 		if (vkEndCommandBuffer(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex]) != VK_SUCCESS) {
 			RE_FATAL_ERROR("Failed finishing to record Vulkan command buffer for rendering everything");
 			return;
 		}
-		vkResetFences(vk_hDevice, 1U, &vk_ahRenderFences[u8CurrentFrameInFlightIndex]);
-		constexpr uint32_t u32RenderSemaphoresToWaitForCount = 1U + RE_VK_SEMAPHORES_PER_FRAME_COUNT;
-		constexpr VkPipelineStageFlags vk_aePipelinesToWaitForBeforeRendering[u32RenderSemaphoresToWaitForCount] = {
+		vkResetFences(vk_hDevice, 1, &vk_ahRenderFences[u8CurrentFrameInFlightIndex]);
+		constexpr uint32_t u32RenderSemaphoresToWaitForCount = 1 + RE_VK_SEMAPHORES_PER_FRAME_COUNT;
+		const std::array<VkPipelineStageFlags, u32RenderSemaphoresToWaitForCount> vk_aePipelinesToWaitForBeforeRendering = {
 			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 
 			VK_PIPELINE_STAGE_TRANSFER_BIT
 		};
-		const VkSemaphore vk_ahWaitForSemaphoresBeforeRendering[u32RenderSemaphoresToWaitForCount] = {
+		const std::array<VkSemaphore, u32RenderSemaphoresToWaitForCount> vk_ahWaitForSemaphoresBeforeRendering = {
 			vk_pahSwapchainSemaphores[u32SwapchainRenderImageIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE], 
 			vk_ahRenderSemaphores[u8CurrentFrameInFlightIndex * RE_VK_SEMAPHORES_PER_FRAME_COUNT + RE_VK_TRANSFER_GAME_OBJECT_VERTICES_SEMAPHORE_INDEX]
 		};
-		if (!CATCH_SIGNAL_AND_RETURN(submit_to_vulkan_queue(vk_ahDeviceQueueFamilies[RE_VK_QUEUE_GRAPHICS_INDEX], u32RenderSemaphoresToWaitForCount, vk_ahWaitForSemaphoresBeforeRendering, vk_aePipelinesToWaitForBeforeRendering, 1U, &vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], 1U, &vk_pahSwapchainSemaphores[u32SwapchainRenderImageIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE + 1U], vk_ahRenderFences[u8CurrentFrameInFlightIndex]), bool)) {
+		if (!CATCH_SIGNAL_AND_RETURN(submit_to_vulkan_queue(vk_ahDeviceQueueFamilies[RE_VK_QUEUE_GRAPHICS_INDEX], u32RenderSemaphoresToWaitForCount, vk_ahWaitForSemaphoresBeforeRendering.data(), vk_aePipelinesToWaitForBeforeRendering.data(), 1, &vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], 1, &vk_pahSwapchainSemaphores[u32SwapchainRenderImageIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE + 1], vk_ahRenderFences[u8CurrentFrameInFlightIndex]), bool)) {
 			RE_FATAL_ERROR("Failed submitting the task for rendering everything to the Vulkan GPU");
 			return;
 		}
 		const VkPresentInfoKHR vk_presentInfo = {
 			.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
-			.waitSemaphoreCount = 1U,
+			.waitSemaphoreCount = 1,
 			.pWaitSemaphores = &vk_pahSwapchainSemaphores[u32SwapchainRenderImageIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE + 1U],
-			.swapchainCount = 1U,
+			.swapchainCount = 1,
 			.pSwapchains = &vk_hSwapchain,
 			.pImageIndices = &u32NextSwapchainImageIndex
 		};
@@ -742,8 +745,8 @@ namespace RE {
 				break;
 		}
 		CATCH_SIGNAL(Window::pInstance->post_rendering_window_proc());
-		u32SwapchainRenderImageIndex = (u32SwapchainRenderImageIndex + 1U) % u32SwapchainImageCount;
-		u8CurrentFrameInFlightIndex = (u8CurrentFrameInFlightIndex + 1U) % RE_VK_FRAMES_IN_FLIGHT;
+		u32SwapchainRenderImageIndex = (u32SwapchainRenderImageIndex + 1) % u32SwapchainImageCount;
+		u8CurrentFrameInFlightIndex = (u8CurrentFrameInFlightIndex + 1) % RE_VK_FRAMES_IN_FLIGHT;
 	}
 
 	bool swapchain_created_renderer() {
@@ -751,10 +754,10 @@ namespace RE {
 			.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
 		};
 		vk_pahSwapchainSemaphores = new VkSemaphore[RE_VK_SWAPCHAIN_SEMAPHORE_COUNT];
-		for (uint32_t u32PresentSemaphoreCreateIndex = 0U; u32PresentSemaphoreCreateIndex < RE_VK_SWAPCHAIN_SEMAPHORE_COUNT; u32PresentSemaphoreCreateIndex++)
+		for (uint32_t u32PresentSemaphoreCreateIndex = 0; u32PresentSemaphoreCreateIndex < RE_VK_SWAPCHAIN_SEMAPHORE_COUNT; u32PresentSemaphoreCreateIndex++)
 			if (vkCreateSemaphore(vk_hDevice, &vk_presentSemaphoreCreateInfo, nullptr, &vk_pahSwapchainSemaphores[u32PresentSemaphoreCreateIndex]) != VK_SUCCESS) {
 				RE_FATAL_ERROR(append_to_string("Failed creating Vulkan semaphore at index ", u32PresentSemaphoreCreateIndex, " for synchronizing rendering procedures"));
-				for (uint32_t u8WorldRenderImageCollectionDeleteIndex = 0U; u8WorldRenderImageCollectionDeleteIndex < u32PresentSemaphoreCreateIndex; u8WorldRenderImageCollectionDeleteIndex++)
+				for (uint32_t u8WorldRenderImageCollectionDeleteIndex = 0; u8WorldRenderImageCollectionDeleteIndex < u32PresentSemaphoreCreateIndex; u8WorldRenderImageCollectionDeleteIndex++)
 					vkDestroySemaphore(vk_hDevice, vk_pahSwapchainSemaphores[u8WorldRenderImageCollectionDeleteIndex], nullptr);
 				DELETE_ARRAY_SAFELY(vk_pahSwapchainSemaphores);
 				return false;
@@ -777,7 +780,7 @@ namespace RE {
 	void swapchain_destroyed_renderer() {
 		if (!vk_pahSwapchainSemaphores)
 			return;
-		for (uint32_t u8WorldRenderImageCollectionDeleteIndex = 0U; u8WorldRenderImageCollectionDeleteIndex < RE_VK_SWAPCHAIN_SEMAPHORE_COUNT; u8WorldRenderImageCollectionDeleteIndex++)
+		for (uint32_t u8WorldRenderImageCollectionDeleteIndex = 0; u8WorldRenderImageCollectionDeleteIndex < RE_VK_SWAPCHAIN_SEMAPHORE_COUNT; u8WorldRenderImageCollectionDeleteIndex++)
 			vkDestroySemaphore(vk_hDevice, vk_pahSwapchainSemaphores[u8WorldRenderImageCollectionDeleteIndex], nullptr);
 		DELETE_ARRAY_SAFELY(vk_pahSwapchainSemaphores);
 		if (eScreenPercentage != SCREEN_PERCENTAGE_CONST_IMG_SIZE)
@@ -819,7 +822,7 @@ namespace RE {
 	void set_msaa_mode(const MsaaMode eNewMsaaMode) {
 		MsaaMode eNextMsaaMode = eNewMsaaMode;
 		while (!is_msaa_mode_supported(eNextMsaaMode) && eNextMsaaMode != RE_MSAA_MODE_1)
-			eNextMsaaMode = static_cast<MsaaMode>(static_cast<uint8_t>(eNextMsaaMode) - 1U);
+			eNextMsaaMode = static_cast<MsaaMode>(static_cast<uint8_t>(eNextMsaaMode) - 1);
 		if (eNewMsaaMode != eNextMsaaMode)
 			RE_WARNING(append_to_string("MSAA mode ", std::pow(2, static_cast<int32_t>(eNewMsaaMode)), " is not supported on this GPU and dropped down to ", std::pow(2, static_cast<int32_t>(eNextMsaaMode))));
 		VkSampleCountFlagBits vk_eNewSampleCount;
@@ -886,15 +889,15 @@ namespace RE {
 		}
 	}
 
-	void get_supported_msaa_modes(const uint8_t u8ListLength, MsaaMode *const peSupportedMsaaModes, uint8_t *const pu8SupportedMsaaModeCount) {
-		if (!peSupportedMsaaModes || !u8ListLength)
+	void get_supported_msaa_modes(const uint8_t u8ListLength, MsaaMode *const paeSupportedMsaaModes, uint8_t *const pu8SupportedMsaaModeCount) {
+		if (!paeSupportedMsaaModes || !u8ListLength)
 			return;
-		uint8_t u8Index = 0U;
-		for (uint8_t u8MsaaModeIndex = 0U; u8MsaaModeIndex < static_cast<uint8_t>(RE_MSAA_MODE_64) && u8Index < u8ListLength; u8MsaaModeIndex++) {
+		uint8_t u8Index = 0;
+		for (uint8_t u8MsaaModeIndex = 0; u8MsaaModeIndex < static_cast<uint8_t>(RE_MSAA_MODE_64) && u8Index < u8ListLength; u8MsaaModeIndex++) {
 			const MsaaMode eMsaaMode = static_cast<MsaaMode>(u8MsaaModeIndex);
 			if (is_msaa_mode_supported(eMsaaMode)) {
-				if (peSupportedMsaaModes)
-					peSupportedMsaaModes[u8Index] = eMsaaMode;
+				if (paeSupportedMsaaModes)
+					paeSupportedMsaaModes[u8Index] = eMsaaMode;
 				u8Index++;
 			}
 		}
@@ -904,7 +907,7 @@ namespace RE {
 
 	[[nodiscard]]
 	MsaaMode get_highest_supported_msaa_mode() {
-		for (uint8_t u8MsaaModeIndex = static_cast<uint8_t>(RE_MSAA_MODE_64); u8MsaaModeIndex > 0U; u8MsaaModeIndex--) {
+		for (uint8_t u8MsaaModeIndex = static_cast<uint8_t>(RE_MSAA_MODE_64); u8MsaaModeIndex > 0; u8MsaaModeIndex--) {
 			const MsaaMode eMsaaMode = static_cast<MsaaMode>(u8MsaaModeIndex);
 			if (is_msaa_mode_supported(eMsaaMode))
 				return eMsaaMode;

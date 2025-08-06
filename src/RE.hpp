@@ -23,6 +23,7 @@
 #include <stdint.h>
 #include <random>
 #include <limits.h>
+#include <array>
 
 namespace RE {
 
@@ -194,10 +195,10 @@ namespace RE {
 		if constexpr (sizeof...(content) == 0)
 			return;
 		([&]() {
-			if constexpr (std::is_same_v<T, uint8_t>)
-				std::cout << static_cast<uint16_t>(content);
-			else if constexpr (std::is_same_v<T, int8_t>)
+			if constexpr (std::is_same_v<T, int8_t>)
 				std::cout << static_cast<int16_t>(content);
+			else if constexpr (std::is_same_v<T, uint8_t>)
+				std::cout << static_cast<uint16_t>(content);
 			else if constexpr (std::is_same_v<T, wchar_t> || std::is_same_v<T, const wchar_t> || std::is_same_v<T, wchar_t*> || std::is_same_v<T, const wchar_t*> || std::is_same_v<T, std::wstring>)
 				std::wcout << content;
 			else
@@ -205,7 +206,7 @@ namespace RE {
 		} (), ...);
 	}
 	template <class... T>
-	void println(T... content) {
+	void println(const T... content) {
 		print(content..., "\n");
 	}
 	void print_colored(const char *pcContent, TerminalColor eColor, bool bBackgroundColored, bool bBold);
@@ -267,7 +268,14 @@ namespace RE {
 	[[nodiscard]]
 	std::string append_to_string(T... strings) {
 		std::stringstream ss("");
-		(ss << ... << strings);
+		([&]() {
+			if constexpr (std::is_same_v<T, int8_t>)
+				ss << static_cast<int16_t>(strings);
+			else if constexpr (std::is_same_v<T, uint8_t>)
+				ss << static_cast<uint16_t>(strings);
+			else
+				ss << strings;
+		} (), ...);
 		return std::string(ss.str());
 	}
 
@@ -275,7 +283,14 @@ namespace RE {
 	[[nodiscard]]
 	std::wstring append_to_wstring(T... strings) {
 		std::wstringstream wss(L"");
-		(wss << ... << strings);
+		([&]() {
+			if constexpr (std::is_same_v<T, int8_t>)
+				wss << static_cast<int16_t>(strings);
+			else if constexpr (std::is_same_v<T, uint8_t>)
+				wss << static_cast<uint16_t>(strings);
+			else
+				wss << strings;
+		} (), ...);
 		return std::wstring(wss.str());
 	}
 
@@ -311,13 +326,18 @@ namespace RE {
 
 	template <typename T>
 	[[nodiscard]]
-	std::string array_to_string(const T arrayToPrint[], const uint32_t u32ArrayLength) {
+	std::string array_to_string(const T array[], const size_t arrayLength) {
 		std::stringstream ss("");
 		ss << '{';
-		for (uint32_t u32Index = 0U; u32Index < u32ArrayLength; u32Index++) {
-			if (u32Index)
+		for (size_t i = 0; i < arrayLength; i++) {
+			if (i)
 				ss << ", ";
-			ss << arrayToPrint[u32Index];
+			if constexpr (std::is_same_v<T, int8_t>)
+				ss << static_cast<int16_t>(array[i]);
+			else if constexpr (std::is_same_v<T, uint8_t>)
+				ss << static_cast<uint16_t>(array[i]);
+			else
+				ss << array[i];
 		}
 		ss << '}';
 		return std::string(ss.str());
@@ -448,7 +468,7 @@ namespace RE {
 		static_assert(u32Dimensions != 0U, "A data-template has zero dimensions");
 
 		public:
-			T data[u32Dimensions];
+			std::array<T, u32Dimensions> data;
 
 			Vector() : data{} {}
 			template <typename P, uint32_t u32CopyDimensions>
@@ -572,7 +592,7 @@ namespace RE {
 
 	class Color final {
 		private:
-			float a4fChannels[4];
+			std::array<float, 4> a4fChannels;
 
 		public:
 			Color();
@@ -758,11 +778,15 @@ namespace RE {
 			void change_scancode(uint32_t u32NewScancode);
 
 			[[nodiscard]]
-			bool is_pressed() const;
-			[[nodiscard]]
 			bool is_down() const;
 			[[nodiscard]]
+			bool was_down() const;
+			[[nodiscard]]
+			bool is_pressed() const;
+			[[nodiscard]]
 			bool is_released() const;
+			[[nodiscard]]
+			bool is_held_down() const;
 			void reset_input_state() const;
 
 			[[nodiscard]]
@@ -797,7 +821,34 @@ namespace RE {
 	void reset_keyboard_input();
 
 	// Input
+	[[nodiscard]]
+	bool is_down(Input eInput, uint32_t u32Scancode);
+	[[nodiscard]]
+	bool was_down(Input eInput, uint32_t u32Scancode);
+	[[nodiscard]]
+	bool is_pressed(Input eInput, uint32_t u32Scancode);
+	[[nodiscard]]
+	bool is_released(Input eInput, uint32_t u32Scancode);
+	[[nodiscard]]
+	bool is_held_down(Input eInput, uint32_t u32Scancode);
+	void reset_input_at(Input eInput, uint32_t u32Scancode);
 	void reset_all_input();
+	[[nodiscard]]
+	constexpr bool is_scroll_input(const Input eInput) {
+		return eInput == RE_INPUT_SCROLL_UP || eInput == RE_INPUT_SCROLL_DOWN;
+	}
+	[[nodiscard]]
+	constexpr bool is_button_input(const Input eInput) {
+		return eInput >= RE_INPUT_BUTTON_LEFT && eInput <= RE_INPUT_BUTTON_MIDDLE;
+	}
+	[[nodiscard]]
+	constexpr bool is_mouse_input(const Input eInput) {
+		return is_scroll_input(eInput) || is_button_input(eInput);
+	}
+	[[nodiscard]]
+	constexpr bool is_key_input(const Input eInput) {
+		return eInput >= RE_INPUT_KEY_SPACE && eInput < RE_INPUT_MAX_ENUM;
+	}
 
 	// Program execution
 	void execute();

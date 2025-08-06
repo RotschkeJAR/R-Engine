@@ -9,7 +9,7 @@ namespace RE {
 	
 	class ListBatch_Camera final {
 		private:
-			Camera *apCameras[MAX_CAMERAS_PER_BATCH];
+			std::array<Camera*, MAX_CAMERAS_PER_BATCH> apCameras;
 			uint8_t u8Count;
 
 		public:

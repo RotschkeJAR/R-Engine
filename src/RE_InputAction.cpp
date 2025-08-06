@@ -62,17 +62,27 @@ namespace RE {
 
 	[[nodiscard]]
 	bool InputAction::is_pressed() const {
-		return has_valid_input_values() ? (is_key_down(eInput, u32KeyScancode) && !was_key_down(eInput, u32KeyScancode)) : false;
+		return RE::is_pressed(eInput, u32KeyScancode);
 	}
 
 	[[nodiscard]]
 	bool InputAction::is_down() const {
-		return has_valid_input_values() ? is_key_down(eInput, u32KeyScancode) : false;
+		return RE::is_down(eInput, u32KeyScancode);
+	}
+
+	[[nodiscard]]
+	bool InputAction::was_down() const {
+		return RE::was_down(eInput, u32KeyScancode);
 	}
 
 	[[nodiscard]]
 	bool InputAction::is_released() const {
-		return has_valid_input_values() ? (!is_key_down(eInput, u32KeyScancode) && was_key_down(eInput, u32KeyScancode)) : false;
+		return RE::is_released(eInput, u32KeyScancode);
+	}
+
+	[[nodiscard]]
+	bool InputAction::is_held_down() const {
+		return RE::is_held_down(eInput, u32KeyScancode);
 	}
 
 	void InputAction::reset_input_state() const {

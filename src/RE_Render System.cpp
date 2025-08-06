@@ -18,8 +18,8 @@ namespace RE {
 	VkPhysicalDeviceLimits vk_physicalDeviceLimits = {};
 	VkPhysicalDeviceFeatures vk_physicalDeviceFeatures = {};
 	VkPhysicalDeviceMemoryProperties vk_physicalDeviceMemoryProperties = {};
-	VkQueue vk_ahDeviceQueueFamilies[RE_VK_QUEUE_COUNT] = {};
-	uint32_t au32DeviceQueueFamilyIndices[RE_VK_QUEUE_COUNT] = {};
+	std::array<VkQueue, RE_VK_QUEUE_COUNT> vk_ahDeviceQueueFamilies = {};
+	std::array<uint32_t, RE_VK_QUEUE_COUNT> au32DeviceQueueFamilyIndices = {};
 	VkSurfaceKHR vk_hSurface = VK_NULL_HANDLE;
 	VkSurfaceCapabilitiesKHR vk_surfaceCapabilities = {};
 	uint32_t u32SurfaceFormatsAvailableCount = 0U;
@@ -32,7 +32,7 @@ namespace RE {
 	uint32_t u32SwapchainImageCount = 0U;
 	VkImage *vk_pahSwapchainImages = nullptr;
 	VkImageView *vk_pahSwapchainImageViews = nullptr;
-	VkCommandPool vk_ahCommandPools[RE_VK_COMMAND_POOL_COUNT] = {};
+	std::array<VkCommandPool, RE_VK_COMMAND_POOL_COUNT> vk_ahCommandPools = {};
 	VkCommandBuffer vk_hDummyTransferCommandBuffer = VK_NULL_HANDLE;
 	VkFormat vk_eDepthStencilBufferFormat = VK_FORMAT_UNDEFINED;
 

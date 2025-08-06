@@ -10,8 +10,10 @@ namespace RE {
 	class RenderBatch_GameObject {
 		private:
 			ListBatch_GameObject &rGameObjectBatch;
-			VkBuffer vk_hStagingVertexBuffer, vk_ahVertexBuffers[RE_VK_FRAMES_IN_FLIGHT];
-			VkDeviceMemory vk_hStagingVertexBufferMemory, vk_ahVertexBufferMemories[RE_VK_FRAMES_IN_FLIGHT];
+			VkBuffer vk_hStagingVertexBuffer;
+			std::array<VkBuffer, RE_VK_FRAMES_IN_FLIGHT> vk_ahVertexBuffers;
+			VkDeviceMemory vk_hStagingVertexBufferMemory;
+			std::array<VkDeviceMemory, RE_VK_FRAMES_IN_FLIGHT> vk_ahVertexBufferMemories;
 			float *pafVertices;
 			VkDeviceSize vk_transparentVerticesOffsetBytes;
 			uint16_t u16TransparentCount;

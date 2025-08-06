@@ -10,7 +10,6 @@
 #include <time.h>
 #include <chrono>
 #include <unordered_map>
-#include <array>
 #include <thread>
 
 #include "RE.hpp"

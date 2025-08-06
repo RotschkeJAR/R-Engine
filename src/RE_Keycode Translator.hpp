@@ -118,7 +118,7 @@ namespace RE {
 	}
 
 	[[nodiscard]]
-	constexpr Input key_from_virtual_keycode(int64_t i64VirtualKeyCode) {
+	constexpr Input key_from_virtual_keycode(const int64_t i64VirtualKeyCode) {
 		switch (i64VirtualKeyCode) {
 			case VK_SPACE:
 				return RE_INPUT_KEY_SPACE;
@@ -231,7 +231,7 @@ namespace RE {
 #elif defined RE_OS_LINUX
 
 	[[nodiscard]]
-	constexpr int64_t virtual_keycode_from_key(Input eKey) {
+	constexpr int64_t virtual_keycode_from_key(const Input eKey) {
 		switch (eKey) {
 			case RE_INPUT_KEY_SPACE:
 				return XK_space;
@@ -338,7 +338,7 @@ namespace RE {
 	}
 
 	[[nodiscard]]
-	constexpr Input key_from_virtual_keycode(int64_t i64VirtualKeyCode) {
+	constexpr Input key_from_virtual_keycode(const int64_t i64VirtualKeyCode) {
 		switch (i64VirtualKeyCode) {
 			case XK_space:
 				return RE_INPUT_KEY_SPACE;

@@ -17,13 +17,15 @@ namespace RE {
 	}
 	
 	bool RenderBatch_GameObject::init() {
-		constexpr uint32_t u32StagingVertexBufferQueueCount = 1U, au32StagingVertexBufferQueues[u32StagingVertexBufferQueueCount] = {RE_VK_QUEUE_TRANSFER_INDEX};
-		if (create_vulkan_buffer(RE_VK_TRANSPARENT_GAME_OBJECT_VERTEX_BUFFER_SIZE_BYTES, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, u32StagingVertexBufferQueueCount, au32StagingVertexBufferQueues, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &vk_hStagingVertexBuffer, &vk_hStagingVertexBufferMemory)) {
+		constexpr uint32_t u32StagingVertexBufferQueueCount = 1U;
+		const std::array<uint32_t, u32StagingVertexBufferQueueCount> au32StagingVertexBufferQueues = {RE_VK_QUEUE_TRANSFER_INDEX};
+		if (create_vulkan_buffer(RE_VK_TRANSPARENT_GAME_OBJECT_VERTEX_BUFFER_SIZE_BYTES, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, u32StagingVertexBufferQueueCount, au32StagingVertexBufferQueues.data(), VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &vk_hStagingVertexBuffer, &vk_hStagingVertexBufferMemory)) {
 			vkMapMemory(vk_hDevice, vk_hStagingVertexBufferMemory, 0UL, RE_VK_TRANSPARENT_GAME_OBJECT_VERTEX_BUFFER_SIZE_BYTES, 0, (void**) &pafVertices);
-			constexpr uint32_t u32VertexBufferQueueCount = 2U, au32VertexBufferQueues[u32VertexBufferQueueCount] = {RE_VK_QUEUE_GRAPHICS_INDEX, RE_VK_QUEUE_TRANSFER_INDEX};
+			constexpr uint32_t u32VertexBufferQueueCount = 2U;
+			const std::array<uint32_t, u32VertexBufferQueueCount> au32VertexBufferQueues = {RE_VK_QUEUE_GRAPHICS_INDEX, RE_VK_QUEUE_TRANSFER_INDEX};
 			uint16_t u16FrameInFlightCreateIndex = 0U;
 			while (u16FrameInFlightCreateIndex < RE_VK_FRAMES_IN_FLIGHT) {
-				if (!create_vulkan_buffer(RE_VK_TRANSPARENT_GAME_OBJECT_VERTEX_BUFFER_SIZE_BYTES, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, u32VertexBufferQueueCount, au32VertexBufferQueues, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_ahVertexBuffers[u16FrameInFlightCreateIndex], &vk_ahVertexBufferMemories[u16FrameInFlightCreateIndex])) {
+				if (!create_vulkan_buffer(RE_VK_TRANSPARENT_GAME_OBJECT_VERTEX_BUFFER_SIZE_BYTES, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, u32VertexBufferQueueCount, au32VertexBufferQueues.data(), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_ahVertexBuffers[u16FrameInFlightCreateIndex], &vk_ahVertexBufferMemories[u16FrameInFlightCreateIndex])) {
 					RE_FATAL_ERROR(append_to_string("Failed to create Vulkan vertex buffer at frame in flight-index ", u16FrameInFlightCreateIndex, " for rendering game objects"));
 					break;
 				}
@@ -66,9 +68,9 @@ namespace RE {
 	void RenderBatch_GameObject::render_opaque() {
 		u16TransparentCount = 0U;
 		uint16_t u16OpaqueCount = 0U;
-		for (uint16_t u16GameObjectIndex = 0U; u16GameObjectIndex < rGameObjectBatch.size(); u16GameObjectIndex++) {
+		for (uint16_t u16GameObjectIndex = 0; u16GameObjectIndex < rGameObjectBatch.size(); u16GameObjectIndex++) {
 			const GameObject *const pObject = rGameObjectBatch.get(u16GameObjectIndex);
-			if (!is_object_active(pObject))
+			if (!CATCH_SIGNAL_AND_RETURN(is_object_active(pObject), bool))
 				continue;
 			if (pObject->spriteRenderer.color[3] < 1.0f) {
 				const uint32_t u32TransparentIndex = (RE_VK_RENDERABLE_RECTANGLES_COUNT - u16TransparentCount - 1U) * RE_VK_TRANSPARENT_GAME_OBJECT_VERTEX_TOTAL_SIZE * 4U;

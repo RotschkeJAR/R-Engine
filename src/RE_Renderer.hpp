@@ -28,14 +28,14 @@ namespace RE {
 	extern VkDeviceMemory vk_hRectIndexBufferMemory;
 
 	extern VkDescriptorSetLayout vk_hWorldDescriptorSetLayout;
-	extern VkDescriptorSet vk_ahWorldCameraDescriptorSets[RE_VK_FRAMES_IN_FLIGHT];
+	extern std::array<VkDescriptorSet, RE_VK_FRAMES_IN_FLIGHT> vk_ahWorldCameraDescriptorSets;
 
 	extern VkPipelineLayout vk_hWorldBasicPipelineLayout;
 
 	extern VkRenderPass vk_hWorldRenderPass;
-	extern VkFramebuffer vk_ahWorldFramebuffers[RE_VK_FRAMES_IN_FLIGHT];
+	extern std::array<VkFramebuffer, RE_VK_FRAMES_IN_FLIGHT> vk_ahWorldFramebuffers;
 
-	extern VkSemaphore vk_ahRenderSemaphores[RE_VK_RENDER_SEMAPHORE_COUNT];
+	extern std::array<VkSemaphore, RE_VK_RENDER_SEMAPHORE_COUNT> vk_ahRenderSemaphores;
 
 	extern uint8_t u8CurrentFrameInFlightIndex;
 

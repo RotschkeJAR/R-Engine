@@ -58,7 +58,7 @@ namespace RE {
 			.commandBufferCount = 1U
 		};
 		if (vkAllocateCommandBuffers(vk_hDevice, &vk_commandBufferAllocInfo, &vk_hCommandBuffer) != VK_SUCCESS)
-			RE_ERROR(append_to_string("Failed to allocate a new command buffer in command pool ", vk_hCommandPool));
+			RE_ERROR("Failed to allocate a new command buffer in command pool ", vk_hCommandPool);
 	}
 	
 	Vulkan_CommandBuffer::~Vulkan_CommandBuffer() {
@@ -75,14 +75,14 @@ namespace RE {
 		};
 		const bool bSuccess = vkBeginCommandBuffer(vk_hCommandBuffer, &vk_beginRecordInfo) == VK_SUCCESS;
 		if (!bSuccess)
-			RE_ERROR(append_to_string("Failed to begin recording command buffer ", vk_hCommandBuffer));
+			RE_ERROR("Failed to begin recording command buffer ", vk_hCommandBuffer);
 		return bSuccess;
 	}
 
 	bool Vulkan_CommandBuffer::end_recording() const {
 		const bool bSuccess = vkEndCommandBuffer(vk_hCommandBuffer) == VK_SUCCESS;
 		if (!bSuccess)
-			RE_ERROR(append_to_string("Failed to finish recording command buffer ", vk_hCommandBuffer));
+			RE_ERROR("Failed to finish recording command buffer ", vk_hCommandBuffer);
 		return bSuccess;
 	}
 

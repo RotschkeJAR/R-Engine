@@ -14,7 +14,7 @@ namespace RE {
 		if (!pWindowWin64)
 			RE_ERROR("Window process function has been called when no window is active");
 		else if (pWindowWin64->win_hWindow != win_hWndParam && bRunning)
-			RE_ERROR(append_to_string("Window process function has been called by another window (actual: ", pWindowWin64->win_hWindow, "; passed to procedure: ", win_hWndParam, ")"));
+			RE_ERROR("Window process function has been called by another window (actual: ", pWindowWin64->win_hWindow, "; passed to procedure: ", win_hWndParam, ")");
 		else {
 			switch (win_uMsg) {
 				case WM_SIZE: /* resized */
@@ -123,9 +123,9 @@ namespace RE {
 				case WM_MOUSEWHEEL: { /* mouse wheel used/scrolled */
 					const int32_t deltaMouseWheel = GET_WHEEL_DELTA_WPARAM(win_wParam);
 					if (deltaMouseWheel > 0)
-						CATCH_SIGNAL(input_event(RE_INPUT_SCROLL_UP, 0U, true, false));
+						CATCH_SIGNAL(input_event(RE_INPUT_SCROLL_UP, 0, true, false));
 					else
-						CATCH_SIGNAL(input_event(RE_INPUT_SCROLL_DOWN, 0U, true, false));
+						CATCH_SIGNAL(input_event(RE_INPUT_SCROLL_DOWN, 0, true, false));
 					} return 0;
 				case RE_WM_MAXIMIZED: {
 					MONITORINFO win_monitorInfo = {};

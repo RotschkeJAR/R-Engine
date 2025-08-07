@@ -241,7 +241,7 @@ namespace RE {
 		PFN_vkVoidFunction pFunc;
 		CATCH_SIGNAL(pFunc = vkGetDeviceProcAddr(vk_hDevice, pcFuncName));
 		if (!pFunc)
-			RE_FATAL_ERROR(append_to_string("Failed loading the Vulkan logical device-level function \"", pcFuncName, "\""));
+			RE_FATAL_ERROR("Failed loading the Vulkan logical device-level function \"", pcFuncName, "\"");
 		return pFunc;
 	}
 

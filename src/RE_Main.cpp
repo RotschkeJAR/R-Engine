@@ -24,7 +24,7 @@ namespace RE {
 		CATCH_SIGNAL(Window::pInstance = new Window_X11());
 #else
 # warning The targeted OS is unknown, so the engine will terminate immediatly upon execution
-		RE_FATAL_ERROR("The OS is unknown. The engine can't initialize");
+		RE_ERROR("The OS is unknown. The engine can't initialize");
 		return;
 #endif
 		if (CATCH_SIGNAL_AND_RETURN(Window::pInstance && Window::pInstance->is_valid() && init_vulkan_instance(), bool)) {

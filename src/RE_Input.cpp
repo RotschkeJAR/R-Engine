@@ -129,7 +129,7 @@ namespace RE {
 				else if (u32EnteredScancode) {
 					// Keyboard input unknown
 					if (u8NumberOfKeys >= MAXIMUM_PHYSICAL_KEYS) {
-						RE_WARNING(append_to_string("New scancode ", hexadecimal_to_string(u32EnteredScancode, true), " cannot be added, because the list is full"));
+						RE_WARNING("New scancode ", hexadecimal_to_string(u32EnteredScancode, true), " cannot be added, because the list is full");
 						break;
 					}
 					uint8_t u8InsertionIndex = u8NumberOfKeys;
@@ -175,7 +175,7 @@ namespace RE {
 					set_bit<uint8_t>(au8KeyBuffer[u8KeyBufferInsertionIndex / 8], u8KeyBufferInsertionIndex % 8, bPressed);
 					set_bit<uint8_t>(au8PrevKeyBuffer[u8KeyBufferInsertionIndex / 8], u8KeyBufferInsertionIndex % 8, !bPressed);
 					u8NumberOfKeys++;
-					RE_NOTE(append_to_string("Remaining slots for more undetected physical keys: ", MAXIMUM_PHYSICAL_KEYS - u8NumberOfKeys));
+					RE_NOTE("Remaining slots for more undetected physical keys: ", MAXIMUM_PHYSICAL_KEYS - u8NumberOfKeys);
 				}
 				if (pUpdateInputObject && bPressed) {
 					if (u32EnteredScancode)

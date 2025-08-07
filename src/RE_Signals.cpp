@@ -55,7 +55,7 @@ namespace RE {
 			print(", at line ");
 			print_colored(std::to_string(locationData.u32Line).c_str(), RE_TERMINAL_COLOR_BRIGHT_WHITE, false, false);
 			if (std::strcmp(locationData.pcDetails, "\0") != 0)
-				print(append_to_string(": ", locationData.pcDetails));
+				print(": ", locationData.pcDetails);
 			println();
 			stackTrace.pop();
 		}

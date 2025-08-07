@@ -37,7 +37,7 @@ namespace RE {
 
 	[[nodiscard]]
 	std::string get_line(const char *const pcString, const uint32_t u32Line) {
-		uint32_t u32CurrentLine = 0U, u32CharacterIndex = 0U;
+		uint32_t u32CurrentLine = 0, u32CharacterIndex = 0;
 		std::stringstream resultStream("");
 		bool bReachedEndOfString = false;
 		while (true) {

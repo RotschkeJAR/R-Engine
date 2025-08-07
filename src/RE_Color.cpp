@@ -11,14 +11,14 @@ namespace RE {
 
 	void Color::set_channel(const uint8_t u8ChannelIndex, const float fNormal) {
 		switch (u8ChannelIndex) {
-			case 0U:
-			case 1U:
-			case 2U:
-			case 3U:
+			case 0:
+			case 1:
+			case 2:
+			case 3:
 				a4fChannels[u8ChannelIndex] = CLAMP_CHANNEL_VALUE(fNormal);
 				break;
 			default:
-				RE_ERROR(append_to_string("The channel index is not within the range [0, 3]: ", u8ChannelIndex).c_str());
+				RE_ERROR("The channel index is not within the range [0, 3]: ", u8ChannelIndex);
 				break;
 		}
 	}
@@ -77,7 +77,7 @@ namespace RE {
 		if (u32ChannelIndex < 4)
 			return a4fChannels[u32ChannelIndex];
 		else {
-			RE_ERROR(append_to_string("The channel index range is [0, 3], but yours was ", u32ChannelIndex));
+			RE_ERROR("The channel index range is [0, 3], but yours was ", u32ChannelIndex);
 			return 0.0f;
 		}
 	}

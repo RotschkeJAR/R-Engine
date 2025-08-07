@@ -191,29 +191,29 @@ namespace RE {
 								const VkImageView vk_ahFramebufferImageViews[u32FramebufferImageViewCount] = {vk_ahWorldRenderImageViews[u8WorldRenderImageCollectionCreateIndex], vk_ahWorldDepthStencilImageViews[u8WorldRenderImageCollectionCreateIndex]};
 								if (CATCH_SIGNAL_AND_RETURN(create_vulkan_framebuffer(0, vk_hWorldRenderPass, u32FramebufferImageViewCount, vk_ahFramebufferImageViews, vk_worldRenderImageExtent.width, vk_worldRenderImageExtent.height, 1, &vk_ahWorldFramebuffers[u8WorldRenderImageCollectionCreateIndex]), bool)) {
 									if (ARE_MSAA_AND_SCREEN_PERCENTAGE_MODIFIED() && !CATCH_SIGNAL_AND_RETURN(create_vulkan_image(0, VK_IMAGE_TYPE_2D, vk_eSwapchainImageFormat, vk_worldRenderImageExtent3D, 1, 1, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, u32GraphicsQueueOnlyCount, au32GraphicsQueueOnly, VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_ahSingleSampledWorldRenderImages[u8WorldRenderImageCollectionCreateIndex], &vk_ahSingleSampledWorldRenderImageMemories[u8WorldRenderImageCollectionCreateIndex]), bool))
-										RE_FATAL_ERROR(append_to_string("Failed to create Vulkan image at index ", u8WorldRenderImageCollectionCreateIndex, " to store single sampled image of the rendered world"));
+										RE_FATAL_ERROR("Failed to create Vulkan image at index ", u8WorldRenderImageCollectionCreateIndex, " to store single sampled image of the rendered world");
 									else {
 										u8WorldRenderImageCollectionCreateIndex++;
 										continue;
 									}
 								} else
-									RE_FATAL_ERROR(append_to_string("Failed creating Vulkan framebuffer at index ", u8WorldRenderImageCollectionCreateIndex, " for world rendering"));
+									RE_FATAL_ERROR("Failed creating Vulkan framebuffer at index ", u8WorldRenderImageCollectionCreateIndex, " for world rendering");
 							} else
-								RE_FATAL_ERROR(append_to_string("Failed transiting depth & stencil buffer at index ", u8WorldRenderImageCollectionCreateIndex, " to its required image layout"));
+								RE_FATAL_ERROR("Failed transiting depth & stencil buffer at index ", u8WorldRenderImageCollectionCreateIndex, " to its required image layout");
 							vkDestroyImageView(vk_hDevice, vk_ahWorldDepthStencilImageViews[u8WorldRenderImageCollectionCreateIndex], nullptr);
 						} else
-							RE_FATAL_ERROR(append_to_string("Failed to create Vulkan image view for the depth & stencil buffer at index ", u8WorldRenderImageCollectionCreateIndex));
+							RE_FATAL_ERROR("Failed to create Vulkan image view for the depth & stencil buffer at index ", u8WorldRenderImageCollectionCreateIndex);
 						vkFreeMemory(vk_hDevice, vk_ahWorldDepthStencilImageMemories[u8WorldRenderImageCollectionCreateIndex], nullptr);
 						vkDestroyImage(vk_hDevice, vk_ahWorldDepthStencilImages[u8WorldRenderImageCollectionCreateIndex], nullptr);
 					} else
-						RE_FATAL_ERROR(append_to_string("Failed to create Vulkan image for depth & stencil buffer usage at index ", u8WorldRenderImageCollectionCreateIndex));
+						RE_FATAL_ERROR("Failed to create Vulkan image for depth & stencil buffer usage at index ", u8WorldRenderImageCollectionCreateIndex);
 					vkDestroyImageView(vk_hDevice, vk_ahWorldRenderImageViews[u8WorldRenderImageCollectionCreateIndex], nullptr);
 				} else
-					RE_FATAL_ERROR(append_to_string("Failed creating Vulkan GPU-side image view at index ", u8WorldRenderImageCollectionCreateIndex, " for world rendering"));
+					RE_FATAL_ERROR("Failed creating Vulkan GPU-side image view at index ", u8WorldRenderImageCollectionCreateIndex, " for world rendering");
 				vkFreeMemory(vk_hDevice, vk_ahWorldRenderImageMemories[u8WorldRenderImageCollectionCreateIndex], nullptr);
 				vkDestroyImage(vk_hDevice, vk_ahWorldRenderImages[u8WorldRenderImageCollectionCreateIndex], nullptr);
 			} else
-				RE_FATAL_ERROR(append_to_string("Failed creating Vulkan GPU-side image at index ", u8WorldRenderImageCollectionCreateIndex, " for world rendering"));
+				RE_FATAL_ERROR("Failed creating Vulkan GPU-side image at index ", u8WorldRenderImageCollectionCreateIndex, " for world rendering");
 			vk_ahSingleSampledWorldRenderImageMemories[u8WorldRenderImageCollectionCreateIndex] = VK_NULL_HANDLE;
 			vk_ahSingleSampledWorldRenderImages[u8WorldRenderImageCollectionCreateIndex] = VK_NULL_HANDLE;
 			vk_ahWorldDepthStencilImageViews[u8WorldRenderImageCollectionCreateIndex] = VK_NULL_HANDLE;
@@ -405,7 +405,7 @@ namespace RE {
 													uint8_t u8FrameInFlightCreateIndex = 0;
 													while (u8FrameInFlightCreateIndex < RE_VK_FRAMES_IN_FLIGHT) {
 														if (!create_vulkan_buffer(RE_VK_CAMERA_UNIFORM_BUFFER_SIZE_BYTES, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, u32CameraUniformBufferQueueCount, au32CameraUniformBufferQueues.data(), VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &vk_ahWorldCameraUniformBuffers[u8FrameInFlightCreateIndex], &vk_ahWorldCameraUniformBufferMemories[u8FrameInFlightCreateIndex])) {
-															RE_FATAL_ERROR(append_to_string("Failed to create Vulkan uniform buffer at index ", u8FrameInFlightCreateIndex));
+															RE_FATAL_ERROR("Failed to create Vulkan uniform buffer at index ", u8FrameInFlightCreateIndex);
 															break;
 														}
 														vkMapMemory(vk_hDevice, vk_ahWorldCameraUniformBufferMemories[u8FrameInFlightCreateIndex], 0, RE_VK_CAMERA_UNIFORM_BUFFER_SIZE_BYTES, 0, (void**) &apafCameraUniformData[u8FrameInFlightCreateIndex]);
@@ -423,7 +423,7 @@ namespace RE {
 															u8FrameInFlightCreateIndex++;
 															continue;
 														} else
-															RE_FATAL_ERROR(append_to_string("Failed to create Vulkan render fence at index ", u8FrameInFlightCreateIndex));
+															RE_FATAL_ERROR("Failed to create Vulkan render fence at index ", u8FrameInFlightCreateIndex);
 														vkUnmapMemory(vk_hDevice, vk_ahWorldCameraUniformBufferMemories[u8FrameInFlightCreateIndex]);
 														vkFreeMemory(vk_hDevice, vk_ahWorldCameraUniformBufferMemories[u8FrameInFlightCreateIndex], nullptr);
 														vkDestroyBuffer(vk_hDevice, vk_ahWorldCameraUniformBuffers[u8FrameInFlightCreateIndex], nullptr);
@@ -442,7 +442,7 @@ namespace RE {
 														uint16_t u16RenderSemaphoreCreateIndex = 0;
 														while (u16RenderSemaphoreCreateIndex < RE_VK_RENDER_SEMAPHORE_COUNT) {
 															if (vkCreateSemaphore(vk_hDevice, &vk_renderSemaphoreCreateInfo, nullptr, &vk_ahRenderSemaphores[u16RenderSemaphoreCreateIndex]) != VK_SUCCESS) {
-																RE_FATAL_ERROR(append_to_string("Failed creating Vulkan semaphore at index ", u16RenderSemaphoreCreateIndex));
+																RE_FATAL_ERROR("Failed creating Vulkan semaphore at index ", u16RenderSemaphoreCreateIndex);
 																break;
 															}
 															u16RenderSemaphoreCreateIndex++;
@@ -756,7 +756,7 @@ namespace RE {
 		vk_pahSwapchainSemaphores = new VkSemaphore[RE_VK_SWAPCHAIN_SEMAPHORE_COUNT];
 		for (uint32_t u32PresentSemaphoreCreateIndex = 0; u32PresentSemaphoreCreateIndex < RE_VK_SWAPCHAIN_SEMAPHORE_COUNT; u32PresentSemaphoreCreateIndex++)
 			if (vkCreateSemaphore(vk_hDevice, &vk_presentSemaphoreCreateInfo, nullptr, &vk_pahSwapchainSemaphores[u32PresentSemaphoreCreateIndex]) != VK_SUCCESS) {
-				RE_FATAL_ERROR(append_to_string("Failed creating Vulkan semaphore at index ", u32PresentSemaphoreCreateIndex, " for synchronizing rendering procedures"));
+				RE_FATAL_ERROR("Failed creating Vulkan semaphore at index ", u32PresentSemaphoreCreateIndex, " for synchronizing rendering procedures");
 				for (uint32_t u8WorldRenderImageCollectionDeleteIndex = 0; u8WorldRenderImageCollectionDeleteIndex < u32PresentSemaphoreCreateIndex; u8WorldRenderImageCollectionDeleteIndex++)
 					vkDestroySemaphore(vk_hDevice, vk_pahSwapchainSemaphores[u8WorldRenderImageCollectionDeleteIndex], nullptr);
 				DELETE_ARRAY_SAFELY(vk_pahSwapchainSemaphores);
@@ -824,7 +824,7 @@ namespace RE {
 		while (!is_msaa_mode_supported(eNextMsaaMode) && eNextMsaaMode != RE_MSAA_MODE_1)
 			eNextMsaaMode = static_cast<MsaaMode>(static_cast<uint8_t>(eNextMsaaMode) - 1);
 		if (eNewMsaaMode != eNextMsaaMode)
-			RE_WARNING(append_to_string("MSAA mode ", std::pow(2, static_cast<int32_t>(eNewMsaaMode)), " is not supported on this GPU and dropped down to ", std::pow(2, static_cast<int32_t>(eNextMsaaMode))));
+			RE_WARNING("MSAA mode ", std::pow(2, static_cast<int32_t>(eNewMsaaMode)), " is not supported on this GPU and dropped down to ", std::pow(2, static_cast<int32_t>(eNextMsaaMode)));
 		VkSampleCountFlagBits vk_eNewSampleCount;
 		switch (eNextMsaaMode) {
 			case RE_MSAA_MODE_1:
@@ -934,7 +934,7 @@ namespace RE {
 		if (fSampleShadingRate == fNewSampleShadingRate)
 			return;
 		if (fNewSampleShadingRate < 0.0f || fNewSampleShadingRate > 1.0f) {
-			RE_ERROR(append_to_string("Sample shading rate should be in range between 0 and 1, but was ", fNewSampleShadingRate, ". Request to change it has been discarded"));
+			RE_ERROR("Sample shading rate should be in range between 0 and 1, but was ", fNewSampleShadingRate, ". Request to change it has been discarded");
 			return;
 		} else if (fNewSampleShadingRate == 0.0f) {
 			RE_WARNING("Sample shading rate of zero disables sample shading. The engine will ignore this new rate and disable it instead");

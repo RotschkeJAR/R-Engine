@@ -33,7 +33,7 @@ namespace RE {
 	bool create_vulkan_shader_from_file(const char *const pcPathToFile, VkShaderModule *const vk_phShader) {
 		std::ifstream shaderBinaryFile(pcPathToFile, std::ios::ate | std::ios::binary);
 		if (!shaderBinaryFile.is_open()) {
-			RE_ERROR(append_to_string("Failed loading SPIR-V shader binaries from file \"", pcPathToFile, "\""));
+			RE_ERROR("Failed loading SPIR-V shader binaries from file \"", pcPathToFile, "\"");
 			return false;
 		}
 		size_t shaderBinaryFileSize = static_cast<size_t>(shaderBinaryFile.tellg());
@@ -49,7 +49,7 @@ namespace RE {
 		const bool bSuccess = vkCreateShaderModule(vk_hDevice, &vk_createInfo, nullptr, vk_phShader) == VK_SUCCESS;
 		delete[] pacShaderBinary;
 		if (!bSuccess)
-			RE_ERROR(append_to_string("Failed creating Vulkan shader from file \"", pcPathToFile, "\""));
+			RE_ERROR("Failed creating Vulkan shader from file \"", pcPathToFile, "\"");
 		return bSuccess;
 	}
 	
@@ -282,7 +282,7 @@ namespace RE {
 	bool signal_vulkan_fences(const uint32_t u32FenceCount, const VkFence *const vk_pahFences) {
 		for (uint32_t u32FenceIndex = 0U; u32FenceIndex < u32FenceCount; u32FenceIndex++)
 			if (!submit_to_vulkan_queue(vk_ahDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], 0U, nullptr, nullptr, 1U, &vk_hDummyTransferCommandBuffer, 0U, nullptr, vk_pahFences[u32FenceIndex])) {
-				RE_ERROR(append_to_string("Failed signaling fence at index ", u32FenceIndex));
+				RE_ERROR("Failed signaling fence at index ", u32FenceIndex);
 				return false;
 			}
 		return true;
@@ -332,7 +332,7 @@ namespace RE {
 				u32CommandPoolIndex = RE_VK_COMMAND_POOL_TRANSFER_TRANSIENT_INDEX;
 				break;
 			default:
-				RE_ERROR(append_to_string("Failed to find the command pool for the queue. The queue's index is ", u32QueueIndex).c_str());
+				RE_ERROR("Failed to find the command pool for the queue. The queue's index is ", u32QueueIndex);
 				if (vk_phFence && *vk_phFence) {
 					vkDestroyFence(vk_hDevice, *vk_phFence, nullptr);
 					*vk_phFence = VK_NULL_HANDLE;

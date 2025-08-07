@@ -13,7 +13,7 @@ namespace RE {
 
 	// Attributes initialized at beginning and rarely changed
 	VkPhysicalDevice *vk_pahPhysicalDevicesAvailable = nullptr;
-	uint32_t u32PhysicalDevicesAvailableCount = 0U;
+	uint32_t u32PhysicalDevicesAvailableCount = 0;
 	VkPhysicalDevice vk_hPhysicalDeviceSelected = VK_NULL_HANDLE;
 	VkPhysicalDeviceLimits vk_physicalDeviceLimits = {};
 	VkPhysicalDeviceFeatures vk_physicalDeviceFeatures = {};
@@ -22,14 +22,14 @@ namespace RE {
 	std::array<uint32_t, RE_VK_QUEUE_COUNT> au32DeviceQueueFamilyIndices = {};
 	VkSurfaceKHR vk_hSurface = VK_NULL_HANDLE;
 	VkSurfaceCapabilitiesKHR vk_surfaceCapabilities = {};
-	uint32_t u32SurfaceFormatsAvailableCount = 0U;
+	uint32_t u32SurfaceFormatsAvailableCount = 0;
 	VkSurfaceFormatKHR *vk_paSurfaceFormatsAvailable = nullptr;
 	VkSurfaceFormatKHR vk_surfaceFormatSelected = {};
 	VkPresentModeKHR vk_ePresentModeVsync = VK_PRESENT_MODE_FIFO_KHR, vk_ePresentModeNoVsync = VK_PRESENT_MODE_FIFO_KHR;
 	VkSwapchainKHR vk_hSwapchain = VK_NULL_HANDLE;
 	VkFormat vk_eSwapchainImageFormat = VK_FORMAT_UNDEFINED;
 	VkExtent2D vk_swapchainResolution = {};
-	uint32_t u32SwapchainImageCount = 0U;
+	uint32_t u32SwapchainImageCount = 0;
 	VkImage *vk_pahSwapchainImages = nullptr;
 	VkImageView *vk_pahSwapchainImageViews = nullptr;
 	std::array<VkCommandPool, RE_VK_COMMAND_POOL_COUNT> vk_ahCommandPools = {};
@@ -626,7 +626,7 @@ namespace RE {
 			uint32_t u32SwapchainImageViewsCreated = 0U;
 			while (u32SwapchainImageViewsCreated < u32SwapchainImageCount) {
 				if (!create_vulkan_image_view(vk_pahSwapchainImages[u32SwapchainImageViewsCreated], VK_IMAGE_VIEW_TYPE_2D, vk_eSwapchainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 0U, 1U, 0U, 1U, &vk_pahSwapchainImageViews[u32SwapchainImageViewsCreated])) {
-					RE_FATAL_ERROR(append_to_string("Failed to create Vulkan image view at index ", u32SwapchainImageViewsCreated));
+					RE_FATAL_ERROR("Failed to create Vulkan image view at index ", u32SwapchainImageViewsCreated);
 					break;
 				}
 				u32SwapchainImageViewsCreated++;
@@ -676,7 +676,7 @@ namespace RE {
 
 				VkPhysicalDeviceProperties vk_physicalDeviceSelectedProperties;
 				vkGetPhysicalDeviceProperties(vk_hPhysicalDeviceSelected, &vk_physicalDeviceSelectedProperties);
-				PRINT_LN(append_to_string("Device selected: ", vk_physicalDeviceSelectedProperties.deviceName).c_str());
+				PRINT_LN("Device selected: ", vk_physicalDeviceSelectedProperties.deviceName);
 				vk_physicalDeviceLimits = vk_physicalDeviceSelectedProperties.limits;
 				vkGetPhysicalDeviceFeatures(vk_hPhysicalDeviceSelected, &vk_physicalDeviceFeatures);
 				vkGetPhysicalDeviceMemoryProperties(vk_hPhysicalDeviceSelected, &vk_physicalDeviceMemoryProperties);

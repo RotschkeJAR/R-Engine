@@ -26,7 +26,7 @@ namespace RE {
 			uint16_t u16FrameInFlightCreateIndex = 0U;
 			while (u16FrameInFlightCreateIndex < RE_VK_FRAMES_IN_FLIGHT) {
 				if (!create_vulkan_buffer(RE_VK_TRANSPARENT_GAME_OBJECT_VERTEX_BUFFER_SIZE_BYTES, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, u32VertexBufferQueueCount, au32VertexBufferQueues.data(), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_ahVertexBuffers[u16FrameInFlightCreateIndex], &vk_ahVertexBufferMemories[u16FrameInFlightCreateIndex])) {
-					RE_FATAL_ERROR(append_to_string("Failed to create Vulkan vertex buffer at frame in flight-index ", u16FrameInFlightCreateIndex, " for rendering game objects"));
+					RE_FATAL_ERROR("Failed to create Vulkan vertex buffer at frame in flight-index ", u16FrameInFlightCreateIndex, " for rendering game objects");
 					break;
 				}
 				u16FrameInFlightCreateIndex++;

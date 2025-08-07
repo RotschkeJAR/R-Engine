@@ -217,10 +217,10 @@ namespace RE {
 	void error(const char *pcFile, const char *pcFunc, uint32_t u32Line, const char *pcDetail, bool bTerminate);
 	void warning(const char *pcFile, const char *pcFunc, uint32_t u32Line, const char *pcDetail);
 	void note(const char *pcFile, const char *pcFunc, uint32_t u32Line, const char *pcDetail);
-#define FATAL_ERROR(T) error(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(T), true)
-#define ERROR(T) error(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(T), false)
-#define WARNING(T) warning(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(T))
-#define NOTE(T) note(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(T))
+#define FATAL_ERROR(...) error(__FILE__, __func__, __LINE__, append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__)).c_str(), true)
+#define ERROR(...) error(__FILE__, __func__, __LINE__, append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__)).c_str(), false)
+#define WARNING(...) warning(__FILE__, __func__, __LINE__, append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__)).c_str())
+#define NOTE(...) note(__FILE__, __func__, __LINE__, append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__)).c_str())
 	
 	class SignalCatcher final {
 		public:
@@ -361,10 +361,10 @@ namespace RE {
 			number -= base * u32HexadecimalCharacterIndex;
 			if (u32HexadecimalCharacterIndex || bNumbersPresent) {
 				bNumbersPresent = true;
-				if (u32HexadecimalCharacterIndex < 10U)
+				if (u32HexadecimalCharacterIndex < 10)
 					ss << u32HexadecimalCharacterIndex;
 				else
-					ss << static_cast<char>(u32HexadecimalCharacterIndex - 10U + static_cast<uint32_t>('a'));
+					ss << static_cast<char>(u32HexadecimalCharacterIndex - 10 + static_cast<uint32_t>('a'));
 			}
 		}
 		if (!bNumbersPresent)
@@ -387,11 +387,11 @@ namespace RE {
 	[[nodiscard]]
 	constexpr uint64_t gen_bitmask_in_range(const uint64_t u64Begin, const uint64_t u64End) {
 		if (u64Begin > u64End) {
-			FATAL_ERROR(append_to_string("Start (", u64Begin, ") of the range is larger than end (", u64End, ")").c_str());
-			return 0UL;
+			FATAL_ERROR("Start (", u64Begin, ") of the range is larger than end (", u64End, ")");
+			return 0;
 		} else if (u64Begin == u64End)
 			return gen_bitmask(u64Begin);
-		uint64_t u64Result = 0UL;
+		uint64_t u64Result = 0;
 		for (uint64_t u64CurrentNumber = u64Begin; u64CurrentNumber < u64End; u64CurrentNumber++)
 			u64Result |= gen_bitmask(u64CurrentNumber);
 		return u64Result;
@@ -407,7 +407,7 @@ namespace RE {
 	[[nodiscard]]
 	constexpr bool are_bits_true_in_range(const T value, const T begin, const T end) {
 		if (begin > end) {
-			FATAL_ERROR(append_to_string("Start (", begin, ") of the range is larger than end (", end, ")").c_str());
+			FATAL_ERROR("Start (", begin, ") of the range is larger than end (", end, ")");
 			return false;
 		} else if (begin == end)
 			return is_bit_true<T>(value, begin);
@@ -430,7 +430,7 @@ namespace RE {
 	template <typename T>
 	constexpr T set_bits(T& value, const T begin, const T end, const bool bNewState) {
 		if (begin > end) {
-			FATAL_ERROR(append_to_string("Start (", begin, ") of the range is larger than end (", end, ")").c_str());
+			FATAL_ERROR("Start (", begin, ") of the range is larger than end (", end, ")");
 			return value;
 		}
 		for (T i = begin; i < end; i++)
@@ -474,7 +474,7 @@ namespace RE {
 			template <typename P, uint32_t u32CopyDimensions>
 			Vector(const Vector<P, u32CopyDimensions> &rCopyVector) {
 				if (u32Dimensions != u32CopyDimensions)
-					WARNING(append_to_string("The coordinates of this vector with ", u32Dimensions, " dimensions were copied from a vector with ", u32CopyDimensions, " dimensions").c_str());
+					WARNING("The coordinates of this vector with ", u32Dimensions, " dimensions were copied from a vector with ", u32CopyDimensions, " dimensions");
 				for (uint32_t u32CoordinateIndex = 0U; u32CoordinateIndex < u32CopyDimensions && u32CoordinateIndex < u32Dimensions; u32CoordinateIndex++)
 					data[u32CoordinateIndex] = rCopyVector.data[u32CoordinateIndex];
 			}
@@ -517,7 +517,7 @@ namespace RE {
 
 			void copy_from(const Vector &rCopyVector) {
 				if (u32Dimensions != rCopyVector.get_dimensions()) {
-					WARNING(append_to_string("Tried to copy values from one vector (", rCopyVector.get_dimensions(), ") to another (", u32Dimensions, "). This process has been terminated").c_str());
+					WARNING("Tried to copy values from one vector (", rCopyVector.get_dimensions(), ") to another (", u32Dimensions, "). This process has been terminated");
 					return;
 				}
 				for (uint32_t u32Index = 0U; u32Index < u32Dimensions; u32Index++)
@@ -541,14 +541,14 @@ namespace RE {
 
 			T& operator [](const uint32_t u32Index) {
 				if (u32Index >= u32Dimensions)
-					FATAL_ERROR(append_to_string("Index ", u32Index, " is out of bounds: [0, ", u32Dimensions, ")").c_str());
+					FATAL_ERROR("Index ", u32Index, " is out of bounds: [0, ", u32Dimensions, ")");
 				return data[u32Index];
 			}
 
 			[[nodiscard]]
 			T operator [](const uint32_t u32Index) const {
 				if (u32Index >= u32Dimensions)
-					FATAL_ERROR(append_to_string("Index ", u32Index, " is out of bounds: [0, ", u32Dimensions, ")").c_str());
+					FATAL_ERROR("Index ", u32Index, " is out of bounds: [0, ", u32Dimensions, ")");
 				return data[u32Index];
 			}
 

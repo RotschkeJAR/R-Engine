@@ -3,107 +3,84 @@
 namespace RE {
 
 	[[nodiscard]]
-	bool is_string_empty(const char *const pcString) {
-		return !pcString || pcString[0] == '\0';
+	bool is_string_empty(const char *const pacString) {
+		return !pacString || pacString[0] == '\0';
 	}
 
 	[[nodiscard]]
-	uint32_t get_string_length_safely(const char *const pcString) {
-		return pcString ? std::strlen(pcString) : 0U;
+	size_t get_string_length_safely(const char *const pacString) {
+		return pacString ? std::strlen(pacString) : 0;
 	}
 
 	[[nodiscard]]
-	bool are_string_contents_equal(const char *const pcString1, const char *const pcString2) {
-		return pcString1 && pcString2 && std::strcmp(pcString1, pcString2) == 0U;
+	bool are_string_contents_equal(const char *const pacString1, const char *const pacString2) {
+		return pacString1 && pacString2 && std::strcmp(pacString1, pacString2) == 0;
 	}
 
 	[[nodiscard]]
-	uint32_t get_line_count(const char *const pcString) {
-		if (is_string_empty(pcString))
-			return 0;
-		uint32_t u32Lines = 1, u32CharacterIndex = 0;
-		while (true) {
-			switch (pcString[u32CharacterIndex]) {
-				case '\0':
-					return u32Lines;
-				case '\n':
-					u32Lines++;
-				default:
-					break;
-			}
-			u32CharacterIndex++;
-		}
+	size_t get_line_count(const char *const pacString) {
+		size_t lineCount = 1;
+		const size_t stringLength = get_string_length_safely(pacString);
+		for (size_t characterIndex = 0; characterIndex < stringLength; characterIndex++)
+			if (pacString[characterIndex] == '\n')
+				lineCount++;
+		return lineCount;
 	}
 
 	[[nodiscard]]
-	std::string get_line(const char *const pcString, const uint32_t u32Line) {
-		uint32_t u32CurrentLine = 0, u32CharacterIndex = 0;
-		std::stringstream resultStream("");
-		bool bReachedEndOfString = false;
-		while (true) {
-			const bool bLineFound = u32CurrentLine == u32Line;
-			while (true) {
-				bool bBreakout = false;
-				switch (pcString[u32CharacterIndex]) {
-					case '\0':
-						bReachedEndOfString = true;
-						// Don't break here!
-					case '\n':
-						bBreakout = true;
-						break;
-					default:
-						if (bLineFound)
-							resultStream << pcString[u32CharacterIndex];
-						break;
-				}
-				u32CharacterIndex++;
-				if (bBreakout)
-					break;
-			}
-			if (bLineFound || bReachedEndOfString)
-				break;
-			u32CurrentLine++;
-		}
-		return std::string(resultStream.str());
+	std::string get_line(const char *const pacString, const size_t lineIndex) {
+		std::stringstream ss("");
+		size_t currentLineIndex = 0;
+		const size_t stringLength = get_string_length_safely(pacString);
+		for (size_t currentCharIndex = 0; currentCharIndex < stringLength; currentCharIndex++)
+			if (pacString[currentCharIndex] == '\n')
+				currentLineIndex++;
+			else if (currentLineIndex == lineIndex)
+				ss << pacString[currentCharIndex];
+		return ss.str();
 	}
 	
 	[[nodiscard]]
-	std::string convert_wide_chars_to_utf8(const wchar_t *const pwcString) {
-		const uint32_t u32StringSize = std::wcslen(pwcString) + 1U;
-		std::string strConverted("", u32StringSize);
-		std::wcstombs(&strConverted[0], pwcString, u32StringSize);
-		return strConverted;
+	std::string convert_wide_chars_to_utf8(const wchar_t *const pawcString) {
+		if (!pawcString)
+			return std::string("");
+		const size_t stringSize = std::wcslen(pawcString) + 1;
+		std::string sConverted("", stringSize);
+		std::wcstombs(&sConverted[0], pawcString, stringSize);
+		return sConverted;
 	}
 
 	[[nodiscard]]
-	std::wstring convert_chars_to_wide(const char *const pcString) {
-		const uint32_t u32StringSize = std::strlen(pcString) + 1U;
-		std::wstring wstrConverted(L"", u32StringSize);
-		std::mbstowcs(&wstrConverted[0], pcString, u32StringSize);
-		return wstrConverted;
+	std::wstring convert_chars_to_wide(const char *const pacString) {
+		if (!pacString)
+			return std::wstring(L"");
+		const size_t stringSize = std::strlen(pacString) + 1;
+		std::wstring wsConverted(L"", stringSize);
+		std::mbstowcs(&wsConverted[0], pacString, stringSize);
+		return wsConverted;
 	}
 
 	[[nodiscard]]
 	std::string get_app_name() {
-		std::string strAppName("");
+		std::string sAppName("");
 #ifdef RE_OS_WINDOWS
 # define PATH_SIZE 500
-		wchar_t wcBuffer[PATH_SIZE] = {0};
-		if (GetModuleFileNameW(nullptr, wcBuffer, PATH_SIZE))
-			strAppName = convert_wide_chars_to_utf8(wcBuffer);
+		wchar_t awcBuffer[PATH_SIZE] = {0};
+		if (GetModuleFileNameW(nullptr, awcBuffer, PATH_SIZE))
+			sAppName = convert_wide_chars_to_utf8(awcBuffer);
 		else
 			RE_ERROR("Failed retrieving the file name of the application");
 # undef PATH_SIZE
 #elif defined RE_OS_LINUX
 		std::ifstream fileStream("/proc/self/comm");
 		if (fileStream.is_open())
-			fileStream >> strAppName;
+			fileStream >> sAppName;
 		else
 			RE_ERROR("Failed opening \"/proc/self/comm\" file for retrieving file name of the application");
 #else
 		RE_ERROR("Unknown platform for retrieving file name of the application");
 #endif
-		return strAppName;
+		return sAppName;
 	}
 
 }

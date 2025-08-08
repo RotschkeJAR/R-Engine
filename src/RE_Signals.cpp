@@ -5,7 +5,7 @@
 namespace RE {
 
 	struct AppLocation {
-		const char *pcFile, *pcMethod, *pcDetails;
+		const char *pacFile, *pacMethod, *pacDetails;
 		uint32_t u32Line;
 	};
 
@@ -49,13 +49,13 @@ namespace RE {
 		while (!stackTrace.empty()) { // prints stack trace
 			AppLocation locationData = stackTrace.top();
 			print("\tin file ");
-			print_colored(locationData.pcFile, RE_TERMINAL_COLOR_BRIGHT_WHITE, false, false);
+			print_colored(locationData.pacFile, RE_TERMINAL_COLOR_BRIGHT_WHITE, false, false);
 			print(", in function ");
-			print_colored(locationData.pcMethod, RE_TERMINAL_COLOR_BRIGHT_WHITE, false, false);
+			print_colored(locationData.pacMethod, RE_TERMINAL_COLOR_BRIGHT_WHITE, false, false);
 			print(", at line ");
 			print_colored(std::to_string(locationData.u32Line).c_str(), RE_TERMINAL_COLOR_BRIGHT_WHITE, false, false);
-			if (std::strcmp(locationData.pcDetails, "\0") != 0)
-				print(": ", locationData.pcDetails);
+			if (std::strcmp(locationData.pacDetails, "\0") != 0)
+				print(": ", locationData.pacDetails);
 			println();
 			stackTrace.pop();
 		}
@@ -86,11 +86,11 @@ namespace RE {
 		std::signal(SIGINT, SIG_DFL);
 	}
 
-	void add_to_stack_trace(const char *const pcFile, const char *const pcMethod, uint32_t u32Line, const char *const pcDetails) {
+	void add_to_stack_trace(const char *const pacFile, const char *const pacMethod, uint32_t u32Line, const char *const pacDetails) {
 		AppLocation newTrace = {};
-		newTrace.pcFile = pcFile;
-		newTrace.pcMethod = pcMethod;
-		newTrace.pcDetails = pcDetails;
+		newTrace.pacFile = pacFile;
+		newTrace.pacMethod = pacMethod;
+		newTrace.pacDetails = pacDetails;
 		newTrace.u32Line = u32Line;
 		stackTrace.push(newTrace);
 	}

@@ -171,10 +171,10 @@ namespace RE {
 		if (bFailure)
 			return false;
 
-		std::string strAppName = get_app_name();
+		std::string sAppName = get_app_name();
 		const VkApplicationInfo vk_appInfo = {
 			.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
-			.pApplicationName = strAppName.c_str(),
+			.pApplicationName = sAppName.c_str(),
 			.applicationVersion = VK_MAKE_API_VERSION(0, 1, 0, 0),
 			.pEngineName = "R-Engine",
 			.engineVersion = VK_MAKE_API_VERSION(0, 1, 0, 0),
@@ -506,9 +506,9 @@ namespace RE {
 		hLibVulkan = nullptr;
 	}
 
-	void focus_vulkan_debug_on(const char *const pcFile, const char *const pcFunc, const uint32_t u32Line) {
-		pcVulkanDebugFocusOnFile = pcFile;
-		pcVulkanDebugFocusOnFunc = pcFunc;
+	void focus_vulkan_debug_on(const char *const pacFile, const char *const pacFunc, const uint32_t u32Line) {
+		pcVulkanDebugFocusOnFile = pacFile;
+		pcVulkanDebugFocusOnFunc = pacFunc;
 		u32VulkanDebugFocusOnLine = u32Line;
 		u32VulkanDebugFocusCount = 0U;
 	}
@@ -520,220 +520,220 @@ namespace RE {
 		u32VulkanDebugFocusCount = 0U;
 	}
 
-	bool check_vulkan_result(const VkResult vk_eResult, const char *const pcFile, const char *const pcFunc, const uint32_t u32Line) {
-		const char* pcErrName = "Unknown Vulkan result";
-		const char* pcErrDetail = "Unknown Vulkan Result enumeration value";
+	bool check_vulkan_result(const VkResult vk_eResult, const char *const pacFile, const char *const pacFunc, const uint32_t u32Line) {
+		const char* pacErrName = "Unknown Vulkan result";
+		const char* pacErrDetail = "Unknown Vulkan Result enumeration value";
 		switch (vk_eResult) {
 			case VK_SUCCESS:
 				return true;
 
 			// Success codes, but treated as errors
 			case VK_NOT_READY:
-				pcErrName = "VK_NOT_READY";
-				pcErrDetail = "Not ready (a fence or query has not yet completed)";
+				pacErrName = "VK_NOT_READY";
+				pacErrDetail = "Not ready (a fence or query has not yet completed)";
 				break;
 			case VK_TIMEOUT:
-				pcErrName = "VK_TIMEOUT";
-				pcErrDetail = "Timeout (a wait operation has not completed in the specified time)";
+				pacErrName = "VK_TIMEOUT";
+				pacErrDetail = "Timeout (a wait operation has not completed in the specified time)";
 				break;
 			case VK_EVENT_SET:
-				pcErrName = "VK_EVENT_SET";
-				pcErrDetail = "Event signaled";
+				pacErrName = "VK_EVENT_SET";
+				pacErrDetail = "Event signaled";
 				break;
 			case VK_EVENT_RESET:
-				pcErrName = "VK_EVENT_RESET";
-				pcErrDetail = "Event unsignaled";
+				pacErrName = "VK_EVENT_RESET";
+				pacErrDetail = "Event unsignaled";
 				break;
 			case VK_INCOMPLETE:
-				pcErrName = "VK_INCOMPLETE";
-				pcErrDetail = "Incomplete (a return array was too small for the result)";
+				pacErrName = "VK_INCOMPLETE";
+				pacErrDetail = "Incomplete (a return array was too small for the result)";
 				break;
 			case VK_SUBOPTIMAL_KHR:
-				pcErrName = "VK_SUBOPTIMAL_KHR";
-				pcErrDetail = "A swapchain no longer matches the surface properties exactly";
+				pacErrName = "VK_SUBOPTIMAL_KHR";
+				pacErrDetail = "A swapchain no longer matches the surface properties exactly";
 				break;
 			case VK_THREAD_IDLE_KHR:
-				pcErrName = "VK_THREAD_IDLE_KHR";
-				pcErrDetail = "A deferred operation is not complete, but there's currently no work for this thread";
+				pacErrName = "VK_THREAD_IDLE_KHR";
+				pacErrDetail = "A deferred operation is not complete, but there's currently no work for this thread";
 				break;
 			case VK_THREAD_DONE_KHR:
-				pcErrName = "VK_THREAD_DONE_KHR";
-				pcErrDetail = "A deferred operation is not complete, but there's no work remaining";
+				pacErrName = "VK_THREAD_DONE_KHR";
+				pacErrDetail = "A deferred operation is not complete, but there's no work remaining";
 				break;
 			case VK_OPERATION_DEFERRED_KHR:
-				pcErrName = "VK_OPERATION_DEFERRED_KHR";
-				pcErrDetail = "A deferred operation was requested and some of the work has been deferred";
+				pacErrName = "VK_OPERATION_DEFERRED_KHR";
+				pacErrDetail = "A deferred operation was requested and some of the work has been deferred";
 				break;
 			case VK_OPERATION_NOT_DEFERRED_KHR:
-				pcErrName = "VK_OPERATION_NOT_DEFERRED_KHR";
-				pcErrDetail = "A deferred operation was requested and no operations were deferred";
+				pacErrName = "VK_OPERATION_NOT_DEFERRED_KHR";
+				pacErrDetail = "A deferred operation was requested and no operations were deferred";
 				break;
 			case VK_PIPELINE_COMPILE_REQUIRED:
-				pcErrName = "VK_PIPELINE_COMPILE_REQUIRED";
-				pcErrDetail = "Pipeline compilation required, but not done by the application";
+				pacErrName = "VK_PIPELINE_COMPILE_REQUIRED";
+				pacErrDetail = "Pipeline compilation required, but not done by the application";
 				break;
 #ifdef RE_OS_WINDOWS
 			case VK_PIPELINE_BINARY_MISSING_KHR:
-				pcErrName = "VK_PIPELINE_BINARY_MISSING_KHR";
-				pcErrDetail = "Attempted to create a pipeline binary by querying an internal cache, but the internal cache entry did not exist";
+				pacErrName = "VK_PIPELINE_BINARY_MISSING_KHR";
+				pacErrDetail = "Attempted to create a pipeline binary by querying an internal cache, but the internal cache entry did not exist";
 				break;
 			case VK_INCOMPATIBLE_SHADER_BINARY_EXT:
-				pcErrName = "VK_INCOMPATIBLE_SHADER_BINARY_EXT";
-				pcErrDetail = "The binary shader code is incompatible with the device";
+				pacErrName = "VK_INCOMPATIBLE_SHADER_BINARY_EXT";
+				pacErrDetail = "The binary shader code is incompatible with the device";
 				break;
 #endif
 
 			// Errors
 			case VK_ERROR_OUT_OF_HOST_MEMORY:
-				pcErrName = "VK_ERROR_OUT_OF_HOST_MEMORY";
-				pcErrDetail = "Out of host memory";
+				pacErrName = "VK_ERROR_OUT_OF_HOST_MEMORY";
+				pacErrDetail = "Out of host memory";
 				break;
 			case VK_ERROR_OUT_OF_DEVICE_MEMORY:
-				pcErrName = "VK_ERROR_OUT_OF_DEVICE_MEMORY";
-				pcErrDetail = "Out of device memory";
+				pacErrName = "VK_ERROR_OUT_OF_DEVICE_MEMORY";
+				pacErrDetail = "Out of device memory";
 				break;
 			case VK_ERROR_INITIALIZATION_FAILED:
-				pcErrName = "VK_ERROR_INITIALIZATION_FAILED";
-				pcErrDetail = "Initialization failed";
+				pacErrName = "VK_ERROR_INITIALIZATION_FAILED";
+				pacErrDetail = "Initialization failed";
 				break;
 			case VK_ERROR_DEVICE_LOST:
-				pcErrName = "VK_ERROR_DEVICE_LOST";
-				pcErrDetail = "Device lost";
+				pacErrName = "VK_ERROR_DEVICE_LOST";
+				pacErrDetail = "Device lost";
 				break;
 			case VK_ERROR_MEMORY_MAP_FAILED:
-				pcErrName = "VK_ERROR_MEMORY_MAP_FAILED";
-				pcErrDetail = "Memory map failed";
+				pacErrName = "VK_ERROR_MEMORY_MAP_FAILED";
+				pacErrDetail = "Memory map failed";
 				break;
 			case VK_ERROR_LAYER_NOT_PRESENT:
-				pcErrName = "VK_ERROR_LAYER_NOT_PRESENT";
-				pcErrDetail = "Layer not present";
+				pacErrName = "VK_ERROR_LAYER_NOT_PRESENT";
+				pacErrDetail = "Layer not present";
 				break;
 			case VK_ERROR_EXTENSION_NOT_PRESENT:
-				pcErrName = "VK_ERROR_EXTENSION_NOT_PRESENT";
-				pcErrDetail = "Extension not present";
+				pacErrName = "VK_ERROR_EXTENSION_NOT_PRESENT";
+				pacErrDetail = "Extension not present";
 				break;
 			case VK_ERROR_FEATURE_NOT_PRESENT:
-				pcErrName = "VK_ERROR_FEATURE_NOT_PRESENT";
-				pcErrDetail = "Feature not present";
+				pacErrName = "VK_ERROR_FEATURE_NOT_PRESENT";
+				pacErrDetail = "Feature not present";
 				break;
 			case VK_ERROR_INCOMPATIBLE_DRIVER:
-				pcErrName = "VK_ERROR_INCOMPATIBLE_DRIVER";
-				pcErrDetail = "Incompatible driver";
+				pacErrName = "VK_ERROR_INCOMPATIBLE_DRIVER";
+				pacErrDetail = "Incompatible driver";
 				break;
 			case VK_ERROR_TOO_MANY_OBJECTS:
-				pcErrName = "VK_ERROR_TOO_MANY_OBJECTS";
-				pcErrDetail = "Too many objects";
+				pacErrName = "VK_ERROR_TOO_MANY_OBJECTS";
+				pacErrDetail = "Too many objects";
 				break;
 			case VK_ERROR_FORMAT_NOT_SUPPORTED:
-				pcErrName = "VK_ERROR_FORMAT_NOT_SUPPORTED";
-				pcErrDetail = "Format not supported";
+				pacErrName = "VK_ERROR_FORMAT_NOT_SUPPORTED";
+				pacErrDetail = "Format not supported";
 				break;
 			case VK_ERROR_FRAGMENTED_POOL:
-				pcErrName = "VK_ERROR_FRAGMENTED_POOL";
-				pcErrDetail = "Fragmented pool";
+				pacErrName = "VK_ERROR_FRAGMENTED_POOL";
+				pacErrDetail = "Fragmented pool";
 				break;
 			case VK_ERROR_SURFACE_LOST_KHR:
-				pcErrName = "VK_ERROR_SURFACE_LOST_KHR";
-				pcErrDetail = "Surface has been lost and is no longer available";
+				pacErrName = "VK_ERROR_SURFACE_LOST_KHR";
+				pacErrDetail = "Surface has been lost and is no longer available";
 				break;
 			case VK_ERROR_NATIVE_WINDOW_IN_USE_KHR:
-				pcErrName = "VK_ERROR_NATIVE_WINDOW_IN_USE_KHR";
-				pcErrDetail = "The window is already in use by any API";
+				pacErrName = "VK_ERROR_NATIVE_WINDOW_IN_USE_KHR";
+				pacErrDetail = "The window is already in use by any API";
 				break;
 			case VK_ERROR_OUT_OF_DATE_KHR:
-				pcErrName = "VK_ERROR_OUT_OF_DATE_KHR";
-				pcErrDetail = "A surface has changed in a way that it's no longer compatible with the swapchain and further operations will fail";
+				pacErrName = "VK_ERROR_OUT_OF_DATE_KHR";
+				pacErrDetail = "A surface has changed in a way that it's no longer compatible with the swapchain and further operations will fail";
 				break;
 			case VK_ERROR_INCOMPATIBLE_DISPLAY_KHR:
-				pcErrName = "VK_ERROR_INCOMPATIBLE_DISPLAY_KHR";
-				pcErrDetail = "The display used by a swapchain doesn't use the same presentable image layout or is incompatible";
+				pacErrName = "VK_ERROR_INCOMPATIBLE_DISPLAY_KHR";
+				pacErrDetail = "The display used by a swapchain doesn't use the same presentable image layout or is incompatible";
 				break;
 			case VK_ERROR_INVALID_SHADER_NV:
-				pcErrName = "VK_ERROR_INVALID_SHADER_NV";
-				pcErrDetail = "One or more shaders failed to compile or link";
+				pacErrName = "VK_ERROR_INVALID_SHADER_NV";
+				pacErrDetail = "One or more shaders failed to compile or link";
 				break;
 			case VK_ERROR_OUT_OF_POOL_MEMORY:
-				pcErrName = "VK_ERROR_OUT_OF_POOL_MEMORY";
-				pcErrDetail = "Out of pool memory";
+				pacErrName = "VK_ERROR_OUT_OF_POOL_MEMORY";
+				pacErrDetail = "Out of pool memory";
 				break;
 			case VK_ERROR_INVALID_EXTERNAL_HANDLE:
-				pcErrName = "VK_ERROR_INVALID_EXTERNAL_HANDLE";
-				pcErrDetail = "Invalid external handle";
+				pacErrName = "VK_ERROR_INVALID_EXTERNAL_HANDLE";
+				pacErrDetail = "Invalid external handle";
 				break;
 			case VK_ERROR_FRAGMENTATION:
-				pcErrName = "VK_ERROR_FRAGMENTATION";
-				pcErrDetail = "Fragmentation";
+				pacErrName = "VK_ERROR_FRAGMENTATION";
+				pacErrDetail = "Fragmentation";
 				break;
 			case VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS:
-				pcErrName = "VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS";
-				pcErrDetail = "The memory address is not available";
+				pacErrName = "VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS";
+				pacErrDetail = "The memory address is not available";
 				break;
 			case VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT:
-				pcErrName = "VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT";
-				pcErrDetail = "Operation on swapchain created with VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT has failed, because the application didn't have exclusive fullscreen access (outside the application's control)";
+				pacErrName = "VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT";
+				pacErrDetail = "Operation on swapchain created with VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT has failed, because the application didn't have exclusive fullscreen access (outside the application's control)";
 				break;
 			case VK_ERROR_VALIDATION_FAILED_EXT:
-				pcErrName = "VK_ERROR_VALIDATION_FAILED_EXT";
-				pcErrDetail = "Invalid usage detected";
+				pacErrName = "VK_ERROR_VALIDATION_FAILED_EXT";
+				pacErrDetail = "Invalid usage detected";
 				break;
 			case VK_ERROR_COMPRESSION_EXHAUSTED_EXT:
-				pcErrName = "VK_ERROR_COMPRESSION_EXHAUSTED_EXT";
-				pcErrDetail = "Image creation failed for internal resources required for compression are exhausted";
+				pacErrName = "VK_ERROR_COMPRESSION_EXHAUSTED_EXT";
+				pacErrDetail = "Image creation failed for internal resources required for compression are exhausted";
 				break;
 			case VK_ERROR_IMAGE_USAGE_NOT_SUPPORTED_KHR:
-				pcErrName = "VK_ERROR_IMAGE_USAGE_NOT_SUPPORTED_KHR";
-				pcErrDetail = "Requested VkImageUsageFlags aren't supported";
+				pacErrName = "VK_ERROR_IMAGE_USAGE_NOT_SUPPORTED_KHR";
+				pacErrDetail = "Requested VkImageUsageFlags aren't supported";
 				break;
 			case VK_ERROR_VIDEO_PICTURE_LAYOUT_NOT_SUPPORTED_KHR:
-				pcErrName = "VK_ERROR_VIDEO_PICTURE_LAYOUT_NOT_SUPPORTED_KHR";
-				pcErrDetail = "Requested video picture layout not supported";
+				pacErrName = "VK_ERROR_VIDEO_PICTURE_LAYOUT_NOT_SUPPORTED_KHR";
+				pacErrDetail = "Requested video picture layout not supported";
 				break;
 			case VK_ERROR_VIDEO_PROFILE_OPERATION_NOT_SUPPORTED_KHR:
-				pcErrName = "VK_ERROR_VIDEO_PROFILE_OPERATION_NOT_SUPPORTED_KHR";
-				pcErrDetail = "Video profile operation not supported";
+				pacErrName = "VK_ERROR_VIDEO_PROFILE_OPERATION_NOT_SUPPORTED_KHR";
+				pacErrDetail = "Video profile operation not supported";
 				break;
 			case VK_ERROR_VIDEO_PROFILE_FORMAT_NOT_SUPPORTED_KHR:
-				pcErrName = "VK_ERROR_VIDEO_PROFILE_FORMAT_NOT_SUPPORTED_KHR";
-				pcErrDetail = "Video profile format parameters not supported";
+				pacErrName = "VK_ERROR_VIDEO_PROFILE_FORMAT_NOT_SUPPORTED_KHR";
+				pacErrDetail = "Video profile format parameters not supported";
 				break;
 			case VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR:
-				pcErrName = "VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR";
-				pcErrDetail = "Video profile codec not supported";
+				pacErrName = "VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR";
+				pacErrDetail = "Video profile codec not supported";
 				break;
 			case VK_ERROR_VIDEO_STD_VERSION_NOT_SUPPORTED_KHR:
-				pcErrName = "VK_ERROR_VIDEO_STD_VERSION_NOT_SUPPORTED_KHR";
-				pcErrDetail = "Specified video STD header version is not supported";
+				pacErrName = "VK_ERROR_VIDEO_STD_VERSION_NOT_SUPPORTED_KHR";
+				pacErrDetail = "Specified video STD header version is not supported";
 				break;
 #ifdef RE_OS_WINDOWS
 			case VK_ERROR_INVALID_VIDEO_STD_PARAMETERS_KHR:
-				pcErrName = "VK_ERROR_INVALID_VIDEO_STD_PARAMETERS_KHR";
-				pcErrDetail = "Invalid video STD parameters";
+				pacErrName = "VK_ERROR_INVALID_VIDEO_STD_PARAMETERS_KHR";
+				pacErrDetail = "Invalid video STD parameters";
 				break;
 #endif
 			case VK_ERROR_NOT_PERMITTED_KHR:
-				pcErrName = "VK_ERROR_NOT_PERMITTED_KHR";
-				pcErrDetail = "Action is not permitted to be executed due to the application's missing privileges";
+				pacErrName = "VK_ERROR_NOT_PERMITTED_KHR";
+				pacErrDetail = "Action is not permitted to be executed due to the application's missing privileges";
 				break;
 #ifdef RE_OS_WINDOWS
 			case VK_ERROR_NOT_ENOUGH_SPACE_KHR:
-				pcErrName = "VK_ERROR_NOT_ENOUGH_SPACE_KHR";
-				pcErrDetail = "Application didn't provide enough space to return the data";
+				pacErrName = "VK_ERROR_NOT_ENOUGH_SPACE_KHR";
+				pacErrDetail = "Application didn't provide enough space to return the data";
 				break;
 #endif
 			case VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT:
-				pcErrName = "VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT";
-				pcErrDetail = "";
+				pacErrName = "VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT";
+				pacErrDetail = "";
 				break;
 			case VK_ERROR_UNKNOWN:
-				pcErrName = "VK_ERROR_UNKNOWN";
-				pcErrDetail = "Unknown error";
+				pacErrName = "VK_ERROR_UNKNOWN";
+				pacErrDetail = "Unknown error";
 				break;
 			case VK_RESULT_MAX_ENUM:
 			default:
 				break;
 		}
-		print(pcFile, " (line ", u32Line, "): ");
-		println_colored(append_to_string(pcErrName, ": ", pcErrDetail).c_str(), RE_TERMINAL_COLOR_BRIGHT_RED, false, false);
+		print(pacFile, " (line ", u32Line, "): ");
+		println_colored(append_to_string(pacErrName, ": ", pacErrDetail).c_str(), RE_TERMINAL_COLOR_BRIGHT_RED, false, false);
 		return false;
 	}
 

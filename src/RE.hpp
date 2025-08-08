@@ -209,14 +209,14 @@ namespace RE {
 	void println(const T... content) {
 		print(content..., "\n");
 	}
-	void print_colored(const char *pcContent, TerminalColor eColor, bool bBackgroundColored, bool bBold);
-	void println_colored(const char *pcContent, TerminalColor eColor, bool bBackgroundColored, bool bBold);
+	void print_colored(const char *pacContent, TerminalColor eColor, bool bBackgroundColored, bool bBold);
+	void println_colored(const char *pacContent, TerminalColor eColor, bool bBackgroundColored, bool bBold);
 #define PRINT(...) print(append_to_string(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE_MACRO(__VA_ARGS__)))
 #define PRINT_LN(...) print(append_to_string(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE_MACRO(__VA_ARGS__), "\n"))
 	
-	void error(const char *pcFile, const char *pcFunc, uint32_t u32Line, const char *pcDetail, bool bTerminate);
-	void warning(const char *pcFile, const char *pcFunc, uint32_t u32Line, const char *pcDetail);
-	void note(const char *pcFile, const char *pcFunc, uint32_t u32Line, const char *pcDetail);
+	void error(const char *pacFile, const char *pacFunc, uint32_t u32Line, const char *pacDetail, bool bTerminate);
+	void warning(const char *pacFile, const char *pacFunc, uint32_t u32Line, const char *pacDetail);
+	void note(const char *pacFile, const char *pacFunc, uint32_t u32Line, const char *pacDetail);
 #define FATAL_ERROR(...) error(__FILE__, __func__, __LINE__, append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__)).c_str(), true)
 #define ERROR(...) error(__FILE__, __func__, __LINE__, append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__)).c_str(), false)
 #define WARNING(...) warning(__FILE__, __func__, __LINE__, append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__)).c_str())
@@ -228,23 +228,23 @@ namespace RE {
 			~SignalCatcher();
 	};
 
-	void add_to_stack_trace(const char *pcFile, const char *pcMethod, uint32_t u32Line, const char *pcDetails);
+	void add_to_stack_trace(const char *pacFile, const char *pacMethod, uint32_t u32Line, const char *pacDetails);
 	void remove_from_stack_trace();
 	class SignalGuard final {
 		public:
-			SignalGuard(const char *pcFile, const char *pcFunc, uint32_t u32Line, const char *pcDetails);
+			SignalGuard(const char *pacFile, const char *pacFunc, uint32_t u32Line, const char *pacDetails);
 			~SignalGuard();
 	};
 #define DEFINE_SIGNAL_GUARD_DETAILED(NAME, DETAILS) SignalGuard NAME(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(DETAILS))
 #define DEFINE_SIGNAL_GUARD(NAME) DEFINE_SIGNAL_GUARD_DETAILED(NAME, "\0")
-#define CATCH_SIGNAL_DETAILED(CMD, DETAILS) ([&](const char *const pcFile, const char *const pcFunc, uint32_t u32Line) { \
-			add_to_stack_trace(pcFile, pcFunc, u32Line, STRIP_QUOTE_MACRO(DETAILS)); \
+#define CATCH_SIGNAL_DETAILED(CMD, DETAILS) ([&](const char *const pacFile, const char *const pacFunc, uint32_t u32Line) { \
+			add_to_stack_trace(pacFile, pacFunc, u32Line, STRIP_QUOTE_MACRO(DETAILS)); \
 			CMD; \
 			remove_from_stack_trace(); \
 		}) (__FILE__, __func__, __LINE__)
 #define CATCH_SIGNAL(CMD) CATCH_SIGNAL_DETAILED(CMD, "\0")
-#define CATCH_SIGNAL_AND_RETURN_DETAILED(CMD, RETURN_TYPE, DETAILS) ([&](const char *const pcFile, const char *const pcFunc, uint32_t u32Line) -> RETURN_TYPE { \
-			add_to_stack_trace(pcFile, pcFunc, u32Line, STRIP_QUOTE_MACRO(DETAILS)); \
+#define CATCH_SIGNAL_AND_RETURN_DETAILED(CMD, RETURN_TYPE, DETAILS) ([&](const char *const pacFile, const char *const pacFunc, uint32_t u32Line) -> RETURN_TYPE { \
+			add_to_stack_trace(pacFile, pacFunc, u32Line, STRIP_QUOTE_MACRO(DETAILS)); \
 			RETURN_TYPE returnValue = CMD; \
 			remove_from_stack_trace(); \
 			return returnValue; \
@@ -276,7 +276,7 @@ namespace RE {
 			else
 				ss << strings;
 		} (), ...);
-		return std::string(ss.str());
+		return ss.str();
 	}
 
 	template <class... T>
@@ -295,19 +295,19 @@ namespace RE {
 	}
 
 	[[nodiscard]]
-	bool is_string_empty(const char *pcString);
+	bool is_string_empty(const char *pacString);
 	[[nodiscard]]
-	uint32_t get_string_length_safely(const char *pcString);
+	size_t get_string_length_safely(const char *pacString);
 	[[nodiscard]]
-	bool are_string_contents_equal(const char *pcString1, const char *pcString2);
+	bool are_string_contents_equal(const char *pacString1, const char *pacString2);
 	[[nodiscard]]
-	uint32_t get_line_count(const char *pcString);
+	size_t get_line_count(const char *pacString);
 	[[nodiscard]]
-	std::string get_line(const char *pcString, uint32_t u32Line);
+	std::string get_line(const char *pacString, size_t lineIndex);
 	[[nodiscard]]
 	std::string convert_wide_chars_to_utf8(const wchar_t *pwcString);
 	[[nodiscard]]
-	std::wstring convert_chars_to_wide(const char *pcString);
+	std::wstring convert_chars_to_wide(const char *pacString);
 	[[nodiscard]]
 	std::string get_app_name();
 
@@ -327,20 +327,32 @@ namespace RE {
 	template <typename T>
 	[[nodiscard]]
 	std::string array_to_string(const T array[], const size_t arrayLength) {
-		std::stringstream ss("");
-		ss << '{';
-		for (size_t i = 0; i < arrayLength; i++) {
-			if (i)
-				ss << ", ";
-			if constexpr (std::is_same_v<T, int8_t>)
-				ss << static_cast<int16_t>(array[i]);
-			else if constexpr (std::is_same_v<T, uint8_t>)
-				ss << static_cast<uint16_t>(array[i]);
-			else
-				ss << array[i];
+		if constexpr (std::is_same_v<T, wchar_t> || std::is_same_v<T, std::wstring>) {
+			std::wstringstream wss(L"");
+			wss << L'{';
+			for (size_t i = 0; i < arrayLength; i++) {
+				if (i)
+					wss << ", ";
+				wss << array[i];
+			}
+			wss << L'}';
+			return std::string(wss.str());
+		} else {
+			std::stringstream ss("");
+			ss << '{';
+			for (size_t i = 0; i < arrayLength; i++) {
+				if (i)
+					ss << ", ";
+				if constexpr (std::is_same_v<T, int8_t>)
+					ss << static_cast<int16_t>(array[i]);
+				else if constexpr (std::is_same_v<T, uint8_t>)
+					ss << static_cast<uint16_t>(array[i]);
+				else
+					ss << array[i];
+			}
+			ss << '}';
+			return ss.str();
 		}
-		ss << '}';
-		return std::string(ss.str());
 	}
 
 	template <typename T>
@@ -369,7 +381,7 @@ namespace RE {
 		}
 		if (!bNumbersPresent)
 			ss << "0";
-		return std::string(ss.str());
+		return ss.str();
 	}
 
 	template <typename T>
@@ -380,7 +392,7 @@ namespace RE {
 
 	template <typename... T>
 	[[nodiscard]]
-	constexpr uint64_t gen_bitmask(T... bits) {
+	constexpr uint64_t gen_bitmask(const T... bits) {
 		return (... | (1UL << static_cast<uint64_t>(bits)));
 	}
 
@@ -441,14 +453,14 @@ namespace RE {
 	template <typename T>
 	[[nodiscard]]
 	std::string bitmask_to_string(const T bitmask, const bool bWithSpace) {
-		std::stringstream strResult("");
+		std::stringstream ss("");
 		constexpr T bits = sizeof(T) * 8;
 		for (T bit = 0; bit < bits; bit++) {
 			if (bWithSpace && bit && (bit % 8) == 0)
-				strResult << " ";
-			strResult << ((bitmask >> (bits - 1 - bit)) & 1);
+				ss << " ";
+			ss << ((bitmask >> (bits - 1 - bit)) & 1);
 		}
-		return std::string(strResult.str());
+		return ss.str();
 	}
 
 	template <typename T>
@@ -459,7 +471,7 @@ namespace RE {
 	
 	template <typename T>
 	[[nodiscard]]
-	T sign(const T value) {
+	constexpr T sign(const T value) {
 		return (static_cast<T>(0.0) < value) - (value < static_cast<T>(0.0));
 	}
 
@@ -749,7 +761,7 @@ namespace RE {
 			virtual void end(Scene *pEndingScene);
 	};
 
-	class InputAction {
+	class InputAction final {
 		private:
 			uint32_t u32KeyScancode;
 			Input eInput;

@@ -335,7 +335,7 @@ namespace RE {
 			fNear = 10.0f,
 			fFar = -fNear;
 		apafCameraUniformData[u8CurrentFrameInFlightIndex][RE_VK_PROJECTION_MATRIX_OFFSET + GET_VULKAN_MATRIX_ELEMENT_INDEX(0, 0)] = 2.0f / (fRight - fLeft) * sign(pActiveCamera->view[0]);
-		apafCameraUniformData[u8CurrentFrameInFlightIndex][RE_VK_PROJECTION_MATRIX_OFFSET + GET_VULKAN_MATRIX_ELEMENT_INDEX(1, 1)] = 2.0f / (fTop - fBottom) * sign(pActiveCamera->view[1]);
+		apafCameraUniformData[u8CurrentFrameInFlightIndex][RE_VK_PROJECTION_MATRIX_OFFSET + GET_VULKAN_MATRIX_ELEMENT_INDEX(1, 1)] = -2.0f / (fTop - fBottom) * sign(pActiveCamera->view[1]);
 		apafCameraUniformData[u8CurrentFrameInFlightIndex][RE_VK_PROJECTION_MATRIX_OFFSET + GET_VULKAN_MATRIX_ELEMENT_INDEX(2, 2)] = 1.0f / (fNear - fFar);
 		/*apafCameraUniformData[u8CurrentFrameInFlightIndex][RE_VK_PROJECTION_MATRIX_OFFSET + GET_VULKAN_MATRIX_ELEMENT_INDEX(3, 0)] = -(fRight + fLeft) / (fRight - fLeft);
 		apafCameraUniformData[u8CurrentFrameInFlightIndex][RE_VK_PROJECTION_MATRIX_OFFSET + GET_VULKAN_MATRIX_ELEMENT_INDEX(3, 1)] = -(fTop + fBottom) / (fTop - fBottom);
@@ -631,7 +631,7 @@ namespace RE {
 			.renderPass = vk_hWorldRenderPass,
 			.framebuffer = vk_ahWorldFramebuffers[u8CurrentFrameInFlightIndex],
 			.renderArea = VkRect2D{
-				VkOffset2D{0, 0}, 
+				VkOffset2D{0, 0},
 				vk_worldRenderImageExtent
 			},
 			.clearValueCount = u32ClearValueCount,
@@ -651,11 +651,11 @@ namespace RE {
 			.srcOffsets = {
 				{
 					.x = 0,
-					.y = static_cast<int32_t>(vk_worldRenderImageExtent.height),
+					.y = 0,
 					.z = 0
 				}, {
 					.x = static_cast<int32_t>(vk_worldRenderImageExtent.width),
-					.y = 0,
+					.y = static_cast<int32_t>(vk_worldRenderImageExtent.height),
 					.z = 1
 				}
 			},

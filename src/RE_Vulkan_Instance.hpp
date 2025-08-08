@@ -99,29 +99,29 @@ namespace RE {
 	bool init_vulkan_instance();
 	void destroy_vulkan_instance();
 
-	void focus_vulkan_debug_on(const char *pcFile, const char *pcFunc, uint32_t u32Line);
+	void focus_vulkan_debug_on(const char *pacFile, const char *pacFunc, uint32_t u32Line);
 	void unfocus_vulkan_debug();
-#define FOCUS_FOR_VK_DEBUG(CMD) ([&](const char *const pcFile, const char *const pcActualFunc, const uint32_t u32Line) { \
-			add_to_stack_trace(pcFile, pcActualFunc, u32Line, "\0"); \
-			focus_vulkan_debug_on(pcFile, pcActualFunc, u32Line); \
+#define FOCUS_FOR_VK_DEBUG(CMD) ([&](const char *const pacFile, const char *const pacActualFunc, const uint32_t u32Line) { \
+			add_to_stack_trace(pacFile, pacActualFunc, u32Line, "\0"); \
+			focus_vulkan_debug_on(pacFile, pacActualFunc, u32Line); \
 			CMD; \
 			unfocus_vulkan_debug(); \
 			remove_from_stack_trace(); \
 		}) (__FILE__, __func__, __LINE__)
 
-	bool check_vulkan_result(const VkResult vk_eResult, const char *pcFile, const char *pcFunc, uint32_t u32Line);
-#define CHECK_VK_RESULT(RESULT) ([&](const char *const pcFile, const char *const pcActualFunc, const uint32_t u32Line) -> VkResult { \
-			add_to_stack_trace(pcFile, pcActualFunc, u32Line, "\0"); \
-			focus_vulkan_debug_on(pcFile, pcActualFunc, u32Line); \
+	bool check_vulkan_result(const VkResult vk_eResult, const char *pacFile, const char *pacFunc, uint32_t u32Line);
+#define CHECK_VK_RESULT(RESULT) ([&](const char *const pacFile, const char *const pacActualFunc, const uint32_t u32Line) -> VkResult { \
+			add_to_stack_trace(pacFile, pacActualFunc, u32Line, "\0"); \
+			focus_vulkan_debug_on(pacFile, pacActualFunc, u32Line); \
 			const VkResult vk_eResult = RESULT; \
-			check_vulkan_result(vk_eResult, pcFile, pcActualFunc, u32Line); \
+			check_vulkan_result(vk_eResult, pacFile, pacActualFunc, u32Line); \
 			unfocus_vulkan_debug(); \
 			remove_from_stack_trace(); \
 			return vk_eResult; \
 		}) (__FILE__, __func__, __LINE__)
-#define FOCUS_FOR_VK_DEBUG_AND_RETURN(CMD, RETURN_TYPE) ([&](const char *const pcFile, const char *const pcActualFunc, const uint32_t u32Line) -> RETURN_TYPE { \
-			add_to_stack_trace(pcFile, pcActualFunc, u32Line, "\0"); \
-			focus_vulkan_debug_on(pcFile, pcActualFunc, u32Line); \
+#define FOCUS_FOR_VK_DEBUG_AND_RETURN(CMD, RETURN_TYPE) ([&](const char *const pacFile, const char *const pacActualFunc, const uint32_t u32Line) -> RETURN_TYPE { \
+			add_to_stack_trace(pacFile, pacActualFunc, u32Line, "\0"); \
+			focus_vulkan_debug_on(pacFile, pacActualFunc, u32Line); \
 			const RETURN_TYPE vk_bResult = CMD; \
 			unfocus_vulkan_debug(); \
 			remove_from_stack_trace(); \

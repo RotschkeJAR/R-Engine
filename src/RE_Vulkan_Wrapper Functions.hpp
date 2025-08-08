@@ -5,7 +5,7 @@
 
 namespace RE {
 
-	bool create_vulkan_shader_from_file(const char *pcPathToFile, VkShaderModule *vk_phShader);
+	bool create_vulkan_shader_from_file(const char *pacPathToFile, VkShaderModule *vk_phShader);
 	
 	bool create_vulkan_buffer(VkDeviceSize vk_size, VkBufferUsageFlags vk_eUsages, uint32_t u32QueueCount, const uint32_t *pau32Queues, VkMemoryPropertyFlags vk_eMemoryPropertyFlags, VkBuffer *vk_phBuffer, VkDeviceMemory *vk_phMemory);
 

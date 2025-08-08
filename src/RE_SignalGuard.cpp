@@ -2,8 +2,8 @@
 
 namespace RE {
 	
-	SignalGuard::SignalGuard(const char *const pcFile, const char *const pcFunc, uint32_t u32Line, const char *const pcDetails) {
-		add_to_stack_trace(pcFile, pcFunc, u32Line, pcDetails);
+	SignalGuard::SignalGuard(const char *const pacFile, const char *const pacFunc, uint32_t u32Line, const char *const pacDetails) {
+		add_to_stack_trace(pacFile, pacFunc, u32Line, pacDetails);
 	}
 
 	SignalGuard::~SignalGuard() {

@@ -5,6 +5,8 @@
 
 namespace RE {
 
+#define INITIAL_VECTOR_SIZE_FOR_STORING_UNIQUE_QUEUE_IDS 7
+
 	VkDevice vk_hDevice = VK_NULL_HANDLE;
 
 	PFN_vkGetDeviceQueue pfn_vkGetDeviceQueue = nullptr;
@@ -237,11 +239,11 @@ namespace RE {
 	PFN_vkGetDeviceGroupSurfacePresentModesKHR pfn_vkGetDeviceGroupSurfacePresentModesKHR = nullptr;
 	PFN_vkAcquireNextImage2KHR pfn_vkAcquireNextImage2KHR = nullptr;
 
-	static PFN_vkVoidFunction load_func_with_device(const char* pcFuncName) {
+	static PFN_vkVoidFunction load_func_with_device(const char* pacFuncName) {
 		PFN_vkVoidFunction pFunc;
-		CATCH_SIGNAL(pFunc = vkGetDeviceProcAddr(vk_hDevice, pcFuncName));
+		CATCH_SIGNAL(pFunc = vkGetDeviceProcAddr(vk_hDevice, pacFuncName));
 		if (!pFunc)
-			RE_FATAL_ERROR("Failed loading the Vulkan logical device-level function \"", pcFuncName, "\"");
+			RE_FATAL_ERROR("Failed loading the Vulkan logical device-level function \"", pacFuncName, "\"");
 		return pFunc;
 	}
 
@@ -1156,15 +1158,16 @@ namespace RE {
 
 	bool init_vulkan_device() {
 		DEFINE_SIGNAL_GUARD(sigGuardCreateDevice);
-		constexpr uint32_t u32PhysicalDeviceExtensionCount = 1U;
-		const char *const pcPhysicalDeviceExtensions[u32PhysicalDeviceExtensionCount] = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+		constexpr uint32_t u32PhysicalDeviceExtensionCount = 1;
+		const char *const pacPhysicalDeviceExtensions[u32PhysicalDeviceExtensionCount] = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 		uint32_t u32PhysicalDeviceQueueFamilyCount;
 		vkGetPhysicalDeviceQueueFamilyProperties(vk_hPhysicalDeviceSelected, &u32PhysicalDeviceQueueFamilyCount, nullptr);
 		VkQueueFamilyProperties *vk_pPhysicalDeviceQueueFamilyProperties = new VkQueueFamilyProperties[u32PhysicalDeviceQueueFamilyCount];
 		vkGetPhysicalDeviceQueueFamilyProperties(vk_hPhysicalDeviceSelected, &u32PhysicalDeviceQueueFamilyCount, vk_pPhysicalDeviceQueueFamilyProperties);
 		std::optional<uint32_t> graphicsQueueIndex, presentQueueIndex, transferQueueIndex;
 		std::vector<uint32_t> uniqueQueueIndices;
-		for (uint32_t u32PhysicalDeviceQueueFamilyIndex = 0U; u32PhysicalDeviceQueueFamilyIndex < u32PhysicalDeviceQueueFamilyCount; u32PhysicalDeviceQueueFamilyIndex++) {
+		uniqueQueueIndices.reserve(INITIAL_VECTOR_SIZE_FOR_STORING_UNIQUE_QUEUE_IDS);
+		for (uint32_t u32PhysicalDeviceQueueFamilyIndex = 0; u32PhysicalDeviceQueueFamilyIndex < u32PhysicalDeviceQueueFamilyCount; u32PhysicalDeviceQueueFamilyIndex++) {
 			bool bQueueUseful = false;
 			// Get graphics-queue index
 			if (!graphicsQueueIndex.has_value() && (vk_pPhysicalDeviceQueueFamilyProperties[u32PhysicalDeviceQueueFamilyIndex].queueFlags & (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_TRANSFER_BIT))) {
@@ -1201,13 +1204,13 @@ namespace RE {
 		constexpr float fQueuePriority = 1.0f;
 		const size_t uniqueQueueIndexCount = uniqueQueueIndices.size();
 		VkDeviceQueueCreateInfo *const vk_paDeviceQueueCreateInfos = new VkDeviceQueueCreateInfo[uniqueQueueIndexCount];
-		uint32_t u32UniqueQueueIndexIndex = 0U;
+		uint32_t u32UniqueQueueIndexIndex = 0;
 		for (uint32_t u32UniqueQueueIndex : uniqueQueueIndices) {
 			vk_paDeviceQueueCreateInfos[u32UniqueQueueIndexIndex].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 			vk_paDeviceQueueCreateInfos[u32UniqueQueueIndexIndex].pNext = nullptr;
 			vk_paDeviceQueueCreateInfos[u32UniqueQueueIndexIndex].flags = 0;
 			vk_paDeviceQueueCreateInfos[u32UniqueQueueIndexIndex].queueFamilyIndex = u32UniqueQueueIndex;
-			vk_paDeviceQueueCreateInfos[u32UniqueQueueIndexIndex].queueCount = 1U;
+			vk_paDeviceQueueCreateInfos[u32UniqueQueueIndexIndex].queueCount = 1;
 			vk_paDeviceQueueCreateInfos[u32UniqueQueueIndexIndex].pQueuePriorities = &fQueuePriority;
 			u32UniqueQueueIndexIndex++;
 		}
@@ -1234,7 +1237,7 @@ namespace RE {
 			.queueCreateInfoCount = static_cast<uint32_t>(uniqueQueueIndexCount),
 			.pQueueCreateInfos = vk_paDeviceQueueCreateInfos,
 			.enabledExtensionCount = u32PhysicalDeviceExtensionCount,
-			.ppEnabledExtensionNames = static_cast<const char *const *>(pcPhysicalDeviceExtensions),
+			.ppEnabledExtensionNames = static_cast<const char *const *>(pacPhysicalDeviceExtensions),
 			.pEnabledFeatures = &vk_physicalDeviceFeaturesEnabled
 		};
 		const bool bCreatedDeviceSuccessfully = vkCreateDevice(vk_hPhysicalDeviceSelected, &vk_deviceCreateInfo, nullptr, &vk_hDevice) == VK_SUCCESS;
@@ -1245,7 +1248,6 @@ namespace RE {
 		}
 
 		if (!CATCH_SIGNAL_AND_RETURN(load_vulkan_1_0_device() && load_vulkan_1_1_device() && load_vulkan_1_2_device() && load_vulkan_1_3_device() /* && load_vulkan_1_4_device() */ && load_extension_funcs_with_device(), bool)) {
-			unload_all_vulkan_functions_of_device();
 			destroy_vulkan_device();
 			return false;
 		}
@@ -1257,6 +1259,7 @@ namespace RE {
 	
 	void destroy_vulkan_device() {
 		vkDestroyDevice(vk_hDevice, nullptr);
+		unload_all_vulkan_functions_of_device();
 		vk_hDevice = VK_NULL_HANDLE;
 	}
 

@@ -45,34 +45,34 @@ namespace RE {
 		return result;
 	}
 
-	static void print_error_msg(const char *const pcFile, const char *const pcFunc, const uint32_t u32Line, const char *const pcDetail) {
+	static void print_error_msg(const char *const pacFile, const char *const pacFunc, const uint32_t u32Line, const char *const pacDetail) {
 		print(" : ");
-		print_colored(pcFile, RE_TERMINAL_COLOR_BRIGHT_WHITE, false, true);
-		println(" (line ", u32Line, "; in function \"", pcFunc, "\")");
-		const uint32_t u32MsgLineCount = get_line_count(pcDetail);
-		for (uint32_t u32Line = 0U; u32Line < u32MsgLineCount; u32Line++)
-			println("\t", get_line(pcDetail, u32Line));
+		print_colored(pacFile, RE_TERMINAL_COLOR_BRIGHT_WHITE, false, true);
+		println(" (line ", u32Line, "; in function \"", pacFunc, "\")");
+		const size_t msgLineCount = get_line_count(pacDetail);
+		for (size_t lineIndex = 0; lineIndex < msgLineCount; lineIndex++)
+			println("\t", get_line(pacDetail, lineIndex));
 	}
 
-	void print_colored(const char *const pcContent, const TerminalColor eColor, const bool bBackgroundColored, const bool bBold) {
-		print(escape_code_to_string(eColor, bBackgroundColored, bBold), pcContent, DEFAULT_COLOR);
+	void print_colored(const char *const pacContent, const TerminalColor eColor, const bool bBackgroundColored, const bool bBold) {
+		print(escape_code_to_string(eColor, bBackgroundColored, bBold), pacContent, DEFAULT_COLOR);
 	}
 
-	void println_colored(const char *const pcContent, const TerminalColor eColor, const bool bBackgroundColored, const bool bBold) {
-		println(escape_code_to_string(eColor, bBackgroundColored, bBold), pcContent, DEFAULT_COLOR);
+	void println_colored(const char *const pacContent, const TerminalColor eColor, const bool bBackgroundColored, const bool bBold) {
+		println(escape_code_to_string(eColor, bBackgroundColored, bBold), pacContent, DEFAULT_COLOR);
 	}
 	
-	void error(const char *const pcFile, const char *const pcFunc, const uint32_t u32Line, const char *const pcDetail, const bool bTerminate) {
+	void error(const char *const pacFile, const char *const pacFunc, const uint32_t u32Line, const char *const pacDetail, const bool bTerminate) {
 		print_time();
 		print_colored("ERROR", RE_TERMINAL_COLOR_RED, false, false);
-		print_error_msg(pcFile, pcFunc, u32Line, pcDetail);
+		print_error_msg(pacFile, pacFunc, u32Line, pacDetail);
 		bool bFatal = bTerminate || is_bit_true<uint8_t>(u8ConsoleSettings, ERRORS_ALWAYS_FATAL);
 		if (bFatal) {
 			bErrorOccured = true;
 			println_colored("Terminating...", RE_TERMINAL_COLOR_BRIGHT_BLACK, false, false);
 			if (is_bit_true<uint8_t>(u8ConsoleSettings, SHOW_MSG_BOX)) {
 #ifdef RE_OS_WINDOWS
-				MessageBoxW(Window::pInstance ? static_cast<Window_Win64*>(Window::pInstance)->get_hwindow() : nullptr, append_to_wstring(L"In file ", pcFile, L" in function ", pcFunc, L" at line ", u32Line, L"\n", pcDetail).c_str(), L"Fatal Error", MB_OK | MB_ICONERROR);
+				MessageBoxW(Window::pInstance ? static_cast<Window_Win64*>(Window::pInstance)->get_hwindow() : nullptr, append_to_wstring(L"In file ", pacFile, L" in function ", pacFunc, L" at line ", u32Line, L"\n", pacDetail).c_str(), L"Fatal Error", MB_OK | MB_ICONERROR);
 #elif defined RE_OS_LINUX
 				// TODO: Create message box on Linux, when error occurs
 #endif
@@ -80,20 +80,20 @@ namespace RE {
 		}
 	}
 
-	void warning(const char *const pcFile, const char *const pcFunc, const uint32_t u32Line, const char *const pcDetail) {
+	void warning(const char *const pacFile, const char *const pacFunc, const uint32_t u32Line, const char *const pacDetail) {
 		if (is_bit_true<uint8_t>(u8ConsoleSettings, TREAT_WARNING_AS_ERROR))
-			error(pcFile, pcFunc, u32Line, pcDetail, false);
+			error(pacFile, pacFunc, u32Line, pacDetail, false);
 		else {
 			print_time();
 			print_colored("WARNING", RE_TERMINAL_COLOR_YELLOW, false, false);
-			print_error_msg(pcFile, pcFunc, u32Line, pcDetail);
+			print_error_msg(pacFile, pacFunc, u32Line, pacDetail);
 		}
 	}
 
-	void note(const char *const pcFile, const char *const pcFunc, const uint32_t u32Line, const char *const pcDetail) {
+	void note(const char *const pacFile, const char *const pacFunc, const uint32_t u32Line, const char *const pacDetail) {
 		print_time();
 		print_colored("NOTE", RE_TERMINAL_COLOR_WHITE, false, false);
-		print_error_msg(pcFile, pcFunc, u32Line, pcDetail);
+		print_error_msg(pacFile, pacFunc, u32Line, pacDetail);
 	}
 
 	void enable_colorful_printing(const bool bEnable) {

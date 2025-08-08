@@ -30,10 +30,10 @@ namespace RE {
 		return vkAllocateMemory(vk_hDevice, &vk_allocInfo, nullptr, vk_phMemory) == VK_SUCCESS;
 	}
 
-	bool create_vulkan_shader_from_file(const char *const pcPathToFile, VkShaderModule *const vk_phShader) {
-		std::ifstream shaderBinaryFile(pcPathToFile, std::ios::ate | std::ios::binary);
+	bool create_vulkan_shader_from_file(const char *const pacPathToFile, VkShaderModule *const vk_phShader) {
+		std::ifstream shaderBinaryFile(pacPathToFile, std::ios::ate | std::ios::binary);
 		if (!shaderBinaryFile.is_open()) {
-			RE_ERROR("Failed loading SPIR-V shader binaries from file \"", pcPathToFile, "\"");
+			RE_ERROR("Failed loading SPIR-V shader binaries from file \"", pacPathToFile, "\"");
 			return false;
 		}
 		size_t shaderBinaryFileSize = static_cast<size_t>(shaderBinaryFile.tellg());
@@ -49,7 +49,7 @@ namespace RE {
 		const bool bSuccess = vkCreateShaderModule(vk_hDevice, &vk_createInfo, nullptr, vk_phShader) == VK_SUCCESS;
 		delete[] pacShaderBinary;
 		if (!bSuccess)
-			RE_ERROR("Failed creating Vulkan shader from file \"", pcPathToFile, "\"");
+			RE_ERROR("Failed creating Vulkan shader from file \"", pacPathToFile, "\"");
 		return bSuccess;
 	}
 	

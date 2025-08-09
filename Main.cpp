@@ -135,12 +135,10 @@ class First : public Scene {
 		InputAction trigger;
 		bool bCamActive, bMsaaEight;
 
-		First() : Scene(1), trigger(RE_INPUT_KEY_NUMPAD_ENTER), bCamActive(true), bMsaaEight(true) {}
+		First() : Scene(1), trigger(RE_INPUT_KEY_NUMPAD_ENTER), bCamActive(true), bMsaaEight(false) {}
 		~First() {}
 		void start() {
 			playerCam.activate();
-			CATCH_SIGNAL(set_msaa_mode(RE_MSAA_MODE_8));
-			CATCH_SIGNAL(set_screen_percentage(0.75f));
 		}
 		void update() {
 			if (trigger.is_pressed())
@@ -156,6 +154,10 @@ class First : public Scene {
 			} else if (is_pressed(RE_INPUT_KEY_SPACE, 0)) {
 				bMsaaEight = !bMsaaEight;
 				CATCH_SIGNAL(set_msaa_mode(bMsaaEight ? RE_MSAA_MODE_8 : RE_MSAA_MODE_1));
+				if (bMsaaEight)
+					CATCH_SIGNAL(set_screen_percentage(0.75f));
+				else
+					CATCH_SIGNAL(reset_screen_size());
 			}
 			//PRINT_LN(get_fps_rate());
 		}

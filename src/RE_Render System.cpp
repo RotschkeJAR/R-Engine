@@ -8,7 +8,7 @@
 
 namespace RE {
 
-#define ALLOWED_DEPTH_STENCIL_BUFFER_FORMAT_COUNT 3U
+#define ALLOWED_DEPTH_STENCIL_BUFFER_FORMAT_COUNT 3
 #define ALLOWED_DEPTH_STENCIL_BUFFER_FORMATS {VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D16_UNORM_S8_UINT}
 
 	// Attributes initialized at beginning and rarely changed
@@ -41,8 +41,8 @@ namespace RE {
 #define GRAPHICS_QUEUE_SUPPORTS_TRANSFER_BIT 2
 	uint8_t u8RenderSystemFlags = 1U << VSYNC_SETTING_BIT;
 
-	static void println_vkbool32(const char* pcName, VkBool32 vk_bState) {
-		print("\t\t\t", pcName, ": ");
+	static void println_vkbool32(const char *const pacName, const VkBool32 vk_bState) {
+		print("\t\t\t", pacName, ": ");
 		if (vk_bState)
 			println_colored("true", RE_TERMINAL_COLOR_GREEN, false, false);
 		else
@@ -51,7 +51,7 @@ namespace RE {
 
 	static void select_best_physical_vulkan_device() {
 		int32_t i32BestDeviceScore = std::numeric_limits<int32_t>::min();
-		for (uint32_t i = 0U; i < u32PhysicalDevicesAvailableCount; i++) {
+		for (uint32_t i = 0; i < u32PhysicalDevicesAvailableCount; i++) {
 			VkPhysicalDeviceProperties vk_physicalDeviceProperties;
 			vkGetPhysicalDeviceProperties(vk_pahPhysicalDevicesAvailable[i], &vk_physicalDeviceProperties);
 			int32_t i32CurrentDeviceScore = 0;
@@ -150,7 +150,7 @@ namespace RE {
 		VkPhysicalDevice *const vk_phTotalPhysicalDevice = new VkPhysicalDevice[u32TotalPhysicalDeviceCount];
 		vkEnumeratePhysicalDevices(vk_hInstance, &u32TotalPhysicalDeviceCount, vk_phTotalPhysicalDevice);
 		std::queue<VkPhysicalDevice> suitablePhysicalDevices;
-		for (uint32_t u32PhysicalDeviceIndex = 0U; u32PhysicalDeviceIndex < u32TotalPhysicalDeviceCount; u32PhysicalDeviceIndex++) {
+		for (uint32_t u32PhysicalDeviceIndex = 0; u32PhysicalDeviceIndex < u32TotalPhysicalDeviceCount; u32PhysicalDeviceIndex++) {
 			const VkPhysicalDevice vk_hPhysicalDevice = vk_phTotalPhysicalDevice[u32PhysicalDeviceIndex];
 
 			// Fetch general information about the GPU
@@ -198,7 +198,7 @@ namespace RE {
 				}
 				println("] supporting Vulkan ", VK_VERSION_MAJOR(vk_physicalDeviceProperties.apiVersion), '.', VK_VERSION_MINOR(vk_physicalDeviceProperties.apiVersion), '.', VK_VERSION_PATCH(vk_physicalDeviceProperties.apiVersion));
 				println("\t\tAvailable device extensions:");
-				for (uint32_t u32PhysicalDeviceExtensionIndex = 0U; u32PhysicalDeviceExtensionIndex < u32PhysicalDeviceExtensionCount; u32PhysicalDeviceExtensionIndex++)
+				for (uint32_t u32PhysicalDeviceExtensionIndex = 0; u32PhysicalDeviceExtensionIndex < u32PhysicalDeviceExtensionCount; u32PhysicalDeviceExtensionIndex++)
 					println("\t\t\t", vk_pPhysicalDeviceExtensionProperties[u32PhysicalDeviceExtensionIndex].extensionName, " (", VK_VERSION_MAJOR(vk_pPhysicalDeviceExtensionProperties[u32PhysicalDeviceExtensionIndex].specVersion), '.', VK_VERSION_MINOR(vk_pPhysicalDeviceExtensionProperties[u32PhysicalDeviceExtensionIndex].specVersion), '.', VK_VERSION_PATCH(vk_pPhysicalDeviceExtensionProperties[u32PhysicalDeviceExtensionIndex].specVersion), ")");
 				uint32_t u32PhysicalDeviceLayerCount;
 				vkEnumerateDeviceLayerProperties(vk_hPhysicalDevice, &u32PhysicalDeviceLayerCount, nullptr);
@@ -209,7 +209,7 @@ namespace RE {
 					println("\t\t\t", vk_pPhysicalDeviceLayerProperties[u32PhysicalDeviceLayerIndex].layerName, " (", VK_VERSION_MAJOR(vk_pPhysicalDeviceLayerProperties[u32PhysicalDeviceLayerIndex].implementationVersion), '.', VK_VERSION_MINOR(vk_pPhysicalDeviceLayerProperties[u32PhysicalDeviceLayerIndex].implementationVersion), '.', VK_VERSION_PATCH(vk_pPhysicalDeviceLayerProperties[u32PhysicalDeviceLayerIndex].implementationVersion), "): ", vk_pPhysicalDeviceLayerProperties[u32PhysicalDeviceLayerIndex].description);
 				delete[] vk_pPhysicalDeviceLayerProperties;
 				println("\t\tQueues available on the GPU:");
-				for (uint32_t u32PhysicalDeviceQueueFamilyIndex = 0U; u32PhysicalDeviceQueueFamilyIndex < u32PhysicalDeviceQueueFamilyCount; u32PhysicalDeviceQueueFamilyIndex++) {
+				for (uint32_t u32PhysicalDeviceQueueFamilyIndex = 0; u32PhysicalDeviceQueueFamilyIndex < u32PhysicalDeviceQueueFamilyCount; u32PhysicalDeviceQueueFamilyIndex++) {
 					print("\t\t\t", u32PhysicalDeviceQueueFamilyIndex, ": ");
 					bool bMultiPurposeQueue = false;
 #define PRINT_COMMA() bMultiPurposeQueue ? print(", ") : print(), bMultiPurposeQueue = true
@@ -435,7 +435,7 @@ namespace RE {
 
 			// Check if the required extensions exist
 			bool bSwapchainExtists = false;
-			for (uint32_t u32PhysicalDeviceExtensionIndex = 0U; u32PhysicalDeviceExtensionIndex < u32PhysicalDeviceExtensionCount; u32PhysicalDeviceExtensionIndex++) {
+			for (uint32_t u32PhysicalDeviceExtensionIndex = 0; u32PhysicalDeviceExtensionIndex < u32PhysicalDeviceExtensionCount; u32PhysicalDeviceExtensionIndex++) {
 				if (!bSwapchainExtists && are_string_contents_equal(vk_pPhysicalDeviceExtensionProperties[u32PhysicalDeviceExtensionIndex].extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME))
 					bSwapchainExtists = true;
 				if (bSwapchainExtists)
@@ -446,7 +446,7 @@ namespace RE {
 
 			// Check if required queues exist
 			bool bGraphicsQueueExists = false, bPresentQueueExists = false, bTransferQueueExists = false;
-			for (uint32_t u32PhysicalDeviceQueueFamilyIndex = 0U; u32PhysicalDeviceQueueFamilyIndex < u32PhysicalDeviceQueueFamilyCount; u32PhysicalDeviceQueueFamilyIndex++) {
+			for (uint32_t u32PhysicalDeviceQueueFamilyIndex = 0; u32PhysicalDeviceQueueFamilyIndex < u32PhysicalDeviceQueueFamilyCount; u32PhysicalDeviceQueueFamilyIndex++) {
 				if (!bPresentQueueExists) {
 					VkBool32 surfaceSupportExists;
 					vkGetPhysicalDeviceSurfaceSupportKHR(vk_hPhysicalDevice, u32PhysicalDeviceQueueFamilyIndex, vk_hSurface, &surfaceSupportExists);
@@ -493,7 +493,7 @@ namespace RE {
 			return false;
 		}
 		vk_pahPhysicalDevicesAvailable = new VkPhysicalDevice[u32PhysicalDevicesAvailableCount];
-		uint32_t u32CurrentIndex = 0U;
+		uint32_t u32CurrentIndex = 0;
 		do {
 			vk_pahPhysicalDevicesAvailable[u32CurrentIndex] = suitablePhysicalDevices.front();
 			u32CurrentIndex++;
@@ -511,7 +511,7 @@ namespace RE {
 		vkGetPhysicalDeviceQueueFamilyProperties(vk_hPhysicalDeviceSelected, &u32PhysicalDeviceSelectedQueueFamilyCount, nullptr);
 		VkQueueFamilyProperties *vk_pPhysicalDeviceSelectedQueueFamilies = new VkQueueFamilyProperties[u32PhysicalDeviceSelectedQueueFamilyCount];
 		vkGetPhysicalDeviceQueueFamilyProperties(vk_hPhysicalDeviceSelected, &u32PhysicalDeviceSelectedQueueFamilyCount, vk_pPhysicalDeviceSelectedQueueFamilies);
-		CATCH_SIGNAL(set_bit<uint8_t>(u8RenderSystemFlags, GRAPHICS_QUEUE_SUPPORTS_TRANSFER_BIT, (vk_pPhysicalDeviceSelectedQueueFamilies[au32DeviceQueueFamilyIndices[RE_VK_QUEUE_GRAPHICS_INDEX]].queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0U));
+		CATCH_SIGNAL(set_bit<uint8_t>(u8RenderSystemFlags, GRAPHICS_QUEUE_SUPPORTS_TRANSFER_BIT, (vk_pPhysicalDeviceSelectedQueueFamilies[au32DeviceQueueFamilyIndices[RE_VK_QUEUE_GRAPHICS_INDEX]].queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0));
 		delete[] vk_pPhysicalDeviceSelectedQueueFamilies;
 
 		vkGetDeviceQueue(vk_hDevice, au32DeviceQueueFamilyIndices[RE_VK_QUEUE_GRAPHICS_INDEX], 0, &vk_ahDeviceQueueFamilies[RE_VK_QUEUE_GRAPHICS_INDEX]);
@@ -530,7 +530,7 @@ namespace RE {
 				if (vkCreateCommandPool(vk_hDevice, &vk_commandPoolCreateInfo, nullptr, &vk_ahCommandPools[RE_VK_COMMAND_POOL_TRANSFER_TRANSIENT_INDEX]) == VK_SUCCESS) {
 					vk_commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 					if (vkCreateCommandPool(vk_hDevice, &vk_commandPoolCreateInfo, nullptr, &vk_ahCommandPools[RE_VK_COMMAND_POOL_TRANSFER_PERSISTENT_INDEX]) == VK_SUCCESS) {
-						if (alloc_vulkan_command_buffers(vk_ahCommandPools[RE_VK_COMMAND_POOL_TRANSFER_PERSISTENT_INDEX], VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1U, &vk_hDummyTransferCommandBuffer)) {
+						if (alloc_vulkan_command_buffers(vk_ahCommandPools[RE_VK_COMMAND_POOL_TRANSFER_PERSISTENT_INDEX], VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1, &vk_hDummyTransferCommandBuffer)) {
 							if (begin_recording_vulkan_command_buffer(vk_hDummyTransferCommandBuffer, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT, nullptr)) {
 								if (vkEndCommandBuffer(vk_hDummyTransferCommandBuffer) == VK_SUCCESS)
 									return true;
@@ -557,12 +557,12 @@ namespace RE {
 
 	static void destroy_interfaces_to_device() {
 		vk_hDummyTransferCommandBuffer = VK_NULL_HANDLE;
-		for (uint8_t u8CommandPoolIndex = 0U; u8CommandPoolIndex < RE_VK_COMMAND_POOL_COUNT; u8CommandPoolIndex++) {
+		for (uint8_t u8CommandPoolIndex = 0; u8CommandPoolIndex < RE_VK_COMMAND_POOL_COUNT; u8CommandPoolIndex++) {
 			vkDestroyCommandPool(vk_hDevice, vk_ahCommandPools[u8CommandPoolIndex], nullptr);
 			vk_ahCommandPools[u8CommandPoolIndex] = VK_NULL_HANDLE;
 		}
-		for (uint8_t u8QueueFamilyIndex = 0U; u8QueueFamilyIndex < RE_VK_QUEUE_COUNT; u8QueueFamilyIndex++) {
-			au32DeviceQueueFamilyIndices[u8QueueFamilyIndex] = 0U;
+		for (uint8_t u8QueueFamilyIndex = 0; u8QueueFamilyIndex < RE_VK_QUEUE_COUNT; u8QueueFamilyIndex++) {
+			au32DeviceQueueFamilyIndices[u8QueueFamilyIndex] = 0;
 			vk_ahDeviceQueueFamilies[u8QueueFamilyIndex] = VK_NULL_HANDLE;
 		}
 	}
@@ -572,12 +572,12 @@ namespace RE {
 		const VkSwapchainKHR vk_hOldSwapchain = vk_hSwapchain;
 		if (vk_hOldSwapchain) {
 			CATCH_SIGNAL(swapchain_destroyed_renderer());
-			for (uint32_t u32SwapchainImageIndex = 0U; u32SwapchainImageIndex < u32SwapchainImageCount; u32SwapchainImageIndex++)
+			for (uint32_t u32SwapchainImageIndex = 0; u32SwapchainImageIndex < u32SwapchainImageCount; u32SwapchainImageIndex++)
 				vkDestroyImageView(vk_hDevice, vk_pahSwapchainImageViews[u32SwapchainImageIndex], nullptr);
 			DELETE_ARRAY_SAFELY(vk_pahSwapchainImages);
 			DELETE_ARRAY_SAFELY(vk_pahSwapchainImageViews);
 		}
-		if (vk_surfaceCapabilities.currentExtent.width != std::numeric_limits<uint32_t>::max() || vk_surfaceCapabilities.currentExtent.height != std::numeric_limits<uint32_t>::max() || vk_surfaceCapabilities.currentExtent.width == 0U || vk_surfaceCapabilities.currentExtent.height == 0U)
+		if (vk_surfaceCapabilities.currentExtent.width != std::numeric_limits<uint32_t>::max() || vk_surfaceCapabilities.currentExtent.height != std::numeric_limits<uint32_t>::max() || !vk_surfaceCapabilities.currentExtent.width || !vk_surfaceCapabilities.currentExtent.height)
 			vk_swapchainResolution = vk_surfaceCapabilities.currentExtent;
 		else {
 			vk_swapchainResolution.width = std::clamp<uint32_t>(windowSize[0], vk_surfaceCapabilities.minImageExtent.width, vk_surfaceCapabilities.maxImageExtent.width);
@@ -586,11 +586,11 @@ namespace RE {
 		VkSwapchainCreateInfoKHR vk_swapchainCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
 			.surface = vk_hSurface,
-			.minImageCount = std::clamp(vk_surfaceCapabilities.minImageCount + 1U, vk_surfaceCapabilities.minImageCount, vk_surfaceCapabilities.maxImageCount > 0U ? vk_surfaceCapabilities.maxImageCount : std::numeric_limits<uint32_t>::max()),
+			.minImageCount = std::clamp(vk_surfaceCapabilities.minImageCount + 1, vk_surfaceCapabilities.minImageCount, vk_surfaceCapabilities.maxImageCount > 0 ? vk_surfaceCapabilities.maxImageCount : std::numeric_limits<uint32_t>::max()),
 			.imageFormat = vk_surfaceFormatSelected.format,
 			.imageColorSpace = vk_surfaceFormatSelected.colorSpace,
 			.imageExtent = vk_swapchainResolution,
-			.imageArrayLayers = 1U,
+			.imageArrayLayers = 1,
 			.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
 			.preTransform = vk_surfaceCapabilities.currentTransform,
 			.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
@@ -600,7 +600,7 @@ namespace RE {
 		const uint32_t u32SwapchainRelevantQueueIndices[2] = {au32DeviceQueueFamilyIndices[RE_VK_QUEUE_GRAPHICS_INDEX], au32DeviceQueueFamilyIndices[RE_VK_QUEUE_PRESENT_INDEX]};
 		if (au32DeviceQueueFamilyIndices[RE_VK_QUEUE_GRAPHICS_INDEX] != au32DeviceQueueFamilyIndices[RE_VK_QUEUE_PRESENT_INDEX]) {
 			vk_swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-			vk_swapchainCreateInfo.queueFamilyIndexCount = 2U;
+			vk_swapchainCreateInfo.queueFamilyIndexCount = 2;
 			vk_swapchainCreateInfo.pQueueFamilyIndices = u32SwapchainRelevantQueueIndices;
 		} else
 			vk_swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -623,9 +623,9 @@ namespace RE {
 		// Create swapchain image views
 		vk_pahSwapchainImageViews = new VkImageView[u32SwapchainImageCount];
 		{
-			uint32_t u32SwapchainImageViewsCreated = 0U;
+			uint32_t u32SwapchainImageViewsCreated = 0;
 			while (u32SwapchainImageViewsCreated < u32SwapchainImageCount) {
-				if (!create_vulkan_image_view(vk_pahSwapchainImages[u32SwapchainImageViewsCreated], VK_IMAGE_VIEW_TYPE_2D, vk_eSwapchainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 0U, 1U, 0U, 1U, &vk_pahSwapchainImageViews[u32SwapchainImageViewsCreated])) {
+				if (!create_vulkan_image_view(vk_pahSwapchainImages[u32SwapchainImageViewsCreated], VK_IMAGE_VIEW_TYPE_2D, vk_eSwapchainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1, &vk_pahSwapchainImageViews[u32SwapchainImageViewsCreated])) {
 					RE_FATAL_ERROR("Failed to create Vulkan image view at index ", u32SwapchainImageViewsCreated);
 					break;
 				}
@@ -633,7 +633,7 @@ namespace RE {
 				continue;
 			}
 			if (u32SwapchainImageViewsCreated != u32SwapchainImageCount) {
-				for (uint32_t u32SwapchainImageDeleteIndex = 0U; u32SwapchainImageDeleteIndex < u32SwapchainImageViewsCreated; u32SwapchainImageDeleteIndex++)
+				for (uint32_t u32SwapchainImageDeleteIndex = 0; u32SwapchainImageDeleteIndex < u32SwapchainImageViewsCreated; u32SwapchainImageDeleteIndex++)
 					vkDestroyImageView(vk_hDevice, vk_pahSwapchainImageViews[u32SwapchainImageDeleteIndex], nullptr);
 				DELETE_ARRAY_SAFELY(vk_pahSwapchainImages);
 				DELETE_ARRAY_SAFELY(vk_pahSwapchainImageViews);
@@ -647,7 +647,7 @@ namespace RE {
 	
 	static void destroy_swapchain() {
 		CATCH_SIGNAL(swapchain_destroyed_renderer());
-		for (uint32_t u32SwapchainImageIndex = 0U; u32SwapchainImageIndex < u32SwapchainImageCount; u32SwapchainImageIndex++)
+		for (uint32_t u32SwapchainImageIndex = 0; u32SwapchainImageIndex < u32SwapchainImageCount; u32SwapchainImageIndex++)
 			vkDestroyImageView(vk_hDevice, vk_pahSwapchainImageViews[u32SwapchainImageIndex], nullptr);
 		DELETE_ARRAY_SAFELY(vk_pahSwapchainImages);
 		DELETE_ARRAY_SAFELY(vk_pahSwapchainImageViews);

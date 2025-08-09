@@ -9,8 +9,6 @@
 
 namespace RE {
 
-#define GET_VULKAN_MATRIX_ELEMENT_INDEX(COLUMN, LINE) (COLUMN * 4 + LINE)
-
 	enum ScreenPercentage {
 		SCREEN_PERCENTAGE_CONST_IMG_SIZE,
 		SCREEN_PERCENTAGE_SWAPCHAIN_EQUAL,
@@ -38,7 +36,7 @@ namespace RE {
 		.maxDepth = 1.0f
 	};
 	VkRect2D vk_cameraScissor;
-	VkExtent2D vk_worldRenderImageExtent = {
+	VkExtent2D vk_worldRenderImageExtent2D = {
 		.width = 600,
 		.height = 400
 	};
@@ -75,6 +73,11 @@ namespace RE {
 	std::array<VkImageView, RE_VK_FRAMES_IN_FLIGHT> vk_ahWorldRenderImageViews = {};
 	std::array<VkFramebuffer, RE_VK_FRAMES_IN_FLIGHT> vk_ahWorldFramebuffers = {};
 
+	VkImage *vk_pahSwapchainDepthStencilImages = nullptr;
+	VkDeviceMemory *vk_pahSwapchainDepthStencilImageMemories = nullptr;
+	VkImageView *vk_pahSwapchainDepthStencilImageViews = nullptr;
+	VkFramebuffer *vk_pahSwapchainFramebuffers = nullptr;
+
 	std::array<VkFence, RE_VK_FRAMES_IN_FLIGHT> vk_ahRenderFences = {};
 	VkSemaphore *vk_pahSwapchainSemaphores = nullptr;
 	std::array<VkSemaphore, RE_VK_RENDER_SEMAPHORE_COUNT> vk_ahRenderSemaphores = {};
@@ -84,7 +87,11 @@ namespace RE {
 	uint32_t u32SwapchainRenderImageIndex = 0;
 	uint8_t u8CurrentFrameInFlightIndex = 0;
 
-#define ARE_MSAA_AND_SCREEN_PERCENTAGE_MODIFIED() (vk_eMsaaCount != VK_SAMPLE_COUNT_1_BIT && eScreenPercentage != SCREEN_PERCENTAGE_SWAPCHAIN_EQUAL)
+#define GET_VULKAN_MATRIX_ELEMENT_INDEX(COLUMN, LINE) (COLUMN * 4 + LINE)
+#define IS_MSAA_ENABLED() (vk_eMsaaCount != VK_SAMPLE_COUNT_1_BIT)
+#define IS_SCREEN_PERCENTAGE_MODIFIED() (eScreenPercentage != SCREEN_PERCENTAGE_SWAPCHAIN_EQUAL)
+#define ARE_MSAA_AND_SCREEN_PERCENTAGE_MODIFIED() (IS_MSAA_ENABLED() && IS_SCREEN_PERCENTAGE_MODIFIED())
+#define SHOULD_USE_SWAPCHAIN_IMAGES_DIRECTLY() (eScreenPercentage == SCREEN_PERCENTAGE_SWAPCHAIN_EQUAL && vk_eMsaaCount == VK_SAMPLE_COUNT_1_BIT)
 
 	static bool create_render_pass() {
 		constexpr uint32_t u32WorldRenderPassAttachmentCount = 2, u32WorldRenderPassSubpassCount = 1, u32WorldRenderPassDependencyCount = 1;
@@ -97,7 +104,7 @@ namespace RE {
 				.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
 				.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
 				.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-				.finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+				.finalLayout = SHOULD_USE_SWAPCHAIN_IMAGES_DIRECTLY() ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
 			}, {
 				.format = vk_eDepthStencilBufferFormat,
 				.samples = vk_eMsaaCount,
@@ -161,118 +168,174 @@ namespace RE {
 	static bool create_world_render_images() {
 		switch (eScreenPercentage) {
 			case SCREEN_PERCENTAGE_SWAPCHAIN_EQUAL:
-				vk_worldRenderImageExtent.width = vk_swapchainResolution.width;
-				vk_worldRenderImageExtent.height = vk_swapchainResolution.height;
+				vk_worldRenderImageExtent2D.width = vk_swapchainResolution.width;
+				vk_worldRenderImageExtent2D.height = vk_swapchainResolution.height;
 				break;
 			case SCREEN_PERCENTAGE_SWAPCHAIN_PERCENTAGE:
-				vk_worldRenderImageExtent.width = static_cast<uint32_t>(std::round(vk_swapchainResolution.width * fScreenPercentage));
-				vk_worldRenderImageExtent.height = static_cast<uint32_t>(std::round(vk_swapchainResolution.height * fScreenPercentage));
+				vk_worldRenderImageExtent2D.width = static_cast<uint32_t>(std::round(vk_swapchainResolution.width * fScreenPercentage));
+				vk_worldRenderImageExtent2D.height = static_cast<uint32_t>(std::round(vk_swapchainResolution.height * fScreenPercentage));
 				break;
 			default:
 				break;
 		}
-		const VkExtent3D vk_worldRenderImageExtent3D = {
-			.width = vk_worldRenderImageExtent.width,
-			.height = vk_worldRenderImageExtent.height,
-			.depth = 1U
+		const VkExtent3D vk_renderImageExtent3D = {
+			.width = vk_worldRenderImageExtent2D.width,
+			.height = vk_worldRenderImageExtent2D.height,
+			.depth = 1
 		};
-		constexpr uint32_t u32WorldRenderImageQueueCount = 2;
-		const std::array<uint32_t, u32WorldRenderImageQueueCount> au32WorldRenderImageQueues = {RE_VK_QUEUE_GRAPHICS_INDEX, RE_VK_QUEUE_TRANSFER_INDEX};
-		uint8_t u8WorldRenderImageCollectionCreateIndex = 0;
-		while (u8WorldRenderImageCollectionCreateIndex < RE_VK_FRAMES_IN_FLIGHT) {
-			if (CATCH_SIGNAL_AND_RETURN(create_vulkan_image(0, VK_IMAGE_TYPE_2D, vk_eSwapchainImageFormat, vk_worldRenderImageExtent3D, 1, 1, vk_eMsaaCount, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, u32WorldRenderImageQueueCount, au32WorldRenderImageQueues.data(), VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_ahWorldRenderImages[u8WorldRenderImageCollectionCreateIndex], &vk_ahWorldRenderImageMemories[u8WorldRenderImageCollectionCreateIndex]), bool)) {
-				if (CATCH_SIGNAL_AND_RETURN(create_vulkan_image_view(vk_ahWorldRenderImages[u8WorldRenderImageCollectionCreateIndex], VK_IMAGE_VIEW_TYPE_2D, vk_eSwapchainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1, &vk_ahWorldRenderImageViews[u8WorldRenderImageCollectionCreateIndex]), bool)) {
-					constexpr uint32_t u32GraphicsQueueOnlyCount = 1, au32GraphicsQueueOnly[u32GraphicsQueueOnlyCount] = {RE_VK_QUEUE_GRAPHICS_INDEX};
-					if (CATCH_SIGNAL_AND_RETURN(create_vulkan_image(0, VK_IMAGE_TYPE_2D, vk_eDepthStencilBufferFormat, vk_worldRenderImageExtent3D, 1, 1, vk_eMsaaCount, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, u32GraphicsQueueOnlyCount, au32GraphicsQueueOnly, VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_ahWorldDepthStencilImages[u8WorldRenderImageCollectionCreateIndex], &vk_ahWorldDepthStencilImageMemories[u8WorldRenderImageCollectionCreateIndex]), bool)) {
-						if (CATCH_SIGNAL_AND_RETURN(create_vulkan_image_view(vk_ahWorldDepthStencilImages[u8WorldRenderImageCollectionCreateIndex], VK_IMAGE_VIEW_TYPE_2D, vk_eDepthStencilBufferFormat, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1, &vk_ahWorldDepthStencilImageViews[u8WorldRenderImageCollectionCreateIndex]), bool)) {
-							VkCommandBuffer vk_hDepthStencilBufferTransitCommandBuffer;
-							if (CATCH_SIGNAL_AND_RETURN(transit_image(RE_VK_QUEUE_GRAPHICS_INDEX, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, 0, VK_ACCESS_NONE, VK_ACCESS_NONE, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, vk_ahWorldDepthStencilImages[u8WorldRenderImageCollectionCreateIndex], VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1, &vk_hDepthStencilBufferTransitCommandBuffer, nullptr), bool)) {
-								constexpr uint32_t u32FramebufferImageViewCount = 2;
-								const VkImageView vk_ahFramebufferImageViews[u32FramebufferImageViewCount] = {vk_ahWorldRenderImageViews[u8WorldRenderImageCollectionCreateIndex], vk_ahWorldDepthStencilImageViews[u8WorldRenderImageCollectionCreateIndex]};
-								if (CATCH_SIGNAL_AND_RETURN(create_vulkan_framebuffer(0, vk_hWorldRenderPass, u32FramebufferImageViewCount, vk_ahFramebufferImageViews, vk_worldRenderImageExtent.width, vk_worldRenderImageExtent.height, 1, &vk_ahWorldFramebuffers[u8WorldRenderImageCollectionCreateIndex]), bool)) {
-									if (ARE_MSAA_AND_SCREEN_PERCENTAGE_MODIFIED() && !CATCH_SIGNAL_AND_RETURN(create_vulkan_image(0, VK_IMAGE_TYPE_2D, vk_eSwapchainImageFormat, vk_worldRenderImageExtent3D, 1, 1, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, u32GraphicsQueueOnlyCount, au32GraphicsQueueOnly, VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_ahSingleSampledWorldRenderImages[u8WorldRenderImageCollectionCreateIndex], &vk_ahSingleSampledWorldRenderImageMemories[u8WorldRenderImageCollectionCreateIndex]), bool))
-										RE_FATAL_ERROR("Failed to create Vulkan image at index ", u8WorldRenderImageCollectionCreateIndex, " to store single sampled image of the rendered world");
-									else {
-										u8WorldRenderImageCollectionCreateIndex++;
-										continue;
-									}
+		constexpr uint32_t u32GraphicsQueueOnlyCount = 1;
+		const std::array<uint32_t, u32GraphicsQueueOnlyCount> au32GraphicsQueueOnly = {{RE_VK_QUEUE_GRAPHICS_INDEX}};
+		if (!SHOULD_USE_SWAPCHAIN_IMAGES_DIRECTLY()) {
+			constexpr uint32_t u32WorldRenderImageQueueCount = 2;
+			const std::array<uint32_t, u32WorldRenderImageQueueCount> au32WorldRenderImageQueues = {RE_VK_QUEUE_GRAPHICS_INDEX, RE_VK_QUEUE_TRANSFER_INDEX};
+			uint8_t u8WorldRenderImageCollectionCreateIndex = 0;
+			while (u8WorldRenderImageCollectionCreateIndex < RE_VK_FRAMES_IN_FLIGHT) {
+				if (CATCH_SIGNAL_AND_RETURN(create_vulkan_image(0, VK_IMAGE_TYPE_2D, vk_eSwapchainImageFormat, vk_renderImageExtent3D, 1, 1, vk_eMsaaCount, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, u32WorldRenderImageQueueCount, au32WorldRenderImageQueues.data(), VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_ahWorldRenderImages[u8WorldRenderImageCollectionCreateIndex], &vk_ahWorldRenderImageMemories[u8WorldRenderImageCollectionCreateIndex]), bool)) {
+					if (CATCH_SIGNAL_AND_RETURN(create_vulkan_image_view(vk_ahWorldRenderImages[u8WorldRenderImageCollectionCreateIndex], VK_IMAGE_VIEW_TYPE_2D, vk_eSwapchainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1, &vk_ahWorldRenderImageViews[u8WorldRenderImageCollectionCreateIndex]), bool)) {
+						if (CATCH_SIGNAL_AND_RETURN(create_vulkan_image(0, VK_IMAGE_TYPE_2D, vk_eDepthStencilBufferFormat, vk_renderImageExtent3D, 1, 1, vk_eMsaaCount, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, u32GraphicsQueueOnlyCount, au32GraphicsQueueOnly.data(), VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_ahWorldDepthStencilImages[u8WorldRenderImageCollectionCreateIndex], &vk_ahWorldDepthStencilImageMemories[u8WorldRenderImageCollectionCreateIndex]), bool)) {
+							if (CATCH_SIGNAL_AND_RETURN(create_vulkan_image_view(vk_ahWorldDepthStencilImages[u8WorldRenderImageCollectionCreateIndex], VK_IMAGE_VIEW_TYPE_2D, vk_eDepthStencilBufferFormat, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1, &vk_ahWorldDepthStencilImageViews[u8WorldRenderImageCollectionCreateIndex]), bool)) {
+								VkCommandBuffer vk_hDepthStencilBufferTransitCommandBuffer;
+								if (CATCH_SIGNAL_AND_RETURN(transit_image(RE_VK_QUEUE_GRAPHICS_INDEX, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, 0, VK_ACCESS_NONE, VK_ACCESS_NONE, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, vk_ahWorldDepthStencilImages[u8WorldRenderImageCollectionCreateIndex], VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1, &vk_hDepthStencilBufferTransitCommandBuffer, nullptr), bool)) {
+									constexpr uint32_t u32FramebufferImageViewCount = 2;
+									const std::array<VkImageView, u32FramebufferImageViewCount> vk_ahFramebufferImageViews = {{vk_ahWorldRenderImageViews[u8WorldRenderImageCollectionCreateIndex], vk_ahWorldDepthStencilImageViews[u8WorldRenderImageCollectionCreateIndex]}};
+									if (CATCH_SIGNAL_AND_RETURN(create_vulkan_framebuffer(0, vk_hWorldRenderPass, u32FramebufferImageViewCount, vk_ahFramebufferImageViews.data(), vk_renderImageExtent3D.width, vk_renderImageExtent3D.height, 1, &vk_ahWorldFramebuffers[u8WorldRenderImageCollectionCreateIndex]), bool)) {
+										if (ARE_MSAA_AND_SCREEN_PERCENTAGE_MODIFIED() && !CATCH_SIGNAL_AND_RETURN(create_vulkan_image(0, VK_IMAGE_TYPE_2D, vk_eSwapchainImageFormat, vk_renderImageExtent3D, 1, 1, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, u32GraphicsQueueOnlyCount, au32GraphicsQueueOnly.data(), VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_ahSingleSampledWorldRenderImages[u8WorldRenderImageCollectionCreateIndex], &vk_ahSingleSampledWorldRenderImageMemories[u8WorldRenderImageCollectionCreateIndex]), bool))
+											RE_FATAL_ERROR("Failed to create Vulkan image at index ", u8WorldRenderImageCollectionCreateIndex, " to store single sampled image of the rendered world");
+										else {
+											u8WorldRenderImageCollectionCreateIndex++;
+											continue;
+										}
+									} else
+										RE_FATAL_ERROR("Failed to create Vulkan framebuffer at index ", u8WorldRenderImageCollectionCreateIndex, " for world rendering");
 								} else
-									RE_FATAL_ERROR("Failed creating Vulkan framebuffer at index ", u8WorldRenderImageCollectionCreateIndex, " for world rendering");
+									RE_FATAL_ERROR("Failed to transit depth & stencil buffer at index ", u8WorldRenderImageCollectionCreateIndex, " to its required image layout");
+								vkDestroyImageView(vk_hDevice, vk_ahWorldDepthStencilImageViews[u8WorldRenderImageCollectionCreateIndex], nullptr);
 							} else
-								RE_FATAL_ERROR("Failed transiting depth & stencil buffer at index ", u8WorldRenderImageCollectionCreateIndex, " to its required image layout");
-							vkDestroyImageView(vk_hDevice, vk_ahWorldDepthStencilImageViews[u8WorldRenderImageCollectionCreateIndex], nullptr);
+								RE_FATAL_ERROR("Failed to create Vulkan image view for the depth & stencil buffer at index ", u8WorldRenderImageCollectionCreateIndex);
+							vkFreeMemory(vk_hDevice, vk_ahWorldDepthStencilImageMemories[u8WorldRenderImageCollectionCreateIndex], nullptr);
+							vkDestroyImage(vk_hDevice, vk_ahWorldDepthStencilImages[u8WorldRenderImageCollectionCreateIndex], nullptr);
 						} else
-							RE_FATAL_ERROR("Failed to create Vulkan image view for the depth & stencil buffer at index ", u8WorldRenderImageCollectionCreateIndex);
-						vkFreeMemory(vk_hDevice, vk_ahWorldDepthStencilImageMemories[u8WorldRenderImageCollectionCreateIndex], nullptr);
-						vkDestroyImage(vk_hDevice, vk_ahWorldDepthStencilImages[u8WorldRenderImageCollectionCreateIndex], nullptr);
+							RE_FATAL_ERROR("Failed to create Vulkan image for depth & stencil buffer usage at index ", u8WorldRenderImageCollectionCreateIndex);
+						vkDestroyImageView(vk_hDevice, vk_ahWorldRenderImageViews[u8WorldRenderImageCollectionCreateIndex], nullptr);
 					} else
-						RE_FATAL_ERROR("Failed to create Vulkan image for depth & stencil buffer usage at index ", u8WorldRenderImageCollectionCreateIndex);
-					vkDestroyImageView(vk_hDevice, vk_ahWorldRenderImageViews[u8WorldRenderImageCollectionCreateIndex], nullptr);
+						RE_FATAL_ERROR("Failed to create Vulkan GPU-side image view at index ", u8WorldRenderImageCollectionCreateIndex, " for world rendering");
+					vkFreeMemory(vk_hDevice, vk_ahWorldRenderImageMemories[u8WorldRenderImageCollectionCreateIndex], nullptr);
+					vkDestroyImage(vk_hDevice, vk_ahWorldRenderImages[u8WorldRenderImageCollectionCreateIndex], nullptr);
 				} else
-					RE_FATAL_ERROR("Failed creating Vulkan GPU-side image view at index ", u8WorldRenderImageCollectionCreateIndex, " for world rendering");
-				vkFreeMemory(vk_hDevice, vk_ahWorldRenderImageMemories[u8WorldRenderImageCollectionCreateIndex], nullptr);
-				vkDestroyImage(vk_hDevice, vk_ahWorldRenderImages[u8WorldRenderImageCollectionCreateIndex], nullptr);
-			} else
-				RE_FATAL_ERROR("Failed creating Vulkan GPU-side image at index ", u8WorldRenderImageCollectionCreateIndex, " for world rendering");
-			vk_ahSingleSampledWorldRenderImageMemories[u8WorldRenderImageCollectionCreateIndex] = VK_NULL_HANDLE;
-			vk_ahSingleSampledWorldRenderImages[u8WorldRenderImageCollectionCreateIndex] = VK_NULL_HANDLE;
-			vk_ahWorldDepthStencilImageViews[u8WorldRenderImageCollectionCreateIndex] = VK_NULL_HANDLE;
-			vk_ahWorldDepthStencilImageMemories[u8WorldRenderImageCollectionCreateIndex] = VK_NULL_HANDLE;
-			vk_ahWorldDepthStencilImages[u8WorldRenderImageCollectionCreateIndex] = VK_NULL_HANDLE;
-			vk_ahWorldRenderImageViews[u8WorldRenderImageCollectionCreateIndex] = VK_NULL_HANDLE;
-			vk_ahWorldRenderImageMemories[u8WorldRenderImageCollectionCreateIndex] = VK_NULL_HANDLE;
-			vk_ahWorldRenderImages[u8WorldRenderImageCollectionCreateIndex] = VK_NULL_HANDLE;
-			break;
-		}
-		if (u8WorldRenderImageCollectionCreateIndex == RE_VK_FRAMES_IN_FLIGHT)
-			return true;
-		for (uint8_t u8WorldRenderImageCollectionDeleteIndex = 0; u8WorldRenderImageCollectionDeleteIndex < u8WorldRenderImageCollectionCreateIndex; u8WorldRenderImageCollectionDeleteIndex++) {
-			if (ARE_MSAA_AND_SCREEN_PERCENTAGE_MODIFIED()) {
-				vkFreeMemory(vk_hDevice, vk_ahSingleSampledWorldRenderImageMemories[u8WorldRenderImageCollectionDeleteIndex], nullptr);
-				vkDestroyImage(vk_hDevice, vk_ahSingleSampledWorldRenderImages[u8WorldRenderImageCollectionDeleteIndex], nullptr);
+					RE_FATAL_ERROR("Failed to create Vulkan GPU-side image at index ", u8WorldRenderImageCollectionCreateIndex, " for world rendering");
+				vk_ahSingleSampledWorldRenderImageMemories[u8WorldRenderImageCollectionCreateIndex] = VK_NULL_HANDLE;
+				vk_ahSingleSampledWorldRenderImages[u8WorldRenderImageCollectionCreateIndex] = VK_NULL_HANDLE;
+				vk_ahWorldDepthStencilImageViews[u8WorldRenderImageCollectionCreateIndex] = VK_NULL_HANDLE;
+				vk_ahWorldDepthStencilImageMemories[u8WorldRenderImageCollectionCreateIndex] = VK_NULL_HANDLE;
+				vk_ahWorldDepthStencilImages[u8WorldRenderImageCollectionCreateIndex] = VK_NULL_HANDLE;
+				vk_ahWorldRenderImageViews[u8WorldRenderImageCollectionCreateIndex] = VK_NULL_HANDLE;
+				vk_ahWorldRenderImageMemories[u8WorldRenderImageCollectionCreateIndex] = VK_NULL_HANDLE;
+				vk_ahWorldRenderImages[u8WorldRenderImageCollectionCreateIndex] = VK_NULL_HANDLE;
+				break;
 			}
-			vkDestroyFramebuffer(vk_hDevice, vk_ahWorldFramebuffers[u8WorldRenderImageCollectionDeleteIndex], nullptr);
-			vkDestroyImageView(vk_hDevice, vk_ahWorldDepthStencilImageViews[u8WorldRenderImageCollectionDeleteIndex], nullptr);
-			vkFreeMemory(vk_hDevice, vk_ahWorldDepthStencilImageMemories[u8WorldRenderImageCollectionDeleteIndex], nullptr);
-			vkDestroyImage(vk_hDevice, vk_ahWorldDepthStencilImages[u8WorldRenderImageCollectionDeleteIndex], nullptr);
-			vkDestroyImageView(vk_hDevice, vk_ahWorldRenderImageViews[u8WorldRenderImageCollectionDeleteIndex], nullptr);
-			vkFreeMemory(vk_hDevice, vk_ahWorldRenderImageMemories[u8WorldRenderImageCollectionDeleteIndex], nullptr);
-			vkDestroyImage(vk_hDevice, vk_ahWorldRenderImages[u8WorldRenderImageCollectionDeleteIndex], nullptr);
-			vk_ahSingleSampledWorldRenderImageMemories[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
-			vk_ahSingleSampledWorldRenderImages[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
-			vk_ahWorldFramebuffers[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
-			vk_ahWorldDepthStencilImageViews[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
-			vk_ahWorldDepthStencilImageMemories[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
-			vk_ahWorldDepthStencilImages[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
-			vk_ahWorldRenderImageViews[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
-			vk_ahWorldRenderImageMemories[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
-			vk_ahWorldRenderImages[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
+			if (u8WorldRenderImageCollectionCreateIndex == RE_VK_FRAMES_IN_FLIGHT)
+				return true;
+			for (uint8_t u8WorldRenderImageCollectionDeleteIndex = 0; u8WorldRenderImageCollectionDeleteIndex < u8WorldRenderImageCollectionCreateIndex; u8WorldRenderImageCollectionDeleteIndex++) {
+				if (ARE_MSAA_AND_SCREEN_PERCENTAGE_MODIFIED()) {
+					vkFreeMemory(vk_hDevice, vk_ahSingleSampledWorldRenderImageMemories[u8WorldRenderImageCollectionDeleteIndex], nullptr);
+					vkDestroyImage(vk_hDevice, vk_ahSingleSampledWorldRenderImages[u8WorldRenderImageCollectionDeleteIndex], nullptr);
+				}
+				vkDestroyFramebuffer(vk_hDevice, vk_ahWorldFramebuffers[u8WorldRenderImageCollectionDeleteIndex], nullptr);
+				vkDestroyImageView(vk_hDevice, vk_ahWorldDepthStencilImageViews[u8WorldRenderImageCollectionDeleteIndex], nullptr);
+				vkFreeMemory(vk_hDevice, vk_ahWorldDepthStencilImageMemories[u8WorldRenderImageCollectionDeleteIndex], nullptr);
+				vkDestroyImage(vk_hDevice, vk_ahWorldDepthStencilImages[u8WorldRenderImageCollectionDeleteIndex], nullptr);
+				vkDestroyImageView(vk_hDevice, vk_ahWorldRenderImageViews[u8WorldRenderImageCollectionDeleteIndex], nullptr);
+				vkFreeMemory(vk_hDevice, vk_ahWorldRenderImageMemories[u8WorldRenderImageCollectionDeleteIndex], nullptr);
+				vkDestroyImage(vk_hDevice, vk_ahWorldRenderImages[u8WorldRenderImageCollectionDeleteIndex], nullptr);
+				vk_ahSingleSampledWorldRenderImageMemories[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
+				vk_ahSingleSampledWorldRenderImages[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
+				vk_ahWorldFramebuffers[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
+				vk_ahWorldDepthStencilImageViews[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
+				vk_ahWorldDepthStencilImageMemories[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
+				vk_ahWorldDepthStencilImages[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
+				vk_ahWorldRenderImageViews[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
+				vk_ahWorldRenderImageMemories[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
+				vk_ahWorldRenderImages[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
+			}
+		} else {
+			vk_pahSwapchainDepthStencilImages = new VkImage[u32SwapchainImageCount];
+			vk_pahSwapchainDepthStencilImageMemories = new VkDeviceMemory[u32SwapchainImageCount];
+			vk_pahSwapchainDepthStencilImageViews = new VkImageView[u32SwapchainImageCount];
+			vk_pahSwapchainFramebuffers = new VkFramebuffer[u32SwapchainImageCount];
+			uint32_t u32SwapchainRenderImageCreateIndex = 0;
+			while (u32SwapchainRenderImageCreateIndex < u32SwapchainImageCount) {
+				if (CATCH_SIGNAL_AND_RETURN(create_vulkan_image(0, VK_IMAGE_TYPE_2D, vk_eDepthStencilBufferFormat, vk_renderImageExtent3D, 1, 1, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, u32GraphicsQueueOnlyCount, au32GraphicsQueueOnly.data(), VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_pahSwapchainDepthStencilImages[u32SwapchainRenderImageCreateIndex], &vk_pahSwapchainDepthStencilImageMemories[u32SwapchainRenderImageCreateIndex]), bool)) {
+					if (CATCH_SIGNAL_AND_RETURN(create_vulkan_image_view(vk_pahSwapchainDepthStencilImages[u32SwapchainRenderImageCreateIndex], VK_IMAGE_VIEW_TYPE_2D, vk_eDepthStencilBufferFormat, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1, &vk_pahSwapchainDepthStencilImageViews[u32SwapchainRenderImageCreateIndex]), bool)) {
+						VkCommandBuffer vk_hDepthStencilBufferTransitCommandBuffer;
+						if (CATCH_SIGNAL_AND_RETURN(transit_image(RE_VK_QUEUE_GRAPHICS_INDEX, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, 0, VK_ACCESS_NONE, VK_ACCESS_NONE, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, vk_pahSwapchainDepthStencilImages[u32SwapchainRenderImageCreateIndex], VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1, &vk_hDepthStencilBufferTransitCommandBuffer, nullptr), bool)) {
+							constexpr uint32_t u32SwapchainFramebufferImageViewCount = 2;
+							const std::array<VkImageView, u32SwapchainFramebufferImageViewCount> vk_ahSwapchainFramebufferImageViews = {{vk_pahSwapchainImageViews[u32SwapchainRenderImageCreateIndex], vk_pahSwapchainDepthStencilImageViews[u32SwapchainRenderImageCreateIndex]}};
+							if (CATCH_SIGNAL_AND_RETURN(create_vulkan_framebuffer(0, vk_hWorldRenderPass, u32SwapchainFramebufferImageViewCount, vk_ahSwapchainFramebufferImageViews.data(), vk_renderImageExtent3D.width, vk_renderImageExtent3D.height, 1, &vk_pahSwapchainFramebuffers[u32SwapchainRenderImageCreateIndex]), bool)) {
+								u32SwapchainRenderImageCreateIndex++;
+								continue;
+							} else
+								RE_FATAL_ERROR("Failed to create Vulkan framebuffer at index ", u32SwapchainRenderImageCreateIndex, " for world rendering into swapchain image");
+						} else
+							RE_FATAL_ERROR("Failed to transit depth & stencil buffer at index ", u32SwapchainRenderImageCreateIndex, " to its required image layout");
+						vkDestroyImageView(vk_hDevice, vk_pahSwapchainDepthStencilImageViews[u32SwapchainRenderImageCreateIndex], nullptr);
+					} else
+						RE_FATAL_ERROR("Failed to create Vulkan image view for the depth & stencil buffer at index ", u32SwapchainRenderImageCreateIndex);
+					vkFreeMemory(vk_hDevice, vk_pahSwapchainDepthStencilImageMemories[u32SwapchainRenderImageCreateIndex], nullptr);
+					vkDestroyImage(vk_hDevice, vk_pahSwapchainDepthStencilImages[u32SwapchainRenderImageCreateIndex], nullptr);
+				} else
+					RE_FATAL_ERROR("Failed to create Vulkan image for depth & stencil buffer usage at index ", u32SwapchainRenderImageCreateIndex);
+			}
+			if (u32SwapchainRenderImageCreateIndex == u32SwapchainImageCount)
+				return true;
+			for (uint32_t u32SwapchainRenderImageDeleteIndex = 0; u32SwapchainRenderImageDeleteIndex < u32SwapchainImageCount; u32SwapchainRenderImageDeleteIndex++) {
+				vkDestroyFramebuffer(vk_hDevice, vk_pahSwapchainFramebuffers[u32SwapchainRenderImageDeleteIndex], nullptr);
+				vkDestroyImageView(vk_hDevice, vk_pahSwapchainDepthStencilImageViews[u32SwapchainRenderImageDeleteIndex], nullptr);
+				vkFreeMemory(vk_hDevice, vk_pahSwapchainDepthStencilImageMemories[u32SwapchainRenderImageDeleteIndex], nullptr);
+				vkDestroyImage(vk_hDevice, vk_pahSwapchainDepthStencilImages[u32SwapchainRenderImageDeleteIndex], nullptr);
+			}
+			DELETE_ARRAY_SAFELY(vk_pahSwapchainDepthStencilImages);
+			DELETE_ARRAY_SAFELY(vk_pahSwapchainDepthStencilImageMemories);
+			DELETE_ARRAY_SAFELY(vk_pahSwapchainDepthStencilImageViews);
+			DELETE_ARRAY_SAFELY(vk_pahSwapchainFramebuffers);
 		}
 		return false;
 	}
 
 	static void destroy_world_render_images() {
-		for (uint32_t u8WorldRenderImageCollectionDeleteIndex = 0; u8WorldRenderImageCollectionDeleteIndex < RE_VK_FRAMES_IN_FLIGHT; u8WorldRenderImageCollectionDeleteIndex++) {
-			if (ARE_MSAA_AND_SCREEN_PERCENTAGE_MODIFIED()) {
-				vkFreeMemory(vk_hDevice, vk_ahSingleSampledWorldRenderImageMemories[u8WorldRenderImageCollectionDeleteIndex], nullptr);
-				vkDestroyImage(vk_hDevice, vk_ahSingleSampledWorldRenderImages[u8WorldRenderImageCollectionDeleteIndex], nullptr);
+		if (!SHOULD_USE_SWAPCHAIN_IMAGES_DIRECTLY()) {
+			for (uint32_t u8WorldRenderImageCollectionDeleteIndex = 0; u8WorldRenderImageCollectionDeleteIndex < RE_VK_FRAMES_IN_FLIGHT; u8WorldRenderImageCollectionDeleteIndex++) {
+				if (ARE_MSAA_AND_SCREEN_PERCENTAGE_MODIFIED()) {
+					vkFreeMemory(vk_hDevice, vk_ahSingleSampledWorldRenderImageMemories[u8WorldRenderImageCollectionDeleteIndex], nullptr);
+					vkDestroyImage(vk_hDevice, vk_ahSingleSampledWorldRenderImages[u8WorldRenderImageCollectionDeleteIndex], nullptr);
+				}
+				vkDestroyFramebuffer(vk_hDevice, vk_ahWorldFramebuffers[u8WorldRenderImageCollectionDeleteIndex], nullptr);
+				vkDestroyImageView(vk_hDevice, vk_ahWorldDepthStencilImageViews[u8WorldRenderImageCollectionDeleteIndex], nullptr);
+				vkFreeMemory(vk_hDevice, vk_ahWorldDepthStencilImageMemories[u8WorldRenderImageCollectionDeleteIndex], nullptr);
+				vkDestroyImage(vk_hDevice, vk_ahWorldDepthStencilImages[u8WorldRenderImageCollectionDeleteIndex], nullptr);
+				vkDestroyImageView(vk_hDevice, vk_ahWorldRenderImageViews[u8WorldRenderImageCollectionDeleteIndex], nullptr);
+				vkFreeMemory(vk_hDevice, vk_ahWorldRenderImageMemories[u8WorldRenderImageCollectionDeleteIndex], nullptr);
+				vkDestroyImage(vk_hDevice, vk_ahWorldRenderImages[u8WorldRenderImageCollectionDeleteIndex], nullptr);
+				vk_ahSingleSampledWorldRenderImageMemories[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
+				vk_ahSingleSampledWorldRenderImages[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
+				vk_ahWorldFramebuffers[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
+				vk_ahWorldDepthStencilImageViews[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
+				vk_ahWorldDepthStencilImageMemories[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
+				vk_ahWorldDepthStencilImages[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
+				vk_ahWorldRenderImageViews[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
+				vk_ahWorldRenderImageMemories[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
+				vk_ahWorldRenderImages[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
 			}
-			vkDestroyFramebuffer(vk_hDevice, vk_ahWorldFramebuffers[u8WorldRenderImageCollectionDeleteIndex], nullptr);
-			vkDestroyImageView(vk_hDevice, vk_ahWorldDepthStencilImageViews[u8WorldRenderImageCollectionDeleteIndex], nullptr);
-			vkFreeMemory(vk_hDevice, vk_ahWorldDepthStencilImageMemories[u8WorldRenderImageCollectionDeleteIndex], nullptr);
-			vkDestroyImage(vk_hDevice, vk_ahWorldDepthStencilImages[u8WorldRenderImageCollectionDeleteIndex], nullptr);
-			vkDestroyImageView(vk_hDevice, vk_ahWorldRenderImageViews[u8WorldRenderImageCollectionDeleteIndex], nullptr);
-			vkFreeMemory(vk_hDevice, vk_ahWorldRenderImageMemories[u8WorldRenderImageCollectionDeleteIndex], nullptr);
-			vkDestroyImage(vk_hDevice, vk_ahWorldRenderImages[u8WorldRenderImageCollectionDeleteIndex], nullptr);
-			vk_ahSingleSampledWorldRenderImageMemories[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
-			vk_ahSingleSampledWorldRenderImages[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
-			vk_ahWorldFramebuffers[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
-			vk_ahWorldDepthStencilImageViews[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
-			vk_ahWorldDepthStencilImageMemories[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
-			vk_ahWorldDepthStencilImages[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
-			vk_ahWorldRenderImageViews[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
-			vk_ahWorldRenderImageMemories[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
-			vk_ahWorldRenderImages[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
+		} else {
+			for (uint32_t u32SwapchainImageIndex = 0; u32SwapchainImageIndex < u32SwapchainImageCount; u32SwapchainImageIndex++) {
+				vkDestroyFramebuffer(vk_hDevice, vk_pahSwapchainFramebuffers[u32SwapchainImageIndex], nullptr);
+				vkDestroyImageView(vk_hDevice, vk_pahSwapchainDepthStencilImageViews[u32SwapchainImageIndex], nullptr);
+				vkFreeMemory(vk_hDevice, vk_pahSwapchainDepthStencilImageMemories[u32SwapchainImageIndex], nullptr);
+				vkDestroyImage(vk_hDevice, vk_pahSwapchainDepthStencilImages[u32SwapchainImageIndex], nullptr);
+			}
+			DELETE_ARRAY_SAFELY(vk_pahSwapchainDepthStencilImages);
+			DELETE_ARRAY_SAFELY(vk_pahSwapchainDepthStencilImageMemories);
+			DELETE_ARRAY_SAFELY(vk_pahSwapchainDepthStencilImageViews);
+			DELETE_ARRAY_SAFELY(vk_pahSwapchainFramebuffers);
 		}
 	}
 
@@ -286,15 +349,17 @@ namespace RE {
 
 	static void calculate_world_render_area_with_camera() {
 		DEFINE_SIGNAL_GUARD(sigCamAccess);
-		const float a2fCamScale[2] = {
-			std::abs(pActiveCamera->view[0]),
-			std::abs(pActiveCamera->view[1])
+		const std::array<float, 2> a2fCamScale = {
+			{
+				std::abs(pActiveCamera->view[0]),
+				std::abs(pActiveCamera->view[1])
+			}
 		};
-		const float fCameraScale = std::abs(std::min(vk_worldRenderImageExtent.width / a2fCamScale[0], vk_worldRenderImageExtent.height / a2fCamScale[1]));
+		const float fCameraScale = std::abs(std::min(vk_worldRenderImageExtent2D.width / a2fCamScale[0], vk_worldRenderImageExtent2D.height / a2fCamScale[1]));
 		vk_cameraViewport.width = a2fCamScale[0] * fCameraScale;
 		vk_cameraViewport.height = a2fCamScale[1] * fCameraScale;
-		vk_cameraViewport.x = (vk_worldRenderImageExtent.width - vk_cameraViewport.width) / 2.0f;
-		vk_cameraViewport.y = (vk_worldRenderImageExtent.height - vk_cameraViewport.height) / 2.0f;
+		vk_cameraViewport.x = (vk_worldRenderImageExtent2D.width - vk_cameraViewport.width) / 2.0f;
+		vk_cameraViewport.y = (vk_worldRenderImageExtent2D.height - vk_cameraViewport.height) / 2.0f;
 		vk_cameraScissor.offset.x = static_cast<int32_t>(std::round(vk_cameraViewport.x));
 		vk_cameraScissor.offset.y = static_cast<int32_t>(std::round(vk_cameraViewport.y));
 		vk_cameraScissor.extent.width = static_cast<int32_t>(std::round(vk_cameraViewport.width));
@@ -396,7 +461,7 @@ namespace RE {
 										if (alloc_descriptor_set(vk_hWorldCameraDescriptorPool, RE_VK_FRAMES_IN_FLIGHT, vk_ahDescriptorSetLayouts, vk_ahWorldCameraDescriptorSets.data())) {
 											if (create_pipeline_layout(1, &vk_hWorldCameraDescriptorSetLayout, 0, nullptr, 0, &vk_hWorldBasicPipelineLayout)) {
 												if (create_render_pass()) {
-													constexpr uint32_t u32CameraUniformBufferQueueCount = 1U;
+													constexpr uint32_t u32CameraUniformBufferQueueCount = 1;
 													const std::array<uint32_t, u32CameraUniformBufferQueueCount> au32CameraUniformBufferQueues = {RE_VK_QUEUE_GRAPHICS_INDEX};
 													const VkFenceCreateInfo vk_renderFenceCreateInfo = {
 														.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
@@ -450,11 +515,12 @@ namespace RE {
 														if (u16RenderSemaphoreCreateIndex == RE_VK_RENDER_SEMAPHORE_COUNT && CATCH_SIGNAL_AND_RETURN(alloc_vulkan_command_buffers(vk_ahCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX], VK_COMMAND_BUFFER_LEVEL_PRIMARY, RE_VK_FRAMES_IN_FLIGHT, vk_ahRenderCommandBuffers.data()), bool)) {
 															const VkSubmitInfo vk_rectIndexBufferTransferSubmitInfo = {
 																.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-																.commandBufferCount = 1U,
+																.commandBufferCount = 1,
 																.pCommandBuffers = indexBufferDataTransferCommandBuffer.get_command_buffer_ptr()
 															};
 															CATCH_SIGNAL(stagingIndexBufferDataInit.join());
 															if (vkQueueSubmit(vk_ahDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], 1, &vk_rectIndexBufferTransferSubmitInfo, rectIndexBufferDataTransferFence) == VK_SUCCESS) {
+																// Creates world render images on GPU, unless its size depends on swapchain image and will be created soon
 																if (eScreenPercentage != SCREEN_PERCENTAGE_CONST_IMG_SIZE || CATCH_SIGNAL_AND_RETURN(create_world_render_images(), bool)) {
 																	if (CATCH_SIGNAL_AND_RETURN(swapchain_created_renderer(), bool)) {
 																		if (CATCH_SIGNAL_AND_RETURN(init_game_object_renderer(), bool)) {
@@ -470,14 +536,14 @@ namespace RE {
 															} else
 																RE_FATAL_ERROR("Failed to submit task to the transfer queue for copying data to the Vulkan rectangle index buffer on the GPU");
 															vkFreeCommandBuffers(vk_hDevice, vk_ahCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX], RE_VK_FRAMES_IN_FLIGHT, vk_ahRenderCommandBuffers.data());
-															std::fill(std::begin(vk_ahRenderCommandBuffers), std::end(vk_ahRenderCommandBuffers), VK_NULL_HANDLE);
+															vk_ahRenderCommandBuffers.fill(VK_NULL_HANDLE);
 														}
-														for (uint16_t u16RenderSemaphoreDeleteIndex = 0U; u16RenderSemaphoreDeleteIndex < u16RenderSemaphoreCreateIndex; u16RenderSemaphoreDeleteIndex++) {
+														for (uint16_t u16RenderSemaphoreDeleteIndex = 0; u16RenderSemaphoreDeleteIndex < u16RenderSemaphoreCreateIndex; u16RenderSemaphoreDeleteIndex++) {
 															vkDestroySemaphore(vk_hDevice, vk_ahRenderSemaphores[u16RenderSemaphoreDeleteIndex], nullptr);
 															vk_ahRenderSemaphores[u16RenderSemaphoreDeleteIndex] = VK_NULL_HANDLE;
 														}
 													}
-													for (uint8_t u8FrameInFlightDeleteIndex = 0U; u8FrameInFlightDeleteIndex < u8FrameInFlightCreateIndex; u8FrameInFlightDeleteIndex++) {
+													for (uint8_t u8FrameInFlightDeleteIndex = 0; u8FrameInFlightDeleteIndex < u8FrameInFlightCreateIndex; u8FrameInFlightDeleteIndex++) {
 														vkUnmapMemory(vk_hDevice, vk_ahWorldCameraUniformBufferMemories[u8FrameInFlightDeleteIndex]);
 														vkFreeMemory(vk_hDevice, vk_ahWorldCameraUniformBufferMemories[u8FrameInFlightDeleteIndex], nullptr);
 														vkDestroyBuffer(vk_hDevice, vk_ahWorldCameraUniformBuffers[u8FrameInFlightDeleteIndex], nullptr);
@@ -609,30 +675,32 @@ namespace RE {
 			return;
 		}
 		constexpr uint32_t u32ClearValueCount = 2;
-		const std::array<VkClearValue, u32ClearValueCount> vk_aClearValues = {{
+		const std::array<VkClearValue, u32ClearValueCount> vk_aClearValues = {
 			{
-				.color = {
-					.float32 = {
-						0.0f,
-						0.0f,
-						0.0f,
-						1.0f
+				{
+					.color = {
+						.float32 = {
+							0.0f,
+							0.0f,
+							0.0f,
+							1.0f
+						}
+					}
+				}, {
+					.depthStencil = {
+						.depth = 0.0f,
+						.stencil = 0
 					}
 				}
-			}, {
-				.depthStencil = {
-					.depth = 0.0f,
-					.stencil = 0
-				}
 			}
-		}};
+		};
 		const VkRenderPassBeginInfo vk_renderPassInfo = {
 			.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
 			.renderPass = vk_hWorldRenderPass,
-			.framebuffer = vk_ahWorldFramebuffers[u8CurrentFrameInFlightIndex],
+			.framebuffer = SHOULD_USE_SWAPCHAIN_IMAGES_DIRECTLY() ? vk_pahSwapchainFramebuffers[u32NextSwapchainImageIndex] : vk_ahWorldFramebuffers[u8CurrentFrameInFlightIndex],
 			.renderArea = VkRect2D{
 				VkOffset2D{0, 0},
-				vk_worldRenderImageExtent
+				vk_worldRenderImageExtent2D
 			},
 			.clearValueCount = u32ClearValueCount,
 			.pClearValues = vk_aClearValues.data()
@@ -640,7 +708,7 @@ namespace RE {
 		vkCmdBeginRenderPass(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], &vk_renderPassInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 		vkCmdExecuteCommands(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], 1, &vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex]);
 		vkCmdEndRenderPass(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex]);
-		CATCH_SIGNAL(vk_cmd_transit_image(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, VK_ACCESS_NONE, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, vk_pahSwapchainImages[u32NextSwapchainImageIndex], VK_IMAGE_ASPECT_COLOR_BIT));
+		CATCH_SIGNAL(vk_cmd_transit_image(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, VK_ACCESS_NONE, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED, SHOULD_USE_SWAPCHAIN_IMAGES_DIRECTLY() ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, vk_pahSwapchainImages[u32NextSwapchainImageIndex], VK_IMAGE_ASPECT_COLOR_BIT));
 		const VkImageBlit vk_worldRenderImageBlit = {
 			.srcSubresource = {
 				.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
@@ -654,8 +722,8 @@ namespace RE {
 					.y = 0,
 					.z = 0
 				}, {
-					.x = static_cast<int32_t>(vk_worldRenderImageExtent.width),
-					.y = static_cast<int32_t>(vk_worldRenderImageExtent.height),
+					.x = static_cast<int32_t>(vk_worldRenderImageExtent2D.width),
+					.y = static_cast<int32_t>(vk_worldRenderImageExtent2D.height),
 					.z = 1
 				}
 			},
@@ -677,7 +745,7 @@ namespace RE {
 				}
 			}
 		};
-		if (vk_eMsaaCount != VK_SAMPLE_COUNT_1_BIT) {
+		if (IS_MSAA_ENABLED()) {
 			const VkImageResolve vk_worldRenderImageResolve = {
 				.srcSubresource = {
 					.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
@@ -692,21 +760,21 @@ namespace RE {
 					.layerCount = 1
 				},
 				.extent = {
-					.width = vk_worldRenderImageExtent.width,
-					.height = vk_worldRenderImageExtent.height,
+					.width = vk_worldRenderImageExtent2D.width,
+					.height = vk_worldRenderImageExtent2D.height,
 					.depth = 1
 				}
 			};
-			if (eScreenPercentage != SCREEN_PERCENTAGE_SWAPCHAIN_EQUAL) {
+			if (IS_SCREEN_PERCENTAGE_MODIFIED()) {
 				CATCH_SIGNAL(vk_cmd_transit_image(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, VK_ACCESS_NONE, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, vk_ahSingleSampledWorldRenderImages[u8CurrentFrameInFlightIndex], VK_IMAGE_ASPECT_COLOR_BIT));
 				vkCmdResolveImage(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], vk_ahWorldRenderImages[u8CurrentFrameInFlightIndex], VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, vk_ahSingleSampledWorldRenderImages[u8CurrentFrameInFlightIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &vk_worldRenderImageResolve);
 				CATCH_SIGNAL(vk_cmd_transit_image(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, vk_ahSingleSampledWorldRenderImages[u8CurrentFrameInFlightIndex], VK_IMAGE_ASPECT_COLOR_BIT));
 				vkCmdBlitImage(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], vk_ahSingleSampledWorldRenderImages[u8CurrentFrameInFlightIndex], VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, vk_pahSwapchainImages[u32NextSwapchainImageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &vk_worldRenderImageBlit, VK_FILTER_LINEAR);
 			} else
 				vkCmdResolveImage(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], vk_ahWorldRenderImages[u8CurrentFrameInFlightIndex], VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, vk_pahSwapchainImages[u32NextSwapchainImageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &vk_worldRenderImageResolve);
-		} else
+		} else if (IS_SCREEN_PERCENTAGE_MODIFIED())
 			vkCmdBlitImage(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], vk_ahWorldRenderImages[u8CurrentFrameInFlightIndex], VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, vk_pahSwapchainImages[u32NextSwapchainImageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &vk_worldRenderImageBlit, VK_FILTER_LINEAR);
-		CATCH_SIGNAL(vk_cmd_transit_image(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_NONE, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, vk_pahSwapchainImages[u32NextSwapchainImageIndex], VK_IMAGE_ASPECT_COLOR_BIT));
+		CATCH_SIGNAL(vk_cmd_transit_image(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_NONE, SHOULD_USE_SWAPCHAIN_IMAGES_DIRECTLY() ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, vk_pahSwapchainImages[u32NextSwapchainImageIndex], VK_IMAGE_ASPECT_COLOR_BIT));
 		if (vkEndCommandBuffer(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex]) != VK_SUCCESS) {
 			RE_FATAL_ERROR("Failed finishing to record Vulkan command buffer for rendering everything");
 			return;
@@ -765,14 +833,14 @@ namespace RE {
 		if (eScreenPercentage != SCREEN_PERCENTAGE_CONST_IMG_SIZE)
 			CATCH_SIGNAL(create_world_render_images());
 		if (!pActiveCamera) {
-			vk_cameraViewport.width = vk_worldRenderImageExtent.width;
-			vk_cameraViewport.height = vk_worldRenderImageExtent.height;
+			vk_cameraViewport.width = vk_worldRenderImageExtent2D.width;
+			vk_cameraViewport.height = vk_worldRenderImageExtent2D.height;
 			vk_cameraViewport.x = 0.0f;
 			vk_cameraViewport.y = 0.0f;
 			vk_cameraScissor.offset.x = 0;
 			vk_cameraScissor.offset.y = 0;
-			vk_cameraScissor.extent.width = vk_worldRenderImageExtent.width;
-			vk_cameraScissor.extent.height = vk_worldRenderImageExtent.height;
+			vk_cameraScissor.extent.width = vk_worldRenderImageExtent2D.width;
+			vk_cameraScissor.extent.height = vk_worldRenderImageExtent2D.height;
 		}
 		return true;
 	}
@@ -790,33 +858,89 @@ namespace RE {
 	void attach_camera(const Camera *const pCamera) {
 		pActiveCamera = pCamera;
 		if (!pActiveCamera) {
-			vk_cameraViewport.width = vk_worldRenderImageExtent.width;
-			vk_cameraViewport.height = vk_worldRenderImageExtent.height;
+			vk_cameraViewport.width = vk_worldRenderImageExtent2D.width;
+			vk_cameraViewport.height = vk_worldRenderImageExtent2D.height;
 			vk_cameraViewport.x = 0.0f;
 			vk_cameraViewport.y = 0.0f;
 			vk_cameraScissor.offset.x = 0;
 			vk_cameraScissor.offset.y = 0;
-			vk_cameraScissor.extent.width = vk_worldRenderImageExtent.width;
-			vk_cameraScissor.extent.height = vk_worldRenderImageExtent.height;
+			vk_cameraScissor.extent.width = vk_worldRenderImageExtent2D.width;
+			vk_cameraScissor.extent.height = vk_worldRenderImageExtent2D.height;
 		}
 	}
 
 	void set_const_screen_size(const uint32_t u32Width, const uint32_t u32Height) {
-		eScreenPercentage = SCREEN_PERCENTAGE_CONST_IMG_SIZE;
-		vk_worldRenderImageExtent.width = u32Width;
-		vk_worldRenderImageExtent.height = u32Height;
-		CATCH_SIGNAL(recreate_world_render_images());
+		if (eScreenPercentage == SCREEN_PERCENTAGE_CONST_IMG_SIZE && vk_worldRenderImageExtent2D.width == u32Width && vk_worldRenderImageExtent2D.height == u32Height)
+			return;
+		else if (eScreenPercentage == SCREEN_PERCENTAGE_SWAPCHAIN_EQUAL) {
+			WAIT_FOR_IDLE_VULKAN_DEVICE();
+			CATCH_SIGNAL(destroy_world_render_images());
+			vkDestroyRenderPass(vk_hDevice, vk_hWorldRenderPass, nullptr);
+			eScreenPercentage = SCREEN_PERCENTAGE_CONST_IMG_SIZE;
+			vk_worldRenderImageExtent2D.width = u32Width;
+			vk_worldRenderImageExtent2D.height = u32Height;
+			if (create_render_pass()) {
+				if (CATCH_SIGNAL_AND_RETURN(create_world_render_images(), bool)) {
+					if (CATCH_SIGNAL_AND_RETURN(recreate_game_object_render_pipelines(), bool))
+						return;
+					CATCH_SIGNAL(destroy_world_render_images());
+				}
+				vkDestroyRenderPass(vk_hDevice, vk_hWorldRenderPass, nullptr);
+			}
+			vk_hWorldRenderPass = VK_NULL_HANDLE;
+		} else {
+			eScreenPercentage = SCREEN_PERCENTAGE_CONST_IMG_SIZE;
+			vk_worldRenderImageExtent2D.width = u32Width;
+			vk_worldRenderImageExtent2D.height = u32Height;
+			CATCH_SIGNAL(recreate_world_render_images());
+		}
 	}
 
 	void set_screen_percentage(const float fPercentage) {
-		eScreenPercentage = fPercentage == 1.0f ? SCREEN_PERCENTAGE_SWAPCHAIN_EQUAL : SCREEN_PERCENTAGE_SWAPCHAIN_PERCENTAGE;
-		fScreenPercentage = fPercentage;
-		CATCH_SIGNAL(recreate_world_render_images());
+		if (eScreenPercentage == SCREEN_PERCENTAGE_SWAPCHAIN_PERCENTAGE && fScreenPercentage == fPercentage)
+			return;
+		else if (fPercentage == 1.0f)
+			CATCH_SIGNAL(reset_screen_size());
+		else if (eScreenPercentage == SCREEN_PERCENTAGE_SWAPCHAIN_EQUAL) {
+			WAIT_FOR_IDLE_VULKAN_DEVICE();
+			CATCH_SIGNAL(destroy_world_render_images());
+			vkDestroyRenderPass(vk_hDevice, vk_hWorldRenderPass, nullptr);
+			eScreenPercentage = SCREEN_PERCENTAGE_SWAPCHAIN_PERCENTAGE;
+			fScreenPercentage = fPercentage;
+			if (create_render_pass()) {
+				if (CATCH_SIGNAL_AND_RETURN(create_world_render_images(), bool)) {
+					if (CATCH_SIGNAL_AND_RETURN(recreate_game_object_render_pipelines(), bool))
+						return;
+					CATCH_SIGNAL(destroy_world_render_images());
+				}
+				vkDestroyRenderPass(vk_hDevice, vk_hWorldRenderPass, nullptr);
+			}
+			vk_hWorldRenderPass = VK_NULL_HANDLE;
+		} else {
+			eScreenPercentage = SCREEN_PERCENTAGE_SWAPCHAIN_PERCENTAGE;
+			fScreenPercentage = fPercentage;
+			CATCH_SIGNAL(recreate_world_render_images());
+		}
 	}
 
 	void reset_screen_size() {
-		eScreenPercentage = SCREEN_PERCENTAGE_SWAPCHAIN_EQUAL;
-		CATCH_SIGNAL(recreate_world_render_images());
+		if (eScreenPercentage == SCREEN_PERCENTAGE_SWAPCHAIN_EQUAL)
+			return;
+		else {
+			WAIT_FOR_IDLE_VULKAN_DEVICE();
+			CATCH_SIGNAL(destroy_world_render_images());
+			vkDestroyRenderPass(vk_hDevice, vk_hWorldRenderPass, nullptr);
+			eScreenPercentage = SCREEN_PERCENTAGE_SWAPCHAIN_EQUAL;
+			if (create_render_pass()) {
+				if (CATCH_SIGNAL_AND_RETURN(create_world_render_images(), bool)) {
+					if (CATCH_SIGNAL_AND_RETURN(recreate_game_object_render_pipelines(), bool))
+						return;
+					CATCH_SIGNAL(destroy_world_render_images());
+				}
+				vkDestroyRenderPass(vk_hDevice, vk_hWorldRenderPass, nullptr);
+			}
+			vk_hWorldRenderPass = VK_NULL_HANDLE;
+		}
 	}
 
 	void set_msaa_mode(const MsaaMode eNewMsaaMode) {

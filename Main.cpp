@@ -155,9 +155,9 @@ class First : public Scene {
 				bMsaaEight = !bMsaaEight;
 				CATCH_SIGNAL(set_msaa_mode(bMsaaEight ? RE_MSAA_MODE_8 : RE_MSAA_MODE_1));
 				if (bMsaaEight)
-					CATCH_SIGNAL(set_screen_percentage(0.75f));
+					CATCH_SIGNAL(set_screen_percentage_mode_const_size(50, 50));
 				else
-					CATCH_SIGNAL(reset_screen_size());
+					CATCH_SIGNAL(set_screen_percentage_mode_normal());
 			}
 			//PRINT_LN(get_fps_rate());
 		}
@@ -166,9 +166,8 @@ class First : public Scene {
 
 int main_func() {
 	show_message_box_on_error(false);
-	set_fps_limit(60U);
+	set_fps_limit(60);
 	SignalCatcher sigCatcher;
-	reset_screen_size();
 	First first;
 	second = new Second();
 	set_next_scene(&first);

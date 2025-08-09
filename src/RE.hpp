@@ -30,43 +30,43 @@ namespace RE {
 #define STRIP_QUOTE_MACRO(...) __VA_ARGS__
 
 	enum TerminalColor {
-		RE_TERMINAL_COLOR_BLACK = 0x00,
-		RE_TERMINAL_COLOR_RED = 0x01,
-		RE_TERMINAL_COLOR_GREEN = 0x02,
-		RE_TERMINAL_COLOR_YELLOW = 0x03,
-		RE_TERMINAL_COLOR_BLUE = 0x04,
-		RE_TERMINAL_COLOR_MAGENTA = 0x05,
-		RE_TERMINAL_COLOR_CYAN = 0x06,
-		RE_TERMINAL_COLOR_WHITE = 0x07,
-		RE_TERMINAL_COLOR_BRIGHT_BLACK = 0x08, /* gray */
-		RE_TERMINAL_COLOR_BRIGHT_RED = 0x09,
-		RE_TERMINAL_COLOR_BRIGHT_GREEN = 0x0A,
-		RE_TERMINAL_COLOR_BRIGHT_YELLOW = 0x0B,
-		RE_TERMINAL_COLOR_BRIGHT_BLUE = 0x0C,
-		RE_TERMINAL_COLOR_BRIGHT_MAGENTA = 0x0D,
-		RE_TERMINAL_COLOR_BRIGHT_CYAN = 0x0E,
-		RE_TERMINAL_COLOR_BRIGHT_WHITE = 0x0F,
+		RE_TERMINAL_COLOR_BLACK = 0x0,
+		RE_TERMINAL_COLOR_RED = 0x1,
+		RE_TERMINAL_COLOR_GREEN = 0x2,
+		RE_TERMINAL_COLOR_YELLOW = 0x3,
+		RE_TERMINAL_COLOR_BLUE = 0x4,
+		RE_TERMINAL_COLOR_MAGENTA = 0x5,
+		RE_TERMINAL_COLOR_CYAN = 0x6,
+		RE_TERMINAL_COLOR_WHITE = 0x7,
+		RE_TERMINAL_COLOR_BRIGHT_BLACK = 0x8, /* gray */
+		RE_TERMINAL_COLOR_BRIGHT_RED = 0x9,
+		RE_TERMINAL_COLOR_BRIGHT_GREEN = 0xA,
+		RE_TERMINAL_COLOR_BRIGHT_YELLOW = 0xB,
+		RE_TERMINAL_COLOR_BRIGHT_BLUE = 0xC,
+		RE_TERMINAL_COLOR_BRIGHT_MAGENTA = 0xD,
+		RE_TERMINAL_COLOR_BRIGHT_CYAN = 0xE,
+		RE_TERMINAL_COLOR_BRIGHT_WHITE = 0xF,
 		RE_TERMINAL_COLOR_MAX_ENUM = 0x10
 	};
 
 	enum Input {
-		RE_INPUT_UNKNOWN = -0x01,
-		RE_INPUT_SCROLL_UP = 0x00,
-		RE_INPUT_SCROLL_DOWN = 0x01,
-		RE_INPUT_BUTTON_LEFT = 0x02,
-		RE_INPUT_BUTTON_RIGHT = 0x03,
-		RE_INPUT_BUTTON_MIDDLE = 0x04,
-		RE_INPUT_KEY_SPACE = 0x05,
-		RE_INPUT_KEY_A = 0x06,
-		RE_INPUT_KEY_B = 0x07,
-		RE_INPUT_KEY_C = 0x08,
-		RE_INPUT_KEY_D = 0x09,
-		RE_INPUT_KEY_E = 0x0A,
-		RE_INPUT_KEY_F = 0x0B,
-		RE_INPUT_KEY_G = 0x0C,
-		RE_INPUT_KEY_H = 0x0D,
-		RE_INPUT_KEY_I = 0x0E,
-		RE_INPUT_KEY_J = 0x0F,
+		RE_INPUT_UNKNOWN = -0x1,
+		RE_INPUT_SCROLL_UP = 0x0,
+		RE_INPUT_SCROLL_DOWN = 0x1,
+		RE_INPUT_BUTTON_LEFT = 0x2,
+		RE_INPUT_BUTTON_RIGHT = 0x3,
+		RE_INPUT_BUTTON_MIDDLE = 0x4,
+		RE_INPUT_KEY_SPACE = 0x5,
+		RE_INPUT_KEY_A = 0x6,
+		RE_INPUT_KEY_B = 0x7,
+		RE_INPUT_KEY_C = 0x8,
+		RE_INPUT_KEY_D = 0x9,
+		RE_INPUT_KEY_E = 0xA,
+		RE_INPUT_KEY_F = 0xB,
+		RE_INPUT_KEY_G = 0xC,
+		RE_INPUT_KEY_H = 0xD,
+		RE_INPUT_KEY_I = 0xE,
+		RE_INPUT_KEY_J = 0xF,
 		RE_INPUT_KEY_K = 0x10,
 		RE_INPUT_KEY_L = 0x11,
 		RE_INPUT_KEY_M = 0x12,
@@ -327,32 +327,20 @@ namespace RE {
 	template <typename T>
 	[[nodiscard]]
 	std::string array_to_string(const T array[], const size_t arrayLength) {
-		if constexpr (std::is_same_v<T, wchar_t> || std::is_same_v<T, std::wstring>) {
-			std::wstringstream wss(L"");
-			wss << L'{';
-			for (size_t i = 0; i < arrayLength; i++) {
-				if (i)
-					wss << ", ";
-				wss << array[i];
-			}
-			wss << L'}';
-			return std::string(wss.str());
-		} else {
-			std::stringstream ss("");
-			ss << '{';
-			for (size_t i = 0; i < arrayLength; i++) {
-				if (i)
-					ss << ", ";
-				if constexpr (std::is_same_v<T, int8_t>)
-					ss << static_cast<int16_t>(array[i]);
-				else if constexpr (std::is_same_v<T, uint8_t>)
-					ss << static_cast<uint16_t>(array[i]);
-				else
-					ss << array[i];
-			}
-			ss << '}';
-			return ss.str();
+		std::stringstream ss("");
+		ss << '{';
+		for (size_t i = 0; i < arrayLength; i++) {
+			if (i)
+				ss << ", ";
+			if constexpr (std::is_same_v<T, int8_t>)
+				ss << static_cast<int16_t>(array[i]);
+			else if constexpr (std::is_same_v<T, uint8_t>)
+				ss << static_cast<uint16_t>(array[i]);
+			else
+				ss << array[i];
 		}
+		ss << '}';
+		return ss.str();
 	}
 
 	template <typename T>
@@ -896,13 +884,13 @@ namespace RE {
 	bool is_vsync_enabled();
 
 	// Renderer
-	void set_const_screen_size(uint32_t u32Width, uint32_t u32Height);
-	void set_screen_percentage(float fPercentage);
-	void reset_screen_size();
+	void set_screen_percentage_mode_const_size(uint32_t u32Width, uint32_t u32Height);
+	void set_screen_percentage_mode_scale(float fScale);
+	void set_screen_percentage_mode_normal();
 	void set_msaa_mode(MsaaMode eNewMsaaMode);
 	[[nodiscard]]
 	bool is_msaa_mode_supported(MsaaMode eMsaaMode);
-	void get_supported_msaa_modes(uint8_t u8ListLength, MsaaMode *peSupportedMsaaModes, uint8_t *pu8SupportedMsaaModeCount);
+	void get_supported_msaa_modes(uint8_t u8ListLength, MsaaMode *paeSupportedMsaaModes, uint8_t *pu8SupportedMsaaModeCount);
 	[[nodiscard]]
 	MsaaMode get_highest_supported_msaa_mode();
 	void enable_sample_shading(bool bEnable);

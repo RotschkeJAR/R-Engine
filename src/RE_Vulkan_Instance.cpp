@@ -17,8 +17,8 @@ namespace RE {
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 	VkInstance vk_hInstance = VK_NULL_HANDLE;
 
-	const char *pcVulkanDebugFocusOnFile = nullptr, *pcVulkanDebugFocusOnFunc = nullptr;
-	uint32_t u32VulkanDebugFocusOnLine = 0U, u32VulkanDebugFocusCount = 0U;
+	const char *pacVulkanDebugFocusOnFile = nullptr, *pacVulkanDebugFocusOnFunc = nullptr;
+	uint32_t u32VulkanDebugFocusOnLine = 0, u32VulkanDebugFocusCount = 0;
 	VkDebugUtilsMessengerEXT vk_hDebugMessenger = VK_NULL_HANDLE;
 
 	// Vulkan 1.0
@@ -85,22 +85,17 @@ namespace RE {
 	PFN_vkGetPhysicalDeviceXlibPresentationSupportKHR pfn_vkGetPhysicalDeviceXlibPresentationSupportKHR = nullptr;
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 
-	static PFN_vkVoidFunction load_func_with_instance(VkInstance vk_hInstance, const char* pcFuncName) {
+	static PFN_vkVoidFunction load_func_with_instance(const VkInstance vk_hInstance, const char *const pacFuncName) {
 		PFN_vkVoidFunction pFunc;
-		CATCH_SIGNAL(pFunc = pfn_vkGetInstanceProcAddr(vk_hInstance, pcFuncName));
+		CATCH_SIGNAL(pFunc = pfn_vkGetInstanceProcAddr(vk_hInstance, pacFuncName));
 		if (!pFunc)
-			RE_FATAL_ERROR(append_to_string("Failed loading the Vulkan instance-level function \"", pcFuncName, "\""));
+			RE_FATAL_ERROR(append_to_string("Failed loading the Vulkan instance-level function \"", pacFuncName, "\""));
 		return pFunc;
 	}
 
-	static PFN_vkVoidFunction load_func(const char* pcFuncName) {
-		return CATCH_SIGNAL_AND_RETURN(load_func_with_instance(vk_hInstance, pcFuncName), PFN_vkVoidFunction);
+	static PFN_vkVoidFunction load_func(const char *const pacFuncName) {
+		return CATCH_SIGNAL_AND_RETURN(load_func_with_instance(vk_hInstance, pacFuncName), PFN_vkVoidFunction);
 	}
-
-#define RE_VK_REQUIRED_EXTENSIONS_COUNT 3U
-	const char *pcRequiredExtensions[RE_VK_REQUIRED_EXTENSIONS_COUNT] = {VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_KHR_SURFACE_EXTENSION_NAME, "\0"};
-#define RE_VK_REQUIRED_LAYERS_COUNT 1U
-	constexpr const char *pcRequiredLayers[RE_VK_REQUIRED_LAYERS_COUNT] = {VK_KHR_VALIDATION_LAYER_NAME};
 
 	static bool create_vulkan_instance() {
 		CATCH_SIGNAL(pfn_vkCreateInstance = reinterpret_cast<PFN_vkCreateInstance>(load_func_with_instance(VK_NULL_HANDLE, "vkCreateInstance")));
@@ -112,26 +107,29 @@ namespace RE {
 		}
 
 		bool bFailure = false;
-		pcRequiredExtensions[RE_VK_REQUIRED_EXTENSIONS_COUNT - 1U] = Window::pInstance->get_vulkan_required_surface_extension_name();
-		uint32_t u32AvailableExtensionsCount = 0U;
+		
+		uint32_t u32AvailableExtensionsCount = 0;
 		vkEnumerateInstanceExtensionProperties(nullptr, &u32AvailableExtensionsCount, nullptr);
-		VkExtensionProperties* vk_pAvailableExtensions = new VkExtensionProperties[u32AvailableExtensionsCount];
+		VkExtensionProperties *const vk_pAvailableExtensions = new VkExtensionProperties[u32AvailableExtensionsCount];
 		vkEnumerateInstanceExtensionProperties(nullptr, &u32AvailableExtensionsCount, vk_pAvailableExtensions);
-		bool bExtensionsPresent[RE_VK_REQUIRED_EXTENSIONS_COUNT] = {};
+		constexpr uint32_t u32RequiredVulkanExtensionCount = 3;
+		std::array<const char*, u32RequiredVulkanExtensionCount> apacRequiredExtensions = {{VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_KHR_SURFACE_EXTENSION_NAME, "\0"}};
+		apacRequiredExtensions[u32RequiredVulkanExtensionCount - 1] = Window::pInstance->get_vulkan_required_surface_extension_name();
+		std::array<bool, u32RequiredVulkanExtensionCount> abExtensionsPresent = {};
 		std::queue<const char*> missingExtensions;
 		if (is_verbose_behaviour_enabled())
 			PRINT_LN("Available Vulkan instance extensions:");
-		for (uint32_t u32ExtensionIndex = 0U; u32ExtensionIndex < u32AvailableExtensionsCount; u32ExtensionIndex++) {
+		for (uint32_t u32ExtensionIndex = 0; u32ExtensionIndex < u32AvailableExtensionsCount; u32ExtensionIndex++) {
 			if (is_verbose_behaviour_enabled())
 				println(append_to_string("\t", vk_pAvailableExtensions[u32ExtensionIndex].extensionName, " (", VK_API_VERSION_MAJOR(vk_pAvailableExtensions[u32ExtensionIndex].specVersion), ".",VK_API_VERSION_MINOR(vk_pAvailableExtensions[u32ExtensionIndex].specVersion), ".", VK_API_VERSION_PATCH(vk_pAvailableExtensions[u32ExtensionIndex].specVersion), ")"));
-			for (uint8_t u8RequiredExtensionIndex = 0U; u8RequiredExtensionIndex < RE_VK_REQUIRED_EXTENSIONS_COUNT; u8RequiredExtensionIndex++)
-				if (are_string_contents_equal(vk_pAvailableExtensions[u32ExtensionIndex].extensionName, pcRequiredExtensions[u8RequiredExtensionIndex]))
-					bExtensionsPresent[u8RequiredExtensionIndex] = true;
+			for (uint8_t u8RequiredExtensionIndex = 0; u8RequiredExtensionIndex < u32RequiredVulkanExtensionCount; u8RequiredExtensionIndex++)
+				if (are_string_contents_equal(vk_pAvailableExtensions[u32ExtensionIndex].extensionName, apacRequiredExtensions[u8RequiredExtensionIndex]))
+					abExtensionsPresent[u8RequiredExtensionIndex] = true;
 		}
 		delete[] vk_pAvailableExtensions;
-		for (uint8_t u8RequiredExtensionIndex = 0U; u8RequiredExtensionIndex < RE_VK_REQUIRED_EXTENSIONS_COUNT; u8RequiredExtensionIndex++)
-			if (!bExtensionsPresent[u8RequiredExtensionIndex])
-				missingExtensions.push(pcRequiredExtensions[u8RequiredExtensionIndex]);
+		for (uint8_t u8RequiredExtensionIndex = 0; u8RequiredExtensionIndex < u32RequiredVulkanExtensionCount; u8RequiredExtensionIndex++)
+			if (!abExtensionsPresent[u8RequiredExtensionIndex])
+				missingExtensions.push(apacRequiredExtensions[u8RequiredExtensionIndex]);
 		if (!missingExtensions.empty()) {
 			bFailure = true;
 			println_colored("\tThe following Vulkan instance extensions are missing on this computer:", RE_TERMINAL_COLOR_RED, false, false);
@@ -141,25 +139,27 @@ namespace RE {
 			} while (!missingExtensions.empty());
 		}
 
-		uint32_t u32AvailableLayersCount = 0U;
+		uint32_t u32AvailableLayersCount = 0;
 		vkEnumerateInstanceLayerProperties(&u32AvailableLayersCount, nullptr);
-		VkLayerProperties* vk_pAvailableLayers = new VkLayerProperties[u32AvailableLayersCount];
+		VkLayerProperties *const vk_pAvailableLayers = new VkLayerProperties[u32AvailableLayersCount];
 		vkEnumerateInstanceLayerProperties(&u32AvailableLayersCount, vk_pAvailableLayers);
-		bool bRequiredLayersPresent[RE_VK_REQUIRED_LAYERS_COUNT] = {};
+		constexpr uint32_t u32RequiredVulkanLayerCount = 1;
+		const std::array<const char*, u32RequiredVulkanLayerCount> apacRequiredLayers = {{VK_KHR_VALIDATION_LAYER_NAME}};
+		std::array<bool, u32RequiredVulkanLayerCount> abRequiredLayersPresent = {};
 		std::queue<const char*> missingLayers;
 		if (is_verbose_behaviour_enabled())
 			PRINT_LN("Available Vulkan instance layers:");
 		for (uint32_t u32LayerIndex = 0; u32LayerIndex < u32AvailableLayersCount; u32LayerIndex++) {
 			if (is_verbose_behaviour_enabled())
 				println(append_to_string("\t", vk_pAvailableLayers[u32LayerIndex].layerName, " (", VK_API_VERSION_MAJOR(vk_pAvailableLayers[u32LayerIndex].specVersion), ".", VK_API_VERSION_MINOR(vk_pAvailableLayers[u32LayerIndex].specVersion), ".",VK_API_VERSION_PATCH(vk_pAvailableLayers[u32LayerIndex].specVersion), " - ", vk_pAvailableLayers[u32LayerIndex].implementationVersion, "): ", vk_pAvailableLayers[u32LayerIndex].description));
-			for (uint8_t u8RequiredLayerIndex = 0U; u8RequiredLayerIndex < RE_VK_REQUIRED_LAYERS_COUNT; u8RequiredLayerIndex++)
-				if (are_string_contents_equal(vk_pAvailableLayers[u32LayerIndex].layerName, pcRequiredLayers[u8RequiredLayerIndex]))
-					bRequiredLayersPresent[u8RequiredLayerIndex] = true;
+			for (uint8_t u8RequiredLayerIndex = 0; u8RequiredLayerIndex < u32RequiredVulkanLayerCount; u8RequiredLayerIndex++)
+				if (are_string_contents_equal(vk_pAvailableLayers[u32LayerIndex].layerName, apacRequiredLayers[u8RequiredLayerIndex]))
+					abRequiredLayersPresent[u8RequiredLayerIndex] = true;
 		}
 		delete[] vk_pAvailableLayers;
-		for (uint8_t u8RequiredLayerIndex = 0U; u8RequiredLayerIndex < RE_VK_REQUIRED_LAYERS_COUNT; u8RequiredLayerIndex++)
-			if (!bRequiredLayersPresent[u8RequiredLayerIndex])
-				missingLayers.push(pcRequiredLayers[u8RequiredLayerIndex]);
+		for (uint8_t u8RequiredLayerIndex = 0; u8RequiredLayerIndex < u32RequiredVulkanLayerCount; u8RequiredLayerIndex++)
+			if (!abRequiredLayersPresent[u8RequiredLayerIndex])
+				missingLayers.push(apacRequiredLayers[u8RequiredLayerIndex]);
 		if (!missingLayers.empty()) {
 			bFailure = true;
 			println_colored("\tThe following Vulkan instance layers are missing on this computer:", RE_TERMINAL_COLOR_RED, false, false);
@@ -183,10 +183,10 @@ namespace RE {
 		const VkInstanceCreateInfo vk_instanceCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
 			.pApplicationInfo = &vk_appInfo,
-			.enabledLayerCount = RE_VK_REQUIRED_LAYERS_COUNT,
-			.ppEnabledLayerNames = pcRequiredLayers,
-			.enabledExtensionCount = RE_VK_REQUIRED_EXTENSIONS_COUNT,
-			.ppEnabledExtensionNames = pcRequiredExtensions
+			.enabledLayerCount = u32RequiredVulkanLayerCount,
+			.ppEnabledLayerNames = apacRequiredLayers.data(),
+			.enabledExtensionCount = u32RequiredVulkanExtensionCount,
+			.ppEnabledExtensionNames = apacRequiredExtensions.data()
 		};
 		if (CHECK_VK_RESULT(pfn_vkCreateInstance(&vk_instanceCreateInfo, nullptr, &vk_hInstance)) != VK_SUCCESS) {
 			RE_FATAL_ERROR("Failed creating Vulkan instance");
@@ -437,8 +437,8 @@ namespace RE {
 				return VK_FALSE;
 		}
 		if (!u32VulkanDebugFocusCount) {
-			if (pcVulkanDebugFocusOnFile && pcVulkanDebugFocusOnFunc && u32VulkanDebugFocusOnLine)
-				println("Vulkan validation layers triggered in ", pcVulkanDebugFocusOnFile, ", in function \"", pcVulkanDebugFocusOnFunc, "\", at line ", u32VulkanDebugFocusOnLine, ":");
+			if (pacVulkanDebugFocusOnFile && pacVulkanDebugFocusOnFunc && u32VulkanDebugFocusOnLine)
+				println("Vulkan validation layers triggered in ", pacVulkanDebugFocusOnFile, ", in function \"", pacVulkanDebugFocusOnFunc, "\", at line ", u32VulkanDebugFocusOnLine, ":");
 			else
 				println("Vulkan validation layers triggered at an unknown location:");
 		}
@@ -507,15 +507,15 @@ namespace RE {
 	}
 
 	void focus_vulkan_debug_on(const char *const pacFile, const char *const pacFunc, const uint32_t u32Line) {
-		pcVulkanDebugFocusOnFile = pacFile;
-		pcVulkanDebugFocusOnFunc = pacFunc;
+		pacVulkanDebugFocusOnFile = pacFile;
+		pacVulkanDebugFocusOnFunc = pacFunc;
 		u32VulkanDebugFocusOnLine = u32Line;
 		u32VulkanDebugFocusCount = 0U;
 	}
 
 	void unfocus_vulkan_debug() {
-		pcVulkanDebugFocusOnFile = nullptr;
-		pcVulkanDebugFocusOnFunc = nullptr;
+		pacVulkanDebugFocusOnFile = nullptr;
+		pacVulkanDebugFocusOnFunc = nullptr;
 		u32VulkanDebugFocusOnLine = 0U;
 		u32VulkanDebugFocusCount = 0U;
 	}

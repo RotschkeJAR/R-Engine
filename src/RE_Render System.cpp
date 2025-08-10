@@ -100,7 +100,7 @@ namespace RE {
 	}
 
 	static bool create_surface() {
-		return CATCH_SIGNAL_AND_RETURN(Window::pInstance->create_vulkan_surface(vk_hSurface), bool);
+		return CATCH_SIGNAL_AND_RETURN(create_vulkan_surface(vk_hSurface), bool);
 	}
 	
 	static void destroy_surface() {
@@ -511,7 +511,7 @@ namespace RE {
 		vkGetPhysicalDeviceQueueFamilyProperties(vk_hPhysicalDeviceSelected, &u32PhysicalDeviceSelectedQueueFamilyCount, nullptr);
 		VkQueueFamilyProperties *vk_pPhysicalDeviceSelectedQueueFamilies = new VkQueueFamilyProperties[u32PhysicalDeviceSelectedQueueFamilyCount];
 		vkGetPhysicalDeviceQueueFamilyProperties(vk_hPhysicalDeviceSelected, &u32PhysicalDeviceSelectedQueueFamilyCount, vk_pPhysicalDeviceSelectedQueueFamilies);
-		CATCH_SIGNAL(set_bit<uint8_t>(u8RenderSystemFlags, GRAPHICS_QUEUE_SUPPORTS_TRANSFER_BIT, (vk_pPhysicalDeviceSelectedQueueFamilies[au32DeviceQueueFamilyIndices[RE_VK_QUEUE_GRAPHICS_INDEX]].queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0));
+		CATCH_SIGNAL(set_bits<uint8_t>(u8RenderSystemFlags, (vk_pPhysicalDeviceSelectedQueueFamilies[au32DeviceQueueFamilyIndices[RE_VK_QUEUE_GRAPHICS_INDEX]].queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0, GRAPHICS_QUEUE_SUPPORTS_TRANSFER_BIT));
 		delete[] vk_pPhysicalDeviceSelectedQueueFamilies;
 
 		vkGetDeviceQueue(vk_hDevice, au32DeviceQueueFamilyIndices[RE_VK_QUEUE_GRAPHICS_INDEX], 0, &vk_ahDeviceQueueFamilies[RE_VK_QUEUE_GRAPHICS_INDEX]);
@@ -604,7 +604,7 @@ namespace RE {
 			vk_swapchainCreateInfo.pQueueFamilyIndices = u32SwapchainRelevantQueueIndices;
 		} else
 			vk_swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-		if (is_bit_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_BIT))
+		if (are_bits_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_BIT))
 			vk_swapchainCreateInfo.presentMode = vk_ePresentModeVsync;
 		else
 			vk_swapchainCreateInfo.presentMode = vk_ePresentModeNoVsync;
@@ -711,8 +711,8 @@ namespace RE {
 	}
 
 	bool refresh_swapchain() {
-		if (is_bit_true<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_BIT)) {
-			set_bit<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_BIT, false);
+		if (are_bits_true<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_BIT)) {
+			set_bits<uint8_t>(u8RenderSystemFlags, false, SWAPCHAIN_DIRTY_BIT);
 			if (!CATCH_SIGNAL_AND_RETURN(recreate_swapchain(), bool))
 				return false;
 		}
@@ -720,23 +720,23 @@ namespace RE {
 	}
 
 	void mark_swapchain_dirty() {
-		set_bit<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_BIT, bRunning);
+		set_bits<uint8_t>(u8RenderSystemFlags, bRunning, SWAPCHAIN_DIRTY_BIT);
 	}
 
 	bool does_graphics_queue_support_transfer() {
-		return is_bit_true<uint8_t>(u8RenderSystemFlags, GRAPHICS_QUEUE_SUPPORTS_TRANSFER_BIT);
+		return are_bits_true<uint8_t>(u8RenderSystemFlags, GRAPHICS_QUEUE_SUPPORTS_TRANSFER_BIT);
 	}
 
 	void enable_vsync(const bool bEnableVsync) {
-		if (is_bit_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_BIT) != bEnableVsync) {
-			set_bit<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_BIT, bEnableVsync);
-			set_bit<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_BIT, bRunning);
+		if (are_bits_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_BIT) != bEnableVsync) {
+			set_bits<uint8_t>(u8RenderSystemFlags, bEnableVsync, VSYNC_SETTING_BIT);
+			set_bits<uint8_t>(u8RenderSystemFlags, bRunning, SWAPCHAIN_DIRTY_BIT);
 		}
 	}
 
 	[[nodiscard]]
 	bool is_vsync_enabled() {
-		return is_bit_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_BIT);
+		return are_bits_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_BIT);
 	}
 
 }

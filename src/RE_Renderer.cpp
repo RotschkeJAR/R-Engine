@@ -9,12 +9,6 @@
 
 namespace RE {
 
-	enum ScreenPercentage {
-		SCREEN_PERCENTAGE_CONST_IMG_SIZE,
-		SCREEN_PERCENTAGE_SWAPCHAIN_EQUAL,
-		SCREEN_PERCENTAGE_SWAPCHAIN_PERCENTAGE
-	};
-
 	typedef uint16_t REindex_t;
 #define RE_VK_RECT_INDEX_BUFFER_SIZE (RE_VK_RENDERABLE_RECTANGLES_COUNT * 6)
 #define RE_VK_RECT_INDEX_BUFFER_SIZE_BYTES (RE_VK_RECT_INDEX_BUFFER_SIZE * sizeof(REindex_t))
@@ -38,8 +32,9 @@ namespace RE {
 	VkRect2D vk_cameraScissor;
 	VkExtent2D vk_worldRenderImageExtent2D;
 
-	ScreenPercentage eScreenPercentage = SCREEN_PERCENTAGE_SWAPCHAIN_EQUAL;
-	float fScreenPercentage;
+	ScreenPercentageSettings screenPercentageSettings = {
+		.eMode = RE_SCREEN_PERCENTAGE_MODE_NORMAL
+	};
 
 	VkSampleCountFlagBits vk_eMsaaCount = VK_SAMPLE_COUNT_1_BIT;
 	std::array<VkImage, RE_VK_FRAMES_IN_FLIGHT> vk_ahSingleSampledWorldRenderImages = {};
@@ -86,9 +81,9 @@ namespace RE {
 
 #define GET_VULKAN_MATRIX_ELEMENT_INDEX(COLUMN, LINE) (COLUMN * 4 + LINE)
 #define IS_MSAA_ENABLED() (vk_eMsaaCount != VK_SAMPLE_COUNT_1_BIT)
-#define IS_SCREEN_PERCENTAGE_MODIFIED() (eScreenPercentage != SCREEN_PERCENTAGE_SWAPCHAIN_EQUAL)
+#define IS_SCREEN_PERCENTAGE_MODIFIED() (screenPercentageSettings.eMode != RE_SCREEN_PERCENTAGE_MODE_NORMAL)
 #define ARE_MSAA_AND_SCREEN_PERCENTAGE_MODIFIED() (IS_MSAA_ENABLED() && IS_SCREEN_PERCENTAGE_MODIFIED())
-#define SHOULD_USE_SWAPCHAIN_IMAGES_DIRECTLY() (eScreenPercentage == SCREEN_PERCENTAGE_SWAPCHAIN_EQUAL && vk_eMsaaCount == VK_SAMPLE_COUNT_1_BIT)
+#define SHOULD_USE_SWAPCHAIN_IMAGES_DIRECTLY() (screenPercentageSettings.eMode == RE_SCREEN_PERCENTAGE_MODE_NORMAL && vk_eMsaaCount == VK_SAMPLE_COUNT_1_BIT)
 
 	static bool create_render_pass() {
 		constexpr uint32_t u32WorldRenderPassAttachmentCount = 2, u32WorldRenderPassSubpassCount = 1, u32WorldRenderPassDependencyCount = 1;
@@ -163,16 +158,21 @@ namespace RE {
 	}
 
 	static bool create_world_render_images() {
-		switch (eScreenPercentage) {
-			case SCREEN_PERCENTAGE_SWAPCHAIN_EQUAL:
-				vk_worldRenderImageExtent2D.width = vk_swapchainResolution.width;
-				vk_worldRenderImageExtent2D.height = vk_swapchainResolution.height;
+		switch (screenPercentageSettings.eMode) {
+			case RE_SCREEN_PERCENTAGE_MODE_NORMAL:
+				vk_worldRenderImageExtent2D = vk_swapchainResolution;
 				break;
-			case SCREEN_PERCENTAGE_SWAPCHAIN_PERCENTAGE:
-				vk_worldRenderImageExtent2D.width = static_cast<uint32_t>(std::round(vk_swapchainResolution.width * fScreenPercentage));
-				vk_worldRenderImageExtent2D.height = static_cast<uint32_t>(std::round(vk_swapchainResolution.height * fScreenPercentage));
+			case RE_SCREEN_PERCENTAGE_MODE_SCALED:
+				vk_worldRenderImageExtent2D = {
+					.width = static_cast<uint32_t>(std::round(vk_swapchainResolution.width * std::get<float>(screenPercentageSettings.settings))),
+					.height = static_cast<uint32_t>(std::round(vk_swapchainResolution.height * std::get<float>(screenPercentageSettings.settings)))
+				};
 				break;
-			default:
+			case RE_SCREEN_PERCENTAGE_MODE_CONST_SIZE:
+				vk_worldRenderImageExtent2D = {
+					.width = std::get<Vector2u>(screenPercentageSettings.settings)[0],
+					.height = std::get<Vector2u>(screenPercentageSettings.settings)[1]
+				};
 				break;
 		}
 		const VkExtent3D vk_renderImageExtent3D = {
@@ -300,6 +300,8 @@ namespace RE {
 
 	static void destroy_world_render_images() {
 		if (!SHOULD_USE_SWAPCHAIN_IMAGES_DIRECTLY()) {
+			if (vk_ahWorldRenderImages[0] == VK_NULL_HANDLE)
+				return;
 			for (uint32_t u8WorldRenderImageCollectionDeleteIndex = 0; u8WorldRenderImageCollectionDeleteIndex < RE_VK_FRAMES_IN_FLIGHT; u8WorldRenderImageCollectionDeleteIndex++) {
 				if (ARE_MSAA_AND_SCREEN_PERCENTAGE_MODIFIED()) {
 					vkFreeMemory(vk_hDevice, vk_ahSingleSampledWorldRenderImageMemories[u8WorldRenderImageCollectionDeleteIndex], nullptr);
@@ -323,6 +325,8 @@ namespace RE {
 				vk_ahWorldRenderImages[u8WorldRenderImageCollectionDeleteIndex] = VK_NULL_HANDLE;
 			}
 		} else {
+			if (!vk_pahSwapchainDepthStencilImages)
+				return;
 			for (uint32_t u32SwapchainImageIndex = 0; u32SwapchainImageIndex < u32SwapchainImageCount; u32SwapchainImageIndex++) {
 				vkDestroyFramebuffer(vk_hDevice, vk_pahSwapchainFramebuffers[u32SwapchainImageIndex], nullptr);
 				vkDestroyImageView(vk_hDevice, vk_pahSwapchainDepthStencilImageViews[u32SwapchainImageIndex], nullptr);
@@ -510,7 +514,7 @@ namespace RE {
 															CATCH_SIGNAL(stagingIndexBufferDataInit.join());
 															if (vkQueueSubmit(vk_ahDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], 1, &vk_rectIndexBufferTransferSubmitInfo, rectIndexBufferDataTransferFence) == VK_SUCCESS) {
 																// Creates world render images on GPU, unless its size depends on swapchain image and will be created soon
-																if (eScreenPercentage != SCREEN_PERCENTAGE_CONST_IMG_SIZE || CATCH_SIGNAL_AND_RETURN(create_world_render_images(), bool)) {
+																if (screenPercentageSettings.eMode != RE_SCREEN_PERCENTAGE_MODE_CONST_SIZE || CATCH_SIGNAL_AND_RETURN(create_world_render_images(), bool)) {
 																	if (CATCH_SIGNAL_AND_RETURN(swapchain_created_renderer(), bool)) {
 																		if (CATCH_SIGNAL_AND_RETURN(init_game_object_renderer(), bool)) {
 																			rectIndexBufferDataTransferFence.wait_for();
@@ -518,7 +522,7 @@ namespace RE {
 																		}
 																		CATCH_SIGNAL(swapchain_destroyed_renderer());
 																	}
-																	if (eScreenPercentage == SCREEN_PERCENTAGE_CONST_IMG_SIZE)
+																	if (screenPercentageSettings.eMode == RE_SCREEN_PERCENTAGE_MODE_CONST_SIZE)
 																		CATCH_SIGNAL(destroy_world_render_images());
 																}
 																rectIndexBufferDataTransferFence.wait_for();
@@ -608,9 +612,10 @@ namespace RE {
 			vk_ahWorldCameraUniformBuffers[u8FrameInFlightDeleteIndex] = VK_NULL_HANDLE;
 			vk_ahRenderFences[u8FrameInFlightDeleteIndex] = VK_NULL_HANDLE;
 		}
-		if (eScreenPercentage == SCREEN_PERCENTAGE_CONST_IMG_SIZE)
+		if (screenPercentageSettings.eMode == RE_SCREEN_PERCENTAGE_MODE_CONST_SIZE)
 			CATCH_SIGNAL(destroy_world_render_images());
-		vkDestroyRenderPass(vk_hDevice, vk_hWorldRenderPass, nullptr);
+		if (vk_hWorldRenderPass)
+			vkDestroyRenderPass(vk_hDevice, vk_hWorldRenderPass, nullptr);
 		vkDestroyPipelineLayout(vk_hDevice, vk_hWorldBasicPipelineLayout, nullptr);
 		vkDestroyDescriptorPool(vk_hDevice, vk_hWorldCameraDescriptorPool, nullptr);
 		vkDestroyDescriptorSetLayout(vk_hDevice, vk_hWorldCameraDescriptorSetLayout, nullptr);
@@ -795,13 +800,15 @@ namespace RE {
 			case VK_SUBOPTIMAL_KHR:
 			case VK_ERROR_OUT_OF_DATE_KHR:
 				mark_swapchain_dirty();
+				[[fallthrough]];
+			case VK_SUCCESS:
 				break;
 			default:
-				if (!check_vulkan_result(vk_eSwapchainPresentResult, __FILE__, __func__, __LINE__))
-					RE_FATAL_ERROR("Failed to submit presentable Vulkan swapchain image");
-				break;
+				check_vulkan_result(vk_eSwapchainPresentResult, __FILE__, __func__, __LINE__);
+				RE_FATAL_ERROR("Failed to submit presentable Vulkan swapchain image");
+				return;
 		}
-		CATCH_SIGNAL(Window::pInstance->post_rendering_window_proc());
+		CATCH_SIGNAL(post_rendering_window_proc());
 		u32SwapchainRenderImageIndex = (u32SwapchainRenderImageIndex + 1) % u32SwapchainImageCount;
 		u8CurrentFrameInFlightIndex = (u8CurrentFrameInFlightIndex + 1) % RE_VK_FRAMES_IN_FLIGHT;
 	}
@@ -819,7 +826,7 @@ namespace RE {
 				DELETE_ARRAY_SAFELY(vk_pahSwapchainSemaphores);
 				return false;
 			}
-		if (eScreenPercentage != SCREEN_PERCENTAGE_CONST_IMG_SIZE)
+		if (screenPercentageSettings.eMode != RE_SCREEN_PERCENTAGE_MODE_CONST_SIZE)
 			CATCH_SIGNAL(create_world_render_images());
 		if (!pActiveCamera) {
 			vk_cameraViewport.width = vk_worldRenderImageExtent2D.width;
@@ -840,7 +847,7 @@ namespace RE {
 		for (uint32_t u8WorldRenderImageCollectionDeleteIndex = 0; u8WorldRenderImageCollectionDeleteIndex < RE_VK_SWAPCHAIN_SEMAPHORE_COUNT; u8WorldRenderImageCollectionDeleteIndex++)
 			vkDestroySemaphore(vk_hDevice, vk_pahSwapchainSemaphores[u8WorldRenderImageCollectionDeleteIndex], nullptr);
 		DELETE_ARRAY_SAFELY(vk_pahSwapchainSemaphores);
-		if (eScreenPercentage != SCREEN_PERCENTAGE_CONST_IMG_SIZE)
+		if (screenPercentageSettings.eMode != RE_SCREEN_PERCENTAGE_MODE_CONST_SIZE)
 			CATCH_SIGNAL(destroy_world_render_images());
 	}
 
@@ -858,100 +865,68 @@ namespace RE {
 		}
 	}
 
-#define UPDATE_SCREEN_PERCENTAGE_MODE(IMMEDIATE_RETURN_COND, RECREATE_RENDER_PASS_COND, SET_MODE_CODE) do { \
-			if (IMMEDIATE_RETURN_COND) \
-				return; \
-			else if (RECREATE_RENDER_PASS_COND) { \
-				WAIT_FOR_IDLE_VULKAN_DEVICE(); \
-				CATCH_SIGNAL(destroy_world_render_images()); \
-				vkDestroyRenderPass(vk_hDevice, vk_hWorldRenderPass, nullptr); \
-				SET_MODE_CODE \
-				if (create_render_pass()) { \
-					if (CATCH_SIGNAL_AND_RETURN(create_world_render_images(), bool)) { \
-						if (CATCH_SIGNAL_AND_RETURN(recreate_game_object_render_pipelines(), bool)) \
-							return; \
-						CATCH_SIGNAL(destroy_world_render_images()); \
-					} \
-					vkDestroyRenderPass(vk_hDevice, vk_hWorldRenderPass, nullptr); \
-				} \
-				vk_hWorldRenderPass = VK_NULL_HANDLE; \
-			} else { \
-				CATCH_SIGNAL(destroy_world_render_images()); \
-				SET_MODE_CODE \
-				CATCH_SIGNAL(create_world_render_images()); \
-			} \
-		} while (false);
-
-	void set_screen_percentage_mode_const_size(const uint32_t u32Width, const uint32_t u32Height) {
-		UPDATE_SCREEN_PERCENTAGE_MODE(
-			eScreenPercentage == SCREEN_PERCENTAGE_CONST_IMG_SIZE && vk_worldRenderImageExtent2D.width == u32Width && vk_worldRenderImageExtent2D.height == u32Height,
-			eScreenPercentage == SCREEN_PERCENTAGE_SWAPCHAIN_EQUAL,
-			{
-				eScreenPercentage = SCREEN_PERCENTAGE_CONST_IMG_SIZE;
-				vk_worldRenderImageExtent2D.width = u32Width;
-				vk_worldRenderImageExtent2D.height = u32Height;
-			});
+	void set_screen_percentage_settings(const ScreenPercentageSettings &rNewSettings) {
+		bool bRequiresRecreatingRenderPass = false;
+		switch (rNewSettings.eMode) {
+			case RE_SCREEN_PERCENTAGE_MODE_NORMAL:
+				if (screenPercentageSettings.eMode == RE_SCREEN_PERCENTAGE_MODE_NORMAL)
+					return;
+				bRequiresRecreatingRenderPass = true;
+				break;
+			case RE_SCREEN_PERCENTAGE_MODE_SCALED:
+				if (screenPercentageSettings.eMode == RE_SCREEN_PERCENTAGE_MODE_SCALED && std::get<float>(screenPercentageSettings.settings) == std::get<float>(rNewSettings.settings))
+					return;
+				bRequiresRecreatingRenderPass = screenPercentageSettings.eMode == RE_SCREEN_PERCENTAGE_MODE_NORMAL;
+				break;
+			case RE_SCREEN_PERCENTAGE_MODE_CONST_SIZE:
+				if (screenPercentageSettings.eMode == RE_SCREEN_PERCENTAGE_MODE_CONST_SIZE && std::get<Vector2u>(screenPercentageSettings.settings) == std::get<Vector2u>(rNewSettings.settings))
+					return;
+				bRequiresRecreatingRenderPass = screenPercentageSettings.eMode == RE_SCREEN_PERCENTAGE_MODE_NORMAL;
+				break;
+		}
+		if (vk_hDevice == VK_NULL_HANDLE) {
+			screenPercentageSettings = rNewSettings;
+			return;
+		}
+		WAIT_FOR_IDLE_VULKAN_DEVICE();
+		CATCH_SIGNAL(destroy_world_render_images());
+		screenPercentageSettings = rNewSettings;
+		if (!bRequiresRecreatingRenderPass)
+			CATCH_SIGNAL(create_world_render_images());
+		else {
+			vkDestroyRenderPass(vk_hDevice, vk_hWorldRenderPass, nullptr);
+			if (CATCH_SIGNAL_AND_RETURN(create_render_pass(), bool)) {
+				if (CATCH_SIGNAL_AND_RETURN(create_world_render_images(), bool)) {
+					if (CATCH_SIGNAL_AND_RETURN(recreate_game_object_render_pipelines(), bool))
+						return;
+					CATCH_SIGNAL(destroy_world_render_images());
+				}
+				vkDestroyRenderPass(vk_hDevice, vk_hWorldRenderPass, nullptr);
+			}
+			vk_hWorldRenderPass = VK_NULL_HANDLE;
+		}
 	}
 
-	void set_screen_percentage_mode_scale(const float fScale) {
-		if (fScale == 1.0f)
-			CATCH_SIGNAL(set_screen_percentage_mode_normal());
-		UPDATE_SCREEN_PERCENTAGE_MODE(
-			eScreenPercentage == SCREEN_PERCENTAGE_SWAPCHAIN_PERCENTAGE && fScreenPercentage == fScale,
-			eScreenPercentage == SCREEN_PERCENTAGE_SWAPCHAIN_EQUAL,
-			{
-				eScreenPercentage = SCREEN_PERCENTAGE_SWAPCHAIN_PERCENTAGE;
-				fScreenPercentage = fScale;
-			});
+	[[nodiscard]]
+	ScreenPercentageSettings get_screen_percentage_settings() {
+		return screenPercentageSettings;
 	}
-
-	void set_screen_percentage_mode_normal() {
-		UPDATE_SCREEN_PERCENTAGE_MODE(
-			eScreenPercentage == SCREEN_PERCENTAGE_SWAPCHAIN_EQUAL,
-			true,
-			{
-				eScreenPercentage = SCREEN_PERCENTAGE_SWAPCHAIN_EQUAL;
-			});
-	}
-
-#undef UPDATE_SCREEN_PERCENTAGE_MODE
 
 	void set_msaa_mode(const MsaaMode eNewMsaaMode) {
 		MsaaMode eNextMsaaMode = eNewMsaaMode;
 		while (!is_msaa_mode_supported(eNextMsaaMode) && eNextMsaaMode != RE_MSAA_MODE_1)
 			eNextMsaaMode = static_cast<MsaaMode>(static_cast<uint8_t>(eNextMsaaMode) - 1);
-		VkSampleCountFlagBits vk_eNewSampleCount;
-		switch (eNextMsaaMode) {
-			case RE_MSAA_MODE_1: // means MSAA is disabled
-				vk_eNewSampleCount = VK_SAMPLE_COUNT_1_BIT;
-				break;
-			case RE_MSAA_MODE_2:
-				vk_eNewSampleCount = VK_SAMPLE_COUNT_2_BIT;
-				break;
-			case RE_MSAA_MODE_4:
-				vk_eNewSampleCount = VK_SAMPLE_COUNT_4_BIT;
-				break;
-			case RE_MSAA_MODE_8:
-				vk_eNewSampleCount = VK_SAMPLE_COUNT_8_BIT;
-				break;
-			case RE_MSAA_MODE_16:
-				vk_eNewSampleCount = VK_SAMPLE_COUNT_16_BIT;
-				break;
-			case RE_MSAA_MODE_32:
-				vk_eNewSampleCount = VK_SAMPLE_COUNT_32_BIT;
-				break;
-			case RE_MSAA_MODE_64:
-				vk_eNewSampleCount = VK_SAMPLE_COUNT_64_BIT;
-				break;
-		}
+		const VkSampleCountFlagBits vk_eNewSampleCount = static_cast<VkSampleCountFlagBits>(VK_SAMPLE_COUNT_1_BIT << eNextMsaaMode);
 		if (vk_eNewSampleCount == vk_eMsaaCount) {
 			if (eNewMsaaMode != eNextMsaaMode)
-				RE_WARNING("MSAA mode ", std::pow(2, static_cast<int32_t>(eNewMsaaMode)), " is not supported on this GPU and dropped down to ", std::pow(2, static_cast<int32_t>(eNextMsaaMode)), ", but already is set");
+				RE_WARNING("MSAA mode ", std::pow(2, static_cast<int32_t>(eNewMsaaMode)), " is not supported on this GPU and dropped down to ", std::pow(2, static_cast<int32_t>(eNextMsaaMode)), ", but is already set");
 			return;
 		} else if (eNewMsaaMode != eNextMsaaMode)
 			RE_WARNING("MSAA mode ", std::pow(2, static_cast<int32_t>(eNewMsaaMode)), " is not supported on this GPU and dropped down to ", std::pow(2, static_cast<int32_t>(eNextMsaaMode)));
-		if (vk_hDevice == VK_NULL_HANDLE)
+		if (vk_hDevice == VK_NULL_HANDLE) {
+			vk_eMsaaCount = vk_eNewSampleCount;
 			return;
+		}
 		WAIT_FOR_IDLE_VULKAN_DEVICE();
 		CATCH_SIGNAL(destroy_world_render_images());
 		vkDestroyRenderPass(vk_hDevice, vk_hWorldRenderPass, nullptr);
@@ -968,26 +943,30 @@ namespace RE {
 	}
 
 	[[nodiscard]]
+	MsaaMode get_msaa_mode() {
+		switch (vk_eMsaaCount) {
+			case VK_SAMPLE_COUNT_1_BIT:
+			default:
+				return RE_MSAA_MODE_1;
+			case VK_SAMPLE_COUNT_2_BIT:
+				return RE_MSAA_MODE_2;
+			case VK_SAMPLE_COUNT_4_BIT:
+				return RE_MSAA_MODE_4;
+			case VK_SAMPLE_COUNT_8_BIT:
+				return RE_MSAA_MODE_8;
+			case VK_SAMPLE_COUNT_16_BIT:
+				return RE_MSAA_MODE_16;
+			case VK_SAMPLE_COUNT_32_BIT:
+				return RE_MSAA_MODE_32;
+			case VK_SAMPLE_COUNT_64_BIT:
+				return RE_MSAA_MODE_64;
+		}
+	}
+
+	[[nodiscard]]
 	bool is_msaa_mode_supported(const MsaaMode eMsaaMode) {
 		const VkSampleCountFlags vk_eAllowedSamples = vk_physicalDeviceLimits.framebufferColorSampleCounts & vk_physicalDeviceLimits.framebufferDepthSampleCounts & vk_physicalDeviceLimits.framebufferStencilSampleCounts;
-		switch (eMsaaMode) {
-			case RE_MSAA_MODE_1:
-				return (vk_eAllowedSamples & VK_SAMPLE_COUNT_1_BIT) == VK_SAMPLE_COUNT_1_BIT;
-			case RE_MSAA_MODE_2:
-				return (vk_eAllowedSamples & VK_SAMPLE_COUNT_2_BIT) == VK_SAMPLE_COUNT_2_BIT;
-			case RE_MSAA_MODE_4:
-				return (vk_eAllowedSamples & VK_SAMPLE_COUNT_4_BIT) == VK_SAMPLE_COUNT_4_BIT;
-			case RE_MSAA_MODE_8:
-				return (vk_eAllowedSamples & VK_SAMPLE_COUNT_8_BIT) == VK_SAMPLE_COUNT_8_BIT;
-			case RE_MSAA_MODE_16:
-				return (vk_eAllowedSamples & VK_SAMPLE_COUNT_16_BIT) == VK_SAMPLE_COUNT_16_BIT;
-			case RE_MSAA_MODE_32:
-				return (vk_eAllowedSamples & VK_SAMPLE_COUNT_32_BIT) == VK_SAMPLE_COUNT_32_BIT;
-			case RE_MSAA_MODE_64:
-				return (vk_eAllowedSamples & VK_SAMPLE_COUNT_64_BIT) == VK_SAMPLE_COUNT_64_BIT;
-			default:
-				return false;
-		}
+		return ((VK_SAMPLE_COUNT_1_BIT << eMsaaMode) & vk_eAllowedSamples) > 0;
 	}
 
 	void get_supported_msaa_modes(const uint8_t u8ListLength, MsaaMode *const paeSupportedMsaaModes, uint8_t *const pu8SupportedMsaaModeCount) {
@@ -1017,7 +996,7 @@ namespace RE {
 	}
 
 	void enable_sample_shading(const bool bEnable) {
-		if ((vk_bSampleShadingEnabled == VK_TRUE ? true : false) == bEnable)
+		if (is_sample_shading_enabled() == bEnable)
 			return;
 		vk_bSampleShadingEnabled = bEnable ? VK_TRUE : VK_FALSE;
 		if (vk_hDevice == VK_NULL_HANDLE)
@@ -1042,6 +1021,8 @@ namespace RE {
 			vk_bSampleShadingEnabled = VK_FALSE;
 		} else
 			fSampleShadingRate = fNewSampleShadingRate;
+		if (vk_hDevice == VK_NULL_HANDLE)
+			return;
 		WAIT_FOR_IDLE_VULKAN_DEVICE();
 		CATCH_SIGNAL(recreate_game_object_render_pipelines());
 	}

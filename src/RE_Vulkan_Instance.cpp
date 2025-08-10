@@ -114,7 +114,7 @@ namespace RE {
 		vkEnumerateInstanceExtensionProperties(nullptr, &u32AvailableExtensionsCount, vk_pAvailableExtensions);
 		constexpr uint32_t u32RequiredVulkanExtensionCount = 3;
 		std::array<const char*, u32RequiredVulkanExtensionCount> apacRequiredExtensions = {{VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_KHR_SURFACE_EXTENSION_NAME, "\0"}};
-		apacRequiredExtensions[u32RequiredVulkanExtensionCount - 1] = Window::pInstance->get_vulkan_required_surface_extension_name();
+		apacRequiredExtensions[u32RequiredVulkanExtensionCount - 1] = get_vulkan_required_surface_extension_name();
 		std::array<bool, u32RequiredVulkanExtensionCount> abExtensionsPresent = {};
 		std::queue<const char*> missingExtensions;
 		if (is_verbose_behaviour_enabled())

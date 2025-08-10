@@ -24,6 +24,7 @@
 #include <random>
 #include <limits.h>
 #include <array>
+#include <variant>
 
 namespace RE {
 
@@ -177,6 +178,12 @@ namespace RE {
 		 */
 		RE_INPUT_KEY_WORLD_1 = 0x78,
 		RE_INPUT_MAX_ENUM = 0x79
+	};
+
+	enum ScreenPercentageMode {
+		RE_SCREEN_PERCENTAGE_MODE_NORMAL,
+		RE_SCREEN_PERCENTAGE_MODE_SCALED,
+		RE_SCREEN_PERCENTAGE_MODE_CONST_SIZE
 	};
 
 	enum MsaaMode {
@@ -397,10 +404,10 @@ namespace RE {
 		return u64Result;
 	}
 
-	template <typename T>
+	template <typename T, typename... U>
 	[[nodiscard]]
-	constexpr bool is_bit_true(const T value, const T bit) {
-		return (value & gen_bitmask<T>(bit)) != static_cast<T>(0);
+	constexpr bool are_bits_true(const T value, const U... bits) {
+		return (value & static_cast<T>(gen_bitmask<U...>(bits...))) != static_cast<T>(0.0);
 	}
 
 	template <typename T>
@@ -417,24 +424,24 @@ namespace RE {
 		return true;
 	}
 
-	template <typename T>
-	constexpr T set_bit(T& value, const T bit, const bool bNewState) {
-		T targetBit = gen_bitmask<T>(bit);
+	template <typename T, typename... U>
+	constexpr T set_bits(T& value, const bool bNewState, const U... bits) {
+		const T bitmask = gen_bitmask<U...>(bits...);
 		if (bNewState)
-			value |= targetBit;
+			value |= bitmask;
 		else
-			value &= ~targetBit;
+			value &= ~bitmask;
 		return value;
 	}
 
 	template <typename T>
-	constexpr T set_bits(T& value, const T begin, const T end, const bool bNewState) {
+	constexpr T set_bits_in_range(T& value, const bool bNewState, const T begin, const T end) {
 		if (begin > end) {
 			FATAL_ERROR("Start (", begin, ") of the range is larger than end (", end, ")");
 			return value;
 		}
 		for (T i = begin; i < end; i++)
-			set_bit<T>(value, i, bNewState);
+			set_bits<T>(value, bNewState, i);
 		return value;
 	}
 
@@ -465,7 +472,7 @@ namespace RE {
 
 	template <typename T, uint32_t u32Dimensions>
 	class Vector final {
-		static_assert(u32Dimensions != 0U, "A data-template has zero dimensions");
+		static_assert(u32Dimensions > 0, "A vector cannot have zero dimensions");
 
 		public:
 			std::array<T, u32Dimensions> data;
@@ -577,18 +584,18 @@ namespace RE {
 				return rStream;
 			}
 	};
-	typedef Vector<float, 2U> Vector2f;
-	typedef Vector<float, 3U> Vector3f;
-	typedef Vector<float, 4U> Vector4f;
-	typedef Vector<double, 2U> Vector2d;
-	typedef Vector<double, 3U> Vector3d;
-	typedef Vector<double, 4U> Vector4d;
-	typedef Vector<int32_t, 2U> Vector2i;
-	typedef Vector<int32_t, 3U> Vector3i;
-	typedef Vector<int32_t, 4U> Vector4i;
-	typedef Vector<uint32_t, 2U> Vector2u;
-	typedef Vector<uint32_t, 3U> Vector3u;
-	typedef Vector<uint32_t, 4U> Vector4u;
+	typedef Vector<float, 2> Vector2f;
+	typedef Vector<float, 3> Vector3f;
+	typedef Vector<float, 4> Vector4f;
+	typedef Vector<double, 2> Vector2d;
+	typedef Vector<double, 3> Vector3d;
+	typedef Vector<double, 4> Vector4d;
+	typedef Vector<int32_t, 2> Vector2i;
+	typedef Vector<int32_t, 3> Vector3i;
+	typedef Vector<int32_t, 4> Vector4i;
+	typedef Vector<uint32_t, 2> Vector2u;
+	typedef Vector<uint32_t, 3> Vector3u;
+	typedef Vector<uint32_t, 4> Vector4u;
 
 	class Color final {
 		private:
@@ -794,6 +801,14 @@ namespace RE {
 			[[nodiscard]]
 			bool has_valid_input_values() const;
 	};
+
+	struct ScreenPercentageSettings {
+		ScreenPercentageMode eMode;
+		std::variant<float, Vector2u> settings;
+	};
+
+	// Window
+	void set_window_title(const char *pacNewTitle);
 	
 	// Console
 	void enable_colorful_printing(bool bEnable);
@@ -884,10 +899,12 @@ namespace RE {
 	bool is_vsync_enabled();
 
 	// Renderer
-	void set_screen_percentage_mode_const_size(uint32_t u32Width, uint32_t u32Height);
-	void set_screen_percentage_mode_scale(float fScale);
-	void set_screen_percentage_mode_normal();
+	void set_screen_percentage_settings(const ScreenPercentageSettings &rNewSettings);
+	[[nodiscard]]
+	ScreenPercentageSettings get_screen_percentage_settings();
 	void set_msaa_mode(MsaaMode eNewMsaaMode);
+	[[nodiscard]]
+	MsaaMode get_msaa_mode();
 	[[nodiscard]]
 	bool is_msaa_mode_supported(MsaaMode eMsaaMode);
 	void get_supported_msaa_modes(uint8_t u8ListLength, MsaaMode *paeSupportedMsaaModes, uint8_t *pu8SupportedMsaaModeCount);
@@ -902,7 +919,7 @@ namespace RE {
 
 
 #ifdef RE_OS_WINDOWS
-	void set_hinstance(HINSTANCE win_hInstance);
+	void win64_set_hinstance(HINSTANCE win_hNewInstance);
 #endif
 
 }

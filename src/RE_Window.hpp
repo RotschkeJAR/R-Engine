@@ -12,146 +12,30 @@ namespace RE {
 #define MAX_WINDOW_WIDTH_RELATIVE_TO_MONITOR -100
 #define MAX_WINDOW_HEIGHT_RELATIVE_TO_MONITOR -100
 
-	enum WindowType {
-		Windows,
-		X11,
-		Wayland
-	};
+#define WINDOW_CREATED_BIT 0
+#define WINDOW_VISIBLE_BIT 1
+#define WINDOW_MINIMIZED_BIT 2
+#define WINDOW_MAXIMIZED_BIT 3
+#define WINDOW_CLOSE_FLAG_BIT 4
+#define WINDOW_WAYLAND_SHOULD_RENDER_FRAME_BIT 5
 
 	extern Vector2u windowSize;
-	
-	class Window {
+	extern const char* pacWindowTitle;
+	extern uint8_t u8WindowFlagBits;
 
-		protected:
-			const char* pcTitle;
-			bool bVisible, bMinimized, bMaximized;
-			bool bCloseFlag;
-			bool bValid;
-
-			virtual void internal_window_proc() = 0;
-			virtual void internal_show_window() = 0;
-			virtual void internal_update_title() = 0;
-			void update_window_size(uint32_t usNewWidth, uint32_t usNewHeight);
-
-		public:
-			static Window* pInstance;
-
-			Window();
-			virtual ~Window();
-			void show_window(bool bShowWindow);
-			void set_window_title(const char* pNewTitle);
-			virtual bool create_vulkan_surface(VkSurfaceKHR &vk_rhSurface) const = 0;
-			[[nodiscard]]
-			virtual const char* get_vulkan_required_surface_extension_name() const = 0;
-			void window_proc();
-			virtual void post_rendering_window_proc() = 0;
-			[[nodiscard]]
-			bool should_close() const;
-			[[nodiscard]]
-			virtual bool should_render();
-			[[nodiscard]]
-			bool is_valid() const;
-			[[nodiscard]]
-			virtual WindowType get_window_type() const = 0;
-
-		friend class InputMgr;
-	};
-
-#ifdef RE_OS_WINDOWS
-	class Window_Win64 final : public Window {
-		private:
-			HWND win_hWindow;
-			HCURSOR win_hCursor;
-
-		protected:
-			void internal_window_proc();
-			void internal_show_window();
-			void internal_update_title();
-
-		public:
-			const HKL win_keyboardLayout;
-			static HINSTANCE win_hInstance;
-			
-			Window_Win64();
-			~Window_Win64();
-			bool create_vulkan_surface(VkSurfaceKHR &vk_rhSurface) const;
-			[[nodiscard]]
-			const char* get_vulkan_required_surface_extension_name() const;
-			void post_rendering_window_proc();
-			[[nodiscard]]
-			HWND get_hwindow() const;
-			[[nodiscard]]
-			WindowType get_window_type() const;
-
-		friend LRESULT CALLBACK windows_window_proc(HWND win_hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-	};
-
-	void set_hinstance(HINSTANCE win_hInstance);
-#elif (defined RE_OS_LINUX)
-	class Window_X11 final : public Window {
-		private:
-			XColormap x11_colormap;
-			XWindow x11_hWindow;
-			XAtom x11_hClose;
-			XAtom x11_hUTF8, x11_hWindowName;
-			XInputMethod x11_hInputMethod;
-			XInputContext x11_hInputContext;
-			XSizeHints* x11_pSizes;
-
-		protected:
-			void internal_window_proc();
-			void internal_show_window();
-			void internal_update_title();
-
-		public:
-			XDisplay* const x11_pDisplay;
-			
-			Window_X11();
-			~Window_X11();
-			bool create_vulkan_surface(VkSurfaceKHR &vk_rhSurface) const;
-			[[nodiscard]]
-			const char* get_vulkan_required_surface_extension_name() const;
-			void post_rendering_window_proc();
-			[[nodiscard]]
-			WindowType get_window_type() const;
-	};
-
-	class Window_Wayland final : public Window {
-		private:
-			wl_registry *wl_pRegistry;
-			wl_compositor *wl_pCompositor;
-			wl_surface *wl_pSurface;
-			xdg_wm_base *xdg_pWindowBase;
-			xdg_surface *xdg_pSurface;
-			xdg_toplevel *xdg_pToplevel;
-			bool bShouldRenderFrame;
-			
-			void register_next_ready_frame_callback();
-			void commit_surface();
-			
-		protected:
-			void internal_window_proc();
-			void internal_show_window();
-			void internal_update_title();
-
-		public:
-			wl_display *const wl_pDisplay;
-
-			Window_Wayland();
-			~Window_Wayland();
-			bool create_vulkan_surface(VkSurfaceKHR &vk_rhSurface) const;
-			[[nodiscard]]
-			const char* get_vulkan_required_surface_extension_name() const;
-			void post_rendering_window_proc();
-			[[nodiscard]]
-			bool should_render() override;
-			[[nodiscard]]
-			WindowType get_window_type() const;
-
-		friend void registry_handle_global(void *pData, wl_registry *wl_pRegistry, uint32_t u32Name, const char *pcInterface, uint32_t u32Version);
-		friend void wayland_frame_ready(void *pData, wl_callback *wl_pCallback, uint32_t u32Serial);
-	};
-#endif /* RE_OS_WINDOWS, RE_OS_LINUX */
+	bool create_window();
+	void destroy_window();
+	void window_resize_event(const uint32_t u32NewWidth, const uint32_t u32NewHeight);
+	void show_window(const bool bShowWindow);
+	void window_proc();
+	void post_rendering_window_proc();
+	[[nodiscard]]
+	bool should_window_close();
+	[[nodiscard]]
+	bool should_render();
+	bool create_vulkan_surface(VkSurfaceKHR &vk_rhSurface);
+	[[nodiscard]]
+	const char* get_vulkan_required_surface_extension_name();
 
 }
 

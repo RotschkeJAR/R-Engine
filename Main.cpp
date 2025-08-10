@@ -154,10 +154,18 @@ class First : public Scene {
 			} else if (is_pressed(RE_INPUT_KEY_SPACE, 0)) {
 				bMsaaEight = !bMsaaEight;
 				CATCH_SIGNAL(set_msaa_mode(bMsaaEight ? RE_MSAA_MODE_8 : RE_MSAA_MODE_1));
-				if (bMsaaEight)
-					CATCH_SIGNAL(set_screen_percentage_mode_const_size(50, 50));
-				else
-					CATCH_SIGNAL(set_screen_percentage_mode_normal());
+				if (bMsaaEight) {
+					const ScreenPercentageSettings constSized = {
+						.eMode = RE_SCREEN_PERCENTAGE_MODE_CONST_SIZE,
+						.settings = Vector2u{50, 50}
+					};
+					CATCH_SIGNAL(set_screen_percentage_settings(constSized));
+				} else {
+					const ScreenPercentageSettings normal = {
+						.eMode = RE_SCREEN_PERCENTAGE_MODE_NORMAL
+					};
+					CATCH_SIGNAL(set_screen_percentage_settings(normal));
+				}
 			}
 			//PRINT_LN(get_fps_rate());
 		}
@@ -171,7 +179,7 @@ int main_func() {
 	First first;
 	second = new Second();
 	set_next_scene(&first);
-	RE::execute();
+	execute();
 	delete second;
 	if (clonus)
 		delete clonus;
@@ -179,8 +187,8 @@ int main_func() {
 }
 
 #ifdef RE_OS_WINDOWS
-int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pwcCmdLine, int i32CmdShow) {
-	set_hinstance(hInstance);
+int WINAPI wWinMain(HINSTANCE win_hInstance, HINSTANCE win_hPrevInstance, PWSTR pawcCmdLine, int i32CmdShow) {
+	win64_set_hinstance(win_hInstance);
 	return main_func();
 }
 #endif

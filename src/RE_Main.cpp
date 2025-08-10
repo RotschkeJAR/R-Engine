@@ -11,58 +11,55 @@ namespace RE {
 	float fDeltaseconds = 0.0f, fMinDeltatime = 1.0f / 60.0f;
 
 	void execute() {
+#if !(defined RE_OS_WINDOWS) && !(defined RE_OS_LINUX)
+# warning The targeted OS is unknown, so the engine will terminate immediatly upon execution
+		RE_ERROR("The OS is unknown. The engine can't initialize");
+		return;
+#endif
 		std::setlocale(LC_ALL, "");
 		if (!are_scenes_present()) {
 			RE_ERROR("The aren't any scenes yet. The engine won't launch");
 			return;
 		}
+		
+		if (CATCH_SIGNAL_AND_RETURN(create_window(), bool)) {
+			if (CATCH_SIGNAL_AND_RETURN(init_vulkan_instance(), bool)) {
+				if (CATCH_SIGNAL_AND_RETURN(init_render_system(), bool)) {
+					if (CATCH_SIGNAL_AND_RETURN(init_renderer(), bool)) {
+						std::chrono::high_resolution_clock::time_point currentFrameTime = std::chrono::high_resolution_clock::now(), lastFrameTime;
+						CATCH_SIGNAL(show_window(true));
+						bRunning = true;
 
-		// Create window
-#ifdef RE_OS_WINDOWS
-		CATCH_SIGNAL(Window::pInstance = new Window_Win64());
-#elif defined RE_OS_LINUX
-		CATCH_SIGNAL(Window::pInstance = new Window_X11());
-#else
-# warning The targeted OS is unknown, so the engine will terminate immediatly upon execution
-		RE_ERROR("The OS is unknown. The engine can't initialize");
-		return;
-#endif
-		if (CATCH_SIGNAL_AND_RETURN(Window::pInstance && Window::pInstance->is_valid() && init_vulkan_instance(), bool)) {
-			if (CATCH_SIGNAL_AND_RETURN(init_render_system(), bool)) {
-				if (CATCH_SIGNAL_AND_RETURN(init_renderer(), bool)) {
-					std::chrono::high_resolution_clock::time_point currentFrameTime = std::chrono::high_resolution_clock::now(), lastFrameTime;
-					CATCH_SIGNAL(Window::pInstance->show_window(true));
-					bRunning = true;
+						// Game loop
+						while (!should_window_close() && are_scenes_present() && !bErrorOccured) {
+							CATCH_SIGNAL(window_proc());
+							CATCH_SIGNAL(game_logic_update());
+							if (should_render()) {
+								CATCH_SIGNAL(refresh_swapchain());
+								CATCH_SIGNAL(render());
+							}
 
-					// Game loop
-					while (!Window::pInstance->should_close() && are_scenes_present() && !bErrorOccured) {
-						CATCH_SIGNAL(Window::pInstance->window_proc());
-						CATCH_SIGNAL(game_logic_update());
-						if (Window::pInstance->should_render()) {
-							CATCH_SIGNAL(refresh_swapchain());
-							CATCH_SIGNAL(render());
+							lastFrameTime = currentFrameTime;
+							currentFrameTime = std::chrono::high_resolution_clock::now();
+							fDeltaseconds = std::chrono::duration_cast<std::chrono::duration<float>>(currentFrameTime - lastFrameTime).count();
+							const float fTimeToWait = fMinDeltatime - fDeltaseconds;
+							if (fTimeToWait > 0.0f)
+								std::this_thread::sleep_for(std::chrono::duration<float>(fTimeToWait));
 						}
 
-						lastFrameTime = currentFrameTime;
-						currentFrameTime = std::chrono::high_resolution_clock::now();
-						fDeltaseconds = std::chrono::duration_cast<std::chrono::duration<float>>(currentFrameTime - lastFrameTime).count();
-						const float fTimeToWait = fMinDeltatime - fDeltaseconds;
-						if (fTimeToWait > 0.0f)
-							std::this_thread::sleep_for(std::chrono::duration<float>(fTimeToWait));
+						// Termination
+						bRunning = false;
+						CATCH_SIGNAL(show_window(false));
+						CATCH_SIGNAL(last_game_logic_update());
+						WAIT_FOR_IDLE_VULKAN_DEVICE();
+						CATCH_SIGNAL(destroy_renderer());
 					}
-
-					// Termination
-					bRunning = false;
-					CATCH_SIGNAL(Window::pInstance->show_window(false));
-					CATCH_SIGNAL(last_game_logic_update());
-					WAIT_FOR_IDLE_VULKAN_DEVICE();
-					CATCH_SIGNAL(destroy_renderer());
+					CATCH_SIGNAL(destroy_render_system());
 				}
-				CATCH_SIGNAL(destroy_render_system());
+				CATCH_SIGNAL(destroy_vulkan_instance());
 			}
-			CATCH_SIGNAL(destroy_vulkan_instance());
+			CATCH_SIGNAL(destroy_window());
 		}
-		DELETE_SAFELY(Window::pInstance);
 		fDeltaseconds = 0.0f;
 	}
 

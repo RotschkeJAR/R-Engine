@@ -1,7 +1,7 @@
 #include "RE_Internal Header.hpp"
 #include "RE_Console.hpp"
 #include "RE_Main.hpp"
-#include "RE_Window.hpp"
+#include "RE_Window_Win64.hpp"
 
 #include <time.h>
 
@@ -19,7 +19,7 @@ namespace RE {
 	uint8_t u8ConsoleSettings = (1U << PRINT_COLORS) | (1U << SHOW_MSG_BOX) | (1U << LOG_TIME);
 
 	static void print_time() {
-		if (!is_bit_true<uint8_t>(u8ConsoleSettings, LOG_TIME))
+		if (!are_bits_true<uint8_t>(u8ConsoleSettings, LOG_TIME))
 			return;
 		const std::time_t timePoint = std::time(nullptr);
 		const std::string sTimeString(std::ctime(&timePoint));
@@ -28,7 +28,7 @@ namespace RE {
 
 	[[nodiscard]]
 	static std::string escape_code_to_string(const TerminalColor eColor, const bool bBackgroundColored, const bool bBold) {
-		if (!is_bit_true<uint8_t>(u8ConsoleSettings, PRINT_COLORS))
+		if (!are_bits_true<uint8_t>(u8ConsoleSettings, PRINT_COLORS))
 			return "";
 		uint32_t u32Id = static_cast<uint32_t>(eColor);
 		if (u32Id >= static_cast<uint32_t>(RE_TERMINAL_COLOR_BRIGHT_BLACK))
@@ -66,13 +66,13 @@ namespace RE {
 		print_time();
 		print_colored("ERROR", RE_TERMINAL_COLOR_RED, false, false);
 		print_error_msg(pacFile, pacFunc, u32Line, pacDetail);
-		bool bFatal = bTerminate || is_bit_true<uint8_t>(u8ConsoleSettings, ERRORS_ALWAYS_FATAL);
+		bool bFatal = bTerminate || are_bits_true<uint8_t>(u8ConsoleSettings, ERRORS_ALWAYS_FATAL);
 		if (bFatal) {
 			bErrorOccured = true;
 			println_colored("Terminating...", RE_TERMINAL_COLOR_BRIGHT_BLACK, false, false);
-			if (is_bit_true<uint8_t>(u8ConsoleSettings, SHOW_MSG_BOX)) {
+			if (are_bits_true<uint8_t>(u8ConsoleSettings, SHOW_MSG_BOX)) {
 #ifdef RE_OS_WINDOWS
-				MessageBoxW(Window::pInstance ? static_cast<Window_Win64*>(Window::pInstance)->get_hwindow() : nullptr, append_to_wstring(L"In file ", pacFile, L" in function ", pacFunc, L" at line ", u32Line, L"\n", pacDetail).c_str(), L"Fatal Error", MB_OK | MB_ICONERROR);
+				MessageBoxW(win_hWindow, append_to_wstring(L"In file ", pacFile, L" in function ", pacFunc, L" at line ", u32Line, L"\n", pacDetail).c_str(), L"Fatal Error", MB_OK | MB_ICONERROR);
 #elif defined RE_OS_LINUX
 				// TODO: Create message box on Linux, when error occurs
 #endif
@@ -81,7 +81,7 @@ namespace RE {
 	}
 
 	void warning(const char *const pacFile, const char *const pacFunc, const uint32_t u32Line, const char *const pacDetail) {
-		if (is_bit_true<uint8_t>(u8ConsoleSettings, TREAT_WARNING_AS_ERROR))
+		if (are_bits_true<uint8_t>(u8ConsoleSettings, TREAT_WARNING_AS_ERROR))
 			error(pacFile, pacFunc, u32Line, pacDetail, false);
 		else {
 			print_time();
@@ -97,32 +97,32 @@ namespace RE {
 	}
 
 	void enable_colorful_printing(const bool bEnable) {
-		set_bit<uint8_t>(u8ConsoleSettings, PRINT_COLORS, bEnable);
+		set_bits<uint8_t>(u8ConsoleSettings, bEnable, PRINT_COLORS);
 	}
 
 	void treat_warnings_as_errors(const bool bEnable) {
-		set_bit<uint8_t>(u8ConsoleSettings, TREAT_WARNING_AS_ERROR, bEnable);
+		set_bits<uint8_t>(u8ConsoleSettings, bEnable, TREAT_WARNING_AS_ERROR);
 	}
 
 	void make_errors_always_fatal(const bool bEnable) {
-		set_bit<uint8_t>(u8ConsoleSettings, ERRORS_ALWAYS_FATAL, bEnable);
+		set_bits<uint8_t>(u8ConsoleSettings, bEnable, ERRORS_ALWAYS_FATAL);
 	}
 
 	void show_message_box_on_error(const bool bEnable) {
-		set_bit<uint8_t>(u8ConsoleSettings, SHOW_MSG_BOX, bEnable);
+		set_bits<uint8_t>(u8ConsoleSettings, bEnable, SHOW_MSG_BOX);
 	}
 
 	void enable_verbosity(const bool bEnable) {
-		set_bit<uint8_t>(u8ConsoleSettings, VERBOSE_BEHAVIOUR, bEnable);
+		set_bits<uint8_t>(u8ConsoleSettings, bEnable, VERBOSE_BEHAVIOUR);
 	}
 
 	[[nodiscard]]
 	bool is_verbose_behaviour_enabled() {
-		return is_bit_true<uint8_t>(u8ConsoleSettings, VERBOSE_BEHAVIOUR);
+		return are_bits_true<uint8_t>(u8ConsoleSettings, VERBOSE_BEHAVIOUR);
 	}
 
 	void enable_time_logging(const bool bEnable) {
-		set_bit<uint8_t>(u8ConsoleSettings, LOG_TIME, bEnable);
+		set_bits<uint8_t>(u8ConsoleSettings, bEnable, LOG_TIME);
 	}
 
 }

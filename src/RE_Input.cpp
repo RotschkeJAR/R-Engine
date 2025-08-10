@@ -69,9 +69,9 @@ namespace RE {
 			case RE_INPUT_BUTTON_RIGHT:
 			case RE_INPUT_BUTTON_MIDDLE:
 				if constexpr (eStateToCheck == ASKING_STATE_PRESENT)
-					return is_bit_true<uint8_t>(u8MouseBuffer, mouse_input_to_uint8(eInput));
+					return are_bits_true<uint8_t>(u8MouseBuffer, mouse_input_to_uint8(eInput));
 				else if constexpr (eStateToCheck == ASKING_STATE_PAST)
-					return is_bit_true<uint8_t>(u8PrevMouseBuffer, mouse_input_to_uint8(eInput));
+					return are_bits_true<uint8_t>(u8PrevMouseBuffer, mouse_input_to_uint8(eInput));
 				else {
 					const uint8_t u8MouseBufferBitmask = gen_bitmask<uint8_t>(mouse_input_to_uint8(eInput));
 					if constexpr (eStateToCheck == ASKING_STATE_BOTH)
@@ -89,9 +89,9 @@ namespace RE {
 					u8KeyIndex = get_key_buffer_index_for_input(eInput);
 				const uint8_t u8KeyBufferArrayIndex = u8KeyIndex / 8;
 				if constexpr (eStateToCheck == ASKING_STATE_PRESENT)
-					return is_bit_true<uint8_t>(au8KeyBuffer[u8KeyIndex / 8], u8KeyIndex % 8);
+					return are_bits_true<uint8_t>(au8KeyBuffer[u8KeyIndex / 8], u8KeyIndex % 8);
 				else if constexpr (eStateToCheck == ASKING_STATE_PAST)
-					return is_bit_true<uint8_t>(au8PrevKeyBuffer[u8KeyIndex / 8], u8KeyIndex % 8);
+					return are_bits_true<uint8_t>(au8PrevKeyBuffer[u8KeyIndex / 8], u8KeyIndex % 8);
 				else {
 					const uint8_t u8KeyBufferBitmask = gen_bitmask<uint8_t>(u8KeyIndex % 8);
 					if constexpr (eStateToCheck == ASKING_STATE_BOTH)
@@ -112,7 +112,7 @@ namespace RE {
 			case RE_INPUT_BUTTON_LEFT:
 			case RE_INPUT_BUTTON_RIGHT:
 			case RE_INPUT_BUTTON_MIDDLE:
-				CATCH_SIGNAL(set_bit<uint8_t>(u8MouseBuffer, static_cast<uint8_t>(eEnteredInput - RE_INPUT_SCROLL_UP), bPressed));
+				CATCH_SIGNAL(set_bits<uint8_t>(u8MouseBuffer, bPressed, static_cast<uint8_t>(eEnteredInput - RE_INPUT_SCROLL_UP)));
 				if (pUpdateInputObject && bPressed) {
 					pUpdateInputObject->change_to_input(eEnteredInput);
 					pUpdateInputObject = nullptr;
@@ -125,7 +125,7 @@ namespace RE {
 				if (u8KeyBufferIndex == FAILURE_KEY_BUFFER_INDEX && bFallbackToInput)
 					u8KeyBufferIndex = get_key_buffer_index_for_input(eEnteredInput);
 				if (u8KeyBufferIndex != FAILURE_KEY_BUFFER_INDEX)
-					set_bit<uint8_t>(au8KeyBuffer[u8KeyBufferIndex / 8], u8KeyBufferIndex % 8, bPressed);
+					set_bits<uint8_t>(au8KeyBuffer[u8KeyBufferIndex / 8], bPressed, u8KeyBufferIndex % 8);
 				else if (u32EnteredScancode) {
 					// Keyboard input unknown
 					if (u8NumberOfKeys >= MAXIMUM_PHYSICAL_KEYS) {
@@ -162,8 +162,8 @@ namespace RE {
 						au32Scancodes[u8ScancodeIndex] = au32Scancodes[u8LowerIndex];
 						const uint8_t u8KeyBufferIndex = u8ScancodeIndex + KEY_BUFFER_OFFSET;
 						const uint8_t u8KeyBufferLowerIndex = u8LowerIndex + KEY_BUFFER_OFFSET;
-						set_bit<uint8_t>(au8KeyBuffer[u8KeyBufferIndex / 8], u8KeyBufferIndex % 8, is_bit_true<uint8_t>(au8KeyBuffer[u8KeyBufferLowerIndex / 8], u8KeyBufferLowerIndex % 8));
-						set_bit<uint8_t>(au8PrevKeyBuffer[u8KeyBufferIndex / 8], u8KeyBufferIndex % 8, is_bit_true<uint8_t>(au8PrevKeyBuffer[u8KeyBufferLowerIndex / 8], u8KeyBufferLowerIndex % 8));
+						set_bits<uint8_t>(au8KeyBuffer[u8KeyBufferIndex / 8], are_bits_true<uint8_t>(au8KeyBuffer[u8KeyBufferLowerIndex / 8], u8KeyBufferLowerIndex % 8), u8KeyBufferIndex % 8);
+						set_bits<uint8_t>(au8PrevKeyBuffer[u8KeyBufferIndex / 8], are_bits_true<uint8_t>(au8PrevKeyBuffer[u8KeyBufferLowerIndex / 8], u8KeyBufferLowerIndex % 8), u8KeyBufferIndex % 8);
 					}
 					for (uint8_t u8InputIndex = 0; u8InputIndex < SIZE_OF_INPUT_TO_KEY_BUFFER_INDEX_TABLE; u8InputIndex++)
 						if (au8InputToKeyBufferIndexTable[u8InputIndex] >= u8InsertionIndex + KEY_BUFFER_OFFSET)
@@ -172,8 +172,8 @@ namespace RE {
 					if (is_key_input(eEnteredInput))
 						au8InputToKeyBufferIndexTable[key_input_to_uint8(eEnteredInput)] = u8InsertionIndex + KEY_BUFFER_OFFSET;
 					const uint8_t u8KeyBufferInsertionIndex = u8InsertionIndex + KEY_BUFFER_OFFSET;
-					set_bit<uint8_t>(au8KeyBuffer[u8KeyBufferInsertionIndex / 8], u8KeyBufferInsertionIndex % 8, bPressed);
-					set_bit<uint8_t>(au8PrevKeyBuffer[u8KeyBufferInsertionIndex / 8], u8KeyBufferInsertionIndex % 8, !bPressed);
+					set_bits<uint8_t>(au8KeyBuffer[u8KeyBufferInsertionIndex / 8], bPressed, u8KeyBufferInsertionIndex % 8);
+					set_bits<uint8_t>(au8PrevKeyBuffer[u8KeyBufferInsertionIndex / 8], !bPressed, u8KeyBufferInsertionIndex % 8);
 					u8NumberOfKeys++;
 					RE_NOTE("Remaining slots for more undetected physical keys: ", MAXIMUM_PHYSICAL_KEYS - u8NumberOfKeys);
 				}
@@ -197,7 +197,7 @@ namespace RE {
 		CATCH_SIGNAL(prevCursorPosition.copy_from(cursorPosition));
 		std::copy(std::begin(au8KeyBuffer), std::end(au8KeyBuffer), std::begin(au8PrevKeyBuffer));
 		u8PrevMouseBuffer = u8MouseBuffer;
-		set_bits<uint8_t>(u8MouseBuffer, RE_INPUT_SCROLL_UP, RE_INPUT_SCROLL_DOWN + 1, false);
+		set_bits_in_range<uint8_t>(u8MouseBuffer, false, RE_INPUT_SCROLL_UP, RE_INPUT_SCROLL_DOWN + 1);
 	}
 
 	[[nodiscard]]
@@ -275,8 +275,8 @@ namespace RE {
 			case RE_INPUT_BUTTON_RIGHT:
 			case RE_INPUT_BUTTON_MIDDLE: {
 				const uint8_t u8Index = mouse_input_to_uint8(eInput);
-				set_bit<uint8_t>(u8MouseBuffer, u8Index, false);
-				set_bit<uint8_t>(u8PrevMouseBuffer, u8Index, false);
+				set_bits<uint8_t>(u8MouseBuffer, false, u8Index);
+				set_bits<uint8_t>(u8PrevMouseBuffer, false, u8Index);
 				} break;
 			default:
 				uint8_t u8KeyBufferIndex = FAILURE_KEY_BUFFER_INDEX;
@@ -286,8 +286,8 @@ namespace RE {
 					u8KeyBufferIndex = get_key_buffer_index_for_input(eInput);
 				if (u8KeyBufferIndex == FAILURE_KEY_BUFFER_INDEX)
 					break;
-				set_bit<uint8_t>(au8KeyBuffer[u8KeyBufferIndex / 8], u8KeyBufferIndex % 8, false);
-				set_bit<uint8_t>(au8PrevKeyBuffer[u8KeyBufferIndex / 8], u8KeyBufferIndex % 8, false);
+				set_bits<uint8_t>(au8KeyBuffer[u8KeyBufferIndex / 8], false, u8KeyBufferIndex % 8);
+				set_bits<uint8_t>(au8PrevKeyBuffer[u8KeyBufferIndex / 8], false, u8KeyBufferIndex % 8);
 				break;
 		}
 	}

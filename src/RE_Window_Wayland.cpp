@@ -34,7 +34,7 @@ namespace RE {
 		CATCH_SIGNAL(xdg_surface_ack_configure(xdg_pSurface, u32Serial));
 	}
 
-	void register_next_ready_frame_callback();
+	static void register_next_ready_frame_callback();
 
 	static void wayland_frame_ready_callback(void *const pData, wl_callback *const wl_pCallback, const uint32_t u32Serial) {
 		CATCH_SIGNAL(wl_callback_destroy(wl_pCallback));
@@ -48,7 +48,7 @@ namespace RE {
 		const wl_callback_listener wl_frameReadyCallback = {
 			.done = wayland_frame_ready_callback
 		};
-		CATCH_SIGNAL(wl_callback_add_listener(wl_pFrameReadyCallback, &wl_frameReadyCallback, this));
+		CATCH_SIGNAL(wl_callback_add_listener(wl_pFrameReadyCallback, &wl_frameReadyCallback, nullptr));
 		CATCH_SIGNAL(commit_wayland_surface());
 	}
 
@@ -60,14 +60,14 @@ namespace RE {
 				.global = registry_handle_global,
 				.global_remove = registry_handle_global_remove
 			};
-			CATCH_SIGNAL(wl_registry_add_listener(wl_pRegistry, &wl_registryListeners, this));
+			CATCH_SIGNAL(wl_registry_add_listener(wl_pRegistry, &wl_registryListeners, nullptr));
 			CATCH_SIGNAL(wl_display_roundtrip(wl_pDisplay));
 			if (wl_pCompositor) {
 				if (xdg_pWindowBase) {
 					const xdg_wm_base_listener xdg_listener = {
 						.ping = window_base_ping_handler
 					};
-					CATCH_SIGNAL(xdg_wm_base_add_listener(xdg_pWindowBase, &xdg_listener, this));
+					CATCH_SIGNAL(xdg_wm_base_add_listener(xdg_pWindowBase, &xdg_listener, nullptr));
 					CATCH_SIGNAL(wl_pSurface = wl_compositor_create_surface(wl_pCompositor));
 					if (wl_pSurface) {
 						CATCH_SIGNAL(xdg_pSurface = xdg_wm_base_get_xdg_surface(xdg_pWindowBase, wl_pSurface));
@@ -77,7 +77,7 @@ namespace RE {
 								const xdg_surface_listener xdg_surfaceListener = {
 									.configure = wayland_configure_window_event
 								};
-								CATCH_SIGNAL(xdg_surface_add_listener(xdg_pSurface, &xdg_surfaceListener, this));
+								CATCH_SIGNAL(xdg_surface_add_listener(xdg_pSurface, &xdg_surfaceListener, nullptr));
 								CATCH_SIGNAL(xdg_toplevel_set_title(xdg_pToplevel, pacWindowTitle));
 								CATCH_SIGNAL(xdg_surface_set_window_geometry(xdg_pSurface, 0, 0, windowSize[0], windowSize[1]));
 								CATCH_SIGNAL(xdg_toplevel_set_min_size(xdg_pToplevel, MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT));

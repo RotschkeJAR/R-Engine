@@ -416,10 +416,9 @@ namespace RE {
 		if (begin > end) {
 			FATAL_ERROR("Start (", begin, ") of the range is larger than end (", end, ")");
 			return false;
-		} else if (begin == end)
-			return is_bit_true<T>(value, begin);
+		}
 		for (T i = begin; i < end; i++)
-			if (!is_bit_true<T>(value, i))
+			if (!are_bits_true<T>(value, i))
 				return false;
 		return true;
 	}

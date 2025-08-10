@@ -19,6 +19,15 @@ namespace RE {
 #define WINDOW_CLOSE_FLAG_BIT 4
 #define WINDOW_WAYLAND_SHOULD_RENDER_FRAME_BIT 5
 
+#ifdef RE_OS_LINUX
+	enum LinuxWindowType {
+		X11,
+		Wayland
+	};
+
+	extern LinuxWindowType eLinuxWindowType;
+#endif
+
 	extern Vector2u windowSize;
 	extern const char* pacWindowTitle;
 	extern uint8_t u8WindowFlagBits;

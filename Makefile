@@ -30,7 +30,7 @@ all:
 	@make --no-print-directory $(OUT)
 
 $(OUT): $(RE) *.cpp
-	@$(CC) $(CFLAG) -o "$(OUT)" *.cpp $(LDFLAG)
+	@$(CC) $(CFLAG) -std=c++20 -x c++ -o "$(OUT)" *.cpp $(LDFLAG)
 
 $(RE): $(SRC)/*
 	-@rm -f *.o $(BIN)/*.o

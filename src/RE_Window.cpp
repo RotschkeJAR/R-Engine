@@ -1,16 +1,13 @@
 #include "RE_Window.hpp"
 #include "RE_Render System.hpp"
 #include "RE_Window_Win64.hpp"
+#include "RE_Window_X11.hpp"
+#include "RE_Window_Wayland.hpp"
 
 namespace RE {
 
 #ifdef RE_OS_LINUX
-	enum LinuxWindowType {
-		X11,
-		Wayland
-	};
-
-	LinuxWindowType eLinuxWindowType;
+	LinuxWindowType eLinuxWindowType = X11;
 #endif
 	
 	Vector2u windowSize(600, 400);
@@ -121,19 +118,25 @@ namespace RE {
 #elif defined RE_OS_LINUX
 		switch (eLinuxWindowType) {
 			case X11:
-				const VkXlibSurfaceCreateInfoKHR vk_x11SurfaceCreateInfo = {
-					.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR,
-					.dpy = x11_pDisplay,
-					.window = x11_hWindow
-				};
-				return CATCH_SIGNAL_AND_RETURN(vkCreateXlibSurfaceKHR(vk_hInstance, &vk_x11SurfaceCreateInfo, nullptr, &vk_rhSurface) == VK_SUCCESS, bool);
+				{
+					const VkXlibSurfaceCreateInfoKHR vk_x11SurfaceCreateInfo = {
+						.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR,
+						.dpy = x11_pDisplay,
+						.window = x11_hWindow
+					};
+					return CATCH_SIGNAL_AND_RETURN(vkCreateXlibSurfaceKHR(vk_hInstance, &vk_x11SurfaceCreateInfo, nullptr, &vk_rhSurface) == VK_SUCCESS, bool);
+				}
 			case Wayland:
-				const VkWaylandSurfaceCreateInfoKHR vk_waylandSurfaceCreateInfo = {
-					.sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR,
-					.display = wl_pDisplay,
-					.surface = wl_pSurface
-				};
-				return CATCH_SIGNAL_AND_RETURN(vkCreateWaylandSurfaceKHR(vk_hInstance, &vk_waylandSurfaceCreateInfo, nullptr, &vk_rhSurface) == VK_SUCCESS, bool);
+				{
+					const VkWaylandSurfaceCreateInfoKHR vk_waylandSurfaceCreateInfo = {
+						.sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR,
+						.display = wl_pDisplay,
+						.surface = wl_pSurface
+					};
+					return CATCH_SIGNAL_AND_RETURN(vkCreateWaylandSurfaceKHR(vk_hInstance, &vk_waylandSurfaceCreateInfo, nullptr, &vk_rhSurface) == VK_SUCCESS, bool);
+				}
+			default:
+				return false;
 		}
 #endif
 	}
@@ -148,6 +151,8 @@ namespace RE {
 				return VK_KHR_XLIB_SURFACE_EXTENSION_NAME;
 			case Wayland:
 				return VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME;
+			default:
+				return nullptr;
 		}
 #endif
 	}

@@ -1,4 +1,5 @@
 #include "RE_Window.hpp"
+#include "RE_Window_X11.hpp"
 #include "RE_Main.hpp"
 
 #include <cstring>
@@ -56,7 +57,7 @@ namespace RE {
 							if (x11_hInputMethod) {
 								CATCH_SIGNAL(x11_hInputContext = XCreateIC(x11_hInputMethod, XNInputStyle, XIMPreeditNothing | XIMStatusNothing, XNClientWindow, x11_hWindow, nullptr));
 								if (x11_hInputContext) {
-									CATCH_SIGNAL(x11_set_window_title());
+									CATCH_SIGNAL(x11_update_window_title());
 									return true;
 								} else
 									RE_ERROR("Failed creating X11 input context");

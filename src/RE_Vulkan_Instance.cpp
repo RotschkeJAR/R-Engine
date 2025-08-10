@@ -334,22 +334,26 @@ namespace RE {
 		if (!pfn_vkGetPhysicalDeviceWin32PresentationSupportKHR)
 			return false;
 #elif defined RE_OS_LINUX
-		if (std::strcmp(Window::pInstance->get_vulkan_required_surface_extension_name(), VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME) == 0) {
-			pfn_vkCreateWaylandSurfaceKHR = reinterpret_cast<PFN_vkCreateWaylandSurfaceKHR>(load_func("vkCreateWaylandSurfaceKHR"));
-			if (!pfn_vkCreateWaylandSurfaceKHR)
+		switch (eLinuxWindowType) {
+			case LinuxWindowType::X11:
+				pfn_vkCreateXlibSurfaceKHR = reinterpret_cast<PFN_vkCreateXlibSurfaceKHR>(load_func("vkCreateXlibSurfaceKHR"));
+				if (!pfn_vkCreateXlibSurfaceKHR)
+					return false;
+				pfn_vkGetPhysicalDeviceXlibPresentationSupportKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceXlibPresentationSupportKHR>(load_func("vkGetPhysicalDeviceXlibPresentationSupportKHR"));
+				if (!pfn_vkGetPhysicalDeviceXlibPresentationSupportKHR)
+					return false;
+				break;
+			case LinuxWindowType::Wayland:
+				pfn_vkCreateWaylandSurfaceKHR = reinterpret_cast<PFN_vkCreateWaylandSurfaceKHR>(load_func("vkCreateWaylandSurfaceKHR"));
+				if (!pfn_vkCreateWaylandSurfaceKHR)
+					return false;
+				pfn_vkGetPhysicalDeviceWaylandPresentationSupportKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR>(load_func("vkGetPhysicalDeviceWaylandPresentationSupportKHR"));
+				if (!pfn_vkGetPhysicalDeviceWaylandPresentationSupportKHR)
+					return false;
+				break;
+			default:
 				return false;
-			pfn_vkGetPhysicalDeviceWaylandPresentationSupportKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR>(load_func("vkGetPhysicalDeviceWaylandPresentationSupportKHR"));
-			if (!pfn_vkGetPhysicalDeviceWaylandPresentationSupportKHR)
-				return false;
-		} else if (std::strcmp(Window::pInstance->get_vulkan_required_surface_extension_name(), VK_KHR_XLIB_SURFACE_EXTENSION_NAME) == 0) {
-			pfn_vkCreateXlibSurfaceKHR = reinterpret_cast<PFN_vkCreateXlibSurfaceKHR>(load_func("vkCreateXlibSurfaceKHR"));
-			if (!pfn_vkCreateXlibSurfaceKHR)
-				return false;
-			pfn_vkGetPhysicalDeviceXlibPresentationSupportKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceXlibPresentationSupportKHR>(load_func("vkGetPhysicalDeviceXlibPresentationSupportKHR"));
-			if (!pfn_vkGetPhysicalDeviceXlibPresentationSupportKHR)
-				return false;
-		} else
-			return false;
+		}
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 		return true;
 	}

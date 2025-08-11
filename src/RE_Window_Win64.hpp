@@ -3,9 +3,10 @@
 
 #include "RE_Internal Header.hpp"
 
+#ifdef RE_OS_WINDOWS
+
 namespace RE {
 	
-#ifdef RE_OS_WINDOWS
 	extern HINSTANCE win_hInstance;
 	extern HWND win_hWindow;
 
@@ -14,8 +15,9 @@ namespace RE {
 	void win64_show_window();
 	void win64_update_window_title();
 	void win64_window_proc();
-#endif
 
 }
+
+#endif /* RE_OS_WINDOWS */
 
 #endif /* __RE_WINDOW_WIN64_H__ */

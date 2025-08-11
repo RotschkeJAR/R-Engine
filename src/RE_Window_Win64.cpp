@@ -1,9 +1,10 @@
 #include "RE_Window.hpp"
 #include "RE_Main.hpp"
 
+#ifdef RE_OS_WINDOWS
+
 namespace RE {
 
-#ifdef RE_OS_WINDOWS
 # define WINDOW_CLASS_NAME L"RE_WindowClass"
 # define WINDOW_STYLE_FLAGS (WS_SIZEBOX | WS_MAXIMIZEBOX | WS_MINIMIZEBOX | WS_CAPTION | WS_SYSMENU)
 # define RE_WM_MAXIMIZED WM_APP
@@ -58,7 +59,7 @@ namespace RE {
 				case WM_KEYUP: /* key released */
 				case WM_SYSKEYUP: {
 					WORD win_virtualKeyCode = LOWORD(win_wParam);
-					WORD win_keyFlags = HIWORD(win_lParam);
+					const WORD win_keyFlags = HIWORD(win_lParam);
 					BYTE win_scancode = LOBYTE(win_keyFlags);
 					WORD win_extScancode = static_cast<WORD>(win_scancode);
 					if ((win_keyFlags & KF_EXTENDED) == KF_EXTENDED)
@@ -80,11 +81,10 @@ namespace RE {
 						default:
 							break;
 					}
-					BOOL win_keyReleased = (win_keyFlags & KF_UP) == KF_UP;
-					CATCH_SIGNAL(input_event(key_from_virtual_keycode(static_cast<int64_t>(win_virtualKeyCode)), static_cast<uint32_t>(win_extScancode), !static_cast<bool>(win_keyReleased), bFallbackToInput));
+					CATCH_SIGNAL(input_event(key_from_virtual_keycode(static_cast<int64_t>(win_virtualKeyCode)), static_cast<uint32_t>(win_extScancode), (win_keyFlags & KF_UP) != KF_UP, bFallbackToInput));
 					} return 0;
 				case WM_CHAR: {
-					//wchar_t wCharacter[2] = {static_cast<wchar_t>(win_wParam), L'\0'};
+					//const wchar_t a2wcCharacter[2] = {static_cast<wchar_t>(win_wParam), L'\0'};
 					} return 0;
 				case WM_LBUTTONDOWN: /* left mouse button pressed */
 					CATCH_SIGNAL(input_event(RE_INPUT_BUTTON_LEFT, 0, true, false));
@@ -169,8 +169,8 @@ namespace RE {
 			const bool bMonitorInfoRetrieved = CATCH_SIGNAL_AND_RETURN(GetMonitorInfoW(MonitorFromPoint(win_pointZero, MONITOR_DEFAULTTOPRIMARY), &win_primaryMonitorInfo), BOOL) == TRUE;
 			if (bMonitorInfoRetrieved) {
 				const Vector<LONG, 2> monitorWorkSize = {
-					std::clamp(std::abs(win_primaryMonitorInfo.rcWork.right - win_primaryMonitorInfo.rcWork.left), MIN_MONITOR_WIDTH_FOR_CALCULATION, MAX_MONITOR_WIDTH_FOR_CALCULATION),
-					std::clamp(std::abs(win_primaryMonitorInfo.rcWork.bottom - win_primaryMonitorInfo.rcWork.top), MIN_MONITOR_HEIGHT_FOR_CALCULATION, MAX_MONITOR_HEIGHT_FOR_CALCULATION)
+					std::clamp<LONG>(std::abs(win_primaryMonitorInfo.rcWork.right - win_primaryMonitorInfo.rcWork.left), MIN_MONITOR_WIDTH_FOR_CALCULATION, MAX_MONITOR_WIDTH_FOR_CALCULATION),
+					std::clamp<LONG>(std::abs(win_primaryMonitorInfo.rcWork.bottom - win_primaryMonitorInfo.rcWork.top), MIN_MONITOR_HEIGHT_FOR_CALCULATION, MAX_MONITOR_HEIGHT_FOR_CALCULATION)
 				};
 				RECT win_adjustableSize = {
 					.left = 0,
@@ -243,6 +243,7 @@ namespace RE {
 	void win64_set_hinstance(const HINSTANCE win_hNewInstance) {
 		win_hInstance = win_hNewInstance;
 	}
-#endif /* RE_OS_WINDOWS */
 
 }
+
+#endif /* RE_OS_WINDOWS */

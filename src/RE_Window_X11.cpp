@@ -2,11 +2,12 @@
 #include "RE_Window_X11.hpp"
 #include "RE_Main.hpp"
 
+#ifdef RE_OS_LINUX
+
 #include <cstring>
 
 namespace RE {
 
-#ifdef RE_OS_LINUX
 	XDisplay *x11_pDisplay = nullptr;
 	XSizeHints *x11_pSizes = nullptr;
 	XColormap x11_colormap = 0;
@@ -201,6 +202,7 @@ namespace RE {
 			}
 		}
 	}
-#endif /* RE_OS_LINUX */
 
 }
+
+#endif /* RE_OS_LINUX */

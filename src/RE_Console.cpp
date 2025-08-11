@@ -16,7 +16,7 @@ namespace RE {
 #define VERBOSE_BEHAVIOUR 4
 #define LOG_TIME 5
 
-	uint8_t u8ConsoleSettings = (1U << PRINT_COLORS) | (1U << SHOW_MSG_BOX) | (1U << LOG_TIME);
+	uint8_t u8ConsoleSettings = (1 << PRINT_COLORS) | (1 << SHOW_MSG_BOX) | (1 << LOG_TIME);
 
 	static void print_time() {
 		if (!are_bits_true<uint8_t>(u8ConsoleSettings, LOG_TIME))

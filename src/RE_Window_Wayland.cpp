@@ -1,8 +1,9 @@
 #include "RE_Window.hpp"
 
+#ifdef RE_OS_LINUX
+
 namespace RE {
 
-#ifdef RE_OS_LINUX
 	wl_display *wl_pDisplay = nullptr;
 	wl_registry *wl_pRegistry = nullptr;
 	wl_compositor *wl_pCompositor = nullptr;
@@ -145,6 +146,7 @@ namespace RE {
 		CATCH_SIGNAL(commit_wayland_surface());
 		set_bits<uint8_t>(u8WindowFlagBits, false, WINDOW_WAYLAND_SHOULD_RENDER_FRAME_BIT);
 	}
-#endif /* RE_OS_LINUX */
 
 }
+
+#endif /* RE_OS_LINUX */

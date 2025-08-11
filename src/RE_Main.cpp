@@ -51,6 +51,7 @@ namespace RE {
 						bRunning = false;
 						CATCH_SIGNAL(show_window(false));
 						CATCH_SIGNAL(last_game_logic_update());
+
 						WAIT_FOR_IDLE_VULKAN_DEVICE();
 						CATCH_SIGNAL(destroy_renderer());
 					}

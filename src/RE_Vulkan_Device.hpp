@@ -221,8 +221,8 @@ namespace RE {
 	extern PFN_vkCopyImageToImage pfn_vkCopyImageToImage;
 	extern PFN_vkTransitionImageLayout pfn_vkTransitionImageLayout; */
 
-	bool init_vulkan_device();
-	void destroy_vulkan_device();
+	bool init_logical_vulkan_device();
+	void destroy_logical_vulkan_device();
 
 // Vulkan 1.0
 #define vkGetDeviceQueue(...) FOCUS_FOR_VK_DEBUG(pfn_vkGetDeviceQueue(__VA_ARGS__))

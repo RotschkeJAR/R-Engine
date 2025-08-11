@@ -34,21 +34,21 @@ namespace RE {
 					CATCH_SIGNAL(PostQuitMessage(0));
 					return 0;
 				case WM_GETMINMAXINFO: {
-					MINMAXINFO* win_windowSizeLimits = (MINMAXINFO*) win_lParam;
-					win_windowSizeLimits->ptMinTrackSize.x = MIN_WINDOW_WIDTH;
-					win_windowSizeLimits->ptMinTrackSize.y = MIN_WINDOW_HEIGHT;
-					MONITORINFO win_monitorInfo = {};
+					MINMAXINFO *win_pWindowSizeLimits = (MINMAXINFO*) win_lParam;
+					win_pWindowSizeLimits->ptMinTrackSize.x = MIN_WINDOW_WIDTH;
+					win_pWindowSizeLimits->ptMinTrackSize.y = MIN_WINDOW_HEIGHT;
+					MONITORINFO win_monitorInfo;
 					win_monitorInfo.cbSize = sizeof(MONITORINFO);
 					BOOL win_monitorInfoRetrieved;
 					CATCH_SIGNAL(win_monitorInfoRetrieved = GetMonitorInfoW(MonitorFromWindow(win_hWndParam, MONITOR_DEFAULTTOPRIMARY), &win_monitorInfo));
 					if (win_monitorInfoRetrieved) {
 						const Vector2i monitorSize(win_monitorInfo.rcWork.right - win_monitorInfo.rcWork.left, win_monitorInfo.rcWork.bottom - win_monitorInfo.rcWork.top);
 						if (!are_bits_true<uint8_t>(u8WindowFlagBits, WINDOW_MAXIMIZED_BIT)) {
-							win_windowSizeLimits->ptMaxTrackSize.x = std::abs(monitorSize[0] + MAX_WINDOW_WIDTH_RELATIVE_TO_MONITOR);
-							win_windowSizeLimits->ptMaxTrackSize.y = std::abs(monitorSize[1] + MAX_WINDOW_HEIGHT_RELATIVE_TO_MONITOR);
+							win_pWindowSizeLimits->ptMaxTrackSize.x = std::abs(monitorSize[0] + MAX_WINDOW_WIDTH_RELATIVE_TO_MONITOR);
+							win_pWindowSizeLimits->ptMaxTrackSize.y = std::abs(monitorSize[1] + MAX_WINDOW_HEIGHT_RELATIVE_TO_MONITOR);
 						} else {
-							win_windowSizeLimits->ptMaxTrackSize.x = monitorSize[0];
-							win_windowSizeLimits->ptMaxTrackSize.y = monitorSize[1];
+							win_pWindowSizeLimits->ptMaxTrackSize.x = monitorSize[0];
+							win_pWindowSizeLimits->ptMaxTrackSize.y = monitorSize[1];
 						}
 					} else
 						RE_FATAL_ERROR("Failed getting monitor info, where the window is currently on, on Windows");
@@ -128,18 +128,18 @@ namespace RE {
 					else
 						CATCH_SIGNAL(input_event(RE_INPUT_SCROLL_DOWN, 0, true, false));
 					} return 0;
-				case RE_WM_MAXIMIZED: {
-					MONITORINFO win_monitorInfo = {};
-					win_monitorInfo.cbSize = sizeof(MONITORINFO);
-					BOOL win_monitorInfoRetrieved;
-					CATCH_SIGNAL(win_monitorInfoRetrieved = GetMonitorInfoW(MonitorFromWindow(win_hWndParam, MONITOR_DEFAULTTOPRIMARY), &win_monitorInfo));
-					if (!win_monitorInfoRetrieved) {
-						RE_FATAL_ERROR("Failed getting monitor info, where the window is currently on, on Windows");
-						return 1;
+				case RE_WM_MAXIMIZED:
+					{
+						MONITORINFO win_monitorInfo;
+						win_monitorInfo.cbSize = sizeof(MONITORINFO);
+						if (CATCH_SIGNAL_AND_RETURN(GetMonitorInfoW(MonitorFromWindow(win_hWndParam, MONITOR_DEFAULTTOPRIMARY), &win_monitorInfo), BOOL) == FALSE) {
+							RE_FATAL_ERROR("Failed getting monitor info, where the window is currently on, on Windows");
+							return 1;
+						}
+						const Vector2i monitorSize(std::abs(win_monitorInfo.rcWork.right - win_monitorInfo.rcWork.left), std::abs(win_monitorInfo.rcWork.bottom - win_monitorInfo.rcWork.top));
+						CATCH_SIGNAL(SetWindowPos(win_hWndParam, nullptr, 0, 0, monitorSize[0], monitorSize[1], SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOZORDER));
 					}
-					const Vector2i monitorSize(win_monitorInfo.rcWork.right - win_monitorInfo.rcWork.left, win_monitorInfo.rcWork.bottom - win_monitorInfo.rcWork.top);
-					CATCH_SIGNAL(SetWindowPos(win_hWndParam, nullptr, 0, 0, monitorSize[0], monitorSize[1], SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOZORDER));
-					} return 0;
+					return 0;
 				default:
 					break;
 			}
@@ -163,9 +163,39 @@ namespace RE {
 		win_WinClass.hInstance = win_hInstance;
 		win_WinClass.lpszClassName = WINDOW_CLASS_NAME;
 		if (CATCH_SIGNAL_AND_RETURN(RegisterClassExW(&win_WinClass), ATOM)) {
-			RECT win_adjustableSize = {0, 0, static_cast<LONG>(windowSize[0]), static_cast<LONG>(windowSize[1])};
-			CATCH_SIGNAL(AdjustWindowRect(&win_adjustableSize, WINDOW_STYLE_FLAGS, FALSE));
-			CATCH_SIGNAL(win_hWindow = CreateWindowExW(0, WINDOW_CLASS_NAME, wideTitleStr.c_str(), WINDOW_STYLE_FLAGS, CW_USEDEFAULT, CW_USEDEFAULT, win_adjustableSize.right - win_adjustableSize.left, win_adjustableSize.bottom - win_adjustableSize.top, nullptr, nullptr, win_hInstance, nullptr));
+			const POINT win_pointZero = {};
+			MONITORINFO win_primaryMonitorInfo;
+			win_primaryMonitorInfo.cbSize = sizeof(MONITORINFO);
+			const bool bMonitorInfoRetrieved = CATCH_SIGNAL_AND_RETURN(GetMonitorInfoW(MonitorFromPoint(win_pointZero, MONITOR_DEFAULTTOPRIMARY), &win_primaryMonitorInfo), BOOL) == TRUE;
+			if (bMonitorInfoRetrieved) {
+				const Vector<LONG, 2> monitorWorkSize = {
+					std::abs(win_primaryMonitorInfo.rcWork.right - win_primaryMonitorInfo.rcWork.left),
+					std::abs(win_primaryMonitorInfo.rcWork.bottom - win_primaryMonitorInfo.rcWork.top)
+				};
+				RECT win_adjustableSize = {
+					.left = 0,
+					.top = 0,
+					.right = monitorWorkSize[0] / 4 * 3,
+					.bottom = monitorWorkSize[1] / 4 * 3
+				};
+				CATCH_SIGNAL(AdjustWindowRect(&win_adjustableSize, WINDOW_STYLE_FLAGS, FALSE));
+				windowSize[0] = win_adjustableSize.right - win_adjustableSize.left;
+				windowSize[1] = win_adjustableSize.bottom - win_adjustableSize.top;
+				CATCH_SIGNAL(win_hWindow = CreateWindowExW(0, WINDOW_CLASS_NAME, wideTitleStr.c_str(), WINDOW_STYLE_FLAGS, (monitorWorkSize[0] - windowSize[0]) / 2, (monitorWorkSize[1] - windowSize[1]) / 2, windowSize[0], windowSize[1], nullptr, nullptr, win_hInstance, nullptr));
+			} else {
+				CATCH_SIGNAL(win_hWindow = CreateWindowExW(0, WINDOW_CLASS_NAME, wideTitleStr.c_str(), WINDOW_STYLE_FLAGS, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, nullptr, nullptr, win_hInstance, nullptr));
+				if (win_hWindow) {
+					RECT win_windowRect;
+					if (CATCH_SIGNAL_AND_RETURN(GetWindowRect(win_hWindow, &win_windowRect), BOOL) == TRUE) {
+						windowSize[0] = std::abs(win_windowRect.right - win_windowRect.left);
+						windowSize[1] = std::abs(win_windowRect.bottom - win_windowRect.top);
+					} else {
+						RE_FATAL_ERROR("Failed to get the window size, which was set by Windows for not getting the monitor size");
+						CATCH_SIGNAL(DestroyWindow(win_hWindow));
+						win_hWindow = nullptr;
+					}
+				}
+			}
 			if (win_hWindow) {
 				if (CATCH_SIGNAL_AND_RETURN(SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_UNAWARE), BOOL) == TRUE)
 					return true;
@@ -173,7 +203,7 @@ namespace RE {
 					RE_FATAL_ERROR("Failed telling Windows R-Engine's DPI awareness");
 				CATCH_SIGNAL(DestroyWindow(win_hWindow));
 				win_hWindow = nullptr;
-			} else
+			} else if (bMonitorInfoRetrieved)
 				RE_FATAL_ERROR("Failed creating window on Windows");
 			CATCH_SIGNAL(UnregisterClassW(WINDOW_CLASS_NAME, win_hInstance));
 		} else

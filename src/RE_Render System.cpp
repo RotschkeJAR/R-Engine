@@ -74,7 +74,7 @@ namespace RE {
 		}
 	}
 
-	static void select_best_surface_format() {
+	static void select_best_vulkan_surface_format() {
 		int32_t i32BestSurfaceFormatScore = std::numeric_limits<int32_t>::min();
 		for (uint32_t i = 0U; i < u32SurfaceFormatsAvailableCount; i++) {
 			int32_t i32CurrentSurfaceFormatScore = 0;
@@ -98,18 +98,14 @@ namespace RE {
 			}
 		}
 	}
-
-	static bool create_surface() {
-		return CATCH_SIGNAL_AND_RETURN(create_vulkan_surface(vk_hSurface), bool);
-	}
 	
-	static void destroy_surface() {
+	static void destroy_vulkan_surface() {
 		vkDestroySurfaceKHR(vk_hInstance, vk_hSurface, nullptr);
 		DELETE_ARRAY_SAFELY(vk_paSurfaceFormatsAvailable);
 		vk_hSurface = VK_NULL_HANDLE;
 	}
 
-	static void fetch_surface_infos() {
+	static void fetch_vulkan_surface_infos() {
 		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &vk_surfaceCapabilities);
 		vkGetPhysicalDeviceSurfaceFormatsKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &u32SurfaceFormatsAvailableCount, nullptr);
 		DELETE_ARRAY_SAFELY(vk_paSurfaceFormatsAvailable);
@@ -137,7 +133,7 @@ namespace RE {
 		delete[] vk_peAllPresentModes;
 	}
 
-	static bool alloc_physical_device_list() {
+	static bool alloc_physical_vulkan_device_list() {
 		DEFINE_SIGNAL_GUARD(sigGuardAllocPhysicalDeviceList);
 		uint32_t u32TotalPhysicalDeviceCount;
 		vkEnumeratePhysicalDevices(vk_hInstance, &u32TotalPhysicalDeviceCount, nullptr);
@@ -502,11 +498,11 @@ namespace RE {
 		return true;
 	}
 
-	static void free_physical_device_list() {
+	static void free_physical_vulkan_device_list() {
 		DELETE_ARRAY_SAFELY(vk_pahPhysicalDevicesAvailable);
 	}
 
-	static bool setup_interfaces_to_device() {
+	static bool setup_interfaces_to_logical_vulkan_device() {
 		uint32_t u32PhysicalDeviceSelectedQueueFamilyCount;
 		vkGetPhysicalDeviceQueueFamilyProperties(vk_hPhysicalDeviceSelected, &u32PhysicalDeviceSelectedQueueFamilyCount, nullptr);
 		VkQueueFamilyProperties *vk_pPhysicalDeviceSelectedQueueFamilies = new VkQueueFamilyProperties[u32PhysicalDeviceSelectedQueueFamilyCount];
@@ -555,7 +551,7 @@ namespace RE {
 		return false;
 	}
 
-	static void destroy_interfaces_to_device() {
+	static void destroy_interfaces_to_logical_vulkan_device() {
 		vk_hDummyTransferCommandBuffer = VK_NULL_HANDLE;
 		for (uint8_t u8CommandPoolIndex = 0; u8CommandPoolIndex < RE_VK_COMMAND_POOL_COUNT; u8CommandPoolIndex++) {
 			vkDestroyCommandPool(vk_hDevice, vk_ahCommandPools[u8CommandPoolIndex], nullptr);
@@ -670,8 +666,8 @@ namespace RE {
 	}
 
 	bool init_render_system() {
-		if (CATCH_SIGNAL_AND_RETURN(create_surface(), bool)) {
-			if (CATCH_SIGNAL_AND_RETURN(alloc_physical_device_list(), bool)) {
+		if (CATCH_SIGNAL_AND_RETURN(create_vulkan_surface(vk_hSurface), bool)) {
+			if (CATCH_SIGNAL_AND_RETURN(alloc_physical_vulkan_device_list(), bool)) {
 				CATCH_SIGNAL(select_best_physical_vulkan_device());
 
 				VkPhysicalDeviceProperties vk_physicalDeviceSelectedProperties;
@@ -683,19 +679,19 @@ namespace RE {
 				constexpr VkFormat vk_aeDepthStencilFormats[ALLOWED_DEPTH_STENCIL_BUFFER_FORMAT_COUNT] = ALLOWED_DEPTH_STENCIL_BUFFER_FORMATS;
 				vk_eDepthStencilBufferFormat = CATCH_SIGNAL_AND_RETURN(find_supported_image_format(ALLOWED_DEPTH_STENCIL_BUFFER_FORMAT_COUNT, vk_aeDepthStencilFormats, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT), VkFormat);
 
-				CATCH_SIGNAL(fetch_surface_infos());
-				CATCH_SIGNAL(select_best_surface_format());
-				if (CATCH_SIGNAL_AND_RETURN(init_vulkan_device(), bool)) {
-					if (CATCH_SIGNAL_AND_RETURN(setup_interfaces_to_device(), bool)) {
+				CATCH_SIGNAL(fetch_vulkan_surface_infos());
+				CATCH_SIGNAL(select_best_vulkan_surface_format());
+				if (CATCH_SIGNAL_AND_RETURN(init_logical_vulkan_device(), bool)) {
+					if (CATCH_SIGNAL_AND_RETURN(setup_interfaces_to_logical_vulkan_device(), bool)) {
 						if (CATCH_SIGNAL_AND_RETURN(create_swapchain(), bool))
 							return true;
-						CATCH_SIGNAL(destroy_interfaces_to_device());
+						CATCH_SIGNAL(destroy_interfaces_to_logical_vulkan_device());
 					}
-					CATCH_SIGNAL(destroy_vulkan_device());
+					CATCH_SIGNAL(destroy_logical_vulkan_device());
 				}
-				CATCH_SIGNAL(free_physical_device_list());
+				CATCH_SIGNAL(free_physical_vulkan_device_list());
 			}
-			CATCH_SIGNAL(destroy_surface());
+			CATCH_SIGNAL(destroy_vulkan_surface());
 		}
 		return false;
 	}
@@ -703,11 +699,11 @@ namespace RE {
 	void destroy_render_system() {
 		if (vk_hSwapchain)
 			CATCH_SIGNAL(destroy_swapchain());
-		CATCH_SIGNAL(destroy_interfaces_to_device());
-		CATCH_SIGNAL(destroy_vulkan_device());
+		CATCH_SIGNAL(destroy_interfaces_to_logical_vulkan_device());
+		CATCH_SIGNAL(destroy_logical_vulkan_device());
 		vk_hPhysicalDeviceSelected = VK_NULL_HANDLE;
-		CATCH_SIGNAL(free_physical_device_list());
-		CATCH_SIGNAL(destroy_surface());
+		CATCH_SIGNAL(free_physical_vulkan_device_list());
+		CATCH_SIGNAL(destroy_vulkan_surface());
 	}
 
 	bool refresh_swapchain() {

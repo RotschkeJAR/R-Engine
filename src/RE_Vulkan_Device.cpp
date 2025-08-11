@@ -1156,7 +1156,7 @@ namespace RE {
 		pfn_vkAcquireNextImage2KHR = nullptr;
 	}
 
-	bool init_vulkan_device() {
+	bool init_logical_vulkan_device() {
 		DEFINE_SIGNAL_GUARD(sigGuardCreateDevice);
 		constexpr uint32_t u32PhysicalDeviceExtensionCount = 1;
 		const char *const pacPhysicalDeviceExtensions[u32PhysicalDeviceExtensionCount] = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
@@ -1248,7 +1248,7 @@ namespace RE {
 		}
 
 		if (!CATCH_SIGNAL_AND_RETURN(load_vulkan_1_0_device() && load_vulkan_1_1_device() && load_vulkan_1_2_device() && load_vulkan_1_3_device() /* && load_vulkan_1_4_device() */ && load_extension_funcs_with_device(), bool)) {
-			destroy_vulkan_device();
+			destroy_logical_vulkan_device();
 			return false;
 		}
 		au32DeviceQueueFamilyIndices[RE_VK_QUEUE_GRAPHICS_INDEX] = graphicsQueueIndex.value();
@@ -1257,10 +1257,11 @@ namespace RE {
 		return true;
 	}
 	
-	void destroy_vulkan_device() {
+	void destroy_logical_vulkan_device() {
 		vkDestroyDevice(vk_hDevice, nullptr);
 		unload_all_vulkan_functions_of_device();
 		vk_hDevice = VK_NULL_HANDLE;
+		
 	}
 
 }

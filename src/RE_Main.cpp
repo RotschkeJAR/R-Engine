@@ -8,7 +8,7 @@ namespace RE {
 
 	bool bErrorOccured = false;
 	bool bRunning = false;
-	float fDeltaseconds = 0.0f, fMinDeltatime = 1.0f / 60.0f;
+	float fDeltaseconds = 0.0f, fMinDeltatime = 1.0f / 60;
 
 	void execute() {
 #if !(defined RE_OS_WINDOWS) && !(defined RE_OS_LINUX)

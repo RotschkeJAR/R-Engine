@@ -169,8 +169,8 @@ namespace RE {
 			const bool bMonitorInfoRetrieved = CATCH_SIGNAL_AND_RETURN(GetMonitorInfoW(MonitorFromPoint(win_pointZero, MONITOR_DEFAULTTOPRIMARY), &win_primaryMonitorInfo), BOOL) == TRUE;
 			if (bMonitorInfoRetrieved) {
 				const Vector<LONG, 2> monitorWorkSize = {
-					std::abs(win_primaryMonitorInfo.rcWork.right - win_primaryMonitorInfo.rcWork.left),
-					std::abs(win_primaryMonitorInfo.rcWork.bottom - win_primaryMonitorInfo.rcWork.top)
+					std::clamp(std::abs(win_primaryMonitorInfo.rcWork.right - win_primaryMonitorInfo.rcWork.left), MIN_MONITOR_WIDTH_FOR_CALCULATION, MAX_MONITOR_WIDTH_FOR_CALCULATION),
+					std::clamp(std::abs(win_primaryMonitorInfo.rcWork.bottom - win_primaryMonitorInfo.rcWork.top), MIN_MONITOR_HEIGHT_FOR_CALCULATION, MAX_MONITOR_HEIGHT_FOR_CALCULATION)
 				};
 				RECT win_adjustableSize = {
 					.left = 0,

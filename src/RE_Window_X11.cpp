@@ -17,36 +17,42 @@ namespace RE {
 	XInputContext x11_hInputContext = 0;
 
 	bool x11_create_window() {
-		x11_pDisplay = XOpenDisplay(nullptr);
+		CATCH_SIGNAL(x11_pDisplay = XOpenDisplay(nullptr));
 		if (x11_pDisplay) {
-			x11_pSizes = XAllocSizeHints();
+			CATCH_SIGNAL(x11_pSizes = XAllocSizeHints());
 			if (x11_pSizes) {
-				int32_t i32DefaultScreen = CATCH_SIGNAL_AND_RETURN(XDefaultScreen(x11_pDisplay), int32_t);
-				XWindow x11_rootWindow = CATCH_SIGNAL_AND_RETURN(XDefaultRootWindow(x11_pDisplay), XWindow);
-				XScreen* x11_pDefaultScreen = CATCH_SIGNAL_AND_RETURN(XScreenOfDisplay(x11_pDisplay, i32DefaultScreen), XScreen*);
+				const int32_t i32DefaultScreen = CATCH_SIGNAL_AND_RETURN(XDefaultScreen(x11_pDisplay), int32_t);
+				const XWindow x11_hRootWindowOfDefaultScreen = CATCH_SIGNAL_AND_RETURN(XRootWindow(x11_pDisplay, i32DefaultScreen), XWindow);
+				const Vector2i monitorSize = {
+					std::clamp(XDisplayWidth(x11_pDisplay, i32DefaultScreen), MIN_MONITOR_WIDTH_FOR_CALCULATION, MAX_MONITOR_WIDTH_FOR_CALCULATION),
+					std::clamp(XDisplayHeight(x11_pDisplay, i32DefaultScreen), MIN_MONITOR_HEIGHT_FOR_CALCULATION, MAX_MONITOR_HEIGHT_FOR_CALCULATION)
+				};
 
-				XVisualInfo x11_visualInfo;
-				int32_t i32VisualsCount = 0;
-				XVisualInfo x11_visualTemplate = {};
-				x11_visualTemplate.screen = i32DefaultScreen;
-				x11_visualTemplate.c_class = TrueColor;
+				int32_t i32VisualsCount;
+				XVisualInfo x11_visualTemplate = {
+					.screen = i32DefaultScreen,
+					.c_class = TrueColor
+				};
 				XVisualInfo *const x11_availableVisualInfos = CATCH_SIGNAL_AND_RETURN(XGetVisualInfo(x11_pDisplay, VisualScreenMask | VisualClassMask, &x11_visualTemplate, &i32VisualsCount), XVisualInfo*);
 				if (i32VisualsCount) {
-					x11_visualInfo = x11_availableVisualInfos[0];
+					PRINT_LN(i32VisualsCount);
+					const XVisualInfo x11_visualInfo = x11_availableVisualInfos[0];
 					CATCH_SIGNAL(XFree(x11_availableVisualInfos));
 					XSetWindowAttributes winAttrib = {};
-					CATCH_SIGNAL(x11_colormap = XCreateColormap(x11_pDisplay, x11_rootWindow, x11_visualInfo.visual, AllocNone));
+					CATCH_SIGNAL(x11_colormap = XCreateColormap(x11_pDisplay, x11_hRootWindowOfDefaultScreen, x11_visualInfo.visual, AllocNone));
 					if (x11_colormap) {
 						winAttrib.colormap = x11_colormap;
 						winAttrib.border_pixel = 0;
 						winAttrib.event_mask = StructureNotifyMask | ExposureMask | KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask;
-						CATCH_SIGNAL(x11_hWindow = XCreateWindow(x11_pDisplay, x11_rootWindow, 0, 0, windowSize[0], windowSize[1], 0, x11_visualInfo.depth, InputOutput, x11_visualInfo.visual, CWColormap | CWEventMask, &winAttrib));
+						windowSize[0] = monitorSize[0] / 4 * 3;
+						windowSize[1] = monitorSize[1] / 4 * 3;
+						CATCH_SIGNAL(x11_hWindow = XCreateWindow(x11_pDisplay, x11_hRootWindowOfDefaultScreen, (monitorSize[0] - windowSize[0]) / 2, (monitorSize[1] - windowSize[1]) / 2, windowSize[0], windowSize[1], 0, x11_visualInfo.depth, InputOutput, x11_visualInfo.visual, CWColormap | CWEventMask, &winAttrib));
 						if (x11_hWindow) {
 							x11_pSizes->flags = PMinSize | PMaxSize;
 							x11_pSizes->min_width = MIN_WINDOW_WIDTH;
 							x11_pSizes->min_height = MIN_WINDOW_HEIGHT;
-							CATCH_SIGNAL(x11_pSizes->max_width = XWidthOfScreen(x11_pDefaultScreen) + MAX_WINDOW_WIDTH_RELATIVE_TO_MONITOR);
-							CATCH_SIGNAL(x11_pSizes->max_height = XHeightOfScreen(x11_pDefaultScreen) + MAX_WINDOW_HEIGHT_RELATIVE_TO_MONITOR);
+							CATCH_SIGNAL(x11_pSizes->max_width = monitorSize[0] + MAX_WINDOW_WIDTH_RELATIVE_TO_MONITOR);
+							CATCH_SIGNAL(x11_pSizes->max_height = monitorSize[1] + MAX_WINDOW_HEIGHT_RELATIVE_TO_MONITOR);
 							CATCH_SIGNAL(XSetWMNormalHints(x11_pDisplay, x11_hWindow, x11_pSizes));
 							CATCH_SIGNAL(x11_hClose = XInternAtom(x11_pDisplay, "WM_DELETE_WINDOW", XFalse));
 							CATCH_SIGNAL(XSetWMProtocols(x11_pDisplay, x11_hWindow, &x11_hClose, 1));

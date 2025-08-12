@@ -60,13 +60,13 @@ namespace RE {
 					i32CurrentDeviceScore += 1000;
 					break;
 				case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
-					i32CurrentDeviceScore += 500;
 					break;
 				default:
-					i32CurrentDeviceScore -= 1000;
+					i32CurrentDeviceScore -= 2000;
 					break;
 			}
 			i32CurrentDeviceScore += vk_physicalDeviceProperties.limits.maxImageDimension2D;
+			i32CurrentDeviceScore += (std::min(std::min(vk_physicalDeviceProperties.limits.maxSamplerAllocationCount, vk_physicalDeviceProperties.limits.maxPerStageDescriptorSamplers), vk_physicalDeviceProperties.limits.maxPerStageDescriptorSampledImages) - 16U) * 1500U / RE_VK_MAX_SAMPLED_IMAGES - 499U;
 			if (i32BestDeviceScore < i32CurrentDeviceScore) {
 				i32BestDeviceScore = i32CurrentDeviceScore;
 				vk_hPhysicalDeviceSelected = vk_pahPhysicalDevicesAvailable[i];
@@ -407,7 +407,7 @@ namespace RE {
 				println("\t\t\tsupportedUsageFlags: ", bitmask_to_string(vk_physicalDeviceSurfaceCapabilities.supportedUsageFlags));
 			} // End of printing information about physical device to console
 
-			std::queue<const char*> missingFeatures, optionalFeaturesMissing;
+			std::queue<std::string> missingFeatures, optionalFeaturesMissing, discrepantFeatures;
 
 			// Check if there are surface formats defined
 			uint32_t u32PhysicalDeviceSurfaceFormatCount;
@@ -428,6 +428,14 @@ namespace RE {
 			// Check if sample shading is supported
 			if (vk_physicalDeviceFeaturesAvailable.sampleRateShading == VK_FALSE)
 				optionalFeaturesMissing.push("Sample shading is not supported on this GPU");
+
+			// Check if required minimum for sampled images is supported
+			if (vk_physicalDeviceProperties.limits.maxSamplerAllocationCount < RE_VK_MAX_SAMPLED_IMAGES)
+				discrepantFeatures.push(append_to_string("The maximum amount of sample objects allocated simultaneously should be equal or greater than ", RE_VK_MAX_SAMPLED_IMAGES, ", but is ", vk_physicalDeviceProperties.limits.maxSamplerAllocationCount));
+			if (vk_physicalDeviceProperties.limits.maxPerStageDescriptorSamplers < RE_VK_MAX_SAMPLED_IMAGES)
+				discrepantFeatures.push(append_to_string("The maximum amount of sample objects bound to a pipeline stage simultaneously should be equal or greater than ", RE_VK_MAX_SAMPLED_IMAGES, ", but is ", vk_physicalDeviceProperties.limits.maxPerStageDescriptorSamplers));
+			if (vk_physicalDeviceProperties.limits.maxPerStageDescriptorSampledImages < RE_VK_MAX_SAMPLED_IMAGES)
+				discrepantFeatures.push(append_to_string("The maximum amount of sampled images bound to a pipeline stage simultaneously should be equal or greater than ", RE_VK_MAX_SAMPLED_IMAGES, ", ", vk_physicalDeviceProperties.limits.maxPerStageDescriptorSampledImages));
 
 			// Check if the required extensions exist
 			bool bSwapchainExtists = false;
@@ -472,10 +480,24 @@ namespace RE {
 
 			delete[] vk_pPhysicalDeviceExtensionProperties;
 			delete[] vk_pPhysicalDeviceQueueFamilyProperties;
-			if (!missingFeatures.empty()) {
-				println_colored(append_to_string("\tPhysical Vulkan device ", vk_physicalDeviceProperties.deviceName, " has been discarded for not fulfilling the requirement(s):").c_str(), RE_TERMINAL_COLOR_RED, false, true);
+			if (!discrepantFeatures.empty()) {
+				println_colored(append_to_string("Physical Vulkan device ", vk_physicalDeviceProperties.deviceName, " has discrepancy/-ies:").c_str(), RE_TERMINAL_COLOR_BRIGHT_RED, false, true);
 				do {
-					println_colored(append_to_string("\t - ", missingFeatures.front()).c_str(), RE_TERMINAL_COLOR_RED, false, true);
+					println_colored(append_to_string(" - ", discrepantFeatures.front()).c_str(), RE_TERMINAL_COLOR_BRIGHT_RED, false, true);
+					discrepantFeatures.pop();
+				} while (!discrepantFeatures.empty());
+			}
+			if (!optionalFeaturesMissing.empty()) {
+				println_colored(append_to_string("Physical Vulkan device ", vk_physicalDeviceProperties.deviceName, " does not fulfill the optional requirement(s):").c_str(), RE_TERMINAL_COLOR_BRIGHT_YELLOW, false, true);
+				do {
+					println_colored(append_to_string(" - ", optionalFeaturesMissing.front()).c_str(), RE_TERMINAL_COLOR_BRIGHT_YELLOW, false, true);
+					optionalFeaturesMissing.pop();
+				} while (!optionalFeaturesMissing.empty());
+			}
+			if (!missingFeatures.empty()) {
+				println_colored(append_to_string("Physical Vulkan device ", vk_physicalDeviceProperties.deviceName, " has been discarded for not fulfilling the requirement(s):").c_str(), RE_TERMINAL_COLOR_RED, false, true);
+				do {
+					println_colored(append_to_string(" - ", missingFeatures.front()).c_str(), RE_TERMINAL_COLOR_RED, false, true);
 					missingFeatures.pop();
 				} while (!missingFeatures.empty());
 				continue;

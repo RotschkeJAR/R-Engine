@@ -20,6 +20,11 @@ namespace RE {
 		int32_t i32ChannelCount;
 		uint8_t *pau32ImageBinaryData = CATCH_SIGNAL_AND_RETURN(stbi_load(pacPathToTextureFile, &imgSize[0], &imgSize[1], &i32ChannelCount, 0), uint8_t*);
 		if (pau32ImageBinaryData) {
+			if (static_cast<uint32_t>(imgSize[0]) > vk_physicalDeviceLimits.maxImageDimension2D || static_cast<uint32_t>(imgSize[1]) > vk_physicalDeviceLimits.maxImageDimension2D) {
+				RE_ERROR("The image loaded from \"", pacPathToTextureFile, "\" cannot be used due to exceeding the GPU hardware limit of ", vk_physicalDeviceLimits.maxImageDimension2D, " pixels");
+				stbi_image_free(reinterpret_cast<void*>(pau32ImageBinaryData));
+				return nullptr;
+			}
 			VkFormat vk_eImageFormat;
 			switch (i32ChannelCount) {
 				case 1:
@@ -35,7 +40,7 @@ namespace RE {
 					vk_eImageFormat = VK_FORMAT_R8G8B8A8_SRGB;
 					break;
 				default:
-					RE_FATAL_ERROR("The image at \"", pacPathToTextureFile, "\" has ", i32ChannelCount, " channels, which is unusual");
+					RE_ERROR("The image at \"", pacPathToTextureFile, "\" has ", i32ChannelCount, " channels, which is unusual");
 					stbi_image_free(reinterpret_cast<void*>(pau32ImageBinaryData));
 					return nullptr;
 			}

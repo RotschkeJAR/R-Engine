@@ -321,7 +321,7 @@ namespace RE {
 	template <typename T>
 	[[nodiscard]]
 	constexpr T nth_root(const T n, const T value) {
-		static_assert(n > 0, "The 0th or negative root is forbidden for causing undefined behaviour");
+		static_assert(n > static_cast<T>(0.0), "The 0th or negative root is forbidden for causing undefined behaviour");
 		if (n <= static_cast<T>(0.0)) {
 			FATAL_ERROR("The value of n shouldn't be zero or negative in an nth root");
 			return static_cast<T>(0.0);
@@ -901,7 +901,7 @@ namespace RE {
 	[[nodiscard]]
 	bool is_vsync_enabled();
 
-	// Texture
+	// Texture loading
 	Texture alloc_texture_loading_from_file(const char *pacPathToTextureFile);
 	void free_texture(Texture hTexture);
 

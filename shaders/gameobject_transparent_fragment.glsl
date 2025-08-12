@@ -6,7 +6,7 @@ layout (location = 2) in vec2 outTexCoords;
 
 layout (location = 0) out vec4 color;
 
-layout (binding = 1) uniform sampler2D textures[32];
+layout (binding = 1) uniform sampler2D textures[0x7FFF];
 
 void main() {
 	if (outTexId == 0.0)

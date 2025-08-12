@@ -15,6 +15,8 @@ namespace RE {
 #define RE_VK_COMMAND_POOL_GRAPHICS_TRANSIENT_INDEX 1
 #define RE_VK_COMMAND_POOL_TRANSFER_PERSISTENT_INDEX 2
 #define RE_VK_COMMAND_POOL_TRANSFER_TRANSIENT_INDEX 3
+
+#define RE_VK_MAX_SAMPLED_IMAGES 0x7FFF
 	
 	// Attributes initialized at beginning and rarely changed
 	extern VkPhysicalDevice vk_hPhysicalDeviceSelected;

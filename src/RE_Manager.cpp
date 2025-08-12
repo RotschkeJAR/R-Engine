@@ -2,6 +2,7 @@
 #include "RE_Main.hpp"
 #include "RE_List_GameObject.hpp"
 #include "RE_List_Camera.hpp"
+#include "RE_Vulkan_Device.hpp"
 
 namespace RE {
 
@@ -37,6 +38,7 @@ namespace RE {
 	void game_logic_update() {
 		if (pNextScene != pCurrentScene && pNextScene) {
 			// End old scene
+			WAIT_FOR_IDLE_VULKAN_DEVICE();
 			if (pCurrentScene)
 				CATCH_SIGNAL(end_proc());
 			while (!deletableGameObjects.empty())

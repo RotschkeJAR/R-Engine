@@ -37,7 +37,7 @@ namespace RE {
 
 	bool signal_vulkan_fences(uint32_t u32FenceCount, const VkFence *vk_pahFences);
 
-	void vk_cmd_transit_image(VkCommandBuffer vk_hCommandBuffer, VkPipelineStageFlags vk_eSrcStageFlags, VkPipelineStageFlags vk_eDstStageFlags, VkDependencyFlags vk_eDependencyFlags, VkAccessFlags vk_eSrcAccessFlags, VkAccessFlags vk_eDstAccessFlags, VkImageLayout vk_eOldLayout, VkImageLayout vk_eNewLayout, uint32_t u32SrcQueueIndex, uint32_t u32DstQueueIndex, VkImage vk_hImage, VkImageAspectFlags vk_eAspectFlags, uint32_t u32BaseMipLevel = 0U, uint32_t u32MipLevelCount = 1U, uint32_t u32BaseArrayLayer = 0U, uint32_t u32ArrayLayerCount = 1U);
+	void vk_cmd_transit_image(VkCommandBuffer vk_hCommandBuffer, VkPipelineStageFlags vk_eSrcStageFlags, VkPipelineStageFlags vk_eDstStageFlags, VkDependencyFlags vk_eDependencyFlags, VkAccessFlags vk_eSrcAccessFlags, VkAccessFlags vk_eDstAccessFlags, VkImageLayout vk_eOldLayout, VkImageLayout vk_eNewLayout, uint32_t u32SrcQueueIndex, uint32_t u32DstQueueIndex, VkImage vk_hImage, VkImageAspectFlags vk_eAspectFlags, uint32_t u32BaseMipLevel = 0, uint32_t u32MipLevelCount = 1, uint32_t u32BaseArrayLayer = 0, uint32_t u32ArrayLayerCount = 1);
 
 	bool transit_image(uint32_t u32QueueIndex, VkPipelineStageFlags vk_eSrcStageFlags, VkPipelineStageFlags vk_eDstStageFlags, VkDependencyFlags vk_eDependencyFlags, VkAccessFlags vk_eSrcAccessFlags, VkAccessFlags vk_eDstAccessFlags, VkImageLayout vk_eOldLayout, VkImageLayout vk_eNewLayout, uint32_t u32SrcQueueIndex, uint32_t u32DstQueueIndex, VkImage vk_hImage, VkImageAspectFlags vk_eAspectFlags, uint32_t u32BaseMipLevel, uint32_t u32MipLevelCount, uint32_t u32BaseArrayLayer, uint32_t u32ArrayLayerCount, VkCommandBuffer *vk_phCommandBufferToFree, VkFence *vk_phFence);
 

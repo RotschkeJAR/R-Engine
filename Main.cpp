@@ -83,13 +83,15 @@ class OC : public GameObject {
 			transform.position[2] = 0.0f;
 			transform.scale[0] = 1.0f;
 			transform.scale[1] = 1.0f;
-			spriteRenderer.color.set_red(0.0f);
-			spriteRenderer.color.set_green(0.0f);
 		}
 		~OC() {}
-		void start(Scene *pStartingScene) {}
+		void start(Scene *pStartingScene) {
+			spriteRenderer.texture = alloc_texture_loading_from_file("Image.png");
+		}
 		void update(Scene *pCurrentScene) {}
-		void end(Scene *pEndingScene) {}
+		void end(Scene *pEndingScene) {
+			free_texture(spriteRenderer.texture);
+		}
 };
 
 class Background : public GameObject {

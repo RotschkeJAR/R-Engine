@@ -46,9 +46,9 @@ namespace RE {
 	VkBuffer vk_hRectIndexBuffer = VK_NULL_HANDLE;
 	VkDeviceMemory vk_hRectIndexBufferMemory = VK_NULL_HANDLE;
 
-	VkDescriptorSetLayout vk_hWorldCameraDescriptorSetLayout = VK_NULL_HANDLE;
+	VkDescriptorSetLayout vk_hWorldDescriptorSetLayout = VK_NULL_HANDLE;
 	VkDescriptorPool vk_hWorldCameraDescriptorPool = VK_NULL_HANDLE;
-	std::array<VkDescriptorSet, RE_VK_FRAMES_IN_FLIGHT> vk_ahWorldCameraDescriptorSets = {};
+	std::array<VkDescriptorSet, RE_VK_TOTAL_COUNT_OF_DESCRIPTOR_SETS> vk_ahDescriptorSets = {};
 	std::array<VkBuffer, RE_VK_FRAMES_IN_FLIGHT> vk_ahWorldCameraUniformBuffers = {};
 	std::array<VkDeviceMemory, RE_VK_FRAMES_IN_FLIGHT> vk_ahWorldCameraUniformBufferMemories = {};
 	std::array<float*, RE_VK_FRAMES_IN_FLIGHT> apafCameraUniformData = {};
@@ -367,7 +367,7 @@ namespace RE {
 		};
 		const VkWriteDescriptorSet vk_writeToCameraDescriptorSet = {
 			.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-			.dstSet = vk_ahWorldCameraDescriptorSets[u8FrameInFlightIndex],
+			.dstSet = vk_ahDescriptorSets[u8FrameInFlightIndex],
 			.dstBinding = 0,
 			.dstArrayElement = 0,
 			.descriptorCount = 1,
@@ -375,6 +375,25 @@ namespace RE {
 			.pBufferInfo = &vk_cameraUniformBufferToDescriptorSet
 		};
 		vkUpdateDescriptorSets(vk_hDevice, 1, &vk_writeToCameraDescriptorSet, 0, nullptr);
+	}
+
+	void update_texture_descriptor_set(const uint8_t u8FrameInFlightIndex, const uint32_t u32TextureCount, const TextureContainer *const *const papTextureContainers) {
+		std::array<VkDescriptorImageInfo, 32> vk_aTextureSamplersToDescriptorSet{};
+		for (uint32_t u32TextureSlot = 0; u32TextureSlot < u32TextureCount; u32TextureSlot++) {
+			CATCH_SIGNAL(vk_aTextureSamplersToDescriptorSet[u32TextureSlot].sampler = papTextureContainers[u32TextureSlot]->vk_hImgSampler);
+			CATCH_SIGNAL(vk_aTextureSamplersToDescriptorSet[u32TextureSlot].imageView = papTextureContainers[u32TextureSlot]->vk_hImgView);
+			vk_aTextureSamplersToDescriptorSet[u32TextureSlot].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		}
+		const VkWriteDescriptorSet vk_writeToTextureDescriptorSet = {
+			.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+			.dstSet = vk_ahDescriptorSets[u8FrameInFlightIndex],
+			.dstBinding = 1,
+			.dstArrayElement = 0,
+			.descriptorCount = u32TextureCount,
+			.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+			.pImageInfo = vk_aTextureSamplersToDescriptorSet.data()
+		};
+		vkUpdateDescriptorSets(vk_hDevice, 1, &vk_writeToTextureDescriptorSet, 0, nullptr);
 	}
 
 	static void update_camera_uniform_buffer() {
@@ -407,7 +426,7 @@ namespace RE {
 		if (stagingIndexBuffer.is_valid()) {
 			std::thread stagingIndexBufferDataInit([&]() {
 				REindex_t *pau16RectIndices;
-				stagingIndexBuffer.map_memory((void**) &pau16RectIndices);
+				stagingIndexBuffer.map_memory(reinterpret_cast<void**>(&pau16RectIndices));
 				for (uint16_t u16RectNumber = 0; u16RectNumber < RE_VK_RENDERABLE_RECTANGLES_COUNT; u16RectNumber++) {
 					pau16RectIndices[u16RectNumber * 6 + 0] = u16RectNumber * 4 + 0;
 					pau16RectIndices[u16RectNumber * 6 + 1] = u16RectNumber * 4 + 1;
@@ -430,29 +449,44 @@ namespace RE {
 						if (indexBufferDataTransferCommandBuffer.end_recording()) {
 							Vulkan_Fence rectIndexBufferDataTransferFence;
 							if (rectIndexBufferDataTransferFence.is_valid()) {
-								constexpr uint32_t u32DescriptorSetLayoutBindingCount = 1;
-								const std::array<VkDescriptorSetLayoutBinding, u32DescriptorSetLayoutBindingCount> vk_aDescriptorSetLayoutBindings = {{
+								constexpr uint32_t u32DescriptorSetLayoutBindingCount = 2;
+								const std::array<VkDescriptorSetLayoutBinding, u32DescriptorSetLayoutBindingCount> vk_aDescriptorSetLayoutBindingInfos = {
 									{
-										.binding = 0,
-										.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-										.descriptorCount = 1,
-										.stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-										.pImmutableSamplers = nullptr
-									}
-								}};
-								if (CATCH_SIGNAL_AND_RETURN(create_descriptor_set_layout(u32DescriptorSetLayoutBindingCount, vk_aDescriptorSetLayoutBindings.data(), 0, &vk_hWorldCameraDescriptorSetLayout), bool)) {
-									constexpr uint32_t u32DescriptorPoolSizeCount = 1;
-									const std::array<VkDescriptorPoolSize, u32DescriptorPoolSizeCount> vk_aDescriptorPoolSizes = {{
 										{
-											.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-											.descriptorCount = RE_VK_FRAMES_IN_FLIGHT
+											.binding = 0,
+											.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+											.descriptorCount = RE_VK_COUNT_OF_CAMERA_UNIFORM_DESCRIPTOR,
+											.stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+											.pImmutableSamplers = nullptr
+										}, {
+											.binding = 1,
+											.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+											.descriptorCount = RE_VK_COUNT_OF_TEXTURE_DESCRIPTOR,
+											.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+											.pImmutableSamplers = nullptr
 										}
-									}};
-									if (create_descriptor_pool(u32DescriptorPoolSizeCount, vk_aDescriptorPoolSizes.data(), RE_VK_FRAMES_IN_FLIGHT, &vk_hWorldCameraDescriptorPool)) {
-										VkDescriptorSetLayout vk_ahDescriptorSetLayouts[RE_VK_FRAMES_IN_FLIGHT];
-										std::fill(std::begin(vk_ahDescriptorSetLayouts), std::end(vk_ahDescriptorSetLayouts), vk_hWorldCameraDescriptorSetLayout);
-										if (alloc_descriptor_set(vk_hWorldCameraDescriptorPool, RE_VK_FRAMES_IN_FLIGHT, vk_ahDescriptorSetLayouts, vk_ahWorldCameraDescriptorSets.data())) {
-											if (create_pipeline_layout(1, &vk_hWorldCameraDescriptorSetLayout, 0, nullptr, 0, &vk_hWorldBasicPipelineLayout)) {
+									}
+								};
+								if (CATCH_SIGNAL_AND_RETURN(create_descriptor_set_layout(u32DescriptorSetLayoutBindingCount, vk_aDescriptorSetLayoutBindingInfos.data(), 0, &vk_hWorldDescriptorSetLayout), bool)) {
+									constexpr uint32_t u32DescriptorPoolSizeCount = 2;
+									const std::array<VkDescriptorPoolSize, u32DescriptorPoolSizeCount> vk_aDescriptorPoolSizes = {
+										{
+											{
+												.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+												.descriptorCount = RE_VK_COUNT_OF_CAMERA_UNIFORM_DESCRIPTOR * RE_VK_FRAMES_IN_FLIGHT
+											}, {
+												.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+												.descriptorCount = RE_VK_COUNT_OF_TEXTURE_DESCRIPTOR * RE_VK_FRAMES_IN_FLIGHT
+											}
+										}
+									};
+									if (create_descriptor_pool(u32DescriptorPoolSizeCount, vk_aDescriptorPoolSizes.data(), RE_VK_TOTAL_COUNT_OF_DESCRIPTOR_SETS, &vk_hWorldCameraDescriptorPool)) {
+										std::array<VkDescriptorSetLayout, RE_VK_TOTAL_COUNT_OF_DESCRIPTOR_SETS> vk_ahWorldDescriptorSetLayouts;
+										vk_ahWorldDescriptorSetLayouts.fill(vk_hWorldDescriptorSetLayout);
+										std::array<VkDescriptorSet, RE_VK_TOTAL_COUNT_OF_DESCRIPTOR_SETS> vk_ahAllDescriptorSets;
+										if (alloc_descriptor_set(vk_hWorldCameraDescriptorPool, RE_VK_TOTAL_COUNT_OF_DESCRIPTOR_SETS, vk_ahWorldDescriptorSetLayouts.data(), vk_ahAllDescriptorSets.data())) {
+											std::copy(vk_ahAllDescriptorSets.begin(), vk_ahAllDescriptorSets.end(), vk_ahDescriptorSets.begin());
+											if (create_pipeline_layout(1, &vk_hWorldDescriptorSetLayout, 0, nullptr, 0, &vk_hWorldBasicPipelineLayout)) {
 												if (create_render_pass()) {
 													constexpr uint32_t u32CameraUniformBufferQueueCount = 1;
 													const std::array<uint32_t, u32CameraUniformBufferQueueCount> au32CameraUniformBufferQueues = {RE_VK_QUEUE_GRAPHICS_INDEX};
@@ -500,7 +534,7 @@ namespace RE {
 														uint16_t u16RenderSemaphoreCreateIndex = 0;
 														while (u16RenderSemaphoreCreateIndex < RE_VK_RENDER_SEMAPHORE_COUNT) {
 															if (vkCreateSemaphore(vk_hDevice, &vk_renderSemaphoreCreateInfo, nullptr, &vk_ahRenderSemaphores[u16RenderSemaphoreCreateIndex]) != VK_SUCCESS) {
-																RE_FATAL_ERROR("Failed creating Vulkan semaphore at index ", u16RenderSemaphoreCreateIndex);
+																RE_FATAL_ERROR("Failed to create Vulkan semaphore at index ", u16RenderSemaphoreCreateIndex);
 																break;
 															}
 															u16RenderSemaphoreCreateIndex++;
@@ -554,14 +588,13 @@ namespace RE {
 												vkDestroyPipelineLayout(vk_hDevice, vk_hWorldBasicPipelineLayout, nullptr);
 											} else
 												RE_FATAL_ERROR("Failed to create basic Vulkan pipeline layout for rendering the world");
-											vkFreeDescriptorSets(vk_hDevice, vk_hWorldCameraDescriptorPool, RE_VK_FRAMES_IN_FLIGHT, vk_ahWorldCameraDescriptorSets.data());
-											vk_ahWorldCameraDescriptorSets.fill(VK_NULL_HANDLE);
+											vk_ahDescriptorSets.fill(VK_NULL_HANDLE);
 										} else
-											RE_FATAL_ERROR("Failed allocating Vulkan descriptor set for camera uniform buffer");
+											RE_FATAL_ERROR("Failed to allocate Vulkan descriptor set for camera uniform buffer");
 										vkDestroyDescriptorPool(vk_hDevice, vk_hWorldCameraDescriptorPool, nullptr);
 									} else
 										RE_FATAL_ERROR("Failed to create Vulkan descriptor pool for camera uniform buffer");
-									vkDestroyDescriptorSetLayout(vk_hDevice, vk_hWorldCameraDescriptorSetLayout, nullptr);
+									vkDestroyDescriptorSetLayout(vk_hDevice, vk_hWorldDescriptorSetLayout, nullptr);
 								} else
 									RE_FATAL_ERROR("Failed to create Vulkan descriptor set layout for camera uniform buffer");
 							} else
@@ -583,7 +616,7 @@ namespace RE {
 		vk_hWorldRenderPass = VK_NULL_HANDLE;
 		vk_hWorldBasicPipelineLayout = VK_NULL_HANDLE;
 		vk_hWorldCameraDescriptorPool = VK_NULL_HANDLE;
-		vk_hWorldCameraDescriptorSetLayout = VK_NULL_HANDLE;
+		vk_hWorldDescriptorSetLayout = VK_NULL_HANDLE;
 		vk_hRectIndexBufferMemory = VK_NULL_HANDLE;
 		vk_hRectIndexBuffer = VK_NULL_HANDLE;
 		return false;
@@ -618,14 +651,15 @@ namespace RE {
 			vkDestroyRenderPass(vk_hDevice, vk_hWorldRenderPass, nullptr);
 		vkDestroyPipelineLayout(vk_hDevice, vk_hWorldBasicPipelineLayout, nullptr);
 		vkDestroyDescriptorPool(vk_hDevice, vk_hWorldCameraDescriptorPool, nullptr);
-		vkDestroyDescriptorSetLayout(vk_hDevice, vk_hWorldCameraDescriptorSetLayout, nullptr);
+		vkDestroyDescriptorSetLayout(vk_hDevice, vk_hWorldDescriptorSetLayout, nullptr);
 		vkFreeMemory(vk_hDevice, vk_hRectIndexBufferMemory, nullptr);
 		vkDestroyBuffer(vk_hDevice, vk_hRectIndexBuffer, nullptr);
+		vk_ahDescriptorSets.fill(VK_NULL_HANDLE);
 		vk_ahRenderCommandBuffers.fill(VK_NULL_HANDLE);
 		vk_hWorldRenderPass = VK_NULL_HANDLE;
 		vk_hWorldBasicPipelineLayout = VK_NULL_HANDLE;
-		vk_hWorldCameraDescriptorSetLayout = VK_NULL_HANDLE;
 		vk_hWorldCameraDescriptorPool = VK_NULL_HANDLE;
+		vk_hWorldDescriptorSetLayout = VK_NULL_HANDLE;
 		vk_hRectIndexBufferMemory = VK_NULL_HANDLE;
 		vk_hRectIndexBuffer = VK_NULL_HANDLE;
 	}
@@ -652,10 +686,10 @@ namespace RE {
 		} else {
 			const VkCopyDescriptorSet vk_copyCameraDescriptorSet = {
 				.sType = VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET,
-				.srcSet = vk_ahWorldCameraDescriptorSets[u8CurrentFrameInFlightIndex == 0 ? (RE_VK_FRAMES_IN_FLIGHT - 1) : (u8CurrentFrameInFlightIndex - 1)],
+				.srcSet = vk_ahDescriptorSets[u8CurrentFrameInFlightIndex == 0 ? (RE_VK_FRAMES_IN_FLIGHT - 1) : (u8CurrentFrameInFlightIndex - 1)],
 				.srcBinding = 0,
 				.srcArrayElement = 0,
-				.dstSet = vk_ahWorldCameraDescriptorSets[u8CurrentFrameInFlightIndex],
+				.dstSet = vk_ahDescriptorSets[u8CurrentFrameInFlightIndex],
 				.dstBinding = 0,
 				.dstArrayElement = 0,
 				.descriptorCount = 1

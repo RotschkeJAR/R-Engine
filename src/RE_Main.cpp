@@ -50,9 +50,9 @@ namespace RE {
 						// Termination
 						bRunning = false;
 						CATCH_SIGNAL(show_window(false));
+						WAIT_FOR_IDLE_VULKAN_DEVICE();
 						CATCH_SIGNAL(last_game_logic_update());
 
-						WAIT_FOR_IDLE_VULKAN_DEVICE();
 						CATCH_SIGNAL(destroy_renderer());
 					}
 					CATCH_SIGNAL(destroy_render_system());

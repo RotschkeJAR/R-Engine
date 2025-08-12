@@ -631,6 +631,9 @@ namespace RE {
 			bool operator !=(const Color &rCompareColor) const;
 	};
 
+	struct Texture_T final {};
+	typedef Texture_T* Texture;
+
 	class Transform final {
 		public:
 			Vector3f position, scale;
@@ -655,6 +658,7 @@ namespace RE {
 	class SpriteRenderer final {
 		public:
 			Color color;
+			Texture texture;
 
 			SpriteRenderer();
 			~SpriteRenderer();
@@ -896,6 +900,10 @@ namespace RE {
 	void enable_vsync(bool bEnableVsync);
 	[[nodiscard]]
 	bool is_vsync_enabled();
+
+	// Texture
+	Texture alloc_texture_loading_from_file(const char *pacPathToTextureFile);
+	void free_texture(Texture hTexture);
 
 	// Renderer
 	void set_screen_percentage_settings(const ScreenPercentageSettings &rNewSettings);

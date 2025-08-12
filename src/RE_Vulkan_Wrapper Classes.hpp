@@ -14,7 +14,7 @@ namespace RE {
 			const VkDeviceSize vk_size;
 
 			Vulkan_Buffer() = delete;
-			Vulkan_Buffer(VkDeviceSize vk_size, VkBufferUsageFlags vk_eUsages, uint32_t u32QueueCount, const uint32_t *pu32Queues, VkMemoryPropertyFlags vk_eMemoryPropertyFlags);
+			Vulkan_Buffer(VkDeviceSize vk_size, VkBufferUsageFlags vk_eUsages, uint32_t u32QueueCount, const uint32_t *pau32Queues, VkMemoryPropertyFlags vk_eMemoryPropertyFlags);
 			~Vulkan_Buffer();
 
 			bool map_memory(void **ppData) const;

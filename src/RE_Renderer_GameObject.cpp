@@ -1,6 +1,7 @@
 #include "RE_Renderer_GameObject.hpp"
 #include "RE_Vulkan_Wrapper Functions.hpp"
 #include "RE_List_GameObject.hpp"
+#include "RE_Renderer.hpp"
 
 namespace RE {
 
@@ -10,8 +11,8 @@ namespace RE {
 	VkCommandBuffer vk_ahGameObjectVertexTransferCommandBuffers[RE_VK_FRAMES_IN_FLIGHT] = {}, vk_ahGameObjectSecondaryCommandBuffers[RE_VK_FRAMES_IN_FLIGHT] = {};
 
 	static bool create_game_object_pipelines() {
-		constexpr uint32_t u32GraphicsPipelineCount = 2U;
-		constexpr uint32_t u32ShaderStageCount = 2U;
+		constexpr uint32_t u32GraphicsPipelineCount = 2;
+		constexpr uint32_t u32ShaderStageCount = 2;
 		const VkPipelineShaderStageCreateInfo vk_aaShaderStages[u32GraphicsPipelineCount][u32ShaderStageCount] = {
 			{
 				{
@@ -45,53 +46,73 @@ namespace RE {
 		};
 		constexpr VkVertexInputBindingDescription vk_aVertexInputBindingDescs[u32GraphicsPipelineCount] = {
 			{
-				.binding = 0U,
+				.binding = 0,
 				.stride = RE_VK_OPAQUE_GAME_OBJECT_VERTEX_TOTAL_SIZE_BYTES,
 				.inputRate = VK_VERTEX_INPUT_RATE_VERTEX
 			}, {
-				.binding = 0U,
+				.binding = 0,
 				.stride = RE_VK_TRANSPARENT_GAME_OBJECT_VERTEX_TOTAL_SIZE_BYTES,
 				.inputRate = VK_VERTEX_INPUT_RATE_VERTEX
 			}
 		};
-		constexpr uint32_t u32VertexInputAttributeDescCount = 2U;
+		constexpr uint32_t u32VertexInputAttributeDescCount = 4;
 		constexpr VkVertexInputAttributeDescription vk_aaVertexInputAttributeDescs[u32GraphicsPipelineCount][u32VertexInputAttributeDescCount] = {
 			{
 				{
-					.location = 0U,
-					.binding = 0U,
+					.location = 0,
+					.binding = 0,
 					.format = VK_FORMAT_R32G32B32_SFLOAT,
 					.offset = RE_VK_OPAQUE_GAME_OBJECT_VERTEX_POSITION_OFFSET_BYTES
 				}, {
-					.location = 1U,
-					.binding = 0U,
+					.location = 1,
+					.binding = 0,
 					.format = VK_FORMAT_R32G32B32_SFLOAT,
 					.offset = RE_VK_OPAQUE_GAME_OBJECT_VERTEX_COLOR_OFFSET_BYTES
+				}, {
+					.location = 2,
+					.binding = 0,
+					.format = VK_FORMAT_R32_SFLOAT,
+					.offset = RE_VK_OPAQUE_GAME_OBJECT_VERTEX_TEXTURE_ID_OFFSET_BYTES
+				}, {
+					.location = 3,
+					.binding = 0,
+					.format = VK_FORMAT_R32G32_SFLOAT,
+					.offset = RE_VK_OPAQUE_GAME_OBJECT_VERTEX_TEXTURE_COORDS_OFFSET_BYTES
 				}
 			}, {
 				{
-					.location = 0U,
-					.binding = 0U,
+					.location = 0,
+					.binding = 0,
 					.format = VK_FORMAT_R32G32B32_SFLOAT,
 					.offset = RE_VK_TRANSPARENT_GAME_OBJECT_VERTEX_POSITION_OFFSET_BYTES
 				}, {
-					.location = 1U,
-					.binding = 0U,
+					.location = 1,
+					.binding = 0,
 					.format = VK_FORMAT_R32G32B32A32_SFLOAT,
 					.offset = RE_VK_TRANSPARENT_GAME_OBJECT_VERTEX_COLOR_OFFSET_BYTES
+				}, {
+					.location = 2,
+					.binding = 0,
+					.format = VK_FORMAT_R32_SFLOAT,
+					.offset = RE_VK_TRANSPARENT_GAME_OBJECT_VERTEX_TEXTURE_ID_OFFSET_BYTES
+				}, {
+					.location = 3,
+					.binding = 0,
+					.format = VK_FORMAT_R32G32_SFLOAT,
+					.offset = RE_VK_TRANSPARENT_GAME_OBJECT_VERTEX_TEXTURE_COORDS_OFFSET_BYTES
 				}
 			}
 		};
 		const VkPipelineVertexInputStateCreateInfo vk_aVertexInputCreateInfos[u32GraphicsPipelineCount] = {
 			{
 				.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-				.vertexBindingDescriptionCount = 1U,
+				.vertexBindingDescriptionCount = 1,
 				.pVertexBindingDescriptions = &vk_aVertexInputBindingDescs[0],
 				.vertexAttributeDescriptionCount = u32VertexInputAttributeDescCount,
 				.pVertexAttributeDescriptions = vk_aaVertexInputAttributeDescs[0]
 			}, {
 				.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-				.vertexBindingDescriptionCount = 1U,
+				.vertexBindingDescriptionCount = 1,
 				.pVertexBindingDescriptions = &vk_aVertexInputBindingDescs[1],
 				.vertexAttributeDescriptionCount = u32VertexInputAttributeDescCount,
 				.pVertexAttributeDescriptions = vk_aaVertexInputAttributeDescs[1]
@@ -104,9 +125,9 @@ namespace RE {
 		};
 		const VkPipelineViewportStateCreateInfo vk_viewportCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
-			.viewportCount = 1U,
+			.viewportCount = 1,
 			.pViewports = &vk_cameraViewport,
-			.scissorCount = 1U,
+			.scissorCount = 1,
 			.pScissors = &vk_cameraScissor
 		};
 		constexpr VkPipelineRasterizationStateCreateInfo vk_rasterizationCreateInfo = {
@@ -176,7 +197,7 @@ namespace RE {
 				.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
 				.logicOpEnable = VK_FALSE,
 				.logicOp = VK_LOGIC_OP_COPY,
-				.attachmentCount = 1U,
+				.attachmentCount = 1,
 				.pAttachments = &vk_aColorBlendAttachments[0],
 				.blendConstants = {
 					0.0f,
@@ -188,7 +209,7 @@ namespace RE {
 				.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
 				.logicOpEnable = VK_FALSE,
 				.logicOp = VK_LOGIC_OP_COPY,
-				.attachmentCount = 1U,
+				.attachmentCount = 1,
 				.pAttachments = &vk_aColorBlendAttachments[1],
 				.blendConstants = {
 					0.0f,
@@ -198,7 +219,7 @@ namespace RE {
 				}
 			}
 		};
-		constexpr uint32_t u32DynamicStateCount = 2U;
+		constexpr uint32_t u32DynamicStateCount = 2;
 		constexpr VkDynamicState vk_aeDynamicStates[u32DynamicStateCount] = {
 			VK_DYNAMIC_STATE_VIEWPORT,
 			VK_DYNAMIC_STATE_SCISSOR
@@ -335,10 +356,10 @@ namespace RE {
 				.occlusionQueryEnable = VK_FALSE
 			};
 			if (CATCH_SIGNAL_AND_RETURN(begin_recording_vulkan_command_buffer(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT, &vk_inheritanceInfo), bool)) {
-				vkCmdSetViewport(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], 0U, 1U, &vk_cameraViewport);
-				vkCmdSetScissor(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], 0U, 1U, &vk_cameraScissor);
-				vkCmdBindDescriptorSets(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hWorldBasicPipelineLayout, 0U, 1U, &vk_ahWorldCameraDescriptorSets[u8CurrentFrameInFlightIndex], 0U, nullptr);
-				vkCmdBindIndexBuffer(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], vk_hRectIndexBuffer, 0UL, VK_INDEX_TYPE_UINT16);
+				vkCmdSetViewport(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], 0, 1, &vk_cameraViewport);
+				vkCmdSetScissor(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], 0, 1, &vk_cameraScissor);
+				vkCmdBindDescriptorSets(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hWorldBasicPipelineLayout, 0, 1, &vk_ahDescriptorSets[u8CurrentFrameInFlightIndex], 0, nullptr);
+				vkCmdBindIndexBuffer(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], vk_hRectIndexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
 				vkCmdBindPipeline(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hOpaqueGameObjectGraphicsPipeline);
 				CATCH_SIGNAL(render_opaque_game_objects());

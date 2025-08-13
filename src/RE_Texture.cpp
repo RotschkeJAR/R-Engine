@@ -3,6 +3,7 @@
 #include "RE_Render System.hpp"
 #include "RE_Vulkan_Wrapper Functions.hpp"
 #include "RE_Vulkan_Wrapper Classes.hpp"
+#include "RE_List_GameObject.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_WINDOWS_UTF8
@@ -12,21 +13,37 @@
 namespace RE {
 	
 	Texture alloc_texture_loading_from_file(const char *const pacPathToTextureFile) {
+		Vector2i textureSize;
+		return alloc_texture_loading_from_file(pacPathToTextureFile, textureSize);
+	}
+
+	Texture alloc_texture_loading_from_file(const char *const pacPathToTextureFile, Vector2i &rSize) {
+		return alloc_texture_loading_from_file(pacPathToTextureFile, rSize[0], rSize[1]);
+	}
+	
+	Texture alloc_texture_loading_from_file(const char *const pacPathToTextureFile, int32_t &ri32Width, int32_t &ri32Height) {
+		int32_t i32Channels;
+		return alloc_texture_loading_from_file(pacPathToTextureFile, ri32Width, ri32Height, i32Channels);
+	}
+	
+	Texture alloc_texture_loading_from_file(const char *const pacPathToTextureFile, Vector2i &rSize, int32_t &ri32Channels) {
+		return alloc_texture_loading_from_file(pacPathToTextureFile, rSize[0], rSize[1], ri32Channels);
+	}
+	
+	Texture alloc_texture_loading_from_file(const char *const pacPathToTextureFile, int32_t &ri32Width, int32_t &ri32Height, int32_t &ri32Channels) {
 		if (vk_hDevice == VK_NULL_HANDLE) {
 			RE_ERROR("Textures can't be loaded, when the engine doesn't run");
 			return nullptr;
 		}
-		Vector2i imgSize;
-		int32_t i32ChannelCount;
-		uint8_t *pau32ImageBinaryData = CATCH_SIGNAL_AND_RETURN(stbi_load(pacPathToTextureFile, &imgSize[0], &imgSize[1], &i32ChannelCount, 0), uint8_t*);
+		uint8_t *pau32ImageBinaryData = CATCH_SIGNAL_AND_RETURN(stbi_load(pacPathToTextureFile, &ri32Width, &ri32Height, &ri32Channels, 0), uint8_t*);
 		if (pau32ImageBinaryData) {
-			if (static_cast<uint32_t>(imgSize[0]) > vk_physicalDeviceLimits.maxImageDimension2D || static_cast<uint32_t>(imgSize[1]) > vk_physicalDeviceLimits.maxImageDimension2D) {
+			if (static_cast<uint32_t>(ri32Width) > vk_physicalDeviceLimits.maxImageDimension2D || static_cast<uint32_t>(ri32Height) > vk_physicalDeviceLimits.maxImageDimension2D) {
 				RE_ERROR("The image loaded from \"", pacPathToTextureFile, "\" cannot be used due to exceeding the GPU hardware limit of ", vk_physicalDeviceLimits.maxImageDimension2D, " pixels");
 				stbi_image_free(reinterpret_cast<void*>(pau32ImageBinaryData));
 				return nullptr;
 			}
 			VkFormat vk_eImageFormat;
-			switch (i32ChannelCount) {
+			switch (ri32Channels) {
 				case 1:
 					vk_eImageFormat = VK_FORMAT_R8_SRGB;
 					break;
@@ -40,7 +57,7 @@ namespace RE {
 					vk_eImageFormat = VK_FORMAT_R8G8B8A8_SRGB;
 					break;
 				default:
-					RE_ERROR("The image at \"", pacPathToTextureFile, "\" has ", i32ChannelCount, " channels, which is unusual");
+					RE_ERROR("The image at \"", pacPathToTextureFile, "\" has ", ri32Channels, " channels, which is unusual. The engine can load and use only 2D textures");
 					stbi_image_free(reinterpret_cast<void*>(pau32ImageBinaryData));
 					return nullptr;
 			}
@@ -50,7 +67,7 @@ namespace RE {
 					RE_VK_QUEUE_TRANSFER_INDEX
 				}
 			};
-			const VkDeviceSize vk_imgSizeInBytes = imgSize.area() * i32ChannelCount;
+			const VkDeviceSize vk_imgSizeInBytes = ri32Width * ri32Height * ri32Channels;
 			Vulkan_Buffer stagingTextureBuffer(vk_imgSizeInBytes, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, u32StagingBufferQueueCount, u32StagingBufferQueues.data(), VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 			if (stagingTextureBuffer.is_valid()) {
 				void *pStagingBufferData;
@@ -68,7 +85,7 @@ namespace RE {
 						RE_VK_QUEUE_TRANSFER_INDEX
 					}
 				};
-				if (create_vulkan_image(0, VK_IMAGE_TYPE_2D, vk_eImageFormat, VkExtent3D{static_cast<uint32_t>(imgSize[0]), static_cast<uint32_t>(imgSize[1]), 1}, 1, 1, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, u32QueueCount, au32Queues.data(), VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &pTextureContainer->vk_hImage, &pTextureContainer->vk_hImageMemory)) {
+				if (create_vulkan_image(0, VK_IMAGE_TYPE_2D, vk_eImageFormat, VkExtent3D{static_cast<uint32_t>(ri32Width), static_cast<uint32_t>(ri32Height), 1}, 1, 1, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, u32QueueCount, au32Queues.data(), VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &pTextureContainer->vk_hImage, &pTextureContainer->vk_hImageMemory)) {
 					if (create_vulkan_image_view(pTextureContainer->vk_hImage, VK_IMAGE_VIEW_TYPE_2D, vk_eImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1, &pTextureContainer->vk_hImgView)) {
 						const VkSamplerCreateInfo vk_samplerCreateInfo = {
 							.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
@@ -109,8 +126,8 @@ namespace RE {
 											.z = 0
 										},
 										.imageExtent = {
-											.width = static_cast<uint32_t>(imgSize[0]),
-											.height = static_cast<uint32_t>(imgSize[1]),
+											.width = static_cast<uint32_t>(ri32Width),
+											.height = static_cast<uint32_t>(ri32Height),
 											.depth = 1
 										}
 									};
@@ -147,11 +164,24 @@ namespace RE {
 			return;
 		}
 		const TextureContainer *const pTextureContainer = reinterpret_cast<TextureContainer*>(hTexture);
+		WAIT_FOR_IDLE_VULKAN_DEVICE();
 		vkDestroySampler(vk_hDevice, pTextureContainer->vk_hImgSampler, nullptr);
 		vkDestroyImageView(vk_hDevice, pTextureContainer->vk_hImgView, nullptr);
 		vkFreeMemory(vk_hDevice, pTextureContainer->vk_hImageMemory, nullptr);
 		vkDestroyImage(vk_hDevice, pTextureContainer->vk_hImage, nullptr);
 		delete pTextureContainer;
+	}
+
+	void free_texture_and_fix_dangling_pointers(const Texture hTexture) {
+		if (!hTexture)
+			return;
+		CATCH_SIGNAL(free_texture(hTexture));
+		for (ListBatch_GameObject *const pGameObjectListBatch : gameObjectBatchList)
+			for (uint16_t u16Index = 0; u16Index < pGameObjectListBatch->size(); u16Index++) {
+				GameObject *const pGameObject = pGameObjectListBatch->get(u16Index);
+				if (pGameObject->spriteRenderer.texture == hTexture)
+					pGameObject->spriteRenderer.texture = nullptr;
+			}
 	}
 
 }

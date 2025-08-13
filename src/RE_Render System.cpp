@@ -62,11 +62,11 @@ namespace RE {
 				case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
 					break;
 				default:
-					i32CurrentDeviceScore -= 2000;
+					i32CurrentDeviceScore -= 2500;
 					break;
 			}
 			i32CurrentDeviceScore += vk_physicalDeviceProperties.limits.maxImageDimension2D;
-			i32CurrentDeviceScore += (std::min(std::min(vk_physicalDeviceProperties.limits.maxSamplerAllocationCount, vk_physicalDeviceProperties.limits.maxPerStageDescriptorSamplers), vk_physicalDeviceProperties.limits.maxPerStageDescriptorSampledImages) - 16U) * 1500U / RE_VK_MAX_SAMPLED_IMAGES - 499U;
+			i32CurrentDeviceScore += static_cast<int32_t>((std::min(std::min(vk_physicalDeviceProperties.limits.maxSamplerAllocationCount, vk_physicalDeviceProperties.limits.maxPerStageDescriptorSamplers), vk_physicalDeviceProperties.limits.maxPerStageDescriptorSampledImages) - 16U) * 1500U / RE_VK_MAX_SAMPLED_IMAGES - 499U);
 			if (i32BestDeviceScore < i32CurrentDeviceScore) {
 				i32BestDeviceScore = i32CurrentDeviceScore;
 				vk_hPhysicalDeviceSelected = vk_pahPhysicalDevicesAvailable[i];

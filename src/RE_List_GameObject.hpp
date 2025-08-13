@@ -2,10 +2,12 @@
 #define __RE_LIST_GAME_OBJECT_H__
 
 #include "RE_Internal Header.hpp"
+#include "RE_ListBatch_GameObject.hpp"
 
 namespace RE {
 
 	extern std::vector<GameObject*> newGameObjects, deletableGameObjects;
+	extern std::list<ListBatch_GameObject*> gameObjectBatchList;
 	
 	void add_new_game_objects();
 	void delete_marked_game_objects();

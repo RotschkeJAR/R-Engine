@@ -903,7 +903,12 @@ namespace RE {
 
 	// Texture loading
 	Texture alloc_texture_loading_from_file(const char *pacPathToTextureFile);
+	Texture alloc_texture_loading_from_file(const char *pacPathToTextureFile, Vector2i &rSize);
+	Texture alloc_texture_loading_from_file(const char *pacPathToTextureFile, int32_t &ri32Width, int32_t &ri32Height);
+	Texture alloc_texture_loading_from_file(const char *pacPathToTextureFile, Vector2i &rSize, int32_t &ri32Channels);
+	Texture alloc_texture_loading_from_file(const char *pacPathToTextureFile, int32_t &ri32Width, int32_t &ri32Height, int32_t &ri32Channels);
 	void free_texture(Texture hTexture);
+	void free_texture_and_fix_dangling_pointers(Texture hTexture);
 
 	// Renderer
 	void set_screen_percentage_settings(const ScreenPercentageSettings &rNewSettings);

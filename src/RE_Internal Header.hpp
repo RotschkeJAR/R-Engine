@@ -11,6 +11,7 @@
 #include <chrono>
 #include <unordered_map>
 #include <thread>
+#include <list>
 
 #include "RE.hpp"
 #undef ERROR

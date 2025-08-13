@@ -3,8 +3,6 @@
 #include "RE_ListBatch_GameObject.hpp"
 #include "RE_Main.hpp"
 
-#include <list>
-
 namespace RE {
 	
 	std::vector<GameObject*> newGameObjects, deletableGameObjects;

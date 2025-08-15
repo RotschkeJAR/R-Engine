@@ -345,45 +345,55 @@ namespace RE {
 		vk_hOpaqueGameObjectVertexShader = VK_NULL_HANDLE;
 	}
 
-	bool render_game_objects() {
+	bool load_game_object_vertices_and_transfer(bool &rbNeedsRender) {
 		bool bSuccess = false;
 		if (CATCH_SIGNAL_AND_RETURN(begin_recording_vulkan_command_buffer(vk_ahGameObjectVertexTransferCommandBuffers[u8CurrentFrameInFlightIndex], VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr), bool)) {
-			const VkCommandBufferInheritanceInfo vk_inheritanceInfo = {
-				.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO,
-				.renderPass = vk_hWorldRenderPass,
-				.subpass = RE_VK_GAME_OBJECT_SUPBASS,
-				.framebuffer = vk_ahWorldFramebuffers[u8CurrentFrameInFlightIndex],
-				.occlusionQueryEnable = VK_FALSE
-			};
-			if (CATCH_SIGNAL_AND_RETURN(begin_recording_vulkan_command_buffer(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT, &vk_inheritanceInfo), bool)) {
-				vkCmdSetViewport(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], 0, 1, &vk_cameraViewport);
-				vkCmdSetScissor(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], 0, 1, &vk_cameraScissor);
-				vkCmdBindDescriptorSets(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hWorldBasicPipelineLayout, 0, 1, &vk_ahDescriptorSets[u8CurrentFrameInFlightIndex], 0, nullptr);
-				vkCmdBindIndexBuffer(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], vk_hRectIndexBuffer, 0, VK_INDEX_TYPE_UINT16);
-
-				vkCmdBindPipeline(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hOpaqueGameObjectGraphicsPipeline);
-				CATCH_SIGNAL(render_opaque_game_objects());
-				vkCmdBindPipeline(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hTransparentGameObjectGraphicsPipeline);
-				CATCH_SIGNAL(render_transparent_game_objects());
-				
-				if (vkEndCommandBuffer(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex]) == VK_SUCCESS)
-					bSuccess = true;
-				else
-					RE_FATAL_ERROR("Failed to finish recording a Vulkan secondary command buffer for rendering game objects");
-			} else
-				RE_FATAL_ERROR("Failed to begin recording a Vulkan secondary command buffer for rendering game objects");
-			if (vkEndCommandBuffer(vk_ahGameObjectVertexTransferCommandBuffers[u8CurrentFrameInFlightIndex]) != VK_SUCCESS)
+			CATCH_SIGNAL(load_game_object_vertices(rbNeedsRender));
+			if (vkEndCommandBuffer(vk_ahGameObjectVertexTransferCommandBuffers[u8CurrentFrameInFlightIndex]) == VK_SUCCESS)
+				bSuccess = true;
+			else
 				RE_FATAL_ERROR("Failed to finish recording a Vulkan command buffer for transferring vertices for rendering game objects");
 		} else
 			RE_FATAL_ERROR("Failed to start recording a Vulkan command buffer for transferring vertices to the GPU for rendering game objects");
 
 		if (!bSuccess)
 			return false;
-		else if (!CATCH_SIGNAL_AND_RETURN(submit_to_vulkan_queue(vk_ahDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], 0U, nullptr, nullptr, 1U, &vk_ahGameObjectVertexTransferCommandBuffers[u8CurrentFrameInFlightIndex], 1U, &vk_ahRenderSemaphores[u8CurrentFrameInFlightIndex * RE_VK_SEMAPHORES_PER_FRAME_COUNT + RE_VK_TRANSFER_GAME_OBJECT_VERTICES_SEMAPHORE_INDEX], VK_NULL_HANDLE), bool)) {
-			RE_FATAL_ERROR("Failed submitting the Vulkan command buffer for transferring vertices to the GPU for rendering game objects");
-			return false;
-		}
-		return true;
+		else if (rbNeedsRender) {
+			if (CATCH_SIGNAL_AND_RETURN(submit_to_vulkan_queue(vk_ahDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], 0, nullptr, nullptr, 1, &vk_ahGameObjectVertexTransferCommandBuffers[u8CurrentFrameInFlightIndex], 1, &vk_ahRenderSemaphores[u8CurrentFrameInFlightIndex * RE_VK_SEMAPHORES_PER_FRAME_COUNT + RE_VK_TRANSFER_GAME_OBJECT_VERTICES_SEMAPHORE_INDEX], VK_NULL_HANDLE), bool))
+				return true;
+			else
+				RE_FATAL_ERROR("Failed submitting the Vulkan command buffer for transferring vertices to the GPU for rendering game objects");
+		} else
+			return true;
+		return false;
+	}
+
+	bool render_game_objects() {
+		const VkCommandBufferInheritanceInfo vk_inheritanceInfo = {
+			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO,
+			.renderPass = vk_hWorldRenderPass,
+			.subpass = RE_VK_GAME_OBJECT_SUPBASS,
+			.framebuffer = vk_ahWorldFramebuffers[u8CurrentFrameInFlightIndex],
+			.occlusionQueryEnable = VK_FALSE
+		};
+		if (CATCH_SIGNAL_AND_RETURN(begin_recording_vulkan_command_buffer(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT, &vk_inheritanceInfo), bool)) {
+			vkCmdSetViewport(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], 0, 1, &vk_cameraViewport);
+			vkCmdSetScissor(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], 0, 1, &vk_cameraScissor);
+			vkCmdBindDescriptorSets(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hWorldBasicPipelineLayout, 0, 1, &vk_ahDescriptorSets[u8CurrentFrameInFlightIndex], 0, nullptr);
+			vkCmdBindIndexBuffer(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], vk_hRectIndexBuffer, 0, VK_INDEX_TYPE_UINT16);
+
+			vkCmdBindPipeline(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hOpaqueGameObjectGraphicsPipeline);
+			CATCH_SIGNAL(render_opaque_game_objects());
+			vkCmdBindPipeline(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hTransparentGameObjectGraphicsPipeline);
+			CATCH_SIGNAL(render_transparent_game_objects());
+				
+			if (vkEndCommandBuffer(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex]) == VK_SUCCESS)
+				return true;
+			else
+				RE_FATAL_ERROR("Failed to finish recording a Vulkan secondary command buffer for rendering game objects");
+		} else
+			RE_FATAL_ERROR("Failed to begin recording a Vulkan secondary command buffer for rendering game objects");
+		return false;
 	}
 
 	bool recreate_game_object_render_pipelines() {

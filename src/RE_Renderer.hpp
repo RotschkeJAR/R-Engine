@@ -46,7 +46,7 @@ namespace RE {
 
 	extern uint8_t u8CurrentFrameInFlightIndex;
 
-	void update_texture_descriptor_set(uint8_t u8FrameInFlightIndex, uint32_t u32TextureCount, const TextureContainer *const *papTextureContainers);
+	void update_texture_descriptor_set(uint8_t u8FrameInFlightIndex, uint32_t u32TextureCount, const Sprite *const *papSprites);
 	bool init_renderer();
 	void destroy_renderer();
 	void render();

@@ -1158,8 +1158,12 @@ namespace RE {
 
 	bool init_logical_vulkan_device() {
 		DEFINE_SIGNAL_GUARD(sigGuardCreateDevice);
-		constexpr uint32_t u32PhysicalDeviceExtensionCount = 1;
-		const char *const pacPhysicalDeviceExtensions[u32PhysicalDeviceExtensionCount] = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+		constexpr uint32_t u32LogicalDeviceExtensionCount = 1;
+		const std::array<const char*, u32LogicalDeviceExtensionCount> a2cLogicalDeviceExtensions = {
+			{
+				VK_KHR_SWAPCHAIN_EXTENSION_NAME
+			}
+		};
 		uint32_t u32PhysicalDeviceQueueFamilyCount;
 		vkGetPhysicalDeviceQueueFamilyProperties(vk_hPhysicalDeviceSelected, &u32PhysicalDeviceQueueFamilyCount, nullptr);
 		VkQueueFamilyProperties *vk_pPhysicalDeviceQueueFamilyProperties = new VkQueueFamilyProperties[u32PhysicalDeviceQueueFamilyCount];
@@ -1216,28 +1220,16 @@ namespace RE {
 		}
 
 		const VkPhysicalDeviceFeatures vk_physicalDeviceFeaturesEnabled = {
-			.sampleRateShading = vk_physicalDeviceFeatures.sampleRateShading
+			.sampleRateShading = vk_physicalDeviceFeatures.sampleRateShading,
+			.samplerAnisotropy = vk_physicalDeviceFeatures.samplerAnisotropy
 		};
-
-		std::queue<const char*> optionalFeaturesMissing;
-
-		if (vk_physicalDeviceFeatures.sampleRateShading == VK_FALSE)
-			optionalFeaturesMissing.push("Sample shading");
-
-		if (!optionalFeaturesMissing.empty()) {
-			println_colored(append_to_string("The selected GPU doesn't support the following optional features:").c_str(), RE_TERMINAL_COLOR_BRIGHT_YELLOW, false, true);
-			do {
-				println_colored(append_to_string(" - ", optionalFeaturesMissing.front()).c_str(), RE_TERMINAL_COLOR_BRIGHT_YELLOW, false, true);
-				optionalFeaturesMissing.pop();
-			} while (!optionalFeaturesMissing.empty());
-		}
 
 		const VkDeviceCreateInfo vk_deviceCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
 			.queueCreateInfoCount = static_cast<uint32_t>(uniqueQueueIndexCount),
 			.pQueueCreateInfos = vk_paDeviceQueueCreateInfos,
-			.enabledExtensionCount = u32PhysicalDeviceExtensionCount,
-			.ppEnabledExtensionNames = static_cast<const char *const *>(pacPhysicalDeviceExtensions),
+			.enabledExtensionCount = u32LogicalDeviceExtensionCount,
+			.ppEnabledExtensionNames = static_cast<const char *const *>(a2cLogicalDeviceExtensions.data()),
 			.pEnabledFeatures = &vk_physicalDeviceFeaturesEnabled
 		};
 		const bool bCreatedDeviceSuccessfully = vkCreateDevice(vk_hPhysicalDeviceSelected, &vk_deviceCreateInfo, nullptr, &vk_hDevice) == VK_SUCCESS;

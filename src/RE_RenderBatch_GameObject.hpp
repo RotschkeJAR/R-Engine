@@ -16,7 +16,7 @@ namespace RE {
 			std::array<VkDeviceMemory, RE_VK_FRAMES_IN_FLIGHT> vk_ahVertexBufferMemories;
 			float *pafVertices;
 			VkDeviceSize vk_transparentVerticesOffsetBytes;
-			uint16_t u16TransparentCount;
+			uint16_t u16OpaqueCount, u16TransparentCount;
 
 		public:
 			RenderBatch_GameObject() = delete;
@@ -25,6 +25,7 @@ namespace RE {
 			bool init();
 			void destroy();
 
+			void load_vertices(bool &rbNeedsRender);
 			void render_opaque();
 			void render_transparent();
 	};

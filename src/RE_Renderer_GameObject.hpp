@@ -51,6 +51,7 @@ namespace RE {
 	
 	bool init_game_object_renderer();
 	void destroy_game_object_renderer();
+	bool load_game_object_vertices_and_transfer(bool &rbNeedsRender);
 	bool render_game_objects();
 
 	bool recreate_game_object_render_pipelines();

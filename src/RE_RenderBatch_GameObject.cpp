@@ -3,10 +3,11 @@
 #include "RE_Manager.hpp"
 #include "RE_Vulkan_Wrapper Functions.hpp"
 #include "RE_ListBatch_GameObject.hpp"
+#include "RE_Renderer Texture.hpp"
 
 namespace RE {
 	
-	RenderBatch_GameObject::RenderBatch_GameObject(ListBatch_GameObject &rGameObjectBatch) : rGameObjectBatch(rGameObjectBatch), vk_hStagingVertexBuffer(VK_NULL_HANDLE), vk_ahVertexBuffers{}, vk_hStagingVertexBufferMemory(VK_NULL_HANDLE), vk_ahVertexBufferMemories{}, pafVertices(nullptr), vk_transparentVerticesOffsetBytes(0), u16TransparentCount(0) {
+	RenderBatch_GameObject::RenderBatch_GameObject(ListBatch_GameObject &rGameObjectBatch) : rGameObjectBatch(rGameObjectBatch), vk_hStagingVertexBuffer(VK_NULL_HANDLE), vk_ahVertexBuffers{}, vk_hStagingVertexBufferMemory(VK_NULL_HANDLE), vk_ahVertexBufferMemories{}, pafVertices(nullptr), vk_transparentVerticesOffsetBytes(0) {
 		if (vk_hDevice)
 			CATCH_SIGNAL(init());
 	}
@@ -65,21 +66,21 @@ namespace RE {
 		vk_hStagingVertexBuffer = VK_NULL_HANDLE;
 	}
 	
-	void RenderBatch_GameObject::render_opaque() {
+	void RenderBatch_GameObject::load_vertices(bool &rbNeedsRender) {
+		u16OpaqueCount = 0;
 		u16TransparentCount = 0;
-		uint16_t u16OpaqueCount = 0, u16TextureIndex = 0;
-		std::array<TextureContainer*, 32> texturesToDraw;
+		std::array<Sprite, RE_VK_RENDERABLE_RECTANGLES_COUNT> texturesToDraw;
 		for (uint16_t u16GameObjectIndex = 0; u16GameObjectIndex < rGameObjectBatch.size(); u16GameObjectIndex++) {
 			const GameObject *const pObject = rGameObjectBatch.get(u16GameObjectIndex);
 			if (!CATCH_SIGNAL_AND_RETURN(is_object_active(pObject), bool))
 				continue;
 			float fTexId;
-			if (pObject->spriteRenderer.texture && u16TextureIndex < 32) {
-				texturesToDraw[u16TextureIndex] = reinterpret_cast<TextureContainer*>(pObject->spriteRenderer.texture);
-				fTexId = static_cast<float>(u16TextureIndex + 1);
-				u16TextureIndex++;
+			if (pObject->spriteRenderer.sprite.hTexture && pObject->spriteRenderer.sprite.hSpriteLayout) {
+				int16_t i16I;
+				CATCH_SIGNAL(submit_sprite(&pObject->spriteRenderer.sprite, i16I));
+				fTexId = static_cast<float>(i16I);
 			} else
-				fTexId = 0.0f;
+				fTexId = -1.0f;
 			if (pObject->spriteRenderer.color[3] < 1.0f) {
 				const uint32_t u32TransparentIndex = (RE_VK_RENDERABLE_RECTANGLES_COUNT - u16TransparentCount - 1U) * RE_VK_TRANSPARENT_GAME_OBJECT_VERTEX_TOTAL_SIZE * 4U;
 				const float a2fTransparentObjectScale[2] = {
@@ -165,8 +166,8 @@ namespace RE {
 				u16OpaqueCount++;
 			}
 		}
-		if (u16TextureIndex)
-			CATCH_SIGNAL(update_texture_descriptor_set(u8CurrentFrameInFlightIndex, 1, texturesToDraw.data()));
+
+		rbNeedsRender = u16OpaqueCount || u16TransparentCount;
 
 		const VkBufferCopy vk_a2VertexBufferCopyRegions[2] = {
 			{
@@ -181,16 +182,19 @@ namespace RE {
 		};
 		vk_transparentVerticesOffsetBytes = vk_a2VertexBufferCopyRegions[0].size;
 		if (u16OpaqueCount && u16TransparentCount)
-			vkCmdCopyBuffer(vk_ahGameObjectVertexTransferCommandBuffers[u8CurrentFrameInFlightIndex], vk_hStagingVertexBuffer, vk_ahVertexBuffers[u8CurrentFrameInFlightIndex], 2U, vk_a2VertexBufferCopyRegions);
+			vkCmdCopyBuffer(vk_ahGameObjectVertexTransferCommandBuffers[u8CurrentFrameInFlightIndex], vk_hStagingVertexBuffer, vk_ahVertexBuffers[u8CurrentFrameInFlightIndex], 2, vk_a2VertexBufferCopyRegions);
 		else if (u16OpaqueCount)
-			vkCmdCopyBuffer(vk_ahGameObjectVertexTransferCommandBuffers[u8CurrentFrameInFlightIndex], vk_hStagingVertexBuffer, vk_ahVertexBuffers[u8CurrentFrameInFlightIndex], 1U, &vk_a2VertexBufferCopyRegions[0]);
+			vkCmdCopyBuffer(vk_ahGameObjectVertexTransferCommandBuffers[u8CurrentFrameInFlightIndex], vk_hStagingVertexBuffer, vk_ahVertexBuffers[u8CurrentFrameInFlightIndex], 1, &vk_a2VertexBufferCopyRegions[0]);
 		else if (u16TransparentCount)
-			vkCmdCopyBuffer(vk_ahGameObjectVertexTransferCommandBuffers[u8CurrentFrameInFlightIndex], vk_hStagingVertexBuffer, vk_ahVertexBuffers[u8CurrentFrameInFlightIndex], 1U, &vk_a2VertexBufferCopyRegions[1]);
-		if (u16OpaqueCount) {
-			constexpr VkDeviceSize vk_opaqueVertexBufferOffset = 0;
-			vkCmdBindVertexBuffers(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], 0, 1, &vk_ahVertexBuffers[u8CurrentFrameInFlightIndex], &vk_opaqueVertexBufferOffset);
-			vkCmdDrawIndexed(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], u16OpaqueCount * 6U, 1, 0, 0, 0);
-		}
+			vkCmdCopyBuffer(vk_ahGameObjectVertexTransferCommandBuffers[u8CurrentFrameInFlightIndex], vk_hStagingVertexBuffer, vk_ahVertexBuffers[u8CurrentFrameInFlightIndex], 1, &vk_a2VertexBufferCopyRegions[1]);
+	}
+
+	void RenderBatch_GameObject::render_opaque() {
+		if (!u16OpaqueCount)
+			return;
+		constexpr VkDeviceSize vk_opaqueVertexBufferOffset = 0;
+		vkCmdBindVertexBuffers(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], 0, 1, &vk_ahVertexBuffers[u8CurrentFrameInFlightIndex], &vk_opaqueVertexBufferOffset);
+		vkCmdDrawIndexed(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], u16OpaqueCount * 6U, 1, 0, 0, 0);
 	}
 
 	void RenderBatch_GameObject::render_transparent() {

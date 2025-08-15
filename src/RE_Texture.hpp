@@ -6,11 +6,10 @@
 
 namespace RE {
 
-	struct TextureContainer {
+	struct TextureContainer final {
 		VkImage vk_hImage;
 		VkDeviceMemory vk_hImageMemory;
 		VkImageView vk_hImgView;
-		VkSampler vk_hImgSampler;
 	};
 
 }

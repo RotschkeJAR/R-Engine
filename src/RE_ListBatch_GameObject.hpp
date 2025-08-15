@@ -31,6 +31,7 @@ namespace RE {
 
 		friend bool init_game_object_render_batches();
 		friend void destroy_game_object_render_batches();
+		friend void load_game_object_vertices(bool &rbNeedsRender);
 		friend void render_opaque_game_objects();
 		friend void render_transparent_game_objects();
 		friend void RenderBatch_GameObject::render_opaque();

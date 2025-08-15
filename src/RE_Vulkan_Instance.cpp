@@ -171,7 +171,7 @@ namespace RE {
 		if (bFailure)
 			return false;
 
-		std::string sAppName = get_app_name();
+		const std::string sAppName = get_app_name();
 		const VkApplicationInfo vk_appInfo = {
 			.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
 			.pApplicationName = sAppName.c_str(),

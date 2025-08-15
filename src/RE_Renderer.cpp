@@ -4,6 +4,7 @@
 #include "RE_Vulkan_Wrapper Classes.hpp"
 #include "RE_Vulkan_Wrapper Functions.hpp"
 #include "RE_Renderer_GameObject.hpp"
+#include "RE_Renderer Texture.hpp"
 
 #include <thread>
 
@@ -377,25 +378,6 @@ namespace RE {
 		vkUpdateDescriptorSets(vk_hDevice, 1, &vk_writeToCameraDescriptorSet, 0, nullptr);
 	}
 
-	void update_texture_descriptor_set(const uint8_t u8FrameInFlightIndex, const uint32_t u32TextureCount, const TextureContainer *const *const papTextureContainers) {
-		std::array<VkDescriptorImageInfo, RE_VK_COUNT_OF_TEXTURE_DESCRIPTOR> vk_aTextureSamplersToDescriptorSet{};
-		for (uint32_t u32TextureSlot = 0; u32TextureSlot < u32TextureCount; u32TextureSlot++) {
-			CATCH_SIGNAL(vk_aTextureSamplersToDescriptorSet[u32TextureSlot].sampler = papTextureContainers[u32TextureSlot]->vk_hImgSampler);
-			CATCH_SIGNAL(vk_aTextureSamplersToDescriptorSet[u32TextureSlot].imageView = papTextureContainers[u32TextureSlot]->vk_hImgView);
-			vk_aTextureSamplersToDescriptorSet[u32TextureSlot].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		}
-		const VkWriteDescriptorSet vk_writeToTextureDescriptorSet = {
-			.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-			.dstSet = vk_ahDescriptorSets[u8FrameInFlightIndex],
-			.dstBinding = 1,
-			.dstArrayElement = 0,
-			.descriptorCount = u32TextureCount,
-			.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-			.pImageInfo = vk_aTextureSamplersToDescriptorSet.data()
-		};
-		vkUpdateDescriptorSets(vk_hDevice, 1, &vk_writeToTextureDescriptorSet, 0, nullptr);
-	}
-
 	static void update_camera_uniform_buffer() {
 		DEFINE_SIGNAL_GUARD(sigCamAccess);
 		apafCameraUniformData[u8CurrentFrameInFlightIndex][RE_VK_VIEW_MATRIX_OFFSET + GET_VULKAN_MATRIX_ELEMENT_INDEX(3, 0)] = -pActiveCamera->position[0];
@@ -556,6 +538,7 @@ namespace RE {
 																if (screenPercentageSettings.eMode != RE_SCREEN_PERCENTAGE_MODE_CONST_SIZE || CATCH_SIGNAL_AND_RETURN(create_world_render_images(), bool)) {
 																	if (CATCH_SIGNAL_AND_RETURN(swapchain_created_renderer(), bool)) {
 																		if (CATCH_SIGNAL_AND_RETURN(init_game_object_renderer(), bool)) {
+																			fetch_minimum_allowed_texture_count();
 																			rectIndexBufferDataTransferFence.wait_for();
 																			return true;
 																		}
@@ -685,6 +668,7 @@ namespace RE {
 				}
 				break;
 		}
+		reset_texture_counter();
 		if (pActiveCamera && pActiveCamera->view[0] && pActiveCamera->view[1]) {
 			CATCH_SIGNAL(calculate_world_render_area_with_camera());
 			CATCH_SIGNAL(update_camera_uniform_buffer());
@@ -701,8 +685,10 @@ namespace RE {
 			};
 			vkUpdateDescriptorSets(vk_hDevice, 0, nullptr, 1, &vk_copyCameraDescriptorSet);
 		}
-		if (!CATCH_SIGNAL_AND_RETURN(render_game_objects(), bool))
+		bool bNeedsRenderingGameObjects = false;
+		if (!CATCH_SIGNAL_AND_RETURN(load_game_object_vertices_and_transfer(bNeedsRenderingGameObjects), bool))
 			return;
+		submit_sprites_to_descriptor_set(u8CurrentFrameInFlightIndex);
 		if (!begin_recording_vulkan_command_buffer(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr)) {
 			RE_FATAL_ERROR("Failed beginning to record Vulkan command buffer for rendering everything");
 			return;
@@ -739,7 +725,10 @@ namespace RE {
 			.pClearValues = vk_aClearValues.data()
 		};
 		vkCmdBeginRenderPass(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], &vk_renderPassInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
-		vkCmdExecuteCommands(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], 1, &vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex]);
+		if (bNeedsRenderingGameObjects) {
+			CATCH_SIGNAL(render_game_objects());
+			vkCmdExecuteCommands(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], 1, &vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex]);
+		}
 		vkCmdEndRenderPass(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex]);
 		CATCH_SIGNAL(vk_cmd_transit_image(vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, VK_ACCESS_NONE, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED, SHOULD_USE_SWAPCHAIN_IMAGES_DIRECTLY() ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, vk_pahSwapchainImages[u32NextSwapchainImageIndex], VK_IMAGE_ASPECT_COLOR_BIT));
 		const VkImageBlit vk_worldRenderImageBlit = {

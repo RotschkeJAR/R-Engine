@@ -9,8 +9,8 @@ layout (location = 0) out vec4 color;
 layout (binding = 1) uniform sampler2D textures[0x7FFF];
 
 void main() {
-	if (outTexId == 0.0)
+	if (outTexId < -0.5)
 		color = vec4(outColor, 1.0);
 	else
-		color = texture(textures[int(outTexId) - 1], outTexCoords) * vec4(outColor, 1.0);
+		color = texture(textures[int(outTexId)], outTexCoords) * vec4(outColor, 1.0);
 }

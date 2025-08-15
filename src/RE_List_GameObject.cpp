@@ -104,6 +104,11 @@ namespace RE {
 			CATCH_SIGNAL(pBatch->renderBatch.destroy());
 	}
 
+	void load_game_object_vertices(bool &rbNeedsRender) {
+		for (ListBatch_GameObject *const pBatch : gameObjectBatchList)
+			CATCH_SIGNAL(pBatch->renderBatch.load_vertices(rbNeedsRender));
+	}
+
 	void render_opaque_game_objects() {
 		for (ListBatch_GameObject *const pBatch : gameObjectBatchList)
 			CATCH_SIGNAL(pBatch->renderBatch.render_opaque());

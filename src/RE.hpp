@@ -180,6 +180,30 @@ namespace RE {
 		RE_INPUT_MAX_ENUM = 0x79
 	};
 
+	enum TextureFilter {
+		/**
+		 * sharp image / each pixel is clearly visible
+		 */
+		RE_TEXTURE_FILTER_NEAREST = 0,
+		/**
+		 * blurry image / smooth transition between pixels
+		 */
+		RE_TEXTURE_FILTER_LINEAR = 1
+	};
+
+	enum TextureRepetition {
+		RE_TEXTURE_REPETITION_REPEAT = 0,
+		RE_TEXTURE_REPETITION_MIRRORED_REPEAT = 1,
+		RE_TEXTURE_REPETITION_CLAMP_TO_EDGE = 2,
+		RE_TEXTURE_REPETITION_CLAMP_TO_BORDER = 3
+	};
+
+	enum BorderColor {
+		RE_BORDER_COLOR_TRANSPARENT = 0,
+		RE_BORDER_COLOR_BLACK = 1,
+		RE_BORDER_COLOR_WHITE = 2,
+	};
+
 	enum ScreenPercentageMode {
 		RE_SCREEN_PERCENTAGE_MODE_NORMAL,
 		RE_SCREEN_PERCENTAGE_MODE_SCALED,
@@ -631,9 +655,6 @@ namespace RE {
 			bool operator !=(const Color &rCompareColor) const;
 	};
 
-	struct Texture_T final {};
-	typedef Texture_T* Texture;
-
 	class Transform final {
 		public:
 			Vector3f position, scale;
@@ -655,10 +676,26 @@ namespace RE {
 			bool operator !=(const Transform &rCompareTransform) const;
 	};
 
+	struct Texture_T final {};
+	typedef Texture_T* Texture;
+
+	struct SpriteLayout_T final {};
+	typedef SpriteLayout_T* SpriteLayout;
+
+	struct Sprite final {
+		Texture hTexture;
+		SpriteLayout hSpriteLayout;
+
+		Sprite();
+		Sprite(Texture hTexture);
+		Sprite(SpriteLayout hSpriteLayout);
+		Sprite(Texture hTexture, SpriteLayout hSpriteLayout);
+	};
+
 	class SpriteRenderer final {
 		public:
 			Color color;
-			Texture texture;
+			Sprite sprite;
 
 			SpriteRenderer();
 			~SpriteRenderer();
@@ -805,9 +842,19 @@ namespace RE {
 			bool has_valid_input_values() const;
 	};
 
-	struct ScreenPercentageSettings {
+	struct ScreenPercentageSettings final {
 		ScreenPercentageMode eMode;
 		std::variant<float, Vector2u> settings;
+	};
+
+	struct SpriteLayoutSettings final {
+		TextureFilter eMagFilter;
+		TextureFilter eMinFilter;
+		TextureFilter eMipmapFilter;
+		TextureRepetition eTextureRepetitionU;
+		TextureRepetition eTextureRepetitionV;
+		float fMaxAnisotropy; // must be equal or greater than 1, otherwise anisotropy is disabled
+		BorderColor eBorderColor;
 	};
 
 	// Window
@@ -909,6 +956,12 @@ namespace RE {
 	Texture alloc_texture_loading_from_file(const char *pacPathToTextureFile, int32_t &ri32Width, int32_t &ri32Height, int32_t &ri32Channels);
 	void free_texture(Texture hTexture);
 	void free_texture_and_fix_dangling_pointers(Texture hTexture);
+
+	// Sprite layout creation
+	SpriteLayout create_sprite_layout();
+	SpriteLayout create_sprite_layout(const SpriteLayoutSettings &rSettings);
+	void change_sprite_layout_settings(SpriteLayout &rSpriteLayout, const SpriteLayoutSettings &rNewSettings);
+	void destroy_sprite_layout(SpriteLayout spriteLayout);
 
 	// Renderer
 	void set_screen_percentage_settings(const ScreenPercentageSettings &rNewSettings);

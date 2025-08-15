@@ -86,11 +86,13 @@ class OC : public GameObject {
 		}
 		~OC() {}
 		void start(Scene *pStartingScene) {
-			spriteRenderer.texture = alloc_texture_loading_from_file("Image.png");
+			spriteRenderer.sprite.hTexture = alloc_texture_loading_from_file("Image.png");
+			spriteRenderer.sprite.hSpriteLayout = create_sprite_layout();
 		}
 		void update(Scene *pCurrentScene) {}
 		void end(Scene *pEndingScene) {
-			free_texture(spriteRenderer.texture);
+			free_texture(spriteRenderer.sprite.hTexture);
+			destroy_sprite_layout(spriteRenderer.sprite.hSpriteLayout);
 		}
 };
 

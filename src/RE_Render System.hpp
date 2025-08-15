@@ -36,6 +36,7 @@ namespace RE {
 	extern std::array<VkCommandPool, RE_VK_COMMAND_POOL_COUNT> vk_ahCommandPools;
 	extern VkCommandBuffer vk_hDummyTransferCommandBuffer;
 	extern VkFormat vk_eDepthStencilBufferFormat;
+	extern uint8_t u8PhysicalDeviceExtensionsActiveFlags;
 
 	bool init_render_system();
 	void destroy_render_system();

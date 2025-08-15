@@ -93,26 +93,26 @@ namespace RE {
 						case 0:
 							pafVertices[u32VertexOffset + 0] = pObject->transform.position[0] - a2fTransparentObjectScale[0];
 							pafVertices[u32VertexOffset + 1] = pObject->transform.position[1] + a2fTransparentObjectScale[1];
-							pafVertices[u32VertexOffset + 8] = 0.0f;
-							pafVertices[u32VertexOffset + 9] = 0.0f;
+							pafVertices[u32VertexOffset + 8] = pObject->spriteRenderer.textureOffset[0];
+							pafVertices[u32VertexOffset + 9] = pObject->spriteRenderer.textureOffset[1];
 							break;
 						case 1:
 							pafVertices[u32VertexOffset + 0] = pObject->transform.position[0] + a2fTransparentObjectScale[0];
 							pafVertices[u32VertexOffset + 1] = pObject->transform.position[1] + a2fTransparentObjectScale[1];
-							pafVertices[u32VertexOffset + 8] = 1.0f;
-							pafVertices[u32VertexOffset + 9] = 0.0f;
+							pafVertices[u32VertexOffset + 8] = pObject->spriteRenderer.textureOffset[0] + pObject->spriteRenderer.textureCoordinates[0];
+							pafVertices[u32VertexOffset + 9] = pObject->spriteRenderer.textureOffset[1];
 							break;
 						case 2:
 							pafVertices[u32VertexOffset + 0] = pObject->transform.position[0] + a2fTransparentObjectScale[0];
 							pafVertices[u32VertexOffset + 1] = pObject->transform.position[1] - a2fTransparentObjectScale[1];
-							pafVertices[u32VertexOffset + 8] = 1.0f;
-							pafVertices[u32VertexOffset + 9] = 1.0f;
+							pafVertices[u32VertexOffset + 8] = pObject->spriteRenderer.textureOffset[0] + pObject->spriteRenderer.textureCoordinates[0];
+							pafVertices[u32VertexOffset + 9] = pObject->spriteRenderer.textureOffset[1] + pObject->spriteRenderer.textureCoordinates[1];
 							break;
 						case 3:
 							pafVertices[u32VertexOffset + 0] = pObject->transform.position[0] - a2fTransparentObjectScale[0];
 							pafVertices[u32VertexOffset + 1] = pObject->transform.position[1] - a2fTransparentObjectScale[1];
-							pafVertices[u32VertexOffset + 8] = 0.0f;
-							pafVertices[u32VertexOffset + 9] = 1.0f;
+							pafVertices[u32VertexOffset + 8] = pObject->spriteRenderer.textureOffset[0];
+							pafVertices[u32VertexOffset + 9] = pObject->spriteRenderer.textureOffset[1] + pObject->spriteRenderer.textureCoordinates[1];
 							break;
 					}
 					pafVertices[u32VertexOffset + 2] = pObject->transform.position[2];
@@ -135,26 +135,26 @@ namespace RE {
 						case 0:
 							pafVertices[u32VertexOffset + 0] = pObject->transform.position[0] - a2fOpaqueObjectScale[0];
 							pafVertices[u32VertexOffset + 1] = pObject->transform.position[1] + a2fOpaqueObjectScale[1];
-							pafVertices[u32VertexOffset + 7] = 0.0f;
-							pafVertices[u32VertexOffset + 8] = 0.0f;
+							pafVertices[u32VertexOffset + 7] = pObject->spriteRenderer.textureOffset[0];
+							pafVertices[u32VertexOffset + 8] = pObject->spriteRenderer.textureOffset[1];
 							break;
 						case 1:
 							pafVertices[u32VertexOffset + 0] = pObject->transform.position[0] + a2fOpaqueObjectScale[0];
 							pafVertices[u32VertexOffset + 1] = pObject->transform.position[1] + a2fOpaqueObjectScale[1];
-							pafVertices[u32VertexOffset + 7] = 1.0f;
-							pafVertices[u32VertexOffset + 8] = 0.0f;
+							pafVertices[u32VertexOffset + 7] = pObject->spriteRenderer.textureOffset[0] + pObject->spriteRenderer.textureCoordinates[0];
+							pafVertices[u32VertexOffset + 8] = pObject->spriteRenderer.textureOffset[1];
 							break;
 						case 2:
 							pafVertices[u32VertexOffset + 0] = pObject->transform.position[0] + a2fOpaqueObjectScale[0];
 							pafVertices[u32VertexOffset + 1] = pObject->transform.position[1] - a2fOpaqueObjectScale[1];
-							pafVertices[u32VertexOffset + 7] = 1.0f;
-							pafVertices[u32VertexOffset + 8] = 1.0f;
+							pafVertices[u32VertexOffset + 7] = pObject->spriteRenderer.textureOffset[0] + pObject->spriteRenderer.textureCoordinates[0];
+							pafVertices[u32VertexOffset + 8] = pObject->spriteRenderer.textureOffset[1] + pObject->spriteRenderer.textureCoordinates[1];
 							break;
 						case 3:
 							pafVertices[u32VertexOffset + 0] = pObject->transform.position[0] - a2fOpaqueObjectScale[0];
 							pafVertices[u32VertexOffset + 1] = pObject->transform.position[1] - a2fOpaqueObjectScale[1];
-							pafVertices[u32VertexOffset + 7] = 0.0f;
-							pafVertices[u32VertexOffset + 8] = 1.0f;
+							pafVertices[u32VertexOffset + 7] = pObject->spriteRenderer.textureOffset[0];
+							pafVertices[u32VertexOffset + 8] = pObject->spriteRenderer.textureOffset[1] + pObject->spriteRenderer.textureCoordinates[1];
 							break;
 					}
 					pafVertices[u32VertexOffset + 2] = pObject->transform.position[2];

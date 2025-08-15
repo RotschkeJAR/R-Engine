@@ -35,7 +35,6 @@ namespace RE {
 	std::array<VkCommandPool, RE_VK_COMMAND_POOL_COUNT> vk_ahCommandPools = {};
 	VkCommandBuffer vk_hDummyTransferCommandBuffer = VK_NULL_HANDLE;
 	VkFormat vk_eDepthStencilBufferFormat = VK_FORMAT_UNDEFINED;
-	uint8_t u8PhysicalDeviceExtensionsActiveFlags = 0;
 
 #define SWAPCHAIN_DIRTY_BIT 0
 #define VSYNC_SETTING_BIT 1
@@ -724,7 +723,6 @@ namespace RE {
 			CATCH_SIGNAL(destroy_swapchain());
 		CATCH_SIGNAL(destroy_interfaces_to_logical_vulkan_device());
 		CATCH_SIGNAL(destroy_logical_vulkan_device());
-		u8PhysicalDeviceExtensionsActiveFlags = 0;
 		vk_hPhysicalDeviceSelected = VK_NULL_HANDLE;
 		CATCH_SIGNAL(free_physical_vulkan_device_list());
 		CATCH_SIGNAL(destroy_vulkan_surface());

@@ -696,6 +696,7 @@ namespace RE {
 		public:
 			Color color;
 			Sprite sprite;
+			Vector2f textureOffset, textureCoordinates;
 
 			SpriteRenderer();
 			~SpriteRenderer();

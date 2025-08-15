@@ -78,18 +78,25 @@ class Objy : public GameObject {
 class OC : public GameObject {
 	public:
 		OC() : GameObject(3, 1) {
-			transform.position[0] = 0.5f;
-			transform.position[1] = 0.5f;
+			transform.position[0] = 0.0f;
+			transform.position[1] = 0.0f;
 			transform.position[2] = 0.0f;
-			transform.scale[0] = 1.0f;
-			transform.scale[1] = 1.0f;
+			transform.scale[0] = 2.0f;
+			transform.scale[1] = 2.0f;
 		}
 		~OC() {}
 		void start(Scene *pStartingScene) {
 			spriteRenderer.sprite.hTexture = alloc_texture_loading_from_file("Image.png");
 			spriteRenderer.sprite.hSpriteLayout = create_sprite_layout();
 		}
-		void update(Scene *pCurrentScene) {}
+		void update(Scene *pCurrentScene) {
+			transform.position[0] = pObjy->transform.position[0];
+			transform.position[1] = pObjy->transform.position[1];
+			spriteRenderer.textureCoordinates[0] = pObjy->transform.position[0];
+			spriteRenderer.textureCoordinates[1] = pObjy->transform.position[1];
+			spriteRenderer.textureOffset[0] = pObjy->transform.position[0];
+			spriteRenderer.textureOffset[1] = pObjy->transform.position[1];
+		}
 		void end(Scene *pEndingScene) {
 			free_texture(spriteRenderer.sprite.hTexture);
 			destroy_sprite_layout(spriteRenderer.sprite.hSpriteLayout);

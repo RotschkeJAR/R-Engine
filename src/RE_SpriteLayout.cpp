@@ -46,6 +46,21 @@ namespace RE {
 				return VK_SAMPLER_ADDRESS_MODE_REPEAT;
 		}
 	}
+
+	static VkBorderColor to_vk_border_color(const BorderColor eBorderColor, bool &rbFailure) {
+		switch (eBorderColor) {
+			case RE_BORDER_COLOR_TRANSPARENT:
+				return VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
+			case RE_BORDER_COLOR_BLACK:
+				return VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
+			case RE_BORDER_COLOR_WHITE:
+				return VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+			default:
+				RE_ERROR("Unknown border color selected: ", hexadecimal_to_string(static_cast<size_t>(eBorderColor)));
+				rbFailure = true;
+				return VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
+		}
+	}
 	
 	SpriteLayout create_sprite_layout() {
 		const SpriteLayoutSettings initialSpriteLayoutSettings = {
@@ -61,7 +76,7 @@ namespace RE {
 
 	SpriteLayout create_sprite_layout(const SpriteLayoutSettings &rSettings) {
 		if (vk_hDevice == VK_NULL_HANDLE) {
-			RE_ERROR("SpriteLayouts cannot be created, when the engine doesn't run");
+			RE_ERROR("Sprite layouts cannot be created, when the engine doesn't run");
 			return nullptr;
 		}
 		bool bFailure = false;
@@ -78,6 +93,7 @@ namespace RE {
 			.compareOp = VK_COMPARE_OP_ALWAYS,
 			.minLod = 0.0f,
 			.maxLod = 0.0f,
+			.borderColor = to_vk_border_color(rSettings.eBorderColor, bFailure),
 			.unnormalizedCoordinates = VK_FALSE
 		};
 		if (bFailure)
@@ -92,29 +108,12 @@ namespace RE {
 			}
 		} else
 			vk_samplerCreateInfo.anisotropyEnable = VK_FALSE;
-		[[maybe_unused]] VkSamplerCustomBorderColorCreateInfoEXT vk_customBorderColorCreateInfo;
-		switch (rSettings.eBorderColor) {
-			case RE_BORDER_COLOR_TRANSPARENT:
-				vk_samplerCreateInfo.borderColor = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
-				break;
-			case RE_BORDER_COLOR_BLACK:
-				vk_samplerCreateInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
-				break;
-			case RE_BORDER_COLOR_WHITE:
-				vk_samplerCreateInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-				break;
-			default:
-				RE_ERROR("Unknown border color selected: ", hexadecimal_to_string(static_cast<size_t>(rSettings.eBorderColor)));
-				return nullptr;
-		}
 		VkSampler vk_hSampler;
 		return vkCreateSampler(vk_hDevice, &vk_samplerCreateInfo, nullptr, &vk_hSampler) == VK_SUCCESS ? reinterpret_cast<SpriteLayout>(vk_hSampler) : nullptr;
 	}
 
 	void change_sprite_layout_settings(SpriteLayout &rSpriteLayout, const SpriteLayoutSettings &rNewSettings) {
-		if (!rSpriteLayout)
-			return;
-		else if (vk_hDevice == VK_NULL_HANDLE) {
+		if (vk_hDevice == VK_NULL_HANDLE) {
 			RE_ERROR("Settings of a sprite layout cannot be changed, when the engine doesn't run");
 			return;
 		}
@@ -126,7 +125,7 @@ namespace RE {
 		if (!spriteLayout)
 			return;
 		else if (vk_hDevice == VK_NULL_HANDLE) {
-			RE_ERROR("SpriteLayouts cannot be destroyed anymore, when the engine doesn't run");
+			RE_ERROR("Sprite layouts cannot be destroyed anymore, when the engine doesn't run");
 			return;
 		}
 		WAIT_FOR_IDLE_VULKAN_DEVICE();

@@ -52,6 +52,7 @@ namespace RE {
 		const size_t msgLineCount = get_line_count(pacDetail);
 		for (size_t lineIndex = 0; lineIndex < msgLineCount; lineIndex++)
 			println("\t", get_line(pacDetail, lineIndex));
+		print_call_stack_trace();
 	}
 
 	void print_colored(const char *const pacContent, const TerminalColor eColor, const bool bBackgroundColored, const bool bBold) {

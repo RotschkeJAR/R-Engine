@@ -4,26 +4,21 @@
 
 namespace RE {
 
-	struct AppLocation {
-		const char *pacFile, *pacMethod, *pacDetails;
-		uint32_t u32Line;
-	};
-
 	SignalCatcher* pInstance = nullptr;
-	std::stack<AppLocation> stackTrace;
-	bool signalAlreadyCaught = false;
+	bool bSignalAlreadyCaught = false;
 
-	void handle_signal(const int32_t signalId) {
-		if (signalAlreadyCaught) {
+	void handle_signal(const int32_t i32SignalId) {
+		if (bSignalAlreadyCaught) {
 			println_colored("\nThe signal handler has been called again. Killing itself...\nIf this application doesn't terminate, you have to kill it manually", RE_TERMINAL_COLOR_RED, true, false);
 #ifdef RE_OS_WINDOWS
-			TerminateProcess(GetCurrentProcess(), static_cast<UINT>(signalId));
+			TerminateProcess(GetCurrentProcess(), static_cast<UINT>(i32SignalId));
 #elif defined RE_OS_LINUX
 			std::raise(SIGKILL);
 #endif
+			return;
 		}
-		signalAlreadyCaught = true;
-		switch (signalId) {
+		bSignalAlreadyCaught = true;
+		switch (i32SignalId) {
 			case SIGSEGV:
 				println("Segmentation violation (Invalid access to memory, e.g. dangling pointer, wild pointer, buffer overflow, array index out of bounds, etc.)");
 				break;
@@ -46,20 +41,8 @@ namespace RE {
 				println("Unknown signal received");
 				break;
 		}
-		while (!stackTrace.empty()) { // prints stack trace
-			AppLocation locationData = stackTrace.top();
-			print("\tin file ");
-			print_colored(locationData.pacFile, RE_TERMINAL_COLOR_BRIGHT_WHITE, false, false);
-			print(", in function ");
-			print_colored(locationData.pacMethod, RE_TERMINAL_COLOR_BRIGHT_WHITE, false, false);
-			print(", at line ");
-			print_colored(std::to_string(locationData.u32Line).c_str(), RE_TERMINAL_COLOR_BRIGHT_WHITE, false, false);
-			if (std::strcmp(locationData.pacDetails, "\0") != 0)
-				print(": ", locationData.pacDetails);
-			println();
-			stackTrace.pop();
-		}
-		std::exit(signalId);
+		print_call_stack_trace();
+		std::exit(i32SignalId);
 	}
 
 	SignalCatcher::SignalCatcher() {
@@ -84,19 +67,6 @@ namespace RE {
 		std::signal(SIGFPE, SIG_DFL);
 		std::signal(SIGTERM, SIG_DFL);
 		std::signal(SIGINT, SIG_DFL);
-	}
-
-	void add_to_stack_trace(const char *const pacFile, const char *const pacMethod, uint32_t u32Line, const char *const pacDetails) {
-		AppLocation newTrace = {};
-		newTrace.pacFile = pacFile;
-		newTrace.pacMethod = pacMethod;
-		newTrace.pacDetails = pacDetails;
-		newTrace.u32Line = u32Line;
-		stackTrace.push(newTrace);
-	}
-
-	void remove_from_stack_trace() {
-		stackTrace.pop();
 	}
 
 }

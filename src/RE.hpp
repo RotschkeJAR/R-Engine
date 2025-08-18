@@ -259,8 +259,10 @@ namespace RE {
 			~SignalCatcher();
 	};
 
-	void add_to_stack_trace(const char *pacFile, const char *pacMethod, uint32_t u32Line, const char *pacDetails);
-	void remove_from_stack_trace();
+	void add_to_call_stack_trace(const char *pacFile, const char *pacFunc, uint32_t u32Line, const char *pacDetails);
+	void remove_from_call_stack_trace();
+	void print_call_stack_trace();
+
 	class SignalGuard final {
 		public:
 			SignalGuard(const char *pacFile, const char *pacFunc, uint32_t u32Line, const char *pacDetails);
@@ -268,16 +270,17 @@ namespace RE {
 	};
 #define DEFINE_SIGNAL_GUARD_DETAILED(NAME, DETAILS) SignalGuard NAME(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(DETAILS))
 #define DEFINE_SIGNAL_GUARD(NAME) DEFINE_SIGNAL_GUARD_DETAILED(NAME, "\0")
+	
 #define CATCH_SIGNAL_DETAILED(CMD, DETAILS) ([&](const char *const pacFile, const char *const pacFunc, uint32_t u32Line) { \
-			add_to_stack_trace(pacFile, pacFunc, u32Line, STRIP_QUOTE_MACRO(DETAILS)); \
+			add_to_call_stack_trace(pacFile, pacFunc, u32Line, STRIP_QUOTE_MACRO(DETAILS)); \
 			CMD; \
-			remove_from_stack_trace(); \
+			remove_from_call_stack_trace(); \
 		}) (__FILE__, __func__, __LINE__)
 #define CATCH_SIGNAL(CMD) CATCH_SIGNAL_DETAILED(CMD, "\0")
 #define CATCH_SIGNAL_AND_RETURN_DETAILED(CMD, RETURN_TYPE, DETAILS) ([&](const char *const pacFile, const char *const pacFunc, uint32_t u32Line) -> RETURN_TYPE { \
-			add_to_stack_trace(pacFile, pacFunc, u32Line, STRIP_QUOTE_MACRO(DETAILS)); \
+			add_to_call_stack_trace(pacFile, pacFunc, u32Line, STRIP_QUOTE_MACRO(DETAILS)); \
 			RETURN_TYPE returnValue = CMD; \
-			remove_from_stack_trace(); \
+			remove_from_call_stack_trace(); \
 			return returnValue; \
 		}) (__FILE__, __func__, __LINE__)
 #define CATCH_SIGNAL_AND_RETURN(CMD, RETURN_TYPE) CATCH_SIGNAL_AND_RETURN_DETAILED(CMD, RETURN_TYPE, "\0")

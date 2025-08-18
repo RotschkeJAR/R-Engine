@@ -950,6 +950,8 @@ namespace RE {
 	bool is_vsync_enabled();
 
 	// Texture loading
+	Texture alloc_texture_from_binary_data(const uint8_t *pau8ImageBinaryData, Vector2u imageSize, uint32_t u32Channels);
+	Texture alloc_texture_from_binary_data(const uint8_t *pau8ImageBinaryData, uint32_t u32Width, uint32_t u32Height, uint32_t u32Channels);
 	Texture alloc_texture_loading_from_file(const char *pacPathToTextureFile);
 	Texture alloc_texture_loading_from_file(const char *pacPathToTextureFile, Vector2i &rSize);
 	Texture alloc_texture_loading_from_file(const char *pacPathToTextureFile, int32_t &ri32Width, int32_t &ri32Height);

@@ -15,15 +15,16 @@ namespace RE {
 #define SHOW_MSG_BOX 3
 #define VERBOSE_BEHAVIOUR 4
 #define LOG_TIME 5
+#define PRINT_CALL_STACK_TRACE 6
 
-	uint8_t u8ConsoleSettings = (1 << PRINT_COLORS) | (1 << SHOW_MSG_BOX) | (1 << LOG_TIME);
+	uint8_t u8ConsoleSettings = (1 << PRINT_COLORS) | (1 << SHOW_MSG_BOX) | (1 << LOG_TIME) | (1 << PRINT_CALL_STACK_TRACE);
 
 	static void print_time() {
 		if (!are_bits_true<uint8_t>(u8ConsoleSettings, LOG_TIME))
 			return;
 		const std::time_t timePoint = std::time(nullptr);
 		const std::string sTimeString(std::ctime(&timePoint));
-		print("[", sTimeString.substr(0U, sTimeString.size() - 1U), "] ");
+		print("[", sTimeString.substr(0, sTimeString.size() - 1), "] ");
 	}
 
 	[[nodiscard]]
@@ -45,14 +46,10 @@ namespace RE {
 		return result;
 	}
 
-	static void print_error_msg(const char *const pacFile, const char *const pacFunc, const uint32_t u32Line, const char *const pacDetail) {
-		print(" : ");
-		print_colored(pacFile, RE_TERMINAL_COLOR_BRIGHT_WHITE, false, true);
-		println(" (line ", u32Line, "; in function \"", pacFunc, "\")");
-		const size_t msgLineCount = get_line_count(pacDetail);
-		for (size_t lineIndex = 0; lineIndex < msgLineCount; lineIndex++)
-			println("\t", get_line(pacDetail, lineIndex));
-		print_call_stack_trace();
+	static void print_error_msg(const std::string sDetail) {
+		println("  : ", sDetail.substr(0, sDetail.find("\n")));
+		if (are_bits_true<uint8_t>(u8ConsoleSettings, PRINT_CALL_STACK_TRACE))
+			print_call_stack_trace();
 	}
 
 	void print_colored(const char *const pacContent, const TerminalColor eColor, const bool bBackgroundColored, const bool bBold) {
@@ -63,54 +60,76 @@ namespace RE {
 		println(escape_code_to_string(eColor, bBackgroundColored, bBold), pacContent, DEFAULT_COLOR);
 	}
 	
-	void error(const char *const pacFile, const char *const pacFunc, const uint32_t u32Line, const char *const pacDetail, const bool bTerminate) {
+	void error(const std::string sDetail, const bool bTerminate) {
 		print_time();
 		print_colored("ERROR", RE_TERMINAL_COLOR_RED, false, false);
-		print_error_msg(pacFile, pacFunc, u32Line, pacDetail);
-		bool bFatal = bTerminate || are_bits_true<uint8_t>(u8ConsoleSettings, ERRORS_ALWAYS_FATAL);
+		print("  ");
+		print_error_msg(sDetail);
+		const bool bFatal = bTerminate || are_bits_true<uint8_t>(u8ConsoleSettings, ERRORS_ALWAYS_FATAL);
 		if (bFatal) {
 			bErrorOccured = true;
 			println_colored("Terminating...", RE_TERMINAL_COLOR_BRIGHT_BLACK, false, false);
-			if (are_bits_true<uint8_t>(u8ConsoleSettings, SHOW_MSG_BOX)) {
+		}
+		if (are_bits_true<uint8_t>(u8ConsoleSettings, SHOW_MSG_BOX)) {
 #ifdef RE_OS_WINDOWS
-				MessageBoxW(win_hWindow, append_to_wstring(L"In file ", pacFile, L" in function ", pacFunc, L" at line ", u32Line, L"\n", pacDetail).c_str(), L"Fatal Error", MB_OK | MB_ICONERROR);
+			MessageBoxW(win_hWindow, convert_chars_to_wide(sDetail.c_str()).c_str(), bFatal ? L"Fatal Error" : L"Error", MB_OK | MB_ICONERROR);
 #elif defined RE_OS_LINUX
-				// TODO: Create message box on Linux, when error occurs
+			// TODO: Create message box on Linux, when error occurs
 #endif
-			}
 		}
 	}
 
-	void warning(const char *const pacFile, const char *const pacFunc, const uint32_t u32Line, const char *const pacDetail) {
+	void warning(const std::string sDetail) {
 		if (are_bits_true<uint8_t>(u8ConsoleSettings, TREAT_WARNING_AS_ERROR))
-			error(pacFile, pacFunc, u32Line, pacDetail, false);
+			error(sDetail, false);
 		else {
 			print_time();
 			print_colored("WARNING", RE_TERMINAL_COLOR_YELLOW, false, false);
-			print_error_msg(pacFile, pacFunc, u32Line, pacDetail);
+			print_error_msg(sDetail);
 		}
 	}
 
-	void note(const char *const pacFile, const char *const pacFunc, const uint32_t u32Line, const char *const pacDetail) {
+	void note(const std::string sDetail) {
 		print_time();
 		print_colored("NOTE", RE_TERMINAL_COLOR_WHITE, false, false);
-		print_error_msg(pacFile, pacFunc, u32Line, pacDetail);
+		print("   ");
+		print_error_msg(sDetail);
 	}
 
 	void enable_colorful_printing(const bool bEnable) {
 		set_bits<uint8_t>(u8ConsoleSettings, bEnable, PRINT_COLORS);
 	}
 
+	[[nodiscard]]
+	bool is_colorful_printing_enabled() {
+		return are_bits_true<uint8_t>(u8ConsoleSettings, PRINT_COLORS);
+	}
+
 	void treat_warnings_as_errors(const bool bEnable) {
 		set_bits<uint8_t>(u8ConsoleSettings, bEnable, TREAT_WARNING_AS_ERROR);
+	}
+
+	[[nodiscard]]
+	bool are_warnings_always_treated_as_errors() {
+		return are_bits_true<uint8_t>(u8ConsoleSettings, TREAT_WARNING_AS_ERROR);
 	}
 
 	void make_errors_always_fatal(const bool bEnable) {
 		set_bits<uint8_t>(u8ConsoleSettings, bEnable, ERRORS_ALWAYS_FATAL);
 	}
 
+	[[nodiscard]]
+	bool are_errors_always_made_fatal() {
+		return are_bits_true<uint8_t>(u8ConsoleSettings, ERRORS_ALWAYS_FATAL);
+	}
+
 	void show_message_box_on_error(const bool bEnable) {
 		set_bits<uint8_t>(u8ConsoleSettings, bEnable, SHOW_MSG_BOX);
+	}
+
+	[[nodiscard]]
+	bool is_show_message_box_on_error(const bool bEnable) {
+		return are_bits_true<uint8_t>(u8ConsoleSettings, SHOW_MSG_BOX);
 	}
 
 	void enable_verbosity(const bool bEnable) {
@@ -124,6 +143,20 @@ namespace RE {
 
 	void enable_time_logging(const bool bEnable) {
 		set_bits<uint8_t>(u8ConsoleSettings, bEnable, LOG_TIME);
+	}
+
+	[[nodiscard]]
+	bool is_time_logging_enabled() {
+		return are_bits_true<uint8_t>(u8ConsoleSettings, LOG_TIME);
+	}
+
+	void enable_printing_call_stack_trace_on_error(const bool bEnable) {
+		set_bits<uint8_t>(u8ConsoleSettings, bEnable, PRINT_CALL_STACK_TRACE);
+	}
+
+	[[nodiscard]]
+	bool is_printing_call_stack_trace_on_error_enabled() {
+		return are_bits_true<uint8_t>(u8ConsoleSettings, PRINT_CALL_STACK_TRACE);
 	}
 
 }

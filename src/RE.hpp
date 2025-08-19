@@ -245,14 +245,6 @@ namespace RE {
 #define PRINT(...) print(append_to_string(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE_MACRO(__VA_ARGS__)))
 #define PRINT_LN(...) print(append_to_string(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE_MACRO(__VA_ARGS__), "\n"))
 	
-	void error(const char *pacFile, const char *pacFunc, uint32_t u32Line, const char *pacDetail, bool bTerminate);
-	void warning(const char *pacFile, const char *pacFunc, uint32_t u32Line, const char *pacDetail);
-	void note(const char *pacFile, const char *pacFunc, uint32_t u32Line, const char *pacDetail);
-#define FATAL_ERROR(...) error(__FILE__, __func__, __LINE__, append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__)).c_str(), true)
-#define ERROR(...) error(__FILE__, __func__, __LINE__, append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__)).c_str(), false)
-#define WARNING(...) warning(__FILE__, __func__, __LINE__, append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__)).c_str())
-#define NOTE(...) note(__FILE__, __func__, __LINE__, append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__)).c_str())
-	
 	class SignalCatcher final {
 		public:
 			SignalCatcher();
@@ -271,19 +263,43 @@ namespace RE {
 #define DEFINE_SIGNAL_GUARD_DETAILED(NAME, DETAILS) SignalGuard NAME(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(DETAILS))
 #define DEFINE_SIGNAL_GUARD(NAME) DEFINE_SIGNAL_GUARD_DETAILED(NAME, "\0")
 	
-#define CATCH_SIGNAL_DETAILED(CMD, DETAILS) ([&](const char *const pacFile, const char *const pacFunc, uint32_t u32Line) { \
+#define CATCH_SIGNAL_DETAILED(CMD, DETAILS) ([&](const char *const pacFile, const char *const pacFunc, const uint32_t u32Line) { \
 			add_to_call_stack_trace(pacFile, pacFunc, u32Line, STRIP_QUOTE_MACRO(DETAILS)); \
 			CMD; \
 			remove_from_call_stack_trace(); \
 		}) (__FILE__, __func__, __LINE__)
 #define CATCH_SIGNAL(CMD) CATCH_SIGNAL_DETAILED(CMD, "\0")
-#define CATCH_SIGNAL_AND_RETURN_DETAILED(CMD, RETURN_TYPE, DETAILS) ([&](const char *const pacFile, const char *const pacFunc, uint32_t u32Line) -> RETURN_TYPE { \
+#define CATCH_SIGNAL_AND_RETURN_DETAILED(CMD, RETURN_TYPE, DETAILS) ([&](const char *const pacFile, const char *const pacFunc, const uint32_t u32Line) -> RETURN_TYPE { \
 			add_to_call_stack_trace(pacFile, pacFunc, u32Line, STRIP_QUOTE_MACRO(DETAILS)); \
 			RETURN_TYPE returnValue = CMD; \
 			remove_from_call_stack_trace(); \
 			return returnValue; \
 		}) (__FILE__, __func__, __LINE__)
 #define CATCH_SIGNAL_AND_RETURN(CMD, RETURN_TYPE) CATCH_SIGNAL_AND_RETURN_DETAILED(CMD, RETURN_TYPE, "\0")
+	
+	void error(std::string sDetail, bool bTerminate);
+	void warning(std::string sDetail);
+	void note(std::string sDetail);
+#define FATAL_ERROR(...) ([&](const char *const pacFile, const char *const pacFunc, const uint32_t u32Line) { \
+			add_to_call_stack_trace(pacFile, pacFunc, u32Line, "\0"); \
+			error(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__)).c_str(), true); \
+			remove_from_call_stack_trace(); \
+		}) (__FILE__, __func__, __LINE__)
+#define ERROR(...) ([&](const char *const pacFile, const char *const pacFunc, const uint32_t u32Line) { \
+			add_to_call_stack_trace(pacFile, pacFunc, u32Line, "\0"); \
+			error(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__)).c_str(), false); \
+			remove_from_call_stack_trace(); \
+		}) (__FILE__, __func__, __LINE__)
+#define WARNING(...) ([&](const char *const pacFile, const char *const pacFunc, const uint32_t u32Line) { \
+			add_to_call_stack_trace(pacFile, pacFunc, u32Line, "\0"); \
+			warning(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__)).c_str()); \
+			remove_from_call_stack_trace(); \
+		}) (__FILE__, __func__, __LINE__)
+#define NOTE(...) ([&](const char *const pacFile, const char *const pacFunc, const uint32_t u32Line) { \
+			add_to_call_stack_trace(pacFile, pacFunc, u32Line, "\0"); \
+			note(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__)).c_str()); \
+			remove_from_call_stack_trace(); \
+		}) (__FILE__, __func__, __LINE__)
 
 #define DELETE_SAFELY(PTR_REF) CATCH_SIGNAL( do { \
 			if (!PTR_REF) \
@@ -300,7 +316,7 @@ namespace RE {
 
 	template <class... T>
 	[[nodiscard]]
-	std::string append_to_string(T... strings) {
+	std::string append_to_string(const T... strings) {
 		std::stringstream ss("");
 		([&]() {
 			if constexpr (std::is_same_v<T, int8_t>)
@@ -315,7 +331,7 @@ namespace RE {
 
 	template <class... T>
 	[[nodiscard]]
-	std::wstring append_to_wstring(T... strings) {
+	std::wstring append_to_wstring(const T... strings) {
 		std::wstringstream wss(L"");
 		([&]() {
 			if constexpr (std::is_same_v<T, int8_t>)
@@ -866,12 +882,26 @@ namespace RE {
 	
 	// Console
 	void enable_colorful_printing(bool bEnable);
+	[[nodiscard]]
+	bool is_colorful_printing_enabled();
 	void treat_warnings_as_errors(bool bEnable);
+	[[nodiscard]]
+	bool are_warnings_always_treated_as_errors();
 	void make_errors_always_fatal(bool bEnable);
+	[[nodiscard]]
+	bool are_errors_always_made_fatal();
 	void show_message_box_on_error(bool bEnable);
+	[[nodiscard]]
+	bool is_show_message_box_on_error(bool bEnable);
 	void enable_verbosity(bool bEnable);
 	[[nodiscard]]
 	bool is_verbose_behaviour_enabled();
+	void enable_time_logging(bool bEnable);
+	[[nodiscard]]
+	bool is_time_logging_enabled();
+	void enable_printing_call_stack_trace_on_error(bool bEnable);
+	[[nodiscard]]
+	bool is_printing_call_stack_trace_on_error_enabled();
 
 	// Cursor input
 	[[nodiscard]]

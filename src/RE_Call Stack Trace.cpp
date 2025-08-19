@@ -31,7 +31,8 @@ namespace RE {
 			if (std::strcmp(appLocation.pacDetails, "\0") != 0) {
 				print(": ");
 				println_colored(appLocation.pacDetails, RE_TERMINAL_COLOR_BRIGHT_WHITE, false, false);
-			}
+			} else
+				println();
 		});
 	}
 

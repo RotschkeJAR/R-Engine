@@ -150,6 +150,9 @@ class First : public Scene {
 		~First() {}
 		void start() {
 			playerCam.activate();
+			ERROR("test message");
+			WARNING("test message");
+			NOTE("test message");
 		}
 		void update() {
 			if (trigger.is_pressed())
@@ -184,7 +187,8 @@ class First : public Scene {
 };
 
 int main_func() {
-	show_message_box_on_error(false);
+	show_message_box_on_error(true);
+	enable_verbosity(true);
 	set_fps_limit(60);
 	SignalCatcher sigCatcher;
 	First first;

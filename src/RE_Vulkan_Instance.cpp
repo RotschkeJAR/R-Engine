@@ -17,9 +17,8 @@ namespace RE {
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 	VkInstance vk_hInstance = VK_NULL_HANDLE;
 
-	const char *pacVulkanDebugFocusOnFile = nullptr, *pacVulkanDebugFocusOnFunc = nullptr;
-	uint32_t u32VulkanDebugFocusOnLine = 0, u32VulkanDebugFocusCount = 0;
 	VkDebugUtilsMessengerEXT vk_hDebugMessenger = VK_NULL_HANDLE;
+	uint16_t u16VulkanDebugFocusCount = 0;
 
 	// Vulkan 1.0
 	PFN_vkCreateInstance pfn_vkCreateInstance = nullptr;
@@ -425,7 +424,7 @@ namespace RE {
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 	}
 
-	static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT vk_eSeverityFlagBits, VkDebugUtilsMessageTypeFlagsEXT vk_eMsgTypeBits, const VkDebugUtilsMessengerCallbackDataEXT* vk_pCallbackData, void* vk_pUserData) {
+	static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(const VkDebugUtilsMessageSeverityFlagBitsEXT vk_eSeverityFlagBits, const VkDebugUtilsMessageTypeFlagsEXT vk_eMsgTypeBits, const VkDebugUtilsMessengerCallbackDataEXT *const vk_pCallbackData, void *const vk_pUserData) {
 		TerminalColor eConsoleColor = RE_TERMINAL_COLOR_WHITE;
 		switch (vk_eSeverityFlagBits) {
 			case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
@@ -437,28 +436,37 @@ namespace RE {
 			case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
 				eConsoleColor = RE_TERMINAL_COLOR_BRIGHT_BLACK;
 				break;
+			case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
+				eConsoleColor = RE_TERMINAL_COLOR_BLACK;
+				break;
 			default:
 				return VK_FALSE;
 		}
-		if (!u32VulkanDebugFocusCount) {
-			if (pacVulkanDebugFocusOnFile && pacVulkanDebugFocusOnFunc && u32VulkanDebugFocusOnLine)
-				println("Vulkan validation layers triggered in ", pacVulkanDebugFocusOnFile, ", in function \"", pacVulkanDebugFocusOnFunc, "\", at line ", u32VulkanDebugFocusOnLine, ":");
-			else
-				println("Vulkan validation layers triggered at an unknown location:");
+		if (!u16VulkanDebugFocusCount) {
+			println_colored("The Vulkan validation layers were triggered", RE_TERMINAL_COLOR_WHITE, false, false);
+			print_call_stack_trace();
 		}
-		u32VulkanDebugFocusCount++;
+		u16VulkanDebugFocusCount++;
 		print("\t");
 		print_colored(append_to_string("[", vk_pCallbackData->pMessageIdName, "]").c_str(), eConsoleColor, false, false);
-		println_colored(append_to_string(" ", vk_pCallbackData->pMessage).c_str(), RE_TERMINAL_COLOR_BRIGHT_WHITE, false, false);
+		print(" ");
+		const std::string_view msgView(vk_pCallbackData->pMessage);
+		const size_t linebreakIndex = msgView.find("\n");
+		println_colored(msgView.substr(0, linebreakIndex).data(), RE_TERMINAL_COLOR_BRIGHT_WHITE, false, false);
+		println_colored(msgView.substr(linebreakIndex + 1, -1).data(), RE_TERMINAL_COLOR_BRIGHT_WHITE, false, false);
 		return VK_FALSE;
 	}
 
 	static bool setup_validation_layers() {
-		VkDebugUtilsMessengerCreateInfoEXT vk_debugCreateInfo = { VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT };
-		vk_debugCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-		vk_debugCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-		vk_debugCreateInfo.pfnUserCallback = debug_callback;
-		vk_debugCreateInfo.pUserData = nullptr;
+		VkDebugUtilsMessengerCreateInfoEXT vk_debugCreateInfo = {
+			.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
+			.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
+			.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT,
+			.pfnUserCallback = debug_callback,
+			.pUserData = nullptr
+		};
+		if (is_verbose_behaviour_enabled())
+			vk_debugCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT;
 		if (vkCreateDebugUtilsMessengerEXT(vk_hInstance, &vk_debugCreateInfo, nullptr, &vk_hDebugMessenger) != VK_SUCCESS) {
 			RE_FATAL_ERROR("Failed creating Vulkan debug messenger for validation layers");
 			return false;
@@ -510,18 +518,8 @@ namespace RE {
 		hLibVulkan = nullptr;
 	}
 
-	void focus_vulkan_debug_on(const char *const pacFile, const char *const pacFunc, const uint32_t u32Line) {
-		pacVulkanDebugFocusOnFile = pacFile;
-		pacVulkanDebugFocusOnFunc = pacFunc;
-		u32VulkanDebugFocusOnLine = u32Line;
-		u32VulkanDebugFocusCount = 0U;
-	}
-
-	void unfocus_vulkan_debug() {
-		pacVulkanDebugFocusOnFile = nullptr;
-		pacVulkanDebugFocusOnFunc = nullptr;
-		u32VulkanDebugFocusOnLine = 0U;
-		u32VulkanDebugFocusCount = 0U;
+	void reset_vulkan_validation_layer_report_count() {
+		u16VulkanDebugFocusCount = 0;
 	}
 
 	bool check_vulkan_result(const VkResult vk_eResult, const char *const pacFile, const char *const pacFunc, const uint32_t u32Line) {

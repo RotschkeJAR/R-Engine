@@ -5,7 +5,7 @@
 namespace RE {
 	
 	Vulkan_Buffer::Vulkan_Buffer(const VkDeviceSize vk_size, const VkBufferUsageFlags vk_eUsages, const uint32_t u32QueueCount, const uint32_t *const pu32Queues, const VkMemoryPropertyFlags vk_eMemoryPropertyFlags) : vk_hBuffer(VK_NULL_HANDLE), vk_hMemory(VK_NULL_HANDLE), vk_size(vk_size) {
-		CATCH_SIGNAL(create_vulkan_buffer(vk_size, vk_eUsages, u32QueueCount, pu32Queues, vk_eMemoryPropertyFlags, &vk_hBuffer, &vk_hMemory));
+		PUSH_TO_CALLSTACKTRACE(create_vulkan_buffer(vk_size, vk_eUsages, u32QueueCount, pu32Queues, vk_eMemoryPropertyFlags, &vk_hBuffer, &vk_hMemory));
 	}
 	
 	Vulkan_Buffer::~Vulkan_Buffer() {

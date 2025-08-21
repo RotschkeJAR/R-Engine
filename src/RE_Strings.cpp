@@ -13,6 +13,11 @@ namespace RE {
 	}
 
 	[[nodiscard]]
+	size_t get_wide_string_length_safely(const wchar_t *const pacWideString) {
+		return pacWideString ? std::wcslen(pacWideString) : 0;
+	}
+
+	[[nodiscard]]
 	bool are_string_contents_equal(const char *const pacString1, const char *const pacString2) {
 		return pacString1 && pacString2 && std::strcmp(pacString1, pacString2) == 0;
 	}
@@ -46,7 +51,7 @@ namespace RE {
 			return std::string("");
 		const size_t stringSize = std::wcslen(pawcString) + 1;
 		std::string sConverted("", stringSize);
-		std::wcstombs(&sConverted[0], pawcString, stringSize);
+		PUSH_TO_CALLSTACKTRACE(std::wcstombs(&sConverted[0], pawcString, stringSize));
 		return sConverted;
 	}
 
@@ -56,7 +61,7 @@ namespace RE {
 			return std::wstring(L"");
 		const size_t stringSize = std::strlen(pacString) + 1;
 		std::wstring wsConverted(L"", stringSize);
-		std::mbstowcs(&wsConverted[0], pacString, stringSize);
+		PUSH_TO_CALLSTACKTRACE(std::mbstowcs(&wsConverted[0], pacString, stringSize));
 		return wsConverted;
 	}
 
@@ -65,18 +70,18 @@ namespace RE {
 		std::string sAppName("");
 #ifdef RE_OS_WINDOWS
 # define PATH_SIZE 500
-		wchar_t awcBuffer[PATH_SIZE] = {0};
-		if (GetModuleFileNameW(nullptr, awcBuffer, PATH_SIZE))
+		wchar_t awcBuffer[PATH_SIZE];
+		if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(GetModuleFileNameW(nullptr, awcBuffer, PATH_SIZE), DWORD))
 			sAppName = convert_wide_chars_to_utf8(awcBuffer);
 		else
-			RE_ERROR("Failed retrieving the file name of the application");
+			RE_ERROR("Failed retrieving the file name of the application on Windows");
 # undef PATH_SIZE
 #elif defined RE_OS_LINUX
 		std::ifstream fileStream("/proc/self/comm");
 		if (fileStream.is_open())
 			fileStream >> sAppName;
 		else
-			RE_ERROR("Failed opening \"/proc/self/comm\" file for retrieving file name of the application");
+			RE_ERROR("Failed opening \"/proc/self/comm\" file for retrieving file name of the application on Linux");
 #else
 		RE_ERROR("Unknown platform for retrieving file name of the application");
 #endif

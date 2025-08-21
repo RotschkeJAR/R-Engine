@@ -220,6 +220,92 @@ namespace RE {
 		RE_MSAA_MODE_64,
 		RE_MSAA_MODE_DISABLED = RE_MSAA_MODE_1
 	};
+	
+	class SignalCatcher final {
+		public:
+			SignalCatcher();
+			~SignalCatcher();
+	};
+
+	void add_to_call_stack_trace(const char *pacFile, const char *pacFunc, uint32_t u32Line, const char *pacDetails);
+	void remove_from_call_stack_trace();
+	void print_call_stack_trace();
+
+	class SignalGuard final {
+		public:
+			SignalGuard(const char *pacFile, const char *pacFunc, uint32_t u32Line, const char *pacDetails);
+			~SignalGuard();
+	};
+#define DEFINE_SIGNAL_GUARD_DETAILED(NAME, DETAILS) SignalGuard NAME(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(DETAILS))
+#define DEFINE_SIGNAL_GUARD(NAME) DEFINE_SIGNAL_GUARD_DETAILED(NAME, "\0")
+	
+#define PUSH_TO_CALLSTACKTRACE_DETAILED(CMD, DETAILS) ([&](const char *const pacFile, const char *const pacFunc, const uint32_t u32Line) { \
+			add_to_call_stack_trace(pacFile, pacFunc, u32Line, STRIP_QUOTE_MACRO(DETAILS)); \
+			CMD; \
+			remove_from_call_stack_trace(); \
+		}) (__FILE__, __func__, __LINE__)
+#define PUSH_TO_CALLSTACKTRACE(CMD) PUSH_TO_CALLSTACKTRACE_DETAILED(CMD, "\0")
+#define PUSH_TO_CALLSTACKTRACE_AND_RETURN_DETAILED(CMD, RETURN_TYPE, DETAILS) ([&](const char *const pacFile, const char *const pacFunc, const uint32_t u32Line) -> RETURN_TYPE { \
+			add_to_call_stack_trace(pacFile, pacFunc, u32Line, STRIP_QUOTE_MACRO(DETAILS)); \
+			RETURN_TYPE returnValue = CMD; \
+			remove_from_call_stack_trace(); \
+			return returnValue; \
+		}) (__FILE__, __func__, __LINE__)
+#define PUSH_TO_CALLSTACKTRACE_AND_RETURN(CMD, RETURN_TYPE) PUSH_TO_CALLSTACKTRACE_AND_RETURN_DETAILED(CMD, RETURN_TYPE, "\0")
+
+	template <typename T>
+	[[nodiscard]]
+	std::string array_to_string(const T array[], const size_t arrayLength) {
+		std::stringstream ss("");
+		ss << '{';
+		for (size_t i = 0; i < arrayLength; i++) {
+			if (i)
+				ss << ", ";
+			if constexpr (std::is_same_v<T, int8_t>)
+				ss << static_cast<int16_t>(array[i]);
+			else if constexpr (std::is_same_v<T, uint8_t>)
+				ss << static_cast<uint16_t>(array[i]);
+			else
+				ss << array[i];
+		}
+		ss << '}';
+		return ss.str();
+	}
+
+	template <typename T>
+	[[nodiscard]]
+	std::string hexadecimal_to_string(T number, const bool bCutZeros) {
+		DEFINE_SIGNAL_GUARD(sigGuardHexadecimalToString);
+		std::ostringstream ss("");
+		if (number < static_cast<T>(0.0))
+			ss << "-";
+		ss << "0x";
+		if constexpr (std::is_signed<T>::value)
+			number = std::abs(number);
+		constexpr int32_t i32HexadecimalDigits = sizeof(T) * 8 / 4;
+		bool bNumbersPresent = !bCutZeros;
+		for (int32_t i32Digit = i32HexadecimalDigits - 1U; i32Digit >= 0; i32Digit--) {
+			const T base = std::pow<T>(16, static_cast<T>(i32Digit));
+			uint32_t u32HexadecimalCharacterIndex = static_cast<uint32_t>(number / base);
+			number -= base * u32HexadecimalCharacterIndex;
+			if (u32HexadecimalCharacterIndex || bNumbersPresent) {
+				bNumbersPresent = true;
+				if (u32HexadecimalCharacterIndex < 10)
+					ss << u32HexadecimalCharacterIndex;
+				else
+					ss << static_cast<char>(u32HexadecimalCharacterIndex - 10 + static_cast<uint32_t>('a'));
+			}
+		}
+		if (!bNumbersPresent)
+			ss << "0";
+		return ss.str();
+	}
+
+	template <typename T>
+	[[nodiscard]]
+	std::string hexadecimal_to_string(const T number) {
+		return hexadecimal_to_string<T>(number, true);
+	}
 
 	template <class... T>
 	void print(const T... content) {
@@ -245,38 +331,6 @@ namespace RE {
 #define PRINT(...) print(append_to_string(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE_MACRO(__VA_ARGS__)))
 #define PRINT_LN(...) print(append_to_string(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE_MACRO(__VA_ARGS__), "\n"))
 	
-	class SignalCatcher final {
-		public:
-			SignalCatcher();
-			~SignalCatcher();
-	};
-
-	void add_to_call_stack_trace(const char *pacFile, const char *pacFunc, uint32_t u32Line, const char *pacDetails);
-	void remove_from_call_stack_trace();
-	void print_call_stack_trace();
-
-	class SignalGuard final {
-		public:
-			SignalGuard(const char *pacFile, const char *pacFunc, uint32_t u32Line, const char *pacDetails);
-			~SignalGuard();
-	};
-#define DEFINE_SIGNAL_GUARD_DETAILED(NAME, DETAILS) SignalGuard NAME(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(DETAILS))
-#define DEFINE_SIGNAL_GUARD(NAME) DEFINE_SIGNAL_GUARD_DETAILED(NAME, "\0")
-	
-#define CATCH_SIGNAL_DETAILED(CMD, DETAILS) ([&](const char *const pacFile, const char *const pacFunc, const uint32_t u32Line) { \
-			add_to_call_stack_trace(pacFile, pacFunc, u32Line, STRIP_QUOTE_MACRO(DETAILS)); \
-			CMD; \
-			remove_from_call_stack_trace(); \
-		}) (__FILE__, __func__, __LINE__)
-#define CATCH_SIGNAL(CMD) CATCH_SIGNAL_DETAILED(CMD, "\0")
-#define CATCH_SIGNAL_AND_RETURN_DETAILED(CMD, RETURN_TYPE, DETAILS) ([&](const char *const pacFile, const char *const pacFunc, const uint32_t u32Line) -> RETURN_TYPE { \
-			add_to_call_stack_trace(pacFile, pacFunc, u32Line, STRIP_QUOTE_MACRO(DETAILS)); \
-			RETURN_TYPE returnValue = CMD; \
-			remove_from_call_stack_trace(); \
-			return returnValue; \
-		}) (__FILE__, __func__, __LINE__)
-#define CATCH_SIGNAL_AND_RETURN(CMD, RETURN_TYPE) CATCH_SIGNAL_AND_RETURN_DETAILED(CMD, RETURN_TYPE, "\0")
-	
 	void error(std::string sDetail, bool bTerminate);
 	void warning(std::string sDetail);
 	void note(std::string sDetail);
@@ -301,13 +355,13 @@ namespace RE {
 			remove_from_call_stack_trace(); \
 		}) (__FILE__, __func__, __LINE__)
 
-#define DELETE_SAFELY(PTR_REF) CATCH_SIGNAL( do { \
+#define DELETE_SAFELY(PTR_REF) PUSH_TO_CALLSTACKTRACE( do { \
 			if (!PTR_REF) \
 				break; \
 			delete (PTR_REF); \
 			(PTR_REF) = nullptr; \
 		} while (false) )
-#define DELETE_ARRAY_SAFELY(PTR_REF) CATCH_SIGNAL( do { \
+#define DELETE_ARRAY_SAFELY(PTR_REF) PUSH_TO_CALLSTACKTRACE( do { \
 			if (!PTR_REF) \
 				break; \
 			delete[] (PTR_REF); \
@@ -349,6 +403,8 @@ namespace RE {
 	[[nodiscard]]
 	size_t get_string_length_safely(const char *pacString);
 	[[nodiscard]]
+	size_t get_wide_string_length_safely(const wchar_t *pacWideString);
+	[[nodiscard]]
 	bool are_string_contents_equal(const char *pacString1, const char *pacString2);
 	[[nodiscard]]
 	size_t get_line_count(const char *pacString);
@@ -369,63 +425,7 @@ namespace RE {
 			FATAL_ERROR("The value of n shouldn't be zero or negative in an nth root");
 			return static_cast<T>(0.0);
 		}
-		T result = static_cast<T>(0.0);
-		CATCH_SIGNAL(result = std::pow(value, static_cast<T>(1.0) / n));
-		return result;
-	}
-
-	template <typename T>
-	[[nodiscard]]
-	std::string array_to_string(const T array[], const size_t arrayLength) {
-		std::stringstream ss("");
-		ss << '{';
-		for (size_t i = 0; i < arrayLength; i++) {
-			if (i)
-				ss << ", ";
-			if constexpr (std::is_same_v<T, int8_t>)
-				ss << static_cast<int16_t>(array[i]);
-			else if constexpr (std::is_same_v<T, uint8_t>)
-				ss << static_cast<uint16_t>(array[i]);
-			else
-				ss << array[i];
-		}
-		ss << '}';
-		return ss.str();
-	}
-
-	template <typename T>
-	[[nodiscard]]
-	std::string hexadecimal_to_string(T number, const bool bCutZeros) {
-		DEFINE_SIGNAL_GUARD(sigGuardHexadecimalToString);
-		std::stringstream ss("");
-		if (number < static_cast<T>(0.0))
-			ss << "-";
-		ss << "0x";
-		if constexpr (std::is_signed<T>::value)
-			number = std::abs(number);
-		constexpr int32_t i32HexadecimalDigits = sizeof(T) * 8 / 4;
-		bool bNumbersPresent = !bCutZeros;
-		for (int32_t i32Digit = i32HexadecimalDigits - 1U; i32Digit >= 0; i32Digit--) {
-			T base = std::pow<T>(16, static_cast<T>(i32Digit));
-			uint32_t u32HexadecimalCharacterIndex = static_cast<uint32_t>(number / base);
-			number -= base * u32HexadecimalCharacterIndex;
-			if (u32HexadecimalCharacterIndex || bNumbersPresent) {
-				bNumbersPresent = true;
-				if (u32HexadecimalCharacterIndex < 10)
-					ss << u32HexadecimalCharacterIndex;
-				else
-					ss << static_cast<char>(u32HexadecimalCharacterIndex - 10 + static_cast<uint32_t>('a'));
-			}
-		}
-		if (!bNumbersPresent)
-			ss << "0";
-		return ss.str();
-	}
-
-	template <typename T>
-	[[nodiscard]]
-	std::string hexadecimal_to_string(const T number) {
-		return hexadecimal_to_string<T>(number, true);
+		return PUSH_TO_CALLSTACKTRACE_AND_RETURN(std::pow(value, static_cast<T>(1.0) / n), T);
 	}
 
 	template <typename... T>
@@ -524,14 +524,14 @@ namespace RE {
 			Vector(const Vector<P, u32CopyDimensions> &rCopyVector) {
 				if (u32Dimensions != u32CopyDimensions)
 					WARNING("The coordinates of this vector with ", u32Dimensions, " dimensions were copied from a vector with ", u32CopyDimensions, " dimensions");
-				for (uint32_t u32CoordinateIndex = 0U; u32CoordinateIndex < u32CopyDimensions && u32CoordinateIndex < u32Dimensions; u32CoordinateIndex++)
-					data[u32CoordinateIndex] = rCopyVector.data[u32CoordinateIndex];
+				for (uint32_t u32CoordinateIndex = 0; u32CoordinateIndex < u32CopyDimensions && u32CoordinateIndex < u32Dimensions; u32CoordinateIndex++)
+					data[u32CoordinateIndex] = static_cast<T>(rCopyVector.data[u32CoordinateIndex]);
 			}
 			template <typename... V>
-			Vector(V... values) : data{} {
-				uint32_t u32Index = 0U;
+			Vector(const V... values) : data{} {
+				uint32_t u32Index = 0;
 				([&]() {
-					CATCH_SIGNAL_DETAILED(data[u32Index] = static_cast<T>(values), append_to_string("Index: ", u32Index).c_str());
+					PUSH_TO_CALLSTACKTRACE_DETAILED(data[u32Index] = static_cast<T>(values), append_to_string("Index: ", u32Index).c_str());
 					u32Index++;
 				} (), ...);
 			}
@@ -540,7 +540,7 @@ namespace RE {
 			[[nodiscard]]
 			T sum() const {
 				T sum = static_cast<T>(0.0);
-				for (T coord : data)
+				for (const T coord : data)
 					sum += coord;
 				return sum;
 			}
@@ -548,16 +548,14 @@ namespace RE {
 			[[nodiscard]]
 			T area() const {
 				T result = static_cast<T>(1.0);
-				for (T coord : data)
+				for (const T coord : data)
 					result *= coord;
 				return result;
 			}
 
 			[[nodiscard]]
 			T length() const {
-				T result;
-				CATCH_SIGNAL(result = nth_root<T>(static_cast<T>(u32Dimensions), sum()));
-				return result;
+				return PUSH_TO_CALLSTACKTRACE_AND_RETURN(nth_root<T>(static_cast<T>(u32Dimensions), sum()), T);
 			}
 
 			void fill(const T value) {
@@ -566,10 +564,10 @@ namespace RE {
 
 			void copy_from(const Vector &rCopyVector) {
 				if (u32Dimensions != rCopyVector.get_dimensions()) {
-					WARNING("Tried to copy values from one vector (", rCopyVector.get_dimensions(), ") to another (", u32Dimensions, "). This process has been terminated");
+					WARNING("Tried to copy values from one vector (", rCopyVector.get_dimensions(), ") to another (", u32Dimensions, "). This process has been terminated due to undefined behaviour");
 					return;
 				}
-				for (uint32_t u32Index = 0U; u32Index < u32Dimensions; u32Index++)
+				for (uint32_t u32Index = 0; u32Index < u32Dimensions; u32Index++)
 					data[u32Index] = rCopyVector[u32Index];
 			}
 
@@ -617,8 +615,8 @@ namespace RE {
 
 			friend std::ostream& operator <<(std::ostream &rStream, const Vector &rVector) {
 				rStream << "(";
-				for (uint32_t i = 0U; i < rVector.get_dimensions(); i++) {
-					if (i != 0U)
+				for (uint32_t i = 0; i < rVector.get_dimensions(); i++) {
+					if (i)
 						rStream << ", ";
 					rStream << rVector.data[i];
 				}
@@ -640,13 +638,17 @@ namespace RE {
 	typedef Vector<uint32_t, 4> Vector4u;
 
 	class Color final {
+		public:
+			static constexpr uint8_t u8ColorChannelCount = 4;
+
 		private:
-			std::array<float, 4> a4fChannels;
+			std::array<float, u8ColorChannelCount> a4fChannels;
 
 		public:
 			Color();
-			Color(Color &rCopyColor);
+			Color(const Color &rCopyColor);
 			~Color();
+			float get_channel(uint8_t u8ChannelIndex) const;
 			void set_channel(uint8_t u8ChannelIndex, float fNormal);
 			void copy_from(const Color &rCopyColor);
 			[[nodiscard]]
@@ -709,6 +711,8 @@ namespace RE {
 		Sprite(Texture hTexture);
 		Sprite(SpriteLayout hSpriteLayout);
 		Sprite(Texture hTexture, SpriteLayout hSpriteLayout);
+		Sprite(const Sprite &rCopy);
+		~Sprite();
 	};
 
 	class SpriteRenderer final {

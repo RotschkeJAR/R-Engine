@@ -287,14 +287,14 @@ namespace RE {
 	}
 
 	bool init_game_object_renderer() {
-		if (CATCH_SIGNAL_AND_RETURN(create_vulkan_shader_from_file("shaders/gameobject_opaque_vertex.glsl.spv", &vk_hOpaqueGameObjectVertexShader), bool)) {
-			if (CATCH_SIGNAL_AND_RETURN(create_vulkan_shader_from_file("shaders/gameobject_opaque_fragment.glsl.spv", &vk_hOpaqueGameObjectFragmentShader), bool)) {
-				if (CATCH_SIGNAL_AND_RETURN(create_vulkan_shader_from_file("shaders/gameobject_transparent_vertex.glsl.spv", &vk_hTransparentGameObjectVertexShader), bool)) {
-					if (CATCH_SIGNAL_AND_RETURN(create_vulkan_shader_from_file("shaders/gameobject_transparent_fragment.glsl.spv", &vk_hTransparentGameObjectFragmentShader), bool)) {
-						if (CATCH_SIGNAL_AND_RETURN(create_game_object_pipelines(), bool)) {
-							if (CATCH_SIGNAL_AND_RETURN(alloc_vulkan_command_buffers(vk_ahCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX], VK_COMMAND_BUFFER_LEVEL_SECONDARY, RE_VK_FRAMES_IN_FLIGHT, vk_ahGameObjectSecondaryCommandBuffers), bool)) {
-								if (CATCH_SIGNAL_AND_RETURN(alloc_vulkan_command_buffers(vk_ahCommandPools[RE_VK_COMMAND_POOL_TRANSFER_PERSISTENT_INDEX], VK_COMMAND_BUFFER_LEVEL_PRIMARY, RE_VK_FRAMES_IN_FLIGHT, vk_ahGameObjectVertexTransferCommandBuffers), bool)) {
-									return CATCH_SIGNAL_AND_RETURN(init_game_object_render_batches(), bool);
+		if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_vulkan_shader_from_file("shaders/gameobject_opaque_vertex.glsl.spv", &vk_hOpaqueGameObjectVertexShader), bool)) {
+			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_vulkan_shader_from_file("shaders/gameobject_opaque_fragment.glsl.spv", &vk_hOpaqueGameObjectFragmentShader), bool)) {
+				if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_vulkan_shader_from_file("shaders/gameobject_transparent_vertex.glsl.spv", &vk_hTransparentGameObjectVertexShader), bool)) {
+					if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_vulkan_shader_from_file("shaders/gameobject_transparent_fragment.glsl.spv", &vk_hTransparentGameObjectFragmentShader), bool)) {
+						if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_game_object_pipelines(), bool)) {
+							if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(alloc_vulkan_command_buffers(vk_ahCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX], VK_COMMAND_BUFFER_LEVEL_SECONDARY, RE_VK_FRAMES_IN_FLIGHT, vk_ahGameObjectSecondaryCommandBuffers), bool)) {
+								if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(alloc_vulkan_command_buffers(vk_ahCommandPools[RE_VK_COMMAND_POOL_TRANSFER_PERSISTENT_INDEX], VK_COMMAND_BUFFER_LEVEL_PRIMARY, RE_VK_FRAMES_IN_FLIGHT, vk_ahGameObjectVertexTransferCommandBuffers), bool)) {
+									return PUSH_TO_CALLSTACKTRACE_AND_RETURN(init_game_object_render_batches(), bool);
 								} else
 									RE_FATAL_ERROR("Failed allocating Vulkan command buffers for transferring vertex buffer data for rendering opaque game objects to GPU");
 								vkFreeCommandBuffers(vk_hDevice, vk_ahCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX], RE_VK_FRAMES_IN_FLIGHT, vk_ahGameObjectSecondaryCommandBuffers);
@@ -326,7 +326,7 @@ namespace RE {
 	}
 
 	void destroy_game_object_renderer() {
-		CATCH_SIGNAL(destroy_game_object_render_batches());
+		PUSH_TO_CALLSTACKTRACE(destroy_game_object_render_batches());
 		vkFreeCommandBuffers(vk_hDevice, vk_ahCommandPools[RE_VK_COMMAND_POOL_TRANSFER_PERSISTENT_INDEX], RE_VK_FRAMES_IN_FLIGHT, vk_ahGameObjectVertexTransferCommandBuffers);
 		vkFreeCommandBuffers(vk_hDevice, vk_ahCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX], RE_VK_FRAMES_IN_FLIGHT, vk_ahGameObjectSecondaryCommandBuffers);
 		vkDestroyPipeline(vk_hDevice, vk_hTransparentGameObjectGraphicsPipeline, nullptr);
@@ -347,8 +347,8 @@ namespace RE {
 
 	bool load_game_object_vertices_and_transfer(bool &rbNeedsRender) {
 		bool bSuccess = false;
-		if (CATCH_SIGNAL_AND_RETURN(begin_recording_vulkan_command_buffer(vk_ahGameObjectVertexTransferCommandBuffers[u8CurrentFrameInFlightIndex], VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr), bool)) {
-			CATCH_SIGNAL(load_game_object_vertices(rbNeedsRender));
+		if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(begin_recording_vulkan_command_buffer(vk_ahGameObjectVertexTransferCommandBuffers[u8CurrentFrameInFlightIndex], VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr), bool)) {
+			PUSH_TO_CALLSTACKTRACE(load_game_object_vertices(rbNeedsRender));
 			if (vkEndCommandBuffer(vk_ahGameObjectVertexTransferCommandBuffers[u8CurrentFrameInFlightIndex]) == VK_SUCCESS)
 				bSuccess = true;
 			else
@@ -359,7 +359,7 @@ namespace RE {
 		if (!bSuccess)
 			return false;
 		else if (rbNeedsRender) {
-			if (CATCH_SIGNAL_AND_RETURN(submit_to_vulkan_queue(vk_ahDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], 0, nullptr, nullptr, 1, &vk_ahGameObjectVertexTransferCommandBuffers[u8CurrentFrameInFlightIndex], 1, &vk_ahRenderSemaphores[u8CurrentFrameInFlightIndex * RE_VK_SEMAPHORES_PER_FRAME_COUNT + RE_VK_TRANSFER_GAME_OBJECT_VERTICES_SEMAPHORE_INDEX], VK_NULL_HANDLE), bool))
+			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(submit_to_vulkan_queue(vk_ahDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], 0, nullptr, nullptr, 1, &vk_ahGameObjectVertexTransferCommandBuffers[u8CurrentFrameInFlightIndex], 1, &vk_ahRenderSemaphores[u8CurrentFrameInFlightIndex * RE_VK_SEMAPHORES_PER_FRAME_COUNT + RE_VK_TRANSFER_GAME_OBJECT_VERTICES_SEMAPHORE_INDEX], VK_NULL_HANDLE), bool))
 				return true;
 			else
 				RE_FATAL_ERROR("Failed submitting the Vulkan command buffer for transferring vertices to the GPU for rendering game objects");
@@ -376,16 +376,16 @@ namespace RE {
 			.framebuffer = vk_ahWorldFramebuffers[u8CurrentFrameInFlightIndex],
 			.occlusionQueryEnable = VK_FALSE
 		};
-		if (CATCH_SIGNAL_AND_RETURN(begin_recording_vulkan_command_buffer(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT, &vk_inheritanceInfo), bool)) {
+		if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(begin_recording_vulkan_command_buffer(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT, &vk_inheritanceInfo), bool)) {
 			vkCmdSetViewport(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], 0, 1, &vk_cameraViewport);
 			vkCmdSetScissor(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], 0, 1, &vk_cameraScissor);
 			vkCmdBindDescriptorSets(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hWorldBasicPipelineLayout, 0, 1, &vk_ahDescriptorSets[u8CurrentFrameInFlightIndex], 0, nullptr);
 			vkCmdBindIndexBuffer(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], vk_hRectIndexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
 			vkCmdBindPipeline(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hOpaqueGameObjectGraphicsPipeline);
-			CATCH_SIGNAL(render_opaque_game_objects());
+			PUSH_TO_CALLSTACKTRACE(render_opaque_game_objects());
 			vkCmdBindPipeline(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hTransparentGameObjectGraphicsPipeline);
-			CATCH_SIGNAL(render_transparent_game_objects());
+			PUSH_TO_CALLSTACKTRACE(render_transparent_game_objects());
 				
 			if (vkEndCommandBuffer(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex]) == VK_SUCCESS)
 				return true;
@@ -397,7 +397,7 @@ namespace RE {
 	}
 
 	bool recreate_game_object_render_pipelines() {
-		return CATCH_SIGNAL_AND_RETURN(create_game_object_pipelines(), bool);
+		return PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_game_object_pipelines(), bool);
 	}
 
 }

@@ -38,9 +38,9 @@ namespace RE {
 		}
 		size_t shaderBinaryFileSize = static_cast<size_t>(shaderBinaryFile.tellg());
 		char *const pacShaderBinary = new char[shaderBinaryFileSize];
-		CATCH_SIGNAL(shaderBinaryFile.seekg(0));
-		CATCH_SIGNAL(shaderBinaryFile.read(pacShaderBinary, shaderBinaryFileSize));
-		CATCH_SIGNAL(shaderBinaryFile.close());
+		PUSH_TO_CALLSTACKTRACE(shaderBinaryFile.seekg(0));
+		PUSH_TO_CALLSTACKTRACE(shaderBinaryFile.read(pacShaderBinary, shaderBinaryFileSize));
+		PUSH_TO_CALLSTACKTRACE(shaderBinaryFile.close());
 		const VkShaderModuleCreateInfo vk_createInfo = {
 			.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
 			.codeSize = shaderBinaryFileSize,
@@ -70,7 +70,7 @@ namespace RE {
 		if (vkCreateBuffer(vk_hDevice, &vk_createInfo, nullptr, vk_phBuffer) == VK_SUCCESS) {
 			VkMemoryRequirements vk_memoryRequirements;
 			vkGetBufferMemoryRequirements(vk_hDevice, *vk_phBuffer, &vk_memoryRequirements);
-			if (CATCH_SIGNAL_AND_RETURN(alloc_required_memory(vk_memoryRequirements, vk_eMemoryPropertyFlags, vk_phMemory), bool)) {
+			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(alloc_required_memory(vk_memoryRequirements, vk_eMemoryPropertyFlags, vk_phMemory), bool)) {
 				if (vkBindBufferMemory(vk_hDevice, *vk_phBuffer, *vk_phMemory, 0UL) == VK_SUCCESS)
 					return true;
 				else
@@ -93,11 +93,11 @@ namespace RE {
 			switch (vk_eImgTiling) {
 				case VK_IMAGE_TILING_OPTIMAL:
 					if ((vk_formatProperties.optimalTilingFeatures & vk_eRequiredFeature) == vk_eRequiredFeature)
-						return CATCH_SIGNAL_AND_RETURN(vk_paeFormatCandidates[u32FormatCandidateIndex], VkFormat);
+						return PUSH_TO_CALLSTACKTRACE_AND_RETURN(vk_paeFormatCandidates[u32FormatCandidateIndex], VkFormat);
 					break;
 				case VK_IMAGE_TILING_LINEAR:
 					if ((vk_formatProperties.linearTilingFeatures & vk_eRequiredFeature) == vk_eRequiredFeature)
-						return CATCH_SIGNAL_AND_RETURN(vk_paeFormatCandidates[u32FormatCandidateIndex], VkFormat);
+						return PUSH_TO_CALLSTACKTRACE_AND_RETURN(vk_paeFormatCandidates[u32FormatCandidateIndex], VkFormat);
 					break;
 				default:
 					break;
@@ -107,7 +107,7 @@ namespace RE {
 	}
 
 	VkFormat find_supported_image_format(const uint32_t u32FormatCandidateCount, const VkFormat *const vk_paeFormatCandidates, const VkImageTiling vk_eImgTiling, const VkFormatFeatureFlags vk_eRequiredFeature) {
-		return CATCH_SIGNAL_AND_RETURN(find_supported_image_format_on_physical_vulkan_device(vk_hPhysicalDeviceSelected, u32FormatCandidateCount, vk_paeFormatCandidates, vk_eImgTiling, vk_eRequiredFeature), VkFormat);
+		return PUSH_TO_CALLSTACKTRACE_AND_RETURN(find_supported_image_format_on_physical_vulkan_device(vk_hPhysicalDeviceSelected, u32FormatCandidateCount, vk_paeFormatCandidates, vk_eImgTiling, vk_eRequiredFeature), VkFormat);
 	}
 
 	bool create_vulkan_image(const VkImageCreateFlags vk_eCreateFlags, const VkImageType vk_eType, const VkFormat vk_eFormat, const VkExtent3D vk_extent, const uint32_t u32MipLevels, const uint32_t u32ArrayLayerCount, const VkSampleCountFlagBits vk_eSamples, const VkImageTiling vk_eTiling, const VkImageUsageFlags vk_eUsages, const uint32_t u32QueueCount, const uint32_t *const pau32Queues, const VkImageLayout vk_eLayout, const VkMemoryPropertyFlags vk_eMemoryPropertyFlags, VkImage *const vk_phImage, VkDeviceMemory *const vk_phMemory) {
@@ -135,7 +135,7 @@ namespace RE {
 		if (vkCreateImage(vk_hDevice, &vk_createInfo, nullptr, vk_phImage) == VK_SUCCESS) {
 			VkMemoryRequirements vk_memoryRequirements;
 			vkGetImageMemoryRequirements(vk_hDevice, *vk_phImage, &vk_memoryRequirements);
-			if (CATCH_SIGNAL_AND_RETURN(alloc_required_memory(vk_memoryRequirements, vk_eMemoryPropertyFlags, vk_phMemory), bool)) {
+			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(alloc_required_memory(vk_memoryRequirements, vk_eMemoryPropertyFlags, vk_phMemory), bool)) {
 				if (vkBindImageMemory(vk_hDevice, *vk_phImage, *vk_phMemory, 0UL) == VK_SUCCESS)
 					return true;
 				else
@@ -344,12 +344,12 @@ namespace RE {
 				vk_cmd_transit_image(*vk_phCommandBufferToFree, vk_eSrcStageFlags, vk_eDstStageFlags, vk_eDependencyFlags, vk_eSrcAccessFlags, vk_eDstAccessFlags, vk_eOldLayout, vk_eNewLayout, u32SrcQueueIndex, u32DstQueueIndex, vk_hImage, vk_eAspectFlags, u32BaseMipLevel, u32MipLevelCount, u32BaseArrayLayer, u32ArrayLayerCount);
 				if (vkEndCommandBuffer(*vk_phCommandBufferToFree) == VK_SUCCESS) {
 					if (vk_phFence && *vk_phFence) {
-						if (CATCH_SIGNAL_AND_RETURN(submit_to_vulkan_queue(vk_ahDeviceQueueFamilies[u32QueueIndex], 0U, nullptr, nullptr, 1U, vk_phCommandBufferToFree, 0U, nullptr, *vk_phFence), bool))
+						if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(submit_to_vulkan_queue(vk_ahDeviceQueueFamilies[u32QueueIndex], 0U, nullptr, nullptr, 1U, vk_phCommandBufferToFree, 0U, nullptr, *vk_phFence), bool))
 							return true;
 						else
 							RE_ERROR("Failed to submit Vulkan command buffer to transit image and signal a fence");
 					} else {
-						if (CATCH_SIGNAL_AND_RETURN(submit_to_vulkan_queue(vk_ahDeviceQueueFamilies[u32QueueIndex], 0U, nullptr, nullptr, 1U, vk_phCommandBufferToFree, 0U, nullptr, VK_NULL_HANDLE), bool)) {
+						if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(submit_to_vulkan_queue(vk_ahDeviceQueueFamilies[u32QueueIndex], 0U, nullptr, nullptr, 1U, vk_phCommandBufferToFree, 0U, nullptr, VK_NULL_HANDLE), bool)) {
 							vkQueueWaitIdle(vk_ahDeviceQueueFamilies[u32QueueIndex]);
 							vkFreeCommandBuffers(vk_hDevice, vk_ahCommandPools[u32CommandPoolIndex], 1U, vk_phCommandBufferToFree);
 							*vk_phCommandBufferToFree = VK_NULL_HANDLE;

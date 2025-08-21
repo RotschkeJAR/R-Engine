@@ -474,7 +474,7 @@ namespace RE {
 
 			// Check if depth & stencil buffers are supported
 			constexpr VkFormat vk_aeDepthStencilFormats[ALLOWED_DEPTH_STENCIL_BUFFER_FORMAT_COUNT] = ALLOWED_DEPTH_STENCIL_BUFFER_FORMATS;
-			const VkFormat vk_eSupportedDepthStencilBufferFormat = CATCH_SIGNAL_AND_RETURN(find_supported_image_format_on_physical_vulkan_device(vk_hPhysicalDevice, ALLOWED_DEPTH_STENCIL_BUFFER_FORMAT_COUNT, vk_aeDepthStencilFormats, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT), VkFormat);
+			const VkFormat vk_eSupportedDepthStencilBufferFormat = PUSH_TO_CALLSTACKTRACE_AND_RETURN(find_supported_image_format_on_physical_vulkan_device(vk_hPhysicalDevice, ALLOWED_DEPTH_STENCIL_BUFFER_FORMAT_COUNT, vk_aeDepthStencilFormats, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT), VkFormat);
 			if (vk_eSupportedDepthStencilBufferFormat == VK_FORMAT_UNDEFINED)
 				missingFeatures.push("Unseperated depth and stencil buffers aren't supported");
 
@@ -529,7 +529,7 @@ namespace RE {
 		vkGetPhysicalDeviceQueueFamilyProperties(vk_hPhysicalDeviceSelected, &u32PhysicalDeviceSelectedQueueFamilyCount, nullptr);
 		VkQueueFamilyProperties *const vk_paPhysicalDeviceSelectedQueueFamilies = new VkQueueFamilyProperties[u32PhysicalDeviceSelectedQueueFamilyCount];
 		vkGetPhysicalDeviceQueueFamilyProperties(vk_hPhysicalDeviceSelected, &u32PhysicalDeviceSelectedQueueFamilyCount, vk_paPhysicalDeviceSelectedQueueFamilies);
-		CATCH_SIGNAL(set_bits<uint8_t>(u8RenderSystemFlags, (vk_paPhysicalDeviceSelectedQueueFamilies[au32DeviceQueueFamilyIndices[RE_VK_QUEUE_GRAPHICS_INDEX]].queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0, GRAPHICS_QUEUE_SUPPORTS_TRANSFER_BIT));
+		PUSH_TO_CALLSTACKTRACE(set_bits<uint8_t>(u8RenderSystemFlags, (vk_paPhysicalDeviceSelectedQueueFamilies[au32DeviceQueueFamilyIndices[RE_VK_QUEUE_GRAPHICS_INDEX]].queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0, GRAPHICS_QUEUE_SUPPORTS_TRANSFER_BIT));
 		delete[] vk_paPhysicalDeviceSelectedQueueFamilies;
 
 		vkGetDeviceQueue(vk_hDevice, au32DeviceQueueFamilyIndices[RE_VK_QUEUE_GRAPHICS_INDEX], 0, &vk_ahDeviceQueueFamilies[RE_VK_QUEUE_GRAPHICS_INDEX]);
@@ -589,7 +589,7 @@ namespace RE {
 		// Create actual sweapchain
 		const VkSwapchainKHR vk_hOldSwapchain = vk_hSwapchain;
 		if (vk_hOldSwapchain) {
-			CATCH_SIGNAL(swapchain_destroyed_renderer());
+			PUSH_TO_CALLSTACKTRACE(swapchain_destroyed_renderer());
 			for (uint32_t u32SwapchainImageIndex = 0; u32SwapchainImageIndex < u32SwapchainImageCount; u32SwapchainImageIndex++)
 				vkDestroyImageView(vk_hDevice, vk_pahSwapchainImageViews[u32SwapchainImageIndex], nullptr);
 			DELETE_ARRAY_SAFELY(vk_pahSwapchainImages);
@@ -664,7 +664,7 @@ namespace RE {
 	}
 	
 	static void destroy_swapchain() {
-		CATCH_SIGNAL(swapchain_destroyed_renderer());
+		PUSH_TO_CALLSTACKTRACE(swapchain_destroyed_renderer());
 		for (uint32_t u32SwapchainImageIndex = 0; u32SwapchainImageIndex < u32SwapchainImageCount; u32SwapchainImageIndex++)
 			vkDestroyImageView(vk_hDevice, vk_pahSwapchainImageViews[u32SwapchainImageIndex], nullptr);
 		DELETE_ARRAY_SAFELY(vk_pahSwapchainImages);
@@ -676,21 +676,21 @@ namespace RE {
 	static bool recreate_swapchain() {
 		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &vk_surfaceCapabilities);
 		WAIT_FOR_IDLE_VULKAN_DEVICE();
-		if (CATCH_SIGNAL_AND_RETURN(create_swapchain(), bool)) {
-			if (CATCH_SIGNAL_AND_RETURN(swapchain_created_renderer(), bool))
+		if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_swapchain(), bool)) {
+			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(swapchain_created_renderer(), bool))
 				return true;
 			else
 				RE_ERROR("Failed notifying the renderer for recreated Vulkan swapchain");
-			CATCH_SIGNAL(destroy_swapchain());
+			PUSH_TO_CALLSTACKTRACE(destroy_swapchain());
 		} else
 			RE_ERROR("Failed recreating the Vulkan swapchain");
 		return false;
 	}
 
 	bool init_render_system() {
-		if (CATCH_SIGNAL_AND_RETURN(create_vulkan_surface(vk_hSurface), bool)) {
-			if (CATCH_SIGNAL_AND_RETURN(alloc_physical_vulkan_device_list(), bool)) {
-				CATCH_SIGNAL(select_best_physical_vulkan_device());
+		if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_vulkan_surface(vk_hSurface), bool)) {
+			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(alloc_physical_vulkan_device_list(), bool)) {
+				PUSH_TO_CALLSTACKTRACE(select_best_physical_vulkan_device());
 
 				VkPhysicalDeviceProperties vk_physicalDeviceProperties;
 				vkGetPhysicalDeviceProperties(vk_hPhysicalDeviceSelected, &vk_physicalDeviceProperties);
@@ -699,39 +699,39 @@ namespace RE {
 				vkGetPhysicalDeviceFeatures(vk_hPhysicalDeviceSelected, &vk_physicalDeviceFeatures);
 				vkGetPhysicalDeviceMemoryProperties(vk_hPhysicalDeviceSelected, &vk_physicalDeviceMemoryProperties);
 				constexpr VkFormat vk_aeDepthStencilFormats[ALLOWED_DEPTH_STENCIL_BUFFER_FORMAT_COUNT] = ALLOWED_DEPTH_STENCIL_BUFFER_FORMATS;
-				vk_eDepthStencilBufferFormat = CATCH_SIGNAL_AND_RETURN(find_supported_image_format(ALLOWED_DEPTH_STENCIL_BUFFER_FORMAT_COUNT, vk_aeDepthStencilFormats, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT), VkFormat);
+				vk_eDepthStencilBufferFormat = PUSH_TO_CALLSTACKTRACE_AND_RETURN(find_supported_image_format(ALLOWED_DEPTH_STENCIL_BUFFER_FORMAT_COUNT, vk_aeDepthStencilFormats, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT), VkFormat);
 
-				CATCH_SIGNAL(fetch_vulkan_surface_infos());
-				CATCH_SIGNAL(select_best_vulkan_surface_format());
-				if (CATCH_SIGNAL_AND_RETURN(init_logical_vulkan_device(), bool)) {
-					if (CATCH_SIGNAL_AND_RETURN(setup_interfaces_to_logical_vulkan_device(), bool)) {
-						if (CATCH_SIGNAL_AND_RETURN(create_swapchain(), bool))
+				PUSH_TO_CALLSTACKTRACE(fetch_vulkan_surface_infos());
+				PUSH_TO_CALLSTACKTRACE(select_best_vulkan_surface_format());
+				if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(init_logical_vulkan_device(), bool)) {
+					if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(setup_interfaces_to_logical_vulkan_device(), bool)) {
+						if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_swapchain(), bool))
 							return true;
-						CATCH_SIGNAL(destroy_interfaces_to_logical_vulkan_device());
+						PUSH_TO_CALLSTACKTRACE(destroy_interfaces_to_logical_vulkan_device());
 					}
-					CATCH_SIGNAL(destroy_logical_vulkan_device());
+					PUSH_TO_CALLSTACKTRACE(destroy_logical_vulkan_device());
 				}
-				CATCH_SIGNAL(free_physical_vulkan_device_list());
+				PUSH_TO_CALLSTACKTRACE(free_physical_vulkan_device_list());
 			}
-			CATCH_SIGNAL(destroy_vulkan_surface());
+			PUSH_TO_CALLSTACKTRACE(destroy_vulkan_surface());
 		}
 		return false;
 	}
 
 	void destroy_render_system() {
 		if (vk_hSwapchain)
-			CATCH_SIGNAL(destroy_swapchain());
-		CATCH_SIGNAL(destroy_interfaces_to_logical_vulkan_device());
-		CATCH_SIGNAL(destroy_logical_vulkan_device());
+			PUSH_TO_CALLSTACKTRACE(destroy_swapchain());
+		PUSH_TO_CALLSTACKTRACE(destroy_interfaces_to_logical_vulkan_device());
+		PUSH_TO_CALLSTACKTRACE(destroy_logical_vulkan_device());
 		vk_hPhysicalDeviceSelected = VK_NULL_HANDLE;
-		CATCH_SIGNAL(free_physical_vulkan_device_list());
-		CATCH_SIGNAL(destroy_vulkan_surface());
+		PUSH_TO_CALLSTACKTRACE(free_physical_vulkan_device_list());
+		PUSH_TO_CALLSTACKTRACE(destroy_vulkan_surface());
 	}
 
 	bool refresh_swapchain() {
 		if (are_bits_true<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_BIT)) {
 			set_bits<uint8_t>(u8RenderSystemFlags, false, SWAPCHAIN_DIRTY_BIT);
-			if (!CATCH_SIGNAL_AND_RETURN(recreate_swapchain(), bool))
+			if (!PUSH_TO_CALLSTACKTRACE_AND_RETURN(recreate_swapchain(), bool))
 				return false;
 		}
 		return true;

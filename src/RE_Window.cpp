@@ -18,15 +18,15 @@ namespace RE {
 		u8WindowFlagBits = 1 << WINDOW_WAYLAND_SHOULD_RENDER_FRAME_BIT;
 		bool bSuccess;
 #ifdef RE_OS_WINDOWS
-		bSuccess = CATCH_SIGNAL_AND_RETURN(win64_create_window(), bool);
+		bSuccess = PUSH_TO_CALLSTACKTRACE_AND_RETURN(win64_create_window(), bool);
 #elif defined RE_OS_LINUX
 		switch (eLinuxWindowType) {
 			case X11:
-				bSuccess = CATCH_SIGNAL_AND_RETURN(x11_create_window(), bool);
+				bSuccess = PUSH_TO_CALLSTACKTRACE_AND_RETURN(x11_create_window(), bool);
 				break;
 			case Wayland:
 				u8WindowFlagBits = 0;
-				bSuccess = CATCH_SIGNAL_AND_RETURN(wayland_create_window(), bool);
+				bSuccess = PUSH_TO_CALLSTACKTRACE_AND_RETURN(wayland_create_window(), bool);
 				break;
 		}
 #endif
@@ -36,14 +36,14 @@ namespace RE {
 
 	void destroy_window() {
 #ifdef RE_OS_WINDOWS
-		CATCH_SIGNAL(win64_destroy_window());
+		PUSH_TO_CALLSTACKTRACE(win64_destroy_window());
 #elif defined RE_OS_LINUX
 		switch (eLinuxWindowType) {
 			case X11:
-				CATCH_SIGNAL(x11_destroy_window());
+				PUSH_TO_CALLSTACKTRACE(x11_destroy_window());
 				break;
 			case Wayland:
-				CATCH_SIGNAL(wayland_destroy_window());
+				PUSH_TO_CALLSTACKTRACE(wayland_destroy_window());
 				break;
 		}
 #endif
@@ -61,30 +61,30 @@ namespace RE {
 			return;
 		set_bits<uint8_t>(u8WindowFlagBits, bShowWindow, WINDOW_VISIBLE_BIT);
 #ifdef RE_OS_WINDOWS
-		CATCH_SIGNAL(win64_show_window());
+		PUSH_TO_CALLSTACKTRACE(win64_show_window());
 #elif defined RE_OS_LINUX
 		switch (eLinuxWindowType) {
 			case X11:
-				CATCH_SIGNAL(x11_show_window());
+				PUSH_TO_CALLSTACKTRACE(x11_show_window());
 				break;
 			case Wayland:
-				CATCH_SIGNAL(wayland_show_window());
+				PUSH_TO_CALLSTACKTRACE(wayland_show_window());
 				break;
 		}
 #endif
 	}
 
 	void window_proc() {
-		CATCH_SIGNAL(update_input_buffers());
+		PUSH_TO_CALLSTACKTRACE(update_input_buffers());
 #ifdef RE_OS_WINDOWS
-		CATCH_SIGNAL(win64_window_proc());
+		PUSH_TO_CALLSTACKTRACE(win64_window_proc());
 #elif defined RE_OS_LINUX
 		switch (eLinuxWindowType) {
 			case X11:
-				CATCH_SIGNAL(x11_window_proc());
+				PUSH_TO_CALLSTACKTRACE(x11_window_proc());
 				break;
 			case Wayland:
-				CATCH_SIGNAL(wayland_window_proc());
+				PUSH_TO_CALLSTACKTRACE(wayland_window_proc());
 				break;
 		}
 #endif
@@ -93,7 +93,7 @@ namespace RE {
 	void post_rendering_window_proc() {
 #ifdef RE_OS_LINUX
 		if (eLinuxWindowType == Wayland)
-			CATCH_SIGNAL(wayland_post_rendering_window_proc());
+			PUSH_TO_CALLSTACKTRACE(wayland_post_rendering_window_proc());
 #endif
 	}
 
@@ -114,7 +114,7 @@ namespace RE {
 			.hinstance = win_hInstance,
 			.hwnd = win_hWindow
 		};
-		return CATCH_SIGNAL_AND_RETURN(vkCreateWin32SurfaceKHR(vk_hInstance, &vk_win32SurfaceCreateInfo, nullptr, &vk_rhSurface) == VK_SUCCESS, bool);
+		return PUSH_TO_CALLSTACKTRACE_AND_RETURN(vkCreateWin32SurfaceKHR(vk_hInstance, &vk_win32SurfaceCreateInfo, nullptr, &vk_rhSurface) == VK_SUCCESS, bool);
 #elif defined RE_OS_LINUX
 		switch (eLinuxWindowType) {
 			case X11:
@@ -124,7 +124,7 @@ namespace RE {
 						.dpy = x11_pDisplay,
 						.window = x11_hWindow
 					};
-					return CATCH_SIGNAL_AND_RETURN(vkCreateXlibSurfaceKHR(vk_hInstance, &vk_x11SurfaceCreateInfo, nullptr, &vk_rhSurface) == VK_SUCCESS, bool);
+					return PUSH_TO_CALLSTACKTRACE_AND_RETURN(vkCreateXlibSurfaceKHR(vk_hInstance, &vk_x11SurfaceCreateInfo, nullptr, &vk_rhSurface) == VK_SUCCESS, bool);
 				}
 			case Wayland:
 				{
@@ -133,7 +133,7 @@ namespace RE {
 						.display = wl_pDisplay,
 						.surface = wl_pSurface
 					};
-					return CATCH_SIGNAL_AND_RETURN(vkCreateWaylandSurfaceKHR(vk_hInstance, &vk_waylandSurfaceCreateInfo, nullptr, &vk_rhSurface) == VK_SUCCESS, bool);
+					return PUSH_TO_CALLSTACKTRACE_AND_RETURN(vkCreateWaylandSurfaceKHR(vk_hInstance, &vk_waylandSurfaceCreateInfo, nullptr, &vk_rhSurface) == VK_SUCCESS, bool);
 				}
 			default:
 				return false;
@@ -158,20 +158,20 @@ namespace RE {
 	}
 
 	void set_window_title(const char *const pacNewTitle) {
-		if (std::strcmp(pacWindowTitle, pacNewTitle) == 0)
+		if (are_string_contents_equal(pacWindowTitle, pacNewTitle))
 			return;
 		pacWindowTitle = pacNewTitle;
 		if (!are_bits_true<uint8_t>(u8WindowFlagBits, WINDOW_CREATED_BIT))
 			return;
 #ifdef RE_OS_WINDOWS
-		CATCH_SIGNAL(win64_update_window_title());
+		PUSH_TO_CALLSTACKTRACE(win64_update_window_title());
 #elif defined RE_OS_LINUX
 		switch (eLinuxWindowType) {
 			case X11:
-				CATCH_SIGNAL(x11_update_window_title());
+				PUSH_TO_CALLSTACKTRACE(x11_update_window_title());
 				break;
 			case Wayland:
-				CATCH_SIGNAL(wayland_update_window_title());
+				PUSH_TO_CALLSTACKTRACE(wayland_update_window_title());
 				break;
 		}
 #endif

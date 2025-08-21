@@ -20,8 +20,8 @@ namespace RE {
 	void submit_sprite(const Sprite *const pSprite, int16_t &ri16TextureIndex) {
 		if (static_cast<uint16_t>(i16TextureInUseCounter) >= u16MaximumTextures)
 			return;
-		CATCH_SIGNAL(vk_aTextureSamplersToDescriptorSet[i16TextureInUseCounter].sampler = reinterpret_cast<VkSampler>(pSprite->hSpriteLayout));
-		CATCH_SIGNAL(vk_aTextureSamplersToDescriptorSet[i16TextureInUseCounter].imageView = reinterpret_cast<TextureContainer*>(pSprite->hTexture)->vk_hImgView);
+		PUSH_TO_CALLSTACKTRACE(vk_aTextureSamplersToDescriptorSet[i16TextureInUseCounter].sampler = reinterpret_cast<VkSampler>(pSprite->hSpriteLayout));
+		PUSH_TO_CALLSTACKTRACE(vk_aTextureSamplersToDescriptorSet[i16TextureInUseCounter].imageView = reinterpret_cast<TextureContainer*>(pSprite->hTexture)->vk_hImgView);
 		vk_aTextureSamplersToDescriptorSet[i16TextureInUseCounter].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		ri16TextureIndex = i16TextureInUseCounter;
 		i16TextureInUseCounter++;

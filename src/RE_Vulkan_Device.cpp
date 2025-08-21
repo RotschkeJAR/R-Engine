@@ -241,7 +241,7 @@ namespace RE {
 
 	static PFN_vkVoidFunction load_func_with_device(const char* pacFuncName) {
 		PFN_vkVoidFunction pFunc;
-		CATCH_SIGNAL(pFunc = vkGetDeviceProcAddr(vk_hDevice, pacFuncName));
+		PUSH_TO_CALLSTACKTRACE(pFunc = vkGetDeviceProcAddr(vk_hDevice, pacFuncName));
 		if (!pFunc)
 			RE_FATAL_ERROR("Failed loading the Vulkan logical device-level function \"", pacFuncName, "\"");
 		return pFunc;
@@ -1239,7 +1239,7 @@ namespace RE {
 			return false;
 		}
 
-		if (!CATCH_SIGNAL_AND_RETURN(load_vulkan_1_0_device() && load_vulkan_1_1_device() && load_vulkan_1_2_device() && load_vulkan_1_3_device() /* && load_vulkan_1_4_device() */ && load_extension_funcs_with_device(), bool)) {
+		if (!PUSH_TO_CALLSTACKTRACE_AND_RETURN(load_vulkan_1_0_device() && load_vulkan_1_1_device() && load_vulkan_1_2_device() && load_vulkan_1_3_device() /* && load_vulkan_1_4_device() */ && load_extension_funcs_with_device(), bool)) {
 			destroy_logical_vulkan_device();
 			return false;
 		}

@@ -13,7 +13,7 @@
 namespace RE {
 
 	Texture alloc_texture_from_binary_data(const uint8_t *const pau8ImageBinaryData, const Vector2u imageSize, const uint32_t u32Channels) {
-		return CATCH_SIGNAL_AND_RETURN(alloc_texture_from_binary_data(pau8ImageBinaryData, imageSize[0], imageSize[1], u32Channels), Texture);
+		return PUSH_TO_CALLSTACKTRACE_AND_RETURN(alloc_texture_from_binary_data(pau8ImageBinaryData, imageSize[0], imageSize[1], u32Channels), Texture);
 	}
 
 	Texture alloc_texture_from_binary_data(const uint8_t *const pau8ImageBinaryData, const uint32_t u32Width, const uint32_t u32Height, const uint32_t u32Channels) {
@@ -117,20 +117,20 @@ namespace RE {
 	
 	Texture alloc_texture_loading_from_file(const char *const pacPathToTextureFile) {
 		Vector2i textureSize;
-		return CATCH_SIGNAL_AND_RETURN(alloc_texture_loading_from_file(pacPathToTextureFile, textureSize), Texture);
+		return PUSH_TO_CALLSTACKTRACE_AND_RETURN(alloc_texture_loading_from_file(pacPathToTextureFile, textureSize), Texture);
 	}
 
 	Texture alloc_texture_loading_from_file(const char *const pacPathToTextureFile, Vector2i &rSize) {
-		return CATCH_SIGNAL_AND_RETURN(alloc_texture_loading_from_file(pacPathToTextureFile, rSize[0], rSize[1]), Texture);
+		return PUSH_TO_CALLSTACKTRACE_AND_RETURN(alloc_texture_loading_from_file(pacPathToTextureFile, rSize[0], rSize[1]), Texture);
 	}
 	
 	Texture alloc_texture_loading_from_file(const char *const pacPathToTextureFile, int32_t &ri32Width, int32_t &ri32Height) {
 		int32_t i32Channels;
-		return CATCH_SIGNAL_AND_RETURN(alloc_texture_loading_from_file(pacPathToTextureFile, ri32Width, ri32Height, i32Channels), Texture);
+		return PUSH_TO_CALLSTACKTRACE_AND_RETURN(alloc_texture_loading_from_file(pacPathToTextureFile, ri32Width, ri32Height, i32Channels), Texture);
 	}
 	
 	Texture alloc_texture_loading_from_file(const char *const pacPathToTextureFile, Vector2i &rSize, int32_t &ri32Channels) {
-		return CATCH_SIGNAL_AND_RETURN(alloc_texture_loading_from_file(pacPathToTextureFile, rSize[0], rSize[1], ri32Channels), Texture);
+		return PUSH_TO_CALLSTACKTRACE_AND_RETURN(alloc_texture_loading_from_file(pacPathToTextureFile, rSize[0], rSize[1], ri32Channels), Texture);
 	}
 	
 	Texture alloc_texture_loading_from_file(const char *const pacPathToTextureFile, int32_t &ri32Width, int32_t &ri32Height, int32_t &ri32Channels) {
@@ -138,9 +138,9 @@ namespace RE {
 			RE_ERROR("Textures can't be loaded, when the engine doesn't run");
 			return nullptr;
 		}
-		uint8_t *const pau8ImageBinaryData = CATCH_SIGNAL_AND_RETURN(stbi_load(pacPathToTextureFile, &ri32Width, &ri32Height, &ri32Channels, 0), uint8_t*);
+		uint8_t *const pau8ImageBinaryData = PUSH_TO_CALLSTACKTRACE_AND_RETURN(stbi_load(pacPathToTextureFile, &ri32Width, &ri32Height, &ri32Channels, 0), uint8_t*);
 		if (pau8ImageBinaryData) {
-			const Texture hTexture = CATCH_SIGNAL_AND_RETURN(alloc_texture_from_binary_data(pau8ImageBinaryData, static_cast<uint32_t>(ri32Width), static_cast<uint32_t>(ri32Height), static_cast<uint32_t>(ri32Channels)), Texture);
+			const Texture hTexture = PUSH_TO_CALLSTACKTRACE_AND_RETURN(alloc_texture_from_binary_data(pau8ImageBinaryData, static_cast<uint32_t>(ri32Width), static_cast<uint32_t>(ri32Height), static_cast<uint32_t>(ri32Channels)), Texture);
 			stbi_image_free(reinterpret_cast<void*>(pau8ImageBinaryData));
 			return hTexture;
 		}
@@ -165,7 +165,7 @@ namespace RE {
 	void free_texture_and_fix_dangling_pointers(const Texture hTexture) {
 		if (!hTexture)
 			return;
-		CATCH_SIGNAL(free_texture(hTexture));
+		PUSH_TO_CALLSTACKTRACE(free_texture(hTexture));
 		for (ListBatch_GameObject *const pGameObjectListBatch : gameObjectBatchList)
 			for (uint16_t u16Index = 0; u16Index < pGameObjectListBatch->size(); u16Index++) {
 				Texture &rTextureAttrib = pGameObjectListBatch->get(u16Index)->spriteRenderer.sprite.hTexture;

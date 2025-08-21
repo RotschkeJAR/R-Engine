@@ -71,7 +71,7 @@ namespace RE {
 			.eTextureRepetitionV = RE_TEXTURE_REPETITION_REPEAT,
 			.fMaxAnisotropy = 0.0f
 		};
-		return CATCH_SIGNAL_AND_RETURN(create_sprite_layout(initialSpriteLayoutSettings), SpriteLayout);
+		return PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_sprite_layout(initialSpriteLayoutSettings), SpriteLayout);
 	}
 
 	SpriteLayout create_sprite_layout(const SpriteLayoutSettings &rSettings) {
@@ -117,8 +117,8 @@ namespace RE {
 			RE_ERROR("Settings of a sprite layout cannot be changed, when the engine doesn't run");
 			return;
 		}
-		CATCH_SIGNAL(destroy_sprite_layout(rSpriteLayout));
-		rSpriteLayout = CATCH_SIGNAL_AND_RETURN(create_sprite_layout(rNewSettings), SpriteLayout);
+		PUSH_TO_CALLSTACKTRACE(destroy_sprite_layout(rSpriteLayout));
+		rSpriteLayout = PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_sprite_layout(rNewSettings), SpriteLayout);
 	}
 
 	void destroy_sprite_layout(const SpriteLayout spriteLayout) {

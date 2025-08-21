@@ -18,7 +18,7 @@ namespace RE {
 	}
 	Camera::~Camera() {
 		deactivate();
-		CATCH_SIGNAL(remove_camera(this));
+		PUSH_TO_CALLSTACKTRACE(remove_camera(this));
 	}
 
 	void Camera::update() {}
@@ -33,7 +33,7 @@ namespace RE {
 	}
 
 	void Camera::mark_deletable() {
-		CATCH_SIGNAL(mark_camera_deletable(this));
+		PUSH_TO_CALLSTACKTRACE(mark_camera_deletable(this));
 	}
 	
 	[[nodiscard]]

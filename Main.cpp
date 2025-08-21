@@ -167,18 +167,18 @@ class First : public Scene {
 				bCamActive = !bCamActive;
 			} else if (is_pressed(RE_INPUT_KEY_SPACE, 0)) {
 				bMsaaEight = !bMsaaEight;
-				CATCH_SIGNAL(set_msaa_mode(bMsaaEight ? RE_MSAA_MODE_8 : RE_MSAA_MODE_1));
+				PUSH_TO_CALLSTACKTRACE(set_msaa_mode(bMsaaEight ? RE_MSAA_MODE_8 : RE_MSAA_MODE_1));
 				if (bMsaaEight) {
 					const ScreenPercentageSettings constSized = {
 						.eMode = RE_SCREEN_PERCENTAGE_MODE_CONST_SIZE,
 						.settings = Vector2u{50, 50}
 					};
-					CATCH_SIGNAL(set_screen_percentage_settings(constSized));
+					PUSH_TO_CALLSTACKTRACE(set_screen_percentage_settings(constSized));
 				} else {
 					const ScreenPercentageSettings normal = {
 						.eMode = RE_SCREEN_PERCENTAGE_MODE_NORMAL
 					};
-					CATCH_SIGNAL(set_screen_percentage_settings(normal));
+					PUSH_TO_CALLSTACKTRACE(set_screen_percentage_settings(normal));
 				}
 			}
 			//PRINT_LN(get_fps_rate());
@@ -187,8 +187,8 @@ class First : public Scene {
 };
 
 int main_func() {
-	show_message_box_on_error(true);
-	enable_verbosity(true);
+	show_message_box_on_error(false);
+	enable_verbosity(false);
 	set_fps_limit(60);
 	SignalCatcher sigCatcher;
 	First first;

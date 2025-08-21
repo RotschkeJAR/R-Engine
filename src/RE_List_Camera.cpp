@@ -12,14 +12,14 @@ namespace RE {
 
 	void add_new_cameras() {
 		for (Camera *const pCam : newCameras)
-			CATCH_SIGNAL(add_camera(pCam));
+			PUSH_TO_CALLSTACKTRACE(add_camera(pCam));
 		newCameras.clear();
 	}
 
 	void delete_marked_cameras() {
 		bDeletingMarkedCameras = true;
 		for (Camera *pCam : deletableCameras)
-			CATCH_SIGNAL_DETAILED(delete pCam, append_to_string("Deleting camera ", pCam).c_str());
+			PUSH_TO_CALLSTACKTRACE_DETAILED(delete pCam, append_to_string("Deleting camera ", pCam).c_str());
 		deletableCameras.clear();
 		bDeletingMarkedCameras = false;
 	}
@@ -28,21 +28,21 @@ namespace RE {
 		size_t batchIndex = 0U;
 		for (ListBatch_Camera *const pBatch : cameraBatchList) {
 			if (pBatch->has_space()) {
-				CATCH_SIGNAL(pBatch->add(pCamera));
+				PUSH_TO_CALLSTACKTRACE(pBatch->add(pCamera));
 				break;
 			}
 			batchIndex++;
 		}
 		if (batchIndex == cameraBatchList.size()) {
-			ListBatch_Camera *const pNewBatch = CATCH_SIGNAL_AND_RETURN(new ListBatch_Camera(), ListBatch_Camera*);
-			CATCH_SIGNAL(pNewBatch->add(pCamera));
+			ListBatch_Camera *const pNewBatch = PUSH_TO_CALLSTACKTRACE_AND_RETURN(new ListBatch_Camera(), ListBatch_Camera*);
+			PUSH_TO_CALLSTACKTRACE(pNewBatch->add(pCamera));
 			cameraBatchList.push_back(pNewBatch);
 		}
 	}
 
 	void remove_camera(const Camera *const pCamera) {
 		for (ListBatch_Camera *const pBatch : cameraBatchList)
-			if (CATCH_SIGNAL_AND_RETURN(pBatch->remove(pCamera), bool))
+			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(pBatch->remove(pCamera), bool))
 				break;
 	}
 
@@ -64,7 +64,7 @@ namespace RE {
 
 	void update_cameras() {
 		for (ListBatch_Camera *const pBatch : cameraBatchList)
-			CATCH_SIGNAL(pBatch->update());
+			PUSH_TO_CALLSTACKTRACE(pBatch->update());
 	}
 
 	void end_cameras() {

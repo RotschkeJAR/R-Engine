@@ -9,30 +9,30 @@ namespace RE {
 	Scene *pCurrentScene = nullptr, *pNextScene = nullptr;
 
 	static void update_proc() {
-		CATCH_SIGNAL_DETAILED(pCurrentScene->update(), append_to_string("Scene ID: ", pCurrentScene->u32Id).c_str());
-		CATCH_SIGNAL(update_game_objects());
-		CATCH_SIGNAL(update_cameras());
+		PUSH_TO_CALLSTACKTRACE_DETAILED(pCurrentScene->update(), append_to_string("Scene ", pCurrentScene, ", ID: ", pCurrentScene->u32Id).c_str());
+		PUSH_TO_CALLSTACKTRACE(update_game_objects());
+		PUSH_TO_CALLSTACKTRACE(update_cameras());
 	}
 
 	static void end_proc() {
-		CATCH_SIGNAL_DETAILED(pCurrentScene->end(), append_to_string("Ending scene ", pCurrentScene, ", ID: ", pCurrentScene->u32Id).c_str());
-		CATCH_SIGNAL(end_game_objects());
-		CATCH_SIGNAL(end_cameras());
+		PUSH_TO_CALLSTACKTRACE_DETAILED(pCurrentScene->end(), append_to_string("Scene ", pCurrentScene, ", ID: ", pCurrentScene->u32Id).c_str());
+		PUSH_TO_CALLSTACKTRACE(end_game_objects());
+		PUSH_TO_CALLSTACKTRACE(end_cameras());
 	}
 
 	static void delete_proc() {
-		CATCH_SIGNAL(delete_marked_game_objects());
-		CATCH_SIGNAL(delete_marked_cameras());
+		PUSH_TO_CALLSTACKTRACE(delete_marked_game_objects());
+		PUSH_TO_CALLSTACKTRACE(delete_marked_cameras());
 	}
 
 	static void add_proc() {
-		CATCH_SIGNAL(add_new_game_objects());
-		CATCH_SIGNAL(add_new_cameras());
+		PUSH_TO_CALLSTACKTRACE(add_new_game_objects());
+		PUSH_TO_CALLSTACKTRACE(add_new_cameras());
 	}
 
 	[[nodiscard]]
 	bool is_object_active(const GameObject *const pGameObject) {
-		return CATCH_SIGNAL_AND_RETURN(!pGameObject->u32SceneParentId || pGameObject->u32SceneParentId == pCurrentScene->u32Id, bool);
+		return PUSH_TO_CALLSTACKTRACE_AND_RETURN(!pGameObject->u32SceneParentId || pGameObject->u32SceneParentId == pCurrentScene->u32Id, bool);
 	}
 
 	void game_logic_update() {
@@ -40,41 +40,41 @@ namespace RE {
 			// End old scene
 			WAIT_FOR_IDLE_VULKAN_DEVICE();
 			if (pCurrentScene)
-				CATCH_SIGNAL(end_proc());
+				PUSH_TO_CALLSTACKTRACE(end_proc());
 			while (!deletableGameObjects.empty())
-				CATCH_SIGNAL(delete_proc());
+				PUSH_TO_CALLSTACKTRACE(delete_proc());
 
 			pCurrentScene = pNextScene;
 
 			// Start new scene and game objects
-			CATCH_SIGNAL_DETAILED(pCurrentScene->start(), append_to_string("Starting scene ", pCurrentScene, ", ID: ", pCurrentScene->u32Id).c_str());
-			CATCH_SIGNAL(start_game_objects());
-			CATCH_SIGNAL(start_cameras());
+			PUSH_TO_CALLSTACKTRACE_DETAILED(pCurrentScene->start(), append_to_string("Scene ", pCurrentScene, ", ID: ", pCurrentScene->u32Id).c_str());
+			PUSH_TO_CALLSTACKTRACE(start_game_objects());
+			PUSH_TO_CALLSTACKTRACE(start_cameras());
 
 			// Start newly added objects
 			bool bNewObjectsAdded;
 			do {
 				for (GameObject *const pObj : newGameObjects)
 					if (is_object_active(pObj))
-						CATCH_SIGNAL_DETAILED(pObj->start(pCurrentScene), append_to_string("Starting new game object ", pObj, ", ID: ", pObj->u32OwnId).c_str());
+						PUSH_TO_CALLSTACKTRACE_DETAILED(pObj->start(pCurrentScene), append_to_string("Starting new game object ", pObj, ", ID: ", pObj->u32OwnId).c_str());
 				bNewObjectsAdded = !newGameObjects.empty();
-				CATCH_SIGNAL(add_proc());
+				PUSH_TO_CALLSTACKTRACE(add_proc());
 			} while (bNewObjectsAdded);
 		} else if (!pCurrentScene) {
 			RE_ERROR("There is no active scene at the moment");
 			return;
 		}
-		CATCH_SIGNAL(update_proc());
+		PUSH_TO_CALLSTACKTRACE(update_proc());
 		while (!deletableGameObjects.empty())
-			CATCH_SIGNAL(delete_proc());
+			PUSH_TO_CALLSTACKTRACE(delete_proc());
 		while (!newGameObjects.empty())
-			CATCH_SIGNAL(add_proc());
+			PUSH_TO_CALLSTACKTRACE(add_proc());
 	}
 
 	void last_game_logic_update() {
 		if (pCurrentScene)
-			CATCH_SIGNAL(end_proc());
-		CATCH_SIGNAL(delete_proc());
+			PUSH_TO_CALLSTACKTRACE(end_proc());
+		PUSH_TO_CALLSTACKTRACE(delete_proc());
 		pCurrentScene = nullptr;
 		pNextScene = nullptr;
 	}
@@ -87,7 +87,7 @@ namespace RE {
 	void set_next_scene(Scene *const pNextSceneParam) {
 		if (!pNextSceneParam)
 			return;
-		else if (CATCH_SIGNAL_AND_RETURN(!pNextSceneParam->u32Id, bool)) {
+		else if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(!pNextSceneParam->u32Id, bool)) {
 			RE_WARNING("A scene has been set for becoming the next one, but its ID is zero and therefore has been discarded");
 			return;
 		}
@@ -107,7 +107,7 @@ namespace RE {
 	[[nodiscard]]
 	uint32_t get_current_scene_id() {
 		Scene *const pCurrentScene = get_current_scene();
-		return pCurrentScene ? CATCH_SIGNAL_AND_RETURN(pCurrentScene->u32Id, uint32_t) : 0U;
+		return pCurrentScene ? PUSH_TO_CALLSTACKTRACE_AND_RETURN(pCurrentScene->u32Id, uint32_t) : 0;
 	}
 
 	[[nodiscard]]
@@ -123,7 +123,7 @@ namespace RE {
 	[[nodiscard]]
 	uint32_t get_next_scene_id() {
 		Scene *const pNextScene = get_next_scene();
-		return pNextScene ? CATCH_SIGNAL_AND_RETURN(pNextScene->u32Id, uint32_t) : 0U;
+		return pNextScene ? PUSH_TO_CALLSTACKTRACE_AND_RETURN(pNextScene->u32Id, uint32_t) : 0;
 	}
 
 	[[nodiscard]]

@@ -6,6 +6,7 @@ namespace RE {
 		const char *pacFile, *pacFunc, *pacDetails;
 		uint32_t u32Line;
 
+		AppLocation() : pacFile(nullptr), pacFunc(nullptr), pacDetails(nullptr), u32Line(0) {}
 		AppLocation(const char *const pacFile, const char *const pacFunc, const uint32_t u32Line, const char *const pacDetails) : pacFile(pacFile), pacFunc(pacFunc), pacDetails(pacDetails), u32Line(u32Line) {}
 		~AppLocation() {}
 	};

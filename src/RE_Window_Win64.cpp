@@ -21,18 +21,18 @@ namespace RE {
 			switch (win_uMsg) {
 				case WM_SIZE: /* resized */
 					RECT win_contentRect;
-					CATCH_SIGNAL(GetClientRect(win_hWndParam, &win_contentRect));
+					PUSH_TO_CALLSTACKTRACE(GetClientRect(win_hWndParam, &win_contentRect));
 					set_bits<uint8_t>(u8WindowFlagBits, win_wParam == SIZE_MINIMIZED, WINDOW_MINIMIZED_BIT);
 					set_bits<uint8_t>(u8WindowFlagBits, win_wParam == SIZE_MAXIMIZED, WINDOW_MAXIMIZED_BIT);
 					if (are_bits_true<uint8_t>(u8WindowFlagBits, WINDOW_MAXIMIZED_BIT))
 						PostMessageW(win_hWndParam, RE_WM_MAXIMIZED, (WPARAM) 0, (LPARAM) 0);
-					CATCH_SIGNAL(window_resize_event(static_cast<uint32_t>(win_contentRect.right - win_contentRect.left), static_cast<uint32_t>(win_contentRect.bottom - win_contentRect.top)));
+					PUSH_TO_CALLSTACKTRACE(window_resize_event(static_cast<uint32_t>(win_contentRect.right - win_contentRect.left), static_cast<uint32_t>(win_contentRect.bottom - win_contentRect.top)));
 					return 0;
 				case WM_CLOSE: /* close */
 					set_bits<uint8_t>(u8WindowFlagBits, true, WINDOW_CLOSE_FLAG_BIT);
 					return 0;
 				case WM_DESTROY: /* destroy window */
-					CATCH_SIGNAL(PostQuitMessage(0));
+					PUSH_TO_CALLSTACKTRACE(PostQuitMessage(0));
 					return 0;
 				case WM_GETMINMAXINFO: {
 					MINMAXINFO *win_pWindowSizeLimits = (MINMAXINFO*) win_lParam;
@@ -41,7 +41,7 @@ namespace RE {
 					MONITORINFO win_monitorInfo;
 					win_monitorInfo.cbSize = sizeof(MONITORINFO);
 					BOOL win_monitorInfoRetrieved;
-					CATCH_SIGNAL(win_monitorInfoRetrieved = GetMonitorInfoW(MonitorFromWindow(win_hWndParam, MONITOR_DEFAULTTOPRIMARY), &win_monitorInfo));
+					PUSH_TO_CALLSTACKTRACE(win_monitorInfoRetrieved = GetMonitorInfoW(MonitorFromWindow(win_hWndParam, MONITOR_DEFAULTTOPRIMARY), &win_monitorInfo));
 					if (win_monitorInfoRetrieved) {
 						const Vector2i monitorSize(win_monitorInfo.rcWork.right - win_monitorInfo.rcWork.left, win_monitorInfo.rcWork.bottom - win_monitorInfo.rcWork.top);
 						if (!are_bits_true<uint8_t>(u8WindowFlagBits, WINDOW_MAXIMIZED_BIT)) {
@@ -81,77 +81,77 @@ namespace RE {
 						default:
 							break;
 					}
-					CATCH_SIGNAL(input_event(key_from_virtual_keycode(static_cast<int64_t>(win_virtualKeyCode)), static_cast<uint32_t>(win_extScancode), (win_keyFlags & KF_UP) != KF_UP, bFallbackToInput));
+					PUSH_TO_CALLSTACKTRACE(input_event(key_from_virtual_keycode(static_cast<int64_t>(win_virtualKeyCode)), static_cast<uint32_t>(win_extScancode), (win_keyFlags & KF_UP) != KF_UP, bFallbackToInput));
 					} return 0;
 				case WM_CHAR: {
 					//const wchar_t a2wcCharacter[2] = {static_cast<wchar_t>(win_wParam), L'\0'};
 					} return 0;
 				case WM_LBUTTONDOWN: /* left mouse button pressed */
-					CATCH_SIGNAL(input_event(RE_INPUT_BUTTON_LEFT, 0, true, false));
-					CATCH_SIGNAL(SetCapture(win_hWndParam));
+					PUSH_TO_CALLSTACKTRACE(input_event(RE_INPUT_BUTTON_LEFT, 0, true, false));
+					PUSH_TO_CALLSTACKTRACE(SetCapture(win_hWndParam));
 					return 0;
 				case WM_LBUTTONUP: /* left mouse button released */
-					CATCH_SIGNAL(input_event(RE_INPUT_BUTTON_LEFT, 0, false, false));
-					CATCH_SIGNAL(ReleaseCapture());
+					PUSH_TO_CALLSTACKTRACE(input_event(RE_INPUT_BUTTON_LEFT, 0, false, false));
+					PUSH_TO_CALLSTACKTRACE(ReleaseCapture());
 					return 0;
 				case WM_RBUTTONDOWN: /* right mouse button pressed */
-					CATCH_SIGNAL(input_event(RE_INPUT_BUTTON_RIGHT, 0, true, false));
-					CATCH_SIGNAL(SetCapture(win_hWndParam));
+					PUSH_TO_CALLSTACKTRACE(input_event(RE_INPUT_BUTTON_RIGHT, 0, true, false));
+					PUSH_TO_CALLSTACKTRACE(SetCapture(win_hWndParam));
 					return 0;
 				case WM_RBUTTONUP: /* right mouse button released */
-					CATCH_SIGNAL(input_event(RE_INPUT_BUTTON_RIGHT, 0, false, false));
-					CATCH_SIGNAL(ReleaseCapture());
+					PUSH_TO_CALLSTACKTRACE(input_event(RE_INPUT_BUTTON_RIGHT, 0, false, false));
+					PUSH_TO_CALLSTACKTRACE(ReleaseCapture());
 					return 0;
 				case WM_MBUTTONDOWN: /* middle mouse button pressed */
-					CATCH_SIGNAL(input_event(RE_INPUT_BUTTON_MIDDLE, 0, true, false));
-					CATCH_SIGNAL(SetCapture(win_hWndParam));
+					PUSH_TO_CALLSTACKTRACE(input_event(RE_INPUT_BUTTON_MIDDLE, 0, true, false));
+					PUSH_TO_CALLSTACKTRACE(SetCapture(win_hWndParam));
 					return 0;
 				case WM_MBUTTONUP: /* middle mouse button released */
-					CATCH_SIGNAL(input_event(RE_INPUT_BUTTON_MIDDLE, 0, false, false));
-					CATCH_SIGNAL(ReleaseCapture());
+					PUSH_TO_CALLSTACKTRACE(input_event(RE_INPUT_BUTTON_MIDDLE, 0, false, false));
+					PUSH_TO_CALLSTACKTRACE(ReleaseCapture());
 					return 0;
 				case WM_MOUSEMOVE: { /* mouse moved */
 					const int32_t i32XPos = GET_X_LPARAM(win_lParam);
 					const int32_t i32YPos = GET_Y_LPARAM(win_lParam);
-					CATCH_SIGNAL(cursor_event(i32XPos, i32YPos));
+					PUSH_TO_CALLSTACKTRACE(cursor_event(i32XPos, i32YPos));
 					} return 0;
 				case WM_SETCURSOR:
 					if (LOWORD(win_lParam) == HTCLIENT) {
-						CATCH_SIGNAL(SetCursor(win_hCursor));
+						PUSH_TO_CALLSTACKTRACE(SetCursor(win_hCursor));
 						return TRUE;
 					}
 					break;
 				case WM_MOUSEWHEEL: { /* mouse wheel used/scrolled */
 					const int32_t deltaMouseWheel = GET_WHEEL_DELTA_WPARAM(win_wParam);
 					if (deltaMouseWheel > 0)
-						CATCH_SIGNAL(input_event(RE_INPUT_SCROLL_UP, 0, true, false));
+						PUSH_TO_CALLSTACKTRACE(input_event(RE_INPUT_SCROLL_UP, 0, true, false));
 					else
-						CATCH_SIGNAL(input_event(RE_INPUT_SCROLL_DOWN, 0, true, false));
+						PUSH_TO_CALLSTACKTRACE(input_event(RE_INPUT_SCROLL_DOWN, 0, true, false));
 					} return 0;
 				case RE_WM_MAXIMIZED:
 					{
 						MONITORINFO win_monitorInfo;
 						win_monitorInfo.cbSize = sizeof(MONITORINFO);
-						if (CATCH_SIGNAL_AND_RETURN(GetMonitorInfoW(MonitorFromWindow(win_hWndParam, MONITOR_DEFAULTTOPRIMARY), &win_monitorInfo), BOOL) == FALSE) {
+						if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(GetMonitorInfoW(MonitorFromWindow(win_hWndParam, MONITOR_DEFAULTTOPRIMARY), &win_monitorInfo), BOOL) == FALSE) {
 							RE_FATAL_ERROR("Failed getting monitor info, where the window is currently on, on Windows");
 							return 1;
 						}
 						const Vector2i monitorSize(std::abs(win_monitorInfo.rcWork.right - win_monitorInfo.rcWork.left), std::abs(win_monitorInfo.rcWork.bottom - win_monitorInfo.rcWork.top));
-						CATCH_SIGNAL(SetWindowPos(win_hWndParam, nullptr, 0, 0, monitorSize[0], monitorSize[1], SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOZORDER));
+						PUSH_TO_CALLSTACKTRACE(SetWindowPos(win_hWndParam, nullptr, 0, 0, monitorSize[0], monitorSize[1], SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOZORDER));
 					}
 					return 0;
 				default:
 					break;
 			}
 		}
-		return CATCH_SIGNAL_AND_RETURN(DefWindowProcW(win_hWndParam, win_uMsg, win_wParam, win_lParam), LRESULT);
+		return PUSH_TO_CALLSTACKTRACE_AND_RETURN(DefWindowProcW(win_hWndParam, win_uMsg, win_wParam, win_lParam), LRESULT);
 	}
 	
 	bool win64_create_window() {
-		win_hCursor = CATCH_SIGNAL_AND_RETURN(LoadCursorA(nullptr, IDC_ARROW), HCURSOR);
-		win_keyboardLayout = CATCH_SIGNAL_AND_RETURN(GetKeyboardLayout(0), HKL);
+		win_hCursor = PUSH_TO_CALLSTACKTRACE_AND_RETURN(LoadCursorA(nullptr, IDC_ARROW), HCURSOR);
+		win_keyboardLayout = PUSH_TO_CALLSTACKTRACE_AND_RETURN(GetKeyboardLayout(0), HKL);
 		if (!win_hInstance)
-			CATCH_SIGNAL(win_hInstance = GetModuleHandle(nullptr));
+			PUSH_TO_CALLSTACKTRACE(win_hInstance = GetModuleHandle(nullptr));
 		if (!win_hInstance) {
 			RE_FATAL_ERROR("Failed getting the HINSTANCE for window creation on Windows");
 			return false;
@@ -162,11 +162,11 @@ namespace RE {
 		win_WinClass.lpfnWndProc = win64_window_proc_callback;
 		win_WinClass.hInstance = win_hInstance;
 		win_WinClass.lpszClassName = WINDOW_CLASS_NAME;
-		if (CATCH_SIGNAL_AND_RETURN(RegisterClassExW(&win_WinClass), ATOM)) {
+		if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(RegisterClassExW(&win_WinClass), ATOM)) {
 			const POINT win_pointZero = {};
 			MONITORINFO win_primaryMonitorInfo;
 			win_primaryMonitorInfo.cbSize = sizeof(MONITORINFO);
-			const bool bMonitorInfoRetrieved = CATCH_SIGNAL_AND_RETURN(GetMonitorInfoW(MonitorFromPoint(win_pointZero, MONITOR_DEFAULTTOPRIMARY), &win_primaryMonitorInfo), BOOL) == TRUE;
+			const bool bMonitorInfoRetrieved = PUSH_TO_CALLSTACKTRACE_AND_RETURN(GetMonitorInfoW(MonitorFromPoint(win_pointZero, MONITOR_DEFAULTTOPRIMARY), &win_primaryMonitorInfo), BOOL) == TRUE;
 			if (bMonitorInfoRetrieved) {
 				const Vector<LONG, 2> monitorWorkSize = {
 					std::clamp<LONG>(std::abs(win_primaryMonitorInfo.rcWork.right - win_primaryMonitorInfo.rcWork.left), MIN_MONITOR_WIDTH_FOR_CALCULATION, MAX_MONITOR_WIDTH_FOR_CALCULATION),
@@ -178,53 +178,51 @@ namespace RE {
 					.right = monitorWorkSize[0] / 4 * 3,
 					.bottom = monitorWorkSize[1] / 4 * 3
 				};
-				CATCH_SIGNAL(AdjustWindowRect(&win_adjustableSize, WINDOW_STYLE_FLAGS, FALSE));
+				PUSH_TO_CALLSTACKTRACE(AdjustWindowRect(&win_adjustableSize, WINDOW_STYLE_FLAGS, FALSE));
 				windowSize[0] = win_adjustableSize.right - win_adjustableSize.left;
 				windowSize[1] = win_adjustableSize.bottom - win_adjustableSize.top;
-				CATCH_SIGNAL(win_hWindow = CreateWindowExW(0, WINDOW_CLASS_NAME, wideTitleStr.c_str(), WINDOW_STYLE_FLAGS, (monitorWorkSize[0] - windowSize[0]) / 2, (monitorWorkSize[1] - windowSize[1]) / 2, windowSize[0], windowSize[1], nullptr, nullptr, win_hInstance, nullptr));
+				PUSH_TO_CALLSTACKTRACE(win_hWindow = CreateWindowExW(0, WINDOW_CLASS_NAME, wideTitleStr.c_str(), WINDOW_STYLE_FLAGS, (monitorWorkSize[0] - windowSize[0]) / 2, (monitorWorkSize[1] - windowSize[1]) / 2, windowSize[0], windowSize[1], nullptr, nullptr, win_hInstance, nullptr));
 			} else {
-				CATCH_SIGNAL(win_hWindow = CreateWindowExW(0, WINDOW_CLASS_NAME, wideTitleStr.c_str(), WINDOW_STYLE_FLAGS, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, nullptr, nullptr, win_hInstance, nullptr));
+				PUSH_TO_CALLSTACKTRACE(win_hWindow = CreateWindowExW(0, WINDOW_CLASS_NAME, wideTitleStr.c_str(), WINDOW_STYLE_FLAGS, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, nullptr, nullptr, win_hInstance, nullptr));
 				if (win_hWindow) {
 					RECT win_windowRect;
-					if (CATCH_SIGNAL_AND_RETURN(GetWindowRect(win_hWindow, &win_windowRect), BOOL) == TRUE) {
+					if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(GetWindowRect(win_hWindow, &win_windowRect), BOOL) == TRUE) {
 						windowSize[0] = std::abs(win_windowRect.right - win_windowRect.left);
 						windowSize[1] = std::abs(win_windowRect.bottom - win_windowRect.top);
 					} else {
 						RE_FATAL_ERROR("Failed to get the window size, which was set by Windows for not getting the monitor size");
-						CATCH_SIGNAL(DestroyWindow(win_hWindow));
+						PUSH_TO_CALLSTACKTRACE(DestroyWindow(win_hWindow));
 						win_hWindow = nullptr;
 					}
 				}
 			}
 			if (win_hWindow) {
-				if (CATCH_SIGNAL_AND_RETURN(SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_UNAWARE), BOOL) == TRUE)
+				if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_UNAWARE), BOOL) == TRUE)
 					return true;
 				else
 					RE_FATAL_ERROR("Failed telling Windows R-Engine's DPI awareness");
-				CATCH_SIGNAL(DestroyWindow(win_hWindow));
+				PUSH_TO_CALLSTACKTRACE(DestroyWindow(win_hWindow));
 				win_hWindow = nullptr;
 			} else if (bMonitorInfoRetrieved)
 				RE_FATAL_ERROR("Failed creating window on Windows");
-			CATCH_SIGNAL(UnregisterClassW(WINDOW_CLASS_NAME, win_hInstance));
+			PUSH_TO_CALLSTACKTRACE(UnregisterClassW(WINDOW_CLASS_NAME, win_hInstance));
 		} else
 			RE_FATAL_ERROR("Failed registering class for window creation on Windows");
 		return false;
 	}
 	
 	void win64_destroy_window() {
-		CATCH_SIGNAL(DestroyWindow(win_hWindow));
-		CATCH_SIGNAL(UnregisterClassW(WINDOW_CLASS_NAME, win_hInstance));
+		PUSH_TO_CALLSTACKTRACE(DestroyWindow(win_hWindow));
+		PUSH_TO_CALLSTACKTRACE(UnregisterClassW(WINDOW_CLASS_NAME, win_hInstance));
 		win_hWindow = nullptr;
 	}
 
 	void win64_show_window() {
-		CATCH_SIGNAL(ShowWindow(win_hWindow, are_bits_true<uint8_t>(u8WindowFlagBits, WINDOW_VISIBLE_BIT)));
+		PUSH_TO_CALLSTACKTRACE(ShowWindow(win_hWindow, are_bits_true<uint8_t>(u8WindowFlagBits, WINDOW_VISIBLE_BIT)));
 	}
 
 	void win64_update_window_title() {
-		BOOL win_success;
-		CATCH_SIGNAL(win_success = SetWindowTextW(win_hWindow, convert_chars_to_wide(pacWindowTitle).c_str()));
-		if (!win_success)
+		if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(SetWindowTextW(win_hWindow, convert_chars_to_wide(pacWindowTitle).c_str()), BOOL) == FALSE)
 			RE_FATAL_ERROR("Failed updating the title in the window title bar on Windows");
 	}
 
@@ -232,11 +230,11 @@ namespace RE {
 		BOOL win_msgInQueue;
 		MSG win_msg;
 		do {
-			CATCH_SIGNAL(win_msgInQueue = PeekMessageW(&win_msg, win_hWindow, 0, 0, PM_REMOVE));
+			PUSH_TO_CALLSTACKTRACE(win_msgInQueue = PeekMessageW(&win_msg, win_hWindow, 0, 0, PM_REMOVE));
 			if (!win_msgInQueue || LOWORD(win_msg.message) == WM_QUIT)
 				break;
-			CATCH_SIGNAL(TranslateMessage(&win_msg));
-			CATCH_SIGNAL(DispatchMessageW(&win_msg)); /* calls window procedure */
+			PUSH_TO_CALLSTACKTRACE(TranslateMessage(&win_msg));
+			PUSH_TO_CALLSTACKTRACE(DispatchMessageW(&win_msg)); /* calls window procedure */
 		} while (win_msgInQueue);
 	}
 

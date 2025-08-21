@@ -9,7 +9,7 @@ namespace RE {
 		newGameObjects.push_back(this);
 	}
 	GameObject::~GameObject() {
-		CATCH_SIGNAL(remove_game_object(this));
+		PUSH_TO_CALLSTACKTRACE(remove_game_object(this));
 	}
 
 	void GameObject::mark_deletable() {

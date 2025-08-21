@@ -112,7 +112,7 @@ namespace RE {
 			case RE_INPUT_BUTTON_LEFT:
 			case RE_INPUT_BUTTON_RIGHT:
 			case RE_INPUT_BUTTON_MIDDLE:
-				CATCH_SIGNAL(set_bits<uint8_t>(u8MouseBuffer, bPressed, static_cast<uint8_t>(eEnteredInput - RE_INPUT_SCROLL_UP)));
+				PUSH_TO_CALLSTACKTRACE(set_bits<uint8_t>(u8MouseBuffer, bPressed, static_cast<uint8_t>(eEnteredInput - RE_INPUT_SCROLL_UP)));
 				if (pUpdateInputObject && bPressed) {
 					pUpdateInputObject->change_to_input(eEnteredInput);
 					pUpdateInputObject = nullptr;
@@ -194,7 +194,7 @@ namespace RE {
 	}
 
 	void update_input_buffers() {
-		CATCH_SIGNAL(prevCursorPosition.copy_from(cursorPosition));
+		PUSH_TO_CALLSTACKTRACE(prevCursorPosition.copy_from(cursorPosition));
 		std::copy(std::begin(au8KeyBuffer), std::end(au8KeyBuffer), std::begin(au8PrevKeyBuffer));
 		u8PrevMouseBuffer = u8MouseBuffer;
 		set_bits_in_range<uint8_t>(u8MouseBuffer, false, RE_INPUT_SCROLL_UP, RE_INPUT_SCROLL_DOWN + 1);

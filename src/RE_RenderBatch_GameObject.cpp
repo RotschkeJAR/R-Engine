@@ -9,12 +9,12 @@ namespace RE {
 	
 	RenderBatch_GameObject::RenderBatch_GameObject(ListBatch_GameObject &rGameObjectBatch) : rGameObjectBatch(rGameObjectBatch), vk_hStagingVertexBuffer(VK_NULL_HANDLE), vk_ahVertexBuffers{}, vk_hStagingVertexBufferMemory(VK_NULL_HANDLE), vk_ahVertexBufferMemories{}, pafVertices(nullptr), vk_transparentVerticesOffsetBytes(0) {
 		if (vk_hDevice)
-			CATCH_SIGNAL(init());
+			PUSH_TO_CALLSTACKTRACE(init());
 	}
 	
 	RenderBatch_GameObject::~RenderBatch_GameObject() {
 		if (vk_hDevice)
-			CATCH_SIGNAL(destroy());
+			PUSH_TO_CALLSTACKTRACE(destroy());
 	}
 	
 	bool RenderBatch_GameObject::init() {
@@ -72,12 +72,12 @@ namespace RE {
 		std::array<Sprite, RE_VK_RENDERABLE_RECTANGLES_COUNT> texturesToDraw;
 		for (uint16_t u16GameObjectIndex = 0; u16GameObjectIndex < rGameObjectBatch.size(); u16GameObjectIndex++) {
 			const GameObject *const pObject = rGameObjectBatch.get(u16GameObjectIndex);
-			if (!CATCH_SIGNAL_AND_RETURN(is_object_active(pObject), bool))
+			if (!PUSH_TO_CALLSTACKTRACE_AND_RETURN(is_object_active(pObject), bool))
 				continue;
 			float fTexId;
 			if (pObject->spriteRenderer.sprite.hTexture && pObject->spriteRenderer.sprite.hSpriteLayout) {
 				int16_t i16I;
-				CATCH_SIGNAL(submit_sprite(&pObject->spriteRenderer.sprite, i16I));
+				PUSH_TO_CALLSTACKTRACE(submit_sprite(&pObject->spriteRenderer.sprite, i16I));
 				fTexId = static_cast<float>(i16I);
 			} else
 				fTexId = -1.0f;

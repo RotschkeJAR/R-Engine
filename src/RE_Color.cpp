@@ -6,75 +6,76 @@ namespace RE {
 #define CLAMP_CHANNEL_VALUE(CHANNEL_FLOAT) std::clamp(CHANNEL_FLOAT, 0.0f, MAX_CHANNEL_VALUE)
 	
 	Color::Color() : a4fChannels{MAX_CHANNEL_VALUE, MAX_CHANNEL_VALUE, MAX_CHANNEL_VALUE, MAX_CHANNEL_VALUE} {}
-	Color::Color(Color &rCopyColor) : a4fChannels{rCopyColor.a4fChannels[0], rCopyColor.a4fChannels[1], rCopyColor.a4fChannels[2], rCopyColor.a4fChannels[3]} {}
+	Color::Color(const Color &rCopyColor) : a4fChannels{rCopyColor.a4fChannels[0], rCopyColor.a4fChannels[1], rCopyColor.a4fChannels[2], rCopyColor.a4fChannels[3]} {}
 	Color::~Color() {}
 
+	float Color::get_channel(const uint8_t u8ChannelIndex) const {
+		if (u8ChannelIndex < u8ColorChannelCount)
+			return a4fChannels[u8ChannelIndex];
+		else
+			RE_FATAL_ERROR("The channel index is not within the range [0, 3]: ", u8ChannelIndex);
+		return 0.0f;
+	}
+
 	void Color::set_channel(const uint8_t u8ChannelIndex, const float fNormal) {
-		switch (u8ChannelIndex) {
-			case 0:
-			case 1:
-			case 2:
-			case 3:
-				a4fChannels[u8ChannelIndex] = CLAMP_CHANNEL_VALUE(fNormal);
-				break;
-			default:
-				RE_ERROR("The channel index is not within the range [0, 3]: ", u8ChannelIndex);
-				break;
-		}
+		if (u8ChannelIndex < u8ColorChannelCount)
+			a4fChannels[u8ChannelIndex] = CLAMP_CHANNEL_VALUE(fNormal);
+		else
+			RE_FATAL_ERROR("The channel index is not within the range [0, 3]: ", u8ChannelIndex);
 	}
 
 	void Color::copy_from(const Color &rCopyColor) {
-		for (uint8_t u8Channel = 0U; u8Channel < 4U; u8Channel++)
+		for (uint8_t u8Channel = 0; u8Channel < u8ColorChannelCount; u8Channel++)
 			a4fChannels[u8Channel] = rCopyColor.a4fChannels[u8Channel];
 	}
 	
 	[[nodiscard]]
 	bool Color::equals(const Color &rCompareColor) const {
-		for (uint8_t u8Channel = 0U; u8Channel < 4U; u8Channel++)
+		for (uint8_t u8Channel = 0; u8Channel < u8ColorChannelCount; u8Channel++)
 			if (a4fChannels[u8Channel] != rCompareColor.a4fChannels[u8Channel])
 				return false;
 		return true;
 	}
 
 	void Color::set_red(const float fRed) {
-		a4fChannels[0] = CLAMP_CHANNEL_VALUE(fRed);
+		set_channel(0, fRed);
 	}
 	
 	[[nodiscard]]
 	float Color::get_red() const {
-		return a4fChannels[0];
+		return get_channel(0);
 	}
 	
 	void Color::set_green(const float fGreen) {
-		a4fChannels[1] = CLAMP_CHANNEL_VALUE(fGreen);
+		set_channel(1, fGreen);
 	}
 	
 	[[nodiscard]]
 	float Color::get_green() const {
-		return a4fChannels[1];
+		return get_channel(1);
 	}
 	
 	void Color::set_blue(const float fBlue) {
-		a4fChannels[2] = CLAMP_CHANNEL_VALUE(fBlue);
+		set_channel(2, fBlue);
 	}
 	
 	[[nodiscard]]
 	float Color::get_blue() const {
-		return a4fChannels[2];
+		return get_channel(2);
 	}
 	
 	void Color::set_alpha(const float fAlpha) {
-		a4fChannels[3] = CLAMP_CHANNEL_VALUE(fAlpha);
+		set_channel(3, fAlpha);
 	}
 	
 	[[nodiscard]]
 	float Color::get_alpha() const {
-		return a4fChannels[3];
+		return get_channel(3);
 	}
 
 	[[nodiscard]]
 	float Color::operator [](const uint32_t u32ChannelIndex) const {
-		if (u32ChannelIndex < 4)
+		if (u32ChannelIndex < u8ColorChannelCount)
 			return a4fChannels[u32ChannelIndex];
 		else {
 			RE_ERROR("The channel index range is [0, 3], but yours was ", u32ChannelIndex);

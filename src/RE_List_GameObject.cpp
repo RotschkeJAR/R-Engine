@@ -11,14 +11,14 @@ namespace RE {
 
 	void add_new_game_objects() {
 		for (GameObject *const pObject : newGameObjects)
-			CATCH_SIGNAL(add_game_object(pObject));
+			PUSH_TO_CALLSTACKTRACE(add_game_object(pObject));
 		newGameObjects.clear();
 	}
 
 	void delete_marked_game_objects() {
 		bDeletingMarkedGameObjects = true;
 		for (GameObject *const pObject : deletableGameObjects)
-			CATCH_SIGNAL_DETAILED(delete pObject, append_to_string("GameObject: ", pObject).c_str());
+			PUSH_TO_CALLSTACKTRACE_DETAILED(delete pObject, append_to_string("GameObject: ", pObject).c_str());
 		deletableGameObjects.clear();
 		bDeletingMarkedGameObjects = false;
 	}
@@ -27,21 +27,21 @@ namespace RE {
 		size_t batchIndex = 0U;
 		for (ListBatch_GameObject *pBatch : gameObjectBatchList) {
 			if (pBatch->has_space()) {
-				CATCH_SIGNAL_DETAILED(pBatch->add(pGameObject), append_to_string("Batch ", pBatch, " at index ", batchIndex).c_str());
+				PUSH_TO_CALLSTACKTRACE_DETAILED(pBatch->add(pGameObject), append_to_string("Batch ", pBatch, " at index ", batchIndex).c_str());
 				break;
 			}
 			batchIndex++;
 		}
 		if (batchIndex == gameObjectBatchList.size()) {
-			ListBatch_GameObject *pNewBatch = CATCH_SIGNAL_AND_RETURN(new ListBatch_GameObject(), ListBatch_GameObject*);
-			CATCH_SIGNAL(pNewBatch->add(pGameObject));
+			ListBatch_GameObject *pNewBatch = PUSH_TO_CALLSTACKTRACE_AND_RETURN(new ListBatch_GameObject(), ListBatch_GameObject*);
+			PUSH_TO_CALLSTACKTRACE(pNewBatch->add(pGameObject));
 			gameObjectBatchList.push_back(pNewBatch);
 		}
 	}
 	
 	void remove_game_object(const GameObject *const pGameObject) {
 		for (ListBatch_GameObject *pBatch : gameObjectBatchList)
-			if (CATCH_SIGNAL_AND_RETURN(pBatch->remove(pGameObject), bool)) {
+			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(pBatch->remove(pGameObject), bool)) {
 				if (pBatch->empty()) {
 					gameObjectBatchList.erase(std::find(gameObjectBatchList.begin(), gameObjectBatchList.end(), pBatch));
 					delete pBatch;
@@ -65,23 +65,23 @@ namespace RE {
 
 	void start_game_objects() {
 		for (ListBatch_GameObject *pBatch : gameObjectBatchList)
-			CATCH_SIGNAL(pBatch->start());
+			PUSH_TO_CALLSTACKTRACE(pBatch->start());
 	}
 
 	void update_game_objects() {
 		for (ListBatch_GameObject *pBatch : gameObjectBatchList)
-			CATCH_SIGNAL(pBatch->update());
+			PUSH_TO_CALLSTACKTRACE(pBatch->update());
 	}
 
 	void end_game_objects() {
 		for (ListBatch_GameObject *pBatch : gameObjectBatchList)
-			CATCH_SIGNAL(pBatch->end());
+			PUSH_TO_CALLSTACKTRACE(pBatch->end());
 	}
 
 	bool init_game_object_render_batches() {
 		size_t batchesInitializedCount = 0U;
 		for (ListBatch_GameObject *const pBatch : gameObjectBatchList)
-			if (!CATCH_SIGNAL_AND_RETURN(pBatch->renderBatch.init(), bool))
+			if (!PUSH_TO_CALLSTACKTRACE_AND_RETURN(pBatch->renderBatch.init(), bool))
 				break;
 			else
 				batchesInitializedCount++;
@@ -89,7 +89,7 @@ namespace RE {
 			size_t batchesDestroyedCount = 0U;
 			for (ListBatch_GameObject *const pBatch : gameObjectBatchList) {
 				if (batchesDestroyedCount < batchesInitializedCount)
-					CATCH_SIGNAL(pBatch->renderBatch.destroy());
+					PUSH_TO_CALLSTACKTRACE(pBatch->renderBatch.destroy());
 				else
 					break;
 				batchesDestroyedCount++;
@@ -101,22 +101,22 @@ namespace RE {
 
 	void destroy_game_object_render_batches() {
 		for (ListBatch_GameObject *const pBatch : gameObjectBatchList)
-			CATCH_SIGNAL(pBatch->renderBatch.destroy());
+			PUSH_TO_CALLSTACKTRACE(pBatch->renderBatch.destroy());
 	}
 
 	void load_game_object_vertices(bool &rbNeedsRender) {
 		for (ListBatch_GameObject *const pBatch : gameObjectBatchList)
-			CATCH_SIGNAL(pBatch->renderBatch.load_vertices(rbNeedsRender));
+			PUSH_TO_CALLSTACKTRACE(pBatch->renderBatch.load_vertices(rbNeedsRender));
 	}
 
 	void render_opaque_game_objects() {
 		for (ListBatch_GameObject *const pBatch : gameObjectBatchList)
-			CATCH_SIGNAL(pBatch->renderBatch.render_opaque());
+			PUSH_TO_CALLSTACKTRACE(pBatch->renderBatch.render_opaque());
 	}
 
 	void render_transparent_game_objects() {
 		for (ListBatch_GameObject *const pBatch : gameObjectBatchList)
-			CATCH_SIGNAL(pBatch->renderBatch.render_transparent());
+			PUSH_TO_CALLSTACKTRACE(pBatch->renderBatch.render_transparent());
 	}
 
 }

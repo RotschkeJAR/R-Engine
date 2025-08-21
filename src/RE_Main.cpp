@@ -22,21 +22,21 @@ namespace RE {
 			return;
 		}
 		
-		if (CATCH_SIGNAL_AND_RETURN(create_window(), bool)) {
-			if (CATCH_SIGNAL_AND_RETURN(init_vulkan_instance(), bool)) {
-				if (CATCH_SIGNAL_AND_RETURN(init_render_system(), bool)) {
-					if (CATCH_SIGNAL_AND_RETURN(init_renderer(), bool)) {
+		if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_window(), bool)) {
+			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(init_vulkan_instance(), bool)) {
+				if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(init_render_system(), bool)) {
+					if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(init_renderer(), bool)) {
 						std::chrono::high_resolution_clock::time_point currentFrameTime = std::chrono::high_resolution_clock::now(), lastFrameTime;
-						CATCH_SIGNAL(show_window(true));
+						PUSH_TO_CALLSTACKTRACE(show_window(true));
 						bRunning = true;
 
 						// Game loop
 						while (!should_window_close() && are_scenes_present() && !bErrorOccured) {
-							CATCH_SIGNAL(window_proc());
-							CATCH_SIGNAL(game_logic_update());
+							PUSH_TO_CALLSTACKTRACE(window_proc());
+							PUSH_TO_CALLSTACKTRACE(game_logic_update());
 							if (should_render()) {
-								CATCH_SIGNAL(refresh_swapchain());
-								CATCH_SIGNAL(render());
+								PUSH_TO_CALLSTACKTRACE(refresh_swapchain());
+								PUSH_TO_CALLSTACKTRACE(render());
 							}
 
 							lastFrameTime = currentFrameTime;
@@ -49,17 +49,17 @@ namespace RE {
 
 						// Termination
 						bRunning = false;
-						CATCH_SIGNAL(show_window(false));
-						CATCH_SIGNAL(last_game_logic_update());
+						PUSH_TO_CALLSTACKTRACE(show_window(false));
+						PUSH_TO_CALLSTACKTRACE(last_game_logic_update());
 
 						WAIT_FOR_IDLE_VULKAN_DEVICE();
-						CATCH_SIGNAL(destroy_renderer());
+						PUSH_TO_CALLSTACKTRACE(destroy_renderer());
 					}
-					CATCH_SIGNAL(destroy_render_system());
+					PUSH_TO_CALLSTACKTRACE(destroy_render_system());
 				}
-				CATCH_SIGNAL(destroy_vulkan_instance());
+				PUSH_TO_CALLSTACKTRACE(destroy_vulkan_instance());
 			}
-			CATCH_SIGNAL(destroy_window());
+			PUSH_TO_CALLSTACKTRACE(destroy_window());
 		}
 		fDeltaseconds = 0.0f;
 	}

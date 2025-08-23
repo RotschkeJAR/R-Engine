@@ -514,7 +514,7 @@ namespace RE {
 
 	template <typename T, uint32_t u32Dimensions>
 	class Vector final {
-		static_assert(u32Dimensions > 0, "A vector cannot have zero dimensions");
+		static_assert(u32Dimensions != 0, "A vector cannot have zero dimensions");
 
 		public:
 			std::array<T, u32Dimensions> data;
@@ -522,16 +522,15 @@ namespace RE {
 			Vector() : data{} {}
 			template <typename P, uint32_t u32CopyDimensions>
 			Vector(const Vector<P, u32CopyDimensions> &rCopyVector) {
-				if (u32Dimensions != u32CopyDimensions)
-					WARNING("The coordinates of this vector with ", u32Dimensions, " dimensions were copied from a vector with ", u32CopyDimensions, " dimensions");
 				for (uint32_t u32CoordinateIndex = 0; u32CoordinateIndex < u32CopyDimensions && u32CoordinateIndex < u32Dimensions; u32CoordinateIndex++)
 					data[u32CoordinateIndex] = static_cast<T>(rCopyVector.data[u32CoordinateIndex]);
 			}
 			template <typename... V>
 			Vector(const V... values) : data{} {
+				static_assert(sizeof...(values) <= u32Dimensions, "The vector gets more values for initialization, than its dimension allows to");
 				uint32_t u32Index = 0;
 				([&]() {
-					PUSH_TO_CALLSTACKTRACE_DETAILED(data[u32Index] = static_cast<T>(values), append_to_string("Index: ", u32Index).c_str());
+					data[u32Index] = static_cast<T>(values);
 					u32Index++;
 				} (), ...);
 			}

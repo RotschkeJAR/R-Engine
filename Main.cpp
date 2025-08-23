@@ -192,10 +192,10 @@ int main_func() {
 	set_fps_limit(60);
 	SignalCatcher sigCatcher;
 	First first;
-	second = new Second();
+	Second secondInStack;
+	second = &secondInStack;
 	set_next_scene(&first);
 	execute();
-	delete second;
 	if (clonus)
 		delete clonus;
 	return 0;

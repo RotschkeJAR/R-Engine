@@ -44,16 +44,10 @@ namespace RE {
 				}
 			}
 		};
-		constexpr VkVertexInputBindingDescription vk_aVertexInputBindingDescs[u32GraphicsPipelineCount] = {
-			{
-				.binding = 0,
-				.stride = RE_VK_OPAQUE_GAME_OBJECT_VERTEX_TOTAL_SIZE_BYTES,
-				.inputRate = VK_VERTEX_INPUT_RATE_VERTEX
-			}, {
-				.binding = 0,
-				.stride = RE_VK_TRANSPARENT_GAME_OBJECT_VERTEX_TOTAL_SIZE_BYTES,
-				.inputRate = VK_VERTEX_INPUT_RATE_VERTEX
-			}
+		constexpr VkVertexInputBindingDescription vk_vertexInputBindingDesc = {
+			.binding = 0,
+			.stride = RE_VK_GAME_OBJECT_VERTEX_TOTAL_SIZE_BYTES,
+			.inputRate = VK_VERTEX_INPUT_RATE_VERTEX
 		};
 		constexpr uint32_t u32VertexInputAttributeDescCount = 4;
 		constexpr VkVertexInputAttributeDescription vk_aaVertexInputAttributeDescs[u32GraphicsPipelineCount][u32VertexInputAttributeDescCount] = {
@@ -62,44 +56,44 @@ namespace RE {
 					.location = 0,
 					.binding = 0,
 					.format = VK_FORMAT_R32G32B32_SFLOAT,
-					.offset = RE_VK_OPAQUE_GAME_OBJECT_VERTEX_POSITION_OFFSET_BYTES
+					.offset = RE_VK_GAME_OBJECT_VERTEX_POSITION_OFFSET_BYTES
 				}, {
 					.location = 1,
 					.binding = 0,
 					.format = VK_FORMAT_R32G32B32_SFLOAT,
-					.offset = RE_VK_OPAQUE_GAME_OBJECT_VERTEX_COLOR_OFFSET_BYTES
+					.offset = RE_VK_GAME_OBJECT_VERTEX_COLOR_OFFSET_BYTES
 				}, {
 					.location = 2,
 					.binding = 0,
-					.format = VK_FORMAT_R32_SFLOAT,
-					.offset = RE_VK_OPAQUE_GAME_OBJECT_VERTEX_TEXTURE_ID_OFFSET_BYTES
+					.format = VK_FORMAT_R32_SINT,
+					.offset = RE_VK_GAME_OBJECT_VERTEX_TEXTURE_ID_OFFSET_BYTES
 				}, {
 					.location = 3,
 					.binding = 0,
 					.format = VK_FORMAT_R32G32_SFLOAT,
-					.offset = RE_VK_OPAQUE_GAME_OBJECT_VERTEX_TEXTURE_COORDS_OFFSET_BYTES
+					.offset = RE_VK_GAME_OBJECT_VERTEX_TEXTURE_COORDS_OFFSET_BYTES
 				}
 			}, {
 				{
 					.location = 0,
 					.binding = 0,
 					.format = VK_FORMAT_R32G32B32_SFLOAT,
-					.offset = RE_VK_TRANSPARENT_GAME_OBJECT_VERTEX_POSITION_OFFSET_BYTES
+					.offset = RE_VK_GAME_OBJECT_VERTEX_POSITION_OFFSET_BYTES
 				}, {
 					.location = 1,
 					.binding = 0,
 					.format = VK_FORMAT_R32G32B32A32_SFLOAT,
-					.offset = RE_VK_TRANSPARENT_GAME_OBJECT_VERTEX_COLOR_OFFSET_BYTES
+					.offset = RE_VK_GAME_OBJECT_VERTEX_COLOR_OFFSET_BYTES
 				}, {
 					.location = 2,
 					.binding = 0,
-					.format = VK_FORMAT_R32_SFLOAT,
-					.offset = RE_VK_TRANSPARENT_GAME_OBJECT_VERTEX_TEXTURE_ID_OFFSET_BYTES
+					.format = VK_FORMAT_R32_SINT,
+					.offset = RE_VK_GAME_OBJECT_VERTEX_TEXTURE_ID_OFFSET_BYTES
 				}, {
 					.location = 3,
 					.binding = 0,
 					.format = VK_FORMAT_R32G32_SFLOAT,
-					.offset = RE_VK_TRANSPARENT_GAME_OBJECT_VERTEX_TEXTURE_COORDS_OFFSET_BYTES
+					.offset = RE_VK_GAME_OBJECT_VERTEX_TEXTURE_COORDS_OFFSET_BYTES
 				}
 			}
 		};
@@ -107,13 +101,13 @@ namespace RE {
 			{
 				.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
 				.vertexBindingDescriptionCount = 1,
-				.pVertexBindingDescriptions = &vk_aVertexInputBindingDescs[0],
+				.pVertexBindingDescriptions = &vk_vertexInputBindingDesc,
 				.vertexAttributeDescriptionCount = u32VertexInputAttributeDescCount,
 				.pVertexAttributeDescriptions = vk_aaVertexInputAttributeDescs[0]
 			}, {
 				.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
 				.vertexBindingDescriptionCount = 1,
-				.pVertexBindingDescriptions = &vk_aVertexInputBindingDescs[1],
+				.pVertexBindingDescriptions = &vk_vertexInputBindingDesc,
 				.vertexAttributeDescriptionCount = u32VertexInputAttributeDescCount,
 				.pVertexAttributeDescriptions = vk_aaVertexInputAttributeDescs[1]
 			}

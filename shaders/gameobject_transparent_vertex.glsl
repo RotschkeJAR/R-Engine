@@ -2,11 +2,11 @@
 
 layout (location = 0) in vec3 inPosition;
 layout (location = 1) in vec4 inColor;
-layout (location = 2) in float inTexId;
+layout (location = 2) in int inTexId;
 layout (location = 3) in vec2 inTexCoords;
 
 layout (location = 0) out vec4 outColor;
-layout (location = 1) out float outTexId;
+layout (location = 1) flat out int outTexId;
 layout (location = 2) out vec2 outTexCoords;
 
 layout (binding = 0) uniform CameraUniformBuffer {

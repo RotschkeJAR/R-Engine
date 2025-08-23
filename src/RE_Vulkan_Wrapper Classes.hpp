@@ -22,12 +22,16 @@ namespace RE {
 			[[nodiscard]]
 			VkBuffer get_buffer() const;
 			[[nodiscard]]
+			const VkBuffer* get_buffer_ptr() const;
+			[[nodiscard]]
 			VkDeviceMemory get_memory() const;
 			[[nodiscard]]
 			bool is_valid() const;
 
 			[[nodiscard]]
 			operator VkBuffer() const;
+			[[nodiscard]]
+			operator const VkBuffer*() const;
 			[[nodiscard]]
 			operator VkDeviceMemory() const;
 	};
@@ -48,14 +52,14 @@ namespace RE {
 			[[nodiscard]]
 			VkCommandBuffer get_command_buffer() const;
 			[[nodiscard]]
-			VkCommandBuffer* get_command_buffer_ptr();
+			const VkCommandBuffer* get_command_buffer_ptr() const;
 			[[nodiscard]]
 			bool is_valid() const;
 
 			[[nodiscard]]
 			operator VkCommandBuffer() const;
 			[[nodiscard]]
-			operator VkCommandBuffer*();
+			operator const VkCommandBuffer*() const;
 	};
 
 	class Vulkan_Fence final {
@@ -71,10 +75,14 @@ namespace RE {
 			[[nodiscard]]
 			VkFence get_fence() const;
 			[[nodiscard]]
+			const VkFence* get_fence_ptr() const;
+			[[nodiscard]]
 			bool is_valid() const;
 
 			[[nodiscard]]
 			operator VkFence() const;
+			[[nodiscard]]
+			operator const VkFence*() const;
 	};
 
 }

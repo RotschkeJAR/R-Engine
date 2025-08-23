@@ -17,13 +17,15 @@ namespace RE {
 		i16TextureInUseCounter = 0;
 	}
 
-	void submit_sprite(const Sprite *const pSprite, int16_t &ri16TextureIndex) {
-		if (static_cast<uint16_t>(i16TextureInUseCounter) >= u16MaximumTextures)
+	void submit_sprite(const Sprite *const pSprite, int32_t &ri32TextureIndex) {
+		if (static_cast<uint16_t>(i16TextureInUseCounter) >= u16MaximumTextures) {
+			ri32TextureIndex = -1;
 			return;
+		}
 		PUSH_TO_CALLSTACKTRACE(vk_aTextureSamplersToDescriptorSet[i16TextureInUseCounter].sampler = reinterpret_cast<VkSampler>(pSprite->hSpriteLayout));
 		PUSH_TO_CALLSTACKTRACE(vk_aTextureSamplersToDescriptorSet[i16TextureInUseCounter].imageView = reinterpret_cast<TextureContainer*>(pSprite->hTexture)->vk_hImgView);
 		vk_aTextureSamplersToDescriptorSet[i16TextureInUseCounter].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		ri16TextureIndex = i16TextureInUseCounter;
+		ri32TextureIndex = i16TextureInUseCounter;
 		i16TextureInUseCounter++;
 	}
 

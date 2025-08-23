@@ -1,11 +1,13 @@
 #include "RE_Vulkan_Wrapper Functions.hpp"
+#include "RE_Vulkan_Wrapper Classes.hpp"
 #include "RE_Render System.hpp"
 
 namespace RE {
 
 	static std::vector<uint32_t> get_queue_family_indices(const uint32_t u32QueueCount, const uint32_t *const pau32Queues) {
 		std::vector<uint32_t> queueFamilies;
-		for (uint32_t u32QueueIndex = 0U; u32QueueIndex < u32QueueCount; u32QueueIndex++)
+		queueFamilies.reserve(u32QueueCount);
+		for (uint32_t u32QueueIndex = 0; u32QueueIndex < u32QueueCount; u32QueueIndex++)
 			if (pau32Queues[u32QueueIndex] != VK_QUEUE_FAMILY_IGNORED && std::find(queueFamilies.begin(), queueFamilies.end(), au32DeviceQueueFamilyIndices[pau32Queues[u32QueueIndex]]) == queueFamilies.end())
 				queueFamilies.push_back(au32DeviceQueueFamilyIndices[pau32Queues[u32QueueIndex]]);
 		return queueFamilies;
@@ -60,7 +62,7 @@ namespace RE {
 			.usage = vk_eUsages
 		};
 		std::vector<uint32_t> queueFamilyIndices = get_queue_family_indices(u32QueueCount, pau32Queues);
-		if (queueFamilyIndices.size() == 1U)
+		if (queueFamilyIndices.size() == 1)
 			vk_createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		else {
 			vk_createInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
@@ -71,7 +73,7 @@ namespace RE {
 			VkMemoryRequirements vk_memoryRequirements;
 			vkGetBufferMemoryRequirements(vk_hDevice, *vk_phBuffer, &vk_memoryRequirements);
 			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(alloc_required_memory(vk_memoryRequirements, vk_eMemoryPropertyFlags, vk_phMemory), bool)) {
-				if (vkBindBufferMemory(vk_hDevice, *vk_phBuffer, *vk_phMemory, 0UL) == VK_SUCCESS)
+				if (vkBindBufferMemory(vk_hDevice, *vk_phBuffer, *vk_phMemory, 0) == VK_SUCCESS)
 					return true;
 				else
 					RE_ERROR("Failed to bind memory to Vulkan buffer");
@@ -266,30 +268,38 @@ namespace RE {
 			.signalSemaphoreCount = u32SignalSemaphoreCount,
 			.pSignalSemaphores = vk_pahSignalSemaphores
 		};
-		const bool bSuccess = vkQueueSubmit(vk_hQueue, 1U, &vk_queueSubmitInfo, vk_hFence) == VK_SUCCESS;
+		const bool bSuccess = vkQueueSubmit(vk_hQueue, 1, &vk_queueSubmitInfo, vk_hFence) == VK_SUCCESS;
 		if (!bSuccess)
 			RE_ERROR("Failed submitting a task to a Vulkan queue");
 		return bSuccess;
 	}
 
-	bool signal_vulkan_semaphores(const uint32_t u32SemaphoreCount, const VkSemaphore *const vk_pahSemaphores) {
-		const bool bSuccess = submit_to_vulkan_queue(vk_ahDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], 0U, nullptr, nullptr, 1U, &vk_hDummyTransferCommandBuffer, u32SemaphoreCount, vk_pahSemaphores, VK_NULL_HANDLE);
+	bool signal_vulkan_binary_semaphores(const uint32_t u32SemaphoreCount, const VkSemaphore *const vk_pahSemaphores) {
+		const bool bSuccess = PUSH_TO_CALLSTACKTRACE_AND_RETURN(submit_to_vulkan_queue(vk_ahDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], 0, nullptr, nullptr, 1, &vk_hDummyTransferCommandBuffer, u32SemaphoreCount, vk_pahSemaphores, VK_NULL_HANDLE), bool);
 		if (!bSuccess)
 			RE_ERROR("Failed signaling semaphores");
 		return bSuccess;
 	}
 
 	bool signal_vulkan_fences(const uint32_t u32FenceCount, const VkFence *const vk_pahFences) {
-		for (uint32_t u32FenceIndex = 0U; u32FenceIndex < u32FenceCount; u32FenceIndex++)
-			if (!submit_to_vulkan_queue(vk_ahDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], 0U, nullptr, nullptr, 1U, &vk_hDummyTransferCommandBuffer, 0U, nullptr, vk_pahFences[u32FenceIndex])) {
+		for (uint32_t u32FenceIndex = 0; u32FenceIndex < u32FenceCount; u32FenceIndex++)
+			if (!PUSH_TO_CALLSTACKTRACE_AND_RETURN(submit_to_vulkan_queue(vk_ahDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], 0, nullptr, nullptr, 1, &vk_hDummyTransferCommandBuffer, 0, nullptr, vk_pahFences[u32FenceIndex]), bool)) {
 				RE_ERROR("Failed signaling fence at index ", u32FenceIndex);
 				return false;
 			}
 		return true;
 	}
 
+	bool wait_for_vulkan_binary_semaphores(const VkSemaphore *const vk_pahSemaphoresToWaitFor, const VkPipelineStageFlags *const vk_paeStagesToWaitAt, const uint32_t u32SemaphoreCount) {
+		Vulkan_Fence vulkanFence;
+		if (!PUSH_TO_CALLSTACKTRACE_AND_RETURN(submit_to_vulkan_queue(vk_ahDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], u32SemaphoreCount, vk_pahSemaphoresToWaitFor, vk_paeStagesToWaitAt, 1, &vk_hDummyTransferCommandBuffer, 0, nullptr, vulkanFence.get_fence()), bool))
+			return false;
+		PUSH_TO_CALLSTACKTRACE(vulkanFence.wait_for());
+		return true;
+	}
+
 	void vk_cmd_transit_image(const VkCommandBuffer vk_hCommandBuffer, const VkPipelineStageFlags vk_eSrcStageFlags, const VkPipelineStageFlags vk_eDstStageFlags, const VkDependencyFlags vk_eDependencyFlags, const VkAccessFlags vk_eSrcAccessFlags, const VkAccessFlags vk_eDstAccessFlags, const VkImageLayout vk_eOldLayout, const VkImageLayout vk_eNewLayout, const uint32_t u32SrcQueueIndex, const uint32_t u32DstQueueIndex, const VkImage vk_hImage, const VkImageAspectFlags vk_eAspectFlags, const uint32_t u32BaseMipLevel, const uint32_t u32MipLevelCount, const uint32_t u32BaseArrayLayer, const uint32_t u32ArrayLayerCount) {
-		std::vector<uint32_t> srcQueues = get_queue_family_indices(1U, &u32SrcQueueIndex), dstQueues = get_queue_family_indices(1U, &u32DstQueueIndex);
+		std::vector<uint32_t> srcQueues = get_queue_family_indices(1, &u32SrcQueueIndex), dstQueues = get_queue_family_indices(1, &u32DstQueueIndex);
 		const VkImageMemoryBarrier vk_imageTransit = {
 			.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
 			.srcAccessMask = vk_eSrcAccessFlags,
@@ -307,7 +317,7 @@ namespace RE {
 				.layerCount = u32ArrayLayerCount
 			}
 		};
-		vkCmdPipelineBarrier(vk_hCommandBuffer, vk_eSrcStageFlags, vk_eDstStageFlags, vk_eDependencyFlags, 0U, nullptr, 0U, nullptr, 1U, &vk_imageTransit);
+		vkCmdPipelineBarrier(vk_hCommandBuffer, vk_eSrcStageFlags, vk_eDstStageFlags, vk_eDependencyFlags, 0, nullptr, 0, nullptr, 1, &vk_imageTransit);
 	}
 
 	bool transit_image(const uint32_t u32QueueIndex, const VkPipelineStageFlags vk_eSrcStageFlags, const VkPipelineStageFlags vk_eDstStageFlags, const VkDependencyFlags vk_eDependencyFlags, const VkAccessFlags vk_eSrcAccessFlags, const VkAccessFlags vk_eDstAccessFlags, const VkImageLayout vk_eOldLayout, const VkImageLayout vk_eNewLayout, const uint32_t u32SrcQueueIndex, const uint32_t u32DstQueueIndex, const VkImage vk_hImage, const VkImageAspectFlags vk_eAspectFlags, const uint32_t u32BaseMipLevel, const uint32_t u32MipLevelCount, const uint32_t u32BaseArrayLayer, const uint32_t u32ArrayLayerCount, VkCommandBuffer *vk_phCommandBufferToFree, VkFence *vk_phFence) {
@@ -339,17 +349,17 @@ namespace RE {
 				}
 				return false;
 		}
-		if (alloc_vulkan_command_buffers(vk_ahCommandPools[u32CommandPoolIndex], VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1U, vk_phCommandBufferToFree)) {
+		if (alloc_vulkan_command_buffers(vk_ahCommandPools[u32CommandPoolIndex], VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1, vk_phCommandBufferToFree)) {
 			if (begin_recording_vulkan_command_buffer(*vk_phCommandBufferToFree, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr)) {
 				vk_cmd_transit_image(*vk_phCommandBufferToFree, vk_eSrcStageFlags, vk_eDstStageFlags, vk_eDependencyFlags, vk_eSrcAccessFlags, vk_eDstAccessFlags, vk_eOldLayout, vk_eNewLayout, u32SrcQueueIndex, u32DstQueueIndex, vk_hImage, vk_eAspectFlags, u32BaseMipLevel, u32MipLevelCount, u32BaseArrayLayer, u32ArrayLayerCount);
 				if (vkEndCommandBuffer(*vk_phCommandBufferToFree) == VK_SUCCESS) {
 					if (vk_phFence && *vk_phFence) {
-						if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(submit_to_vulkan_queue(vk_ahDeviceQueueFamilies[u32QueueIndex], 0U, nullptr, nullptr, 1U, vk_phCommandBufferToFree, 0U, nullptr, *vk_phFence), bool))
+						if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(submit_to_vulkan_queue(vk_ahDeviceQueueFamilies[u32QueueIndex], 0, nullptr, nullptr, 1, vk_phCommandBufferToFree, 0, nullptr, *vk_phFence), bool))
 							return true;
 						else
 							RE_ERROR("Failed to submit Vulkan command buffer to transit image and signal a fence");
 					} else {
-						if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(submit_to_vulkan_queue(vk_ahDeviceQueueFamilies[u32QueueIndex], 0U, nullptr, nullptr, 1U, vk_phCommandBufferToFree, 0U, nullptr, VK_NULL_HANDLE), bool)) {
+						if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(submit_to_vulkan_queue(vk_ahDeviceQueueFamilies[u32QueueIndex], 0, nullptr, nullptr, 1, vk_phCommandBufferToFree, 0, nullptr, VK_NULL_HANDLE), bool)) {
 							vkQueueWaitIdle(vk_ahDeviceQueueFamilies[u32QueueIndex]);
 							vkFreeCommandBuffers(vk_hDevice, vk_ahCommandPools[u32CommandPoolIndex], 1U, vk_phCommandBufferToFree);
 							*vk_phCommandBufferToFree = VK_NULL_HANDLE;

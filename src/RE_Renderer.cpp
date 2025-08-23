@@ -77,7 +77,7 @@ namespace RE {
 
 	std::array<VkCommandBuffer, RE_VK_FRAMES_IN_FLIGHT> vk_ahRenderCommandBuffers = {};
 
-	uint32_t u32SwapchainRenderImageIndex = 0;
+	uint32_t u32NextSwapchainSemaphoreIndex = 0;
 	uint8_t u8CurrentFrameInFlightIndex = 0;
 
 #define GET_VULKAN_MATRIX_ELEMENT_INDEX(COLUMN, LINE) (COLUMN * 4 + LINE)
@@ -655,7 +655,7 @@ namespace RE {
 	void render() {
 		vkWaitForFences(vk_hDevice, 1, &vk_ahRenderFences[u8CurrentFrameInFlightIndex], VK_TRUE, std::numeric_limits<uint64_t>::max());
 		uint32_t u32NextSwapchainImageIndex;
-		const VkResult vk_eSwapchainImageAcquireResult = vkAcquireNextImageKHR(vk_hDevice, vk_hSwapchain, std::numeric_limits<uint64_t>::max(), vk_pahSwapchainSemaphores[u32SwapchainRenderImageIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE], VK_NULL_HANDLE, &u32NextSwapchainImageIndex);
+		const VkResult vk_eSwapchainImageAcquireResult = vkAcquireNextImageKHR(vk_hDevice, vk_hSwapchain, std::numeric_limits<uint64_t>::max(), vk_pahSwapchainSemaphores[u32NextSwapchainSemaphoreIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE], VK_NULL_HANDLE, &u32NextSwapchainImageIndex);
 		switch (vk_eSwapchainImageAcquireResult) {
 			case VK_SUBOPTIMAL_KHR:
 			case VK_ERROR_OUT_OF_DATE_KHR:
@@ -808,17 +808,17 @@ namespace RE {
 			VK_PIPELINE_STAGE_TRANSFER_BIT
 		};
 		const std::array<VkSemaphore, u32RenderSemaphoresToWaitForCount> vk_ahWaitForSemaphoresBeforeRendering = {
-			vk_pahSwapchainSemaphores[u32SwapchainRenderImageIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE], 
+			vk_pahSwapchainSemaphores[u32NextSwapchainSemaphoreIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE], 
 			vk_ahRenderSemaphores[u8CurrentFrameInFlightIndex * RE_VK_SEMAPHORES_PER_FRAME_COUNT + RE_VK_TRANSFER_GAME_OBJECT_VERTICES_SEMAPHORE_INDEX]
 		};
-		if (!PUSH_TO_CALLSTACKTRACE_AND_RETURN(submit_to_vulkan_queue(vk_ahDeviceQueueFamilies[RE_VK_QUEUE_GRAPHICS_INDEX], u32RenderSemaphoresToWaitForCount, vk_ahWaitForSemaphoresBeforeRendering.data(), vk_aePipelinesToWaitForBeforeRendering.data(), 1, &vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], 1, &vk_pahSwapchainSemaphores[u32SwapchainRenderImageIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE + 1], vk_ahRenderFences[u8CurrentFrameInFlightIndex]), bool)) {
+		if (!PUSH_TO_CALLSTACKTRACE_AND_RETURN(submit_to_vulkan_queue(vk_ahDeviceQueueFamilies[RE_VK_QUEUE_GRAPHICS_INDEX], u32RenderSemaphoresToWaitForCount, vk_ahWaitForSemaphoresBeforeRendering.data(), vk_aePipelinesToWaitForBeforeRendering.data(), 1, &vk_ahRenderCommandBuffers[u8CurrentFrameInFlightIndex], 1, &vk_pahSwapchainSemaphores[u32NextSwapchainSemaphoreIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE + 1], vk_ahRenderFences[u8CurrentFrameInFlightIndex]), bool)) {
 			RE_FATAL_ERROR("Failed submitting the task for rendering everything to the Vulkan GPU");
 			return;
 		}
 		const VkPresentInfoKHR vk_presentInfo = {
 			.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
 			.waitSemaphoreCount = 1,
-			.pWaitSemaphores = &vk_pahSwapchainSemaphores[u32SwapchainRenderImageIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE + 1],
+			.pWaitSemaphores = &vk_pahSwapchainSemaphores[u32NextSwapchainSemaphoreIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE + 1],
 			.swapchainCount = 1,
 			.pSwapchains = &vk_hSwapchain,
 			.pImageIndices = &u32NextSwapchainImageIndex
@@ -828,16 +828,16 @@ namespace RE {
 			case VK_SUBOPTIMAL_KHR:
 			case VK_ERROR_OUT_OF_DATE_KHR:
 				mark_swapchain_dirty();
-				[[fallthrough]];
-			case VK_SUCCESS:
 				break;
 			default:
-				check_vulkan_result(vk_eSwapchainPresentResult, __FILE__, __func__, __LINE__);
-				RE_FATAL_ERROR("Failed to submit presentable Vulkan swapchain image");
-				return;
+				if (!check_vulkan_result(vk_eSwapchainPresentResult, __FILE__, __func__, __LINE__)) {
+					RE_FATAL_ERROR("Failed to submit presentable Vulkan swapchain image");
+					return;
+				}
+				break;
 		}
 		PUSH_TO_CALLSTACKTRACE(post_rendering_window_proc());
-		u32SwapchainRenderImageIndex = (u32SwapchainRenderImageIndex + 1) % u32SwapchainImageCount;
+		u32NextSwapchainSemaphoreIndex = (u32NextSwapchainSemaphoreIndex + 1) % u32SwapchainImageCount;
 		u8CurrentFrameInFlightIndex = (u8CurrentFrameInFlightIndex + 1) % RE_VK_FRAMES_IN_FLIGHT;
 	}
 
@@ -855,7 +855,12 @@ namespace RE {
 				return false;
 			}
 		if (screenPercentageSettings.eMode != RE_SCREEN_PERCENTAGE_MODE_CONST_SIZE)
-			PUSH_TO_CALLSTACKTRACE(create_world_render_images());
+			if (!PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_world_render_images(), bool)) {
+				for (uint32_t u8WorldRenderImageCollectionDeleteIndex = 0; u8WorldRenderImageCollectionDeleteIndex < RE_VK_SWAPCHAIN_SEMAPHORE_COUNT; u8WorldRenderImageCollectionDeleteIndex++)
+					vkDestroySemaphore(vk_hDevice, vk_pahSwapchainSemaphores[u8WorldRenderImageCollectionDeleteIndex], nullptr);
+				DELETE_ARRAY_SAFELY(vk_pahSwapchainSemaphores);
+				return false;
+			}
 		if (!pActiveCamera) {
 			vk_cameraViewport.width = vk_worldRenderImageExtent2D.width;
 			vk_cameraViewport.height = vk_worldRenderImageExtent2D.height;
@@ -866,6 +871,7 @@ namespace RE {
 			vk_cameraScissor.extent.width = vk_worldRenderImageExtent2D.width;
 			vk_cameraScissor.extent.height = vk_worldRenderImageExtent2D.height;
 		}
+		u32NextSwapchainSemaphoreIndex = 0;
 		return true;
 	}
 

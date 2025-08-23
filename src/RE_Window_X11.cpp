@@ -54,6 +54,7 @@ namespace RE {
 							x11_pSizes->min_height = MIN_WINDOW_HEIGHT;
 							PUSH_TO_CALLSTACKTRACE(x11_pSizes->max_width = monitorSize[0] + MAX_WINDOW_WIDTH_RELATIVE_TO_MONITOR);
 							PUSH_TO_CALLSTACKTRACE(x11_pSizes->max_height = monitorSize[1] + MAX_WINDOW_HEIGHT_RELATIVE_TO_MONITOR);
+							PRINT_LN(x11_pSizes->max_width, ", ", x11_pSizes->max_height);
 							PUSH_TO_CALLSTACKTRACE(XSetWMNormalHints(x11_pDisplay, x11_hWindow, x11_pSizes));
 							PUSH_TO_CALLSTACKTRACE(x11_hClose = XInternAtom(x11_pDisplay, "WM_DELETE_WINDOW", XFalse));
 							PUSH_TO_CALLSTACKTRACE(XSetWMProtocols(x11_pDisplay, x11_hWindow, &x11_hClose, 1));

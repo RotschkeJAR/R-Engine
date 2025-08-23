@@ -641,17 +641,17 @@ namespace RE {
 		// Create swapchain image views
 		vk_pahSwapchainImageViews = new VkImageView[u32SwapchainImageCount];
 		{
-			uint32_t u32SwapchainImageViewsCreated = 0;
-			while (u32SwapchainImageViewsCreated < u32SwapchainImageCount) {
-				if (!create_vulkan_image_view(vk_pahSwapchainImages[u32SwapchainImageViewsCreated], VK_IMAGE_VIEW_TYPE_2D, vk_eSwapchainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1, &vk_pahSwapchainImageViews[u32SwapchainImageViewsCreated])) {
-					RE_FATAL_ERROR("Failed to create Vulkan image view at index ", u32SwapchainImageViewsCreated);
-					break;
-				}
-				u32SwapchainImageViewsCreated++;
-				continue;
+			uint32_t u32SwapchainImageCreateIndex = 0;
+			while (u32SwapchainImageCreateIndex < u32SwapchainImageCount) {
+				if (create_vulkan_image_view(vk_pahSwapchainImages[u32SwapchainImageCreateIndex], VK_IMAGE_VIEW_TYPE_2D, vk_eSwapchainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1, &vk_pahSwapchainImageViews[u32SwapchainImageCreateIndex])) {
+					u32SwapchainImageCreateIndex++;
+					continue;
+				} else
+					RE_FATAL_ERROR("Failed to create Vulkan image view at swapchain image index ", u32SwapchainImageCreateIndex);
+				break;
 			}
-			if (u32SwapchainImageViewsCreated != u32SwapchainImageCount) {
-				for (uint32_t u32SwapchainImageDeleteIndex = 0; u32SwapchainImageDeleteIndex < u32SwapchainImageViewsCreated; u32SwapchainImageDeleteIndex++)
+			if (u32SwapchainImageCreateIndex != u32SwapchainImageCount) {
+				for (uint32_t u32SwapchainImageDeleteIndex = 0; u32SwapchainImageDeleteIndex < u32SwapchainImageCreateIndex; u32SwapchainImageDeleteIndex++)
 					vkDestroyImageView(vk_hDevice, vk_pahSwapchainImageViews[u32SwapchainImageDeleteIndex], nullptr);
 				DELETE_ARRAY_SAFELY(vk_pahSwapchainImages);
 				DELETE_ARRAY_SAFELY(vk_pahSwapchainImageViews);

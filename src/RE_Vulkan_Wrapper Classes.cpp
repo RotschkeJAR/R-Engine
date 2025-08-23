@@ -27,6 +27,11 @@ namespace RE {
 	VkBuffer Vulkan_Buffer::get_buffer() const {
 		return vk_hBuffer;
 	}
+
+	[[nodiscard]]
+	const VkBuffer* Vulkan_Buffer::get_buffer_ptr() const {
+		return &vk_hBuffer;
+	}
 	
 	[[nodiscard]]
 	VkDeviceMemory Vulkan_Buffer::get_memory() const {
@@ -41,6 +46,11 @@ namespace RE {
 	[[nodiscard]]
 	Vulkan_Buffer::operator VkBuffer() const {
 		return get_buffer();
+	}
+
+	[[nodiscard]]
+	Vulkan_Buffer::operator const VkBuffer*() const {
+		return get_buffer_ptr();
 	}
 
 	[[nodiscard]]
@@ -92,7 +102,7 @@ namespace RE {
 	}
 
 	[[nodiscard]]
-	VkCommandBuffer* Vulkan_CommandBuffer::get_command_buffer_ptr() {
+	const VkCommandBuffer* Vulkan_CommandBuffer::get_command_buffer_ptr() const {
 		return &vk_hCommandBuffer;
 	}
 
@@ -107,7 +117,7 @@ namespace RE {
 	}
 
 	[[nodiscard]]
-	Vulkan_CommandBuffer::operator VkCommandBuffer*() {
+	Vulkan_CommandBuffer::operator const VkCommandBuffer*() const {
 		return get_command_buffer_ptr();
 	}
 
@@ -130,12 +140,17 @@ namespace RE {
 	}
 
 	bool Vulkan_Fence::wait_for() const {
-		return vkWaitForFences(vk_hDevice, 1U, &vk_hFence, VK_TRUE, std::numeric_limits<uint64_t>::max());
+		return vkWaitForFences(vk_hDevice, 1, &vk_hFence, VK_TRUE, std::numeric_limits<uint64_t>::max());
 	}
 
 	[[nodiscard]]
 	VkFence Vulkan_Fence::get_fence() const {
 		return vk_hFence;
+	}
+
+	[[nodiscard]]
+	const VkFence* Vulkan_Fence::get_fence_ptr() const {
+		return &vk_hFence;
 	}
 	
 	[[nodiscard]]
@@ -146,6 +161,11 @@ namespace RE {
 	[[nodiscard]]
 	Vulkan_Fence::operator VkFence() const {
 		return get_fence();
+	}
+
+	[[nodiscard]]
+	Vulkan_Fence::operator const VkFence*() const {
+		return get_fence_ptr();
 	}
 
 }

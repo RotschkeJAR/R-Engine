@@ -33,9 +33,11 @@ namespace RE {
 
 	bool submit_to_vulkan_queue(VkQueue vk_hQueue, uint32_t u32WaitSemaphoreCount, const VkSemaphore *vk_pahWaitSemaphores, const VkPipelineStageFlags *vk_pahWaitOnPipelineStages, uint32_t u32CommandBufferCount, const VkCommandBuffer *vk_pahCommandBuffers, uint32_t u32SignalSemaphoreCount, const VkSemaphore *vk_pahSignalSemaphores, VkFence vk_hFence);
 
-	bool signal_vulkan_semaphores(uint32_t u32SemaphoreCount, const VkSemaphore *vk_pahSemaphores);
+	bool signal_vulkan_binary_semaphores(uint32_t u32SemaphoreCount, const VkSemaphore *vk_pahSemaphores);
 
 	bool signal_vulkan_fences(uint32_t u32FenceCount, const VkFence *vk_pahFences);
+
+	bool wait_for_vulkan_binary_semaphores(const VkSemaphore *const vk_pahSemaphoresToWaitFor, const VkPipelineStageFlags *const vk_paeStagesToWaitAt, const uint32_t u32SemaphoreCount);
 
 	void vk_cmd_transit_image(VkCommandBuffer vk_hCommandBuffer, VkPipelineStageFlags vk_eSrcStageFlags, VkPipelineStageFlags vk_eDstStageFlags, VkDependencyFlags vk_eDependencyFlags, VkAccessFlags vk_eSrcAccessFlags, VkAccessFlags vk_eDstAccessFlags, VkImageLayout vk_eOldLayout, VkImageLayout vk_eNewLayout, uint32_t u32SrcQueueIndex, uint32_t u32DstQueueIndex, VkImage vk_hImage, VkImageAspectFlags vk_eAspectFlags, uint32_t u32BaseMipLevel = 0, uint32_t u32MipLevelCount = 1, uint32_t u32BaseArrayLayer = 0, uint32_t u32ArrayLayerCount = 1);
 

@@ -558,7 +558,7 @@ namespace RE {
 			}
 
 			void fill(const T value) {
-				std::fill(std::begin(data), std::end(data), value);
+				data.fill(value);
 			}
 
 			void copy_from(const Vector &rCopyVector) {
@@ -566,8 +566,7 @@ namespace RE {
 					WARNING("Tried to copy values from one vector (", rCopyVector.get_dimensions(), ") to another (", u32Dimensions, "). This process has been terminated due to undefined behaviour");
 					return;
 				}
-				for (uint32_t u32Index = 0; u32Index < u32Dimensions; u32Index++)
-					data[u32Index] = rCopyVector[u32Index];
+				std::copy(rCopyVector.data.begin(), rCopyVector.data.end(), data.begin());
 			}
 
 			[[nodiscard]]

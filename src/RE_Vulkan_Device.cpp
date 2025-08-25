@@ -5,8 +5,6 @@
 
 namespace RE {
 
-#define INITIAL_VECTOR_SIZE_FOR_STORING_UNIQUE_QUEUE_IDS 7
-
 	VkDevice vk_hDevice = VK_NULL_HANDLE;
 
 	PFN_vkGetDeviceQueue pfn_vkGetDeviceQueue = nullptr;
@@ -1160,56 +1158,82 @@ namespace RE {
 		DEFINE_SIGNAL_GUARD(sigGuardCreateDevice);
 		constexpr uint32_t u32LogicalDeviceExtensionCount = 1;
 		const std::array<const char*, u32LogicalDeviceExtensionCount> a2cLogicalDeviceExtensions = {
-			{
-				VK_KHR_SWAPCHAIN_EXTENSION_NAME
-			}
+			VK_KHR_SWAPCHAIN_EXTENSION_NAME
 		};
 		uint32_t u32PhysicalDeviceQueueFamilyCount;
 		vkGetPhysicalDeviceQueueFamilyProperties(vk_hPhysicalDeviceSelected, &u32PhysicalDeviceQueueFamilyCount, nullptr);
-		VkQueueFamilyProperties *vk_pPhysicalDeviceQueueFamilyProperties = new VkQueueFamilyProperties[u32PhysicalDeviceQueueFamilyCount];
-		vkGetPhysicalDeviceQueueFamilyProperties(vk_hPhysicalDeviceSelected, &u32PhysicalDeviceQueueFamilyCount, vk_pPhysicalDeviceQueueFamilyProperties);
-		std::optional<uint32_t> graphicsQueueIndex, presentQueueIndex, transferQueueIndex;
+		VkQueueFamilyProperties *const vk_paPhysicalDeviceQueueFamilyProperties = new VkQueueFamilyProperties[u32PhysicalDeviceQueueFamilyCount];
+		vkGetPhysicalDeviceQueueFamilyProperties(vk_hPhysicalDeviceSelected, &u32PhysicalDeviceQueueFamilyCount, vk_paPhysicalDeviceQueueFamilyProperties);
+		std::optional<uint32_t> graphicsQueueIndex, presentQueueIndex, computeQueueIndex, transferQueueIndex;
 		std::vector<uint32_t> uniqueQueueIndices;
-		uniqueQueueIndices.reserve(INITIAL_VECTOR_SIZE_FOR_STORING_UNIQUE_QUEUE_IDS);
+		uniqueQueueIndices.reserve(4);
 		for (uint32_t u32PhysicalDeviceQueueFamilyIndex = 0; u32PhysicalDeviceQueueFamilyIndex < u32PhysicalDeviceQueueFamilyCount; u32PhysicalDeviceQueueFamilyIndex++) {
 			bool bQueueUseful = false;
-			// Get graphics-queue index
-			if (!graphicsQueueIndex.has_value() && (vk_pPhysicalDeviceQueueFamilyProperties[u32PhysicalDeviceQueueFamilyIndex].queueFlags & (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_TRANSFER_BIT))) {
+
+			// Get graphics-queue index, but avoid being a compute queue too
+			if (!graphicsQueueIndex.has_value() && (vk_paPhysicalDeviceQueueFamilyProperties[u32PhysicalDeviceQueueFamilyIndex].queueFlags & (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_TRANSFER_BIT))) {
 				graphicsQueueIndex = u32PhysicalDeviceQueueFamilyIndex;
 				// Check if graphics queue supports presenting too for better performance
 				VkBool32 surfaceSupportExists;
 				vkGetPhysicalDeviceSurfaceSupportKHR(vk_hPhysicalDeviceSelected, u32PhysicalDeviceQueueFamilyIndex, vk_hSurface, &surfaceSupportExists);
-				if (surfaceSupportExists)
+				if (surfaceSupportExists == VK_TRUE)
 					presentQueueIndex = u32PhysicalDeviceQueueFamilyIndex;
 				bQueueUseful = true;
 			}
+
 			// Get presenting-queue index
 			if (!presentQueueIndex.has_value()) {
 				VkBool32 surfaceSupportExists;
 				vkGetPhysicalDeviceSurfaceSupportKHR(vk_hPhysicalDeviceSelected, u32PhysicalDeviceQueueFamilyIndex, vk_hSurface, &surfaceSupportExists);
-				if (surfaceSupportExists)
+				if (surfaceSupportExists == VK_TRUE)
 					presentQueueIndex = u32PhysicalDeviceQueueFamilyIndex;
 				bQueueUseful = true;
 			}
-			// Get transfer-queue index, but avoid being a graphics queue too
-			if (!transferQueueIndex.has_value() && (vk_pPhysicalDeviceQueueFamilyProperties[u32PhysicalDeviceQueueFamilyIndex].queueFlags & VK_QUEUE_TRANSFER_BIT) && !(vk_pPhysicalDeviceQueueFamilyProperties[u32PhysicalDeviceQueueFamilyIndex].queueFlags & VK_QUEUE_GRAPHICS_BIT)) {
+
+			// Get compute-queue index, but avoid being a graphics-queue too
+			if (!computeQueueIndex.has_value() && (vk_paPhysicalDeviceQueueFamilyProperties[u32PhysicalDeviceQueueFamilyIndex].queueFlags & (VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT)) && !(vk_paPhysicalDeviceQueueFamilyProperties[u32PhysicalDeviceQueueFamilyIndex].queueFlags & VK_QUEUE_GRAPHICS_BIT)) {
+				computeQueueIndex = u32PhysicalDeviceQueueFamilyIndex;
+				bQueueUseful = true;
+			}
+
+			// Get transfer-queue index, but avoid being a graphics-queue too
+			if (!transferQueueIndex.has_value() && (vk_paPhysicalDeviceQueueFamilyProperties[u32PhysicalDeviceQueueFamilyIndex].queueFlags & VK_QUEUE_TRANSFER_BIT) && !(vk_paPhysicalDeviceQueueFamilyProperties[u32PhysicalDeviceQueueFamilyIndex].queueFlags & VK_QUEUE_GRAPHICS_BIT)) {
 				transferQueueIndex = u32PhysicalDeviceQueueFamilyIndex;
 				bQueueUseful = true;
 			}
+
 			// Check if current queue index is unique and add it
 			if (bQueueUseful && std::find(uniqueQueueIndices.begin(), uniqueQueueIndices.end(), u32PhysicalDeviceQueueFamilyIndex) == uniqueQueueIndices.end())
 				uniqueQueueIndices.push_back(u32PhysicalDeviceQueueFamilyIndex);
-			if (graphicsQueueIndex.has_value() && presentQueueIndex.has_value() && transferQueueIndex.has_value())
+			if (graphicsQueueIndex.has_value() && presentQueueIndex.has_value() && computeQueueIndex.has_value() && transferQueueIndex.has_value())
 				break;
 		}
+		delete[] vk_paPhysicalDeviceQueueFamilyProperties;
+
+		// If no compute-queue found, use graphics-queue instead, if it supports computing
+		if (!computeQueueIndex.has_value()) {
+			if (graphicsQueueIndex.has_value() && (vk_paPhysicalDeviceQueueFamilyProperties[graphicsQueueIndex.value()].queueFlags & VK_QUEUE_COMPUTE_BIT) != 0)
+				computeQueueIndex = graphicsQueueIndex.value();
+			else {
+				RE_FATAL_ERROR("Failed to find a Vulkan queue, that supports computing and transfering, on the selected GPU");
+				return false;
+			}
+		}
+
 		// If no transfer-queue found, use graphics-queue instead, which is also a transfer-queue
 		if (!transferQueueIndex.has_value())
 			transferQueueIndex = graphicsQueueIndex.value();
+
+		if (!graphicsQueueIndex.has_value() || !presentQueueIndex.has_value() || !computeQueueIndex.has_value() || !transferQueueIndex.has_value()) {
+			RE_FATAL_ERROR("Failed to get indices per Vulkan queue");
+			return false;
+		}
+
 		constexpr float fQueuePriority = 1.0f;
-		const size_t uniqueQueueIndexCount = uniqueQueueIndices.size();
-		VkDeviceQueueCreateInfo *const vk_paDeviceQueueCreateInfos = new VkDeviceQueueCreateInfo[uniqueQueueIndexCount];
+		const uint32_t u32UniqueQueueIndexCount = static_cast<uint32_t>(uniqueQueueIndices.size());
+		VkDeviceQueueCreateInfo *const vk_paDeviceQueueCreateInfos = new VkDeviceQueueCreateInfo[u32UniqueQueueIndexCount];
 		uint32_t u32UniqueQueueIndexIndex = 0;
-		for (uint32_t u32UniqueQueueIndex : uniqueQueueIndices) {
+		for (const uint32_t u32UniqueQueueIndex : uniqueQueueIndices) {
 			vk_paDeviceQueueCreateInfos[u32UniqueQueueIndexIndex].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 			vk_paDeviceQueueCreateInfos[u32UniqueQueueIndexIndex].pNext = nullptr;
 			vk_paDeviceQueueCreateInfos[u32UniqueQueueIndexIndex].flags = 0;
@@ -1226,7 +1250,7 @@ namespace RE {
 
 		const VkDeviceCreateInfo vk_deviceCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
-			.queueCreateInfoCount = static_cast<uint32_t>(uniqueQueueIndexCount),
+			.queueCreateInfoCount = u32UniqueQueueIndexCount,
 			.pQueueCreateInfos = vk_paDeviceQueueCreateInfos,
 			.enabledExtensionCount = u32LogicalDeviceExtensionCount,
 			.ppEnabledExtensionNames = static_cast<const char *const *>(a2cLogicalDeviceExtensions.data()),
@@ -1245,6 +1269,7 @@ namespace RE {
 		}
 		au32DeviceQueueFamilyIndices[RE_VK_QUEUE_GRAPHICS_INDEX] = graphicsQueueIndex.value();
 		au32DeviceQueueFamilyIndices[RE_VK_QUEUE_PRESENT_INDEX] = presentQueueIndex.value();
+		au32DeviceQueueFamilyIndices[RE_VK_QUEUE_COMPUTE_INDEX] = computeQueueIndex.value();
 		au32DeviceQueueFamilyIndices[RE_VK_QUEUE_TRANSFER_INDEX] = transferQueueIndex.value();
 		return true;
 	}

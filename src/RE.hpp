@@ -554,7 +554,7 @@ namespace RE {
 
 			[[nodiscard]]
 			T length() const {
-				return PUSH_TO_CALLSTACKTRACE_AND_RETURN(nth_root<T>(static_cast<T>(u32Dimensions), sum()), T);
+				return nth_root<T>(static_cast<T>(u32Dimensions), sum());
 			}
 
 			void fill(const T value) {
@@ -573,7 +573,7 @@ namespace RE {
 			bool equals(const Vector &rCompareVector) const {
 				if (u32Dimensions != rCompareVector.get_dimensions())
 					return false;
-				for (uint32_t u32Index = 0U; u32Index < u32Dimensions; u32Index++)
+				for (uint32_t u32Index = 0; u32Index < u32Dimensions; u32Index++)
 					if (data[u32Index] != rCompareVector[u32Index])
 						return false;
 				return true;
@@ -867,6 +867,14 @@ namespace RE {
 	struct ScreenPercentageSettings final {
 		ScreenPercentageMode eMode;
 		std::variant<float, Vector2u> settings;
+
+		ScreenPercentageSettings();
+		ScreenPercentageSettings(ScreenPercentageMode eMode);
+		ScreenPercentageSettings(float fScale);
+		ScreenPercentageSettings(const Vector2u &rConstSize);
+		ScreenPercentageSettings(ScreenPercentageMode eMode, const std::variant<float, Vector2u> &rSettings);
+		ScreenPercentageSettings(const ScreenPercentageSettings &rCopy);
+		~ScreenPercentageSettings();
 	};
 
 	struct SpriteLayoutSettings final {
@@ -875,8 +883,20 @@ namespace RE {
 		TextureFilter eMipmapFilter;
 		TextureRepetition eTextureRepetitionU;
 		TextureRepetition eTextureRepetitionV;
-		float fMaxAnisotropy; // must be equal or greater than 1, otherwise anisotropy is disabled
+		float fMaxAnisotropy; // must be equal or greater than 1, otherwise anisotropic filtering is disabled
 		BorderColor eBorderColor;
+
+		SpriteLayoutSettings();
+		SpriteLayoutSettings(TextureFilter eMagFilter);
+		SpriteLayoutSettings(TextureFilter eMagFilter, TextureFilter eMinFilter);
+		SpriteLayoutSettings(TextureFilter eMagFilter, TextureFilter eMinFilter, TextureFilter eMipmapFilter);
+		SpriteLayoutSettings(TextureRepetition eTextureRepetitionU);
+		SpriteLayoutSettings(TextureRepetition eTextureRepetitionU, TextureRepetition eTextureRepetitionV);
+		SpriteLayoutSettings(float fMaxAnisotropy);
+		SpriteLayoutSettings(BorderColor eBorderColor);
+		SpriteLayoutSettings(TextureFilter eMagFilter, TextureFilter eMinFilter, TextureFilter eMipmapFilter, TextureRepetition eTextureRepetitionU, TextureRepetition eTextureRepetitionV, float fMaxAnisotropy, BorderColor eBorderColor);
+		SpriteLayoutSettings(const SpriteLayoutSettings &rCopy);
+		~SpriteLayoutSettings();
 	};
 
 	// Window

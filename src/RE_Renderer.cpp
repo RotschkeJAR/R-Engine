@@ -33,9 +33,7 @@ namespace RE {
 	VkRect2D vk_cameraScissor;
 	VkExtent2D vk_worldRenderImageExtent2D;
 
-	ScreenPercentageSettings screenPercentageSettings = {
-		.eMode = RE_SCREEN_PERCENTAGE_MODE_NORMAL
-	};
+	ScreenPercentageSettings screenPercentageSettings(RE_SCREEN_PERCENTAGE_MODE_NORMAL);
 
 	VkSampleCountFlagBits vk_eMsaaCount = VK_SAMPLE_COUNT_1_BIT;
 	std::array<VkImage, RE_VK_FRAMES_IN_FLIGHT> vk_ahSingleSampledWorldRenderImages = {};

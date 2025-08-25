@@ -169,15 +169,10 @@ class First : public Scene {
 				bMsaaEight = !bMsaaEight;
 				PUSH_TO_CALLSTACKTRACE(set_msaa_mode(bMsaaEight ? RE_MSAA_MODE_8 : RE_MSAA_MODE_1));
 				if (bMsaaEight) {
-					const ScreenPercentageSettings constSized = {
-						.eMode = RE_SCREEN_PERCENTAGE_MODE_CONST_SIZE,
-						.settings = Vector2u{50, 50}
-					};
+					const ScreenPercentageSettings constSized(Vector2u{50, 50});
 					PUSH_TO_CALLSTACKTRACE(set_screen_percentage_settings(constSized));
 				} else {
-					const ScreenPercentageSettings normal = {
-						.eMode = RE_SCREEN_PERCENTAGE_MODE_NORMAL
-					};
+					const ScreenPercentageSettings normal;
 					PUSH_TO_CALLSTACKTRACE(set_screen_percentage_settings(normal));
 				}
 			}

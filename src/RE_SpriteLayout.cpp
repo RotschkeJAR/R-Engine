@@ -63,14 +63,7 @@ namespace RE {
 	}
 	
 	SpriteLayout create_sprite_layout() {
-		const SpriteLayoutSettings initialSpriteLayoutSettings = {
-			.eMagFilter = RE_TEXTURE_FILTER_LINEAR,
-			.eMinFilter = RE_TEXTURE_FILTER_LINEAR,
-			.eMipmapFilter = RE_TEXTURE_FILTER_LINEAR,
-			.eTextureRepetitionU = RE_TEXTURE_REPETITION_REPEAT,
-			.eTextureRepetitionV = RE_TEXTURE_REPETITION_REPEAT,
-			.fMaxAnisotropy = 0.0f
-		};
+		const SpriteLayoutSettings initialSpriteLayoutSettings;
 		return PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_sprite_layout(initialSpriteLayoutSettings), SpriteLayout);
 	}
 

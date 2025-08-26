@@ -866,7 +866,10 @@ namespace RE {
 
 	struct ScreenPercentageSettings final {
 		ScreenPercentageMode eMode;
-		std::variant<float, Vector2u> settings;
+		union {
+			float fScale;
+			Vector2u constSize;
+		};
 
 		ScreenPercentageSettings();
 		ScreenPercentageSettings(ScreenPercentageMode eMode);
@@ -875,6 +878,14 @@ namespace RE {
 		ScreenPercentageSettings(ScreenPercentageMode eMode, const std::variant<float, Vector2u> &rSettings);
 		ScreenPercentageSettings(const ScreenPercentageSettings &rCopy);
 		~ScreenPercentageSettings();
+		void copy_from(const ScreenPercentageSettings &rCopy);
+		[[nodiscard]]
+		bool equals(const ScreenPercentageSettings &rCompare) const;
+		void operator =(const ScreenPercentageSettings &rCopy);
+		[[nodiscard]]
+		bool operator ==(const ScreenPercentageSettings &rCompare) const;
+		[[nodiscard]]
+		bool operator !=(const ScreenPercentageSettings &rCompare) const;
 	};
 
 	struct SpriteLayoutSettings final {
@@ -897,6 +908,14 @@ namespace RE {
 		SpriteLayoutSettings(TextureFilter eMagFilter, TextureFilter eMinFilter, TextureFilter eMipmapFilter, TextureRepetition eTextureRepetitionU, TextureRepetition eTextureRepetitionV, float fMaxAnisotropy, BorderColor eBorderColor);
 		SpriteLayoutSettings(const SpriteLayoutSettings &rCopy);
 		~SpriteLayoutSettings();
+		void copy_from(const SpriteLayoutSettings &rCopy);
+		[[nodiscard]]
+		bool equals(const SpriteLayoutSettings &rCompare) const;
+		void operator =(const SpriteLayoutSettings &rCopy);
+		[[nodiscard]]
+		bool operator ==(const SpriteLayoutSettings &rCompare) const;
+		[[nodiscard]]
+		bool operator !=(const SpriteLayoutSettings &rCompare) const;
 	};
 
 	// Window

@@ -163,14 +163,14 @@ namespace RE {
 				break;
 			case RE_SCREEN_PERCENTAGE_MODE_SCALED:
 				vk_worldRenderImageExtent2D = {
-					.width = static_cast<uint32_t>(std::round(vk_swapchainResolution.width * std::get<float>(screenPercentageSettings.settings))),
-					.height = static_cast<uint32_t>(std::round(vk_swapchainResolution.height * std::get<float>(screenPercentageSettings.settings)))
+					.width = static_cast<uint32_t>(std::round(vk_swapchainResolution.width * screenPercentageSettings.fScale)),
+					.height = static_cast<uint32_t>(std::round(vk_swapchainResolution.height * screenPercentageSettings.fScale))
 				};
 				break;
 			case RE_SCREEN_PERCENTAGE_MODE_CONST_SIZE:
 				vk_worldRenderImageExtent2D = {
-					.width = std::get<Vector2u>(screenPercentageSettings.settings)[0],
-					.height = std::get<Vector2u>(screenPercentageSettings.settings)[1]
+					.width = screenPercentageSettings.constSize[0],
+					.height = screenPercentageSettings.constSize[1]
 				};
 				break;
 		}
@@ -906,12 +906,12 @@ namespace RE {
 				bRequiresRecreatingRenderPass = true;
 				break;
 			case RE_SCREEN_PERCENTAGE_MODE_SCALED:
-				if (screenPercentageSettings.eMode == RE_SCREEN_PERCENTAGE_MODE_SCALED && std::get<float>(screenPercentageSettings.settings) == std::get<float>(rNewSettings.settings))
+				if (screenPercentageSettings.eMode == RE_SCREEN_PERCENTAGE_MODE_SCALED && screenPercentageSettings.fScale == rNewSettings.fScale)
 					return;
 				bRequiresRecreatingRenderPass = screenPercentageSettings.eMode == RE_SCREEN_PERCENTAGE_MODE_NORMAL;
 				break;
 			case RE_SCREEN_PERCENTAGE_MODE_CONST_SIZE:
-				if (screenPercentageSettings.eMode == RE_SCREEN_PERCENTAGE_MODE_CONST_SIZE && std::get<Vector2u>(screenPercentageSettings.settings) == std::get<Vector2u>(rNewSettings.settings))
+				if (screenPercentageSettings.eMode == RE_SCREEN_PERCENTAGE_MODE_CONST_SIZE && screenPercentageSettings.constSize == rNewSettings.constSize)
 					return;
 				bRequiresRecreatingRenderPass = screenPercentageSettings.eMode == RE_SCREEN_PERCENTAGE_MODE_NORMAL;
 				break;

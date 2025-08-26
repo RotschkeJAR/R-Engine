@@ -14,4 +14,33 @@ namespace RE {
 	SpriteLayoutSettings::SpriteLayoutSettings(const SpriteLayoutSettings &rCopy) : SpriteLayoutSettings(rCopy.eMagFilter, rCopy.eMinFilter, rCopy.eMipmapFilter, rCopy.eTextureRepetitionU, rCopy.eTextureRepetitionV, rCopy.fMaxAnisotropy, rCopy.eBorderColor) {}
 	SpriteLayoutSettings::~SpriteLayoutSettings() {}
 
+	void SpriteLayoutSettings::copy_from(const SpriteLayoutSettings &rCopy) {
+		eMagFilter = rCopy.eMagFilter;
+		eMinFilter = rCopy.eMinFilter;
+		eMipmapFilter = rCopy.eMipmapFilter;
+		eTextureRepetitionU = rCopy.eTextureRepetitionU;
+		eTextureRepetitionV = rCopy.eTextureRepetitionV;
+		fMaxAnisotropy = rCopy.fMaxAnisotropy;
+		eBorderColor = rCopy.eBorderColor;
+	}
+	
+	[[nodiscard]]
+	bool SpriteLayoutSettings::equals(const SpriteLayoutSettings &rCompare) const {
+		return eMagFilter == rCompare.eMagFilter && eMinFilter == rCompare.eMinFilter && eMipmapFilter == rCompare.eMipmapFilter && eTextureRepetitionU == rCompare.eTextureRepetitionU && eTextureRepetitionV == rCompare.eTextureRepetitionV && fMaxAnisotropy == rCompare.fMaxAnisotropy && eBorderColor == rCompare.eBorderColor;
+	}
+	
+	void SpriteLayoutSettings::operator =(const SpriteLayoutSettings &rCopy) {
+		copy_from(rCopy);
+	}
+	
+	[[nodiscard]]
+	bool SpriteLayoutSettings::operator ==(const SpriteLayoutSettings &rCompare) const {
+		return equals(rCompare);
+	}
+	
+	[[nodiscard]]
+	bool SpriteLayoutSettings::operator !=(const SpriteLayoutSettings &rCompare) const {
+		return !equals(rCompare);
+	}
+
 }

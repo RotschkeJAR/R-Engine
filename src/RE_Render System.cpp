@@ -1,4 +1,5 @@
 #include "RE_Render System.hpp"
+#include "RE_Render System_Scheduler.hpp"
 #include "RE_Renderer.hpp"
 #include "RE_Window.hpp"
 #include "RE_Main.hpp"
@@ -18,8 +19,6 @@ namespace RE {
 	VkPhysicalDeviceLimits vk_physicalDeviceLimits = {};
 	VkPhysicalDeviceFeatures vk_physicalDeviceFeatures = {};
 	VkPhysicalDeviceMemoryProperties vk_physicalDeviceMemoryProperties = {};
-	std::array<VkQueue, RE_VK_QUEUE_COUNT> vk_ahDeviceQueueFamilies = {};
-	std::array<uint32_t, RE_VK_QUEUE_COUNT> au32DeviceQueueFamilyIndices = {};
 	VkSurfaceKHR vk_hSurface = VK_NULL_HANDLE;
 	VkSurfaceCapabilitiesKHR vk_surfaceCapabilities = {};
 	uint32_t u32SurfaceFormatsAvailableCount = 0;
@@ -32,9 +31,6 @@ namespace RE {
 	uint32_t u32SwapchainImageCount = 0;
 	VkImage *vk_pahSwapchainImages = nullptr;
 	VkImageView *vk_pahSwapchainImageViews = nullptr;
-	std::array<VkCommandPool, RE_VK_COMMAND_POOL_COUNT> vk_ahCommandPools = {};
-	VkCommandBuffer vk_hDummyTransferCommandBuffer = VK_NULL_HANDLE;
-	VkFormat vk_eDepthStencilBufferFormat = VK_FORMAT_UNDEFINED;
 
 #define SWAPCHAIN_DIRTY_BIT 0
 #define VSYNC_SETTING_BIT 1
@@ -44,14 +40,14 @@ namespace RE {
 
 	static void select_best_physical_vulkan_device() {
 		int32_t i32BestDeviceScore = std::numeric_limits<int32_t>::min();
-		for (uint32_t i = 0; i < u32PhysicalDevicesAvailableCount; i++) {
+		for (uint32_t u32PhysicalDeviceAvailableIndex = 0; u32PhysicalDeviceAvailableIndex < u32PhysicalDevicesAvailableCount; u32PhysicalDeviceAvailableIndex++) {
 			VkPhysicalDeviceProperties vk_physicalDeviceProperties;
-			vkGetPhysicalDeviceProperties(vk_pahPhysicalDevicesAvailable[i], &vk_physicalDeviceProperties);
-			
+			vkGetPhysicalDeviceProperties(vk_pahPhysicalDevicesAvailable[u32PhysicalDeviceAvailableIndex], &vk_physicalDeviceProperties);
+	
 			int32_t i32CurrentDeviceScore = 0;
 			switch (vk_physicalDeviceProperties.deviceType) {
 				case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
-					i32CurrentDeviceScore += 1000;
+					i32CurrentDeviceScore += 1500;
 					break;
 				case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
 					break;
@@ -59,19 +55,19 @@ namespace RE {
 					i32CurrentDeviceScore -= 2500;
 					break;
 			}
-			i32CurrentDeviceScore += vk_physicalDeviceProperties.limits.maxImageDimension2D;
+			i32CurrentDeviceScore += static_cast<int32_t>(std::clamp<uint32_t>(vk_physicalDeviceProperties.limits.maxImageDimension2D, 0U, 8192U)) * 1500 / 8192 - 499;
+			i32CurrentDeviceScore += PUSH_TO_CALLSTACKTRACE_AND_RETURN(rate_gpu_queues(vk_pahPhysicalDevicesAvailable[u32PhysicalDeviceAvailableIndex]), int32_t);
 			i32CurrentDeviceScore += static_cast<int32_t>(std::clamp<uint32_t>(std::min(vk_physicalDeviceProperties.limits.maxPerStageDescriptorSamplers, vk_physicalDeviceProperties.limits.maxPerStageDescriptorSampledImages), 16U, RE_VK_MAX_SAMPLED_IMAGES) - 16U) * 1500 / RE_VK_MAX_SAMPLED_IMAGES - 499;
-
-			if (i32BestDeviceScore < i32CurrentDeviceScore) {
+			if (i32CurrentDeviceScore > i32BestDeviceScore) {
 				i32BestDeviceScore = i32CurrentDeviceScore;
-				vk_hPhysicalDeviceSelected = vk_pahPhysicalDevicesAvailable[i];
+				vk_hPhysicalDeviceSelected = vk_pahPhysicalDevicesAvailable[u32PhysicalDeviceAvailableIndex];
 			}
 		}
 	}
 
 	static void select_best_vulkan_surface_format() {
 		int32_t i32BestSurfaceFormatScore = std::numeric_limits<int32_t>::min();
-		for (uint32_t i = 0U; i < u32SurfaceFormatsAvailableCount; i++) {
+		for (uint32_t i = 0; i < u32SurfaceFormatsAvailableCount; i++) {
 			int32_t i32CurrentSurfaceFormatScore = 0;
 			switch (vk_paSurfaceFormatsAvailable[i].format) {
 				case VK_FORMAT_R8G8B8A8_UNORM:
@@ -108,12 +104,13 @@ namespace RE {
 		vkGetPhysicalDeviceSurfaceFormatsKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &u32SurfaceFormatsAvailableCount, vk_paSurfaceFormatsAvailable);
 		uint32_t u32PresentModesCount;
 		vkGetPhysicalDeviceSurfacePresentModesKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &u32PresentModesCount, nullptr);
-		VkPresentModeKHR *const vk_paeAllPresentModes = new VkPresentModeKHR[u32PresentModesCount];
-		vkGetPhysicalDeviceSurfacePresentModesKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &u32PresentModesCount, vk_paeAllPresentModes);
+		std::vector<VkPresentModeKHR> vk_paeAllPresentModes;
+		vk_paeAllPresentModes.resize(u32PresentModesCount);
+		vkGetPhysicalDeviceSurfacePresentModesKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &u32PresentModesCount, vk_paeAllPresentModes.data());
 
 		vk_ePresentModeVsync = VK_PRESENT_MODE_FIFO_KHR;
 		vk_ePresentModeNoVsync = VK_PRESENT_MODE_FIFO_KHR;
-		for (uint32_t u32PresentModeIndex = 0U; u32PresentModeIndex < u32PresentModesCount; u32PresentModeIndex++) {
+		for (uint32_t u32PresentModeIndex = 0; u32PresentModeIndex < u32PresentModesCount; u32PresentModeIndex++) {
 			switch (vk_paeAllPresentModes[u32PresentModeIndex]) {
 				case VK_PRESENT_MODE_IMMEDIATE_KHR:
 					vk_ePresentModeNoVsync = VK_PRESENT_MODE_IMMEDIATE_KHR;
@@ -125,7 +122,6 @@ namespace RE {
 					break;
 			}
 		}
-		delete[] vk_paeAllPresentModes;
 	}
 
 	static bool alloc_physical_vulkan_device_list() {
@@ -153,12 +149,6 @@ namespace RE {
 			vkEnumerateDeviceExtensionProperties(vk_hPhysicalDevice, nullptr, &u32PhysicalDeviceExtensionCount, nullptr);
 			VkExtensionProperties *const vk_paPhysicalDeviceExtensionProperties = new VkExtensionProperties[u32PhysicalDeviceExtensionCount];
 			vkEnumerateDeviceExtensionProperties(vk_hPhysicalDevice, nullptr, &u32PhysicalDeviceExtensionCount, vk_paPhysicalDeviceExtensionProperties);
-
-			// Fetch queue-data about the GPU
-			uint32_t u32PhysicalDeviceQueueFamilyCount;
-			vkGetPhysicalDeviceQueueFamilyProperties(vk_hPhysicalDevice, &u32PhysicalDeviceQueueFamilyCount, nullptr);
-			VkQueueFamilyProperties *const vk_paPhysicalDeviceQueueFamilyProperties = new VkQueueFamilyProperties[u32PhysicalDeviceQueueFamilyCount];
-			vkGetPhysicalDeviceQueueFamilyProperties(vk_hPhysicalDevice, &u32PhysicalDeviceQueueFamilyCount, vk_paPhysicalDeviceQueueFamilyProperties);
 
 			// Fetch surface-data about the GPU
 			VkSurfaceCapabilitiesKHR vk_physicalDeviceSurfaceCapabilities;
@@ -212,33 +202,7 @@ namespace RE {
 				missingFeatures.emplace("The swapchain extension doesn't exist on this GPU");
 
 			// Check if required queues exist
-			bool bGraphicsQueueExists = false, bPresentQueueExists = false, bComputeQueueExists = false, bTransferQueueExists = false;
-			for (uint32_t u32PhysicalDeviceQueueFamilyIndex = 0; u32PhysicalDeviceQueueFamilyIndex < u32PhysicalDeviceQueueFamilyCount; u32PhysicalDeviceQueueFamilyIndex++) {
-				if (!bPresentQueueExists) {
-					VkBool32 surfaceSupportExists;
-					vkGetPhysicalDeviceSurfaceSupportKHR(vk_hPhysicalDevice, u32PhysicalDeviceQueueFamilyIndex, vk_hSurface, &surfaceSupportExists);
-					if (surfaceSupportExists)
-						bPresentQueueExists = true;
-				}
-				if (!bGraphicsQueueExists && (vk_paPhysicalDeviceQueueFamilyProperties[u32PhysicalDeviceQueueFamilyIndex].queueFlags & (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_TRANSFER_BIT))) {
-					bGraphicsQueueExists = true;
-					bTransferQueueExists = true;
-				} else if (!bComputeQueueExists && (vk_paPhysicalDeviceQueueFamilyProperties[u32PhysicalDeviceQueueFamilyIndex].queueFlags & (VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT))) {
-					bComputeQueueExists = true;
-					bTransferQueueExists = true;
-				} else if (!bTransferQueueExists && (vk_paPhysicalDeviceQueueFamilyProperties[u32PhysicalDeviceQueueFamilyIndex].queueFlags & VK_QUEUE_TRANSFER_BIT))
-					bTransferQueueExists = true;
-				if (bGraphicsQueueExists && bPresentQueueExists && bComputeQueueExists && bTransferQueueExists)
-					break;
-			}
-			if (!bGraphicsQueueExists)
-				missingFeatures.emplace("A graphics queue supporting transfers either doesn't exist");
-			if (!bPresentQueueExists)
-				missingFeatures.emplace("The presentation queue doesn't exist");
-			if (!bComputeQueueExists)
-				missingFeatures.emplace("A computation queue supporting transfers either doesn't exist");
-			if (!bTransferQueueExists)
-				missingFeatures.emplace("A dedicated transfer queue or a graphics or computation queue supporting transfers aswell doesn't exist");
+			PUSH_TO_CALLSTACKTRACE(does_gpu_have_necessary_queues(vk_hPhysicalDevice, missingFeatures));
 
 			// Check if depth & stencil buffers are supported
 			constexpr VkFormat vk_aeDepthStencilFormats[ALLOWED_DEPTH_STENCIL_BUFFER_FORMAT_COUNT] = ALLOWED_DEPTH_STENCIL_BUFFER_FORMATS;
@@ -247,7 +211,6 @@ namespace RE {
 				missingFeatures.emplace("Unseperated depth and stencil buffers aren't supported");
 
 			delete[] vk_paPhysicalDeviceExtensionProperties;
-			delete[] vk_paPhysicalDeviceQueueFamilyProperties;
 			if (!discrepantFeatures.empty()) {
 				println_colored(append_to_string("Physical Vulkan device ", vk_physicalDeviceProperties.deviceName, " has discrepancy/-ies:").c_str(), RE_TERMINAL_COLOR_BRIGHT_RED, false, true);
 				do {
@@ -303,10 +266,7 @@ namespace RE {
 			delete[] vk_paPhysicalDeviceSelectedQueueFamilies;
 		}
 
-		vkGetDeviceQueue(vk_hDevice, au32DeviceQueueFamilyIndices[RE_VK_QUEUE_GRAPHICS_INDEX], 0, &vk_ahDeviceQueueFamilies[RE_VK_QUEUE_GRAPHICS_INDEX]);
-		vkGetDeviceQueue(vk_hDevice, au32DeviceQueueFamilyIndices[RE_VK_QUEUE_PRESENT_INDEX], 0, &vk_ahDeviceQueueFamilies[RE_VK_QUEUE_PRESENT_INDEX]);
-		vkGetDeviceQueue(vk_hDevice, au32DeviceQueueFamilyIndices[RE_VK_QUEUE_COMPUTE_INDEX], 0, &vk_ahDeviceQueueFamilies[RE_VK_QUEUE_COMPUTE_INDEX]);
-		vkGetDeviceQueue(vk_hDevice, au32DeviceQueueFamilyIndices[RE_VK_QUEUE_TRANSFER_INDEX], 0, &vk_ahDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX]);
+		PUSH_TO_CALLSTACKTRACE(get_logical_queues());
 
 		VkCommandPoolCreateInfo vk_commandPoolCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
@@ -359,8 +319,7 @@ namespace RE {
 			vkDestroyCommandPool(vk_hDevice, vk_ahCommandPools[u8CommandPoolIndex], nullptr);
 			vk_ahCommandPools[u8CommandPoolIndex] = VK_NULL_HANDLE;
 		}
-		au32DeviceQueueFamilyIndices.fill(0);
-		vk_ahDeviceQueueFamilies.fill(VK_NULL_HANDLE);
+		destroy_logical_queues();
 	}
 
 	static bool create_swapchain() {

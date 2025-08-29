@@ -1189,10 +1189,6 @@ namespace RE {
 			destroy_logical_vulkan_device();
 			return false;
 		}
-		au32DeviceQueueFamilyIndices[RE_VK_QUEUE_GRAPHICS_INDEX] = graphicsQueueIndex.value();
-		au32DeviceQueueFamilyIndices[RE_VK_QUEUE_PRESENT_INDEX] = presentQueueIndex.value();
-		au32DeviceQueueFamilyIndices[RE_VK_QUEUE_COMPUTE_INDEX] = computeQueueIndex.value();
-		au32DeviceQueueFamilyIndices[RE_VK_QUEUE_TRANSFER_INDEX] = transferQueueIndex.value();
 		return true;
 	}
 	
@@ -1200,7 +1196,6 @@ namespace RE {
 		vkDestroyDevice(vk_hDevice, nullptr);
 		unload_all_vulkan_functions_of_device();
 		vk_hDevice = VK_NULL_HANDLE;
-		
 	}
 
 }

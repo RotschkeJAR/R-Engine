@@ -34,8 +34,6 @@ namespace RE {
 
 #define SWAPCHAIN_DIRTY_BIT 0
 #define VSYNC_SETTING_BIT 1
-#define GRAPHICS_QUEUE_SUPPORTS_TRANSFER_BIT 2
-#define COMPUTE_QUEUE_SUPPORTS_TRANSFER_BIT 3
 	uint8_t u8RenderSystemFlags = 1 << VSYNC_SETTING_BIT;
 
 	static void select_best_physical_vulkan_device() {
@@ -255,73 +253,6 @@ namespace RE {
 		DELETE_ARRAY_SAFELY(vk_pahPhysicalDevicesAvailable);
 	}
 
-	static bool setup_interfaces_to_logical_vulkan_device() {
-		{ // Sets bit, whether graphics- and compute-queue support transfers
-			uint32_t u32PhysicalDeviceSelectedQueueFamilyCount;
-			vkGetPhysicalDeviceQueueFamilyProperties(vk_hPhysicalDeviceSelected, &u32PhysicalDeviceSelectedQueueFamilyCount, nullptr);
-			VkQueueFamilyProperties *const vk_paPhysicalDeviceSelectedQueueFamilies = new VkQueueFamilyProperties[u32PhysicalDeviceSelectedQueueFamilyCount];
-			vkGetPhysicalDeviceQueueFamilyProperties(vk_hPhysicalDeviceSelected, &u32PhysicalDeviceSelectedQueueFamilyCount, vk_paPhysicalDeviceSelectedQueueFamilies);
-			PUSH_TO_CALLSTACKTRACE(set_bits<uint8_t>(u8RenderSystemFlags, (vk_paPhysicalDeviceSelectedQueueFamilies[au32DeviceQueueFamilyIndices[RE_VK_QUEUE_GRAPHICS_INDEX]].queueFlags & (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_TRANSFER_BIT)) != 0, GRAPHICS_QUEUE_SUPPORTS_TRANSFER_BIT));
-			PUSH_TO_CALLSTACKTRACE(set_bits<uint8_t>(u8RenderSystemFlags, (vk_paPhysicalDeviceSelectedQueueFamilies[au32DeviceQueueFamilyIndices[RE_VK_QUEUE_COMPUTE_INDEX]].queueFlags & (VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT)) != 0,COMPUTE_QUEUE_SUPPORTS_TRANSFER_BIT));
-			delete[] vk_paPhysicalDeviceSelectedQueueFamilies;
-		}
-
-		PUSH_TO_CALLSTACKTRACE(get_logical_queues());
-
-		VkCommandPoolCreateInfo vk_commandPoolCreateInfo = {
-			.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
-			.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
-			.queueFamilyIndex = au32DeviceQueueFamilyIndices[RE_VK_QUEUE_GRAPHICS_INDEX]
-		};
-		if (vkCreateCommandPool(vk_hDevice, &vk_commandPoolCreateInfo, nullptr, &vk_ahCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX]) == VK_SUCCESS) {
-			vk_commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
-			if (vkCreateCommandPool(vk_hDevice, &vk_commandPoolCreateInfo, nullptr, &vk_ahCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_TRANSIENT_INDEX]) == VK_SUCCESS) {
-				vk_commandPoolCreateInfo.queueFamilyIndex = au32DeviceQueueFamilyIndices[RE_VK_QUEUE_COMPUTE_INDEX];
-				if (vkCreateCommandPool(vk_hDevice, &vk_commandPoolCreateInfo, nullptr, &vk_ahCommandPools[RE_VK_COMMAND_POOL_COMPUTE_TRANSIENT_INDEX]) == VK_SUCCESS) {
-					vk_commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-					if (vkCreateCommandPool(vk_hDevice, &vk_commandPoolCreateInfo, nullptr, &vk_ahCommandPools[RE_VK_COMMAND_POOL_COMPUTE_PERSISTENT_INDEX]) == VK_SUCCESS) {
-						vk_commandPoolCreateInfo.queueFamilyIndex = au32DeviceQueueFamilyIndices[RE_VK_QUEUE_TRANSFER_INDEX];
-						if (vkCreateCommandPool(vk_hDevice, &vk_commandPoolCreateInfo, nullptr, &vk_ahCommandPools[RE_VK_COMMAND_POOL_TRANSFER_PERSISTENT_INDEX]) == VK_SUCCESS) {
-							if (vkCreateCommandPool(vk_hDevice, &vk_commandPoolCreateInfo, nullptr, &vk_ahCommandPools[RE_VK_COMMAND_POOL_TRANSFER_TRANSIENT_INDEX]) == VK_SUCCESS) {
-								if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(alloc_vulkan_command_buffers(vk_ahCommandPools[RE_VK_COMMAND_POOL_TRANSFER_PERSISTENT_INDEX], VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1, &vk_hDummyTransferCommandBuffer), bool)) {
-									if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(begin_recording_vulkan_command_buffer(vk_hDummyTransferCommandBuffer, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT, nullptr), bool)) {
-										if (vkEndCommandBuffer(vk_hDummyTransferCommandBuffer) == VK_SUCCESS)
-											return true;
-										else
-											RE_FATAL_ERROR("Failed to finish recording Vulkan dummy command buffer");
-									} else
-										RE_FATAL_ERROR("Failed to begin recording Vulkan dummy command buffer");
-								} else
-									RE_FATAL_ERROR("Failed to allocate Vulkan dummy command buffer");
-							} else
-								RE_FATAL_ERROR("Failed to create Vulkan command pool for transient transfer command buffers");
-							vkDestroyCommandPool(vk_hDevice, vk_ahCommandPools[RE_VK_COMMAND_POOL_TRANSFER_PERSISTENT_INDEX], nullptr);
-						} else
-							RE_FATAL_ERROR("Failed to create Vulkan command pool for persistent transfer command buffers");
-						vkDestroyCommandPool(vk_hDevice, vk_ahCommandPools[RE_VK_COMMAND_POOL_COMPUTE_PERSISTENT_INDEX], nullptr);
-					} else
-						RE_FATAL_ERROR("Failed to create Vulkan command pool for persistent compute command buffers");
-					vkDestroyCommandPool(vk_hDevice, vk_ahCommandPools[RE_VK_COMMAND_POOL_COMPUTE_TRANSIENT_INDEX], nullptr);
-				} else
-					RE_FATAL_ERROR("Failed to create Vulkan command pool for transient compute command buffers");
-				vkDestroyCommandPool(vk_hDevice, vk_ahCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_TRANSIENT_INDEX], nullptr);
-			} else
-				RE_FATAL_ERROR("Failed to create Vulkan command pool for transient graphics command buffers");
-			vkDestroyCommandPool(vk_hDevice, vk_ahCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX], nullptr);
-		} else
-			RE_FATAL_ERROR("Failed to create Vulkan command pool for persistent graphics command buffers");
-		return false;
-	}
-
-	static void destroy_interfaces_to_logical_vulkan_device() {
-		vk_hDummyTransferCommandBuffer = VK_NULL_HANDLE;
-		for (uint8_t u8CommandPoolIndex = 0; u8CommandPoolIndex < RE_VK_COMMAND_POOL_COUNT; u8CommandPoolIndex++) {
-			vkDestroyCommandPool(vk_hDevice, vk_ahCommandPools[u8CommandPoolIndex], nullptr);
-			vk_ahCommandPools[u8CommandPoolIndex] = VK_NULL_HANDLE;
-		}
-		destroy_logical_queues();
-	}
-
 	static bool create_swapchain() {
 		// Create actual sweapchain
 		const VkSwapchainKHR vk_hOldSwapchain = vk_hSwapchain;
@@ -441,10 +372,10 @@ namespace RE {
 				PUSH_TO_CALLSTACKTRACE(fetch_vulkan_surface_infos());
 				PUSH_TO_CALLSTACKTRACE(select_best_vulkan_surface_format());
 				if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(init_logical_vulkan_device(), bool)) {
-					if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(setup_interfaces_to_logical_vulkan_device(), bool)) {
+					if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(setup_logical_device_interfaces(), bool)) {
 						if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_swapchain(), bool))
 							return true;
-						PUSH_TO_CALLSTACKTRACE(destroy_interfaces_to_logical_vulkan_device());
+						PUSH_TO_CALLSTACKTRACE(destroy_logical_device_interfaces());
 					}
 					PUSH_TO_CALLSTACKTRACE(destroy_logical_vulkan_device());
 				}
@@ -458,7 +389,7 @@ namespace RE {
 	void destroy_render_system() {
 		if (vk_hSwapchain)
 			PUSH_TO_CALLSTACKTRACE(destroy_swapchain());
-		PUSH_TO_CALLSTACKTRACE(destroy_interfaces_to_logical_vulkan_device());
+		PUSH_TO_CALLSTACKTRACE(destroy_logical_device_interfaces());
 		PUSH_TO_CALLSTACKTRACE(destroy_logical_vulkan_device());
 		vk_hPhysicalDeviceSelected = VK_NULL_HANDLE;
 		PUSH_TO_CALLSTACKTRACE(free_physical_vulkan_device_list());

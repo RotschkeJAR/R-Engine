@@ -6,6 +6,7 @@ namespace RE {
 	VkQueue *vk_pahQueues = nullptr;
 	VkQueueFlags *vk_paeQueueTypes = nullptr;
 	uint32_t *pau32QueueIndices = nullptr;
+	VkCommandPool *vk_pahCommandPools = nullptr;
 	uint8_t u8LogicalQueueCount = 0;
 
 	constexpr VkQueueFlags vk_aeRecommendedQueueTypes[] = {
@@ -278,6 +279,7 @@ namespace RE {
 		vk_pahQueues = new VkQueue[u8LogicalQueueCount];
 		vk_paeQueueTypes = new VkQueueFlags[u8LogicalQueueCount];
 		pau32QueueIndices = new uint32_t[u8LogicalQueueCount];
+		vk_pahCommandPools = new VkCommandPool[u8LogicalQueueCount * 2];
 		vk_rpaLogicalQueueCreateInfos.resize(u8LogicalQueueCount);
 		uint32_t u32LogicalQueueCreateIndex = 0;
 		for (const uint32_t u32QueueIndex : selectedQueues) {
@@ -293,18 +295,33 @@ namespace RE {
 		}
 	}
 
-	void get_logical_queues() {
+	bool setup_logical_device_interfaces() {
 		for (uint8_t u8LogicalQueueIndex = 0; u8LogicalQueueIndex < u8LogicalQueueCount; u8LogicalQueueIndex++)
 			vkGetDeviceQueue(vk_hDevice, pau32QueueIndices[u8LogicalQueueIndex], 0, &vk_pahQueues[u8LogicalQueueIndex]);
+		VkCommandPoolCreateInfo vk_commandPoolCreateInfo;
+		vk_commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+		vk_commandPoolCreateInfo.pNext = nullptr;
+		for (uint8_t u8LogicalQueueIndex = 0; u8LogicalQueueIndex < u8LogicalQueueCount; u8LogicalQueueIndex++) {
+			vk_commandPoolCreateInfo.queueFamilyIndex = pau32QueueIndices[u8LogicalQueueIndex];
+			vk_commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+			vkCreateCommandPool(vk_hDevice, &vk_commandPoolCreateInfo, nullptr, &vk_pahCommandPools[u8LogicalQueueIndex * 2]);
+			vk_commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+			vkCreateCommandPool(vk_hDevice, &vk_commandPoolCreateInfo, nullptr, &vk_pahCommandPools[u8LogicalQueueIndex * 2 + 1]);
+		}
 	}
 
-	void destroy_logical_queues() {
+	void destroy_logical_device_interfaces() {
+		for (uint8_t u8CommandPoolIndex = 0; u8CommandPoolIndex < u8LogicalQueueCount * 2; u8CommandPoolIndex++)
+			vkDestroyCommandPool(vk_hDevice, vk_pahCommandPools[u8CommandPoolIndex], nullptr);
 		delete[] vk_pahQueues;
 		delete[] vk_paeQueueTypes;
 		delete[] pau32QueueIndices;
+		delete[] vk_pahCommandPools;
 		vk_pahQueues = nullptr;
 		vk_paeQueueTypes = nullptr;
 		pau32QueueIndices = nullptr;
+		vk_pahCommandPools = nullptr;
+		u8LogicalQueueCount = 0;
 	}
 
 }

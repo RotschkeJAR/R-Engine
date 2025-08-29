@@ -12,8 +12,8 @@ namespace RE {
 	[[nodiscard]]
 	int32_t rate_gpu_queues(VkPhysicalDevice vk_hPhysicalDevice);
 	void create_queue_create_infos(const float &fPriority, std::vector<VkDeviceQueueCreateInfo> &vk_rpaLogicalQueueCreateInfos);
-	void get_logical_queues();
-	void destroy_logical_queues();
+	bool setup_logical_device_interfaces();
+	void destroy_logical_device_interfaces();
 
 }
 

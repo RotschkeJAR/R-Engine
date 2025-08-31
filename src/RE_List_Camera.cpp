@@ -2,12 +2,10 @@
 #include "RE_ListBatch_Camera.hpp"
 #include "RE_Main.hpp"
 
-#include <list>
-
 namespace RE {
 	
-	std::list<ListBatch_Camera*> cameraBatchList;
-	std::vector<Camera*> newCameras, deletableCameras;
+	std::deque<ListBatch_Camera*> cameraBatchList;
+	std::deque<Camera*> newCameras, deletableCameras;
 	bool bDeletingMarkedCameras = false;
 
 	void add_new_cameras() {
@@ -25,7 +23,7 @@ namespace RE {
 	}
 
 	void add_camera(Camera *const pCamera) {
-		size_t batchIndex = 0U;
+		size_t batchIndex = 0;
 		for (ListBatch_Camera *const pBatch : cameraBatchList) {
 			if (pBatch->has_space()) {
 				PUSH_TO_CALLSTACKTRACE(pBatch->add(pCamera));
@@ -50,7 +48,7 @@ namespace RE {
 		if (!bRunning || bDeletingMarkedCameras)
 			delete pCamera;
 		else {
-			std::vector<Camera*>::iterator it = std::find(newCameras.begin(), newCameras.end(), pCamera);
+			std::deque<Camera*>::iterator it = std::find(newCameras.begin(), newCameras.end(), pCamera);
 			if (it != newCameras.end()) {
 				newCameras.erase(it);
 				delete pCamera;

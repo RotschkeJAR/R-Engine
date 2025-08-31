@@ -5,7 +5,7 @@
 
 namespace RE {
 	
-	extern std::vector<Camera*> newCameras, deletableCameras;
+	extern std::deque<Camera*> newCameras, deletableCameras;
 
 	void add_new_cameras();
 	void delete_marked_cameras();

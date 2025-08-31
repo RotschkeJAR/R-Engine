@@ -1163,7 +1163,7 @@ namespace RE {
 
 		constexpr float fQueuePriority = 1.0f;
 		std::vector<VkDeviceQueueCreateInfo> vk_paDeviceQueueCreateInfos;
-		PUSH_TO_CALLSTACKTRACE(create_queue_create_infos(fQueuePriority, vk_paDeviceQueueCreateInfos));
+		PUSH_TO_CALLSTACKTRACE(create_queue_create_infos(&fQueuePriority, vk_paDeviceQueueCreateInfos));
 
 		const VkPhysicalDeviceFeatures vk_physicalDeviceFeaturesEnabled = {
 			.sampleRateShading = vk_physicalDeviceFeatures.sampleRateShading,
@@ -1178,7 +1178,7 @@ namespace RE {
 			.ppEnabledExtensionNames = static_cast<const char *const *>(a2cLogicalDeviceExtensions.data()),
 			.pEnabledFeatures = &vk_physicalDeviceFeaturesEnabled
 		};
-		const bool bCreatedDeviceSuccessfully = vkCreateDevice(vk_pahPhysicalDevicesAvailable[u32IndexToSelectedPhysicalDevice], &vk_deviceCreateInfo, nullptr, &vk_hDevice) == VK_SUCCESS;
+		const bool bCreatedDeviceSuccessfully = vkCreateDevice(get_selected_physical_vulkan_device(), &vk_deviceCreateInfo, nullptr, &vk_hDevice) == VK_SUCCESS;
 		if (!bCreatedDeviceSuccessfully) {
 			RE_FATAL_ERROR("Failed creating logical Vulkan device");
 			return false;

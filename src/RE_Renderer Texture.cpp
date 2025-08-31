@@ -2,6 +2,7 @@
 #include "RE_Render System.hpp"
 #include "RE_Renderer.hpp"
 #include "RE_Internal Header.hpp"
+#include "RE_Texture.hpp"
 
 namespace RE {
 

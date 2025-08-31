@@ -9,17 +9,17 @@ namespace RE {
 
 	VkSurfaceKHR vk_hSurface = VK_NULL_HANDLE;
 	VkSurfaceCapabilitiesKHR vk_surfaceCapabilities = {};
-	VkSurfaceFormatKHR *vk_paSurfaceFormatsAvailable = nullptr;
-	VkSurfaceFormatKHR vk_surfaceFormatSelected = {};
+	std::unique_ptr<VkSurfaceFormatKHR[]> vk_paSurfaceFormatsAvailable;
 	uint32_t u32SurfaceFormatsAvailableCount = 0;
+	uint32_t u32IndexToSelectedSurfaceFormat = 0;
 
 	uint8_t u8RenderSystemFlags = 1 << VSYNC_SETTING_BIT;
 
 	static void select_best_vulkan_surface_format() {
 		int32_t i32BestSurfaceFormatScore = std::numeric_limits<int32_t>::min();
-		for (uint32_t i = 0; i < u32SurfaceFormatsAvailableCount; i++) {
+		for (uint32_t u32SurfaceFormatIndex = 0; u32SurfaceFormatIndex < u32SurfaceFormatsAvailableCount; u32SurfaceFormatIndex++) {
 			int32_t i32CurrentSurfaceFormatScore = 0;
-			switch (vk_paSurfaceFormatsAvailable[i].format) {
+			switch (vk_paSurfaceFormatsAvailable[u32SurfaceFormatIndex].format) {
 				case VK_FORMAT_R8G8B8A8_UNORM:
 				case VK_FORMAT_B8G8R8A8_UNORM:
 					i32CurrentSurfaceFormatScore += 500;
@@ -32,31 +32,31 @@ namespace RE {
 					i32CurrentSurfaceFormatScore -= 2000;
 					break;
 			}
-			i32CurrentSurfaceFormatScore += (vk_paSurfaceFormatsAvailable[i].colorSpace != VK_COLOR_SPACE_SRGB_NONLINEAR_KHR ? -1 : 1) * 1000;
+			i32CurrentSurfaceFormatScore += (vk_paSurfaceFormatsAvailable[u32SurfaceFormatIndex].colorSpace != VK_COLOR_SPACE_SRGB_NONLINEAR_KHR ? -1 : 1) * 1000;
 			if (i32BestSurfaceFormatScore < i32CurrentSurfaceFormatScore) {
 				i32BestSurfaceFormatScore = i32CurrentSurfaceFormatScore;
-				vk_surfaceFormatSelected = vk_paSurfaceFormatsAvailable[i];
+				u32IndexToSelectedSurfaceFormat = u32SurfaceFormatIndex;
 			}
 		}
 	}
 	
 	static void destroy_vulkan_surface() {
 		vkDestroySurfaceKHR(vk_hInstance, vk_hSurface, nullptr);
-		DELETE_ARRAY_SAFELY(vk_paSurfaceFormatsAvailable);
+		vk_paSurfaceFormatsAvailable.reset();
 		vk_hSurface = VK_NULL_HANDLE;
 	}
 
 	static void fetch_vulkan_surface_infos() {
-		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk_pahPhysicalDevicesAvailable[u32IndexToSelectedPhysicalDevice], vk_hSurface, &vk_surfaceCapabilities);
-		vkGetPhysicalDeviceSurfaceFormatsKHR(vk_pahPhysicalDevicesAvailable[u32IndexToSelectedPhysicalDevice], vk_hSurface, &u32SurfaceFormatsAvailableCount, nullptr);
-		DELETE_ARRAY_SAFELY(vk_paSurfaceFormatsAvailable);
-		vk_paSurfaceFormatsAvailable = new VkSurfaceFormatKHR[u32SurfaceFormatsAvailableCount];
-		vkGetPhysicalDeviceSurfaceFormatsKHR(vk_pahPhysicalDevicesAvailable[u32IndexToSelectedPhysicalDevice], vk_hSurface, &u32SurfaceFormatsAvailableCount, vk_paSurfaceFormatsAvailable);
+		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(get_selected_physical_vulkan_device(), vk_hSurface, &vk_surfaceCapabilities);
+		vkGetPhysicalDeviceSurfaceFormatsKHR(get_selected_physical_vulkan_device(), vk_hSurface, &u32SurfaceFormatsAvailableCount, nullptr);
+		vk_paSurfaceFormatsAvailable.reset();
+		vk_paSurfaceFormatsAvailable = std::make_unique<VkSurfaceFormatKHR[]>(u32SurfaceFormatsAvailableCount);
+		vkGetPhysicalDeviceSurfaceFormatsKHR(get_selected_physical_vulkan_device(), vk_hSurface, &u32SurfaceFormatsAvailableCount, vk_paSurfaceFormatsAvailable.get());
 		uint32_t u32PresentModesCount;
-		vkGetPhysicalDeviceSurfacePresentModesKHR(vk_pahPhysicalDevicesAvailable[u32IndexToSelectedPhysicalDevice], vk_hSurface, &u32PresentModesCount, nullptr);
+		vkGetPhysicalDeviceSurfacePresentModesKHR(get_selected_physical_vulkan_device(), vk_hSurface, &u32PresentModesCount, nullptr);
 		std::vector<VkPresentModeKHR> allSupportedPresentModes;
 		allSupportedPresentModes.resize(u32PresentModesCount);
-		vkGetPhysicalDeviceSurfacePresentModesKHR(vk_pahPhysicalDevicesAvailable[u32IndexToSelectedPhysicalDevice], vk_hSurface, &u32PresentModesCount, allSupportedPresentModes.data());
+		vkGetPhysicalDeviceSurfacePresentModesKHR(get_selected_physical_vulkan_device(), vk_hSurface, &u32PresentModesCount, allSupportedPresentModes.data());
 
 		vk_ePresentModeVsync = VK_PRESENT_MODE_FIFO_KHR;
 		vk_ePresentModeNoVsync = VK_PRESENT_MODE_FIFO_KHR;
@@ -99,7 +99,6 @@ namespace RE {
 			PUSH_TO_CALLSTACKTRACE(destroy_swapchain());
 		PUSH_TO_CALLSTACKTRACE(destroy_logical_device_interfaces());
 		PUSH_TO_CALLSTACKTRACE(destroy_logical_vulkan_device());
-		vk_pahPhysicalDevicesAvailable[u32IndexToSelectedPhysicalDevice] = VK_NULL_HANDLE;
 		PUSH_TO_CALLSTACKTRACE(free_physical_vulkan_device_list());
 		PUSH_TO_CALLSTACKTRACE(destroy_vulkan_surface());
 	}

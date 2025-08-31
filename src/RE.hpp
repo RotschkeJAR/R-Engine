@@ -328,8 +328,14 @@ namespace RE {
 	}
 	void print_colored(const char *pacContent, TerminalColor eColor, bool bBackgroundColored, bool bBold);
 	void println_colored(const char *pacContent, TerminalColor eColor, bool bBackgroundColored, bool bBold);
-#define PRINT(...) print(append_to_string(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE_MACRO(__VA_ARGS__)))
-#define PRINT_LN(...) print(append_to_string(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE_MACRO(__VA_ARGS__), "\n"))
+#define PRINT(...) do { \
+			print(append_to_string(__FILE__, " (line ", __LINE__, "): ")); \
+			print(STRIP_QUOTE_MACRO(__VA_ARGS__)); \
+		} while (false)
+#define PRINT_LN(...) do { \
+			print(append_to_string(__FILE__, " (line ", __LINE__, "): ")); \
+			println(STRIP_QUOTE_MACRO(__VA_ARGS__)); \
+		} while (false)
 	
 	void error(std::string sDetail, bool bTerminate);
 	void warning(std::string sDetail);

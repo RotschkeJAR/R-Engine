@@ -1,8 +1,7 @@
 #ifndef __RE_RENDERER_H__
 #define __RE_RENDERER_H__
 
-#include "RE_Render System.hpp"
-#include "RE_Texture.hpp"
+#include "RE_Vulkan_Device.hpp"
 
 namespace RE {
 
@@ -26,13 +25,8 @@ namespace RE {
 	extern VkRect2D vk_cameraScissor;
 	extern VkExtent2D vk_worldRenderImageExtent;
 
-	extern VkSampleCountFlagBits vk_eMsaaCount;
-
 	extern VkBool32 vk_bSampleShadingEnabled;
 	extern float fSampleShadingRate;
-
-	extern VkBuffer vk_hRectIndexBuffer;
-	extern VkDeviceMemory vk_hRectIndexBufferMemory;
 
 	extern VkDescriptorSetLayout vk_hWorldDescriptorSetLayout;
 	extern std::array<VkDescriptorSet, RE_VK_TOTAL_COUNT_OF_DESCRIPTOR_SETS> vk_ahDescriptorSets;
@@ -53,6 +47,9 @@ namespace RE {
 	bool swapchain_created_renderer();
 	void swapchain_destroyed_renderer();
 	void attach_camera(const Camera *pCamera);
+
+	// Depth-stencil buffers
+	bool does_gpu_support_depth_stencil_buffers(const VkPhysicalDevice vk_hPhysicalDevice, std::queue<std::string> &rMissingFeatures);
 
 }
 

@@ -68,7 +68,7 @@ namespace RE {
 	}
 
 	SpriteLayout create_sprite_layout(const SpriteLayoutSettings &rSettings) {
-		if (vk_hDevice == VK_NULL_HANDLE) {
+		/*if (vk_hDevice == VK_NULL_HANDLE) {
 			RE_ERROR("Sprite layouts cannot be created, when the engine doesn't run");
 			return nullptr;
 		}
@@ -102,7 +102,8 @@ namespace RE {
 		} else
 			vk_samplerCreateInfo.anisotropyEnable = VK_FALSE;
 		VkSampler vk_hSampler;
-		return vkCreateSampler(vk_hDevice, &vk_samplerCreateInfo, nullptr, &vk_hSampler) == VK_SUCCESS ? reinterpret_cast<SpriteLayout>(vk_hSampler) : nullptr;
+		return vkCreateSampler(vk_hDevice, &vk_samplerCreateInfo, nullptr, &vk_hSampler) == VK_SUCCESS ? reinterpret_cast<SpriteLayout>(vk_hSampler) : nullptr;*/
+		return nullptr;
 	}
 
 	void change_sprite_layout_settings(SpriteLayout &rSpriteLayout, const SpriteLayoutSettings &rNewSettings) {
@@ -122,7 +123,7 @@ namespace RE {
 			return;
 		}
 		WAIT_FOR_IDLE_VULKAN_DEVICE();
-		vkDestroySampler(vk_hDevice, reinterpret_cast<VkSampler>(spriteLayout), nullptr);
+		//vkDestroySampler(vk_hDevice, reinterpret_cast<VkSampler>(spriteLayout), nullptr);
 	}
 
 }

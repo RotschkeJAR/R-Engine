@@ -12,6 +12,9 @@
 #include <unordered_map>
 #include <thread>
 #include <list>
+#include <memory>
+#include <queue>
+#include <functional>
 
 #include "RE.hpp"
 #undef ERROR

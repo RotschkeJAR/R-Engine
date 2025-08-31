@@ -7,9 +7,9 @@ namespace RE {
 	static std::vector<uint32_t> get_queue_family_indices(const uint32_t u32QueueCount, const uint32_t *const pau32Queues) {
 		std::vector<uint32_t> queueFamilies;
 		queueFamilies.reserve(u32QueueCount);
-		for (uint32_t u32QueueIndex = 0; u32QueueIndex < u32QueueCount; u32QueueIndex++)
+		/*for (uint32_t u32QueueIndex = 0; u32QueueIndex < u32QueueCount; u32QueueIndex++)
 			if (pau32Queues[u32QueueIndex] != VK_QUEUE_FAMILY_IGNORED && std::find(queueFamilies.begin(), queueFamilies.end(), au32DeviceQueueFamilyIndices[pau32Queues[u32QueueIndex]]) == queueFamilies.end())
-				queueFamilies.push_back(au32DeviceQueueFamilyIndices[pau32Queues[u32QueueIndex]]);
+				queueFamilies.push_back(au32DeviceQueueFamilyIndices[pau32Queues[u32QueueIndex]]);*/
 		return queueFamilies;
 	}
 
@@ -109,7 +109,7 @@ namespace RE {
 	}
 
 	VkFormat find_supported_image_format(const uint32_t u32FormatCandidateCount, const VkFormat *const vk_paeFormatCandidates, const VkImageTiling vk_eImgTiling, const VkFormatFeatureFlags vk_eRequiredFeature) {
-		return PUSH_TO_CALLSTACKTRACE_AND_RETURN(find_supported_image_format_on_physical_vulkan_device(vk_hPhysicalDeviceSelected, u32FormatCandidateCount, vk_paeFormatCandidates, vk_eImgTiling, vk_eRequiredFeature), VkFormat);
+		return PUSH_TO_CALLSTACKTRACE_AND_RETURN(find_supported_image_format_on_physical_vulkan_device(vk_pahPhysicalDevicesAvailable[u32IndexToSelectedPhysicalDevice], u32FormatCandidateCount, vk_paeFormatCandidates, vk_eImgTiling, vk_eRequiredFeature), VkFormat);
 	}
 
 	bool create_vulkan_image(const VkImageCreateFlags vk_eCreateFlags, const VkImageType vk_eType, const VkFormat vk_eFormat, const VkExtent3D vk_extent, const uint32_t u32MipLevels, const uint32_t u32ArrayLayerCount, const VkSampleCountFlagBits vk_eSamples, const VkImageTiling vk_eTiling, const VkImageUsageFlags vk_eUsages, const uint32_t u32QueueCount, const uint32_t *const pau32Queues, const VkImageLayout vk_eLayout, const VkMemoryPropertyFlags vk_eMemoryPropertyFlags, VkImage *const vk_phImage, VkDeviceMemory *const vk_phMemory) {
@@ -275,31 +275,32 @@ namespace RE {
 	}
 
 	bool signal_vulkan_binary_semaphores(const uint32_t u32SemaphoreCount, const VkSemaphore *const vk_pahSemaphores) {
-		const bool bSuccess = PUSH_TO_CALLSTACKTRACE_AND_RETURN(submit_to_vulkan_queue(vk_ahDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], 0, nullptr, nullptr, 1, &vk_hDummyTransferCommandBuffer, u32SemaphoreCount, vk_pahSemaphores, VK_NULL_HANDLE), bool);
-		if (!bSuccess)
+		/*if (!PUSH_TO_CALLSTACKTRACE_AND_RETURN(submit_to_vulkan_queue(vk_ahDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], 0, nullptr, nullptr, 1, &vk_hDummyTransferCommandBuffer, u32SemaphoreCount, vk_pahSemaphores, VK_NULL_HANDLE), bool)) {
 			RE_ERROR("Failed signaling semaphores");
-		return bSuccess;
+			return false;
+		}*/
+		return true;
 	}
 
 	bool signal_vulkan_fences(const uint32_t u32FenceCount, const VkFence *const vk_pahFences) {
-		for (uint32_t u32FenceIndex = 0; u32FenceIndex < u32FenceCount; u32FenceIndex++)
+		/*for (uint32_t u32FenceIndex = 0; u32FenceIndex < u32FenceCount; u32FenceIndex++)
 			if (!PUSH_TO_CALLSTACKTRACE_AND_RETURN(submit_to_vulkan_queue(vk_ahDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], 0, nullptr, nullptr, 1, &vk_hDummyTransferCommandBuffer, 0, nullptr, vk_pahFences[u32FenceIndex]), bool)) {
 				RE_ERROR("Failed signaling fence at index ", u32FenceIndex);
 				return false;
-			}
+			}*/
 		return true;
 	}
 
 	bool wait_for_vulkan_binary_semaphores(const VkSemaphore *const vk_pahSemaphoresToWaitFor, const VkPipelineStageFlags *const vk_paeStagesToWaitAt, const uint32_t u32SemaphoreCount) {
-		Vulkan_Fence vulkanFence;
+		/*Vulkan_Fence vulkanFence;
 		if (!PUSH_TO_CALLSTACKTRACE_AND_RETURN(submit_to_vulkan_queue(vk_ahDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], u32SemaphoreCount, vk_pahSemaphoresToWaitFor, vk_paeStagesToWaitAt, 1, &vk_hDummyTransferCommandBuffer, 0, nullptr, vulkanFence.get_fence()), bool))
 			return false;
-		PUSH_TO_CALLSTACKTRACE(vulkanFence.wait_for());
+		PUSH_TO_CALLSTACKTRACE(vulkanFence.wait_for());*/
 		return true;
 	}
 
 	void vk_cmd_transit_image(const VkCommandBuffer vk_hCommandBuffer, const VkPipelineStageFlags vk_eSrcStageFlags, const VkPipelineStageFlags vk_eDstStageFlags, const VkDependencyFlags vk_eDependencyFlags, const VkAccessFlags vk_eSrcAccessFlags, const VkAccessFlags vk_eDstAccessFlags, const VkImageLayout vk_eOldLayout, const VkImageLayout vk_eNewLayout, const uint32_t u32SrcQueueIndex, const uint32_t u32DstQueueIndex, const VkImage vk_hImage, const VkImageAspectFlags vk_eAspectFlags, const uint32_t u32BaseMipLevel, const uint32_t u32MipLevelCount, const uint32_t u32BaseArrayLayer, const uint32_t u32ArrayLayerCount) {
-		std::vector<uint32_t> srcQueues = get_queue_family_indices(1, &u32SrcQueueIndex), dstQueues = get_queue_family_indices(1, &u32DstQueueIndex);
+		/*std::vector<uint32_t> srcQueues = get_queue_family_indices(1, &u32SrcQueueIndex), dstQueues = get_queue_family_indices(1, &u32DstQueueIndex);
 		const VkImageMemoryBarrier vk_imageTransit = {
 			.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
 			.srcAccessMask = vk_eSrcAccessFlags,
@@ -317,11 +318,11 @@ namespace RE {
 				.layerCount = u32ArrayLayerCount
 			}
 		};
-		vkCmdPipelineBarrier(vk_hCommandBuffer, vk_eSrcStageFlags, vk_eDstStageFlags, vk_eDependencyFlags, 0, nullptr, 0, nullptr, 1, &vk_imageTransit);
+		vkCmdPipelineBarrier(vk_hCommandBuffer, vk_eSrcStageFlags, vk_eDstStageFlags, vk_eDependencyFlags, 0, nullptr, 0, nullptr, 1, &vk_imageTransit);*/
 	}
 
 	bool transit_image(const uint32_t u32QueueIndex, const VkPipelineStageFlags vk_eSrcStageFlags, const VkPipelineStageFlags vk_eDstStageFlags, const VkDependencyFlags vk_eDependencyFlags, const VkAccessFlags vk_eSrcAccessFlags, const VkAccessFlags vk_eDstAccessFlags, const VkImageLayout vk_eOldLayout, const VkImageLayout vk_eNewLayout, const uint32_t u32SrcQueueIndex, const uint32_t u32DstQueueIndex, const VkImage vk_hImage, const VkImageAspectFlags vk_eAspectFlags, const uint32_t u32BaseMipLevel, const uint32_t u32MipLevelCount, const uint32_t u32BaseArrayLayer, const uint32_t u32ArrayLayerCount, VkCommandBuffer *vk_phCommandBufferToFree, VkFence *vk_phFence) {
-		if (!vk_phCommandBufferToFree) {
+		/*if (!vk_phCommandBufferToFree) {
 			RE_ERROR("No pointer to command buffer attribute has been provided");
 			return false;
 		}
@@ -374,7 +375,8 @@ namespace RE {
 			vkFreeCommandBuffers(vk_hDevice, vk_ahCommandPools[u32CommandPoolIndex], 1U, vk_phCommandBufferToFree);
 			*vk_phCommandBufferToFree = VK_NULL_HANDLE;
 		}
-		return false;
+		return false;*/
+		return true;
 	}
 
 }

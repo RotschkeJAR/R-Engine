@@ -1,6 +1,5 @@
 #include "RE_Vulkan_Device.hpp"
 #include "RE_Render System.hpp"
-#include "RE_Render System_Scheduler.hpp"
 
 #include <queue>
 
@@ -1173,13 +1172,13 @@ namespace RE {
 
 		const VkDeviceCreateInfo vk_deviceCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
-			.queueCreateInfoCount = vk_paDeviceQueueCreateInfos.size(),
+			.queueCreateInfoCount = static_cast<uint32_t>(vk_paDeviceQueueCreateInfos.size()),
 			.pQueueCreateInfos = vk_paDeviceQueueCreateInfos.data(),
 			.enabledExtensionCount = u32LogicalDeviceExtensionCount,
 			.ppEnabledExtensionNames = static_cast<const char *const *>(a2cLogicalDeviceExtensions.data()),
 			.pEnabledFeatures = &vk_physicalDeviceFeaturesEnabled
 		};
-		const bool bCreatedDeviceSuccessfully = vkCreateDevice(vk_hPhysicalDeviceSelected, &vk_deviceCreateInfo, nullptr, &vk_hDevice) == VK_SUCCESS;
+		const bool bCreatedDeviceSuccessfully = vkCreateDevice(vk_pahPhysicalDevicesAvailable[u32IndexToSelectedPhysicalDevice], &vk_deviceCreateInfo, nullptr, &vk_hDevice) == VK_SUCCESS;
 		if (!bCreatedDeviceSuccessfully) {
 			RE_FATAL_ERROR("Failed creating logical Vulkan device");
 			return false;

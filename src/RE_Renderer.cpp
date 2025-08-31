@@ -85,7 +85,7 @@ namespace RE {
 #define SHOULD_USE_SWAPCHAIN_IMAGES_DIRECTLY() (screenPercentageSettings.eMode == RE_SCREEN_PERCENTAGE_MODE_NORMAL && vk_eMsaaCount == VK_SAMPLE_COUNT_1_BIT)
 
 	static bool create_render_pass() {
-		constexpr uint32_t u32WorldRenderPassAttachmentCount = 2, u32WorldRenderPassSubpassCount = 1, u32WorldRenderPassDependencyCount = 1;
+		/*constexpr uint32_t u32WorldRenderPassAttachmentCount = 2, u32WorldRenderPassSubpassCount = 1, u32WorldRenderPassDependencyCount = 1;
 		const std::array<VkAttachmentDescription, u32WorldRenderPassAttachmentCount> vk_aWorldRenderPassAttachments = {{
 			{
 				.format = vk_eSwapchainImageFormat,
@@ -152,12 +152,12 @@ namespace RE {
 		if (vkCreateRenderPass(vk_hDevice, &vk_renderPassCreateInfo, nullptr, &vk_hWorldRenderPass) != VK_SUCCESS) {
 			RE_FATAL_ERROR("Failed to create Vulkan render pass");
 			return false;
-		}
+		}*/
 		return true;
 	}
 
 	static bool create_world_render_images() {
-		switch (screenPercentageSettings.eMode) {
+		/*switch (screenPercentageSettings.eMode) {
 			case RE_SCREEN_PERCENTAGE_MODE_NORMAL:
 				vk_worldRenderImageExtent2D = vk_swapchainResolution;
 				break;
@@ -293,12 +293,12 @@ namespace RE {
 			DELETE_ARRAY_SAFELY(vk_pahSwapchainDepthStencilImageMemories);
 			DELETE_ARRAY_SAFELY(vk_pahSwapchainDepthStencilImageViews);
 			DELETE_ARRAY_SAFELY(vk_pahSwapchainFramebuffers);
-		}
+		}*/
 		return false;
 	}
 
 	static void destroy_world_render_images() {
-		if (!SHOULD_USE_SWAPCHAIN_IMAGES_DIRECTLY()) {
+		/*if (!SHOULD_USE_SWAPCHAIN_IMAGES_DIRECTLY()) {
 			if (vk_ahWorldRenderImages[0] == VK_NULL_HANDLE)
 				return;
 			for (uint32_t u8WorldRenderImageCollectionDeleteIndex = 0; u8WorldRenderImageCollectionDeleteIndex < RE_VK_FRAMES_IN_FLIGHT; u8WorldRenderImageCollectionDeleteIndex++) {
@@ -336,11 +336,11 @@ namespace RE {
 			DELETE_ARRAY_SAFELY(vk_pahSwapchainDepthStencilImageMemories);
 			DELETE_ARRAY_SAFELY(vk_pahSwapchainDepthStencilImageViews);
 			DELETE_ARRAY_SAFELY(vk_pahSwapchainFramebuffers);
-		}
+		}*/
 	}
 
 	static void calculate_world_render_area_with_camera() {
-		DEFINE_SIGNAL_GUARD(sigCamAccess);
+		/*DEFINE_SIGNAL_GUARD(sigCamAccess);
 		const std::array<float, 2> a2fCamScale = {
 			{
 				std::abs(pActiveCamera->view[0]),
@@ -355,11 +355,11 @@ namespace RE {
 		vk_cameraScissor.offset.x = static_cast<int32_t>(std::round(vk_cameraViewport.x));
 		vk_cameraScissor.offset.y = static_cast<int32_t>(std::round(vk_cameraViewport.y));
 		vk_cameraScissor.extent.width = static_cast<int32_t>(std::round(vk_cameraViewport.width));
-		vk_cameraScissor.extent.height = static_cast<int32_t>(std::round(vk_cameraViewport.height));
+		vk_cameraScissor.extent.height = static_cast<int32_t>(std::round(vk_cameraViewport.height));*/
 	}
 
 	static void update_camera_descriptor_set(const uint8_t u8FrameInFlightIndex) {
-		const VkDescriptorBufferInfo vk_cameraUniformBufferToDescriptorSet = {
+		/*const VkDescriptorBufferInfo vk_cameraUniformBufferToDescriptorSet = {
 			.buffer = vk_ahWorldCameraUniformBuffers[u8FrameInFlightIndex],
 			.offset = 0,
 			.range = RE_VK_CAMERA_UNIFORM_BUFFER_SIZE_BYTES
@@ -373,11 +373,11 @@ namespace RE {
 			.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 			.pBufferInfo = &vk_cameraUniformBufferToDescriptorSet
 		};
-		vkUpdateDescriptorSets(vk_hDevice, 1, &vk_writeToCameraDescriptorSet, 0, nullptr);
+		vkUpdateDescriptorSets(vk_hDevice, 1, &vk_writeToCameraDescriptorSet, 0, nullptr);*/
 	}
 
 	static void update_camera_uniform_buffer() {
-		DEFINE_SIGNAL_GUARD(sigCamAccess);
+		/*DEFINE_SIGNAL_GUARD(sigCamAccess);
 		apafCameraUniformData[u8CurrentFrameInFlightIndex][RE_VK_VIEW_MATRIX_OFFSET + GET_VULKAN_MATRIX_ELEMENT_INDEX(3, 0)] = -pActiveCamera->position[0];
 		apafCameraUniformData[u8CurrentFrameInFlightIndex][RE_VK_VIEW_MATRIX_OFFSET + GET_VULKAN_MATRIX_ELEMENT_INDEX(3, 1)] = -pActiveCamera->position[1];
 		apafCameraUniformData[u8CurrentFrameInFlightIndex][RE_VK_VIEW_MATRIX_OFFSET + GET_VULKAN_MATRIX_ELEMENT_INDEX(3, 2)] = -pActiveCamera->position[2];
@@ -401,7 +401,7 @@ namespace RE {
 	}
 
 	bool init_renderer() {
-		if (vk_bSampleShadingEnabled == VK_TRUE && vk_physicalDeviceFeatures.sampleRateShading == VK_FALSE) {
+		/*if (vk_bSampleShadingEnabled == VK_TRUE && vk_physicalDeviceFeatures.sampleRateShading == VK_FALSE) {
 			vk_bSampleShadingEnabled = VK_FALSE;
 			RE_WARNING("Sample shading has been disabled, because it's not supported on the selected GPU");
 		}
@@ -605,11 +605,12 @@ namespace RE {
 		vk_hWorldDescriptorSetLayout = VK_NULL_HANDLE;
 		vk_hRectIndexBufferMemory = VK_NULL_HANDLE;
 		vk_hRectIndexBuffer = VK_NULL_HANDLE;
-		return false;
+		return false;*/
+		return true;
 	}
 	
 	void destroy_renderer() {
-		PUSH_TO_CALLSTACKTRACE(destroy_game_object_renderer());
+		/*PUSH_TO_CALLSTACKTRACE(destroy_game_object_renderer());
 		vkFreeCommandBuffers(vk_hDevice, vk_ahCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX], RE_VK_FRAMES_IN_FLIGHT, vk_ahRenderCommandBuffers.data());
 		for (uint16_t u16RenderSemaphoreDeleteIndex = 0; u16RenderSemaphoreDeleteIndex < RE_VK_RENDER_SEMAPHORE_COUNT; u16RenderSemaphoreDeleteIndex++) {
 			vkDestroySemaphore(vk_hDevice, vk_ahRenderSemaphores[u16RenderSemaphoreDeleteIndex], nullptr);
@@ -647,11 +648,11 @@ namespace RE {
 		vk_hWorldDescriptorSetPool = VK_NULL_HANDLE;
 		vk_hWorldDescriptorSetLayout = VK_NULL_HANDLE;
 		vk_hRectIndexBufferMemory = VK_NULL_HANDLE;
-		vk_hRectIndexBuffer = VK_NULL_HANDLE;
+		vk_hRectIndexBuffer = VK_NULL_HANDLE;*/
 	}
 
 	void render() {
-		vkWaitForFences(vk_hDevice, 1, &vk_ahRenderFences[u8CurrentFrameInFlightIndex], VK_TRUE, std::numeric_limits<uint64_t>::max());
+		/*vkWaitForFences(vk_hDevice, 1, &vk_ahRenderFences[u8CurrentFrameInFlightIndex], VK_TRUE, std::numeric_limits<uint64_t>::max());
 		uint32_t u32NextSwapchainImageIndex;
 		const VkResult vk_eSwapchainImageAcquireResult = vkAcquireNextImageKHR(vk_hDevice, vk_hSwapchain, std::numeric_limits<uint64_t>::max(), vk_pahSwapchainSemaphores[u32NextSwapchainSemaphoreIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE], VK_NULL_HANDLE, &u32NextSwapchainImageIndex);
 		switch (vk_eSwapchainImageAcquireResult) {
@@ -836,11 +837,11 @@ namespace RE {
 		}
 		PUSH_TO_CALLSTACKTRACE(post_rendering_window_proc());
 		u32NextSwapchainSemaphoreIndex = (u32NextSwapchainSemaphoreIndex + 1) % u32SwapchainImageCount;
-		u8CurrentFrameInFlightIndex = (u8CurrentFrameInFlightIndex + 1) % RE_VK_FRAMES_IN_FLIGHT;
+		u8CurrentFrameInFlightIndex = (u8CurrentFrameInFlightIndex + 1) % RE_VK_FRAMES_IN_FLIGHT;*/
 	}
 
 	bool swapchain_created_renderer() {
-		const VkSemaphoreCreateInfo vk_presentSemaphoreCreateInfo = {
+		/*const VkSemaphoreCreateInfo vk_presentSemaphoreCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
 		};
 		vk_pahSwapchainSemaphores = new VkSemaphore[RE_VK_SWAPCHAIN_SEMAPHORE_COUNT];
@@ -869,18 +870,18 @@ namespace RE {
 			vk_cameraScissor.extent.width = vk_worldRenderImageExtent2D.width;
 			vk_cameraScissor.extent.height = vk_worldRenderImageExtent2D.height;
 		}
-		u32NextSwapchainSemaphoreIndex = 0;
+		u32NextSwapchainSemaphoreIndex = 0;*/
 		return true;
 	}
 
 	void swapchain_destroyed_renderer() {
-		if (!vk_pahSwapchainSemaphores)
+		/*if (!vk_pahSwapchainSemaphores)
 			return;
 		for (uint32_t u8WorldRenderImageCollectionDeleteIndex = 0; u8WorldRenderImageCollectionDeleteIndex < RE_VK_SWAPCHAIN_SEMAPHORE_COUNT; u8WorldRenderImageCollectionDeleteIndex++)
 			vkDestroySemaphore(vk_hDevice, vk_pahSwapchainSemaphores[u8WorldRenderImageCollectionDeleteIndex], nullptr);
 		DELETE_ARRAY_SAFELY(vk_pahSwapchainSemaphores);
 		if (screenPercentageSettings.eMode != RE_SCREEN_PERCENTAGE_MODE_CONST_SIZE)
-			PUSH_TO_CALLSTACKTRACE(destroy_world_render_images());
+			PUSH_TO_CALLSTACKTRACE(destroy_world_render_images());*/
 	}
 
 	void attach_camera(const Camera *const pCamera) {
@@ -923,7 +924,7 @@ namespace RE {
 		WAIT_FOR_IDLE_VULKAN_DEVICE();
 		PUSH_TO_CALLSTACKTRACE(destroy_world_render_images());
 		screenPercentageSettings = rNewSettings;
-		if (!bRequiresRecreatingRenderPass)
+		/*if (!bRequiresRecreatingRenderPass)
 			PUSH_TO_CALLSTACKTRACE(create_world_render_images());
 		else {
 			vkDestroyRenderPass(vk_hDevice, vk_hWorldRenderPass, nullptr);
@@ -936,7 +937,7 @@ namespace RE {
 				vkDestroyRenderPass(vk_hDevice, vk_hWorldRenderPass, nullptr);
 			}
 			vk_hWorldRenderPass = VK_NULL_HANDLE;
-		}
+		}*/
 	}
 
 	[[nodiscard]]
@@ -963,7 +964,7 @@ namespace RE {
 		PUSH_TO_CALLSTACKTRACE(destroy_world_render_images());
 		vkDestroyRenderPass(vk_hDevice, vk_hWorldRenderPass, nullptr);
 		vk_eMsaaCount = vk_eNewSampleCount;
-		if (create_render_pass()) {
+		/*if (create_render_pass()) {
 			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_world_render_images(), bool)) {
 				if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(recreate_game_object_render_pipelines(), bool))
 					return;
@@ -971,7 +972,7 @@ namespace RE {
 			}
 			vkDestroyRenderPass(vk_hDevice, vk_hWorldRenderPass, nullptr);
 		}
-		vk_hWorldRenderPass = VK_NULL_HANDLE;
+		vk_hWorldRenderPass = VK_NULL_HANDLE;*/
 	}
 
 	[[nodiscard]]
@@ -997,7 +998,7 @@ namespace RE {
 
 	[[nodiscard]]
 	bool is_msaa_mode_supported(const MsaaMode eMsaaMode) {
-		const VkSampleCountFlags vk_eAllowedSamples = vk_physicalDeviceLimits.framebufferColorSampleCounts & vk_physicalDeviceLimits.framebufferDepthSampleCounts & vk_physicalDeviceLimits.framebufferStencilSampleCounts;
+		const VkSampleCountFlags vk_eAllowedSamples = vk_physicalDeviceProperties.limits.framebufferColorSampleCounts & vk_physicalDeviceProperties.limits.framebufferDepthSampleCounts & vk_physicalDeviceProperties.limits.framebufferStencilSampleCounts;
 		return ((VK_SAMPLE_COUNT_1_BIT << eMsaaMode) & vk_eAllowedSamples) > 0;
 	}
 
@@ -1034,7 +1035,7 @@ namespace RE {
 		if (vk_hDevice == VK_NULL_HANDLE)
 			return;
 		WAIT_FOR_IDLE_VULKAN_DEVICE();
-		PUSH_TO_CALLSTACKTRACE(recreate_game_object_render_pipelines());
+		//PUSH_TO_CALLSTACKTRACE(recreate_game_object_render_pipelines());
 	}
 
 	[[nodiscard]]
@@ -1056,7 +1057,7 @@ namespace RE {
 		if (vk_hDevice == VK_NULL_HANDLE)
 			return;
 		WAIT_FOR_IDLE_VULKAN_DEVICE();
-		PUSH_TO_CALLSTACKTRACE(recreate_game_object_render_pipelines());
+		//PUSH_TO_CALLSTACKTRACE(recreate_game_object_render_pipelines());
 	}
 
 	[[nodiscard]]

@@ -17,7 +17,7 @@ namespace RE {
 	}
 
 	Texture alloc_texture_from_binary_data(const uint8_t *const pau8ImageBinaryData, const uint32_t u32Width, const uint32_t u32Height, const uint32_t u32Channels) {
-		if (u32Width > vk_physicalDeviceLimits.maxImageDimension2D || u32Height > vk_physicalDeviceLimits.maxImageDimension2D) {
+		/*if (u32Width > vk_physicalDeviceLimits.maxImageDimension2D || u32Height > vk_physicalDeviceLimits.maxImageDimension2D) {
 			RE_ERROR("The binary image data cannot be used due to exceeding the GPU hardware limit of ", vk_physicalDeviceLimits.maxImageDimension2D, " pixels");
 			return nullptr;
 		}
@@ -111,7 +111,7 @@ namespace RE {
 				RE_ERROR("Failed to create Vulkan image on the GPU for storing the texture in its memory");
 			delete pTextureContainer;
 		} else
-			RE_ERROR("Failed to create a Vulkan staging buffer for transferring the recently loaded texture to the GPU");
+			RE_ERROR("Failed to create a Vulkan staging buffer for transferring the recently loaded texture to the GPU");*/
 		return nullptr;
 	}
 	
@@ -134,7 +134,7 @@ namespace RE {
 	}
 	
 	Texture alloc_texture_loading_from_file(const char *const pacPathToTextureFile, int32_t &ri32Width, int32_t &ri32Height, int32_t &ri32Channels) {
-		if (vk_hDevice == VK_NULL_HANDLE) {
+		/*if (vk_hDevice == VK_NULL_HANDLE) {
 			RE_ERROR("Textures can't be loaded, when the engine doesn't run");
 			return nullptr;
 		}
@@ -143,7 +143,7 @@ namespace RE {
 			const Texture hTexture = PUSH_TO_CALLSTACKTRACE_AND_RETURN(alloc_texture_from_binary_data(pau8ImageBinaryData, static_cast<uint32_t>(ri32Width), static_cast<uint32_t>(ri32Height), static_cast<uint32_t>(ri32Channels)), Texture);
 			stbi_image_free(reinterpret_cast<void*>(pau8ImageBinaryData));
 			return hTexture;
-		}
+		}*/
 		return nullptr;
 	}
 
@@ -156,9 +156,9 @@ namespace RE {
 		}
 		const TextureContainer *const pTextureContainer = reinterpret_cast<TextureContainer*>(hTexture);
 		WAIT_FOR_IDLE_VULKAN_DEVICE();
-		vkDestroyImageView(vk_hDevice, pTextureContainer->vk_hImgView, nullptr);
+		/*vkDestroyImageView(vk_hDevice, pTextureContainer->vk_hImgView, nullptr);
 		vkFreeMemory(vk_hDevice, pTextureContainer->vk_hImageMemory, nullptr);
-		vkDestroyImage(vk_hDevice, pTextureContainer->vk_hImage, nullptr);
+		vkDestroyImage(vk_hDevice, pTextureContainer->vk_hImage, nullptr);*/
 		delete pTextureContainer;
 	}
 

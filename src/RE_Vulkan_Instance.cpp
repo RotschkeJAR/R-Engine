@@ -602,6 +602,7 @@ namespace RE {
 			case VK_ERROR_DEVICE_LOST:
 				pacErrName = "VK_ERROR_DEVICE_LOST";
 				pacErrDetail = "Device lost";
+				std::abort();
 				break;
 			case VK_ERROR_MEMORY_MAP_FAILED:
 				pacErrName = "VK_ERROR_MEMORY_MAP_FAILED";

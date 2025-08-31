@@ -10,7 +10,7 @@ namespace RE {
 	std::array<VkDescriptorImageInfo, RE_VK_COUNT_OF_TEXTURE_DESCRIPTOR> vk_aTextureSamplersToDescriptorSet = {};
 	
 	void fetch_minimum_allowed_texture_count() {
-		u16MaximumTextures = static_cast<uint16_t>(std::min<uint32_t>(std::min<uint32_t>(vk_physicalDeviceLimits.maxPerStageDescriptorSamplers, vk_physicalDeviceLimits.maxPerStageDescriptorSampledImages), RE_VK_MAX_SAMPLED_IMAGES));
+		u16MaximumTextures = static_cast<uint16_t>(std::min<uint32_t>(std::min<uint32_t>(vk_physicalDeviceProperties.limits.maxPerStageDescriptorSamplers, vk_physicalDeviceProperties.limits.maxPerStageDescriptorSampledImages), RE_VK_MAX_SAMPLED_IMAGES));
 	}
 
 	void reset_texture_counter() {
@@ -30,7 +30,7 @@ namespace RE {
 	}
 
 	void submit_sprites_to_descriptor_set(const uint8_t u8FrameInFlightIndex) {
-		const VkWriteDescriptorSet vk_writeToTextureDescriptorSet = {
+		/*const VkWriteDescriptorSet vk_writeToTextureDescriptorSet = {
 			.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 			.dstSet = vk_ahDescriptorSets[u8FrameInFlightIndex],
 			.dstBinding = 1,
@@ -39,7 +39,7 @@ namespace RE {
 			.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 			.pImageInfo = vk_aTextureSamplersToDescriptorSet.data()
 		};
-		vkUpdateDescriptorSets(vk_hDevice, 1, &vk_writeToTextureDescriptorSet, 0, nullptr);
+		vkUpdateDescriptorSets(vk_hDevice, 1, &vk_writeToTextureDescriptorSet, 0, nullptr);*/
 	}
 
 }

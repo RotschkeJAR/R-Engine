@@ -61,24 +61,24 @@ namespace RE {
 
 	
 	Vulkan_CommandBuffer::Vulkan_CommandBuffer(const VkCommandPool vk_hCommandPool, const VkCommandBufferLevel vk_eCommandBufferLevel) : vk_hCommandBuffer(VK_NULL_HANDLE), vk_hCommandPool(vk_hCommandPool) {
-		const VkCommandBufferAllocateInfo vk_commandBufferAllocInfo = {
+		/*const VkCommandBufferAllocateInfo vk_commandBufferAllocInfo = {
 			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
 			.commandPool = vk_hCommandPool,
 			.level = vk_eCommandBufferLevel,
 			.commandBufferCount = 1U
 		};
 		if (vkAllocateCommandBuffers(vk_hDevice, &vk_commandBufferAllocInfo, &vk_hCommandBuffer) != VK_SUCCESS)
-			RE_ERROR("Failed to allocate a new command buffer in command pool ", vk_hCommandPool);
+			RE_ERROR("Failed to allocate a new command buffer in command pool ", vk_hCommandPool);*/
 	}
 	
 	Vulkan_CommandBuffer::~Vulkan_CommandBuffer() {
 		if(!is_valid())
 			return;
-		vkFreeCommandBuffers(vk_hDevice, vk_hCommandPool, 1U, &vk_hCommandBuffer);
+		//vkFreeCommandBuffers(vk_hDevice, vk_hCommandPool, 1U, &vk_hCommandBuffer);
 	}
 
 	bool Vulkan_CommandBuffer::begin_recording(const VkCommandBufferUsageFlags vk_eUsageFlags, const VkCommandBufferInheritanceInfo *const vk_pInheritanceInfo) const {
-		const VkCommandBufferBeginInfo vk_beginRecordInfo = {
+		/*const VkCommandBufferBeginInfo vk_beginRecordInfo = {
 			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
 			.flags = vk_eUsageFlags,
 			.pInheritanceInfo = vk_pInheritanceInfo
@@ -86,14 +86,16 @@ namespace RE {
 		const bool bSuccess = vkBeginCommandBuffer(vk_hCommandBuffer, &vk_beginRecordInfo) == VK_SUCCESS;
 		if (!bSuccess)
 			RE_ERROR("Failed to begin recording command buffer ", vk_hCommandBuffer);
-		return bSuccess;
+		return bSuccess;*/
+		return true;
 	}
 
 	bool Vulkan_CommandBuffer::end_recording() const {
-		const bool bSuccess = vkEndCommandBuffer(vk_hCommandBuffer) == VK_SUCCESS;
+		/*const bool bSuccess = vkEndCommandBuffer(vk_hCommandBuffer) == VK_SUCCESS;
 		if (!bSuccess)
 			RE_ERROR("Failed to finish recording command buffer ", vk_hCommandBuffer);
-		return bSuccess;
+		return bSuccess;*/
+		return true;
 	}
 
 	[[nodiscard]]

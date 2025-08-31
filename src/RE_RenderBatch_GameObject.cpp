@@ -18,7 +18,7 @@ namespace RE {
 	}
 	
 	bool RenderBatch_GameObject::init() {
-		constexpr uint32_t u32StagingVertexBufferQueueCount = 1;
+		/*constexpr uint32_t u32StagingVertexBufferQueueCount = 1;
 		const std::array<uint32_t, u32StagingVertexBufferQueueCount> au32StagingVertexBufferQueues = {RE_VK_QUEUE_TRANSFER_INDEX};
 		if (create_vulkan_buffer(RE_VK_GAME_OBJECT_VERTEX_BUFFER_SIZE_BYTES, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, u32StagingVertexBufferQueueCount, au32StagingVertexBufferQueues.data(), VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &vk_hStagingVertexBuffer, &vk_hStagingVertexBufferMemory)) {
 			vkMapMemory(vk_hDevice, vk_hStagingVertexBufferMemory, 0, RE_VK_GAME_OBJECT_VERTEX_BUFFER_SIZE_BYTES, 0, reinterpret_cast<void**>(&paVertices));
@@ -48,11 +48,12 @@ namespace RE {
 		paVertices = nullptr;
 		vk_hStagingVertexBufferMemory = VK_NULL_HANDLE;
 		vk_hStagingVertexBuffer = VK_NULL_HANDLE;
-		return false;
+		return false;*/
+		return true;
 	}
 	
 	void RenderBatch_GameObject::destroy() {
-		for (uint16_t u16FrameInFlightDeleteIndex = 0; u16FrameInFlightDeleteIndex < RE_VK_FRAMES_IN_FLIGHT; u16FrameInFlightDeleteIndex++) {
+		/*for (uint16_t u16FrameInFlightDeleteIndex = 0; u16FrameInFlightDeleteIndex < RE_VK_FRAMES_IN_FLIGHT; u16FrameInFlightDeleteIndex++) {
 			vkFreeMemory(vk_hDevice, vk_ahVertexBufferMemories[u16FrameInFlightDeleteIndex], nullptr);
 			vkDestroyBuffer(vk_hDevice, vk_ahVertexBuffers[u16FrameInFlightDeleteIndex], nullptr);
 			vk_ahVertexBufferMemories[u16FrameInFlightDeleteIndex] = VK_NULL_HANDLE;
@@ -63,11 +64,11 @@ namespace RE {
 		vkDestroyBuffer(vk_hDevice, vk_hStagingVertexBuffer, nullptr);
 		paVertices = nullptr;
 		vk_hStagingVertexBufferMemory = VK_NULL_HANDLE;
-		vk_hStagingVertexBuffer = VK_NULL_HANDLE;
+		vk_hStagingVertexBuffer = VK_NULL_HANDLE;*/
 	}
 	
 	void RenderBatch_GameObject::load_vertices(bool &rbNeedsRender) {
-		u16OpaqueCount = 0;
+		/*u16OpaqueCount = 0;
 		u16TransparentCount = 0;
 		std::array<Sprite, RE_VK_RENDERABLE_RECTANGLES_COUNT> texturesToDraw;
 		for (uint16_t u16GameObjectIndex = 0; u16GameObjectIndex < rGameObjectBatch.size(); u16GameObjectIndex++) {
@@ -180,22 +181,22 @@ namespace RE {
 		else if (u16OpaqueCount)
 			vkCmdCopyBuffer(vk_ahGameObjectVertexTransferCommandBuffers[u8CurrentFrameInFlightIndex], vk_hStagingVertexBuffer, vk_ahVertexBuffers[u8CurrentFrameInFlightIndex], 1, &vk_a2VertexBufferCopyRegions[0]);
 		else if (u16TransparentCount)
-			vkCmdCopyBuffer(vk_ahGameObjectVertexTransferCommandBuffers[u8CurrentFrameInFlightIndex], vk_hStagingVertexBuffer, vk_ahVertexBuffers[u8CurrentFrameInFlightIndex], 1, &vk_a2VertexBufferCopyRegions[1]);
+			vkCmdCopyBuffer(vk_ahGameObjectVertexTransferCommandBuffers[u8CurrentFrameInFlightIndex], vk_hStagingVertexBuffer, vk_ahVertexBuffers[u8CurrentFrameInFlightIndex], 1, &vk_a2VertexBufferCopyRegions[1]);*/
 	}
 
 	void RenderBatch_GameObject::render_opaque() {
 		if (!u16OpaqueCount)
 			return;
 		constexpr VkDeviceSize vk_opaqueVertexBufferOffset = 0;
-		vkCmdBindVertexBuffers(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], 0, 1, &vk_ahVertexBuffers[u8CurrentFrameInFlightIndex], &vk_opaqueVertexBufferOffset);
-		vkCmdDrawIndexed(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], u16OpaqueCount * 6U, 1, 0, 0, 0);
+		/*vkCmdBindVertexBuffers(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], 0, 1, &vk_ahVertexBuffers[u8CurrentFrameInFlightIndex], &vk_opaqueVertexBufferOffset);
+		vkCmdDrawIndexed(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], u16OpaqueCount * 6U, 1, 0, 0, 0);*/
 	}
 
 	void RenderBatch_GameObject::render_transparent() {
 		if (!u16TransparentCount)
 			return;
-		vkCmdBindVertexBuffers(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], 0, 1, &vk_ahVertexBuffers[u8CurrentFrameInFlightIndex], &vk_transparentVerticesOffsetBytes);
-		vkCmdDrawIndexed(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], u16TransparentCount * 6U, 1, 0, 0, 0);
+		/*vkCmdBindVertexBuffers(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], 0, 1, &vk_ahVertexBuffers[u8CurrentFrameInFlightIndex], &vk_transparentVerticesOffsetBytes);
+		vkCmdDrawIndexed(vk_ahGameObjectSecondaryCommandBuffers[u8CurrentFrameInFlightIndex], u16TransparentCount * 6U, 1, 0, 0, 0);*/
 	}
 
 }

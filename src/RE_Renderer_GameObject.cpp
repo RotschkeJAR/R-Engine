@@ -11,7 +11,7 @@ namespace RE {
 	VkCommandBuffer vk_ahGameObjectVertexTransferCommandBuffers[RE_VK_FRAMES_IN_FLIGHT] = {}, vk_ahGameObjectSecondaryCommandBuffers[RE_VK_FRAMES_IN_FLIGHT] = {};
 
 	static bool create_game_object_pipelines() {
-		constexpr uint32_t u32GraphicsPipelineCount = 2;
+		/*constexpr uint32_t u32GraphicsPipelineCount = 2;
 		constexpr uint32_t u32ShaderStageCount = 2;
 		const VkPipelineShaderStageCreateInfo vk_aaShaderStages[u32GraphicsPipelineCount][u32ShaderStageCount] = {
 			{
@@ -277,11 +277,12 @@ namespace RE {
 		} else {
 			RE_FATAL_ERROR("Failed to create Vulkan graphics pipelines for rendering game objects");
 			return false;
-		}
+		}*/
+		return true;
 	}
 
 	bool init_game_object_renderer() {
-		if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_vulkan_shader_from_file("shaders/gameobject_opaque_vertex.glsl.spv", &vk_hOpaqueGameObjectVertexShader), bool)) {
+		/*if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_vulkan_shader_from_file("shaders/gameobject_opaque_vertex.glsl.spv", &vk_hOpaqueGameObjectVertexShader), bool)) {
 			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_vulkan_shader_from_file("shaders/gameobject_opaque_fragment.glsl.spv", &vk_hOpaqueGameObjectFragmentShader), bool)) {
 				if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_vulkan_shader_from_file("shaders/gameobject_transparent_vertex.glsl.spv", &vk_hTransparentGameObjectVertexShader), bool)) {
 					if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_vulkan_shader_from_file("shaders/gameobject_transparent_fragment.glsl.spv", &vk_hTransparentGameObjectFragmentShader), bool)) {
@@ -316,11 +317,12 @@ namespace RE {
 		vk_hTransparentGameObjectVertexShader = VK_NULL_HANDLE;
 		vk_hOpaqueGameObjectFragmentShader = VK_NULL_HANDLE;
 		vk_hOpaqueGameObjectVertexShader = VK_NULL_HANDLE;
-		return false;
+		return false;*/
+		return true;
 	}
 
 	void destroy_game_object_renderer() {
-		PUSH_TO_CALLSTACKTRACE(destroy_game_object_render_batches());
+		/*PUSH_TO_CALLSTACKTRACE(destroy_game_object_render_batches());
 		vkFreeCommandBuffers(vk_hDevice, vk_ahCommandPools[RE_VK_COMMAND_POOL_TRANSFER_PERSISTENT_INDEX], RE_VK_FRAMES_IN_FLIGHT, vk_ahGameObjectVertexTransferCommandBuffers);
 		vkFreeCommandBuffers(vk_hDevice, vk_ahCommandPools[RE_VK_COMMAND_POOL_GRAPHICS_PERSISTENT_INDEX], RE_VK_FRAMES_IN_FLIGHT, vk_ahGameObjectSecondaryCommandBuffers);
 		vkDestroyPipeline(vk_hDevice, vk_hTransparentGameObjectGraphicsPipeline, nullptr);
@@ -336,11 +338,11 @@ namespace RE {
 		vk_hTransparentGameObjectFragmentShader = VK_NULL_HANDLE;
 		vk_hTransparentGameObjectVertexShader = VK_NULL_HANDLE;
 		vk_hOpaqueGameObjectFragmentShader = VK_NULL_HANDLE;
-		vk_hOpaqueGameObjectVertexShader = VK_NULL_HANDLE;
+		vk_hOpaqueGameObjectVertexShader = VK_NULL_HANDLE;*/
 	}
 
 	bool load_game_object_vertices_and_transfer(bool &rbNeedsRender) {
-		bool bSuccess = false;
+		/*bool bSuccess = false;
 		if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(begin_recording_vulkan_command_buffer(vk_ahGameObjectVertexTransferCommandBuffers[u8CurrentFrameInFlightIndex], VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr), bool)) {
 			PUSH_TO_CALLSTACKTRACE(load_game_object_vertices(rbNeedsRender));
 			if (vkEndCommandBuffer(vk_ahGameObjectVertexTransferCommandBuffers[u8CurrentFrameInFlightIndex]) == VK_SUCCESS)
@@ -359,11 +361,12 @@ namespace RE {
 				RE_FATAL_ERROR("Failed submitting the Vulkan command buffer for transferring vertices to the GPU for rendering game objects");
 		} else
 			return true;
-		return false;
+		return false;*/
+		return true;
 	}
 
 	bool render_game_objects() {
-		const VkCommandBufferInheritanceInfo vk_inheritanceInfo = {
+		/*const VkCommandBufferInheritanceInfo vk_inheritanceInfo = {
 			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO,
 			.renderPass = vk_hWorldRenderPass,
 			.subpass = RE_VK_GAME_OBJECT_SUPBASS,
@@ -387,7 +390,8 @@ namespace RE {
 				RE_FATAL_ERROR("Failed to finish recording a Vulkan secondary command buffer for rendering game objects");
 		} else
 			RE_FATAL_ERROR("Failed to begin recording a Vulkan secondary command buffer for rendering game objects");
-		return false;
+		return false;*/
+		return true;
 	}
 
 	bool recreate_game_object_render_pipelines() {

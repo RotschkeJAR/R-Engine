@@ -30,14 +30,14 @@ all:
 	@make --no-print-directory $(OUT)
 
 $(OUT): $(RE) *.cpp
-	@$(CC) $(CFLAG) -std=c++20 -x c++ -o "$(OUT)" *.cpp $(LDFLAG)
+	@$(CC) $(CFLAG) -std=c++23 -x c++ -o "$(OUT)" *.cpp $(LDFLAG)
 
 $(RE): $(SRC)/*
 	-@rm -f *.o $(BIN)/*.o
 	@if [ "$(wildcard $(BIN)/*.gch)" != "" ]; then \
 		mv $(BIN)/*.gch $(SRC); \
 	fi
-	@$(CC) $(CFLAG) -std=c++20 -x c++ -c $(SRC)/*.cpp -I$(LIB) -I$(LIB_SPEC) -I"$(HOME)/Vulkan SDK/x86_64/include" || (rm -f *.o; exit 1)
+	@$(CC) $(CFLAG) -std=c++23 -x c++ -c $(SRC)/*.cpp -I$(LIB) -I$(LIB_SPEC) -I"$(HOME)/Vulkan SDK/x86_64/include" || (rm -f *.o; exit 1)
 	@mv *.o $(BIN)
 	@if [ "$(wildcard $(SRC)/*.gch)" != "" ]; then \
 		mv $(SRC)/*.gch $(BIN); \
@@ -51,13 +51,13 @@ $(LIB_BIN)/*: $(LIB)/* $(LIB_SPEC)/*
 		$(CC) $(CFLAG) -std=c2x -x c -c $(LIB)/*.c || (rm -f *.o; exit 1); \
 	fi
 	@if [ "$(wildcard $(LIB)/*.cpp)" != "" ]; then \
-		$(CC) $(CFLAG) -std=c++20 -x c++ -c $(LIB)/*.cpp || (rm -f *.o; exit 1); \
+		$(CC) $(CFLAG) -std=c++23 -x c++ -c $(LIB)/*.cpp || (rm -f *.o; exit 1); \
 	fi
 	@if [ "$(wildcard $(LIB_SPEC)/*.c)" != "" ]; then \
 		$(CC) $(CFLAG) -std=c2x -x c -c $(LIB_SPEC)/*.c || (rm -f *.o; exit 1); \
 	fi
 	@if [ "$(wildcard $(LIB_SPEC)/*.cpp)" != "" ]; then \
-		$(CC) $(CFLAG) -std=c++20 -x c++ -c $(LIB_SPEC)/*.cpp || (rm -f *.o; exit 1); \
+		$(CC) $(CFLAG) -std=c++23 -x c++ -c $(LIB_SPEC)/*.cpp || (rm -f *.o; exit 1); \
 	fi
 	@mv *.o $(LIB_BIN)
 

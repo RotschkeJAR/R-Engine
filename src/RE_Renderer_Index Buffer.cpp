@@ -3,9 +3,10 @@
 namespace RE {
 	
 	VkBuffer vk_hRectIndexBuffer;
-	VkDeviceMemory vk_hRectIndexBufferMemory;
+	static VkDeviceMemory vk_hRectIndexBufferMemory;
 
 	bool create_rect_index_buffer() {
+		// TODO: create staging index buffer and transfer to (on-gpu) index buffer
 		return true;
 	}
 

@@ -45,7 +45,7 @@ namespace RE {
 		if (u8LogicalQueueCount > 1) {
 			vk_swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
 			vk_swapchainCreateInfo.queueFamilyIndexCount = u8LogicalQueueCount;
-			vk_swapchainCreateInfo.pQueueFamilyIndices = pau32QueueIndices.get();
+			vk_swapchainCreateInfo.pQueueFamilyIndices = queueFamilyIndices.get();
 		} else
 			vk_swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		if (are_bits_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_BIT))
@@ -98,7 +98,7 @@ namespace RE {
 	}
 
 	bool recreate_swapchain() {
-		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(get_selected_physical_vulkan_device(), vk_hSurface, &vk_surfaceCapabilities);
+		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &vk_surfaceCapabilities);
 		WAIT_FOR_IDLE_VULKAN_DEVICE();
 		if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_swapchain(), bool)) {
 			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(swapchain_created_renderer(), bool))

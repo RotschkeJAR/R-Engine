@@ -1011,9 +1011,14 @@ namespace RE {
 	void execute();
 	[[nodiscard]]
 	float get_deltaseconds();
-	void set_fps_limit(uint32_t u32MaxFramesPerSecond);
 	[[nodiscard]]
 	float get_fps_rate();
+	void set_fps_limit(uint32_t u32MaxFramesPerSecond);
+	[[nodiscard]]
+	uint32_t get_fps_limit();
+	void set_max_lag_time(float fSecondsOfLag);
+	[[nodiscard]]
+	float get_max_lag_time();
 	
 	// Manager
 	void set_next_scene(Scene *pNextSceneParam);

@@ -13,10 +13,10 @@ namespace RE {
 		const VkSampleCountFlagBits vk_eNewSampleCount = static_cast<VkSampleCountFlagBits>(VK_SAMPLE_COUNT_1_BIT << eNextMsaaMode);
 		if (vk_eNewSampleCount == vk_eMsaaCount) {
 			if (eNewMsaaMode != eNextMsaaMode)
-				RE_WARNING("MSAA mode ", std::pow(2, static_cast<int32_t>(eNewMsaaMode)), " is not supported on this GPU and dropped down to ", std::pow(2, static_cast<int32_t>(eNextMsaaMode)), ", but is already set");
+				RE_WARNING("MSAA mode ", std::pow(2, static_cast<int32_t>(eNewMsaaMode)), " is not supported on this GPU and has been dropped down to ", std::pow(2, static_cast<int32_t>(eNextMsaaMode)), ", but is already set");
 			return;
 		} else if (eNewMsaaMode != eNextMsaaMode)
-			RE_WARNING("MSAA mode ", std::pow(2, static_cast<int32_t>(eNewMsaaMode)), " is not supported on this GPU and dropped down to ", std::pow(2, static_cast<int32_t>(eNextMsaaMode)));
+			RE_WARNING("MSAA mode ", std::pow(2, static_cast<int32_t>(eNewMsaaMode)), " is not supported on this GPU and has been dropped down to ", std::pow(2, static_cast<int32_t>(eNextMsaaMode)));
 		if (vk_hDevice == VK_NULL_HANDLE) {
 			vk_eMsaaCount = vk_eNewSampleCount;
 			return;
@@ -60,7 +60,7 @@ namespace RE {
 	[[nodiscard]]
 	bool is_msaa_mode_supported(const MsaaMode eMsaaMode) {
 		const VkSampleCountFlags vk_eAllowedSamples = vk_physicalDeviceProperties.limits.framebufferColorSampleCounts & vk_physicalDeviceProperties.limits.framebufferDepthSampleCounts & vk_physicalDeviceProperties.limits.framebufferStencilSampleCounts;
-		return ((VK_SAMPLE_COUNT_1_BIT << eMsaaMode) & vk_eAllowedSamples) > 0;
+		return ((VK_SAMPLE_COUNT_1_BIT << eMsaaMode) & vk_eAllowedSamples) != 0;
 	}
 
 	void get_supported_msaa_modes(const uint8_t u8ListLength, MsaaMode *const paeSupportedMsaaModes, uint8_t *const pu8SupportedMsaaModeCount) {

@@ -1,9 +1,7 @@
 #include "RE_RenderBatch_GameObject.hpp"
-#include "RE_Renderer_GameObject.hpp"
 #include "RE_Manager.hpp"
 #include "RE_Vulkan_Wrapper Functions.hpp"
 #include "RE_ListBatch_GameObject.hpp"
-#include "RE_Renderer Texture.hpp"
 
 namespace RE {
 	

@@ -26,16 +26,19 @@ namespace RE {
 	void select_best_physical_vulkan_device();
 	
 	// Scheduler
+#define COMMAND_POOLS_PER_QUEUE 2
+#define COMMAND_POOL_OFFSET_NORMAL 0
+#define COMMAND_POOL_OFFSET_TRANSIENT 1
+	extern std::unique_ptr<uint32_t[]> queueFamilyIndices;
 	extern std::unique_ptr<VkQueue[]> vk_pahQueues;
 	extern std::unique_ptr<VkQueueFlags[]> vk_paeQueueTypes;
-	extern std::unique_ptr<uint32_t[]> pau32QueueIndices;
 	extern std::unique_ptr<VkCommandPool[]> vk_pahCommandPools;
 	extern uint8_t u8LogicalQueueCount;
 	void does_gpu_have_necessary_queues(VkPhysicalDevice vk_hPhysicalDevice, std::queue<std::string> &rMissingFeatures);
 	[[nodiscard]]
 	int32_t rate_gpu_queues(VkPhysicalDevice vk_hPhysicalDevice);
-	bool setup_logical_device_interfaces();
-	void destroy_logical_device_interfaces();
+	bool setup_logical_device_queues();
+	void destroy_logical_device_queues();
 
 	// Swapchain
 	extern VkPresentModeKHR vk_ePresentModeVsync, vk_ePresentModeNoVsync;

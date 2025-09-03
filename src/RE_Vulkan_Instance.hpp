@@ -1,6 +1,8 @@
 #ifndef __RE_VULKAN_INSTANCE_H__
 #define __RE_VULKAN_INSTANCE_H__
 
+#define RE_VK_API_VERSION VK_API_VERSION_1_3
+
 #include "RE_Internal Header.hpp"
 #ifdef RE_OS_WINDOWS
 # define VK_USE_PLATFORM_WIN32_KHR
@@ -10,8 +12,8 @@
 #endif
 #define VK_NO_PROTOTYPES
 #include <vulkan/vulkan.h>
-#ifndef VK_API_VERSION_1_2
-# error The Vulkan header should support at least all versions up to 1.2
+#ifndef RE_VK_API_VERSION
+# error The Vulkan header should support at least all versions up to 1.3
 #endif
 
 namespace RE {
@@ -20,12 +22,12 @@ namespace RE {
 	
 	// Vulkan 1.0
 	extern PFN_vkEnumeratePhysicalDevices pfn_vkEnumeratePhysicalDevices;
-	extern PFN_vkGetPhysicalDeviceFeatures pfn_vkGetPhysicalDeviceFeatures;
-	extern PFN_vkGetPhysicalDeviceFormatProperties pfn_vkGetPhysicalDeviceFormatProperties;
-	extern PFN_vkGetPhysicalDeviceImageFormatProperties pfn_vkGetPhysicalDeviceImageFormatProperties;
-	extern PFN_vkGetPhysicalDeviceProperties pfn_vkGetPhysicalDeviceProperties;
-	extern PFN_vkGetPhysicalDeviceQueueFamilyProperties pfn_vkGetPhysicalDeviceQueueFamilyProperties;
-	extern PFN_vkGetPhysicalDeviceMemoryProperties pfn_vkGetPhysicalDeviceMemoryProperties;
+	[[deprecated]] extern PFN_vkGetPhysicalDeviceFeatures pfn_vkGetPhysicalDeviceFeatures;
+	[[deprecated]] extern PFN_vkGetPhysicalDeviceFormatProperties pfn_vkGetPhysicalDeviceFormatProperties;
+	[[deprecated]] extern PFN_vkGetPhysicalDeviceImageFormatProperties pfn_vkGetPhysicalDeviceImageFormatProperties;
+	[[deprecated]] extern PFN_vkGetPhysicalDeviceProperties pfn_vkGetPhysicalDeviceProperties;
+	[[deprecated]] extern PFN_vkGetPhysicalDeviceQueueFamilyProperties pfn_vkGetPhysicalDeviceQueueFamilyProperties;
+	[[deprecated]] extern PFN_vkGetPhysicalDeviceMemoryProperties pfn_vkGetPhysicalDeviceMemoryProperties;
 	extern PFN_vkGetInstanceProcAddr pfn_vkGetInstanceProcAddr;
 	extern PFN_vkGetDeviceProcAddr pfn_vkGetDeviceProcAddr;
 	extern PFN_vkCreateDevice pfn_vkCreateDevice;
@@ -34,6 +36,7 @@ namespace RE {
 	extern PFN_vkEnumerateDeviceExtensionProperties pfn_vkEnumerateDeviceExtensionProperties;
 	extern PFN_vkEnumerateInstanceLayerProperties pfn_vkEnumerateInstanceLayerProperties;
 	extern PFN_vkEnumerateDeviceLayerProperties pfn_vkEnumerateDeviceLayerProperties;
+	[[deprecated]] extern PFN_vkGetPhysicalDeviceSparseImageFormatProperties pfn_vkGetPhysicalDeviceSparseImageFormatProperties;
 
 	// Vulkan 1.1
 	extern PFN_vkEnumerateInstanceVersion pfn_vkEnumerateInstanceVersion;

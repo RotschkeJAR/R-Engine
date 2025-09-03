@@ -8,7 +8,7 @@ namespace RE {
 
 	bool bErrorOccured = false;
 	bool bRunning = false;
-	float fDeltaseconds = 0.0f, fMinDeltatime = 1.0f / 60;
+	float fDeltaseconds = 0.0f, fMinDeltatime = 1.0f / 60, fMaxLagTime = 0.5f;
 
 	void execute() {
 #if !(defined RE_OS_WINDOWS) && !(defined RE_OS_LINUX)
@@ -18,7 +18,7 @@ namespace RE {
 #endif
 		std::setlocale(LC_ALL, "");
 		if (!are_scenes_present()) {
-			RE_ERROR("The aren't any scenes yet. The engine won't launch");
+			RE_ERROR("There aren't any scenes yet. The engine won't launch");
 			return;
 		}
 		
@@ -42,9 +42,12 @@ namespace RE {
 							lastFrameTime = currentFrameTime;
 							currentFrameTime = std::chrono::high_resolution_clock::now();
 							fDeltaseconds = std::chrono::duration_cast<std::chrono::duration<float>>(currentFrameTime - lastFrameTime).count();
-							const float fTimeToWait = fMinDeltatime - fDeltaseconds;
-							if (fTimeToWait > 0.0f)
-								std::this_thread::sleep_for(std::chrono::duration<float>(fTimeToWait));
+							if (fDeltaseconds <= fMaxLagTime) {
+								const float fTimeToWait = fMinDeltatime - fDeltaseconds;
+								if (fTimeToWait > 0.0f)
+									std::this_thread::sleep_for(std::chrono::duration<float>(fTimeToWait));
+							} else
+								fDeltaseconds = 0.0f;
 						}
 
 						// Termination
@@ -69,13 +72,35 @@ namespace RE {
 		return fDeltaseconds;
 	}
 
+	[[nodiscard]]
+	float get_fps_rate() {
+		return fDeltaseconds > 0.0f ? (1.0f / fDeltaseconds) : -1.0f;
+	}
+
 	void set_fps_limit(const uint32_t u32MaxFramesPerSecond) {
 		fMinDeltatime = u32MaxFramesPerSecond ? (1.0f / static_cast<float>(u32MaxFramesPerSecond)) : -1.0f;
 	}
 
 	[[nodiscard]]
-	float get_fps_rate() {
-		return fDeltaseconds > 0.0f ? (1.0f / fDeltaseconds) : -1.0f;
+	uint32_t get_fps_limit() {
+		return fMinDeltatime > 0.0f ? static_cast<uint32_t>(std::round(1.0f / fMinDeltatime)) : 0;
+	}
+
+#define LOWEST_SMOOTH_FPS 10
+#define DELTATIME_FOR_LOWEST_SMOOTH_FPS (1.0f / static_cast<float>(LOWEST_SMOOTH_FPS))
+
+	void set_max_lag_time(const float fSecondsOfLag) {
+		if (fSecondsOfLag <= 0.0f) {
+			RE_WARNING("Maximum lag time cannot be zero or negative. Old value will be kept");
+			return;
+		} else if (fSecondsOfLag <= DELTATIME_FOR_LOWEST_SMOOTH_FPS)
+			RE_WARNING("The new maximum lag time (", fSecondsOfLag, " seconds = ", static_cast<uint32_t>(std::round(1.0f / fSecondsOfLag)), " FPS) might be too low causing the simulation to stutter or freeze. Common fixed deltatime for ", LOWEST_SMOOTH_FPS, " FPS is ", DELTATIME_FOR_LOWEST_SMOOTH_FPS, " seconds");
+		fMaxLagTime = fSecondsOfLag;
+	}
+
+	[[nodiscard]]
+	float get_max_lag_time() {
+		return fMaxLagTime;
 	}
 
 }

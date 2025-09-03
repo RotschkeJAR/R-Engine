@@ -1,5 +1,5 @@
-#ifndef __RE_RENDERER_GAME_OBJECT_H__
-#define __RE_RENDERER_GAME_OBJECT_H__
+#ifndef __RE_SUB_RENDERER_H__
+#define __RE_SUB_RENDERER_H__
 
 #include "RE_Renderer.hpp"
 
@@ -40,4 +40,4 @@ namespace RE {
 
 }
 
-#endif /* __RE_RENDERER_GAME_OBJECT_H__ */
+#endif /* __RE_SUB_RENDERER_H__ */

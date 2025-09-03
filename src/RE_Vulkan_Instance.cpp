@@ -24,12 +24,12 @@ namespace RE {
 	PFN_vkCreateInstance pfn_vkCreateInstance = nullptr;
 	PFN_vkDestroyInstance pfn_vkDestroyInstance = nullptr;
 	PFN_vkEnumeratePhysicalDevices pfn_vkEnumeratePhysicalDevices = nullptr;
-	PFN_vkGetPhysicalDeviceFeatures pfn_vkGetPhysicalDeviceFeatures = nullptr;
-	PFN_vkGetPhysicalDeviceFormatProperties pfn_vkGetPhysicalDeviceFormatProperties = nullptr;
-	PFN_vkGetPhysicalDeviceImageFormatProperties pfn_vkGetPhysicalDeviceImageFormatProperties = nullptr;
-	PFN_vkGetPhysicalDeviceProperties pfn_vkGetPhysicalDeviceProperties = nullptr;
-	PFN_vkGetPhysicalDeviceQueueFamilyProperties pfn_vkGetPhysicalDeviceQueueFamilyProperties = nullptr;
-	PFN_vkGetPhysicalDeviceMemoryProperties pfn_vkGetPhysicalDeviceMemoryProperties = nullptr;
+	[[deprecated]] PFN_vkGetPhysicalDeviceFeatures pfn_vkGetPhysicalDeviceFeatures = nullptr;
+	[[deprecated]] PFN_vkGetPhysicalDeviceFormatProperties pfn_vkGetPhysicalDeviceFormatProperties = nullptr;
+	[[deprecated]] PFN_vkGetPhysicalDeviceImageFormatProperties pfn_vkGetPhysicalDeviceImageFormatProperties = nullptr;
+	[[deprecated]] PFN_vkGetPhysicalDeviceProperties pfn_vkGetPhysicalDeviceProperties = nullptr;
+	[[deprecated]] PFN_vkGetPhysicalDeviceQueueFamilyProperties pfn_vkGetPhysicalDeviceQueueFamilyProperties = nullptr;
+	[[deprecated]] PFN_vkGetPhysicalDeviceMemoryProperties pfn_vkGetPhysicalDeviceMemoryProperties = nullptr;
 	PFN_vkGetInstanceProcAddr pfn_vkGetInstanceProcAddr = nullptr;
 	PFN_vkGetDeviceProcAddr pfn_vkGetDeviceProcAddr = nullptr;
 	PFN_vkCreateDevice pfn_vkCreateDevice = nullptr;
@@ -38,6 +38,7 @@ namespace RE {
 	PFN_vkEnumerateDeviceExtensionProperties pfn_vkEnumerateDeviceExtensionProperties = nullptr;
 	PFN_vkEnumerateInstanceLayerProperties pfn_vkEnumerateInstanceLayerProperties = nullptr;
 	PFN_vkEnumerateDeviceLayerProperties pfn_vkEnumerateDeviceLayerProperties = nullptr;
+	[[deprecated]] PFN_vkGetPhysicalDeviceSparseImageFormatProperties pfn_vkGetPhysicalDeviceSparseImageFormatProperties = nullptr;
 
 	// Vulkan 1.1
 	PFN_vkEnumerateInstanceVersion pfn_vkEnumerateInstanceVersion = nullptr;
@@ -177,7 +178,7 @@ namespace RE {
 			.applicationVersion = VK_MAKE_API_VERSION(0, 1, 0, 0),
 			.pEngineName = "R-Engine",
 			.engineVersion = VK_MAKE_API_VERSION(0, 1, 0, 0),
-			.apiVersion = VK_API_VERSION_1_3
+			.apiVersion = RE_VK_API_VERSION
 		};
 		const VkInstanceCreateInfo vk_instanceCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
@@ -526,6 +527,7 @@ namespace RE {
 	bool check_vulkan_result(const VkResult vk_eResult, const char *const pacFile, const char *const pacFunc, const uint32_t u32Line) {
 		const char* pacErrName = "Unknown Vulkan result";
 		const char* pacErrDetail = "Unknown Vulkan Result enumeration value";
+		bool bCrash = false;
 		switch (vk_eResult) {
 			case VK_SUCCESS:
 				return true;
@@ -533,11 +535,11 @@ namespace RE {
 			// Success codes, but treated as errors
 			case VK_NOT_READY:
 				pacErrName = "VK_NOT_READY";
-				pacErrDetail = "Not ready (a fence or query has not yet completed)";
+				pacErrDetail = "A fence or query has not completed yet";
 				break;
 			case VK_TIMEOUT:
 				pacErrName = "VK_TIMEOUT";
-				pacErrDetail = "Timeout (a wait operation has not completed in the specified time)";
+				pacErrDetail = "A wait operation has not completed in the specified time";
 				break;
 			case VK_EVENT_SET:
 				pacErrName = "VK_EVENT_SET";
@@ -549,7 +551,7 @@ namespace RE {
 				break;
 			case VK_INCOMPLETE:
 				pacErrName = "VK_INCOMPLETE";
-				pacErrDetail = "Incomplete (a return array was too small for the result)";
+				pacErrDetail = "A return array was too small for the result";
 				break;
 			case VK_SUBOPTIMAL_KHR:
 				pacErrName = "VK_SUBOPTIMAL_KHR";
@@ -589,11 +591,13 @@ namespace RE {
 			// Errors
 			case VK_ERROR_OUT_OF_HOST_MEMORY:
 				pacErrName = "VK_ERROR_OUT_OF_HOST_MEMORY";
-				pacErrDetail = "Out of host memory";
+				pacErrDetail = "PC ran out of memory";
+				bCrash = true;
 				break;
 			case VK_ERROR_OUT_OF_DEVICE_MEMORY:
 				pacErrName = "VK_ERROR_OUT_OF_DEVICE_MEMORY";
-				pacErrDetail = "Out of device memory";
+				pacErrDetail = "GPU ran out of memory";
+				bCrash = true;
 				break;
 			case VK_ERROR_INITIALIZATION_FAILED:
 				pacErrName = "VK_ERROR_INITIALIZATION_FAILED";
@@ -601,24 +605,24 @@ namespace RE {
 				break;
 			case VK_ERROR_DEVICE_LOST:
 				pacErrName = "VK_ERROR_DEVICE_LOST";
-				pacErrDetail = "Device lost";
-				std::abort();
+				pacErrDetail = "Fatal error on GPU, which caused termination for segmentation violation in shaders, floating-point exception or other. Aborting...";
+				bCrash = true;
 				break;
 			case VK_ERROR_MEMORY_MAP_FAILED:
 				pacErrName = "VK_ERROR_MEMORY_MAP_FAILED";
-				pacErrDetail = "Memory map failed";
+				pacErrDetail = "Mapping memory failed";
 				break;
 			case VK_ERROR_LAYER_NOT_PRESENT:
 				pacErrName = "VK_ERROR_LAYER_NOT_PRESENT";
-				pacErrDetail = "Layer not present";
+				pacErrDetail = "Requested Vulkan layer not present";
 				break;
 			case VK_ERROR_EXTENSION_NOT_PRESENT:
 				pacErrName = "VK_ERROR_EXTENSION_NOT_PRESENT";
-				pacErrDetail = "Extension not present";
+				pacErrDetail = "Requested Vulkan extension not present";
 				break;
 			case VK_ERROR_FEATURE_NOT_PRESENT:
 				pacErrName = "VK_ERROR_FEATURE_NOT_PRESENT";
-				pacErrDetail = "Feature not present";
+				pacErrDetail = "Requested GPU-feature not present";
 				break;
 			case VK_ERROR_INCOMPATIBLE_DRIVER:
 				pacErrName = "VK_ERROR_INCOMPATIBLE_DRIVER";
@@ -630,11 +634,11 @@ namespace RE {
 				break;
 			case VK_ERROR_FORMAT_NOT_SUPPORTED:
 				pacErrName = "VK_ERROR_FORMAT_NOT_SUPPORTED";
-				pacErrDetail = "Format not supported";
+				pacErrDetail = "Format not supported on this GPU";
 				break;
 			case VK_ERROR_FRAGMENTED_POOL:
 				pacErrName = "VK_ERROR_FRAGMENTED_POOL";
-				pacErrDetail = "Fragmented pool";
+				pacErrDetail = "Memory fragmentation in pool";
 				break;
 			case VK_ERROR_SURFACE_LOST_KHR:
 				pacErrName = "VK_ERROR_SURFACE_LOST_KHR";
@@ -738,6 +742,8 @@ namespace RE {
 		}
 		print(pacFile, " (line ", u32Line, "): ");
 		println_colored(append_to_string(pacErrName, ": ", pacErrDetail).c_str(), RE_TERMINAL_COLOR_BRIGHT_RED, false, false);
+		if (bCrash)
+			std::abort();
 		return false;
 	}
 

@@ -47,16 +47,16 @@ namespace RE {
 	}
 
 	static void fetch_vulkan_surface_infos() {
-		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(get_selected_physical_vulkan_device(), vk_hSurface, &vk_surfaceCapabilities);
-		vkGetPhysicalDeviceSurfaceFormatsKHR(get_selected_physical_vulkan_device(), vk_hSurface, &u32SurfaceFormatsAvailableCount, nullptr);
+		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &vk_surfaceCapabilities);
+		vkGetPhysicalDeviceSurfaceFormatsKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &u32SurfaceFormatsAvailableCount, nullptr);
 		vk_paSurfaceFormatsAvailable.reset();
 		vk_paSurfaceFormatsAvailable = std::make_unique<VkSurfaceFormatKHR[]>(u32SurfaceFormatsAvailableCount);
-		vkGetPhysicalDeviceSurfaceFormatsKHR(get_selected_physical_vulkan_device(), vk_hSurface, &u32SurfaceFormatsAvailableCount, vk_paSurfaceFormatsAvailable.get());
+		vkGetPhysicalDeviceSurfaceFormatsKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &u32SurfaceFormatsAvailableCount, vk_paSurfaceFormatsAvailable.get());
 		uint32_t u32PresentModesCount;
-		vkGetPhysicalDeviceSurfacePresentModesKHR(get_selected_physical_vulkan_device(), vk_hSurface, &u32PresentModesCount, nullptr);
+		vkGetPhysicalDeviceSurfacePresentModesKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &u32PresentModesCount, nullptr);
 		std::vector<VkPresentModeKHR> allSupportedPresentModes;
 		allSupportedPresentModes.resize(u32PresentModesCount);
-		vkGetPhysicalDeviceSurfacePresentModesKHR(get_selected_physical_vulkan_device(), vk_hSurface, &u32PresentModesCount, allSupportedPresentModes.data());
+		vkGetPhysicalDeviceSurfacePresentModesKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &u32PresentModesCount, allSupportedPresentModes.data());
 
 		vk_ePresentModeVsync = VK_PRESENT_MODE_FIFO_KHR;
 		vk_ePresentModeNoVsync = VK_PRESENT_MODE_FIFO_KHR;
@@ -80,10 +80,10 @@ namespace RE {
 				PUSH_TO_CALLSTACKTRACE(fetch_vulkan_surface_infos());
 				PUSH_TO_CALLSTACKTRACE(select_best_vulkan_surface_format());
 				if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(init_logical_vulkan_device(), bool)) {
-					if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(setup_logical_device_interfaces(), bool)) {
+					if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(setup_logical_device_queues(), bool)) {
 						if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_swapchain(), bool))
 							return true;
-						PUSH_TO_CALLSTACKTRACE(destroy_logical_device_interfaces());
+						PUSH_TO_CALLSTACKTRACE(destroy_logical_device_queues());
 					}
 					PUSH_TO_CALLSTACKTRACE(destroy_logical_vulkan_device());
 				}
@@ -97,7 +97,7 @@ namespace RE {
 	void destroy_render_system() {
 		if (vk_hSwapchain)
 			PUSH_TO_CALLSTACKTRACE(destroy_swapchain());
-		PUSH_TO_CALLSTACKTRACE(destroy_logical_device_interfaces());
+		PUSH_TO_CALLSTACKTRACE(destroy_logical_device_queues());
 		PUSH_TO_CALLSTACKTRACE(destroy_logical_vulkan_device());
 		PUSH_TO_CALLSTACKTRACE(free_physical_vulkan_device_list());
 		PUSH_TO_CALLSTACKTRACE(destroy_vulkan_surface());

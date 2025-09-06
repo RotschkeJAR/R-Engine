@@ -43,7 +43,7 @@ namespace RE {
 			vk_pahCommandBuffers = std::make_unique<VkCommandBuffer[]>(u32CommandBufferCount);
 			PUSH_TO_CALLSTACKTRACE(alloc_vulkan_command_buffers(commandPoolPerCommandBuffer[0], VK_COMMAND_BUFFER_LEVEL_PRIMARY, u32CommandBufferCount, &vk_pahCommandBuffers[0]));
 			commandBufferIndicesPerFunction = std::make_shared<uint32_t[]>(u32CommandBufferCount);
-			commandBufferIndicesPerFunction[0] = 0;
+			std::fill(commandBufferIndicesPerFunction.get(), commandBufferIndicesPerFunction.get() + u32FunctionsCount, 0);
 			if (bRequiresPresenting) {
 				if ((vk_paeQueueTypes[u8BestQueue] & RE_VK_QUEUE_PRESENT_BIT) != 0)
 					u8PresentQueueIndex = u8BestQueue;
@@ -164,6 +164,7 @@ namespace RE {
 
 	void VulkanTask::record(const VkCommandBufferUsageFlags vk_eUsageFlags) {
 		uint32_t u32CommandBufferIndex = 0;
+		begin_recording_vulkan_command_buffer(vk_pahCommandBuffers[u32CommandBufferIndex], vk_eUsageFlags, nullptr);
 		for (uint32_t u32FunctionIndex = 0; u32FunctionIndex < u32FunctionsCount; u32FunctionIndex++) {
 			if (u32CommandBufferIndex != commandBufferIndicesPerFunction[u32FunctionIndex]) {
 				if (u32CommandBufferIndex > 0)
@@ -175,6 +176,7 @@ namespace RE {
 			const uint32_t u32NextQueueFamily = u32FunctionIndex < (u32FunctionsCount - 1) ? get_queue_family_index_for_function(u32FunctionIndex + 1) : VK_QUEUE_FAMILY_IGNORED;
 			PUSH_TO_CALLSTACKTRACE_DETAILED(paFunctions[u32FunctionIndex](vk_pahCommandBuffers[u32CommandBufferIndex], u32PreviousQueueFamily, get_queue_family_index_for_function(u32FunctionIndex), u32NextQueueFamily), append_to_string("Function index ", u32FunctionIndex).c_str());
 		}
+		vkEndCommandBuffer(vk_pahCommandBuffers[commandBufferIndicesPerFunction[u32FunctionsCount - 1]]);
 	}
 
 	void VulkanTask::submit(const uint32_t u32SemaphoresToWaitForCount, const VkSemaphore *const vk_pahSemaphoresToWaitFor, const VkPipelineStageFlags *const vk_pahStagesToWaitAt, const uint32_t u32SemaphoresToSignal, const VkSemaphore *const vk_pahSemaphoresToSignal, const VkFence vk_hFenceToSignal) {

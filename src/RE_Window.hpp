@@ -33,7 +33,7 @@ namespace RE {
 	extern LinuxWindowType eLinuxWindowType;
 #endif
 
-	extern Vector2u windowSize;
+	extern Vector2u windowSize, largestMonitorSize;
 	extern const char* pacWindowTitle;
 	extern uint8_t u8WindowFlagBits;
 

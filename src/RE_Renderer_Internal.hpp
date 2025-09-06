@@ -4,12 +4,29 @@
 #include "RE_Renderer.hpp"
 #include "RE_Render System.hpp"
 #include "RE_Texture.hpp"
+#include "RE_Vulkan_Wrapper Functions.hpp"
+#include "RE_Vulkan_Wrapper Classes.hpp"
 
 namespace RE {
 
+	/**
+	 * Rendering rectangle-scheme:
+	 * 
+	 * 1st triangle: 0, 1, 2
+	 * 2nd triangle: 1, 3, 2
+	 *  
+	 *  0 -------------------- 1
+	 *  |               ______/|
+	 *  |        ______/       |
+	 *  | ______/              |
+	 *  |/                     |
+	 *  2 -------------------- 3
+	 */
+
 	// Index buffer
+#define RE_VK_INDEX_BUFFER_SIZE (RE_VK_RENDERABLE_RECTANGLES_COUNT * 6U * sizeof(uint16_t))
 	extern VkBuffer vk_hRectIndexBuffer;
-	bool create_rect_index_buffer();
+	bool create_rect_index_buffer(VkBuffer vk_hStagingIndexBuffer, VkDeviceMemory vk_hStagingIndexBufferMemory, VkFence vk_hIndexBufferTransferFence);
 	void destroy_rect_index_buffer();
 
 	// MSAA

@@ -79,6 +79,7 @@ namespace RE {
 				PUSH_TO_CALLSTACKTRACE(select_best_physical_vulkan_device());
 				PUSH_TO_CALLSTACKTRACE(fetch_vulkan_surface_infos());
 				PUSH_TO_CALLSTACKTRACE(select_best_vulkan_surface_format());
+				PUSH_TO_CALLSTACKTRACE(find_suitable_depth_stencil_formats());
 				if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(init_logical_vulkan_device(), bool)) {
 					if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(setup_logical_device_queues(), bool)) {
 						if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_swapchain(), bool))

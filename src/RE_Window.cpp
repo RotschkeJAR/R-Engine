@@ -10,7 +10,7 @@ namespace RE {
 	LinuxWindowType eLinuxWindowType = X11;
 #endif
 	
-	Vector2u windowSize(600, 400);
+	Vector2u windowSize(600, 400), largestMonitorSize(1920, 1080);
 	const char* pacWindowTitle = "Untitled game window";
 	uint8_t u8WindowFlagBits;
 

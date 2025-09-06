@@ -54,7 +54,6 @@ namespace RE {
 							x11_pSizes->min_height = MIN_WINDOW_HEIGHT;
 							PUSH_TO_CALLSTACKTRACE(x11_pSizes->max_width = monitorSize[0] + MAX_WINDOW_WIDTH_RELATIVE_TO_MONITOR);
 							PUSH_TO_CALLSTACKTRACE(x11_pSizes->max_height = monitorSize[1] + MAX_WINDOW_HEIGHT_RELATIVE_TO_MONITOR);
-							PRINT_LN(x11_pSizes->max_width, ", ", x11_pSizes->max_height);
 							PUSH_TO_CALLSTACKTRACE(XSetWMNormalHints(x11_pDisplay, x11_hWindow, x11_pSizes));
 							PUSH_TO_CALLSTACKTRACE(x11_hClose = XInternAtom(x11_pDisplay, "WM_DELETE_WINDOW", XFalse));
 							PUSH_TO_CALLSTACKTRACE(XSetWMProtocols(x11_pDisplay, x11_hWindow, &x11_hClose, 1));
@@ -66,6 +65,13 @@ namespace RE {
 								PUSH_TO_CALLSTACKTRACE(x11_hInputContext = XCreateIC(x11_hInputMethod, XNInputStyle, XIMPreeditNothing | XIMStatusNothing, XNClientWindow, x11_hWindow, nullptr));
 								if (x11_hInputContext) {
 									PUSH_TO_CALLSTACKTRACE(x11_update_window_title());
+									largestMonitorSize.fill(0);
+									const uint32_t u32MonitorCount = XScreenCount(x11_pDisplay);
+									for (uint32_t u32MonitorIndex = 0; u32MonitorIndex < u32MonitorCount; u32MonitorIndex++) {
+										XScreen *const x11_pScreen = XScreenOfDisplay(x11_pDisplay, u32MonitorIndex);
+										largestMonitorSize[0] = std::max(largestMonitorSize[0], static_cast<uint32_t>(XWidthOfScreen(x11_pScreen)));
+										largestMonitorSize[1] = std::max(largestMonitorSize[1], static_cast<uint32_t>(XHeightOfScreen(x11_pScreen)));
+									}
 									return true;
 								} else
 									RE_ERROR("Failed creating X11 input context");

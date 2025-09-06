@@ -90,7 +90,7 @@ namespace RE {
 			PUSH_TO_CALLSTACKTRACE(does_gpu_support_textures(vk_hPhysicalDevice, vk_thisPhysicalDeviceProperties.properties.limits, missingFeatures, discrepantFeatures));
 
 			// Check if depth & stencil buffers are supported
-			PUSH_TO_CALLSTACKTRACE(does_gpu_support_depth_stencil_buffers(vk_hPhysicalDevice, missingFeatures));
+			PUSH_TO_CALLSTACKTRACE(does_gpu_support_depth_stencil_images(vk_hPhysicalDevice, missingFeatures));
 		}
 
 		if (!discrepantFeatures.empty()) {
@@ -172,6 +172,7 @@ namespace RE {
 						break;
 				}
 				i32CurrentDeviceScore += PUSH_TO_CALLSTACKTRACE_AND_RETURN(rate_gpu_queues(vk_pahPhysicalDevicesAvailable[u32PhysicalDeviceAvailableIndex]), int32_t);
+				i32CurrentDeviceScore += PUSH_TO_CALLSTACKTRACE_AND_RETURN(rate_gpu_depth_stencil_image_formats(vk_pahPhysicalDevicesAvailable[u32PhysicalDeviceAvailableIndex]), int32_t);
 				i32CurrentDeviceScore += PUSH_TO_CALLSTACKTRACE_AND_RETURN(rate_gpu_texture_capacity(vk_thisPhysicalDeviceProperties.properties.limits), int32_t);
 				if (i32CurrentDeviceScore > i32BestDeviceScore) {
 					i32BestDeviceScore = i32CurrentDeviceScore;

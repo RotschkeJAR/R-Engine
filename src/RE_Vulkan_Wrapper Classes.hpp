@@ -72,6 +72,7 @@ namespace RE {
 			~Vulkan_Fence();
 
 			bool wait_for() const;
+			void reset() const;
 			[[nodiscard]]
 			VkFence get_fence() const;
 			[[nodiscard]]
@@ -83,6 +84,30 @@ namespace RE {
 			operator VkFence() const;
 			[[nodiscard]]
 			operator const VkFence*() const;
+	};
+
+	class Vulkan_TimelineSemaphore final {
+		private:
+			VkSemaphore vk_hTimelineSemaphore;
+
+		public:
+			Vulkan_TimelineSemaphore();
+			Vulkan_TimelineSemaphore(uint64_t u64InitialValue);
+			~Vulkan_TimelineSemaphore();
+
+			bool wait_for_reaching(uint64_t u64Value) const;
+			void set_to(uint64_t u64Value) const;
+			[[nodiscard]]
+			VkSemaphore get_timeline_semaphore() const;
+			[[nodiscard]]
+			const VkSemaphore* get_timeline_semaphore_ptr() const;
+			[[nodiscard]]
+			bool is_valid() const;
+
+			[[nodiscard]]
+			operator VkSemaphore() const;
+			[[nodiscard]]
+			operator const VkSemaphore*() const;
 	};
 
 }

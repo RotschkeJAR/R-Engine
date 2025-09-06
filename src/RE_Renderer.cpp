@@ -1,4 +1,4 @@
-#include "RE_Renderer.hpp"
+#include "RE_Renderer_Internal.hpp"
 #include "RE_Internal Header.hpp"
 #include "RE_Window.hpp"
 #include "RE_Vulkan_Wrapper Classes.hpp"
@@ -58,23 +58,32 @@ namespace RE {
 			else
 				u8CurrentFenceIndex++;
 		if (u8CurrentFenceIndex == static_cast<uint8_t>(renderFences.size())) {
-			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_rect_index_buffer(), bool)) {
-				if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_depth_stencil_buffers(), bool))
+			Vulkan_Buffer stagingIndexBuffer(RE_VK_INDEX_BUFFER_SIZE, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 1, nullptr, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+			Vulkan_Fence indexBufferTransferFence;
+			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_rect_index_buffer(stagingIndexBuffer.get_buffer(), stagingIndexBuffer.get_memory(), indexBufferTransferFence), bool)) {
+				if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_depth_stencil_buffers(), bool)) {
+					indexBufferTransferFence.wait_for();
 					return true;
+				}
+				indexBufferTransferFence.wait_for();
 				PUSH_TO_CALLSTACKTRACE(destroy_rect_index_buffer());
 			}
 		} else
 			RE_FATAL_ERROR("Failed to create Vulkan fence at index ", u8CurrentFenceIndex, " to wait on rendering to finish");
+		for (uint8_t u8FenceDestroyIndex = 0; u8FenceDestroyIndex < u8CurrentFenceIndex; u8FenceDestroyIndex++)
+			vkDestroyFence(vk_hDevice, renderFences[u8FenceDestroyIndex], nullptr);
+		for (VulkanTask &rRenderTask : renderTasks)
+			rRenderTask.destroy();
 		return false;
 	}
 	
 	void destroy_renderer() {
 		PUSH_TO_CALLSTACKTRACE(destroy_depth_stencil_buffers());
 		PUSH_TO_CALLSTACKTRACE(destroy_rect_index_buffer());
+		for (VkFence &vk_rhFence : renderFences)
+			vkDestroyFence(vk_hDevice, vk_rhFence, nullptr);
 		for (VulkanTask &rRenderTask : renderTasks)
 			rRenderTask.destroy();
-		for (VkFence vk_hFence : renderFences)
-			vkDestroyFence(vk_hDevice, vk_hFence, nullptr);
 	}
 
 	void render() {

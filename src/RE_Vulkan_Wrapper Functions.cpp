@@ -4,29 +4,20 @@
 
 namespace RE {
 
-	static std::vector<uint32_t> get_queue_family_indices(const uint32_t u32QueueCount, const uint32_t *const pau32Queues) {
-		std::vector<uint32_t> queueFamilies;
-		queueFamilies.reserve(u32QueueCount);
-		/*for (uint32_t u32QueueIndex = 0; u32QueueIndex < u32QueueCount; u32QueueIndex++)
-			if (pau32Queues[u32QueueIndex] != VK_QUEUE_FAMILY_IGNORED && std::find(queueFamilies.begin(), queueFamilies.end(), au32DeviceQueueFamilyIndices[pau32Queues[u32QueueIndex]]) == queueFamilies.end())
-				queueFamilies.push_back(au32DeviceQueueFamilyIndices[pau32Queues[u32QueueIndex]]);*/
-		return queueFamilies;
-	}
-
-	static bool alloc_required_memory(const VkMemoryRequirements vk_memoryRequirements, const VkMemoryPropertyFlags vk_eMemoryPropertyFlags, VkDeviceMemory *const vk_phMemory) {
-		uint32_t u32MemoryTypeIndex = VK_MAX_MEMORY_TYPES;
-		for (uint32_t u32PhysicalDeviceMemoryTypeIndex = 0U; u32PhysicalDeviceMemoryTypeIndex < vk_physicalDeviceMemoryProperties.memoryTypeCount; u32PhysicalDeviceMemoryTypeIndex++)
-			if ((vk_memoryRequirements.memoryTypeBits & (1U << u32PhysicalDeviceMemoryTypeIndex)) && (vk_physicalDeviceMemoryProperties.memoryTypes[u32PhysicalDeviceMemoryTypeIndex].propertyFlags & vk_eMemoryPropertyFlags) == vk_eMemoryPropertyFlags) {
+	static bool alloc_required_memory(VkMemoryRequirements *const vk_pMemoryRequirements, const VkMemoryPropertyFlags vk_eMemoryPropertyFlags, VkDeviceMemory *const vk_phMemory) {
+		uint32_t u32MemoryTypeIndex = VK_MAX_MEMORY_TYPES + 1;
+		for (uint32_t u32PhysicalDeviceMemoryTypeIndex = 0; u32PhysicalDeviceMemoryTypeIndex < vk_physicalDeviceMemoryProperties.memoryTypeCount; u32PhysicalDeviceMemoryTypeIndex++)
+			if ((vk_pMemoryRequirements->memoryTypeBits & (1U << u32PhysicalDeviceMemoryTypeIndex)) && (vk_physicalDeviceMemoryProperties.memoryTypes[u32PhysicalDeviceMemoryTypeIndex].propertyFlags & vk_eMemoryPropertyFlags) == vk_eMemoryPropertyFlags) {
 				u32MemoryTypeIndex = u32PhysicalDeviceMemoryTypeIndex;
 				break;
 			}
-		if (u32MemoryTypeIndex == VK_MAX_MEMORY_TYPES) {
+		if (u32MemoryTypeIndex == VK_MAX_MEMORY_TYPES + 1) {
 			RE_ERROR("Failed to find required memory type");
 			return false;
 		}
 		const VkMemoryAllocateInfo vk_allocInfo = {
 			.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-			.allocationSize = vk_memoryRequirements.size,
+			.allocationSize = vk_pMemoryRequirements->size,
 			.memoryTypeIndex = u32MemoryTypeIndex
 		};
 		return vkAllocateMemory(vk_hDevice, &vk_allocInfo, nullptr, vk_phMemory) == VK_SUCCESS;
@@ -55,24 +46,23 @@ namespace RE {
 		return bSuccess;
 	}
 	
-	bool create_vulkan_buffer(const VkDeviceSize vk_size, const VkBufferUsageFlags vk_eUsages, const uint32_t u32QueueCount, const uint32_t *const pau32Queues, const VkMemoryPropertyFlags vk_eMemoryPropertyFlags, VkBuffer *const vk_phBuffer, VkDeviceMemory *const vk_phMemory) {
+	bool create_vulkan_buffer(const VkDeviceSize vk_size, const VkBufferUsageFlags vk_eUsages, const uint32_t u32QueueFamilyCount, const uint32_t *const pau32QueueFamilies, const VkMemoryPropertyFlags vk_eMemoryPropertyFlags, VkBuffer *const vk_phBuffer, VkDeviceMemory *const vk_phMemory) {
 		VkBufferCreateInfo vk_createInfo = {
 			.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
 			.size = vk_size,
 			.usage = vk_eUsages
 		};
-		std::vector<uint32_t> queueFamilyIndices = get_queue_family_indices(u32QueueCount, pau32Queues);
-		if (queueFamilyIndices.size() == 1)
+		if (u32QueueFamilyCount == 1)
 			vk_createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		else {
 			vk_createInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
-			vk_createInfo.queueFamilyIndexCount = queueFamilyIndices.size();
-			vk_createInfo.pQueueFamilyIndices = queueFamilyIndices.data();
+			vk_createInfo.queueFamilyIndexCount = u32QueueFamilyCount;
+			vk_createInfo.pQueueFamilyIndices = pau32QueueFamilies;
 		}
 		if (vkCreateBuffer(vk_hDevice, &vk_createInfo, nullptr, vk_phBuffer) == VK_SUCCESS) {
 			VkMemoryRequirements vk_memoryRequirements;
 			vkGetBufferMemoryRequirements(vk_hDevice, *vk_phBuffer, &vk_memoryRequirements);
-			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(alloc_required_memory(vk_memoryRequirements, vk_eMemoryPropertyFlags, vk_phMemory), bool)) {
+			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(alloc_required_memory(&vk_memoryRequirements, vk_eMemoryPropertyFlags, vk_phMemory), bool)) {
 				if (vkBindBufferMemory(vk_hDevice, *vk_phBuffer, *vk_phMemory, 0) == VK_SUCCESS)
 					return true;
 				else
@@ -88,31 +78,7 @@ namespace RE {
 		return false;
 	}
 
-	VkFormat find_supported_image_format_on_physical_vulkan_device(const VkPhysicalDevice vk_hPhysicalDevice, const uint32_t u32FormatCandidateCount, const VkFormat *const vk_paeFormatCandidates, const VkImageTiling vk_eImgTiling, const VkFormatFeatureFlags vk_eRequiredFeature) {
-		for (uint32_t u32FormatCandidateIndex = 0; u32FormatCandidateIndex < u32FormatCandidateCount; u32FormatCandidateIndex++) {
-			VkFormatProperties vk_formatProperties;
-			vkGetPhysicalDeviceFormatProperties(vk_hPhysicalDevice, vk_paeFormatCandidates[u32FormatCandidateIndex], &vk_formatProperties);
-			switch (vk_eImgTiling) {
-				case VK_IMAGE_TILING_OPTIMAL:
-					if ((vk_formatProperties.optimalTilingFeatures & vk_eRequiredFeature) == vk_eRequiredFeature)
-						return PUSH_TO_CALLSTACKTRACE_AND_RETURN(vk_paeFormatCandidates[u32FormatCandidateIndex], VkFormat);
-					break;
-				case VK_IMAGE_TILING_LINEAR:
-					if ((vk_formatProperties.linearTilingFeatures & vk_eRequiredFeature) == vk_eRequiredFeature)
-						return PUSH_TO_CALLSTACKTRACE_AND_RETURN(vk_paeFormatCandidates[u32FormatCandidateIndex], VkFormat);
-					break;
-				default:
-					break;
-			}
-		}
-		return VK_FORMAT_UNDEFINED;
-	}
-
-	VkFormat find_supported_image_format(const uint32_t u32FormatCandidateCount, const VkFormat *const vk_paeFormatCandidates, const VkImageTiling vk_eImgTiling, const VkFormatFeatureFlags vk_eRequiredFeature) {
-		return PUSH_TO_CALLSTACKTRACE_AND_RETURN(find_supported_image_format_on_physical_vulkan_device(vk_hPhysicalDeviceSelected, u32FormatCandidateCount, vk_paeFormatCandidates, vk_eImgTiling, vk_eRequiredFeature), VkFormat);
-	}
-
-	bool create_vulkan_image(const VkImageCreateFlags vk_eCreateFlags, const VkImageType vk_eType, const VkFormat vk_eFormat, const VkExtent3D vk_extent, const uint32_t u32MipLevels, const uint32_t u32ArrayLayerCount, const VkSampleCountFlagBits vk_eSamples, const VkImageTiling vk_eTiling, const VkImageUsageFlags vk_eUsages, const uint32_t u32QueueCount, const uint32_t *const pau32Queues, const VkImageLayout vk_eLayout, const VkMemoryPropertyFlags vk_eMemoryPropertyFlags, VkImage *const vk_phImage, VkDeviceMemory *const vk_phMemory) {
+	bool create_vulkan_image(const VkImageCreateFlags vk_eCreateFlags, const VkImageType vk_eType, const VkFormat vk_eFormat, const VkExtent3D vk_extent, const uint32_t u32MipLevels, const uint32_t u32ArrayLayerCount, const VkSampleCountFlagBits vk_eSamples, const VkImageTiling vk_eTiling, const VkImageUsageFlags vk_eUsages, const uint32_t u32QueueFamilyCount, const uint32_t *const pau32QueueFamilies, const VkImageLayout vk_eLayout, const VkMemoryPropertyFlags vk_eMemoryPropertyFlags, VkImage *const vk_phImage, VkDeviceMemory *const vk_phMemory) {
 		VkImageCreateInfo vk_createInfo = {
 			.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
 			.flags = vk_eCreateFlags,
@@ -126,19 +92,18 @@ namespace RE {
 			.usage = vk_eUsages,
 			.initialLayout = vk_eLayout
 		};
-		std::vector<uint32_t> queueFamilies = get_queue_family_indices(u32QueueCount, pau32Queues);
-		if (queueFamilies.size() == 1U)
+		if (u32QueueFamilyCount == 1)
 			vk_createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		else {
 			vk_createInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
-			vk_createInfo.queueFamilyIndexCount = queueFamilies.size();
-			vk_createInfo.pQueueFamilyIndices = queueFamilies.data();
+			vk_createInfo.queueFamilyIndexCount = u32QueueFamilyCount;
+			vk_createInfo.pQueueFamilyIndices = pau32QueueFamilies;
 		}
 		if (vkCreateImage(vk_hDevice, &vk_createInfo, nullptr, vk_phImage) == VK_SUCCESS) {
 			VkMemoryRequirements vk_memoryRequirements;
 			vkGetImageMemoryRequirements(vk_hDevice, *vk_phImage, &vk_memoryRequirements);
-			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(alloc_required_memory(vk_memoryRequirements, vk_eMemoryPropertyFlags, vk_phMemory), bool)) {
-				if (vkBindImageMemory(vk_hDevice, *vk_phImage, *vk_phMemory, 0UL) == VK_SUCCESS)
+			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(alloc_required_memory(&vk_memoryRequirements, vk_eMemoryPropertyFlags, vk_phMemory), bool)) {
+				if (vkBindImageMemory(vk_hDevice, *vk_phImage, *vk_phMemory, 0) == VK_SUCCESS)
 					return true;
 				else
 					RE_ERROR("Failed to bind memory to Vulkan image");
@@ -154,7 +119,7 @@ namespace RE {
 	}
 
 	bool create_vulkan_image_view(const VkImage vk_hImage, const VkImageViewType vk_eType, const VkFormat vk_eFormat, const VkImageAspectFlags vk_eImageAspects, const uint32_t u32BaseMipLevel, const uint32_t u32MipLevelCount, const uint32_t u32BaseArrayLayer, const uint32_t u32ArrayLayerCount, VkImageView *const vk_phImageView) {
-		VkImageViewCreateInfo vk_createInfo = {
+		const VkImageViewCreateInfo vk_createInfo = {
 			.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
 			.image = vk_hImage,
 			.viewType = vk_eType,
@@ -272,111 +237,6 @@ namespace RE {
 		if (!bSuccess)
 			RE_ERROR("Failed submitting a task to a Vulkan queue");
 		return bSuccess;
-	}
-
-	bool signal_vulkan_binary_semaphores(const uint32_t u32SemaphoreCount, const VkSemaphore *const vk_pahSemaphores) {
-		/*if (!PUSH_TO_CALLSTACKTRACE_AND_RETURN(submit_to_vulkan_queue(vk_ahDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], 0, nullptr, nullptr, 1, &vk_hDummyTransferCommandBuffer, u32SemaphoreCount, vk_pahSemaphores, VK_NULL_HANDLE), bool)) {
-			RE_ERROR("Failed signaling semaphores");
-			return false;
-		}*/
-		return true;
-	}
-
-	bool signal_vulkan_fences(const uint32_t u32FenceCount, const VkFence *const vk_pahFences) {
-		/*for (uint32_t u32FenceIndex = 0; u32FenceIndex < u32FenceCount; u32FenceIndex++)
-			if (!PUSH_TO_CALLSTACKTRACE_AND_RETURN(submit_to_vulkan_queue(vk_ahDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], 0, nullptr, nullptr, 1, &vk_hDummyTransferCommandBuffer, 0, nullptr, vk_pahFences[u32FenceIndex]), bool)) {
-				RE_ERROR("Failed signaling fence at index ", u32FenceIndex);
-				return false;
-			}*/
-		return true;
-	}
-
-	bool wait_for_vulkan_binary_semaphores(const VkSemaphore *const vk_pahSemaphoresToWaitFor, const VkPipelineStageFlags *const vk_paeStagesToWaitAt, const uint32_t u32SemaphoreCount) {
-		/*Vulkan_Fence vulkanFence;
-		if (!PUSH_TO_CALLSTACKTRACE_AND_RETURN(submit_to_vulkan_queue(vk_ahDeviceQueueFamilies[RE_VK_QUEUE_TRANSFER_INDEX], u32SemaphoreCount, vk_pahSemaphoresToWaitFor, vk_paeStagesToWaitAt, 1, &vk_hDummyTransferCommandBuffer, 0, nullptr, vulkanFence.get_fence()), bool))
-			return false;
-		PUSH_TO_CALLSTACKTRACE(vulkanFence.wait_for());*/
-		return true;
-	}
-
-	void vk_cmd_transit_image(const VkCommandBuffer vk_hCommandBuffer, const VkPipelineStageFlags vk_eSrcStageFlags, const VkPipelineStageFlags vk_eDstStageFlags, const VkDependencyFlags vk_eDependencyFlags, const VkAccessFlags vk_eSrcAccessFlags, const VkAccessFlags vk_eDstAccessFlags, const VkImageLayout vk_eOldLayout, const VkImageLayout vk_eNewLayout, const uint32_t u32SrcQueueIndex, const uint32_t u32DstQueueIndex, const VkImage vk_hImage, const VkImageAspectFlags vk_eAspectFlags, const uint32_t u32BaseMipLevel, const uint32_t u32MipLevelCount, const uint32_t u32BaseArrayLayer, const uint32_t u32ArrayLayerCount) {
-		/*std::vector<uint32_t> srcQueues = get_queue_family_indices(1, &u32SrcQueueIndex), dstQueues = get_queue_family_indices(1, &u32DstQueueIndex);
-		const VkImageMemoryBarrier vk_imageTransit = {
-			.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-			.srcAccessMask = vk_eSrcAccessFlags,
-			.dstAccessMask = vk_eDstAccessFlags,
-			.oldLayout = vk_eOldLayout,
-			.newLayout = vk_eNewLayout,
-			.srcQueueFamilyIndex = u32SrcQueueIndex != VK_QUEUE_FAMILY_IGNORED ? *srcQueues.begin() : VK_QUEUE_FAMILY_IGNORED,
-			.dstQueueFamilyIndex = u32DstQueueIndex != VK_QUEUE_FAMILY_IGNORED ? *dstQueues.begin() : VK_QUEUE_FAMILY_IGNORED,
-			.image = vk_hImage,
-			.subresourceRange = {
-				.aspectMask = vk_eAspectFlags,
-				.baseMipLevel = u32BaseMipLevel,
-				.levelCount = u32MipLevelCount,
-				.baseArrayLayer = u32BaseArrayLayer,
-				.layerCount = u32ArrayLayerCount
-			}
-		};
-		vkCmdPipelineBarrier(vk_hCommandBuffer, vk_eSrcStageFlags, vk_eDstStageFlags, vk_eDependencyFlags, 0, nullptr, 0, nullptr, 1, &vk_imageTransit);*/
-	}
-
-	bool transit_image(const uint32_t u32QueueIndex, const VkPipelineStageFlags vk_eSrcStageFlags, const VkPipelineStageFlags vk_eDstStageFlags, const VkDependencyFlags vk_eDependencyFlags, const VkAccessFlags vk_eSrcAccessFlags, const VkAccessFlags vk_eDstAccessFlags, const VkImageLayout vk_eOldLayout, const VkImageLayout vk_eNewLayout, const uint32_t u32SrcQueueIndex, const uint32_t u32DstQueueIndex, const VkImage vk_hImage, const VkImageAspectFlags vk_eAspectFlags, const uint32_t u32BaseMipLevel, const uint32_t u32MipLevelCount, const uint32_t u32BaseArrayLayer, const uint32_t u32ArrayLayerCount, VkCommandBuffer *vk_phCommandBufferToFree, VkFence *vk_phFence) {
-		/*if (!vk_phCommandBufferToFree) {
-			RE_ERROR("No pointer to command buffer attribute has been provided");
-			return false;
-		}
-		if (vk_phFence) {
-			const VkFenceCreateInfo vk_fenceCreateInfo = {
-				.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
-				.flags = 0
-			};
-			if (vkCreateFence(vk_hDevice, &vk_fenceCreateInfo, nullptr, vk_phFence) != VK_SUCCESS)
-				*vk_phFence = VK_NULL_HANDLE;
-		}
-		uint32_t u32CommandPoolIndex;
-		switch (u32QueueIndex) {
-			case RE_VK_QUEUE_GRAPHICS_INDEX:
-				u32CommandPoolIndex = RE_VK_COMMAND_POOL_GRAPHICS_TRANSIENT_INDEX;
-				break;
-			case RE_VK_QUEUE_TRANSFER_INDEX:
-				u32CommandPoolIndex = RE_VK_COMMAND_POOL_TRANSFER_TRANSIENT_INDEX;
-				break;
-			default:
-				RE_ERROR("Failed to find the command pool for the queue. The queue's index is ", u32QueueIndex);
-				if (vk_phFence && *vk_phFence) {
-					vkDestroyFence(vk_hDevice, *vk_phFence, nullptr);
-					*vk_phFence = VK_NULL_HANDLE;
-				}
-				return false;
-		}
-		if (alloc_vulkan_command_buffers(vk_ahCommandPools[u32CommandPoolIndex], VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1, vk_phCommandBufferToFree)) {
-			if (begin_recording_vulkan_command_buffer(*vk_phCommandBufferToFree, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr)) {
-				vk_cmd_transit_image(*vk_phCommandBufferToFree, vk_eSrcStageFlags, vk_eDstStageFlags, vk_eDependencyFlags, vk_eSrcAccessFlags, vk_eDstAccessFlags, vk_eOldLayout, vk_eNewLayout, u32SrcQueueIndex, u32DstQueueIndex, vk_hImage, vk_eAspectFlags, u32BaseMipLevel, u32MipLevelCount, u32BaseArrayLayer, u32ArrayLayerCount);
-				if (vkEndCommandBuffer(*vk_phCommandBufferToFree) == VK_SUCCESS) {
-					if (vk_phFence && *vk_phFence) {
-						if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(submit_to_vulkan_queue(vk_ahDeviceQueueFamilies[u32QueueIndex], 0, nullptr, nullptr, 1, vk_phCommandBufferToFree, 0, nullptr, *vk_phFence), bool))
-							return true;
-						else
-							RE_ERROR("Failed to submit Vulkan command buffer to transit image and signal a fence");
-					} else {
-						if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(submit_to_vulkan_queue(vk_ahDeviceQueueFamilies[u32QueueIndex], 0, nullptr, nullptr, 1, vk_phCommandBufferToFree, 0, nullptr, VK_NULL_HANDLE), bool)) {
-							vkQueueWaitIdle(vk_ahDeviceQueueFamilies[u32QueueIndex]);
-							vkFreeCommandBuffers(vk_hDevice, vk_ahCommandPools[u32CommandPoolIndex], 1U, vk_phCommandBufferToFree);
-							*vk_phCommandBufferToFree = VK_NULL_HANDLE;
-							return true;
-						} else
-							RE_ERROR("Failed to submit Vulkan command buffer to transit image without signaling a fence");
-					}
-				} else
-					RE_ERROR("Failed to finish recording Vulkan command buffer for transitting an image");
-			} else
-				RE_ERROR("Failed to begin recording Vulkan command buffer for transitting an image");
-			vkFreeCommandBuffers(vk_hDevice, vk_ahCommandPools[u32CommandPoolIndex], 1U, vk_phCommandBufferToFree);
-			*vk_phCommandBufferToFree = VK_NULL_HANDLE;
-		}
-		return false;*/
-		return true;
 	}
 
 }

@@ -1163,6 +1163,15 @@ namespace RE {
 		std::vector<VkDeviceQueueCreateInfo> vk_paDeviceQueueCreateInfos;
 		PUSH_TO_CALLSTACKTRACE(create_queue_create_infos(&fQueuePriority, vk_paDeviceQueueCreateInfos));
 
+		VkPhysicalDeviceSynchronization2Features vk_physicalDeviceFeaturesEnabled_Synchronization2 = {
+			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES,
+			.synchronization2 = VK_TRUE
+		};
+		const VkPhysicalDeviceTimelineSemaphoreFeatures vk_physicalDeviceFeaturesEnabled_TimelineSemaphore = {
+			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES,
+			.pNext = &vk_physicalDeviceFeaturesEnabled_Synchronization2,
+			.timelineSemaphore = VK_TRUE
+		};
 		const VkPhysicalDeviceFeatures vk_physicalDeviceFeaturesEnabled = {
 			.sampleRateShading = vk_physicalDeviceFeatures.sampleRateShading,
 			.samplerAnisotropy = vk_physicalDeviceFeatures.samplerAnisotropy
@@ -1170,14 +1179,14 @@ namespace RE {
 
 		const VkDeviceCreateInfo vk_deviceCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+			.pNext = &vk_physicalDeviceFeaturesEnabled_TimelineSemaphore,
 			.queueCreateInfoCount = static_cast<uint32_t>(vk_paDeviceQueueCreateInfos.size()),
 			.pQueueCreateInfos = vk_paDeviceQueueCreateInfos.data(),
 			.enabledExtensionCount = u32LogicalDeviceExtensionCount,
 			.ppEnabledExtensionNames = static_cast<const char *const *>(a2cLogicalDeviceExtensions.data()),
 			.pEnabledFeatures = &vk_physicalDeviceFeaturesEnabled
 		};
-		const bool bCreatedDeviceSuccessfully = vkCreateDevice(vk_hPhysicalDeviceSelected, &vk_deviceCreateInfo, nullptr, &vk_hDevice) == VK_SUCCESS;
-		if (!bCreatedDeviceSuccessfully) {
+		if (vkCreateDevice(vk_hPhysicalDeviceSelected, &vk_deviceCreateInfo, nullptr, &vk_hDevice) != VK_SUCCESS) {
 			RE_FATAL_ERROR("Failed creating logical Vulkan device");
 			return false;
 		}

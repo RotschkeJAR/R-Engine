@@ -30,9 +30,15 @@ namespace RE {
 		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk_hPhysicalDevice, vk_hSurface, &vk_physicalDeviceSurfaceCapabilities);
 
 		// Fetch supported GPU features
+		VkPhysicalDeviceSynchronization2Features vk_physicalDeviceFeaturesAvailable_Synchronization2;
+		vk_physicalDeviceFeaturesAvailable_Synchronization2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES;
+		vk_physicalDeviceFeaturesAvailable_Synchronization2.pNext = nullptr;
+		VkPhysicalDeviceTimelineSemaphoreFeatures vk_physicalDeviceFeaturesAvailable_TimelineSemaphore;
+		vk_physicalDeviceFeaturesAvailable_TimelineSemaphore.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES;
+		vk_physicalDeviceFeaturesAvailable_TimelineSemaphore.pNext = &vk_physicalDeviceFeaturesAvailable_Synchronization2;
 		VkPhysicalDeviceFeatures2 vk_physicalDeviceFeaturesAvailable;
 		vk_physicalDeviceFeaturesAvailable.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-		vk_physicalDeviceFeaturesAvailable.pNext = nullptr;
+		vk_physicalDeviceFeaturesAvailable.pNext = &vk_physicalDeviceFeaturesAvailable_TimelineSemaphore;
 		vkGetPhysicalDeviceFeatures2(vk_hPhysicalDevice, &vk_physicalDeviceFeaturesAvailable);
 
 		// Check if required Vulkan version is supported
@@ -72,6 +78,14 @@ namespace RE {
 			// Check if anisotropy is supported
 			if (vk_physicalDeviceFeaturesAvailable.features.samplerAnisotropy == VK_FALSE)
 				optionalFeaturesMissing.emplace("Anisotropic filtering is not supported on this GPU");
+
+			// Check if timeline semaphores are supported
+			if (vk_physicalDeviceFeaturesAvailable_TimelineSemaphore.timelineSemaphore != VK_TRUE)
+				missingFeatures.emplace("Timeline semaphores should be supported for synchronization");
+
+			// Check if synchronization2 is supported
+			if (vk_physicalDeviceFeaturesAvailable_Synchronization2.synchronization2 != VK_TRUE)
+				missingFeatures.emplace("The synchronization2-feature should be supported");
 
 			// Check if the required extensions exist
 			bool bSwapchainExtists = false;

@@ -39,12 +39,16 @@ namespace RE {
 	uint32_t u32NextSwapchainSemaphoreIndex = 0;
 	uint8_t u8CurrentFrameInFlightIndex = 0;
 
+	uint8_t get_render_graphics_queue_logical_index() {
+		return renderTasks[0].get_logical_queue_index_for_function(1);
+	}
+
 	bool init_renderer() {
 		constexpr VkQueueFlagBits vk_aeQueuesUsedForRendering[] = {
 			VK_QUEUE_COMPUTE_BIT,
 			VK_QUEUE_GRAPHICS_BIT
 		};
-		renderTasks[0].init(sizeof(vk_aeQueuesUsedForRendering) / sizeof(vk_aeQueuesUsedForRendering[0]), vk_aeQueuesUsedForRendering, true, false);
+		renderTasks[0].init(sizeof(vk_aeQueuesUsedForRendering) / sizeof(vk_aeQueuesUsedForRendering[0]), vk_aeQueuesUsedForRendering, false);
 		for (uint32_t u32RenderTaskIndex = 1; u32RenderTaskIndex < renderTasks.size(); u32RenderTaskIndex++)
 			renderTasks[u32RenderTaskIndex].init(renderTasks[0]);
 		const VkFenceCreateInfo vk_fenceCreateInfo = {
@@ -59,13 +63,17 @@ namespace RE {
 				u8CurrentFenceIndex++;
 		if (u8CurrentFenceIndex == static_cast<uint8_t>(renderFences.size())) {
 			Vulkan_Buffer stagingIndexBuffer(RE_VK_INDEX_BUFFER_SIZE, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 1, nullptr, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-			Vulkan_Fence indexBufferTransferFence;
-			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_rect_index_buffer(stagingIndexBuffer.get_buffer(), stagingIndexBuffer.get_memory(), indexBufferTransferFence), bool)) {
-				if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_depth_stencil_buffers(), bool)) {
-					indexBufferTransferFence.wait_for();
+			VulkanTask indexBufferTransferTask;
+			Vulkan_TimelineSemaphore indexBufferTransferTimelineSemaphore;
+			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_rect_index_buffer(stagingIndexBuffer.get_buffer(), stagingIndexBuffer.get_memory(), indexBufferTransferTask, indexBufferTransferTimelineSemaphore), bool)) {
+				VulkanTask depthImageLayoutTransitionTask;
+				Vulkan_Fence depthStencilImageLayoutTransitionFence;
+				if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_depth_stencil_buffers(depthImageLayoutTransitionTask, depthStencilImageLayoutTransitionFence.get_fence()), bool)) {
+					indexBufferTransferTimelineSemaphore.wait_for_reaching(RE_VK_TIMELINE_SEMAPHORE_FINISH);
+					depthStencilImageLayoutTransitionFence.wait_for();
 					return true;
 				}
-				indexBufferTransferFence.wait_for();
+				indexBufferTransferTimelineSemaphore.wait_for_reaching(RE_VK_TIMELINE_SEMAPHORE_FINISH);
 				PUSH_TO_CALLSTACKTRACE(destroy_rect_index_buffer());
 			}
 		} else

@@ -60,10 +60,21 @@ namespace RE {
 			vk_createInfo.pQueueFamilyIndices = pau32QueueFamilies;
 		}
 		if (vkCreateBuffer(vk_hDevice, &vk_createInfo, nullptr, vk_phBuffer) == VK_SUCCESS) {
-			VkMemoryRequirements vk_memoryRequirements;
-			vkGetBufferMemoryRequirements(vk_hDevice, *vk_phBuffer, &vk_memoryRequirements);
-			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(alloc_required_memory(&vk_memoryRequirements, vk_eMemoryPropertyFlags, vk_phMemory), bool)) {
-				if (vkBindBufferMemory(vk_hDevice, *vk_phBuffer, *vk_phMemory, 0) == VK_SUCCESS)
+			const VkBufferMemoryRequirementsInfo2 vk_bufferInfo = {
+				.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2,
+				.buffer = *vk_phBuffer
+			};
+			VkMemoryRequirements2 vk_memoryRequirements;
+			vk_memoryRequirements.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2;
+			vk_memoryRequirements.pNext = nullptr;
+			vkGetBufferMemoryRequirements2(vk_hDevice, &vk_bufferInfo, &vk_memoryRequirements);
+			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(alloc_required_memory(&vk_memoryRequirements.memoryRequirements, vk_eMemoryPropertyFlags, vk_phMemory), bool)) {
+				const VkBindBufferMemoryInfo vk_bindMemoryInfo = {
+					.sType = VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO,
+					.buffer = *vk_phBuffer,
+					.memory = *vk_phMemory
+				};
+				if (vkBindBufferMemory2(vk_hDevice, 1, &vk_bindMemoryInfo) == VK_SUCCESS)
 					return true;
 				else
 					RE_ERROR("Failed to bind memory to Vulkan buffer");
@@ -100,10 +111,21 @@ namespace RE {
 			vk_createInfo.pQueueFamilyIndices = pau32QueueFamilies;
 		}
 		if (vkCreateImage(vk_hDevice, &vk_createInfo, nullptr, vk_phImage) == VK_SUCCESS) {
-			VkMemoryRequirements vk_memoryRequirements;
-			vkGetImageMemoryRequirements(vk_hDevice, *vk_phImage, &vk_memoryRequirements);
-			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(alloc_required_memory(&vk_memoryRequirements, vk_eMemoryPropertyFlags, vk_phMemory), bool)) {
-				if (vkBindImageMemory(vk_hDevice, *vk_phImage, *vk_phMemory, 0) == VK_SUCCESS)
+			const VkImageMemoryRequirementsInfo2 vk_imageInfo = {
+				.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2,
+				.image = *vk_phImage
+			};
+			VkMemoryRequirements2 vk_memoryRequirements;
+			vk_memoryRequirements.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2;
+			vk_memoryRequirements.pNext = nullptr;
+			vkGetImageMemoryRequirements2(vk_hDevice, &vk_imageInfo, &vk_memoryRequirements);
+			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(alloc_required_memory(&vk_memoryRequirements.memoryRequirements, vk_eMemoryPropertyFlags, vk_phMemory), bool)) {
+				const VkBindImageMemoryInfo vk_bindMemoryInfo = {
+					.sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO,
+					.image = *vk_phImage,
+					.memory = *vk_phMemory
+				};
+				if (vkBindImageMemory2(vk_hDevice, 1, &vk_bindMemoryInfo) == VK_SUCCESS)
 					return true;
 				else
 					RE_ERROR("Failed to bind memory to Vulkan image");
@@ -220,23 +242,6 @@ namespace RE {
 			.pInheritanceInfo = vk_pInheritanceInfo
 		};
 		return vkBeginCommandBuffer(vk_hCommandBuffer, &vk_beginInfo) == VK_SUCCESS;
-	}
-
-	bool submit_to_vulkan_queue(const VkQueue vk_hQueue, const uint32_t u32WaitSemaphoreCount, const VkSemaphore *const vk_pahWaitSemaphores, const VkPipelineStageFlags *const vk_pahWaitOnPipelineStages, const uint32_t u32CommandBufferCount, const VkCommandBuffer *const vk_pahCommandBuffers, const uint32_t u32SignalSemaphoreCount, const VkSemaphore *const vk_pahSignalSemaphores, const VkFence vk_hFence) {
-		const VkSubmitInfo vk_queueSubmitInfo = {
-			.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-			.waitSemaphoreCount = u32WaitSemaphoreCount,
-			.pWaitSemaphores = vk_pahWaitSemaphores,
-			.pWaitDstStageMask = vk_pahWaitOnPipelineStages,
-			.commandBufferCount = u32CommandBufferCount,
-			.pCommandBuffers = vk_pahCommandBuffers,
-			.signalSemaphoreCount = u32SignalSemaphoreCount,
-			.pSignalSemaphores = vk_pahSignalSemaphores
-		};
-		const bool bSuccess = vkQueueSubmit(vk_hQueue, 1, &vk_queueSubmitInfo, vk_hFence) == VK_SUCCESS;
-		if (!bSuccess)
-			RE_ERROR("Failed submitting a task to a Vulkan queue");
-		return bSuccess;
 	}
 
 }

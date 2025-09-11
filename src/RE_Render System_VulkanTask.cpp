@@ -292,11 +292,11 @@ namespace RE {
 	}
 
 	void VulkanTask::submit(const uint32_t u32SemaphoresToWaitForCount, const VkSemaphoreSubmitInfo *const vk_paSemaphoresToWaitFor, const uint32_t u32SemaphoresToSignal, const VkSemaphoreSubmitInfo *const vk_paSemaphoresToSignal, const VkFence vk_hFenceToSignal) {
-		VkCommandBufferSubmitInfo vk_commandBufferSubmitInfo;
-		vk_commandBufferSubmitInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
-		vk_commandBufferSubmitInfo.pNext = nullptr;
-		vk_commandBufferSubmitInfo.commandBuffer = commandBuffers[0];
-		vk_commandBufferSubmitInfo.deviceMask = 0;
+		VkCommandBufferSubmitInfo vk_commandBufferSubmissionInfo;
+		vk_commandBufferSubmissionInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
+		vk_commandBufferSubmissionInfo.pNext = nullptr;
+		vk_commandBufferSubmissionInfo.commandBuffer = commandBuffers[0];
+		vk_commandBufferSubmissionInfo.deviceMask = 0;
 		VkSubmitInfo2 vk_submissionInfo;
 		vk_submissionInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
 		vk_submissionInfo.pNext = nullptr;
@@ -304,39 +304,56 @@ namespace RE {
 		vk_submissionInfo.waitSemaphoreInfoCount = u32SemaphoresToWaitForCount;
 		vk_submissionInfo.pWaitSemaphoreInfos = vk_paSemaphoresToWaitFor;
 		vk_submissionInfo.commandBufferInfoCount = 1;
-		vk_submissionInfo.pCommandBufferInfos = &vk_commandBufferSubmitInfo;
+		vk_submissionInfo.pCommandBufferInfos = &vk_commandBufferSubmissionInfo;
+
 		if (u32CommandBufferCount == 1) {
 			vk_submissionInfo.signalSemaphoreInfoCount = u32SemaphoresToSignal;
 			vk_submissionInfo.pSignalSemaphoreInfos = vk_paSemaphoresToSignal;
 			vkQueueSubmit2(vk_pahQueues[queueIndicesPerCommandBuffer[0]], 1, &vk_submissionInfo, vk_hFenceToSignal);
 		} else {
-			VkSemaphoreSubmitInfo vk_a2InternalSemaphoreSubmissionInfo[2] = {
-				{
-					.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-					.semaphore = vk_hInternalSemaphore,
-					.value = 1,
-					.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
-					.deviceIndex = 0
-				}, {
-					.sType = vk_a2InternalSemaphoreSubmissionInfo[0].sType,
-					.semaphore = vk_a2InternalSemaphoreSubmissionInfo[0].semaphore,
-					.value = 2,
-					.stageMask = vk_a2InternalSemaphoreSubmissionInfo[0].stageMask,
-					.deviceIndex = vk_a2InternalSemaphoreSubmissionInfo[0].deviceIndex
-				}
-			};
+			uint64_t u64TimelineSemaphoreValue;
+			vkGetSemaphoreCounterValue(vk_hDevice, vk_hInternalSemaphore, &u64TimelineSemaphoreValue);
+			if (u64TimelineSemaphoreValue + u32CommandBufferCount < u64TimelineSemaphoreValue) {
+				// Reset timeline semaphore due to upcoming overflow
+				vkDestroySemaphore(vk_hDevice, vk_hInternalSemaphore, nullptr);
+				constexpr VkSemaphoreTypeCreateInfo vk_timelineSemaphoreCreateInfo = {
+					.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO,
+					.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE
+				};
+				const VkSemaphoreCreateInfo vk_semaphoreCreateInfo = {
+					.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+					.pNext = &vk_timelineSemaphoreCreateInfo
+				};
+				vkCreateSemaphore(vk_hDevice, &vk_semaphoreCreateInfo, nullptr, &vk_hInternalSemaphore);
+				u64TimelineSemaphoreValue = 0;
+			}
+
+			VkSemaphoreSubmitInfo vk_a2InternalSemaphoreSubmissionInfo[2];
+			vk_a2InternalSemaphoreSubmissionInfo[0].sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+			vk_a2InternalSemaphoreSubmissionInfo[0].pNext = nullptr;
+			vk_a2InternalSemaphoreSubmissionInfo[0].semaphore = vk_hInternalSemaphore;
+			vk_a2InternalSemaphoreSubmissionInfo[0].value = u64TimelineSemaphoreValue + 1;
+			vk_a2InternalSemaphoreSubmissionInfo[0].stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+			vk_a2InternalSemaphoreSubmissionInfo[0].deviceIndex = 0;
+			vk_a2InternalSemaphoreSubmissionInfo[1].sType = vk_a2InternalSemaphoreSubmissionInfo[0].sType;
+			vk_a2InternalSemaphoreSubmissionInfo[1].pNext = vk_a2InternalSemaphoreSubmissionInfo[0].pNext;
+			vk_a2InternalSemaphoreSubmissionInfo[1].semaphore = vk_a2InternalSemaphoreSubmissionInfo[0].semaphore;
+			vk_a2InternalSemaphoreSubmissionInfo[1].stageMask = vk_a2InternalSemaphoreSubmissionInfo[0].stageMask;
+			vk_a2InternalSemaphoreSubmissionInfo[1].deviceIndex = vk_a2InternalSemaphoreSubmissionInfo[0].deviceIndex;
 			vk_submissionInfo.signalSemaphoreInfoCount = 1;
 			vk_submissionInfo.pSignalSemaphoreInfos = &vk_a2InternalSemaphoreSubmissionInfo[0];
 			vkQueueSubmit2(vk_pahQueues[queueIndicesPerCommandBuffer[0]], 1, &vk_submissionInfo, VK_NULL_HANDLE);
 			vk_submissionInfo.waitSemaphoreInfoCount = 1;
 			vk_submissionInfo.pWaitSemaphoreInfos = &vk_a2InternalSemaphoreSubmissionInfo[0];
 			vk_submissionInfo.pSignalSemaphoreInfos = &vk_a2InternalSemaphoreSubmissionInfo[1];
+
 			for (uint32_t u32CommandBufferIndex = 1; u32CommandBufferIndex < u32CommandBufferCount - 1; u32CommandBufferIndex++) {
-				vk_a2InternalSemaphoreSubmissionInfo[u32CommandBufferIndex % 2].value = u32CommandBufferIndex + 1;
-				vk_commandBufferSubmitInfo.commandBuffer = commandBuffers[u32CommandBufferIndex];
+				vk_a2InternalSemaphoreSubmissionInfo[u32CommandBufferIndex % 2].value = u64TimelineSemaphoreValue + u32CommandBufferIndex + 1;
+				vk_commandBufferSubmissionInfo.commandBuffer = commandBuffers[u32CommandBufferIndex];
 				vkQueueSubmit2(vk_pahQueues[queueIndicesPerCommandBuffer[u32CommandBufferIndex]], 1, &vk_submissionInfo, VK_NULL_HANDLE);
 				std::swap(vk_submissionInfo.pWaitSemaphoreInfos, vk_submissionInfo.pSignalSemaphoreInfos);
 			}
+
 			vk_submissionInfo.signalSemaphoreInfoCount = u32SemaphoresToSignal;
 			vk_submissionInfo.pSignalSemaphoreInfos = vk_paSemaphoresToSignal;
 			vkQueueSubmit2(vk_pahQueues[queueIndicesPerCommandBuffer[u32CommandBufferCount - 1]], 1, &vk_submissionInfo, vk_hFenceToSignal);

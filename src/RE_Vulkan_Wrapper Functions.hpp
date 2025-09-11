@@ -27,8 +27,6 @@ namespace RE {
 
 	bool begin_recording_vulkan_command_buffer(VkCommandBuffer vk_hCommandBuffer, VkCommandBufferUsageFlags vk_eUsages, const VkCommandBufferInheritanceInfo *vk_pInheritanceInfo);
 
-	bool submit_to_vulkan_queue(VkQueue vk_hQueue, uint32_t u32WaitSemaphoreCount, const VkSemaphore *vk_pahWaitSemaphores, const VkPipelineStageFlags *vk_pahWaitOnPipelineStages, uint32_t u32CommandBufferCount, const VkCommandBuffer *vk_pahCommandBuffers, uint32_t u32SignalSemaphoreCount, const VkSemaphore *vk_pahSignalSemaphores, VkFence vk_hFence);
-
 }
 
 #endif /* __RE_VULKAN_WRAPPER_FUNCS_H__ */

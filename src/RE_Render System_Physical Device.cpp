@@ -42,9 +42,9 @@ namespace RE {
 		vkGetPhysicalDeviceFeatures2(vk_hPhysicalDevice, &vk_physicalDeviceFeaturesAvailable);
 
 		// Check if required Vulkan version is supported
-		const uint32_t u32VulkanMajorVersion = VK_API_VERSION_MAJOR(RE_VK_API_VERSION), 
-			u32VulkanMinorVersion = VK_API_VERSION_MINOR(RE_VK_API_VERSION), 
-			u32PhysicalDeviceVulkanMajorVersion = VK_API_VERSION_MAJOR(vk_thisPhysicalDeviceProperties.properties.apiVersion), 
+		constexpr uint32_t u32VulkanMajorVersion = VK_API_VERSION_MAJOR(RE_VK_API_VERSION), 
+			u32VulkanMinorVersion = VK_API_VERSION_MINOR(RE_VK_API_VERSION);
+		const uint32_t u32PhysicalDeviceVulkanMajorVersion = VK_API_VERSION_MAJOR(vk_thisPhysicalDeviceProperties.properties.apiVersion), 
 			u32PhysicalDeviceVulkanMinorVersion = VK_API_VERSION_MINOR(vk_thisPhysicalDeviceProperties.properties.apiVersion);
 		if ((u32PhysicalDeviceVulkanMajorVersion == u32VulkanMajorVersion && u32PhysicalDeviceVulkanMinorVersion < u32VulkanMinorVersion) || u32PhysicalDeviceVulkanMajorVersion < u32VulkanMajorVersion)
 			missingFeatures.push(append_to_string("The physical device should support at least Vulkan ", u32VulkanMajorVersion, ".", u32VulkanMinorVersion, "; it's latest version is ", u32PhysicalDeviceVulkanMajorVersion, ".", u32PhysicalDeviceVulkanMinorVersion));
@@ -174,6 +174,7 @@ namespace RE {
 			for (uint32_t u32PhysicalDeviceAvailableIndex = 0; u32PhysicalDeviceAvailableIndex < u32PhysicalDevicesAvailableCount; u32PhysicalDeviceAvailableIndex++) {
 				vkGetPhysicalDeviceProperties2(vk_pahPhysicalDevicesAvailable[u32PhysicalDeviceAvailableIndex], &vk_thisPhysicalDeviceProperties);
 	
+				VkSampleCountFlags vk_eMsaaAvailable = vk_thisPhysicalDeviceProperties.properties.limits.framebufferColorSampleCounts & vk_thisPhysicalDeviceProperties.properties.limits.framebufferDepthSampleCounts & vk_thisPhysicalDeviceProperties.properties.limits.framebufferStencilSampleCounts;
 				int32_t i32CurrentDeviceScore = 0;
 				switch (vk_thisPhysicalDeviceProperties.properties.deviceType) {
 					case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
@@ -186,8 +187,9 @@ namespace RE {
 						break;
 				}
 				i32CurrentDeviceScore += PUSH_TO_CALLSTACKTRACE_AND_RETURN(rate_gpu_queues(vk_pahPhysicalDevicesAvailable[u32PhysicalDeviceAvailableIndex]), int32_t);
-				i32CurrentDeviceScore += PUSH_TO_CALLSTACKTRACE_AND_RETURN(rate_gpu_depth_stencil_image_formats(vk_pahPhysicalDevicesAvailable[u32PhysicalDeviceAvailableIndex]), int32_t);
+				i32CurrentDeviceScore += PUSH_TO_CALLSTACKTRACE_AND_RETURN(rate_gpu_depth_stencil_image_formats(vk_pahPhysicalDevicesAvailable[u32PhysicalDeviceAvailableIndex], vk_eMsaaAvailable), int32_t);
 				i32CurrentDeviceScore += PUSH_TO_CALLSTACKTRACE_AND_RETURN(rate_gpu_texture_capacity(vk_thisPhysicalDeviceProperties.properties.limits), int32_t);
+				PRINT_LN(hexadecimal_to_string(vk_eMsaaAvailable));
 				if (i32CurrentDeviceScore > i32BestDeviceScore) {
 					i32BestDeviceScore = i32CurrentDeviceScore;
 					vk_hPhysicalDeviceSelected = vk_pahPhysicalDevicesAvailable[u32PhysicalDeviceAvailableIndex];

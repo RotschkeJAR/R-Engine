@@ -75,7 +75,7 @@ namespace RE {
 		for (uint8_t u8LogicalQueueIndex = 0; u8LogicalQueueIndex < u8LogicalQueueCount; u8LogicalQueueIndex++)
 			if ((vk_paeQueueTypes[u8LogicalQueueIndex] & vk_eAllRequiredQueueTypes) == vk_eAllRequiredQueueTypes)
 				indicesOfPerfectQueues.push_back(u8LogicalQueueIndex);
-		if (!indicesOfPerfectQueues.empty()) {
+		if (!indicesOfPerfectQueues.empty()) [[likely]] {
 			uint8_t u8BestQueue;
 			uint8_t u8MinimalAmountOfSideFeaturesInQueue = std::numeric_limits<uint8_t>::max();
 			for (const uint8_t u8LogicalQueueIndex : indicesOfPerfectQueues) {
@@ -94,7 +94,7 @@ namespace RE {
 			PUSH_TO_CALLSTACKTRACE(alloc_vulkan_command_buffers(commandPoolPerCommandBuffer[0], VK_COMMAND_BUFFER_LEVEL_PRIMARY, u32CommandBufferCount, &commandBuffers[0]));
 			commandBufferIndicesPerFunction = std::make_shared<uint32_t[]>(u32CommandBufferCount);
 			std::fill(commandBufferIndicesPerFunction.get(), commandBufferIndicesPerFunction.get() + u32FunctionsCount, 0);
-		} else {
+		} else [[unlikely]] {
 			std::vector<uint8_t> queuesToUseInOrder;
 			queuesToUseInOrder.reserve(u32FunctionsCount);
 			for (uint32_t u32FunctionIndex = 0; u32FunctionIndex < u32FunctionsCount; u32FunctionIndex++)
@@ -130,14 +130,16 @@ namespace RE {
 				commandPoolPerCommandBuffer[u32CommandBufferIndex] = vk_pahCommandPools[queueIndicesPerCommandBuffer[u32CommandBufferIndex] * COMMAND_POOLS_PER_QUEUE + u8CommandPoolIndexOffset];
 				PUSH_TO_CALLSTACKTRACE(alloc_vulkan_command_buffers(commandPoolPerCommandBuffer[u32CommandBufferIndex], VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1, &commandBuffers[u32CommandBufferIndex]));
 			}
-			const uint32_t u32SemaphoreCount = u32CommandBufferCount - 1;
-			if (u32SemaphoreCount) {
-				internalSemaphores = std::make_unique<VkSemaphore[]>(u32SemaphoreCount);
+			if (u32CommandBufferCount > 1) {
+			const VkSemaphoreTypeCreateInfo vk_timelineSemaphoreCreateInfo = {
+				.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO,
+				.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE
+			};
 				const VkSemaphoreCreateInfo vk_semaphoreCreateInfo = {
-					.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
+					.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+				.pNext = &vk_timelineSemaphoreCreateInfo
 				};
-				for (uint32_t u32SemaphoreIndex = 0; u32SemaphoreIndex < u32SemaphoreCount; u32SemaphoreIndex++)
-					vkCreateSemaphore(vk_hDevice, &vk_semaphoreCreateInfo, nullptr, &internalSemaphores[u32SemaphoreIndex]);
+				vkCreateSemaphore(vk_hDevice, &vk_semaphoreCreateInfo, nullptr, &vk_hInternalSemaphore);
 			}
 		}
 	}
@@ -175,14 +177,16 @@ namespace RE {
 			PUSH_TO_CALLSTACKTRACE(alloc_vulkan_command_buffers(commandPoolPerCommandBuffer[u32CommandBufferIndex], VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1, &commandBuffers[u32CommandBufferIndex]));
 			u32CommandBufferIndex++;
 		}
-		const uint32_t u32SemaphoreCount = u32CommandBufferCount - 1;
-		if (u32SemaphoreCount) {
-			internalSemaphores = std::make_unique<VkSemaphore[]>(u32SemaphoreCount);
-			const VkSemaphoreCreateInfo vk_semaphoreCreateInfo = {
-				.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
+		if (u32CommandBufferCount > 1) {
+			const VkSemaphoreTypeCreateInfo vk_timelineSemaphoreCreateInfo = {
+				.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO,
+				.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE
 			};
-			for (uint32_t u32SemaphoreIndex = 0; u32SemaphoreIndex < u32SemaphoreCount; u32SemaphoreIndex++)
-				vkCreateSemaphore(vk_hDevice, &vk_semaphoreCreateInfo, nullptr, &internalSemaphores[u32SemaphoreIndex]);
+			const VkSemaphoreCreateInfo vk_semaphoreCreateInfo = {
+				.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+				.pNext = &vk_timelineSemaphoreCreateInfo
+			};
+			vkCreateSemaphore(vk_hDevice, &vk_semaphoreCreateInfo, nullptr, &vk_hInternalSemaphore);
 		}
 	}
 
@@ -222,47 +226,50 @@ namespace RE {
 			commandPoolPerCommandBuffer[u32CommandBufferIndex] = vk_pahCommandPools[logicalQueuesInOrder[u32CommandBufferIndex] * COMMAND_POOLS_PER_QUEUE + (bTransient ? COMMAND_POOL_OFFSET_TRANSIENT : COMMAND_POOL_OFFSET_NORMAL)];
 			PUSH_TO_CALLSTACKTRACE(alloc_vulkan_command_buffers(commandPoolPerCommandBuffer[u32CommandBufferIndex], VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1, &commandBuffers[u32CommandBufferIndex]));
 		}
-		const uint32_t u32SemaphoreCount = u32CommandBufferCount - 1;
-		if (u32SemaphoreCount) {
-			internalSemaphores = std::make_unique<VkSemaphore[]>(u32SemaphoreCount);
-			const VkSemaphoreCreateInfo vk_semaphoreCreateInfo = {
-				.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
+		if (u32CommandBufferCount > 1) {
+			const VkSemaphoreTypeCreateInfo vk_timelineSemaphoreCreateInfo = {
+				.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO,
+				.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE
 			};
-			for (uint32_t u32SemaphoreIndex = 0; u32SemaphoreIndex < u32SemaphoreCount; u32SemaphoreIndex++)
-				vkCreateSemaphore(vk_hDevice, &vk_semaphoreCreateInfo, nullptr, &internalSemaphores[u32SemaphoreIndex]);
+			const VkSemaphoreCreateInfo vk_semaphoreCreateInfo = {
+				.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+				.pNext = &vk_timelineSemaphoreCreateInfo
+			};
+			vkCreateSemaphore(vk_hDevice, &vk_semaphoreCreateInfo, nullptr, &vk_hInternalSemaphore);
 		}
 	}
 
 	void VulkanTask::init(const VulkanTask &rCopy) {
-		queueIndicesPerCommandBuffer = rCopy.queueIndicesPerCommandBuffer;
-		commandPoolPerCommandBuffer = rCopy.commandPoolPerCommandBuffer;
-		commandBuffers = std::make_unique<VkCommandBuffer[]>(rCopy.u32CommandBufferCount);
-		internalSemaphores = rCopy.u32CommandBufferCount > 0 ? std::make_unique<VkSemaphore[]>(rCopy.u32CommandBufferCount - 1) : nullptr;
-		commandBufferIndicesPerFunction = rCopy.commandBufferIndicesPerFunction;
-		paFunctions = std::make_unique<std::function<void (VkCommandBuffer, uint8_t, uint8_t, uint8_t)>[]>(rCopy.u32FunctionsCount);
 		u32FunctionsCount = rCopy.u32FunctionsCount;
 		u32CommandBufferCount = rCopy.u32CommandBufferCount;
+		queueIndicesPerCommandBuffer = rCopy.queueIndicesPerCommandBuffer;
+		commandPoolPerCommandBuffer = rCopy.commandPoolPerCommandBuffer;
+		commandBufferIndicesPerFunction = rCopy.commandBufferIndicesPerFunction;
+		commandBuffers = std::make_unique<VkCommandBuffer[]>(u32CommandBufferCount);
+		paFunctions = std::make_unique<std::function<void (VkCommandBuffer, uint8_t, uint8_t, uint8_t)>[]>(rCopy.u32FunctionsCount);
 		for (uint32_t u32CommandBufferIndex = 0; u32CommandBufferIndex < u32CommandBufferCount; u32CommandBufferIndex++)
 			PUSH_TO_CALLSTACKTRACE(alloc_vulkan_command_buffers(commandPoolPerCommandBuffer[u32CommandBufferIndex], VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1, &commandBuffers[u32CommandBufferIndex]));
-		if (internalSemaphores && u32CommandBufferCount > 0) {
-			const VkSemaphoreCreateInfo vk_semaphoreCreateInfo = {
-				.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
+		if (u32CommandBufferCount > 1) {
+			const VkSemaphoreTypeCreateInfo vk_timelineSemaphoreCreateInfo = {
+				.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO,
+				.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE
 			};
-			for (uint32_t u32InternalSemaphoreIndex = 0; u32InternalSemaphoreIndex < u32CommandBufferCount - 1; u32InternalSemaphoreIndex++)
-				vkCreateSemaphore(vk_hDevice, &vk_semaphoreCreateInfo, nullptr, &internalSemaphores[u32InternalSemaphoreIndex]);
+			const VkSemaphoreCreateInfo vk_semaphoreCreateInfo = {
+				.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+				.pNext = &vk_timelineSemaphoreCreateInfo
+			};
+			vkCreateSemaphore(vk_hDevice, &vk_semaphoreCreateInfo, nullptr, &vk_hInternalSemaphore);
 		}
 	}
 
 	void VulkanTask::destroy() {
-		for (uint32_t u32CommandBufferIndex = 0; u32CommandBufferIndex < u32CommandBufferCount; u32CommandBufferIndex++) {
+		for (uint32_t u32CommandBufferIndex = 0; u32CommandBufferIndex < u32CommandBufferCount; u32CommandBufferIndex++)
 			vkFreeCommandBuffers(vk_hDevice, commandPoolPerCommandBuffer[u32CommandBufferIndex], u32CommandBufferCount, &commandBuffers[u32CommandBufferIndex]);
-			if (u32CommandBufferIndex > 0)
-				vkDestroySemaphore(vk_hDevice, internalSemaphores[u32CommandBufferIndex - 1], nullptr);
-		}
+		if (u32CommandBufferCount > 1)
+			vkDestroySemaphore(vk_hDevice, vk_hInternalSemaphore, nullptr);
 		queueIndicesPerCommandBuffer.reset();
 		commandPoolPerCommandBuffer.reset();
 		commandBuffers.reset();
-		internalSemaphores.reset();
 		commandBufferIndicesPerFunction.reset();
 		paFunctions.reset();
 	}
@@ -284,58 +291,55 @@ namespace RE {
 		vkEndCommandBuffer(commandBuffers[commandBufferIndicesPerFunction[u32FunctionsCount - 1]]);
 	}
 
-	void VulkanTask::submit(const VkTimelineSemaphoreSubmitInfo *const vk_pTimelineSubmit, const uint32_t u32SemaphoresToWaitForCount, const VkSemaphore *const vk_pahSemaphoresToWaitFor, const VkPipelineStageFlags *const vk_pahStagesToWaitAt, const uint32_t u32SemaphoresToSignal, const VkSemaphore *const vk_pahSemaphoresToSignal, const VkFence vk_hFenceToSignal) {
+	void VulkanTask::submit(const uint32_t u32SemaphoresToWaitForCount, const VkSemaphoreSubmitInfo *const vk_paSemaphoresToWaitFor, const uint32_t u32SemaphoresToSignal, const VkSemaphoreSubmitInfo *const vk_paSemaphoresToSignal, const VkFence vk_hFenceToSignal) {
+		VkCommandBufferSubmitInfo vk_commandBufferSubmitInfo;
+		vk_commandBufferSubmitInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
+		vk_commandBufferSubmitInfo.pNext = nullptr;
+		vk_commandBufferSubmitInfo.commandBuffer = commandBuffers[0];
+		vk_commandBufferSubmitInfo.deviceMask = 0;
+		VkSubmitInfo2 vk_submissionInfo;
+		vk_submissionInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
+		vk_submissionInfo.pNext = nullptr;
+		vk_submissionInfo.flags = 0;
+		vk_submissionInfo.waitSemaphoreInfoCount = u32SemaphoresToWaitForCount;
+		vk_submissionInfo.pWaitSemaphoreInfos = vk_paSemaphoresToWaitFor;
+		vk_submissionInfo.commandBufferInfoCount = 1;
+		vk_submissionInfo.pCommandBufferInfos = &vk_commandBufferSubmitInfo;
 		if (u32CommandBufferCount == 1) {
-			const VkSubmitInfo vk_submissionInfo = {
-				.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-				.pNext = vk_pTimelineSubmit,
-				.waitSemaphoreCount = u32SemaphoresToWaitForCount,
-				.pWaitSemaphores = vk_pahSemaphoresToWaitFor,
-				.pWaitDstStageMask = vk_pahStagesToWaitAt,
-				.commandBufferCount = 1,
-				.pCommandBuffers = commandBuffers.get(),
-				.signalSemaphoreCount = u32SemaphoresToSignal,
-				.pSignalSemaphores = vk_pahSemaphoresToSignal
-			};
-			vkQueueSubmit(vk_pahQueues[queueIndicesPerCommandBuffer[0]], 1, &vk_submissionInfo, vk_hFenceToSignal);
+			vk_submissionInfo.signalSemaphoreInfoCount = u32SemaphoresToSignal;
+			vk_submissionInfo.pSignalSemaphoreInfos = vk_paSemaphoresToSignal;
+			vkQueueSubmit2(vk_pahQueues[queueIndicesPerCommandBuffer[0]], 1, &vk_submissionInfo, vk_hFenceToSignal);
 		} else {
-			constexpr uint64_t a1u64SemaphoreValueDummy[1] = {0};
-			VkTimelineSemaphoreSubmitInfo vk_timelineSubmission;
-			vk_timelineSubmission.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
-			VkSubmitInfo vk_submissionInfo = {
-				.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-				.waitSemaphoreCount = u32SemaphoresToWaitForCount,
-				.pWaitSemaphores = vk_pahSemaphoresToWaitFor,
-				.pWaitDstStageMask = vk_pahStagesToWaitAt,
-				.commandBufferCount = 1,
-				.pCommandBuffers = &commandBuffers[0],
-				.signalSemaphoreCount = 1,
-				.pSignalSemaphores = &internalSemaphores[0]
+			VkSemaphoreSubmitInfo vk_a2InternalSemaphoreSubmissionInfo[2] = {
+				{
+					.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+					.semaphore = vk_hInternalSemaphore,
+					.value = 1,
+					.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+					.deviceIndex = 0
+				}, {
+					.sType = vk_a2InternalSemaphoreSubmissionInfo[0].sType,
+					.semaphore = vk_a2InternalSemaphoreSubmissionInfo[0].semaphore,
+					.value = 2,
+					.stageMask = vk_a2InternalSemaphoreSubmissionInfo[0].stageMask,
+					.deviceIndex = vk_a2InternalSemaphoreSubmissionInfo[0].deviceIndex
+				}
 			};
-			if (vk_pTimelineSubmit) {
-				vk_timelineSubmission.waitSemaphoreValueCount = vk_pTimelineSubmit->waitSemaphoreValueCount;
-				vk_timelineSubmission.pWaitSemaphoreValues = vk_pTimelineSubmit->pWaitSemaphoreValues;
-				vk_timelineSubmission.signalSemaphoreValueCount = 1;
-				vk_timelineSubmission.pSignalSemaphoreValues = a1u64SemaphoreValueDummy;
-				vk_submissionInfo.pNext = &vk_timelineSubmission;
+			vk_submissionInfo.signalSemaphoreInfoCount = 1;
+			vk_submissionInfo.pSignalSemaphoreInfos = &vk_a2InternalSemaphoreSubmissionInfo[0];
+			vkQueueSubmit2(vk_pahQueues[queueIndicesPerCommandBuffer[0]], 1, &vk_submissionInfo, VK_NULL_HANDLE);
+			vk_submissionInfo.waitSemaphoreInfoCount = 1;
+			vk_submissionInfo.pWaitSemaphoreInfos = &vk_a2InternalSemaphoreSubmissionInfo[0];
+			vk_submissionInfo.pSignalSemaphoreInfos = &vk_a2InternalSemaphoreSubmissionInfo[1];
+			for (uint32_t u32CommandBufferIndex = 1; u32CommandBufferIndex < u32CommandBufferCount - 1; u32CommandBufferIndex++) {
+				vk_a2InternalSemaphoreSubmissionInfo[u32CommandBufferIndex % 2].value = u32CommandBufferIndex + 1;
+				vk_commandBufferSubmitInfo.commandBuffer = commandBuffers[u32CommandBufferIndex];
+				vkQueueSubmit2(vk_pahQueues[queueIndicesPerCommandBuffer[u32CommandBufferIndex]], 1, &vk_submissionInfo, VK_NULL_HANDLE);
+				std::swap(vk_submissionInfo.pWaitSemaphoreInfos, vk_submissionInfo.pSignalSemaphoreInfos);
 			}
-			vkQueueSubmit(vk_pahQueues[queueIndicesPerCommandBuffer[0]], 1, &vk_submissionInfo, VK_NULL_HANDLE);
-			constexpr VkPipelineStageFlags vk_ePipelineStageToWaitAt = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-			for (uint32_t u32CommandBufferIndex = 1; u32CommandBufferIndex < u32CommandBufferCount - 1; u32CommandBufferIndex++)
-				PUSH_TO_CALLSTACKTRACE(submit_to_vulkan_queue(vk_pahQueues[queueIndicesPerCommandBuffer[u32CommandBufferIndex]], 1, &internalSemaphores[u32CommandBufferIndex - 1], &vk_ePipelineStageToWaitAt, 1, &commandBuffers[u32CommandBufferIndex], 1, &internalSemaphores[u32CommandBufferIndex], VK_NULL_HANDLE));
-			vk_submissionInfo.waitSemaphoreCount = 1;
-			vk_submissionInfo.pWaitSemaphores = &internalSemaphores[u32CommandBufferCount - 2];
-			vk_submissionInfo.pCommandBuffers = &commandBuffers[u32CommandBufferCount - 1];
-			vk_submissionInfo.signalSemaphoreCount = u32SemaphoresToSignal;
-			vk_submissionInfo.pSignalSemaphores = vk_pahSemaphoresToSignal;
-			if (vk_pTimelineSubmit) {
-				vk_timelineSubmission.waitSemaphoreValueCount = 1;
-				vk_timelineSubmission.pWaitSemaphoreValues = a1u64SemaphoreValueDummy;
-				vk_timelineSubmission.signalSemaphoreValueCount = vk_pTimelineSubmit->signalSemaphoreValueCount;
-				vk_timelineSubmission.pSignalSemaphoreValues = vk_pTimelineSubmit->pSignalSemaphoreValues;
-				vk_submissionInfo.pNext = &vk_timelineSubmission;
-			}
-			vkQueueSubmit(vk_pahQueues[queueIndicesPerCommandBuffer[u32CommandBufferCount - 1]], 1, &vk_submissionInfo, vk_hFenceToSignal);
+			vk_submissionInfo.signalSemaphoreInfoCount = u32SemaphoresToSignal;
+			vk_submissionInfo.pSignalSemaphoreInfos = vk_paSemaphoresToSignal;
+			vkQueueSubmit2(vk_pahQueues[queueIndicesPerCommandBuffer[u32CommandBufferCount - 1]], 1, &vk_submissionInfo, vk_hFenceToSignal);
 		}
 	}
 

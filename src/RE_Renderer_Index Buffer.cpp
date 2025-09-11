@@ -5,10 +5,10 @@ namespace RE {
 	VkBuffer vk_hRectIndexBuffer;
 	static VkDeviceMemory vk_hRectIndexBufferMemory;
 
-	bool create_rect_index_buffer(VkBuffer vk_hStagingIndexBuffer, VkDeviceMemory vk_hStagingIndexBufferMemory, VulkanTask &rIndexBufferTransferTask, Vulkan_TimelineSemaphore &rIndexBufferTransferTimelineSemaphore) {
+	bool create_rect_index_buffer(VkBuffer vk_hStagingIndexBuffer, VkDeviceMemory vk_hStagingIndexBufferMemory, VulkanTask &rIndexBufferTransferTask, Vulkan_TimelineSemaphore &rIndexBufferTransferTimelineSemaphore, std::thread &rThreadIndexBufferDataInit) {
 		uint16_t *pau16Indices;
 		vkMapMemory(vk_hDevice, vk_hStagingIndexBufferMemory, 0, RE_VK_INDEX_BUFFER_SIZE, 0, reinterpret_cast<void**>(&pau16Indices));
-		std::thread indexBufferDataInit([&]() {
+		std::thread threadIndexBufferDataInit([&]() {
 			for (uint32_t u32RectIndex = 0; u32RectIndex < RE_VK_RENDERABLE_RECTANGLES_COUNT; u32RectIndex++) {
 				pau16Indices[u32RectIndex * 6 + 0] = u32RectIndex * 4 + 0;
 				pau16Indices[u32RectIndex * 6 + 1] = u32RectIndex * 4 + 1;
@@ -30,7 +30,7 @@ namespace RE {
 				get_render_graphics_queue_logical_index()
 			};
 			const VulkanTask_Queues indexBufferTransferQueues = {
-				.u32FunctionsCount = 2,
+				.u32FunctionsCount = sizeof(au8RenderGraphicsLogicalQueueIndex) / sizeof(au8RenderGraphicsLogicalQueueIndex[0]),
 				.pau8LogicalQueueIndices = au8RenderGraphicsLogicalQueueIndex,
 				.vk_paeQueueTypes = vk_aeIndexBufferTransferQueues
 			};
@@ -90,26 +90,22 @@ namespace RE {
 				vkCmdPipelineBarrier2(vk_hCommandBuffer, &vk_ownershipTransfer);
 			};
 			PUSH_TO_CALLSTACKTRACE(rIndexBufferTransferTask.record(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT));
-			indexBufferDataInit.join();
-			constexpr uint64_t a2u64TimelineSemaphoreValues[2] = {
-				RE_VK_TIMELINE_SEMAPHORE_TRANSFER,
-				RE_VK_TIMELINE_SEMAPHORE_FINISH
+			const VkSemaphoreSubmitInfo vk_signalSemaphoreInfo = {
+				.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+				.semaphore = rIndexBufferTransferTimelineSemaphore.get_timeline_semaphore(),
+				.value = RE_VK_TIMELINE_SEMAPHORE_TRANSFER,
+				.stageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT
 			};
-			const VkTimelineSemaphoreSubmitInfo vk_timelineSubmitInfo = {
-				.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO,
-				.waitSemaphoreValueCount = 1,
-				.pWaitSemaphoreValues = &a2u64TimelineSemaphoreValues[0],
-				.signalSemaphoreValueCount = 1,
-				.pSignalSemaphoreValues = &a2u64TimelineSemaphoreValues[1]
+			const VkSemaphoreSubmitInfo vk_waitSemaphoreInfo = {
+				.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+				.semaphore = rIndexBufferTransferTimelineSemaphore.get_timeline_semaphore(),
+				.value = RE_VK_TIMELINE_SEMAPHORE_FINISH
 			};
-			constexpr VkPipelineStageFlags vk_a1ePipelineToWaitAt[1] = {
-				VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
-			};
-			PUSH_TO_CALLSTACKTRACE(rIndexBufferTransferTask.submit(&vk_timelineSubmitInfo, 1, rIndexBufferTransferTimelineSemaphore.get_timeline_semaphore_ptr(), vk_a1ePipelineToWaitAt, 1, rIndexBufferTransferTimelineSemaphore.get_timeline_semaphore_ptr(), VK_NULL_HANDLE));
+			PUSH_TO_CALLSTACKTRACE(rIndexBufferTransferTask.submit(1, &vk_signalSemaphoreInfo, 1, &vk_waitSemaphoreInfo, VK_NULL_HANDLE));
+			rThreadIndexBufferDataInit = std::move(threadIndexBufferDataInit);
 			return true;
 		}
-		if (indexBufferDataInit.joinable())
-			indexBufferDataInit.join();
+		threadIndexBufferDataInit.join();
 		return false;
 	}
 

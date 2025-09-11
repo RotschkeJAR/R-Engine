@@ -31,7 +31,7 @@ namespace RE {
 #define RE_VK_TIMELINE_SEMAPHORE_TRANSFER 1
 #define RE_VK_TIMELINE_SEMAPHORE_FINISH 2
 	extern VkBuffer vk_hRectIndexBuffer;
-	bool create_rect_index_buffer(VkBuffer vk_hStagingIndexBuffer, VkDeviceMemory vk_hStagingIndexBufferMemory, VulkanTask &rIndexBufferTransferTask, Vulkan_TimelineSemaphore &rIndexBufferTransferTimelineSemaphore);
+	bool create_rect_index_buffer(VkBuffer vk_hStagingIndexBuffer, VkDeviceMemory vk_hStagingIndexBufferMemory, VulkanTask &rIndexBufferTransferTask, Vulkan_TimelineSemaphore &rIndexBufferTransferTimelineSemaphore, std::thread &rThreadIndexBufferDataInit);
 	void destroy_rect_index_buffer();
 
 	// MSAA

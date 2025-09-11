@@ -184,7 +184,7 @@ namespace RE {
 		if ((!bSupportsDepthStencilCombined && bSupportsStencilsOnly && bSupportsDepthOnly) || (bSupportsDepthStencilCombined && !bSupportsStencilsOnly && !bSupportsDepthOnly))
 			i32Score /= 10; // Bad GPU design and likely causes many cache-misses or unnecessary memory allocation
 		else if (!bSupportsDepthStencilCombined && !bSupportsStencilsOnly && !bSupportsDepthOnly)
-			i32Score = -5000; // Depth-stencil images only available in linear tiling, which likely causes high memory usage and many cache-misses
+			i32Score = -5000; // Depth-stencil images only available in linear tiling, which is suboptimal for performance and memory
 		return i32Score;
 	}
 
@@ -309,7 +309,7 @@ namespace RE {
 						return false;
 					}
 					rDepthStencilImageLayoutTransitionTask.paFunctions[0] = [&](const VkCommandBuffer vk_hCommandBuffer, const uint8_t u8PreviousLogicalQueue, const uint8_t u8CurrentLogicalQueue, const uint8_t u8NextLogicalQueue) {
-						const VkImageMemoryBarrier2 vk_aDepthStencilImageBarriers[] = {
+						const VkImageMemoryBarrier2 vk_aDepthStencilImageBarriers[4] = {
 							{
 								.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
 								.srcStageMask = VK_PIPELINE_STAGE_2_NONE,
@@ -384,7 +384,7 @@ namespace RE {
 						vkCmdPipelineBarrier2(vk_hCommandBuffer, &vk_imageTransitionBarrier);
 					};
 					PUSH_TO_CALLSTACKTRACE(rDepthStencilImageLayoutTransitionTask.record(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT));
-					PUSH_TO_CALLSTACKTRACE(rDepthStencilImageLayoutTransitionTask.submit(nullptr, 0, nullptr, nullptr, 0, nullptr, vk_hDepthStencilImageLayoutTransitionFence));
+					PUSH_TO_CALLSTACKTRACE(rDepthStencilImageLayoutTransitionTask.submit(0, nullptr, 0, nullptr, vk_hDepthStencilImageLayoutTransitionFence));
 					return true;
 				} else {
 					RE_NOTE("The currently selected format for separated depth-stencil images isn't supported. Searching for combined format and using it instead");
@@ -425,7 +425,7 @@ namespace RE {
 				return false;
 			}
 			rDepthStencilImageLayoutTransitionTask.paFunctions[0] = [&](const VkCommandBuffer vk_hCommandBuffer, const uint8_t u8PreviousLogicalQueue, const uint8_t u8CurrentLogicalQueue, const uint8_t u8NextLogicalQueue) {
-				const VkImageMemoryBarrier2 vk_aDepthStencilImageBarriers[] = {
+				const VkImageMemoryBarrier2 vk_aDepthStencilImageBarriers[2] = {
 					{
 						.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
 						.srcStageMask = VK_PIPELINE_STAGE_2_NONE,
@@ -507,7 +507,7 @@ namespace RE {
 				return false;
 			}
 			rDepthStencilImageLayoutTransitionTask.paFunctions[0] = [&](const VkCommandBuffer vk_hCommandBuffer, const uint8_t u8PreviousLogicalQueue, const uint8_t u8CurrentLogicalQueue, const uint8_t u8NextLogicalQueue) {
-				const VkImageMemoryBarrier2 vk_aDepthImageBarriers[] = {
+				const VkImageMemoryBarrier2 vk_aDepthImageBarriers[2] = {
 					{
 						.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
 						.srcStageMask = VK_PIPELINE_STAGE_2_NONE,
@@ -551,7 +551,7 @@ namespace RE {
 			};
 		}
 		PUSH_TO_CALLSTACKTRACE(rDepthStencilImageLayoutTransitionTask.record(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT));
-		PUSH_TO_CALLSTACKTRACE(rDepthStencilImageLayoutTransitionTask.submit(nullptr, 0, nullptr, nullptr, 0, nullptr, vk_hDepthStencilImageLayoutTransitionFence));
+		PUSH_TO_CALLSTACKTRACE(rDepthStencilImageLayoutTransitionTask.submit(0, nullptr, 0, nullptr, vk_hDepthStencilImageLayoutTransitionFence));
 		return true;
 	}
 

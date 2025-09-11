@@ -27,8 +27,8 @@ namespace RE {
 			std::shared_ptr<uint8_t[]> queueIndicesPerCommandBuffer;
 			std::shared_ptr<VkCommandPool[]> commandPoolPerCommandBuffer;
 			std::unique_ptr<VkCommandBuffer[]> commandBuffers;
-			std::unique_ptr<VkSemaphore[]> internalSemaphores;
 			std::shared_ptr<uint32_t[]> commandBufferIndicesPerFunction;
+			VkSemaphore vk_hInternalSemaphore;
 			uint32_t u32CommandBufferCount;
 
 		public:
@@ -46,7 +46,7 @@ namespace RE {
 			void init(const VulkanTask &rCopy);
 			void destroy();
 			void record(VkCommandBufferUsageFlags vk_eUsageFlags);
-			void submit(const VkTimelineSemaphoreSubmitInfo *vk_pTimelineSubmit, uint32_t u32SemaphoresToWaitForCount, const VkSemaphore *vk_pahSemaphoresToWaitFor, const VkPipelineStageFlags *vk_pahStagesToWaitAt, uint32_t u32SemaphoresToSignal, const VkSemaphore *vk_pahSemaphoresToSignal, VkFence vk_hFenceToSignal);
+			void submit(uint32_t u32SemaphoresToWaitForCount, const VkSemaphoreSubmitInfo *vk_paSemaphoresToWaitFor, uint32_t u32SemaphoresToSignal, const VkSemaphoreSubmitInfo *vk_paSemaphoresToSignal, VkFence vk_hFenceToSignal);
 			uint32_t get_function_count() const;
 			uint8_t get_logical_queue_index_for_function(uint32_t u32FunctionIndex) const;
 			bool is_valid() const;

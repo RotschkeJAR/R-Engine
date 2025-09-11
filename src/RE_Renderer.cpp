@@ -65,14 +65,17 @@ namespace RE {
 			Vulkan_Buffer stagingIndexBuffer(RE_VK_INDEX_BUFFER_SIZE, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 1, nullptr, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 			VulkanTask indexBufferTransferTask;
 			Vulkan_TimelineSemaphore indexBufferTransferTimelineSemaphore;
-			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_rect_index_buffer(stagingIndexBuffer.get_buffer(), stagingIndexBuffer.get_memory(), indexBufferTransferTask, indexBufferTransferTimelineSemaphore), bool)) {
+			std::thread threadIndexBufferDataInit;
+			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_rect_index_buffer(stagingIndexBuffer.get_buffer(), stagingIndexBuffer.get_memory(), indexBufferTransferTask, indexBufferTransferTimelineSemaphore, threadIndexBufferDataInit), bool)) {
 				VulkanTask depthImageLayoutTransitionTask;
 				Vulkan_Fence depthStencilImageLayoutTransitionFence;
 				if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_depth_stencil_buffers(depthImageLayoutTransitionTask, depthStencilImageLayoutTransitionFence.get_fence()), bool)) {
+					threadIndexBufferDataInit.join();
 					indexBufferTransferTimelineSemaphore.wait_for_reaching(RE_VK_TIMELINE_SEMAPHORE_FINISH);
 					depthStencilImageLayoutTransitionFence.wait_for();
 					return true;
 				}
+				threadIndexBufferDataInit.join();
 				indexBufferTransferTimelineSemaphore.wait_for_reaching(RE_VK_TIMELINE_SEMAPHORE_FINISH);
 				PUSH_TO_CALLSTACKTRACE(destroy_rect_index_buffer());
 			}

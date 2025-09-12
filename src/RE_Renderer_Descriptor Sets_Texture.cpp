@@ -38,4 +38,12 @@ namespace RE {
 		return (static_cast<int32_t>(std::clamp<uint32_t>(std::min(vk_rPhysicalDeviceLimits.maxPerStageDescriptorSamplers, vk_rPhysicalDeviceLimits.maxPerStageDescriptorSampledImages), 16U, RE_VK_MAX_SAMPLED_IMAGES) - 16U) * 1500 / RE_VK_MAX_SAMPLED_IMAGES - 499) + (static_cast<int32_t>(std::clamp<uint32_t>(vk_rPhysicalDeviceLimits.maxImageDimension2D, 0U, 8192U)) * 1500 / 8192 - 499);
 	}
 
+	bool create_texture_descriptor_sets() {
+		return true;
+	}
+
+	void destroy_texture_descriptor_sets() {
+		
+	}
+
 }

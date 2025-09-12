@@ -203,6 +203,24 @@ namespace RE {
 		u8IndexToSelectedDepthStencilFormat = 0;
 	}
 
+	void discard_incompatible_msaa_modes_for_depth_stencil_images(VkSampleCountFlags &vk_reMsaaAvailable) {
+		VkPhysicalDeviceImageFormatInfo2 vk_physicalDeviceImageFormatInfo;
+		vk_physicalDeviceImageFormatInfo.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2;
+		vk_physicalDeviceImageFormatInfo.pNext = nullptr;
+		vk_physicalDeviceImageFormatInfo.type = VK_IMAGE_TYPE_2D;
+		vk_physicalDeviceImageFormatInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+		vk_physicalDeviceImageFormatInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+		vk_physicalDeviceImageFormatInfo.flags = 0;
+		VkImageFormatProperties2 vk_imageFormatProperties;
+		vk_imageFormatProperties.sType = VK_STRUCTURE_TYPE_IMAGE_FORMAT_PROPERTIES_2;
+		vk_imageFormatProperties.pNext = nullptr;
+		for (const VkFormat vk_eFormat : availableDepthStencilFormats) {
+			vk_physicalDeviceImageFormatInfo.format = vk_eFormat;
+			vkGetPhysicalDeviceImageFormatProperties2(vk_hPhysicalDeviceSelected, &vk_physicalDeviceImageFormatInfo, &vk_imageFormatProperties);
+			vk_reMsaaAvailable &= vk_imageFormatProperties.imageFormatProperties.sampleCounts;
+		}
+	}
+
 	bool create_depth_stencil_buffers(VulkanTask &rDepthStencilImageLayoutTransitionTask, VkFence vk_hDepthStencilImageLayoutTransitionFence) {
 		const VkExtent3D vk_depthStencilImageExtent = {
 			.width = vk_swapchainResolution.width,

@@ -43,6 +43,14 @@ namespace RE {
 	bool create_depth_stencil_buffers(VulkanTask &rDepthStencilImageLayoutTransitionTask, VkFence vk_hDepthStencilImageLayoutTransitionFence);
 	void destroy_depth_stencil_buffers();
 
+	// Descriptor Sets
+	bool create_descriptor_sets();
+	void destroy_descriptor_sets();
+
+	// Render Pass
+	bool create_renderpass();
+	void destroy_renderpass();
+
 }
 
 #endif /* __RE_RENDERER_INTERNAL_H__ */

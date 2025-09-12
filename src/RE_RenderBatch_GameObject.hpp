@@ -11,13 +11,6 @@ namespace RE {
 	class RenderBatch_GameObject {
 		private:
 			ListBatch_GameObject &rGameObjectBatch;
-			VkBuffer vk_hStagingVertexBuffer;
-			std::array<VkBuffer, RE_VK_FRAMES_IN_FLIGHT> vk_ahVertexBuffers;
-			VkDeviceMemory vk_hStagingVertexBufferMemory;
-			std::array<VkDeviceMemory, RE_VK_FRAMES_IN_FLIGHT> vk_ahVertexBufferMemories;
-			GameObject_VertexData *paVertices;
-			VkDeviceSize vk_transparentVerticesOffsetBytes;
-			uint16_t u16OpaqueCount, u16TransparentCount;
 
 		public:
 			RenderBatch_GameObject() = delete;

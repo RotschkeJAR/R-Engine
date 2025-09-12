@@ -21,10 +21,14 @@ namespace RE {
 	bool does_gpu_support_depth_stencil_images(VkPhysicalDevice vk_hPhysicalDevice, std::queue<std::string> &rMissingFeatures);
 	int32_t rate_gpu_depth_stencil_image_formats(VkPhysicalDevice vk_hPhysicalDevice, VkSampleCountFlags &vk_reMsaaAvailable);
 	void find_suitable_depth_stencil_formats();
+	void discard_incompatible_msaa_modes_for_depth_stencil_images(VkSampleCountFlags &vk_reMsaaAvailable);
 
 	// Textures
 	bool does_gpu_support_textures(VkPhysicalDevice vk_hPhysicalDevice, const VkPhysicalDeviceLimits &vk_rPhysicalDeviceLimits, std::queue<std::string> &rMissingFeatures, std::queue<std::string> &rDiscrepantFeatures);
 	int32_t rate_gpu_texture_capacity(const VkPhysicalDeviceLimits &vk_rPhysicalDeviceLimits);
+
+	// MSAA
+	extern VkSampleCountFlags vk_eAllowedMsaaSamples;
 
 }
 

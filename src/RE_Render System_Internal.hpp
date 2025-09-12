@@ -24,6 +24,7 @@ namespace RE {
 	bool alloc_physical_vulkan_device_list();
 	void free_physical_vulkan_device_list();
 	void select_best_physical_vulkan_device();
+	void select_physical_vulkan_device(VkPhysicalDevice vk_hPhysicalDevice);
 	
 	// Scheduler
 	extern std::unique_ptr<VkQueue[]> vk_pahQueues;

@@ -2,9 +2,10 @@
 
 namespace RE {
 	
+	VkSampleCountFlags vk_eAllowedMsaaSamples;
 	VkSampleCountFlagBits vk_eMsaaCount = VK_SAMPLE_COUNT_1_BIT;
-	std::array<VkImage, RE_VK_FRAMES_IN_FLIGHT> vk_ahSingleSampledWorldRenderImages = {};
-	std::array<VkDeviceMemory, RE_VK_FRAMES_IN_FLIGHT> vk_ahSingleSampledWorldRenderImageMemories = {};
+	std::array<VkImage, RE_VK_FRAMES_IN_FLIGHT> vk_ahSingleSampledWorldRenderImages;
+	std::array<VkDeviceMemory, RE_VK_FRAMES_IN_FLIGHT> vk_ahSingleSampledWorldRenderImageMemories;
 
 	void set_msaa_mode(const MsaaMode eNewMsaaMode) {
 		MsaaMode eNextMsaaMode = eNewMsaaMode;
@@ -21,19 +22,6 @@ namespace RE {
 			vk_eMsaaCount = vk_eNewSampleCount;
 			return;
 		}
-		WAIT_FOR_IDLE_VULKAN_DEVICE();
-		/*PUSH_TO_CALLSTACKTRACE(destroy_world_render_images());
-		vkDestroyRenderPass(vk_hDevice, vk_hWorldRenderPass, nullptr);
-		vk_eMsaaCount = vk_eNewSampleCount;
-		if (create_render_pass()) {
-			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_world_render_images(), bool)) {
-				if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(recreate_game_object_render_pipelines(), bool))
-					return;
-				PUSH_TO_CALLSTACKTRACE(destroy_world_render_images());
-			}
-			vkDestroyRenderPass(vk_hDevice, vk_hWorldRenderPass, nullptr);
-		}
-		vk_hWorldRenderPass = VK_NULL_HANDLE;*/
 	}
 
 	[[nodiscard]]
@@ -59,8 +47,7 @@ namespace RE {
 
 	[[nodiscard]]
 	bool is_msaa_mode_supported(const MsaaMode eMsaaMode) {
-		const VkSampleCountFlags vk_eAllowedSamples = vk_physicalDeviceProperties.limits.framebufferColorSampleCounts & vk_physicalDeviceProperties.limits.framebufferDepthSampleCounts & vk_physicalDeviceProperties.limits.framebufferStencilSampleCounts;
-		return ((VK_SAMPLE_COUNT_1_BIT << eMsaaMode) & vk_eAllowedSamples) != 0;
+		return ((VK_SAMPLE_COUNT_1_BIT << eMsaaMode) & vk_eAllowedMsaaSamples) != 0;
 	}
 
 	void get_supported_msaa_modes(const uint8_t u8ListLength, MsaaMode *const paeSupportedMsaaModes, uint8_t *const pu8SupportedMsaaModeCount) {

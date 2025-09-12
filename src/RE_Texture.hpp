@@ -6,12 +6,6 @@
 
 namespace RE {
 
-	struct TextureContainer final {
-		VkImage vk_hImage;
-		VkDeviceMemory vk_hImageMemory;
-		VkImageView vk_hImgView;
-	};
-
 }
 
 #endif /* __RE_TEXTURE_H__ */

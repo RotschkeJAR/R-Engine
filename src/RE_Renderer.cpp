@@ -1,5 +1,4 @@
 #include "RE_Renderer_Internal.hpp"
-#include "RE_Internal Header.hpp"
 #include "RE_Window.hpp"
 #include "RE_Vulkan_Wrapper Classes.hpp"
 #include "RE_Vulkan_Wrapper Functions.hpp"
@@ -70,10 +69,20 @@ namespace RE {
 				VulkanTask depthImageLayoutTransitionTask;
 				Vulkan_Fence depthStencilImageLayoutTransitionFence;
 				if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_depth_stencil_buffers(depthImageLayoutTransitionTask, depthStencilImageLayoutTransitionFence.get_fence()), bool)) {
-					threadIndexBufferDataInit.join();
-					indexBufferTransferTimelineSemaphore.wait_for_reaching(RE_VK_TIMELINE_SEMAPHORE_FINISH);
+					if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_descriptor_sets(), bool)) {
+						if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_renderpass(), bool)) {
+							if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(init_sub_renderers(), bool)) {
+								threadIndexBufferDataInit.join();
+								indexBufferTransferTimelineSemaphore.wait_for_reaching(RE_VK_TIMELINE_SEMAPHORE_FINISH);
+								depthStencilImageLayoutTransitionFence.wait_for();
+								return true;
+							}
+							PUSH_TO_CALLSTACKTRACE(destroy_renderpass());
+						}
+						PUSH_TO_CALLSTACKTRACE(destroy_descriptor_sets());
+					}
 					depthStencilImageLayoutTransitionFence.wait_for();
-					return true;
+					PUSH_TO_CALLSTACKTRACE(destroy_depth_stencil_buffers());
 				}
 				threadIndexBufferDataInit.join();
 				indexBufferTransferTimelineSemaphore.wait_for_reaching(RE_VK_TIMELINE_SEMAPHORE_FINISH);
@@ -89,9 +98,12 @@ namespace RE {
 	}
 	
 	void destroy_renderer() {
+		PUSH_TO_CALLSTACKTRACE(destroy_sub_renderers());
+		PUSH_TO_CALLSTACKTRACE(destroy_renderpass());
+		PUSH_TO_CALLSTACKTRACE(destroy_descriptor_sets());
 		PUSH_TO_CALLSTACKTRACE(destroy_depth_stencil_buffers());
 		PUSH_TO_CALLSTACKTRACE(destroy_rect_index_buffer());
-		for (VkFence &vk_rhFence : renderFences)
+		for (const VkFence &vk_rhFence : renderFences)
 			vkDestroyFence(vk_hDevice, vk_rhFence, nullptr);
 		for (VulkanTask &rRenderTask : renderTasks)
 			rRenderTask.destroy();

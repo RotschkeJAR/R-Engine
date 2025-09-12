@@ -2,12 +2,12 @@
 
 namespace RE {
 	
-	std::unique_ptr<VkPhysicalDevice[]> vk_pahPhysicalDevicesAvailable;
-	VkPhysicalDevice vk_hPhysicalDeviceSelected;
-	uint32_t u32PhysicalDevicesAvailableCount = 0;
+	VkPhysicalDevice vk_hPhysicalDeviceSelected = VK_NULL_HANDLE;
 	VkPhysicalDeviceProperties vk_physicalDeviceProperties;
 	VkPhysicalDeviceFeatures vk_physicalDeviceFeatures;
 	VkPhysicalDeviceMemoryProperties vk_physicalDeviceMemoryProperties;
+	std::unique_ptr<VkPhysicalDevice[]> vk_pahPhysicalDevicesAvailable;
+	uint32_t u32PhysicalDevicesAvailableCount;
 
 	static bool is_vulkan_physical_device_suitable(const VkPhysicalDevice vk_hPhysicalDevice) {
 		std::queue<std::string> missingFeatures, optionalFeaturesMissing, discrepantFeatures;
@@ -163,11 +163,15 @@ namespace RE {
 
 	void free_physical_vulkan_device_list() {
 		vk_pahPhysicalDevicesAvailable.reset();
+		vk_hPhysicalDeviceSelected = VK_NULL_HANDLE;
 	}
 
 	void select_best_physical_vulkan_device() {
-		{ // Algorithm to select best GPU
+		if (u32PhysicalDevicesAvailableCount == 1)
+			PUSH_TO_CALLSTACKTRACE(select_physical_vulkan_device(vk_pahPhysicalDevicesAvailable[0]));
+		else {
 			int32_t i32BestDeviceScore = std::numeric_limits<int32_t>::min();
+			VkPhysicalDevice vk_hBestPhysicalDevice;
 			VkPhysicalDeviceProperties2 vk_thisPhysicalDeviceProperties;
 			vk_thisPhysicalDeviceProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
 			vk_thisPhysicalDeviceProperties.pNext = nullptr;
@@ -183,20 +187,28 @@ namespace RE {
 					case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
 						break;
 					default:
-						i32CurrentDeviceScore -= 2500;
+						i32CurrentDeviceScore -= 2000;
 						break;
 				}
 				i32CurrentDeviceScore += PUSH_TO_CALLSTACKTRACE_AND_RETURN(rate_gpu_queues(vk_pahPhysicalDevicesAvailable[u32PhysicalDeviceAvailableIndex]), int32_t);
 				i32CurrentDeviceScore += PUSH_TO_CALLSTACKTRACE_AND_RETURN(rate_gpu_depth_stencil_image_formats(vk_pahPhysicalDevicesAvailable[u32PhysicalDeviceAvailableIndex], vk_eMsaaAvailable), int32_t);
 				i32CurrentDeviceScore += PUSH_TO_CALLSTACKTRACE_AND_RETURN(rate_gpu_texture_capacity(vk_thisPhysicalDeviceProperties.properties.limits), int32_t);
-				PRINT_LN(hexadecimal_to_string(vk_eMsaaAvailable));
+				i32CurrentDeviceScore += count_true_bits<VkSampleCountFlags>(vk_eMsaaAvailable & ~VK_SAMPLE_COUNT_1_BIT) * 700;
+				if ((vk_eMsaaAvailable & VK_SAMPLE_COUNT_1_BIT) == 0)
+					i32CurrentDeviceScore -= 2000;
 				if (i32CurrentDeviceScore > i32BestDeviceScore) {
 					i32BestDeviceScore = i32CurrentDeviceScore;
-					vk_hPhysicalDeviceSelected = vk_pahPhysicalDevicesAvailable[u32PhysicalDeviceAvailableIndex];
+					vk_hBestPhysicalDevice = vk_pahPhysicalDevicesAvailable[u32PhysicalDeviceAvailableIndex];
 				}
 			}
+			PUSH_TO_CALLSTACKTRACE(select_physical_vulkan_device(vk_hBestPhysicalDevice));
 		}
+	}
 
+	void select_physical_vulkan_device(const VkPhysicalDevice vk_hPhysicalDevice) {
+		if (vk_hPhysicalDeviceSelected == vk_hPhysicalDevice)
+			return;
+		vk_hPhysicalDeviceSelected = vk_hPhysicalDevice;
 		VkPhysicalDeviceProperties2 vk_physicalDeviceProperties2;
 		vk_physicalDeviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
 		vk_physicalDeviceProperties2.pNext = nullptr;
@@ -212,6 +224,8 @@ namespace RE {
 		vk_physicalDeviceMemoryProperties2.pNext = nullptr;
 		vkGetPhysicalDeviceMemoryProperties2(vk_hPhysicalDeviceSelected, &vk_physicalDeviceMemoryProperties2);
 		vk_physicalDeviceMemoryProperties = vk_physicalDeviceMemoryProperties2.memoryProperties;
+		vk_eAllowedMsaaSamples = vk_physicalDeviceProperties.limits.framebufferColorSampleCounts & vk_physicalDeviceProperties.limits.framebufferDepthSampleCounts & vk_physicalDeviceProperties.limits.framebufferStencilSampleCounts;
+		PUSH_TO_CALLSTACKTRACE(discard_incompatible_msaa_modes_for_depth_stencil_images(vk_eAllowedMsaaSamples));
 	}
 
 }

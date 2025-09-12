@@ -182,7 +182,7 @@ namespace RE {
 
 	enum TextureFilter {
 		/**
-		 * sharp image / each pixel is clearly visible
+		 * sharp image / each individual pixel of the texture is clearly visible
 		 */
 		RE_TEXTURE_FILTER_NEAREST = 0,
 		/**
@@ -201,7 +201,7 @@ namespace RE {
 	enum BorderColor {
 		RE_BORDER_COLOR_TRANSPARENT = 0,
 		RE_BORDER_COLOR_BLACK = 1,
-		RE_BORDER_COLOR_WHITE = 2,
+		RE_BORDER_COLOR_WHITE = 2
 	};
 
 	enum ScreenPercentageMode {
@@ -211,13 +211,13 @@ namespace RE {
 	};
 
 	enum MsaaMode {
-		RE_MSAA_MODE_1,
-		RE_MSAA_MODE_2,
-		RE_MSAA_MODE_4,
-		RE_MSAA_MODE_8,
-		RE_MSAA_MODE_16,
-		RE_MSAA_MODE_32,
-		RE_MSAA_MODE_64,
+		RE_MSAA_MODE_1 = 0,
+		RE_MSAA_MODE_2 = 1,
+		RE_MSAA_MODE_4 = 2,
+		RE_MSAA_MODE_8 = 3,
+		RE_MSAA_MODE_16 = 4,
+		RE_MSAA_MODE_32 = 5,
+		RE_MSAA_MODE_64 = 6,
 		RE_MSAA_MODE_DISABLED = RE_MSAA_MODE_1
 	};
 	
@@ -1044,18 +1044,27 @@ namespace RE {
 	bool is_vsync_enabled();
 
 	// Texture loading
+	[[nodiscard]]
 	Texture alloc_texture_from_binary_data(const uint8_t *pau8ImageBinaryData, Vector2u imageSize, uint32_t u32Channels);
+	[[nodiscard]]
 	Texture alloc_texture_from_binary_data(const uint8_t *pau8ImageBinaryData, uint32_t u32Width, uint32_t u32Height, uint32_t u32Channels);
+	[[nodiscard]]
 	Texture alloc_texture_loading_from_file(const char *pacPathToTextureFile);
+	[[nodiscard]]
 	Texture alloc_texture_loading_from_file(const char *pacPathToTextureFile, Vector2i &rSize);
+	[[nodiscard]]
 	Texture alloc_texture_loading_from_file(const char *pacPathToTextureFile, int32_t &ri32Width, int32_t &ri32Height);
+	[[nodiscard]]
 	Texture alloc_texture_loading_from_file(const char *pacPathToTextureFile, Vector2i &rSize, int32_t &ri32Channels);
+	[[nodiscard]]
 	Texture alloc_texture_loading_from_file(const char *pacPathToTextureFile, int32_t &ri32Width, int32_t &ri32Height, int32_t &ri32Channels);
 	void free_texture(Texture hTexture);
 	void free_texture_and_fix_dangling_pointers(Texture hTexture);
 
 	// Sprite layout creation
+	[[nodiscard]]
 	SpriteLayout create_sprite_layout();
+	[[nodiscard]]
 	SpriteLayout create_sprite_layout(const SpriteLayoutSettings &rSettings);
 	void change_sprite_layout_settings(SpriteLayout &rSpriteLayout, const SpriteLayoutSettings &rNewSettings);
 	void destroy_sprite_layout(SpriteLayout spriteLayout);

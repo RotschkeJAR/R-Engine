@@ -5,31 +5,30 @@ namespace RE {
 #define RE_VK_MAX_SAMPLED_IMAGES 0x7FFF
 	
 	bool does_gpu_support_textures(const VkPhysicalDevice vk_hPhysicalDevice, const VkPhysicalDeviceLimits &vk_rPhysicalDeviceLimits, std::queue<std::string> &rMissingFeatures, std::queue<std::string> &rDiscrepantFeatures) {
-		constexpr VkFormatFeatureFlags vk_eRequiredTextureFormatFeatures = VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT | VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_BLIT_DST_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT;
-		bool bSuitable = true;
+		constexpr VkFormatFeatureFlags vk_eRequiredTextureFormatFeatures = VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
 		VkFormatProperties2 vk_textureFormatFeatures;
 		vk_textureFormatFeatures.sType = VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2;
 		vk_textureFormatFeatures.pNext = nullptr;
-		vkGetPhysicalDeviceFormatProperties2(vk_hPhysicalDevice, VK_FORMAT_R8_SRGB, &vk_textureFormatFeatures);
-		if ((vk_textureFormatFeatures.formatProperties.optimalTilingFeatures & vk_eRequiredTextureFormatFeatures) != vk_eRequiredTextureFormatFeatures) {
-			rMissingFeatures.emplace("The required features for texture formats with R-channel aren't supported");
-			bSuitable = false;
-		}
-		vkGetPhysicalDeviceFormatProperties2(vk_hPhysicalDevice, VK_FORMAT_R8G8_SRGB, &vk_textureFormatFeatures);
-		if ((vk_textureFormatFeatures.formatProperties.optimalTilingFeatures & vk_eRequiredTextureFormatFeatures) != vk_eRequiredTextureFormatFeatures) {
-			rMissingFeatures.emplace("The required features for texture formats with RG-channels aren't supported");
-			bSuitable = false;
+		vkGetPhysicalDeviceFormatProperties2(vk_hPhysicalDevice, VK_FORMAT_R8G8B8A8_SRGB, &vk_textureFormatFeatures);
+		bool bSuitable = (vk_textureFormatFeatures.formatProperties.optimalTilingFeatures & vk_eRequiredTextureFormatFeatures) == vk_eRequiredTextureFormatFeatures;
+		if (!bSuitable) {
+			vkGetPhysicalDeviceFormatProperties2(vk_hPhysicalDevice, VK_FORMAT_B8G8R8A8_SRGB, &vk_textureFormatFeatures);
+			bSuitable = (vk_textureFormatFeatures.formatProperties.optimalTilingFeatures & vk_eRequiredTextureFormatFeatures) == vk_eRequiredTextureFormatFeatures;
+			if (!bSuitable)
+				rMissingFeatures.emplace("The required features for textures with RGBA- and BGRA-channels aren't supported");
 		}
 		vkGetPhysicalDeviceFormatProperties2(vk_hPhysicalDevice, VK_FORMAT_R8G8B8_SRGB, &vk_textureFormatFeatures);
-		if ((vk_textureFormatFeatures.formatProperties.optimalTilingFeatures & vk_eRequiredTextureFormatFeatures) != vk_eRequiredTextureFormatFeatures) {
-			rMissingFeatures.emplace("The required features for texture formats with RGB-channels aren't supported");
-			bSuitable = false;
-		}
-		vkGetPhysicalDeviceFormatProperties2(vk_hPhysicalDevice, VK_FORMAT_R8G8B8A8_SRGB, &vk_textureFormatFeatures);
-		if ((vk_textureFormatFeatures.formatProperties.optimalTilingFeatures & vk_eRequiredTextureFormatFeatures) != vk_eRequiredTextureFormatFeatures) {
-			rMissingFeatures.emplace("The required features for texture formats with RGBA-channels aren't supported");
-			bSuitable = false;
-		}
+		if ((vk_textureFormatFeatures.formatProperties.optimalTilingFeatures & vk_eRequiredTextureFormatFeatures) != vk_eRequiredTextureFormatFeatures)
+			rDiscrepantFeatures.emplace("The required features for textures with RGB-channels aren't supported");
+		vkGetPhysicalDeviceFormatProperties2(vk_hPhysicalDevice, VK_FORMAT_B8G8R8_SRGB, &vk_textureFormatFeatures);
+		if ((vk_textureFormatFeatures.formatProperties.optimalTilingFeatures & vk_eRequiredTextureFormatFeatures) != vk_eRequiredTextureFormatFeatures)
+			rDiscrepantFeatures.emplace("The required features for textures with BGR-channels aren't supported");
+		vkGetPhysicalDeviceFormatProperties2(vk_hPhysicalDevice, VK_FORMAT_R8G8_SRGB, &vk_textureFormatFeatures);
+		if ((vk_textureFormatFeatures.formatProperties.optimalTilingFeatures & vk_eRequiredTextureFormatFeatures) != vk_eRequiredTextureFormatFeatures)
+			rDiscrepantFeatures.emplace("The required features for textures with RG-channels aren't supported");
+		vkGetPhysicalDeviceFormatProperties2(vk_hPhysicalDevice, VK_FORMAT_R8_SRGB, &vk_textureFormatFeatures);
+		if ((vk_textureFormatFeatures.formatProperties.optimalTilingFeatures & vk_eRequiredTextureFormatFeatures) != vk_eRequiredTextureFormatFeatures)
+			rDiscrepantFeatures.emplace("The required features for textures with R-channel only aren't supported");
 		if (std::min(vk_rPhysicalDeviceLimits.maxPerStageDescriptorSamplers, vk_rPhysicalDeviceLimits.maxPerStageDescriptorSampledImages) < RE_VK_MAX_SAMPLED_IMAGES)
 			rDiscrepantFeatures.push(append_to_string("The maximum amount of bound sampler objects/sampled images should be at least ", hexadecimal_to_string(RE_VK_MAX_SAMPLED_IMAGES)));
 		return bSuitable;

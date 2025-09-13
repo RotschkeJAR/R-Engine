@@ -6,16 +6,16 @@ namespace RE {
 
 	VkPresentModeKHR vk_ePresentModeVsync = VK_PRESENT_MODE_FIFO_KHR, vk_ePresentModeNoVsync = VK_PRESENT_MODE_FIFO_KHR;
 	VkSwapchainKHR vk_hSwapchain = VK_NULL_HANDLE;
-	VkFormat vk_eSwapchainImageFormat = VK_FORMAT_UNDEFINED;
-	VkExtent2D vk_swapchainResolution = {};
+	VkFormat vk_eSwapchainImageFormat;
+	VkExtent2D vk_swapchainResolution;
 	std::unique_ptr<VkImage[]> vk_pahSwapchainImages;
 	std::unique_ptr<VkImageView[]> vk_pahSwapchainImageViews;
-	uint32_t u32SwapchainImageCount = 0;
+	uint32_t u32SwapchainImageCount;
 	
 	bool create_swapchain() {
 		// Create actual sweapchain
 		const VkSwapchainKHR vk_hOldSwapchain = vk_hSwapchain;
-		if (vk_hOldSwapchain) {
+		if (vk_hOldSwapchain != VK_NULL_HANDLE) {
 			PUSH_TO_CALLSTACKTRACE(swapchain_destroyed_renderer());
 			for (uint32_t u32SwapchainImageIndex = 0; u32SwapchainImageIndex < u32SwapchainImageCount; u32SwapchainImageIndex++)
 				vkDestroyImageView(vk_hDevice, vk_pahSwapchainImageViews[u32SwapchainImageIndex], nullptr);
@@ -28,26 +28,27 @@ namespace RE {
 			vk_swapchainResolution.width = std::clamp<uint32_t>(windowSize[0], vk_surfaceCapabilities.minImageExtent.width, vk_surfaceCapabilities.maxImageExtent.width);
 			vk_swapchainResolution.height = std::clamp<uint32_t>(windowSize[1], vk_surfaceCapabilities.minImageExtent.height, vk_surfaceCapabilities.maxImageExtent.height);
 		}
-		VkSwapchainCreateInfoKHR vk_swapchainCreateInfo = {
-			.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
-			.surface = vk_hSurface,
-			.minImageCount = std::clamp(vk_surfaceCapabilities.minImageCount + 1, vk_surfaceCapabilities.minImageCount, vk_surfaceCapabilities.maxImageCount > 0 ? vk_surfaceCapabilities.maxImageCount : std::numeric_limits<uint32_t>::max()),
-			.imageFormat = vk_paSurfaceFormatsAvailable[u32IndexToSelectedSurfaceFormat].format,
-			.imageColorSpace = vk_paSurfaceFormatsAvailable[u32IndexToSelectedSurfaceFormat].colorSpace,
-			.imageExtent = vk_swapchainResolution,
-			.imageArrayLayers = 1,
-			.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-			.preTransform = vk_surfaceCapabilities.currentTransform,
-			.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
-			.clipped = VK_TRUE,
-			.oldSwapchain = vk_hOldSwapchain
-		};
+		VkSwapchainCreateInfoKHR vk_swapchainCreateInfo;
+		vk_swapchainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+		vk_swapchainCreateInfo.pNext = nullptr;
+		vk_swapchainCreateInfo.flags = 0;
+		vk_swapchainCreateInfo.surface = vk_hSurface;
+		vk_swapchainCreateInfo.minImageCount = std::clamp(vk_surfaceCapabilities.minImageCount + 1, vk_surfaceCapabilities.minImageCount, vk_surfaceCapabilities.maxImageCount > 0 ? vk_surfaceCapabilities.maxImageCount : std::numeric_limits<uint32_t>::max());
+		vk_swapchainCreateInfo.imageFormat = vk_paSurfaceFormatsAvailable[u32IndexToSelectedSurfaceFormat].format;
+		vk_swapchainCreateInfo.imageColorSpace = vk_paSurfaceFormatsAvailable[u32IndexToSelectedSurfaceFormat].colorSpace;
+		vk_swapchainCreateInfo.imageExtent = vk_swapchainResolution;
+		vk_swapchainCreateInfo.imageArrayLayers = 1;
+		vk_swapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 		if (u8LogicalQueueCount > 1) {
 			vk_swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
 			vk_swapchainCreateInfo.queueFamilyIndexCount = u8LogicalQueueCount;
 			vk_swapchainCreateInfo.pQueueFamilyIndices = queueFamilyIndices.get();
 		} else
 			vk_swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		vk_swapchainCreateInfo.preTransform = vk_surfaceCapabilities.currentTransform;
+		vk_swapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+		vk_swapchainCreateInfo.clipped = VK_TRUE;
+		vk_swapchainCreateInfo.oldSwapchain = vk_hOldSwapchain;
 		if (are_bits_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_BIT))
 			vk_swapchainCreateInfo.presentMode = vk_ePresentModeVsync;
 		else

@@ -108,23 +108,23 @@ namespace RE {
 		}
 
 		if (!discrepantFeatures.empty()) {
-			println_colored(append_to_string("Physical Vulkan device ", vk_thisPhysicalDeviceProperties.properties.deviceName, " has discrepancy/-ies:").c_str(), RE_TERMINAL_COLOR_BRIGHT_RED, false, true);
+			println_colored(append_to_string("Physical Vulkan device ", vk_thisPhysicalDeviceProperties.properties.deviceName, " has discrepancy/-ies:").c_str(), RE_TERMINAL_COLOR_BRIGHT_RED, false, false);
 			do {
-				println_colored(append_to_string(" - ", discrepantFeatures.front()).c_str(), RE_TERMINAL_COLOR_BRIGHT_RED, false, true);
+				println_colored(append_to_string(" - ", discrepantFeatures.front()).c_str(), RE_TERMINAL_COLOR_BRIGHT_RED, false, false);
 				discrepantFeatures.pop();
 			} while (!discrepantFeatures.empty());
 		}
 		if (!optionalFeaturesMissing.empty()) {
-			println_colored(append_to_string("Physical Vulkan device ", vk_thisPhysicalDeviceProperties.properties.deviceName, " does not fulfill the optional requirement(s):").c_str(), RE_TERMINAL_COLOR_BRIGHT_YELLOW, false, true);
+			println_colored(append_to_string("Physical Vulkan device ", vk_thisPhysicalDeviceProperties.properties.deviceName, " does not fulfill the optional requirement(s):").c_str(), RE_TERMINAL_COLOR_BRIGHT_YELLOW, false, false);
 			do {
-				println_colored(append_to_string(" - ", optionalFeaturesMissing.front()).c_str(), RE_TERMINAL_COLOR_BRIGHT_YELLOW, false, true);
+				println_colored(append_to_string(" - ", optionalFeaturesMissing.front()).c_str(), RE_TERMINAL_COLOR_BRIGHT_YELLOW, false, false);
 				optionalFeaturesMissing.pop();
 			} while (!optionalFeaturesMissing.empty());
 		}
 		if (!missingFeatures.empty()) {
-			println_colored(append_to_string("Physical Vulkan device ", vk_thisPhysicalDeviceProperties.properties.deviceName, " has been discarded for the following reason(s):").c_str(), RE_TERMINAL_COLOR_RED, false, true);
+			println_colored(append_to_string("Physical Vulkan device ", vk_thisPhysicalDeviceProperties.properties.deviceName, " has been discarded for the following reason(s):").c_str(), RE_TERMINAL_COLOR_RED, false, false);
 			do {
-				println_colored(append_to_string(" - ", missingFeatures.front()).c_str(), RE_TERMINAL_COLOR_RED, false, true);
+				println_colored(append_to_string(" - ", missingFeatures.front()).c_str(), RE_TERMINAL_COLOR_RED, false, false);
 				missingFeatures.pop();
 			} while (!missingFeatures.empty());
 			return false;

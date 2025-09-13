@@ -7,35 +7,46 @@
 
 namespace RE {
 
-	VkSurfaceKHR vk_hSurface = VK_NULL_HANDLE;
-	VkSurfaceCapabilitiesKHR vk_surfaceCapabilities = {};
+	VkSurfaceKHR vk_hSurface;
+	VkSurfaceCapabilitiesKHR vk_surfaceCapabilities;
 	std::unique_ptr<VkSurfaceFormatKHR[]> vk_paSurfaceFormatsAvailable;
-	uint32_t u32SurfaceFormatsAvailableCount = 0;
-	uint32_t u32IndexToSelectedSurfaceFormat = 0;
+	uint32_t u32SurfaceFormatsAvailableCount;
+	uint32_t u32IndexToSelectedSurfaceFormat;
 
 	uint8_t u8RenderSystemFlags = 1 << VSYNC_SETTING_BIT;
 
 	static void select_best_vulkan_surface_format() {
-		int32_t i32BestSurfaceFormatScore = std::numeric_limits<int32_t>::min();
-		for (uint32_t u32SurfaceFormatIndex = 0; u32SurfaceFormatIndex < u32SurfaceFormatsAvailableCount; u32SurfaceFormatIndex++) {
-			int32_t i32CurrentSurfaceFormatScore = 0;
-			switch (vk_paSurfaceFormatsAvailable[u32SurfaceFormatIndex].format) {
-				case VK_FORMAT_R8G8B8A8_UNORM:
-				case VK_FORMAT_B8G8R8A8_UNORM:
-					i32CurrentSurfaceFormatScore += 500;
-					break;
-				case VK_FORMAT_R8G8B8A8_SRGB:
-				case VK_FORMAT_B8G8R8A8_SRGB:
-					i32CurrentSurfaceFormatScore += 1000;
-					break;
-				default:
-					i32CurrentSurfaceFormatScore -= 2000;
-					break;
-			}
-			i32CurrentSurfaceFormatScore += (vk_paSurfaceFormatsAvailable[u32SurfaceFormatIndex].colorSpace != VK_COLOR_SPACE_SRGB_NONLINEAR_KHR ? -1 : 1) * 1000;
-			if (i32BestSurfaceFormatScore < i32CurrentSurfaceFormatScore) {
-				i32BestSurfaceFormatScore = i32CurrentSurfaceFormatScore;
-				u32IndexToSelectedSurfaceFormat = u32SurfaceFormatIndex;
+		if (u32SurfaceFormatsAvailableCount == 1)
+			u32IndexToSelectedSurfaceFormat = 0;
+		else {
+			int32_t i32BestSurfaceFormatScore = std::numeric_limits<int32_t>::min();
+			for (uint32_t u32SurfaceFormatIndex = 0; u32SurfaceFormatIndex < u32SurfaceFormatsAvailableCount; u32SurfaceFormatIndex++) {
+				int32_t i32CurrentSurfaceFormatScore = 0;
+				switch (vk_paSurfaceFormatsAvailable[u32SurfaceFormatIndex].format) {
+					// SDR
+					case VK_FORMAT_R8G8B8A8_UNORM:
+					case VK_FORMAT_B8G8R8A8_UNORM:
+						i32CurrentSurfaceFormatScore += 990;
+						break;
+					case VK_FORMAT_R8G8B8A8_SRGB:
+					case VK_FORMAT_B8G8R8A8_SRGB:
+						i32CurrentSurfaceFormatScore += 1000;
+						break;
+					case VK_FORMAT_A8B8G8R8_UNORM_PACK32:
+					case VK_FORMAT_A8B8G8R8_SRGB_PACK32:
+						i32CurrentSurfaceFormatScore += 960;
+						break;
+
+					// other or unknown
+					default:
+						i32CurrentSurfaceFormatScore -= 2000;
+						break;
+				}
+				i32CurrentSurfaceFormatScore += (vk_paSurfaceFormatsAvailable[u32SurfaceFormatIndex].colorSpace != VK_COLOR_SPACE_SRGB_NONLINEAR_KHR ? -1 : 1) * 1000;
+				if (i32BestSurfaceFormatScore < i32CurrentSurfaceFormatScore) {
+					i32BestSurfaceFormatScore = i32CurrentSurfaceFormatScore;
+					u32IndexToSelectedSurfaceFormat = u32SurfaceFormatIndex;
+				}
 			}
 		}
 	}

@@ -21,8 +21,7 @@ namespace RE {
 		// Fetch extensions-data about the GPU
 		uint32_t u32PhysicalDeviceExtensionCount;
 		vkEnumerateDeviceExtensionProperties(vk_hPhysicalDevice, nullptr, &u32PhysicalDeviceExtensionCount, nullptr);
-		std::vector<VkExtensionProperties> vk_paPhysicalDeviceExtensionProperties;
-		vk_paPhysicalDeviceExtensionProperties.resize(u32PhysicalDeviceExtensionCount);
+		std::vector<VkExtensionProperties> vk_paPhysicalDeviceExtensionProperties(u32PhysicalDeviceExtensionCount);
 		vkEnumerateDeviceExtensionProperties(vk_hPhysicalDevice, nullptr, &u32PhysicalDeviceExtensionCount, vk_paPhysicalDeviceExtensionProperties.data());
 
 		// Fetch surface-data about the GPU

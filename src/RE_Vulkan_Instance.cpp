@@ -125,8 +125,7 @@ namespace RE {
 		
 		uint32_t u32AvailableExtensionsCount = 0;
 		vkEnumerateInstanceExtensionProperties(nullptr, &u32AvailableExtensionsCount, nullptr);
-		std::vector<VkExtensionProperties> availableExtensions;
-		availableExtensions.reserve(u32AvailableExtensionsCount);
+		std::vector<VkExtensionProperties> availableExtensions(u32AvailableExtensionsCount);
 		vkEnumerateInstanceExtensionProperties(nullptr, &u32AvailableExtensionsCount, availableExtensions.data());
 		constexpr uint32_t u32RequiredVulkanExtensionCount = 3;
 		std::array<const char*, u32RequiredVulkanExtensionCount> apacRequiredExtensions = {{VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_KHR_SURFACE_EXTENSION_NAME, "\0"}};
@@ -151,8 +150,7 @@ namespace RE {
 
 		uint32_t u32AvailableLayersCount = 0;
 		vkEnumerateInstanceLayerProperties(&u32AvailableLayersCount, nullptr);
-		std::vector<VkLayerProperties> availableLayers;
-		availableLayers.reserve(u32AvailableLayersCount);
+		std::vector<VkLayerProperties> availableLayers(u32AvailableLayersCount);
 		vkEnumerateInstanceLayerProperties(&u32AvailableLayersCount, availableLayers.data());
 		constexpr uint32_t u32RequiredVulkanLayerCount = 1;
 		const std::array<const char*, u32RequiredVulkanLayerCount> apacRequiredLayers = {{VK_KHR_VALIDATION_LAYER_NAME}};

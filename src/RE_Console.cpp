@@ -40,14 +40,21 @@ namespace RE {
 			u32Id += 10;
 		std::string result("\033[");
 		if (bBold)
-			result += "1;";
-		result += std::to_string(u32Id);
-		result += "m";
+			result.append("1;");
+		result.append(std::to_string(u32Id));
+		result.append("m");
 		return result;
 	}
 
 	static void print_error_msg(const std::string sDetail) {
-		println("  : ", sDetail.substr(0, sDetail.find("\n")));
+		size_t lineBreak = sDetail.find("\n");
+		println(" : ", sDetail.substr(0, lineBreak));
+		while (lineBreak != std::string::npos) {
+			lineBreak++;
+			const size_t nextLineBreak = sDetail.find("\n", lineBreak);
+			println("                                     ", sDetail.substr(lineBreak, nextLineBreak));
+			lineBreak = nextLineBreak;
+		}
 		if (are_bits_true<uint8_t>(u8ConsoleSettings, PRINT_CALL_STACK_TRACE))
 			print_call_stack_trace();
 	}

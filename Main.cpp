@@ -150,9 +150,10 @@ class First : public Scene {
 		~First() {}
 		void start() {
 			playerCam.activate();
-			ERROR("test message");
-			WARNING("test message");
-			NOTE("test message");
+			PRINT_LN(this, " | ", append_to_string("Pointer: ", this), " | ", append_to_string("Pointer: ", this).c_str());
+			ERROR("test message\ntesty");
+			WARNING("test message\ntesty");
+			NOTE("test message\ntesty");
 		}
 		void update() {
 			if (trigger.is_pressed())
@@ -182,10 +183,10 @@ class First : public Scene {
 };
 
 int main_func() {
+	set_signal_handlers();
 	show_message_box_on_error(false);
 	enable_verbosity(false);
 	set_fps_limit(60);
-	SignalCatcher sigCatcher;
 	First first;
 	Second secondInStack;
 	second = &secondInStack;

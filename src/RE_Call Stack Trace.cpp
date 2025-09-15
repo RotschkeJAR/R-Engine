@@ -2,13 +2,14 @@
 
 namespace RE {
 	
-	struct AppLocation final {
-		const char *pacFile, *pacFunc, *pacDetails;
-		uint32_t u32Line;
+	class AppLocation final {
+		public:
+			const char *pacFile, *pacFunc, *pacDetails;
+			const uint32_t u32Line;
 
-		AppLocation() : pacFile(nullptr), pacFunc(nullptr), pacDetails(nullptr), u32Line(0) {}
-		AppLocation(const char *const pacFile, const char *const pacFunc, const uint32_t u32Line, const char *const pacDetails) : pacFile(pacFile), pacFunc(pacFunc), pacDetails(pacDetails), u32Line(u32Line) {}
-		~AppLocation() {}
+			AppLocation() : pacFile(nullptr), pacFunc(nullptr), pacDetails(nullptr), u32Line(0) {}
+			AppLocation(const char *const pacFile, const char *const pacFunc, const uint32_t u32Line, const char *const pacDetails) : pacFile(pacFile), pacFunc(pacFunc), pacDetails(pacDetails), u32Line(u32Line) {}
+			~AppLocation() {}
 	};
 
 	std::deque<AppLocation> callStackTrace;
@@ -29,7 +30,7 @@ namespace RE {
 			print_colored(appLocation.pacFunc, RE_TERMINAL_COLOR_BRIGHT_WHITE, false, false);
 			print(", at line ");
 			print_colored(append_to_string(appLocation.u32Line).c_str(), RE_TERMINAL_COLOR_BRIGHT_WHITE, false, false);
-			if (std::strcmp(appLocation.pacDetails, "\0") != 0) {
+			if (std::strcmp(appLocation.pacDetails, "")) {
 				print(": ");
 				println_colored(appLocation.pacDetails, RE_TERMINAL_COLOR_BRIGHT_WHITE, false, false);
 			} else

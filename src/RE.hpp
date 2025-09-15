@@ -220,16 +220,27 @@ namespace RE {
 		RE_MSAA_MODE_64 = 6,
 		RE_MSAA_MODE_DISABLED = RE_MSAA_MODE_1
 	};
-	
-	class SignalCatcher final {
-		public:
-			SignalCatcher();
-			~SignalCatcher();
-	};
 
-	void add_to_call_stack_trace(const char *pacFile, const char *pacFunc, uint32_t u32Line, const char *pacDetails);
+	template <class T>
+	[[nodiscard]]
+	const char* resolve_string_class(const T& rString) {
+		if constexpr (std::is_same_v<T, std::string>)
+			return rString.c_str();
+		else if constexpr (std::is_same_v<T, std::string*>)
+			return rString->c_str();
+		else if constexpr (std::is_same_v<T, const char*> || std::is_same_v<T, char*>)
+			return const_cast<const char*>(rString);
+		else if constexpr (std::is_same_v<T, std::string_view>)
+			static_assert(false, "String views cannot be resolved");
+		else
+			static_assert(false, "This function only accepts string-like datatypes, that support plain characters (wide chars aren't accepted)");
+	}
+
+	void add_to_call_stack_trace(const char *pacFile, const char *pacFunc, uint32_t u32Line, const char *const pacDetails);
 	void remove_from_call_stack_trace();
 	void print_call_stack_trace();
+
+	void set_signal_handlers();
 
 	class SignalGuard final {
 		public:
@@ -240,13 +251,15 @@ namespace RE {
 #define DEFINE_SIGNAL_GUARD(NAME) DEFINE_SIGNAL_GUARD_DETAILED(NAME, "\0")
 	
 #define PUSH_TO_CALLSTACKTRACE_DETAILED(CMD, DETAILS) ([&](const char *const pacFile, const char *const pacFunc, const uint32_t u32Line) { \
-			add_to_call_stack_trace(pacFile, pacFunc, u32Line, STRIP_QUOTE_MACRO(DETAILS)); \
+			auto stringOfDetails = STRIP_QUOTE_MACRO(DETAILS); \
+			add_to_call_stack_trace(pacFile, pacFunc, u32Line, resolve_string_class(stringOfDetails)); \
 			CMD; \
 			remove_from_call_stack_trace(); \
 		}) (__FILE__, __func__, __LINE__)
 #define PUSH_TO_CALLSTACKTRACE(CMD) PUSH_TO_CALLSTACKTRACE_DETAILED(CMD, "\0")
 #define PUSH_TO_CALLSTACKTRACE_AND_RETURN_DETAILED(CMD, RETURN_TYPE, DETAILS) ([&](const char *const pacFile, const char *const pacFunc, const uint32_t u32Line) -> RETURN_TYPE { \
-			add_to_call_stack_trace(pacFile, pacFunc, u32Line, STRIP_QUOTE_MACRO(DETAILS)); \
+			auto stringOfDetails = STRIP_QUOTE_MACRO(DETAILS); \
+			add_to_call_stack_trace(pacFile, pacFunc, u32Line, resolve_string_class(stringOfDetails)); \
 			RETURN_TYPE returnValue = CMD; \
 			remove_from_call_stack_trace(); \
 			return returnValue; \
@@ -256,7 +269,7 @@ namespace RE {
 	template <typename T>
 	[[nodiscard]]
 	std::string array_to_string(const T array[], const size_t arrayLength) {
-		std::stringstream ss("");
+		std::ostringstream ss;
 		ss << '{';
 		for (size_t i = 0; i < arrayLength; i++) {
 			if (i)
@@ -276,7 +289,7 @@ namespace RE {
 	[[nodiscard]]
 	std::string hexadecimal_to_string(T number, const bool bCutZeros) {
 		DEFINE_SIGNAL_GUARD(sigGuardHexadecimalToString);
-		std::ostringstream ss("");
+		std::ostringstream ss;
 		if (number < static_cast<T>(0.0))
 			ss << "-";
 		ss << "0x";
@@ -303,7 +316,7 @@ namespace RE {
 
 	template <typename T>
 	[[nodiscard]]
-	std::string hexadecimal_to_string(const T number) {
+	std::string hexadecimal_to_string(const T&& number) {
 		return hexadecimal_to_string<T>(number, true);
 	}
 
@@ -377,7 +390,7 @@ namespace RE {
 	template <class... T>
 	[[nodiscard]]
 	std::string append_to_string(const T... strings) {
-		std::stringstream ss("");
+		std::ostringstream ss;
 		([&]() {
 			if constexpr (std::is_same_v<T, int8_t>)
 				ss << static_cast<int16_t>(strings);
@@ -392,7 +405,7 @@ namespace RE {
 	template <class... T>
 	[[nodiscard]]
 	std::wstring append_to_wstring(const T... strings) {
-		std::wstringstream wss(L"");
+		std::wstringstream wss;
 		([&]() {
 			if constexpr (std::is_same_v<T, int8_t>)
 				wss << static_cast<int16_t>(strings);

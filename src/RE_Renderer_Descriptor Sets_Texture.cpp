@@ -3,10 +3,11 @@
 namespace RE {
 
 #define RE_VK_MAX_SAMPLED_IMAGES 0x7FFF
+
+	std::array<VulkanTask, 1> textureCreationTasks;
 	
 	bool does_gpu_support_textures(const VkPhysicalDevice vk_hPhysicalDevice, const VkPhysicalDeviceLimits &vk_rPhysicalDeviceLimits, std::queue<std::string> &rMissingFeatures, std::queue<std::string> &rDiscrepantFeatures) {
 		constexpr VkFormatFeatureFlags vk_eRequiredTextureFormatFeatures = VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
-		bool bSuitable = false;
 		VkFormatProperties2 vk_textureFormatFeatures;
 		vk_textureFormatFeatures.sType = VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2;
 		vk_textureFormatFeatures.pNext = nullptr;
@@ -77,19 +78,47 @@ namespace RE {
 		if (std::min(vk_rPhysicalDeviceLimits.maxPerStageDescriptorSamplers, vk_rPhysicalDeviceLimits.maxPerStageDescriptorSampledImages) < RE_VK_MAX_SAMPLED_IMAGES)
 			rDiscrepantFeatures.push(append_to_string("The maximum amount of bound sampler objects/sampled images should be at least ", hexadecimal_to_string(RE_VK_MAX_SAMPLED_IMAGES)));
 
-		return bSuitable;
+		return a4bTextureFormatsSupported[0];
 	}
 
 	int32_t rate_gpu_texture_capacity(const VkPhysicalDeviceLimits &vk_rPhysicalDeviceLimits) {
-		return (static_cast<int32_t>(std::clamp<uint32_t>(std::min(vk_rPhysicalDeviceLimits.maxPerStageDescriptorSamplers, vk_rPhysicalDeviceLimits.maxPerStageDescriptorSampledImages), 16U, RE_VK_MAX_SAMPLED_IMAGES) - 16U) * 1500 / RE_VK_MAX_SAMPLED_IMAGES - 499) + (static_cast<int32_t>(std::clamp<uint32_t>(vk_rPhysicalDeviceLimits.maxImageDimension2D, 0, 8192)) * 1500 / 8192 - 499);
+		return (static_cast<int32_t>(std::clamp<uint32_t>(std::min(vk_rPhysicalDeviceLimits.maxPerStageDescriptorSamplers, vk_rPhysicalDeviceLimits.maxPerStageDescriptorSampledImages), 16, RE_VK_MAX_SAMPLED_IMAGES) - 16) * 1500 / RE_VK_MAX_SAMPLED_IMAGES - 499) + (static_cast<int32_t>(std::clamp<uint32_t>(vk_rPhysicalDeviceLimits.maxImageDimension2D, 0, 8192)) * 1500 / 8192 - 499);
 	}
 
 	bool create_texture_descriptor_sets() {
-		return true;
+		const uint8_t au8LogicalQueueIndices[] = {
+			u8LogicalQueueCount,
+			get_render_graphics_queue_logical_index()
+		};
+		constexpr VkQueueFlagBits vk_aeQueueTypes[] = {
+			VK_QUEUE_TRANSFER_BIT,
+			VK_QUEUE_GRAPHICS_BIT
+		};
+		constexpr uint32_t au32SeparatedWorks[] = { 0, 1 };
+		const VulkanTask_Queues textureCreationQueues = {
+			.pau8LogicalQueueIndices = au8LogicalQueueIndices,
+			.vk_paeQueueTypes = vk_aeQueueTypes,
+			.pau32StrictSeparationIds = au32SeparatedWorks,
+			.u32FunctionsCount = sizeof(au8LogicalQueueIndices) / sizeof(au8LogicalQueueIndices[0])
+		};
+		if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(textureCreationTasks[0].init(textureCreationQueues, false), bool)) {
+			uint16_t u16TextureCreationTaskInitIndex = 1;
+			while (u16TextureCreationTaskInitIndex < textureCreationTasks.size()) {
+				if (!PUSH_TO_CALLSTACKTRACE_AND_RETURN(textureCreationTasks[u16TextureCreationTaskInitIndex].init(textureCreationTasks[0]), bool))
+					break;
+				u16TextureCreationTaskInitIndex++;
+			}
+			if (u16TextureCreationTaskInitIndex == textureCreationTasks.size())
+				return true;
+			for (uint16_t u16TextureCreationTaskDestroyIndex = 0; u16TextureCreationTaskDestroyIndex < u16TextureCreationTaskInitIndex; u16TextureCreationTaskDestroyIndex++)
+				PUSH_TO_CALLSTACKTRACE(textureCreationTasks[u16TextureCreationTaskDestroyIndex].destroy());
+		}
+		return false;
 	}
 
 	void destroy_texture_descriptor_sets() {
-		
+		for (VulkanTask &rTask : textureCreationTasks)
+			rTask.destroy();
 	}
 
 }

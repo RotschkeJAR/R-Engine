@@ -9,13 +9,13 @@ namespace RE {
 	Scene *pCurrentScene = nullptr, *pNextScene = nullptr;
 
 	static void update_proc() {
-		PUSH_TO_CALLSTACKTRACE_DETAILED(pCurrentScene->update(), append_to_string("Scene ", pCurrentScene, ", ID: ", pCurrentScene->u32Id).c_str());
+		PUSH_TO_CALLSTACKTRACE_DETAILED(pCurrentScene->update(), append_to_string("Scene ", pCurrentScene, ", ID: ", pCurrentScene->u32Id));
 		PUSH_TO_CALLSTACKTRACE(update_game_objects());
 		PUSH_TO_CALLSTACKTRACE(update_cameras());
 	}
 
 	static void end_proc() {
-		PUSH_TO_CALLSTACKTRACE_DETAILED(pCurrentScene->end(), append_to_string("Scene ", pCurrentScene, ", ID: ", pCurrentScene->u32Id).c_str());
+		PUSH_TO_CALLSTACKTRACE_DETAILED(pCurrentScene->end(), append_to_string("Scene ", pCurrentScene, ", ID: ", pCurrentScene->u32Id));
 		PUSH_TO_CALLSTACKTRACE(end_game_objects());
 		PUSH_TO_CALLSTACKTRACE(end_cameras());
 	}
@@ -47,7 +47,7 @@ namespace RE {
 			pCurrentScene = pNextScene;
 
 			// Start new scene and game objects
-			PUSH_TO_CALLSTACKTRACE_DETAILED(pCurrentScene->start(), append_to_string("Scene ", pCurrentScene, ", ID: ", pCurrentScene->u32Id).c_str());
+			PUSH_TO_CALLSTACKTRACE_DETAILED(pCurrentScene->start(), append_to_string("Scene ", pCurrentScene, ", ID: ", pCurrentScene->u32Id));
 			PUSH_TO_CALLSTACKTRACE(start_game_objects());
 			PUSH_TO_CALLSTACKTRACE(start_cameras());
 
@@ -56,7 +56,7 @@ namespace RE {
 			do {
 				for (GameObject *const pObj : newGameObjects)
 					if (is_object_active(pObj))
-						PUSH_TO_CALLSTACKTRACE_DETAILED(pObj->start(pCurrentScene), append_to_string("Starting new game object ", pObj, ", ID: ", pObj->u32OwnId).c_str());
+						PUSH_TO_CALLSTACKTRACE_DETAILED(pObj->start(pCurrentScene), append_to_string("Starting new game object ", pObj, ", ID: ", pObj->u32OwnId));
 				bNewObjectsAdded = !newGameObjects.empty();
 				PUSH_TO_CALLSTACKTRACE(add_proc());
 			} while (bNewObjectsAdded);

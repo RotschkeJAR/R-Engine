@@ -18,9 +18,10 @@ namespace RE {
 
 #define RE_VK_LOGICAL_QUEUE_IGNORED std::numeric_limits<uint8_t>::max()
 	struct VulkanTask_Queues final {
-		uint32_t u32FunctionsCount;
 		const uint8_t *pau8LogicalQueueIndices;
 		const VkQueueFlagBits *vk_paeQueueTypes;
+		const uint32_t *pau32StrictSeparationIds;
+		uint32_t u32FunctionsCount;
 	};
 	class VulkanTask final {
 		private:
@@ -38,15 +39,16 @@ namespace RE {
 			VulkanTask();
 			VulkanTask(uint32_t u32FunctionsCount, const VkQueueFlagBits *vk_paeQueueTypePerFunctionRequiredInOrder, bool bTransient);
 			VulkanTask(uint32_t u32FunctionsCount, const uint8_t *pau8LogicalQueueIndexPerFunctionRequiredInOrder, bool bTransient);
+			VulkanTask(const VulkanTask_Queues &rQueues, bool bTransient);
 			VulkanTask(const VulkanTask &rCopy);
 			~VulkanTask();
-			void init(uint32_t u32FunctionsCount, const VkQueueFlagBits *vk_paeQueueTypePerFunctionRequiredInOrder, bool bTransient);
-			void init(uint32_t u32FunctionsCount, const uint8_t *pau8LogicalQueueIndexPerFunctionRequiredInOrder, bool bTransient);
-			void init(const VulkanTask_Queues &rQueues, bool bTransient);
-			void init(const VulkanTask &rCopy);
+			bool init(uint32_t u32FunctionsCount, const VkQueueFlagBits *vk_paeQueueTypePerFunctionRequiredInOrder, bool bTransient);
+			bool init(uint32_t u32FunctionsCount, const uint8_t *pau8LogicalQueueIndexPerFunctionRequiredInOrder, bool bTransient);
+			bool init(const VulkanTask_Queues &rQueues, bool bTransient);
+			bool init(const VulkanTask &rCopy);
 			void destroy();
 			void record(VkCommandBufferUsageFlags vk_eUsageFlags);
-			void submit(uint32_t u32SemaphoresToWaitForCount, const VkSemaphoreSubmitInfo *vk_paSemaphoresToWaitFor, uint32_t u32SemaphoresToSignal, const VkSemaphoreSubmitInfo *vk_paSemaphoresToSignal, VkFence vk_hFenceToSignal);
+			bool submit(uint32_t u32SemaphoresToWaitForCount, const VkSemaphoreSubmitInfo *vk_paSemaphoresToWaitFor, uint32_t u32SemaphoresToSignal, const VkSemaphoreSubmitInfo *vk_paSemaphoresToSignal, VkFence vk_hFenceToSignal);
 			uint32_t get_function_count() const;
 			uint8_t get_logical_queue_index_for_function(uint32_t u32FunctionIndex) const;
 			bool is_valid() const;

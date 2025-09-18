@@ -30,7 +30,7 @@ namespace RE {
 			print_colored(appLocation.pacFunc, RE_TERMINAL_COLOR_BRIGHT_WHITE, false, false);
 			print(", at line ");
 			print_colored(append_to_string(appLocation.u32Line).c_str(), RE_TERMINAL_COLOR_BRIGHT_WHITE, false, false);
-			if (std::strcmp(appLocation.pacDetails, "")) {
+			if (!is_string_empty(appLocation.pacDetails)) {
 				print(": ");
 				println_colored(appLocation.pacDetails, RE_TERMINAL_COLOR_BRIGHT_WHITE, false, false);
 			} else

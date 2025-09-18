@@ -150,7 +150,6 @@ class First : public Scene {
 		~First() {}
 		void start() {
 			playerCam.activate();
-			PRINT_LN(this, " | ", append_to_string("Pointer: ", this), " | ", append_to_string("Pointer: ", this).c_str());
 			ERROR("test message\ntesty");
 			WARNING("test message\ntesty");
 			NOTE("test message\ntesty");

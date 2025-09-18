@@ -15,7 +15,7 @@ namespace RE {
 				constSize = windowSize;
 				break;
 			default:
-				RE_WARNING("Unknown screen percentage mode ", hexadecimal_to_string<size_t>(eMode), ". Falling back to normal");
+				RE_WARNING("Unknown screen percentage mode ", std::hex, eMode, std::dec, ". Falling back to normal");
 				this->eMode = RE_SCREEN_PERCENTAGE_MODE_NORMAL;
 				break;
 		}
@@ -43,7 +43,7 @@ namespace RE {
 				}
 				break;
 			default:
-				RE_WARNING("Unknown screen percentage mode ", hexadecimal_to_string<size_t>(eMode), ". Falling back to normal");
+				RE_WARNING("Unknown screen percentage mode ", std::hex, eMode, std::dec, ". Falling back to normal");
 				eMode = RE_SCREEN_PERCENTAGE_MODE_NORMAL;
 				break;
 		}
@@ -60,7 +60,7 @@ namespace RE {
 				constSize = rCopy.constSize;
 				break;
 			default:
-				RE_WARNING("The screen percentage mode ", hexadecimal_to_string<size_t>(rCopy.eMode), " of the 'screen percentage setting'-struct is invalid and makes copying insufficient. Falling back to normal mode");
+				RE_WARNING("The screen percentage mode ", std::hex, rCopy.eMode, std::dec, " of the 'screen percentage setting'-struct is invalid and makes copying insufficient. Falling back to normal mode");
 				eMode = RE_SCREEN_PERCENTAGE_MODE_NORMAL;
 				return;
 		}
@@ -79,7 +79,7 @@ namespace RE {
 				constSize = rCopy.constSize;
 				break;
 			default:
-				RE_WARNING("The screen percentage mode ", hexadecimal_to_string<size_t>(rCopy.eMode), " is invalid, which makes further copying insufficient");
+				RE_WARNING("The screen percentage mode ", std::hex, rCopy.eMode, std::dec, " is invalid, which makes further copying insufficient");
 				return;
 		}
 		eMode = rCopy.eMode;
@@ -97,7 +97,7 @@ namespace RE {
 			case RE_SCREEN_PERCENTAGE_MODE_CONST_SIZE:
 				return constSize == rCompare.constSize;
 			default:
-				RE_WARNING("The 'screen percentage setting'-struct itself contains an invalid screen percentage mode ", hexadecimal_to_string<size_t>(eMode), ", which makes further comparing insufficient");
+				RE_WARNING("The 'screen percentage setting'-struct itself contains an invalid screen percentage mode ", std::hex, eMode, std::dec, ", which makes further comparing insufficient");
 				return false;
 		}
 	}

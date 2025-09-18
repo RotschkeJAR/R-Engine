@@ -129,7 +129,7 @@ namespace RE {
 				else if (u32EnteredScancode) {
 					// Keyboard input unknown
 					if (u8NumberOfKeys >= MAXIMUM_PHYSICAL_KEYS) {
-						RE_WARNING("New scancode ", hexadecimal_to_string(u32EnteredScancode, true), " cannot be added, because the list is full");
+						RE_WARNING("New scancode ", std::hex, u32EnteredScancode, std::dec, " cannot be added, because the list is full");
 						break;
 					}
 					uint8_t u8InsertionIndex = u8NumberOfKeys;

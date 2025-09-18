@@ -285,51 +285,14 @@ namespace RE {
 		return ss.str();
 	}
 
-	template <typename T>
-	[[nodiscard]]
-	std::string hexadecimal_to_string(T number, const bool bCutZeros) {
-		DEFINE_SIGNAL_GUARD(sigGuardHexadecimalToString);
-		std::ostringstream ss;
-		if (number < static_cast<T>(0.0))
-			ss << "-";
-		ss << "0x";
-		if constexpr (std::is_signed<T>::value)
-			number = std::abs(number);
-		constexpr int32_t i32HexadecimalDigits = sizeof(T) * 8 / 4;
-		bool bNumbersPresent = !bCutZeros;
-		for (int32_t i32Digit = i32HexadecimalDigits - 1U; i32Digit >= 0; i32Digit--) {
-			const T base = std::pow<T>(16, static_cast<T>(i32Digit));
-			uint32_t u32HexadecimalCharacterIndex = static_cast<uint32_t>(number / base);
-			number -= base * u32HexadecimalCharacterIndex;
-			if (u32HexadecimalCharacterIndex || bNumbersPresent) {
-				bNumbersPresent = true;
-				if (u32HexadecimalCharacterIndex < 10)
-					ss << u32HexadecimalCharacterIndex;
-				else
-					ss << static_cast<char>(u32HexadecimalCharacterIndex - 10 + static_cast<uint32_t>('a'));
-			}
-		}
-		if (!bNumbersPresent)
-			ss << "0";
-		return ss.str();
-	}
-
-	template <typename T>
-	[[nodiscard]]
-	std::string hexadecimal_to_string(const T&& number) {
-		return hexadecimal_to_string<T>(number, true);
-	}
-
 	template <class... T>
 	void print(const T... content) {
-		if constexpr (sizeof...(content) == 0)
-			return;
 		([&]() {
 			if constexpr (std::is_same_v<T, int8_t>)
 				std::cout << static_cast<int16_t>(content);
 			else if constexpr (std::is_same_v<T, uint8_t>)
 				std::cout << static_cast<uint16_t>(content);
-			else if constexpr (std::is_same_v<T, wchar_t> || std::is_same_v<T, const wchar_t> || std::is_same_v<T, wchar_t*> || std::is_same_v<T, const wchar_t*> || std::is_same_v<T, std::wstring>)
+			else if constexpr (std::is_same_v<T, std::wstring> || std::is_same_v<T, const wchar_t*> || std::is_same_v<T, wchar_t>)
 				std::wcout << content;
 			else
 				std::cout << content;
@@ -341,31 +304,25 @@ namespace RE {
 	}
 	void print_colored(const char *pacContent, TerminalColor eColor, bool bBackgroundColored, bool bBold);
 	void println_colored(const char *pacContent, TerminalColor eColor, bool bBackgroundColored, bool bBold);
-#define PRINT(...) do { \
-			print(append_to_string(__FILE__, " (line ", __LINE__, "): ")); \
-			print(STRIP_QUOTE_MACRO(__VA_ARGS__)); \
-		} while (false)
-#define PRINT_LN(...) do { \
-			print(append_to_string(__FILE__, " (line ", __LINE__, "): ")); \
-			println(STRIP_QUOTE_MACRO(__VA_ARGS__)); \
-		} while (false)
+#define PRINT(...) print(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE_MACRO(__VA_ARGS__))
+#define PRINT_LN(...) PRINT(STRIP_QUOTE_MACRO(__VA_ARGS__), "\n")
 	
 	void error(std::string sDetail, bool bTerminate);
 	void warning(std::string sDetail);
 	void note(std::string sDetail);
 #define FATAL_ERROR(...) ([&](const char *const pacFile, const char *const pacFunc, const uint32_t u32Line) { \
 			add_to_call_stack_trace(pacFile, pacFunc, u32Line, "\0"); \
-			error(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__)).c_str(), true); \
+			error(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__)), true); \
 			remove_from_call_stack_trace(); \
 		}) (__FILE__, __func__, __LINE__)
 #define ERROR(...) ([&](const char *const pacFile, const char *const pacFunc, const uint32_t u32Line) { \
 			add_to_call_stack_trace(pacFile, pacFunc, u32Line, "\0"); \
-			error(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__)).c_str(), false); \
+			error(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__)), false); \
 			remove_from_call_stack_trace(); \
 		}) (__FILE__, __func__, __LINE__)
 #define WARNING(...) ([&](const char *const pacFile, const char *const pacFunc, const uint32_t u32Line) { \
 			add_to_call_stack_trace(pacFile, pacFunc, u32Line, "\0"); \
-			warning(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__)).c_str()); \
+			warning(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__))); \
 			remove_from_call_stack_trace(); \
 		}) (__FILE__, __func__, __LINE__)
 #define NOTE(...) ([&](const char *const pacFile, const char *const pacFunc, const uint32_t u32Line) { \
@@ -514,30 +471,15 @@ namespace RE {
 			set_bits<T>(value, bNewState, i);
 		return value;
 	}
-
-	template <typename T>
-	[[nodiscard]]
-	std::string bitmask_to_string(const T bitmask, const bool bWithSpace) {
-		std::stringstream ss("");
-		constexpr T bits = sizeof(T) * 8;
-		for (T bit = 0; bit < bits; bit++) {
-			if (bWithSpace && bit && (bit % 8) == 0)
-				ss << " ";
-			ss << ((bitmask >> (bits - 1 - bit)) & 1);
-		}
-		return ss.str();
-	}
-
-	template <typename T>
-	[[nodiscard]]
-	std::string bitmask_to_string(const T bitmask) {
-		return bitmask_to_string(bitmask, true);
-	}
 	
 	template <typename T>
 	[[nodiscard]]
-	constexpr T sign(const T value) {
-		return (static_cast<T>(0.0) < value) - (value < static_cast<T>(0.0));
+	constexpr T sign(const T& rValue) {
+		static_assert(std::is_arithmetic_v<T>, "The sign-function only accepts arithmetic datatypes, such as integers and floating-point numbers");
+		if constexpr (std::is_unsigned_v<T>)
+			return static_cast<T>(0.0) > rValue;
+		else
+			return (static_cast<T>(0.0) < rValue) - (rValue < static_cast<T>(0.0));
 	}
 
 	template <typename T, uint32_t u32Dimensions>

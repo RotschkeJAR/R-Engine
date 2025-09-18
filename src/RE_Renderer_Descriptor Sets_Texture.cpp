@@ -76,7 +76,7 @@ namespace RE {
 			rDiscrepantFeatures.emplace("The required format features for textures or texture creation with R-channel only (grayscale) aren't supported");
 
 		if (std::min(vk_rPhysicalDeviceLimits.maxPerStageDescriptorSamplers, vk_rPhysicalDeviceLimits.maxPerStageDescriptorSampledImages) < RE_VK_MAX_SAMPLED_IMAGES)
-			rDiscrepantFeatures.push(append_to_string("The maximum amount of bound sampler objects/sampled images should be at least ", hexadecimal_to_string(RE_VK_MAX_SAMPLED_IMAGES)));
+			rDiscrepantFeatures.push(append_to_string("The maximum amount of bound sampler objects/sampled images should be at least ", std::hex, RE_VK_MAX_SAMPLED_IMAGES, std::dec));
 
 		return a4bTextureFormatsSupported[0];
 	}

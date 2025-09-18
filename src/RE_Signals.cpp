@@ -11,9 +11,10 @@ namespace RE {
 	 */
 
 	void handle_abort(const int32_t i32SignalId) {
-		print("\033[0m\n\033[41mABORTION\nIf the application doesn't terminate, the user has to explicitly kill the process.\n\033[0m");
-		std::signal(SIGABRT, SIG_DFL);
-		std::raise(SIGABRT);
+		print("\nABORTION\nIf the application doesn't terminate, the user has to explicitly kill the process.\n");
+		if (std::signal(SIGABRT, SIG_DFL) == SIG_ERR)
+			println("Failed reassigning the signal handler for SIGABRT (abortion). This might lead to infinite recursion");
+		std::abort();
 	}
 
 	void handle_signal(const int32_t i32SignalId) {
@@ -23,15 +24,14 @@ namespace RE {
 				println("Segmentation violation (Invalid access to memory, e.g. dangling pointer, wild pointer, buffer overflow, array index out of bounds, etc.)");
 				break;
 			case SIGILL:
-				println("Illegal Instruction (The instruction was either corrupted or a non-instruction was used for execution)");
+				println("Illegal Instruction (The CPU-instruction was either corrupted or a non-CPU-instruction was used for execution)");
 				break;
 			case SIGFPE:
-				println("Floating-point exception (An arithmetic operation failed, e.g. division by zero, or a number overflowed)");
+				println("Floating-point exception (An arithmetic operation with floating-point numbers failed, e.g. division by zero, or a number overflowed)");
 				break;
 			default:
 				return;
 		}
-		print_call_stack_trace();
 		std::abort();
 	}
 

@@ -3,7 +3,6 @@
 #include "RE_Vulkan_Wrapper Classes.hpp"
 #include "RE_Vulkan_Wrapper Functions.hpp"
 #include "RE_Sub Renderer.hpp"
-#include "RE_Render System.hpp"
 
 #include <thread>
 

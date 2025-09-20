@@ -1,5 +1,5 @@
-#ifndef __RE_RENDER_SYSTEM_H__
-#define __RE_RENDER_SYSTEM_H__
+#ifndef __RE_GPU_H__
+#define __RE_GPU_H__
 
 #include "RE_Vulkan_Device.hpp"
 
@@ -69,4 +69,4 @@ namespace RE {
 
 }
 
-#endif /* __RE_RENDER_SYSTEM_H__ */
+#endif /* __RE_GPU_H__ */

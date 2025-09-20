@@ -1,7 +1,7 @@
-#ifndef __RE_RENDER_SYSTEM_INTERNAL_H__
-#define __RE_RENDER_SYSTEM_INTERNAL_H__
+#ifndef __RE_GPU_INTERNAL_H__
+#define __RE_GPU_INTERNAL_H__
 
-#include "RE_Render System.hpp"
+#include "RE_GPU.hpp"
 #include "RE_Vulkan_Wrapper Functions.hpp"
 #include "RE_Renderer.hpp"
 
@@ -47,4 +47,4 @@ namespace RE {
 
 }
 
-#endif /* __RE_RENDER_SYSTEM_INTERNAL_H__ */
+#endif /* __RE_GPU_INTERNAL_H__ */

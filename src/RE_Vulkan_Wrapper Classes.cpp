@@ -1,5 +1,5 @@
 #include "RE_Vulkan_Wrapper Classes.hpp"
-#include "RE_Render System.hpp"
+#include "RE_GPU.hpp"
 #include "RE_Vulkan_Wrapper Functions.hpp"
 
 namespace RE {

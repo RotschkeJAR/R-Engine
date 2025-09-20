@@ -1,6 +1,6 @@
 #include "RE_Internal Header.hpp"
 #include "RE_Vulkan_Device.hpp"
-#include "RE_Render System.hpp"
+#include "RE_GPU.hpp"
 
 namespace RE {
 	

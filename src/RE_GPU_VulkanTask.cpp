@@ -1,4 +1,4 @@
-#include "RE_Render System_Internal.hpp"
+#include "RE_GPU_Internal.hpp"
 
 namespace RE {
 
@@ -35,7 +35,7 @@ namespace RE {
 			uint8_t u8BestQueue;
 			uint8_t u8MinimalAmountOfSideFeaturesInQueue = std::numeric_limits<uint8_t>::max();
 			for (const uint8_t u8LogicalQueueIndex : firstUsableQueues) {
-				const uint8_t u8SideFeaturesCount = count_true_bits<VkQueueFlags>(vk_paeQueueTypes[u8LogicalQueueIndex] & (~vk_eQueueTypesInUse));
+				const uint8_t u8SideFeaturesCount = std::popcount<VkQueueFlags>(vk_paeQueueTypes[u8LogicalQueueIndex] & (~vk_eQueueTypesInUse));
 				if (u8SideFeaturesCount < u8MinimalAmountOfSideFeaturesInQueue) {
 					u8MinimalAmountOfSideFeaturesInQueue = u8SideFeaturesCount;
 					u8BestQueue = u8LogicalQueueIndex;
@@ -83,7 +83,7 @@ namespace RE {
 			uint8_t u8BestQueue;
 			uint8_t u8MinimalAmountOfSideFeaturesInQueue = std::numeric_limits<uint8_t>::max();
 			for (const uint8_t u8LogicalQueueIndex : indicesOfPerfectQueues) {
-				const uint8_t u8SideFeaturesCount = count_true_bits<VkQueueFlags>(vk_paeQueueTypes[u8LogicalQueueIndex] ^ vk_eAllRequiredQueueTypes);
+				const uint8_t u8SideFeaturesCount = std::popcount<VkQueueFlags>(vk_paeQueueTypes[u8LogicalQueueIndex] ^ vk_eAllRequiredQueueTypes);
 				if (u8SideFeaturesCount < u8MinimalAmountOfSideFeaturesInQueue) {
 					u8MinimalAmountOfSideFeaturesInQueue = u8SideFeaturesCount;
 					u8BestQueue = u8LogicalQueueIndex;

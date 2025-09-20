@@ -1,6 +1,6 @@
 #include "RE_Texture.hpp"
 #include "RE_Vulkan_Device.hpp"
-#include "RE_Render System.hpp"
+#include "RE_GPU.hpp"
 #include "RE_Vulkan_Wrapper Functions.hpp"
 #include "RE_Vulkan_Wrapper Classes.hpp"
 #include "RE_List_GameObject.hpp"

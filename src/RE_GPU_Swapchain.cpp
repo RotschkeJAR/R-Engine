@@ -1,4 +1,4 @@
-#include "RE_Render System_Internal.hpp"
+#include "RE_GPU_Internal.hpp"
 #include "RE_Renderer.hpp"
 #include "RE_Window.hpp"
 

@@ -1,4 +1,4 @@
-#include "RE_Render System_Internal.hpp"
+#include "RE_GPU_Internal.hpp"
 
 namespace RE {
 
@@ -65,7 +65,7 @@ namespace RE {
 		for (const VkQueueFamilyProperties2 vk_physicalDeviceQueueFamilyProperties : vk_paPhysicalDeviceQueueFamilyProperties)
 			for (const VkQueueFlags vk_eRecommendedQueueType : vk_aeRecommendedQueueTypes)
 				if ((vk_physicalDeviceQueueFamilyProperties.queueFamilyProperties.queueFlags & vk_eRecommendedQueueType) == vk_eRecommendedQueueType)
-					i32Score += 100 - count_true_bits<VkQueueFlags>(vk_physicalDeviceQueueFamilyProperties.queueFamilyProperties.queueFlags ^ vk_eRecommendedQueueType) * 2;
+					i32Score += 100 - std::popcount<VkQueueFlags>(vk_physicalDeviceQueueFamilyProperties.queueFamilyProperties.queueFlags ^ vk_eRecommendedQueueType) * 2;
 		return i32Score;
 	}
 
@@ -107,7 +107,7 @@ namespace RE {
 			uint32_t u32BestQueue;
 			uint8_t u8MinimalAmountOfSideFeaturesInQueue = std::numeric_limits<uint8_t>::max();
 			for (const uint32_t u32QueueIndex : transferQueues) {
-				const uint8_t u8SideFeaturesCount = count_true_bits<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags ^ vk_aeRecommendedQueueTypes[QUEUE_INDEX_TRANSFER]);
+				const uint8_t u8SideFeaturesCount = std::popcount<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags ^ vk_aeRecommendedQueueTypes[QUEUE_INDEX_TRANSFER]);
 				if (u8SideFeaturesCount < u8MinimalAmountOfSideFeaturesInQueue) {
 					u32BestQueue = u32QueueIndex;
 					u8MinimalAmountOfSideFeaturesInQueue = u8SideFeaturesCount;
@@ -131,7 +131,7 @@ namespace RE {
 			uint32_t u32BestQueue;
 			uint8_t u8MinimalAmountOfSideFeaturesInQueue = std::numeric_limits<uint8_t>::max();
 			for (const uint32_t u32QueueIndex : renderQueues) {
-				const uint8_t u8SideFeaturesCount = count_true_bits<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags ^ vk_aeRecommendedQueueTypes[QUEUE_INDEX_RENDERING]);
+				const uint8_t u8SideFeaturesCount = std::popcount<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags ^ vk_aeRecommendedQueueTypes[QUEUE_INDEX_RENDERING]);
 				if (u8SideFeaturesCount < u8MinimalAmountOfSideFeaturesInQueue) {
 					u8MinimalAmountOfSideFeaturesInQueue = u8SideFeaturesCount;
 					u32BestQueue = u32QueueIndex;
@@ -145,7 +145,7 @@ namespace RE {
 			uint32_t u32BestQueue;
 			uint8_t u8MinimalAmountOfSideFeaturesInQueue = std::numeric_limits<uint8_t>::max();
 			for (const uint32_t u32QueueIndex : imageTransferQueues) {
-				const uint8_t u8SideFeaturesCount = count_true_bits<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags ^ vk_aeRecommendedQueueTypes[QUEUE_INDEX_IMAGE_TRANSFER]);
+				const uint8_t u8SideFeaturesCount = std::popcount<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags ^ vk_aeRecommendedQueueTypes[QUEUE_INDEX_IMAGE_TRANSFER]);
 				if (u8SideFeaturesCount < u8MinimalAmountOfSideFeaturesInQueue) {
 					u8MinimalAmountOfSideFeaturesInQueue = u8SideFeaturesCount;
 					u32BestQueue = u32QueueIndex;
@@ -159,7 +159,7 @@ namespace RE {
 			uint32_t u32BestQueue;
 			uint8_t u8MinimalAmountOfSideFeaturesInQueue = std::numeric_limits<uint8_t>::max();
 			for (const uint32_t u32QueueIndex : generalComputationQueues) {
-				const uint8_t u8SideFeaturesCount = count_true_bits<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags ^ vk_aeRecommendedQueueTypes[QUEUE_INDEX_GENERAL_COMPUTING]);
+				const uint8_t u8SideFeaturesCount = std::popcount<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags ^ vk_aeRecommendedQueueTypes[QUEUE_INDEX_GENERAL_COMPUTING]);
 				if (u8SideFeaturesCount < u8MinimalAmountOfSideFeaturesInQueue) {
 					u8MinimalAmountOfSideFeaturesInQueue = u8SideFeaturesCount;
 					u32BestQueue = u32QueueIndex;
@@ -179,7 +179,7 @@ namespace RE {
 						uint8_t u8MinimalAmountOfSideFeaturesInQueue = std::numeric_limits<uint8_t>::max();
 						for (const uint32_t u32QueueIndex : graphicsQueues) {
 							uint8_t u8SideFeaturesCount;
-							u8SideFeaturesCount = count_true_bits<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags ^ VK_QUEUE_GRAPHICS_BIT);
+							u8SideFeaturesCount = std::popcount<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags ^ VK_QUEUE_GRAPHICS_BIT);
 							if (u8SideFeaturesCount < u8MinimalAmountOfSideFeaturesInQueue) {
 								u8MinimalAmountOfSideFeaturesInQueue = u8SideFeaturesCount;
 								u32BestQueue = u32QueueIndex;
@@ -189,7 +189,7 @@ namespace RE {
 							selectedQueues.push_back(u32BestQueue);
 						for (const uint32_t u32QueueIndex : computeQueues) {
 							uint8_t u8SideFeaturesCount;
-							u8SideFeaturesCount = count_true_bits<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags ^ VK_QUEUE_COMPUTE_BIT);
+							u8SideFeaturesCount = std::popcount<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags ^ VK_QUEUE_COMPUTE_BIT);
 							if (u8SideFeaturesCount < u8MinimalAmountOfSideFeaturesInQueue) {
 								u8MinimalAmountOfSideFeaturesInQueue = u8SideFeaturesCount;
 								u32BestQueue = u32QueueIndex;
@@ -205,7 +205,7 @@ namespace RE {
 						uint8_t u8MinimalAmountOfSideFeaturesInQueue = std::numeric_limits<uint8_t>::max();
 						for (const uint32_t u32QueueIndex : graphicsQueues) {
 							uint8_t u8SideFeaturesCount;
-							u8SideFeaturesCount = count_true_bits<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags ^ VK_QUEUE_GRAPHICS_BIT);
+							u8SideFeaturesCount = std::popcount<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags ^ VK_QUEUE_GRAPHICS_BIT);
 							if (u8SideFeaturesCount < u8MinimalAmountOfSideFeaturesInQueue) {
 								u8MinimalAmountOfSideFeaturesInQueue = u8SideFeaturesCount;
 								u32BestQueue = u32QueueIndex;
@@ -215,7 +215,7 @@ namespace RE {
 							selectedQueues.push_back(u32BestQueue);
 						for (const uint32_t u32QueueIndex : computeQueues) {
 							uint8_t u8SideFeaturesCount;
-							u8SideFeaturesCount = count_true_bits<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags ^ VK_QUEUE_TRANSFER_BIT);
+							u8SideFeaturesCount = std::popcount<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags ^ VK_QUEUE_TRANSFER_BIT);
 							if (u8SideFeaturesCount < u8MinimalAmountOfSideFeaturesInQueue) {
 								u8MinimalAmountOfSideFeaturesInQueue = u8SideFeaturesCount;
 								u32BestQueue = u32QueueIndex;
@@ -231,7 +231,7 @@ namespace RE {
 						uint8_t u8MinimalAmountOfSideFeaturesInQueue = std::numeric_limits<uint8_t>::max();
 						for (const uint32_t u32QueueIndex : graphicsQueues) {
 							uint8_t u8SideFeaturesCount;
-							u8SideFeaturesCount = count_true_bits<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags ^ VK_QUEUE_COMPUTE_BIT);
+							u8SideFeaturesCount = std::popcount<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags ^ VK_QUEUE_COMPUTE_BIT);
 							if (u8SideFeaturesCount < u8MinimalAmountOfSideFeaturesInQueue) {
 								u8MinimalAmountOfSideFeaturesInQueue = u8SideFeaturesCount;
 								u32BestQueue = u32QueueIndex;
@@ -241,7 +241,7 @@ namespace RE {
 							selectedQueues.push_back(u32BestQueue);
 						for (const uint32_t u32QueueIndex : computeQueues) {
 							uint8_t u8SideFeaturesCount;
-							u8SideFeaturesCount = count_true_bits<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags ^ VK_QUEUE_TRANSFER_BIT);
+							u8SideFeaturesCount = std::popcount<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags ^ VK_QUEUE_TRANSFER_BIT);
 							if (u8SideFeaturesCount < u8MinimalAmountOfSideFeaturesInQueue) {
 								u8MinimalAmountOfSideFeaturesInQueue = u8SideFeaturesCount;
 								u32BestQueue = u32QueueIndex;
@@ -276,7 +276,7 @@ namespace RE {
 				uint32_t u32BestQueue;
 				uint8_t u8MinimalAmountOfSideFeaturesInQueue = std::numeric_limits<uint8_t>::max();
 				for (const uint32_t u32QueueIndex : goodPresentQueues) {
-					uint8_t u8SideFeaturesCount = count_true_bits<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags);
+					uint8_t u8SideFeaturesCount = std::popcount<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags);
 					if (u8SideFeaturesCount < u8MinimalAmountOfSideFeaturesInQueue) {
 						u32BestQueue = u32QueueIndex;
 						u8MinimalAmountOfSideFeaturesInQueue = u8SideFeaturesCount;

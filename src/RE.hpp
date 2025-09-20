@@ -442,15 +442,6 @@ namespace RE {
 		return true;
 	}
 
-	template <typename T>
-	[[nodiscard]]
-	constexpr uint8_t count_true_bits(const T value) {
-		uint8_t u8TrueBitsCounter = 0;
-		for (uint8_t u8BitIndex = 0; u8BitIndex < sizeof(T) * 8; u8BitIndex++)
-			u8TrueBitsCounter += (value & gen_bitmask(u8BitIndex)) != 0;
-		return u8TrueBitsCounter;
-	}
-
 	template <typename T, typename... U>
 	constexpr T set_bits(T& value, const bool bNewState, const U... bits) {
 		const T bitmask = gen_bitmask<U...>(bits...);

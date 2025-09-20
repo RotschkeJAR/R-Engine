@@ -192,7 +192,7 @@ namespace RE {
 				i32CurrentDeviceScore += PUSH_TO_CALLSTACKTRACE_AND_RETURN(rate_gpu_queues(vk_pahPhysicalDevicesAvailable[u32PhysicalDeviceAvailableIndex]), int32_t);
 				i32CurrentDeviceScore += PUSH_TO_CALLSTACKTRACE_AND_RETURN(rate_gpu_depth_stencil_image_formats(vk_pahPhysicalDevicesAvailable[u32PhysicalDeviceAvailableIndex], vk_eMsaaAvailable), int32_t);
 				i32CurrentDeviceScore += PUSH_TO_CALLSTACKTRACE_AND_RETURN(rate_gpu_texture_capacity(vk_thisPhysicalDeviceProperties.properties.limits), int32_t);
-				i32CurrentDeviceScore += count_true_bits<VkSampleCountFlags>(vk_eMsaaAvailable & ~VK_SAMPLE_COUNT_1_BIT) * 700;
+				i32CurrentDeviceScore += std::popcount<VkSampleCountFlags>(vk_eMsaaAvailable & ~VK_SAMPLE_COUNT_1_BIT) * 700;
 				if ((vk_eMsaaAvailable & VK_SAMPLE_COUNT_1_BIT) == 0)
 					i32CurrentDeviceScore -= 2000;
 				if (i32CurrentDeviceScore > i32BestDeviceScore) {

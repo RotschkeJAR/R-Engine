@@ -17,7 +17,7 @@ namespace RE {
 	void delete_marked_cameras() {
 		bDeletingMarkedCameras = true;
 		for (Camera *pCam : deletableCameras)
-			PUSH_TO_CALLSTACKTRACE_DETAILED(delete pCam, append_to_string("Deleting camera ", pCam).c_str());
+			PUSH_TO_CALLSTACKTRACE_DETAILED(delete pCam, append_to_string("Deleting camera ", pCam));
 		deletableCameras.clear();
 		bDeletingMarkedCameras = false;
 	}

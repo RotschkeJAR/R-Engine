@@ -3,9 +3,11 @@
 #include "RE_Vulkan_Wrapper Functions.hpp"
 
 namespace RE {
+
+	Vulkan_Buffer::Vulkan_Buffer() : vk_hBuffer(VK_NULL_HANDLE), vk_hMemory(VK_NULL_HANDLE) {}
 	
-	Vulkan_Buffer::Vulkan_Buffer(const VkDeviceSize vk_size, const VkBufferUsageFlags vk_eUsages, const uint32_t u32QueueFamilyCount, const uint32_t *const pu32QueueFamilies, const VkMemoryPropertyFlags vk_eMemoryPropertyFlags) : vk_hBuffer(VK_NULL_HANDLE), vk_hMemory(VK_NULL_HANDLE), vk_size(vk_size) {
-		PUSH_TO_CALLSTACKTRACE(create_vulkan_buffer(vk_size, vk_eUsages, u32QueueFamilyCount, pu32QueueFamilies, vk_eMemoryPropertyFlags, &vk_hBuffer, &vk_hMemory));
+	Vulkan_Buffer::Vulkan_Buffer(const VkDeviceSize vk_size, const VkBufferUsageFlags vk_eUsages, const uint32_t u32QueueFamilyCount, const uint32_t *const pu32QueueFamilies, const VkMemoryPropertyFlags vk_eMemoryPropertyFlags) : vk_hBuffer(VK_NULL_HANDLE), vk_hMemory(VK_NULL_HANDLE) {
+		PUSH_TO_CALLSTACKTRACE(init(vk_size, vk_eUsages, u32QueueFamilyCount, pu32QueueFamilies, vk_eMemoryPropertyFlags));
 	}
 	
 	Vulkan_Buffer::~Vulkan_Buffer() {
@@ -15,8 +17,19 @@ namespace RE {
 		vkDestroyBuffer(vk_hDevice, vk_hBuffer, nullptr);
 	}
 
-	bool Vulkan_Buffer::map_memory(void **ppData) const {
-		return vkMapMemory(vk_hDevice, vk_hMemory, 0, vk_size, 0, ppData);
+	bool Vulkan_Buffer::init(const VkDeviceSize vk_size, const VkBufferUsageFlags vk_eUsages, const uint32_t u32QueueFamilyCount, const uint32_t *const pu32QueueFamilies, const VkMemoryPropertyFlags vk_eMemoryPropertyFlags) {
+		return PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_vulkan_buffer(vk_size, vk_eUsages, u32QueueFamilyCount, pu32QueueFamilies, vk_eMemoryPropertyFlags, &vk_hBuffer, &vk_hMemory), bool);
+	}
+
+	void Vulkan_Buffer::destroy() {
+		vkFreeMemory(vk_hDevice, vk_hMemory, nullptr);
+		vkDestroyBuffer(vk_hDevice, vk_hBuffer, nullptr);
+		vk_hMemory = VK_NULL_HANDLE;
+		vk_hBuffer = VK_NULL_HANDLE;
+	}
+
+	bool Vulkan_Buffer::map_memory(const VkDeviceSize vk_offset, const VkDeviceSize vk_size, void **ppData) const {
+		return vkMapMemory(vk_hDevice, vk_hMemory, vk_offset, vk_size, 0, ppData) == VK_SUCCESS;
 	}
 
 	void Vulkan_Buffer::unmap_memory() const {

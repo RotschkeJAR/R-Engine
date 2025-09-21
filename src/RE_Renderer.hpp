@@ -5,11 +5,11 @@
 
 namespace RE {
 
-#define RE_VK_RENDERABLE_RECTANGLES_COUNT 16384U
 #define RE_VK_FRAMES_IN_FLIGHT 2
 
 	extern const Camera *pActiveCamera;
 
+	uint8_t get_render_graphics_queue_logical_index();
 	bool init_renderer();
 	void destroy_renderer();
 	void render();

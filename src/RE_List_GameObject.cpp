@@ -18,7 +18,7 @@ namespace RE {
 	void delete_marked_game_objects() {
 		bDeletingMarkedGameObjects = true;
 		for (GameObject *const pObject : deletableGameObjects)
-			PUSH_TO_CALLSTACKTRACE_DETAILED(delete pObject, append_to_string("GameObject: ", pObject).c_str());
+			PUSH_TO_CALLSTACKTRACE_DETAILED(delete pObject, append_to_string("GameObject: ", pObject));
 		deletableGameObjects.clear();
 		bDeletingMarkedGameObjects = false;
 	}

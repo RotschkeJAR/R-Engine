@@ -5,10 +5,12 @@
 #include "RE_RenderBatch_GameObject.hpp"
 
 namespace RE {
+
+#define MAXIMUM_GAME_OBJECTS_PER_BATCH 1000
 	
 	class ListBatch_GameObject final {
 		private:
-			std::array<GameObject*, RE_VK_RENDERABLE_RECTANGLES_COUNT> apGameObjects;
+			std::array<GameObject*, MAXIMUM_GAME_OBJECTS_PER_BATCH> apGameObjects;
 			RenderBatch_GameObject renderBatch;
 			uint16_t u16Count;
 

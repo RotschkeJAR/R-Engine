@@ -40,22 +40,22 @@ namespace RE {
 	}
 
 	bool ListBatch_GameObject::has_space() const {
-		return u16Count < RE_VK_RENDERABLE_RECTANGLES_COUNT;
+		return u16Count < apGameObjects.size();
 	}
 
 	void ListBatch_GameObject::start() {
 		for (uint16_t u16Index = 0; u16Index < u16Count; u16Index++)
-			PUSH_TO_CALLSTACKTRACE_DETAILED(apGameObjects[u16Index]->start(pCurrentScene), append_to_string("GameObject ", apGameObjects[u16Index], ", Index ", u16Index).c_str());
+			PUSH_TO_CALLSTACKTRACE_DETAILED(apGameObjects[u16Index]->start(pCurrentScene), append_to_string("GameObject ", apGameObjects[u16Index], ", Index ", u16Index));
 	}
 	
 	void ListBatch_GameObject::update() {
 		for (uint16_t u16Index = 0; u16Index < u16Count; u16Index++)
-			PUSH_TO_CALLSTACKTRACE_DETAILED(apGameObjects[u16Index]->update(pCurrentScene), append_to_string("GameObject ", apGameObjects[u16Index], ", Index ", u16Index).c_str());
+			PUSH_TO_CALLSTACKTRACE_DETAILED(apGameObjects[u16Index]->update(pCurrentScene), append_to_string("GameObject ", apGameObjects[u16Index], ", Index ", u16Index));
 	}
 	
 	void ListBatch_GameObject::end() {
 		for (uint16_t u16Index = 0; u16Index < u16Count; u16Index++)
-			PUSH_TO_CALLSTACKTRACE_DETAILED(apGameObjects[u16Index]->end(pCurrentScene), append_to_string("GameObject ", apGameObjects[u16Index], ", Index ", u16Index).c_str());
+			PUSH_TO_CALLSTACKTRACE_DETAILED(apGameObjects[u16Index]->end(pCurrentScene), append_to_string("GameObject ", apGameObjects[u16Index], ", Index ", u16Index));
 	}
 
 }

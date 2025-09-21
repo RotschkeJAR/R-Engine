@@ -221,7 +221,7 @@ namespace RE {
 		}
 	}
 
-	bool create_depth_stencil_buffers(VulkanTask &rDepthStencilImageLayoutTransitionTask, VkFence vk_hDepthStencilImageLayoutTransitionFence) {
+	bool create_depth_stencil_images(VulkanTask &rDepthStencilImageLayoutTransitionTask, VkFence vk_hDepthStencilImageLayoutTransitionFence) {
 		const VkExtent3D vk_depthStencilImageExtent = {
 			.width = vk_swapchainResolution.width,
 			.height = vk_swapchainResolution.height,
@@ -531,7 +531,7 @@ namespace RE {
 		return true;
 	}
 
-	void destroy_depth_stencil_buffers() {
+	void destroy_depth_stencil_images() {
 		const uint8_t u8ImageCount = vk_ahDepthStencilImages.size() / ((bStencilsEnabled && are_depth_stencil_images_separated(availableDepthStencilFormats[u8IndexToSelectedDepthStencilFormat])) ? 1 : 2);
 		for (uint8_t u8ImageIndex = 0; u8ImageIndex < u8ImageCount; u8ImageIndex++) {
 			vkDestroyImageView(vk_hDevice, vk_ahDepthStencilImageViews[u8ImageIndex], nullptr);

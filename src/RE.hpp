@@ -226,8 +226,6 @@ namespace RE {
 	const char* resolve_string_class(const T& rString) {
 		if constexpr (std::is_same_v<T, std::string>)
 			return rString.c_str();
-		else if constexpr (std::is_same_v<T, std::string*>)
-			return rString->c_str();
 		else if constexpr (std::is_same_v<T, const char*> || std::is_same_v<T, char*>)
 			return const_cast<const char*>(rString);
 		else if constexpr (std::is_same_v<T, std::string_view>)
@@ -407,6 +405,7 @@ namespace RE {
 	template <typename... T>
 	[[nodiscard]]
 	constexpr uint64_t gen_bitmask(const T... bits) {
+		([&]() {static_assert(std::is_arithmetic_v<T>, "Only arithmetic values can be used for generating a bitmask");} (), ...);
 		return (... | (1UL << static_cast<uint64_t>(bits)));
 	}
 
@@ -426,12 +425,14 @@ namespace RE {
 	template <typename T, typename... U>
 	[[nodiscard]]
 	constexpr bool are_bits_true(const T value, const U... bits) {
+		static_assert(std::is_arithmetic_v<T>, "Only arithmetic values can be used for checking bits");
 		return (value & static_cast<T>(gen_bitmask<U...>(bits...))) != static_cast<T>(0.0);
 	}
 
 	template <typename T>
 	[[nodiscard]]
 	constexpr bool are_bits_true_in_range(const T value, const T begin, const T end) {
+		static_assert(std::is_arithmetic_v<T>, "Only arithmetic values can be used for checking bits in a specific range");
 		if (begin > end) {
 			FATAL_ERROR("Start (", begin, ") of the range is larger than end (", end, ")");
 			return false;
@@ -444,6 +445,7 @@ namespace RE {
 
 	template <typename T, typename... U>
 	constexpr T set_bits(T& value, const bool bNewState, const U... bits) {
+		static_assert(std::is_arithmetic_v<T>, "Only arithmetic values can be used for setting bits");
 		const T bitmask = gen_bitmask<U...>(bits...);
 		if (bNewState)
 			value |= bitmask;
@@ -454,6 +456,7 @@ namespace RE {
 
 	template <typename T>
 	constexpr T set_bits_in_range(T& value, const bool bNewState, const T begin, const T end) {
+		static_assert(std::is_arithmetic_v<T>, "Only arithmetic values can be used for setting bits in a specific range");
 		if (begin > end) {
 			FATAL_ERROR("Start (", begin, ") of the range is larger than end (", end, ")");
 			return value;

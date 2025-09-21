@@ -2,7 +2,7 @@
 #include "RE_Window.hpp"
 #include "RE_Vulkan_Wrapper Classes.hpp"
 #include "RE_Vulkan_Wrapper Functions.hpp"
-#include "RE_Sub Renderer.hpp"
+#include "RE_RenderElement.hpp"
 
 #include <thread>
 
@@ -42,10 +42,7 @@ namespace RE {
 	}
 
 	bool init_renderer() {
-		constexpr VkQueueFlagBits vk_aeQueuesUsedForRendering[] = {
-			VK_QUEUE_COMPUTE_BIT,
-			VK_QUEUE_GRAPHICS_BIT
-		};
+		constexpr VkQueueFlagBits vk_aeQueuesUsedForRendering[] = {VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT};
 		renderTasks[0].init(sizeof(vk_aeQueuesUsedForRendering) / sizeof(vk_aeQueuesUsedForRendering[0]), vk_aeQueuesUsedForRendering, false);
 		for (uint32_t u32RenderTaskIndex = 1; u32RenderTaskIndex < renderTasks.size(); u32RenderTaskIndex++)
 			renderTasks[u32RenderTaskIndex].init(renderTasks[0]);
@@ -60,32 +57,26 @@ namespace RE {
 			else
 				u8CurrentFenceIndex++;
 		if (u8CurrentFenceIndex == static_cast<uint8_t>(renderFences.size())) {
-			Vulkan_Buffer stagingIndexBuffer(RE_VK_INDEX_BUFFER_SIZE, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 1, nullptr, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-			VulkanTask indexBufferTransferTask;
-			Vulkan_TimelineSemaphore indexBufferTransferTimelineSemaphore;
-			std::thread threadIndexBufferDataInit;
-			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_rect_index_buffer(stagingIndexBuffer.get_buffer(), stagingIndexBuffer.get_memory(), indexBufferTransferTask, indexBufferTransferTimelineSemaphore, threadIndexBufferDataInit), bool)) {
-				VulkanTask depthImageLayoutTransitionTask;
-				Vulkan_Fence depthStencilImageLayoutTransitionFence;
-				if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_depth_stencil_buffers(depthImageLayoutTransitionTask, depthStencilImageLayoutTransitionFence.get_fence()), bool)) {
+			VulkanTask depthImageLayoutTransitionTask;
+			Vulkan_Fence depthStencilImageLayoutTransitionFence;
+			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_depth_stencil_images(depthImageLayoutTransitionTask, depthStencilImageLayoutTransitionFence.get_fence()), bool)) {
+				Vulkan_Buffer stagingRectBuffer;
+				VulkanTask rectBufferCreateTask;
+				Vulkan_Fence stagingRectBufferTransferFence;
+				if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(init_render_elements(stagingRectBuffer, rectBufferCreateTask, stagingRectBufferTransferFence), bool)) {
 					if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_descriptor_sets(), bool)) {
-						if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_renderpass(), bool)) {
-							if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(init_sub_renderers(), bool)) {
-								threadIndexBufferDataInit.join();
-								indexBufferTransferTimelineSemaphore.wait_for_reaching(RE_VK_TIMELINE_SEMAPHORE_FINISH);
-								depthStencilImageLayoutTransitionFence.wait_for();
-								return true;
-							}
-							PUSH_TO_CALLSTACKTRACE(destroy_renderpass());
+						if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_renderpass(), bool)) {	
+							depthStencilImageLayoutTransitionFence.wait_for();
+							stagingRectBufferTransferFence.wait_for();
+							return true;
 						}
 						PUSH_TO_CALLSTACKTRACE(destroy_descriptor_sets());
 					}
-					depthStencilImageLayoutTransitionFence.wait_for();
-					PUSH_TO_CALLSTACKTRACE(destroy_depth_stencil_buffers());
+					stagingRectBufferTransferFence.wait_for();
+					PUSH_TO_CALLSTACKTRACE(destroy_render_elements());
 				}
-				threadIndexBufferDataInit.join();
-				indexBufferTransferTimelineSemaphore.wait_for_reaching(RE_VK_TIMELINE_SEMAPHORE_FINISH);
-				PUSH_TO_CALLSTACKTRACE(destroy_rect_index_buffer());
+				depthStencilImageLayoutTransitionFence.wait_for();
+				PUSH_TO_CALLSTACKTRACE(destroy_depth_stencil_images());
 			}
 		} else
 			RE_FATAL_ERROR("Failed to create Vulkan fence at index ", u8CurrentFenceIndex, " to wait on rendering to finish");
@@ -97,11 +88,10 @@ namespace RE {
 	}
 	
 	void destroy_renderer() {
-		PUSH_TO_CALLSTACKTRACE(destroy_sub_renderers());
+		PUSH_TO_CALLSTACKTRACE(destroy_render_elements());
 		PUSH_TO_CALLSTACKTRACE(destroy_renderpass());
 		PUSH_TO_CALLSTACKTRACE(destroy_descriptor_sets());
-		PUSH_TO_CALLSTACKTRACE(destroy_depth_stencil_buffers());
-		PUSH_TO_CALLSTACKTRACE(destroy_rect_index_buffer());
+		PUSH_TO_CALLSTACKTRACE(destroy_depth_stencil_images());
 		for (const VkFence &vk_rhFence : renderFences)
 			vkDestroyFence(vk_hDevice, vk_rhFence, nullptr);
 		for (VulkanTask &rRenderTask : renderTasks)
@@ -113,7 +103,14 @@ namespace RE {
 	}
 
 	bool swapchain_created_renderer() {
-		return true;
+		PUSH_TO_CALLSTACKTRACE(destroy_depth_stencil_images());
+		VulkanTask depthImageLayoutTransitionTask;
+		Vulkan_Fence depthStencilImageLayoutTransitionFence;
+		if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_depth_stencil_images(depthImageLayoutTransitionTask, depthStencilImageLayoutTransitionFence.get_fence()), bool)) {
+			depthStencilImageLayoutTransitionFence.wait_for();
+			return true;
+		}
+		return false;
 	}
 
 	void swapchain_destroyed_renderer() {
@@ -125,7 +122,7 @@ namespace RE {
 	}
 
 	void set_screen_percentage_settings(const ScreenPercentageSettings &rNewSettings) {
-		bool bRequiresRecreatingRenderPass = false;
+		bool bRequiresRecreatingRenderPass;
 		switch (rNewSettings.eMode) {
 			case RE_SCREEN_PERCENTAGE_MODE_NORMAL:
 				if (screenPercentageSettings.eMode == RE_SCREEN_PERCENTAGE_MODE_NORMAL)

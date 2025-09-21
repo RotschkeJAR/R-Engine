@@ -2,7 +2,6 @@
 #define __RE_RENDER_BATCH_GAME_OBJECT_H__
 
 #include "RE_Renderer.hpp"
-#include "RE_Sub Renderer.hpp"
 
 namespace RE {
 

@@ -50,7 +50,7 @@ namespace RE {
 
 	void ListBatch_Camera::update() {
 		for (uint8_t u8Index = 0U; u8Index < u8Count; u8Index++)
-			PUSH_TO_CALLSTACKTRACE_DETAILED(apCameras[u8Index]->update(), append_to_string("Camera ", apCameras[u8Index], ", Index: ", u8Index).c_str());
+			PUSH_TO_CALLSTACKTRACE_DETAILED(apCameras[u8Index]->update(), append_to_string("Camera ", apCameras[u8Index], ", Index: ", u8Index));
 	}
 
 }

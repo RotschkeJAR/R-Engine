@@ -5,6 +5,7 @@ namespace RE {
 
 	VkBuffer vk_hRectBuffer;
 	VkDeviceMemory vk_hRectBufferMemory;
+	VkPipeline vk_hRectObaquePipeline, vk_hRectTransparentPipeline;
 	
 	bool init_render_element_rectangle(Vulkan_Buffer &rStagingRectBuffer, VulkanTask &rRectBufferCreateTask, Vulkan_Fence &rRectBufferTransferFence) {
 		if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(rStagingRectBuffer.init(RE_VK_RECT_BUFFER_TOTAL_SIZE, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 1, nullptr, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), bool)) {

@@ -8,8 +8,8 @@ namespace RE {
 	extern VkDevice vk_hDevice;
 
 	// Vulkan 1.0
-	[[deprecated]] extern PFN_vkGetDeviceQueue pfn_vkGetDeviceQueue;
-	[[deprecated]] extern PFN_vkQueueSubmit pfn_vkQueueSubmit;
+	extern PFN_vkGetDeviceQueue pfn_vkGetDeviceQueue;
+	extern PFN_vkQueueSubmit pfn_vkQueueSubmit;
 	extern PFN_vkQueueWaitIdle pfn_vkQueueWaitIdle;
 	extern PFN_vkDeviceWaitIdle pfn_vkDeviceWaitIdle;
 	extern PFN_vkAllocateMemory pfn_vkAllocateMemory;
@@ -19,8 +19,8 @@ namespace RE {
 	extern PFN_vkFlushMappedMemoryRanges pfn_vkFlushMappedMemoryRanges;
 	extern PFN_vkInvalidateMappedMemoryRanges pfn_vkInvalidateMappedMemoryRanges;
 	extern PFN_vkGetDeviceMemoryCommitment pfn_vkGetDeviceMemoryCommitment;
-	[[deprecated]] extern PFN_vkBindBufferMemory pfn_vkBindBufferMemory;
-	[[deprecated]] extern PFN_vkBindImageMemory pfn_vkBindImageMemory;
+	extern PFN_vkBindBufferMemory pfn_vkBindBufferMemory;
+	extern PFN_vkBindImageMemory pfn_vkBindImageMemory;
 	extern PFN_vkGetBufferMemoryRequirements pfn_vkGetBufferMemoryRequirements;
 	extern PFN_vkGetImageMemoryRequirements pfn_vkGetImageMemoryRequirements;
 	extern PFN_vkGetImageSparseMemoryRequirements pfn_vkGetImageSparseMemoryRequirements;
@@ -72,7 +72,7 @@ namespace RE {
 	extern PFN_vkUpdateDescriptorSets pfn_vkUpdateDescriptorSets;
 	extern PFN_vkCreateFramebuffer pfn_vkCreateFramebuffer;
 	extern PFN_vkDestroyFramebuffer pfn_vkDestroyFramebuffer;
-	[[deprecated]] extern PFN_vkCreateRenderPass pfn_vkCreateRenderPass;
+	extern PFN_vkCreateRenderPass pfn_vkCreateRenderPass;
 	extern PFN_vkDestroyRenderPass pfn_vkDestroyRenderPass;
 	extern PFN_vkGetRenderAreaGranularity pfn_vkGetRenderAreaGranularity;
 	extern PFN_vkCreateCommandPool pfn_vkCreateCommandPool;
@@ -95,37 +95,37 @@ namespace RE {
 	extern PFN_vkCmdSetStencilReference pfn_vkCmdSetStencilReference;
 	extern PFN_vkCmdBindDescriptorSets pfn_vkCmdBindDescriptorSets;
 	extern PFN_vkCmdBindIndexBuffer pfn_vkCmdBindIndexBuffer;
-	[[deprecated]] extern PFN_vkCmdBindVertexBuffers pfn_vkCmdBindVertexBuffers;
+	extern PFN_vkCmdBindVertexBuffers pfn_vkCmdBindVertexBuffers;
 	extern PFN_vkCmdDraw pfn_vkCmdDraw;
 	extern PFN_vkCmdDrawIndexed pfn_vkCmdDrawIndexed;
 	extern PFN_vkCmdDrawIndirect pfn_vkCmdDrawIndirect;
 	extern PFN_vkCmdDrawIndexedIndirect pfn_vkCmdDrawIndexedIndirect;
 	extern PFN_vkCmdDispatch pfn_vkCmdDispatch;
 	extern PFN_vkCmdDispatchIndirect pfn_vkCmdDispatchIndirect;
-	[[deprecated]] extern PFN_vkCmdCopyBuffer pfn_vkCmdCopyBuffer;
-	[[deprecated]] extern PFN_vkCmdCopyImage pfn_vkCmdCopyImage;
-	[[deprecated]] extern PFN_vkCmdBlitImage pfn_vkCmdBlitImage;
-	[[deprecated]] extern PFN_vkCmdCopyBufferToImage pfn_vkCmdCopyBufferToImage;
-	[[deprecated]] extern PFN_vkCmdCopyImageToBuffer pfn_vkCmdCopyImageToBuffer;
+	extern PFN_vkCmdCopyBuffer pfn_vkCmdCopyBuffer;
+	extern PFN_vkCmdCopyImage pfn_vkCmdCopyImage;
+	extern PFN_vkCmdBlitImage pfn_vkCmdBlitImage;
+	extern PFN_vkCmdCopyBufferToImage pfn_vkCmdCopyBufferToImage;
+	extern PFN_vkCmdCopyImageToBuffer pfn_vkCmdCopyImageToBuffer;
 	extern PFN_vkCmdUpdateBuffer pfn_vkCmdUpdateBuffer;
 	extern PFN_vkCmdFillBuffer pfn_vkCmdFillBuffer;
 	extern PFN_vkCmdClearColorImage pfn_vkCmdClearColorImage;
 	extern PFN_vkCmdClearDepthStencilImage pfn_vkCmdClearDepthStencilImage;
 	extern PFN_vkCmdClearAttachments pfn_vkCmdClearAttachments;
-	[[deprecated]] extern PFN_vkCmdResolveImage pfn_vkCmdResolveImage;
-	[[deprecated]] extern PFN_vkCmdSetEvent pfn_vkCmdSetEvent;
-	[[deprecated]] extern PFN_vkCmdResetEvent pfn_vkCmdResetEvent;
-	[[deprecated]] extern PFN_vkCmdWaitEvents pfn_vkCmdWaitEvents;
-	[[deprecated]] extern PFN_vkCmdPipelineBarrier pfn_vkCmdPipelineBarrier;
+	extern PFN_vkCmdResolveImage pfn_vkCmdResolveImage;
+	extern PFN_vkCmdSetEvent pfn_vkCmdSetEvent;
+	extern PFN_vkCmdResetEvent pfn_vkCmdResetEvent;
+	extern PFN_vkCmdWaitEvents pfn_vkCmdWaitEvents;
+	extern PFN_vkCmdPipelineBarrier pfn_vkCmdPipelineBarrier;
 	extern PFN_vkCmdBeginQuery pfn_vkCmdBeginQuery;
 	extern PFN_vkCmdEndQuery pfn_vkCmdEndQuery;
 	extern PFN_vkCmdResetQueryPool pfn_vkCmdResetQueryPool;
-	[[deprecated]] extern PFN_vkCmdWriteTimestamp pfn_vkCmdWriteTimestamp;
+	extern PFN_vkCmdWriteTimestamp pfn_vkCmdWriteTimestamp;
 	extern PFN_vkCmdCopyQueryPoolResults pfn_vkCmdCopyQueryPoolResults;
 	extern PFN_vkCmdPushConstants pfn_vkCmdPushConstants;
-	[[deprecated]] extern PFN_vkCmdBeginRenderPass pfn_vkCmdBeginRenderPass;
-	[[deprecated]] extern PFN_vkCmdNextSubpass pfn_vkCmdNextSubpass;
-	[[deprecated]] extern PFN_vkCmdEndRenderPass pfn_vkCmdEndRenderPass;
+	extern PFN_vkCmdBeginRenderPass pfn_vkCmdBeginRenderPass;
+	extern PFN_vkCmdNextSubpass pfn_vkCmdNextSubpass;
+	extern PFN_vkCmdEndRenderPass pfn_vkCmdEndRenderPass;
 	extern PFN_vkCmdExecuteCommands pfn_vkCmdExecuteCommands;
 
 	// Vulkan 1.1
@@ -416,7 +416,7 @@ namespace RE {
 #define vkGetDeviceImageSparseMemoryRequirements(...) FOCUS_FOR_VK_DEBUG(pfn_vkGetDeviceImageSparseMemoryRequirements(__VA_ARGS__))
 
 // Vulkan 1.4
-/* #define vkCmdSetLineStipple(...) FOCUS_FOR_VK_DEBUG(pfn_vkCmdSetLineStipple(__VA_ARGS__))
+#define vkCmdSetLineStipple(...) FOCUS_FOR_VK_DEBUG(pfn_vkCmdSetLineStipple(__VA_ARGS__))
 #define vkMapMemory2(...) CHECK_VK_RESULT(pfn_vkMapMemory2(__VA_ARGS__))
 #define vkUnmapMemory2(...) CHECK_VK_RESULT(pfn_vkUnmapMemory2(__VA_ARGS__))
 #define vkCmdBindIndexBuffer2(...) FOCUS_FOR_VK_DEBUG(pfn_vkCmdBindIndexBuffer2(__VA_ARGS__))
@@ -434,7 +434,7 @@ namespace RE {
 #define vkCopyMemoryToImage(...) CHECK_VK_RESULT(pfn_vkCopyMemoryToImage(__VA_ARGS__))
 #define vkCopyImageToMemory(...) CHECK_VK_RESULT(pfn_vkCopyImageToMemory(__VA_ARGS__))
 #define vkCopyImageToImage(...) CHECK_VK_RESULT(pfn_vkCopyImageToImage(__VA_ARGS__))
-#define vkTransitionImageLayout(...) CHECK_VK_RESULT(pfn_vkTransitionImageLayout(__VA_ARGS__)) */
+#define vkTransitionImageLayout(...) CHECK_VK_RESULT(pfn_vkTransitionImageLayout(__VA_ARGS__))
 
 // Debug extension
 #define vkQueueBeginDebugUtilsLabelEXT(...) FOCUS_FOR_VK_DEBUG(pfn_vkQueueBeginDebugUtilsLabelEXT(__VA_ARGS__))

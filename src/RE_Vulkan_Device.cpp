@@ -7,7 +7,7 @@ namespace RE {
 
 	VkDevice vk_hDevice = VK_NULL_HANDLE;
 
-	[[deprecated]] PFN_vkGetDeviceQueue pfn_vkGetDeviceQueue = nullptr;
+	PFN_vkGetDeviceQueue pfn_vkGetDeviceQueue = nullptr;
 	PFN_vkQueueSubmit pfn_vkQueueSubmit = nullptr;
 	PFN_vkQueueWaitIdle pfn_vkQueueWaitIdle = nullptr;
 	PFN_vkDeviceWaitIdle pfn_vkDeviceWaitIdle = nullptr;
@@ -18,8 +18,8 @@ namespace RE {
 	PFN_vkFlushMappedMemoryRanges pfn_vkFlushMappedMemoryRanges = nullptr;
 	PFN_vkInvalidateMappedMemoryRanges pfn_vkInvalidateMappedMemoryRanges = nullptr;
 	PFN_vkGetDeviceMemoryCommitment pfn_vkGetDeviceMemoryCommitment = nullptr;
-	[[deprecated]] PFN_vkBindBufferMemory pfn_vkBindBufferMemory = nullptr;
-	[[deprecated]] PFN_vkBindImageMemory pfn_vkBindImageMemory = nullptr;
+	PFN_vkBindBufferMemory pfn_vkBindBufferMemory = nullptr;
+	PFN_vkBindImageMemory pfn_vkBindImageMemory = nullptr;
 	PFN_vkGetBufferMemoryRequirements pfn_vkGetBufferMemoryRequirements = nullptr;
 	PFN_vkGetImageMemoryRequirements pfn_vkGetImageMemoryRequirements = nullptr;
 	PFN_vkGetImageSparseMemoryRequirements pfn_vkGetImageSparseMemoryRequirements = nullptr;
@@ -71,7 +71,7 @@ namespace RE {
 	PFN_vkUpdateDescriptorSets pfn_vkUpdateDescriptorSets = nullptr;
 	PFN_vkCreateFramebuffer pfn_vkCreateFramebuffer = nullptr;
 	PFN_vkDestroyFramebuffer pfn_vkDestroyFramebuffer = nullptr;
-	[[deprecated]] PFN_vkCreateRenderPass pfn_vkCreateRenderPass = nullptr;
+	PFN_vkCreateRenderPass pfn_vkCreateRenderPass = nullptr;
 	PFN_vkDestroyRenderPass pfn_vkDestroyRenderPass = nullptr;
 	PFN_vkGetRenderAreaGranularity pfn_vkGetRenderAreaGranularity = nullptr;
 	PFN_vkCreateCommandPool pfn_vkCreateCommandPool = nullptr;
@@ -94,37 +94,37 @@ namespace RE {
 	PFN_vkCmdSetStencilReference pfn_vkCmdSetStencilReference = nullptr;
 	PFN_vkCmdBindDescriptorSets pfn_vkCmdBindDescriptorSets = nullptr;
 	PFN_vkCmdBindIndexBuffer pfn_vkCmdBindIndexBuffer = nullptr;
-	[[deprecated]] PFN_vkCmdBindVertexBuffers pfn_vkCmdBindVertexBuffers = nullptr;
+	PFN_vkCmdBindVertexBuffers pfn_vkCmdBindVertexBuffers = nullptr;
 	PFN_vkCmdDraw pfn_vkCmdDraw = nullptr;
 	PFN_vkCmdDrawIndexed pfn_vkCmdDrawIndexed = nullptr;
 	PFN_vkCmdDrawIndirect pfn_vkCmdDrawIndirect = nullptr;
 	PFN_vkCmdDrawIndexedIndirect pfn_vkCmdDrawIndexedIndirect = nullptr;
 	PFN_vkCmdDispatch pfn_vkCmdDispatch = nullptr;
 	PFN_vkCmdDispatchIndirect pfn_vkCmdDispatchIndirect = nullptr;
-	[[deprecated]] PFN_vkCmdCopyBuffer pfn_vkCmdCopyBuffer = nullptr;
-	[[deprecated]] PFN_vkCmdCopyImage pfn_vkCmdCopyImage = nullptr;
-	[[deprecated]] PFN_vkCmdBlitImage pfn_vkCmdBlitImage = nullptr;
-	[[deprecated]] PFN_vkCmdCopyBufferToImage pfn_vkCmdCopyBufferToImage = nullptr;
-	[[deprecated]] PFN_vkCmdCopyImageToBuffer pfn_vkCmdCopyImageToBuffer = nullptr;
+	PFN_vkCmdCopyBuffer pfn_vkCmdCopyBuffer = nullptr;
+	PFN_vkCmdCopyImage pfn_vkCmdCopyImage = nullptr;
+	PFN_vkCmdBlitImage pfn_vkCmdBlitImage = nullptr;
+	PFN_vkCmdCopyBufferToImage pfn_vkCmdCopyBufferToImage = nullptr;
+	PFN_vkCmdCopyImageToBuffer pfn_vkCmdCopyImageToBuffer = nullptr;
 	PFN_vkCmdUpdateBuffer pfn_vkCmdUpdateBuffer = nullptr;
 	PFN_vkCmdFillBuffer pfn_vkCmdFillBuffer = nullptr;
 	PFN_vkCmdClearColorImage pfn_vkCmdClearColorImage = nullptr;
 	PFN_vkCmdClearDepthStencilImage pfn_vkCmdClearDepthStencilImage = nullptr;
 	PFN_vkCmdClearAttachments pfn_vkCmdClearAttachments = nullptr;
-	[[deprecated]] PFN_vkCmdResolveImage pfn_vkCmdResolveImage = nullptr;
-	[[deprecated]] PFN_vkCmdSetEvent pfn_vkCmdSetEvent = nullptr;
-	[[deprecated]] PFN_vkCmdResetEvent pfn_vkCmdResetEvent = nullptr;
-	[[deprecated]] PFN_vkCmdWaitEvents pfn_vkCmdWaitEvents = nullptr;
-	[[deprecated]] PFN_vkCmdPipelineBarrier pfn_vkCmdPipelineBarrier = nullptr;
+	PFN_vkCmdResolveImage pfn_vkCmdResolveImage = nullptr;
+	PFN_vkCmdSetEvent pfn_vkCmdSetEvent = nullptr;
+	PFN_vkCmdResetEvent pfn_vkCmdResetEvent = nullptr;
+	PFN_vkCmdWaitEvents pfn_vkCmdWaitEvents = nullptr;
+	PFN_vkCmdPipelineBarrier pfn_vkCmdPipelineBarrier = nullptr;
 	PFN_vkCmdBeginQuery pfn_vkCmdBeginQuery = nullptr;
 	PFN_vkCmdEndQuery pfn_vkCmdEndQuery = nullptr;
 	PFN_vkCmdResetQueryPool pfn_vkCmdResetQueryPool = nullptr;
-	[[deprecated]] PFN_vkCmdWriteTimestamp pfn_vkCmdWriteTimestamp = nullptr;
+	PFN_vkCmdWriteTimestamp pfn_vkCmdWriteTimestamp = nullptr;
 	PFN_vkCmdCopyQueryPoolResults pfn_vkCmdCopyQueryPoolResults = nullptr;
 	PFN_vkCmdPushConstants pfn_vkCmdPushConstants = nullptr;
-	[[deprecated]] PFN_vkCmdBeginRenderPass pfn_vkCmdBeginRenderPass = nullptr;
-	[[deprecated]] PFN_vkCmdNextSubpass pfn_vkCmdNextSubpass = nullptr;
-	[[deprecated]] PFN_vkCmdEndRenderPass pfn_vkCmdEndRenderPass = nullptr;
+	PFN_vkCmdBeginRenderPass pfn_vkCmdBeginRenderPass = nullptr;
+	PFN_vkCmdNextSubpass pfn_vkCmdNextSubpass = nullptr;
+	PFN_vkCmdEndRenderPass pfn_vkCmdEndRenderPass = nullptr;
 	PFN_vkCmdExecuteCommands pfn_vkCmdExecuteCommands = nullptr;
 
 	// Vulkan 1.1
@@ -1163,8 +1163,13 @@ namespace RE {
 		std::vector<VkDeviceQueueCreateInfo> vk_paDeviceQueueCreateInfos;
 		PUSH_TO_CALLSTACKTRACE(create_queue_create_infos(&fQueuePriority, vk_paDeviceQueueCreateInfos));
 
+		VkPhysicalDeviceDynamicRenderingFeatures vk_physicalDeviceFeaturesEnabled_DynamicRendering = {
+			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES,
+			.dynamicRendering = VK_TRUE
+		};
 		VkPhysicalDeviceSynchronization2Features vk_physicalDeviceFeaturesEnabled_Synchronization2 = {
 			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES,
+			.pNext = &vk_physicalDeviceFeaturesEnabled_DynamicRendering,
 			.synchronization2 = VK_TRUE
 		};
 		const VkPhysicalDeviceTimelineSemaphoreFeatures vk_physicalDeviceFeaturesEnabled_TimelineSemaphore = {

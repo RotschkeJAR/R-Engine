@@ -39,6 +39,10 @@ namespace RE {
 			.codeSize = shaderBinaryFileSize,
 			.pCode = reinterpret_cast<const uint32_t*>(pacShaderBinary)
 		};
+		PRINT(pacPathToFile, " (", shaderBinaryFileSize / 4, "): ", vk_createInfo.pCode[0]);
+		for (size_t i = 1; i < shaderBinaryFileSize / 4; i++)
+			print(", ", vk_createInfo.pCode[i]);
+		println();
 		const bool bSuccess = vkCreateShaderModule(vk_hDevice, &vk_createInfo, nullptr, vk_phShader) == VK_SUCCESS;
 		delete[] pacShaderBinary;
 		if (!bSuccess)

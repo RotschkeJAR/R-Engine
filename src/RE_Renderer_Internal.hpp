@@ -11,11 +11,14 @@ namespace RE {
 
 	// MSAA
 	extern VkSampleCountFlagBits vk_eMsaaCount;
+	extern std::array<VkImage, RE_VK_FRAMES_IN_FLIGHT> vk_ahSingleSampledWorldRenderImages;
+	bool create_singlesampled_images(const VkExtent3D &vk_rSingleSampledImageExtent3D);
+	void destroy_singlesampled_images();
 
 	// Depth-stencil images
 	extern std::array<VkImage, RE_VK_FRAMES_IN_FLIGHT * 2> vk_ahDepthStencilImages;
 	extern std::array<VkImageView, vk_ahDepthStencilImages.size()> vk_ahDepthStencilImageViews;
-	bool create_depth_stencil_images(VulkanTask &rDepthStencilImageLayoutTransitionTask, VkFence vk_hDepthStencilImageLayoutTransitionFence);
+	bool create_depth_stencil_images(const VkExtent3D &vk_rDepthStencilImageExtent3D, VulkanTask &rDepthStencilImageLayoutTransitionTask, VkFence vk_hDepthStencilImageLayoutTransitionFence);
 	void destroy_depth_stencil_images();
 
 	// Descriptor Sets

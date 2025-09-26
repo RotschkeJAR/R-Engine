@@ -9,7 +9,7 @@ namespace RE {
 	uint8_t u8LogicalQueueCount = 0;
 
 	constexpr VkQueueFlags vk_aeRecommendedQueueTypes[] = {
-		VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, // Rendering
+		VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT, // Rendering
 		VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_TRANSFER_BIT, // Image transfer and optional mipmap generation
 		VK_QUEUE_TRANSFER_BIT, // Transfer buffer data or images
 		VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT // General computing

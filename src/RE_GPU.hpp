@@ -5,6 +5,9 @@
 
 namespace RE {
 
+	extern std::unique_ptr<VkSurfaceFormatKHR[]> vk_paSurfaceFormatsAvailable;
+	extern uint32_t u32IndexToSelectedSurfaceFormat;
+
 	// Physical Device
 	extern VkPhysicalDevice vk_hPhysicalDeviceSelected;
 	extern VkPhysicalDeviceProperties vk_physicalDeviceProperties;

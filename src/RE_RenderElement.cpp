@@ -3,9 +3,7 @@
 namespace RE {
 	
 	bool init_render_elements(Vulkan_Buffer &rStagingRectBuffer, VulkanTask &rRectBufferCreateTask, Vulkan_Fence &rRectBufferTransferFence) {
-		if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(init_render_element_rectangle(rStagingRectBuffer, rRectBufferCreateTask, rRectBufferTransferFence), bool))
-			return true;
-		return false;
+		return PUSH_TO_CALLSTACKTRACE_AND_RETURN(init_render_element_rectangle(rStagingRectBuffer, rRectBufferCreateTask, rRectBufferTransferFence), bool);
 	}
 
 	void destroy_render_elements() {

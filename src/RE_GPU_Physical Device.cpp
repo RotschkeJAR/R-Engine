@@ -29,9 +29,12 @@ namespace RE {
 		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk_hPhysicalDevice, vk_hSurface, &vk_physicalDeviceSurfaceCapabilities);
 
 		// Fetch supported GPU features
+		VkPhysicalDeviceDynamicRenderingFeatures vk_physicalDeviceFeaturesAvailable_DynamicRendering;
+		vk_physicalDeviceFeaturesAvailable_DynamicRendering.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES;
+		vk_physicalDeviceFeaturesAvailable_DynamicRendering.pNext = nullptr;
 		VkPhysicalDeviceSynchronization2Features vk_physicalDeviceFeaturesAvailable_Synchronization2;
 		vk_physicalDeviceFeaturesAvailable_Synchronization2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES;
-		vk_physicalDeviceFeaturesAvailable_Synchronization2.pNext = nullptr;
+		vk_physicalDeviceFeaturesAvailable_Synchronization2.pNext = &vk_physicalDeviceFeaturesAvailable_DynamicRendering;
 		VkPhysicalDeviceTimelineSemaphoreFeatures vk_physicalDeviceFeaturesAvailable_TimelineSemaphore;
 		vk_physicalDeviceFeaturesAvailable_TimelineSemaphore.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES;
 		vk_physicalDeviceFeaturesAvailable_TimelineSemaphore.pNext = &vk_physicalDeviceFeaturesAvailable_Synchronization2;
@@ -85,6 +88,10 @@ namespace RE {
 			// Check if synchronization2 is supported
 			if (vk_physicalDeviceFeaturesAvailable_Synchronization2.synchronization2 != VK_TRUE)
 				missingFeatures.emplace("The synchronization2-feature should be supported");
+
+			// Check if dynamic rendering is supported
+			if (vk_physicalDeviceFeaturesAvailable_DynamicRendering.dynamicRendering != VK_TRUE)
+				missingFeatures.emplace("The dynamic rendering-feature should be supported");
 
 			// Check if the required extensions exist
 			bool bSwapchainExtists = false;

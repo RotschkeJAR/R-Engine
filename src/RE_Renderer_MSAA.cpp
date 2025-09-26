@@ -1,4 +1,6 @@
 #include "RE_Renderer_Internal.hpp"
+#include "RE_Vulkan_Wrapper Functions.hpp"
+#include "RE_GPU.hpp"
 
 namespace RE {
 	
@@ -6,6 +8,42 @@ namespace RE {
 	VkSampleCountFlagBits vk_eMsaaCount = VK_SAMPLE_COUNT_1_BIT;
 	std::array<VkImage, RE_VK_FRAMES_IN_FLIGHT> vk_ahSingleSampledWorldRenderImages;
 	std::array<VkDeviceMemory, RE_VK_FRAMES_IN_FLIGHT> vk_ahSingleSampledWorldRenderImageMemories;
+	std::array<VkImageView, RE_VK_FRAMES_IN_FLIGHT> vk_ahSingleSampledWorldRenderImageViews;
+
+	bool create_singlesampled_images(const VkExtent3D &vk_rSingleSampledImageExtent3D) {
+		if (vk_eMsaaCount == VK_SAMPLE_COUNT_1_BIT)
+			return true;
+		size_t singleSampledImageCreateIndex = 0;
+		while (singleSampledImageCreateIndex < RE_VK_FRAMES_IN_FLIGHT) {
+			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_vulkan_image(0, VK_IMAGE_TYPE_2D, vk_eSwapchainImageFormat, vk_rSingleSampledImageExtent3D, 1, 1, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, 1, nullptr, VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_ahSingleSampledWorldRenderImages[singleSampledImageCreateIndex], &vk_ahSingleSampledWorldRenderImageMemories[singleSampledImageCreateIndex]), bool)) {
+				if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_vulkan_image_view(vk_ahSingleSampledWorldRenderImages[singleSampledImageCreateIndex], VK_IMAGE_VIEW_TYPE_2D, vk_eSwapchainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1, &vk_ahSingleSampledWorldRenderImageViews[singleSampledImageCreateIndex]), bool)) {
+					singleSampledImageCreateIndex++;
+					continue;
+				}
+				vkFreeMemory(vk_hDevice, vk_ahSingleSampledWorldRenderImageMemories[singleSampledImageCreateIndex], nullptr);
+				vkDestroyImage(vk_hDevice, vk_ahSingleSampledWorldRenderImages[singleSampledImageCreateIndex], nullptr);
+			}
+			break;
+		}
+		if (singleSampledImageCreateIndex == RE_VK_FRAMES_IN_FLIGHT)
+			return true;
+		for (size_t singleSampledImageDestroyIndex = 0; singleSampledImageDestroyIndex < singleSampledImageCreateIndex; singleSampledImageDestroyIndex++) {
+			vkDestroyImageView(vk_hDevice, vk_ahSingleSampledWorldRenderImageViews[singleSampledImageDestroyIndex], nullptr);
+			vkFreeMemory(vk_hDevice, vk_ahSingleSampledWorldRenderImageMemories[singleSampledImageDestroyIndex], nullptr);
+			vkDestroyImage(vk_hDevice, vk_ahSingleSampledWorldRenderImages[singleSampledImageDestroyIndex], nullptr);
+		}
+		return false;
+	}
+
+	void destroy_singlesampled_images() {
+		if (vk_eMsaaCount == VK_SAMPLE_COUNT_1_BIT)
+			return;
+		for (size_t singleSampledImageDestroyIndex = 0; singleSampledImageDestroyIndex < RE_VK_FRAMES_IN_FLIGHT; singleSampledImageDestroyIndex++) {
+			vkDestroyImageView(vk_hDevice, vk_ahSingleSampledWorldRenderImageViews[singleSampledImageDestroyIndex], nullptr);
+			vkFreeMemory(vk_hDevice, vk_ahSingleSampledWorldRenderImageMemories[singleSampledImageDestroyIndex], nullptr);
+			vkDestroyImage(vk_hDevice, vk_ahSingleSampledWorldRenderImages[singleSampledImageDestroyIndex], nullptr);
+		}
+	}
 
 	void set_msaa_mode(const MsaaMode eNewMsaaMode) {
 		MsaaMode eNextMsaaMode = eNewMsaaMode;
@@ -18,10 +56,9 @@ namespace RE {
 			return;
 		} else if (eNewMsaaMode != eNextMsaaMode)
 			RE_WARNING("MSAA mode ", std::pow(2, static_cast<int32_t>(eNewMsaaMode)), " is not supported on this GPU and has been dropped down to ", std::pow(2, static_cast<int32_t>(eNextMsaaMode)));
-		if (vk_hDevice == VK_NULL_HANDLE) {
-			vk_eMsaaCount = vk_eNewSampleCount;
+		vk_eMsaaCount = vk_eNewSampleCount;
+		if (vk_hDevice == VK_NULL_HANDLE)
 			return;
-		}
 	}
 
 	[[nodiscard]]

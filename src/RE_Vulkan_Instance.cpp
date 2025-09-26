@@ -24,12 +24,12 @@ namespace RE {
 	PFN_vkCreateInstance pfn_vkCreateInstance = nullptr;
 	PFN_vkDestroyInstance pfn_vkDestroyInstance = nullptr;
 	PFN_vkEnumeratePhysicalDevices pfn_vkEnumeratePhysicalDevices = nullptr;
-	[[deprecated]] PFN_vkGetPhysicalDeviceFeatures pfn_vkGetPhysicalDeviceFeatures = nullptr;
-	[[deprecated]] PFN_vkGetPhysicalDeviceFormatProperties pfn_vkGetPhysicalDeviceFormatProperties = nullptr;
-	[[deprecated]] PFN_vkGetPhysicalDeviceImageFormatProperties pfn_vkGetPhysicalDeviceImageFormatProperties = nullptr;
-	[[deprecated]] PFN_vkGetPhysicalDeviceProperties pfn_vkGetPhysicalDeviceProperties = nullptr;
-	[[deprecated]] PFN_vkGetPhysicalDeviceQueueFamilyProperties pfn_vkGetPhysicalDeviceQueueFamilyProperties = nullptr;
-	[[deprecated]] PFN_vkGetPhysicalDeviceMemoryProperties pfn_vkGetPhysicalDeviceMemoryProperties = nullptr;
+	PFN_vkGetPhysicalDeviceFeatures pfn_vkGetPhysicalDeviceFeatures = nullptr;
+	PFN_vkGetPhysicalDeviceFormatProperties pfn_vkGetPhysicalDeviceFormatProperties = nullptr;
+	PFN_vkGetPhysicalDeviceImageFormatProperties pfn_vkGetPhysicalDeviceImageFormatProperties = nullptr;
+	PFN_vkGetPhysicalDeviceProperties pfn_vkGetPhysicalDeviceProperties = nullptr;
+	PFN_vkGetPhysicalDeviceQueueFamilyProperties pfn_vkGetPhysicalDeviceQueueFamilyProperties = nullptr;
+	PFN_vkGetPhysicalDeviceMemoryProperties pfn_vkGetPhysicalDeviceMemoryProperties = nullptr;
 	PFN_vkGetInstanceProcAddr pfn_vkGetInstanceProcAddr = nullptr;
 	PFN_vkGetDeviceProcAddr pfn_vkGetDeviceProcAddr = nullptr;
 	PFN_vkCreateDevice pfn_vkCreateDevice = nullptr;
@@ -38,7 +38,7 @@ namespace RE {
 	PFN_vkEnumerateDeviceExtensionProperties pfn_vkEnumerateDeviceExtensionProperties = nullptr;
 	PFN_vkEnumerateInstanceLayerProperties pfn_vkEnumerateInstanceLayerProperties = nullptr;
 	PFN_vkEnumerateDeviceLayerProperties pfn_vkEnumerateDeviceLayerProperties = nullptr;
-	[[deprecated]] PFN_vkGetPhysicalDeviceSparseImageFormatProperties pfn_vkGetPhysicalDeviceSparseImageFormatProperties = nullptr;
+	PFN_vkGetPhysicalDeviceSparseImageFormatProperties pfn_vkGetPhysicalDeviceSparseImageFormatProperties = nullptr;
 
 	// Vulkan 1.1
 	PFN_vkEnumerateInstanceVersion pfn_vkEnumerateInstanceVersion = nullptr;
@@ -109,7 +109,7 @@ namespace RE {
 		}
 		const uint32_t u32VulkanVersionMajor = VK_API_VERSION_MAJOR(u32VulkanVersion), u32VulkanVersionMinor = VK_API_VERSION_MINOR(u32VulkanVersion);
 		if (u32VulkanVersionMajor < 1 || (u32VulkanVersionMajor == 1 && u32VulkanVersionMinor < 3)) {
-			RE_FATAL_ERROR("The minimum required Vulkan version ", VK_API_VERSION_MAJOR(RE_VK_API_VERSION), ".", VK_API_VERSION_MINOR(RE_VK_API_VERSION), " is not supported on this computer. This computer supports Vulkan ", u32VulkanVersionMajor, ".", u32VulkanVersionMinor, " (and lower)");
+			RE_FATAL_ERROR("The minimum required Vulkan version ", VK_API_VERSION_MAJOR(RE_VK_API_VERSION), ".", VK_API_VERSION_MINOR(RE_VK_API_VERSION), " is not supported on this computer. This computer has Vulkan ", u32VulkanVersionMajor, ".", u32VulkanVersionMinor, " installed");
 			return false;
 		}
 

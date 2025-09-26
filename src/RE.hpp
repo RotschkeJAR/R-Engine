@@ -957,7 +957,9 @@ namespace RE {
 	}
 
 	// Program execution
-	void execute();
+	bool init_engine();
+	void destroy_engine();
+	void start_game_loop();
 	[[nodiscard]]
 	float get_deltaseconds();
 	[[nodiscard]]

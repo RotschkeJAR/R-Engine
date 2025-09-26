@@ -185,14 +185,16 @@ int main_func() {
 	set_signal_handlers();
 	show_message_box_on_error(false);
 	enable_verbosity(false);
-	set_fps_limit(60);
-	First first;
-	Second secondInStack;
-	second = &secondInStack;
-	set_next_scene(&first);
-	execute();
-	if (clonus)
-		delete clonus;
+	if (init_engine()) {
+		set_fps_limit(60);
+		First first;
+		Second secondInStack;
+		second = &secondInStack;
+		set_next_scene(&first);
+		start_game_loop();
+		if (clonus)
+			delete clonus;
+	}
 	return 0;
 }
 

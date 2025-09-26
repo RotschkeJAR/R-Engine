@@ -7,6 +7,11 @@ namespace RE {
 
 #define RE_VK_FRAMES_IN_FLIGHT 2
 
+	extern VkBool32 vk_bSampleShadingEnabled;
+	extern float fSampleShadingRate;
+
+	extern VkPipelineLayout vk_hWorldPipelineLayout;
+
 	extern const Camera *pActiveCamera;
 
 	uint8_t get_render_graphics_queue_logical_index();
@@ -18,6 +23,9 @@ namespace RE {
 	void attach_camera(const Camera *pCamera);
 
 	// Depth-stencil buffers
+	extern std::vector<VkFormat> availableDepthStencilFormats;
+	extern uint8_t u8IndexToSelectedDepthStencilFormat;
+	extern bool bStencilsEnabled;
 	bool does_gpu_support_depth_stencil_images(VkPhysicalDevice vk_hPhysicalDevice, std::queue<std::string> &rMissingFeatures);
 	int32_t rate_gpu_depth_stencil_image_formats(VkPhysicalDevice vk_hPhysicalDevice, VkSampleCountFlags &vk_reMsaaAvailable);
 	void find_suitable_depth_stencil_formats();
@@ -29,6 +37,7 @@ namespace RE {
 
 	// MSAA
 	extern VkSampleCountFlags vk_eAllowedMsaaSamples;
+	extern VkSampleCountFlagBits vk_eMsaaCount;
 
 }
 

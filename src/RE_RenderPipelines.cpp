@@ -3,15 +3,15 @@
 namespace RE {
 
 	bool create_render_pipelines() {
-		return PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_render_pipeline_game_objects(), bool);
+		return create_render_pipeline_game_objects();
 	}
 
 	bool recreate_render_pipelines() {
-		return PUSH_TO_CALLSTACKTRACE_AND_RETURN(recreate_render_pipeline_game_objects(), bool);
+		return recreate_render_pipeline_game_objects();
 	}
 
 	void destroy_render_pipelines() {
-		PUSH_TO_CALLSTACKTRACE(destroy_render_pipeline_game_objects());
+		destroy_render_pipeline_game_objects();
 	}
 
 }

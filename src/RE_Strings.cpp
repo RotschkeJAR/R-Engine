@@ -51,7 +51,7 @@ namespace RE {
 			return std::string("");
 		const size_t stringSize = std::wcslen(pawcString) + 1;
 		std::string sConverted("", stringSize);
-		PUSH_TO_CALLSTACKTRACE(std::wcstombs(&sConverted[0], pawcString, stringSize));
+		std::wcstombs(&sConverted[0], pawcString, stringSize);
 		return sConverted;
 	}
 
@@ -61,7 +61,7 @@ namespace RE {
 			return std::wstring(L"");
 		const size_t stringSize = std::strlen(pacString) + 1;
 		std::wstring wsConverted(L"", stringSize);
-		PUSH_TO_CALLSTACKTRACE(std::mbstowcs(&wsConverted[0], pacString, stringSize));
+		std::mbstowcs(&wsConverted[0], pacString, stringSize);
 		return wsConverted;
 	}
 
@@ -71,7 +71,7 @@ namespace RE {
 #ifdef RE_OS_WINDOWS
 # define PATH_SIZE 500
 		wchar_t awcBuffer[PATH_SIZE];
-		if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(GetModuleFileNameW(nullptr, awcBuffer, PATH_SIZE), DWORD))
+		if (GetModuleFileNameW(nullptr, awcBuffer, PATH_SIZE))
 			sAppName = convert_wide_chars_to_utf8(awcBuffer);
 		else
 			RE_ERROR("Failed retrieving the file name of the application on Windows");

@@ -25,6 +25,7 @@
 #include <limits.h>
 #include <array>
 #include <variant>
+#include <ctime>
 
 namespace RE {
 
@@ -221,67 +222,7 @@ namespace RE {
 		RE_MSAA_MODE_DISABLED = RE_MSAA_MODE_1
 	};
 
-	template <class T>
-	[[nodiscard]]
-	const char* resolve_string_class(const T& rString) {
-		if constexpr (std::is_same_v<T, std::string>)
-			return rString.c_str();
-		else if constexpr (std::is_same_v<T, const char*> || std::is_same_v<T, char*>)
-			return const_cast<const char*>(rString);
-		else if constexpr (std::is_same_v<T, std::string_view>)
-			static_assert(false, "String views cannot be resolved");
-		else
-			static_assert(false, "This function only accepts string-like datatypes, that support plain characters (wide chars aren't accepted)");
-	}
-
-	void add_to_call_stack_trace(const char *pacFile, const char *pacFunc, uint32_t u32Line, const char *const pacDetails);
-	void remove_from_call_stack_trace();
-	void print_call_stack_trace();
-
 	void set_signal_handlers();
-
-	class SignalGuard final {
-		public:
-			SignalGuard(const char *pacFile, const char *pacFunc, uint32_t u32Line, const char *pacDetails);
-			~SignalGuard();
-	};
-#define DEFINE_SIGNAL_GUARD_DETAILED(NAME, DETAILS) SignalGuard NAME(__FILE__, __func__, __LINE__, STRIP_QUOTE_MACRO(DETAILS))
-#define DEFINE_SIGNAL_GUARD(NAME) DEFINE_SIGNAL_GUARD_DETAILED(NAME, "\0")
-	
-#define PUSH_TO_CALLSTACKTRACE_DETAILED(CMD, DETAILS) ([&](const char *const pacFile, const char *const pacFunc, const uint32_t u32Line) { \
-			auto stringOfDetails = STRIP_QUOTE_MACRO(DETAILS); \
-			add_to_call_stack_trace(pacFile, pacFunc, u32Line, resolve_string_class(stringOfDetails)); \
-			CMD; \
-			remove_from_call_stack_trace(); \
-		}) (__FILE__, __func__, __LINE__)
-#define PUSH_TO_CALLSTACKTRACE(CMD) PUSH_TO_CALLSTACKTRACE_DETAILED(CMD, "\0")
-#define PUSH_TO_CALLSTACKTRACE_AND_RETURN_DETAILED(CMD, RETURN_TYPE, DETAILS) ([&](const char *const pacFile, const char *const pacFunc, const uint32_t u32Line) -> RETURN_TYPE { \
-			auto stringOfDetails = STRIP_QUOTE_MACRO(DETAILS); \
-			add_to_call_stack_trace(pacFile, pacFunc, u32Line, resolve_string_class(stringOfDetails)); \
-			RETURN_TYPE returnValue = CMD; \
-			remove_from_call_stack_trace(); \
-			return returnValue; \
-		}) (__FILE__, __func__, __LINE__)
-#define PUSH_TO_CALLSTACKTRACE_AND_RETURN(CMD, RETURN_TYPE) PUSH_TO_CALLSTACKTRACE_AND_RETURN_DETAILED(CMD, RETURN_TYPE, "\0")
-
-	template <typename T>
-	[[nodiscard]]
-	std::string array_to_string(const T array[], const size_t arrayLength) {
-		std::ostringstream ss;
-		ss << '{';
-		for (size_t i = 0; i < arrayLength; i++) {
-			if (i)
-				ss << ", ";
-			if constexpr (std::is_same_v<T, int8_t>)
-				ss << static_cast<int16_t>(array[i]);
-			else if constexpr (std::is_same_v<T, uint8_t>)
-				ss << static_cast<uint16_t>(array[i]);
-			else
-				ss << array[i];
-		}
-		ss << '}';
-		return ss.str();
-	}
 
 	template <class... T>
 	void print(const T... content) {
@@ -304,43 +245,67 @@ namespace RE {
 	void println_colored(const char *pacContent, TerminalColor eColor, bool bBackgroundColored, bool bBold);
 #define PRINT(...) print(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE_MACRO(__VA_ARGS__))
 #define PRINT_LN(...) PRINT(STRIP_QUOTE_MACRO(__VA_ARGS__), "\n")
+
+#define PRINT_DEBUG(...) [&](const char *const pacFile, const char *const pacFunc, const uint32_t u32Line) { \
+			char acTimeString[50]; \
+			std::strftime(acTimeString, sizeof(acTimeString) / sizeof(acTimeString[0]), "%j. %b %Y, %H:%M:%S", std::gmtime(nullptr)); \
+			println("[", acTimeString, "] (", pacFile, ", line ", u32Line, "): ", STRIP_QUOTE_MACRO(__VA_ARGS__)); \
+		} (__FILE__, __func__, __LINE__)
 	
 	void error(std::string sDetail, bool bTerminate);
 	void warning(std::string sDetail);
 	void note(std::string sDetail);
-#define FATAL_ERROR(...) ([&](const char *const pacFile, const char *const pacFunc, const uint32_t u32Line) { \
-			add_to_call_stack_trace(pacFile, pacFunc, u32Line, "\0"); \
-			error(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__)), true); \
-			remove_from_call_stack_trace(); \
-		}) (__FILE__, __func__, __LINE__)
-#define ERROR(...) ([&](const char *const pacFile, const char *const pacFunc, const uint32_t u32Line) { \
-			add_to_call_stack_trace(pacFile, pacFunc, u32Line, "\0"); \
-			error(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__)), false); \
-			remove_from_call_stack_trace(); \
-		}) (__FILE__, __func__, __LINE__)
-#define WARNING(...) ([&](const char *const pacFile, const char *const pacFunc, const uint32_t u32Line) { \
-			add_to_call_stack_trace(pacFile, pacFunc, u32Line, "\0"); \
-			warning(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__))); \
-			remove_from_call_stack_trace(); \
-		}) (__FILE__, __func__, __LINE__)
-#define NOTE(...) ([&](const char *const pacFile, const char *const pacFunc, const uint32_t u32Line) { \
-			add_to_call_stack_trace(pacFile, pacFunc, u32Line, "\0"); \
-			note(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__)).c_str()); \
-			remove_from_call_stack_trace(); \
-		}) (__FILE__, __func__, __LINE__)
+#define FATAL_ERROR(...) error(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__)), true)
+#define ERROR(...) error(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__)), false)
+#define WARNING(...) warning(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__)))
+#define NOTE(...) note(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__)))
 
-#define DELETE_SAFELY(PTR_REF) PUSH_TO_CALLSTACKTRACE( do { \
+#define DELETE_SAFELY(PTR_REF) [&](const char *const pacFile, const char *const pacFunc, const uint32_t u32Line) { \
 			if (!PTR_REF) \
 				break; \
+			PRINT_DEBUG("Safely deleting ", PTR_REF); \
 			delete (PTR_REF); \
 			(PTR_REF) = nullptr; \
-		} while (false) )
-#define DELETE_ARRAY_SAFELY(PTR_REF) PUSH_TO_CALLSTACKTRACE( do { \
+		} (__FILE__, __func__, __LINE__)
+#define DELETE_ARRAY_SAFELY(PTR_REF) [&](const char *const pacFile, const char *const pacFunc, const uint32_t u32Line) { \
 			if (!PTR_REF) \
 				break; \
+			PRINT_DEBUG("Safely deleting array ", PTR_REF); \
 			delete[] (PTR_REF); \
 			(PTR_REF) = nullptr; \
-		} while (false) )
+		} (__FILE__, __func__, __LINE__)
+
+	template <class T>
+	[[nodiscard]]
+	const char* resolve_string_class(const T& rString) {
+		static_assert(!std::is_same_v<T, std::string_view>, "String views cannot be resolved");
+		static_assert(std::is_same_v<T, std::string> || std::is_same_v<T, const char*> || std::is_same_v<T, char*>, "This function only accepts string-like datatypes, that support plain characters (wide chars aren't accepted)");
+		if constexpr (std::is_same_v<T, std::string>)
+			return rString.c_str();
+		else if constexpr (std::is_same_v<T, const char*> || std::is_same_v<T, char*>)
+			return const_cast<const char*>(rString);
+		else
+			return nullptr;
+	}
+
+	template <typename T>
+	[[nodiscard]]
+	std::string array_to_string(const T array[], const size_t arrayLength) {
+		std::ostringstream ss;
+		ss << '{';
+		for (size_t i = 0; i < arrayLength; i++) {
+			if (i)
+				ss << ", ";
+			if constexpr (std::is_same_v<T, int8_t>)
+				ss << static_cast<int16_t>(array[i]);
+			else if constexpr (std::is_same_v<T, uint8_t>)
+				ss << static_cast<uint16_t>(array[i]);
+			else
+				ss << array[i];
+		}
+		ss << '}';
+		return ss.str();
+	}
 
 	template <class... T>
 	[[nodiscard]]
@@ -399,7 +364,7 @@ namespace RE {
 			FATAL_ERROR("The value of n shouldn't be zero or negative in an nth root");
 			return static_cast<T>(0.0);
 		}
-		return PUSH_TO_CALLSTACKTRACE_AND_RETURN(std::pow(value, static_cast<T>(1.0) / n), T);
+		return std::pow(value, static_cast<T>(1.0) / n);
 	}
 
 	template <typename... T>
@@ -898,15 +863,6 @@ namespace RE {
 	void show_message_box_on_error(bool bEnable);
 	[[nodiscard]]
 	bool is_show_message_box_on_error(bool bEnable);
-	void enable_verbosity(bool bEnable);
-	[[nodiscard]]
-	bool is_verbose_behaviour_enabled();
-	void enable_time_logging(bool bEnable);
-	[[nodiscard]]
-	bool is_time_logging_enabled();
-	void enable_printing_call_stack_trace_on_error(bool bEnable);
-	[[nodiscard]]
-	bool is_printing_call_stack_trace_on_error_enabled();
 
 	// Cursor input
 	[[nodiscard]]

@@ -15,9 +15,9 @@ namespace RE {
 	
 	bool ListBatch_GameObject::remove(const GameObject *const pGameObject) {
 		for (uint16_t u16Index = 0; u16Index < u16Count; u16Index++)
-			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(apGameObjects[u16Index] == pGameObject, bool)) {
+			if (apGameObjects[u16Index] == pGameObject) {
 				u16Count--;
-				PUSH_TO_CALLSTACKTRACE(apGameObjects[u16Index] = apGameObjects[u16Count]);
+				apGameObjects[u16Index] = apGameObjects[u16Count];
 				return true;
 			}
 		return false;
@@ -45,17 +45,17 @@ namespace RE {
 
 	void ListBatch_GameObject::start() {
 		for (uint16_t u16Index = 0; u16Index < u16Count; u16Index++)
-			PUSH_TO_CALLSTACKTRACE_DETAILED(apGameObjects[u16Index]->start(pCurrentScene), append_to_string("GameObject ", apGameObjects[u16Index], ", Index ", u16Index));
+			apGameObjects[u16Index]->start(pCurrentScene);
 	}
 	
 	void ListBatch_GameObject::update() {
 		for (uint16_t u16Index = 0; u16Index < u16Count; u16Index++)
-			PUSH_TO_CALLSTACKTRACE_DETAILED(apGameObjects[u16Index]->update(pCurrentScene), append_to_string("GameObject ", apGameObjects[u16Index], ", Index ", u16Index));
+			apGameObjects[u16Index]->update(pCurrentScene);
 	}
 	
 	void ListBatch_GameObject::end() {
 		for (uint16_t u16Index = 0; u16Index < u16Count; u16Index++)
-			PUSH_TO_CALLSTACKTRACE_DETAILED(apGameObjects[u16Index]->end(pCurrentScene), append_to_string("GameObject ", apGameObjects[u16Index], ", Index ", u16Index));
+			apGameObjects[u16Index]->end(pCurrentScene);
 	}
 
 }

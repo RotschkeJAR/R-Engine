@@ -13,7 +13,7 @@
 namespace RE {
 
 	Texture alloc_texture_from_binary_data(const uint8_t *const pau8ImageBinaryData, const Vector2u imageSize, const uint32_t u32Channels) {
-		return PUSH_TO_CALLSTACKTRACE_AND_RETURN(alloc_texture_from_binary_data(pau8ImageBinaryData, imageSize[0], imageSize[1], u32Channels), Texture);
+		return alloc_texture_from_binary_data(pau8ImageBinaryData, imageSize[0], imageSize[1], u32Channels);
 	}
 
 	Texture alloc_texture_from_binary_data(const uint8_t *const pau8ImageBinaryData, const uint32_t u32Width, const uint32_t u32Height, const uint32_t u32Channels) {
@@ -22,20 +22,20 @@ namespace RE {
 	
 	Texture alloc_texture_loading_from_file(const char *const pacPathToTextureFile) {
 		Vector2i textureSize;
-		return PUSH_TO_CALLSTACKTRACE_AND_RETURN(alloc_texture_loading_from_file(pacPathToTextureFile, textureSize), Texture);
+		return alloc_texture_loading_from_file(pacPathToTextureFile, textureSize);
 	}
 
 	Texture alloc_texture_loading_from_file(const char *const pacPathToTextureFile, Vector2i &rSize) {
-		return PUSH_TO_CALLSTACKTRACE_AND_RETURN(alloc_texture_loading_from_file(pacPathToTextureFile, rSize[0], rSize[1]), Texture);
+		return alloc_texture_loading_from_file(pacPathToTextureFile, rSize[0], rSize[1]);
 	}
 	
 	Texture alloc_texture_loading_from_file(const char *const pacPathToTextureFile, int32_t &ri32Width, int32_t &ri32Height) {
 		int32_t i32Channels;
-		return PUSH_TO_CALLSTACKTRACE_AND_RETURN(alloc_texture_loading_from_file(pacPathToTextureFile, ri32Width, ri32Height, i32Channels), Texture);
+		return alloc_texture_loading_from_file(pacPathToTextureFile, ri32Width, ri32Height, i32Channels);
 	}
 	
 	Texture alloc_texture_loading_from_file(const char *const pacPathToTextureFile, Vector2i &rSize, int32_t &ri32Channels) {
-		return PUSH_TO_CALLSTACKTRACE_AND_RETURN(alloc_texture_loading_from_file(pacPathToTextureFile, rSize[0], rSize[1], ri32Channels), Texture);
+		return alloc_texture_loading_from_file(pacPathToTextureFile, rSize[0], rSize[1], ri32Channels);
 	}
 	
 	Texture alloc_texture_loading_from_file(const char *const pacPathToTextureFile, int32_t &ri32Width, int32_t &ri32Height, int32_t &ri32Channels) {

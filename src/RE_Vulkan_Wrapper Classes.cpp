@@ -7,7 +7,7 @@ namespace RE {
 	Vulkan_Buffer::Vulkan_Buffer() : vk_hBuffer(VK_NULL_HANDLE), vk_hMemory(VK_NULL_HANDLE) {}
 	
 	Vulkan_Buffer::Vulkan_Buffer(const VkDeviceSize vk_size, const VkBufferUsageFlags vk_eUsages, const uint32_t u32QueueFamilyCount, const uint32_t *const pu32QueueFamilies, const VkMemoryPropertyFlags vk_eMemoryPropertyFlags) : vk_hBuffer(VK_NULL_HANDLE), vk_hMemory(VK_NULL_HANDLE) {
-		PUSH_TO_CALLSTACKTRACE(init(vk_size, vk_eUsages, u32QueueFamilyCount, pu32QueueFamilies, vk_eMemoryPropertyFlags));
+		init(vk_size, vk_eUsages, u32QueueFamilyCount, pu32QueueFamilies, vk_eMemoryPropertyFlags);
 	}
 	
 	Vulkan_Buffer::~Vulkan_Buffer() {
@@ -18,7 +18,7 @@ namespace RE {
 	}
 
 	bool Vulkan_Buffer::init(const VkDeviceSize vk_size, const VkBufferUsageFlags vk_eUsages, const uint32_t u32QueueFamilyCount, const uint32_t *const pu32QueueFamilies, const VkMemoryPropertyFlags vk_eMemoryPropertyFlags) {
-		return PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_vulkan_buffer(vk_size, vk_eUsages, u32QueueFamilyCount, pu32QueueFamilies, vk_eMemoryPropertyFlags, &vk_hBuffer, &vk_hMemory), bool);
+		return create_vulkan_buffer(vk_size, vk_eUsages, u32QueueFamilyCount, pu32QueueFamilies, vk_eMemoryPropertyFlags, &vk_hBuffer, &vk_hMemory);
 	}
 
 	void Vulkan_Buffer::destroy() {

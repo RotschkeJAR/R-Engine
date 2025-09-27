@@ -238,7 +238,7 @@ namespace RE {
 
 	static PFN_vkVoidFunction load_func_with_device(const char* pacFuncName) {
 		PFN_vkVoidFunction pFunc;
-		PUSH_TO_CALLSTACKTRACE(pFunc = vkGetDeviceProcAddr(vk_hDevice, pacFuncName));
+		pFunc = vkGetDeviceProcAddr(vk_hDevice, pacFuncName);
 		if (!pFunc)
 			RE_FATAL_ERROR("Failed loading the Vulkan logical device-level function \"", pacFuncName, "\"");
 		return pFunc;
@@ -1153,7 +1153,6 @@ namespace RE {
 	}
 
 	bool init_logical_vulkan_device() {
-		DEFINE_SIGNAL_GUARD(sigGuardCreateDevice);
 		constexpr uint32_t u32LogicalDeviceExtensionCount = 1;
 		const std::array<const char*, u32LogicalDeviceExtensionCount> a2cLogicalDeviceExtensions = {
 			VK_KHR_SWAPCHAIN_EXTENSION_NAME
@@ -1161,7 +1160,7 @@ namespace RE {
 
 		constexpr float fQueuePriority = 1.0f;
 		std::vector<VkDeviceQueueCreateInfo> vk_paDeviceQueueCreateInfos;
-		PUSH_TO_CALLSTACKTRACE(create_queue_create_infos(&fQueuePriority, vk_paDeviceQueueCreateInfos));
+		create_queue_create_infos(&fQueuePriority, vk_paDeviceQueueCreateInfos);
 
 		VkPhysicalDeviceDynamicRenderingFeatures vk_physicalDeviceFeaturesEnabled_DynamicRendering = {
 			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES,
@@ -1196,7 +1195,7 @@ namespace RE {
 			return false;
 		}
 
-		if (!PUSH_TO_CALLSTACKTRACE_AND_RETURN(load_vulkan_1_0_device() && load_vulkan_1_1_device() && load_vulkan_1_2_device() && load_vulkan_1_3_device() /* && load_vulkan_1_4_device() */ && load_extension_funcs_with_device(), bool)) {
+		if (!load_vulkan_1_0_device() && load_vulkan_1_1_device() && load_vulkan_1_2_device() && load_vulkan_1_3_device() /* && load_vulkan_1_4_device() */ && load_extension_funcs_with_device()) {
 			destroy_logical_vulkan_device();
 			return false;
 		}

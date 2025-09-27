@@ -8,9 +8,9 @@ namespace RE {
 	VkPipeline vk_hRectObaquePipeline, vk_hRectTransparentPipeline;
 	
 	bool init_render_element_rectangle(Vulkan_Buffer &rStagingRectBuffer, VulkanTask &rRectBufferCreateTask, Vulkan_Fence &rRectBufferTransferFence) {
-		if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(rStagingRectBuffer.init(RE_VK_RECT_BUFFER_TOTAL_SIZE, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 1, nullptr, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT), bool)) {
+		if (rStagingRectBuffer.init(RE_VK_RECT_BUFFER_TOTAL_SIZE, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 1, nullptr, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
 			float *pafVertices;
-			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(rStagingRectBuffer.map_memory(RE_VK_RECT_BUFFER_VERTICES_OFFSET, RE_VK_RECT_BUFFER_VERTICES_SIZE, reinterpret_cast<void**>(&pafVertices)), bool)) {
+			if (rStagingRectBuffer.map_memory(RE_VK_RECT_BUFFER_VERTICES_OFFSET, RE_VK_RECT_BUFFER_VERTICES_SIZE, reinterpret_cast<void**>(&pafVertices))) {
 				pafVertices[0] = -1.0f;
 				pafVertices[1] = 1.0f;
 				pafVertices[2] = 1.0f;
@@ -21,7 +21,7 @@ namespace RE {
 				pafVertices[7] = -1.0f;
 				rStagingRectBuffer.unmap_memory();
 				uint16_t *pau16Indices;
-				if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(rStagingRectBuffer.map_memory(RE_VK_RECT_BUFFER_INDICES_OFFSET, RE_VK_RECT_BUFFER_INDICES_SIZE, reinterpret_cast<void**>(&pau16Indices)), bool)) {
+				if (rStagingRectBuffer.map_memory(RE_VK_RECT_BUFFER_INDICES_OFFSET, RE_VK_RECT_BUFFER_INDICES_SIZE, reinterpret_cast<void**>(&pau16Indices))) {
 					pau16Indices[0] = 0;
 					pau16Indices[1] = 1;
 					pau16Indices[2] = 2;
@@ -29,7 +29,7 @@ namespace RE {
 					pau16Indices[4] = 3;
 					pau16Indices[5] = 0;
 					rStagingRectBuffer.unmap_memory();
-					if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_vulkan_buffer(RE_VK_RECT_BUFFER_TOTAL_SIZE, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 1, nullptr, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_hRectBuffer, &vk_hRectBufferMemory), bool)) {
+					if (create_vulkan_buffer(RE_VK_RECT_BUFFER_TOTAL_SIZE, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 1, nullptr, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_hRectBuffer, &vk_hRectBufferMemory)) {
 						const uint8_t pau8LogicalQueuesToUse[] = {std::numeric_limits<uint8_t>::max(), get_render_graphics_queue_logical_index()};
 						constexpr VkQueueFlagBits vk_paeQueueTypesToUse[] = {VK_QUEUE_TRANSFER_BIT, VK_QUEUE_GRAPHICS_BIT};
 						constexpr uint32_t pau32SeparationIds[] = {0, 0};
@@ -39,7 +39,7 @@ namespace RE {
 							.pau32StrictSeparationIds = pau32SeparationIds,
 							.u32FunctionsCount = 2
 						};
-						if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(rRectBufferCreateTask.init(queuesToUse, true), bool)) {
+						if (rRectBufferCreateTask.init(queuesToUse, true)) {
 							VkBufferMemoryBarrier2 vk_rectBufferOwnershipBarrier;
 							vk_rectBufferOwnershipBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2;
 							vk_rectBufferOwnershipBarrier.pNext = nullptr;
@@ -82,7 +82,7 @@ namespace RE {
 								vkCmdPipelineBarrier2(vk_hCommandBuffer, &vk_rectBufferOwnership);
 							};
 							rRectBufferCreateTask.record(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-							if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(rRectBufferCreateTask.submit(0, nullptr, 0, nullptr, rRectBufferTransferFence.get_fence()), bool))
+							if (rRectBufferCreateTask.submit(0, nullptr, 0, nullptr, rRectBufferTransferFence.get_fence()))
 								return true;
 						}
 						vkFreeMemory(vk_hDevice, vk_hRectBufferMemory, nullptr);

@@ -48,24 +48,24 @@ namespace RE {
 	VulkanTask::VulkanTask() {}
 
 	VulkanTask::VulkanTask(const uint32_t u32FunctionsCount, const VkQueueFlagBits *const vk_paeQueueTypePerFunctionRequiredInOrder, const bool bTransient) {
-		PUSH_TO_CALLSTACKTRACE(init(u32FunctionsCount, vk_paeQueueTypePerFunctionRequiredInOrder, bTransient));
+		init(u32FunctionsCount, vk_paeQueueTypePerFunctionRequiredInOrder, bTransient);
 	}
 
 	VulkanTask::VulkanTask(const uint32_t u32FunctionsCount, const uint8_t *pau8LogicalQueueIndexPerFunctionRequiredInOrder, const bool bTransient) {
-		PUSH_TO_CALLSTACKTRACE(init(u32FunctionsCount, pau8LogicalQueueIndexPerFunctionRequiredInOrder, bTransient));
+		init(u32FunctionsCount, pau8LogicalQueueIndexPerFunctionRequiredInOrder, bTransient);
 	}
 
 	VulkanTask::VulkanTask(const VulkanTask_Queues &rQueues, const bool bTransient) {
-		PUSH_TO_CALLSTACKTRACE(init(rQueues, bTransient));
+		init(rQueues, bTransient);
 	}
 
 	VulkanTask::VulkanTask(const VulkanTask &rCopy) {
-		PUSH_TO_CALLSTACKTRACE(init(rCopy));
+		init(rCopy);
 	}
 
 	VulkanTask::~VulkanTask() {
 		if (is_valid())
-			PUSH_TO_CALLSTACKTRACE(destroy());
+			destroy();
 	}
 	
 	bool VulkanTask::init(const uint32_t u32FunctionsCount, const VkQueueFlagBits *const vk_paeQueueTypePerFunctionRequiredInOrder, const bool bTransient) {
@@ -95,7 +95,7 @@ namespace RE {
 			commandPoolPerCommandBuffer = std::make_shared<VkCommandPool[]>(u32CommandBufferCount);
 			commandPoolPerCommandBuffer[0] = vk_pahCommandPools[u8BestQueue * COMMAND_POOLS_PER_QUEUE + (bTransient ? COMMAND_POOL_OFFSET_TRANSIENT : COMMAND_POOL_OFFSET_NORMAL)];
 			commandBuffers = std::make_unique<VkCommandBuffer[]>(u32CommandBufferCount);
-			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(alloc_vulkan_command_buffers(commandPoolPerCommandBuffer[0], VK_COMMAND_BUFFER_LEVEL_PRIMARY, u32CommandBufferCount, &commandBuffers[0]), bool)) {
+			if (alloc_vulkan_command_buffers(commandPoolPerCommandBuffer[0], VK_COMMAND_BUFFER_LEVEL_PRIMARY, u32CommandBufferCount, &commandBuffers[0])) {
 				commandBufferIndicesPerFunction = std::make_shared<uint32_t[]>(u32CommandBufferCount);
 				std::fill(commandBufferIndicesPerFunction.get(), commandBufferIndicesPerFunction.get() + u32FunctionsCount, 0);
 				return true;
@@ -139,7 +139,7 @@ namespace RE {
 			uint32_t u32CommandBufferCreateIndex = 0;
 			while (u32CommandBufferCreateIndex < u32CommandBufferCount) {
 				commandPoolPerCommandBuffer[u32CommandBufferCreateIndex] = vk_pahCommandPools[queueIndicesPerCommandBuffer[u32CommandBufferCreateIndex] * COMMAND_POOLS_PER_QUEUE + u8CommandPoolIndexOffset];
-				if (!PUSH_TO_CALLSTACKTRACE_AND_RETURN(alloc_vulkan_command_buffers(commandPoolPerCommandBuffer[u32CommandBufferCreateIndex], VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1, &commandBuffers[u32CommandBufferCreateIndex]), bool))
+				if (!alloc_vulkan_command_buffers(commandPoolPerCommandBuffer[u32CommandBufferCreateIndex], VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1, &commandBuffers[u32CommandBufferCreateIndex]))
 					break;
 				u32CommandBufferCreateIndex++;
 			}
@@ -201,7 +201,7 @@ namespace RE {
 		commandBuffers = std::make_unique<VkCommandBuffer[]>(u32CommandBufferCount);
 		uint32_t u32CommandBufferCreateIndex = 0;
 		while (u32CommandBufferCreateIndex < u32CommandBufferCount) {
-			if (!PUSH_TO_CALLSTACKTRACE_AND_RETURN(alloc_vulkan_command_buffers(commandPoolPerCommandBuffer[u32CommandBufferCreateIndex], VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1, &commandBuffers[u32CommandBufferCreateIndex]), bool))
+			if (!alloc_vulkan_command_buffers(commandPoolPerCommandBuffer[u32CommandBufferCreateIndex], VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1, &commandBuffers[u32CommandBufferCreateIndex]))
 				break;
 			u32CommandBufferCreateIndex++;
 		}
@@ -245,7 +245,7 @@ namespace RE {
 		else {
 			const uint32_t u32MaxExtentInFunctions = std::find_if(rQueues.pau32StrictSeparationIds, pu32EndOfSeparationIds, [&](const uint32_t u32SeparationId) { return u32SeparationId > 0; }) - rQueues.pau32StrictSeparationIds;
 			const uint32_t u32IndexToNextKnownLogicalQueue = std::find_if(rQueues.pau8LogicalQueueIndices, pu8EndOfLogicalQueuesToUse, [&](const uint8_t &ru8LogicalQueueIndex) -> bool { return ru8LogicalQueueIndex < u8LogicalQueueCount; }) - rQueues.pau8LogicalQueueIndices;
-			PUSH_TO_CALLSTACKTRACE(u8CurrentLogicalQueueIndex = find_next_best_logical_queue(u32MaxExtentInFunctions, rQueues.vk_paeQueueTypes, (u32IndexToNextKnownLogicalQueue == u32FunctionsCount) ? u8LogicalQueueCount : rQueues.pau8LogicalQueueIndices[u32IndexToNextKnownLogicalQueue]));
+			u8CurrentLogicalQueueIndex = find_next_best_logical_queue(u32MaxExtentInFunctions, rQueues.vk_paeQueueTypes, (u32IndexToNextKnownLogicalQueue == u32FunctionsCount) ? u8LogicalQueueCount : rQueues.pau8LogicalQueueIndices[u32IndexToNextKnownLogicalQueue]);
 		}
 		std::vector<uint8_t> logicalQueuesInOrder;
 		logicalQueuesInOrder.reserve(u32FunctionsCount);
@@ -259,7 +259,7 @@ namespace RE {
 				const uint32_t *const pu32BeginOfSeparationIds = rQueues.pau32StrictSeparationIds + u32FunctionIndex;
 				uint32_t u32IndexToNextKnownLogicalQueue = std::find_if(pu8BeginOfLogicalQueuesToUse, pu8EndOfLogicalQueuesToUse, [&](const uint8_t u8LogicalQueueIndex) -> bool { return u8LogicalQueueIndex < u8LogicalQueueCount; }) - pu8BeginOfLogicalQueuesToUse;
 				const uint32_t u32MaxExtentInFunctions = std::find_if(pu32BeginOfSeparationIds, pu32EndOfSeparationIds, [&](const uint32_t u32SeparationId) { return u32SeparationId > 0; }) - pu32BeginOfSeparationIds;
-				PUSH_TO_CALLSTACKTRACE(u8CurrentLogicalQueueIndex = find_next_best_logical_queue(u32MaxExtentInFunctions, &rQueues.vk_paeQueueTypes[u32FunctionIndex], (u32IndexToNextKnownLogicalQueue > u32MaxExtentInFunctions) ? u8LogicalQueueCount : rQueues.pau8LogicalQueueIndices[u32IndexToNextKnownLogicalQueue]));
+				u8CurrentLogicalQueueIndex = find_next_best_logical_queue(u32MaxExtentInFunctions, &rQueues.vk_paeQueueTypes[u32FunctionIndex], (u32IndexToNextKnownLogicalQueue > u32MaxExtentInFunctions) ? u8LogicalQueueCount : rQueues.pau8LogicalQueueIndices[u32IndexToNextKnownLogicalQueue]);
 				logicalQueuesInOrder.push_back(u8CurrentLogicalQueueIndex);
 			}
 			commandBufferIndicesPerFunction[u32FunctionIndex] = static_cast<uint32_t>(logicalQueuesInOrder.size() - 1);
@@ -272,7 +272,7 @@ namespace RE {
 		while (u32CommandBufferCreateIndex < u32CommandBufferCount) {
 			queueIndicesPerCommandBuffer[u32CommandBufferCreateIndex] = logicalQueuesInOrder[u32CommandBufferCreateIndex];
 			commandPoolPerCommandBuffer[u32CommandBufferCreateIndex] = vk_pahCommandPools[logicalQueuesInOrder[u32CommandBufferCreateIndex] * COMMAND_POOLS_PER_QUEUE + (bTransient ? COMMAND_POOL_OFFSET_TRANSIENT : COMMAND_POOL_OFFSET_NORMAL)];
-			PUSH_TO_CALLSTACKTRACE(alloc_vulkan_command_buffers(commandPoolPerCommandBuffer[u32CommandBufferCreateIndex], VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1, &commandBuffers[u32CommandBufferCreateIndex]));
+			alloc_vulkan_command_buffers(commandPoolPerCommandBuffer[u32CommandBufferCreateIndex], VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1, &commandBuffers[u32CommandBufferCreateIndex]);
 			u32CommandBufferCreateIndex++;
 		}
 		if (u32CommandBufferCreateIndex == u32CommandBufferCount) {
@@ -312,7 +312,7 @@ namespace RE {
 		paFunctions = std::make_unique<std::function<void (VkCommandBuffer, uint8_t, uint8_t, uint8_t)>[]>(rCopy.u32FunctionsCount);
 		uint32_t u32CommandBufferCreateIndex = 0;
 		while (u32CommandBufferCreateIndex < u32CommandBufferCount) {
-			if (!PUSH_TO_CALLSTACKTRACE_AND_RETURN(alloc_vulkan_command_buffers(commandPoolPerCommandBuffer[u32CommandBufferCreateIndex], VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1, &commandBuffers[u32CommandBufferCreateIndex]), bool))
+			if (!alloc_vulkan_command_buffers(commandPoolPerCommandBuffer[u32CommandBufferCreateIndex], VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1, &commandBuffers[u32CommandBufferCreateIndex]))
 				break;
 			u32CommandBufferCreateIndex++;
 		}
@@ -357,18 +357,18 @@ namespace RE {
 
 	void VulkanTask::record(const VkCommandBufferUsageFlags vk_eUsageFlags) {
 		uint32_t u32CommandBufferIndex = 0;
-		if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(begin_recording_vulkan_command_buffer(commandBuffers[u32CommandBufferIndex], vk_eUsageFlags, nullptr), bool)) {
+		if (begin_recording_vulkan_command_buffer(commandBuffers[u32CommandBufferIndex], vk_eUsageFlags, nullptr)) {
 			for (uint32_t u32FunctionIndex = 0; u32FunctionIndex < u32FunctionsCount; u32FunctionIndex++) {
 				if (u32CommandBufferIndex != commandBufferIndicesPerFunction[u32FunctionIndex]) {
 					if (u32CommandBufferIndex > 0 && vkEndCommandBuffer(commandBuffers[u32CommandBufferIndex - 1]) != VK_SUCCESS)
 						std::abort();
 					u32CommandBufferIndex = commandBufferIndicesPerFunction[u32FunctionIndex];
-					if (!PUSH_TO_CALLSTACKTRACE_AND_RETURN(begin_recording_vulkan_command_buffer(commandBuffers[u32CommandBufferIndex], vk_eUsageFlags, nullptr), bool))
+					if (!begin_recording_vulkan_command_buffer(commandBuffers[u32CommandBufferIndex], vk_eUsageFlags, nullptr))
 						std::abort();
 				}
 				const uint8_t u8PreviousLogicalQueue = u32FunctionIndex > 0 ? get_logical_queue_index_for_function(u32FunctionIndex - 1) : RE_VK_LOGICAL_QUEUE_IGNORED;
 				uint8_t u8NextLogicalQueue = (u32FunctionsCount > 1 && u32FunctionIndex < (u32FunctionsCount - 1)) ?  get_logical_queue_index_for_function(u32FunctionIndex + 1) : RE_VK_LOGICAL_QUEUE_IGNORED;
-				PUSH_TO_CALLSTACKTRACE_DETAILED(paFunctions[u32FunctionIndex](commandBuffers[u32CommandBufferIndex], u8PreviousLogicalQueue, get_logical_queue_index_for_function(u32FunctionIndex), u8NextLogicalQueue), append_to_string("Function index ", u32FunctionIndex));
+				paFunctions[u32FunctionIndex](commandBuffers[u32CommandBufferIndex], u8PreviousLogicalQueue, get_logical_queue_index_for_function(u32FunctionIndex), u8NextLogicalQueue), append_to_string("Function index ", u32FunctionIndex);
 			}
 			if (vkEndCommandBuffer(commandBuffers[commandBufferIndicesPerFunction[u32FunctionsCount - 1]]) != VK_SUCCESS)
 				std::abort();

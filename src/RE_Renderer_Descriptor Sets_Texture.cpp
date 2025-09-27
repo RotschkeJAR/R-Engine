@@ -101,17 +101,17 @@ namespace RE {
 			.pau32StrictSeparationIds = au32SeparatedWorks,
 			.u32FunctionsCount = sizeof(au8LogicalQueueIndices) / sizeof(au8LogicalQueueIndices[0])
 		};
-		if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(textureCreationTasks[0].init(textureCreationQueues, false), bool)) {
+		if (textureCreationTasks[0].init(textureCreationQueues, false)) {
 			uint16_t u16TextureCreationTaskInitIndex = 1;
 			while (u16TextureCreationTaskInitIndex < textureCreationTasks.size()) {
-				if (!PUSH_TO_CALLSTACKTRACE_AND_RETURN(textureCreationTasks[u16TextureCreationTaskInitIndex].init(textureCreationTasks[0]), bool))
+				if (!textureCreationTasks[u16TextureCreationTaskInitIndex].init(textureCreationTasks[0]))
 					break;
 				u16TextureCreationTaskInitIndex++;
 			}
 			if (u16TextureCreationTaskInitIndex == textureCreationTasks.size())
 				return true;
 			for (uint16_t u16TextureCreationTaskDestroyIndex = 0; u16TextureCreationTaskDestroyIndex < u16TextureCreationTaskInitIndex; u16TextureCreationTaskDestroyIndex++)
-				PUSH_TO_CALLSTACKTRACE(textureCreationTasks[u16TextureCreationTaskDestroyIndex].destroy());
+				textureCreationTasks[u16TextureCreationTaskDestroyIndex].destroy();
 		}
 		return false;
 	}

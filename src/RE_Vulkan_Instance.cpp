@@ -18,7 +18,6 @@ namespace RE {
 	VkInstance vk_hInstance = VK_NULL_HANDLE;
 
 	VkDebugUtilsMessengerEXT vk_hDebugMessenger = VK_NULL_HANDLE;
-	uint16_t u16VulkanDebugFocusCount = 0;
 
 	// Vulkan 1.0
 	PFN_vkCreateInstance pfn_vkCreateInstance = nullptr;
@@ -86,24 +85,24 @@ namespace RE {
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 
 	static PFN_vkVoidFunction load_func_with_instance(const VkInstance vk_hInstance, const char *const pacFuncName) {
-		PFN_vkVoidFunction pFunc = PUSH_TO_CALLSTACKTRACE_AND_RETURN(pfn_vkGetInstanceProcAddr(vk_hInstance, pacFuncName), PFN_vkVoidFunction);
+		PFN_vkVoidFunction pFunc = pfn_vkGetInstanceProcAddr(vk_hInstance, pacFuncName);
 		if (!pFunc)
 			println_colored(append_to_string("Failed loading the Vulkan instance-level function \"", pacFuncName, "\"").c_str(), RE_TERMINAL_COLOR_RED, false, false);
 		return pFunc;
 	}
 
 	static PFN_vkVoidFunction load_func(const char *const pacFuncName) {
-		return PUSH_TO_CALLSTACKTRACE_AND_RETURN(load_func_with_instance(vk_hInstance, pacFuncName), PFN_vkVoidFunction);
+		return load_func_with_instance(vk_hInstance, pacFuncName);
 	}
 
 	static bool create_vulkan_instance() {
-		PUSH_TO_CALLSTACKTRACE(pfn_vkEnumerateInstanceVersion = reinterpret_cast<PFN_vkEnumerateInstanceVersion>(load_func_with_instance(VK_NULL_HANDLE, "vkEnumerateInstanceVersion")));
+		pfn_vkEnumerateInstanceVersion = reinterpret_cast<PFN_vkEnumerateInstanceVersion>(load_func_with_instance(VK_NULL_HANDLE, "vkEnumerateInstanceVersion"));
 		if (!pfn_vkEnumerateInstanceVersion) {
 			RE_FATAL_ERROR("Failed to get the Vulkan version on this computer. It either failed loading the function or its version is 1.0. The least version required is ", VK_API_VERSION_MAJOR(RE_VK_API_VERSION), ".", VK_API_VERSION_MINOR(RE_VK_API_VERSION));
 			return false;
 		}
 		uint32_t u32VulkanVersion;
-		if (CHECK_VK_RESULT(pfn_vkEnumerateInstanceVersion(&u32VulkanVersion)) != VK_SUCCESS) {
+		if (pfn_vkEnumerateInstanceVersion(&u32VulkanVersion) != VK_SUCCESS) {
 			RE_FATAL_ERROR("Failed to get the Vulkan version on this computer");
 			return false;
 		}
@@ -113,9 +112,9 @@ namespace RE {
 			return false;
 		}
 
-		PUSH_TO_CALLSTACKTRACE(pfn_vkCreateInstance = reinterpret_cast<PFN_vkCreateInstance>(load_func_with_instance(VK_NULL_HANDLE, "vkCreateInstance")));
-		PUSH_TO_CALLSTACKTRACE(pfn_vkEnumerateInstanceExtensionProperties = reinterpret_cast<PFN_vkEnumerateInstanceExtensionProperties>(load_func_with_instance(VK_NULL_HANDLE, "vkEnumerateInstanceExtensionProperties")));
-		PUSH_TO_CALLSTACKTRACE(pfn_vkEnumerateInstanceLayerProperties = reinterpret_cast<PFN_vkEnumerateInstanceLayerProperties>(load_func_with_instance(VK_NULL_HANDLE, "vkEnumerateInstanceLayerProperties")));
+		pfn_vkCreateInstance = reinterpret_cast<PFN_vkCreateInstance>(load_func_with_instance(VK_NULL_HANDLE, "vkCreateInstance"));
+		pfn_vkEnumerateInstanceExtensionProperties = reinterpret_cast<PFN_vkEnumerateInstanceExtensionProperties>(load_func_with_instance(VK_NULL_HANDLE, "vkEnumerateInstanceExtensionProperties"));
+		pfn_vkEnumerateInstanceLayerProperties = reinterpret_cast<PFN_vkEnumerateInstanceLayerProperties>(load_func_with_instance(VK_NULL_HANDLE, "vkEnumerateInstanceLayerProperties"));
 		if (!pfn_vkCreateInstance || !pfn_vkEnumerateInstanceExtensionProperties || !pfn_vkEnumerateInstanceLayerProperties) {
 			RE_FATAL_ERROR("Failed loading Vulkan functions, which are essential for creating a Vulkan instance");
 			return false;
@@ -200,7 +199,6 @@ namespace RE {
 				RE_FATAL_ERROR("The Vulkan instance couldn't be created, because the driver doesn't support any Vulkan version higher than 1.0");
 				return false;
 			default:
-				CHECK_VK_RESULT(vk_eInstanceCreationResult);
 				RE_FATAL_ERROR("Failed creating Vulkan instance");
 				return false;
 		}
@@ -452,18 +450,12 @@ namespace RE {
 			default:
 				return VK_FALSE;
 		}
-		if (!u16VulkanDebugFocusCount) {
-			println_colored("The Vulkan validation layers were triggered", RE_TERMINAL_COLOR_WHITE, false, false);
-			print_call_stack_trace();
-		}
-		u16VulkanDebugFocusCount++;
-		print("\t");
 		println_colored(append_to_string("[", vk_pCallbackData->pMessageIdName, "]").c_str(), eConsoleColor, false, false);
 		const std::string_view msgView(vk_pCallbackData->pMessage);
 		const size_t linebreakIndex = msgView.find("\n");
-		print("\t\t");
+		print("\t");
 		println_colored(msgView.substr(0, linebreakIndex).data(), RE_TERMINAL_COLOR_BRIGHT_WHITE, false, false);
-		print("\t\t");
+		print("\t");
 		println_colored(msgView.substr(linebreakIndex + 1, -1).data(), RE_TERMINAL_COLOR_BRIGHT_WHITE, false, false);
 		return VK_FALSE;
 	}
@@ -476,8 +468,6 @@ namespace RE {
 			.pfnUserCallback = debug_callback,
 			.pUserData = nullptr
 		};
-		if (is_verbose_behaviour_enabled())
-			vk_debugCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT;
 		if (vkCreateDebugUtilsMessengerEXT(vk_hInstance, &vk_debugCreateInfo, nullptr, &vk_hDebugMessenger) != VK_SUCCESS) {
 			RE_FATAL_ERROR("Failed creating Vulkan debug messenger for validation layers");
 			return false;
@@ -487,9 +477,9 @@ namespace RE {
 
 	bool init_vulkan_instance() {
 #ifdef RE_OS_WINDOWS
-		PUSH_TO_CALLSTACKTRACE(hLibVulkan = LoadLibraryW(L"vulkan-1.dll"));
+		hLibVulkan = LoadLibraryW(L"vulkan-1.dll");
 #elif defined RE_OS_LINUX
-		PUSH_TO_CALLSTACKTRACE(hLibVulkan = dlopen("libvulkan.so.1", RTLD_NOW | RTLD_LOCAL));
+		hLibVulkan = dlopen("libvulkan.so.1", RTLD_NOW | RTLD_LOCAL);
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 		if (!hLibVulkan) {
 			RE_FATAL_ERROR("Failed loading the Vulkan library. Make sure Vulkan drivers are installed on your computer");
@@ -497,20 +487,20 @@ namespace RE {
 		}
 
 #ifdef RE_OS_WINDOWS
-		PUSH_TO_CALLSTACKTRACE(pfn_vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(GetProcAddress(hLibVulkan, "vkGetInstanceProcAddr")));
+		pfn_vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(GetProcAddress(hLibVulkan, "vkGetInstanceProcAddr"));
 #elif defined RE_OS_LINUX
-		PUSH_TO_CALLSTACKTRACE(pfn_vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(dlsym(hLibVulkan, "vkGetInstanceProcAddr")));
+		pfn_vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(dlsym(hLibVulkan, "vkGetInstanceProcAddr"));
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 		if (!pfn_vkGetInstanceProcAddr) {
 			RE_FATAL_ERROR("Failed loading the Vulkan function \"vkGetInstanceProcAddr\" with the OS-specific API");
 			return false;
 		}
 
-		if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_vulkan_instance(), bool)) {
-			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(load_vulkan_1_0_with_instance() && load_vulkan_1_1_with_instance() && load_vulkan_1_3_with_instance() && load_extension_funcs_with_instance() && setup_validation_layers(), bool))
+		if (create_vulkan_instance()) {
+			if (load_vulkan_1_0_with_instance() && load_vulkan_1_1_with_instance() && load_vulkan_1_3_with_instance() && load_extension_funcs_with_instance() && setup_validation_layers())
 				return true;
 			unload_all_vulkan_functions_of_instance();
-			PUSH_TO_CALLSTACKTRACE(pfn_vkDestroyInstance(vk_hInstance, nullptr));
+			pfn_vkDestroyInstance(vk_hInstance, nullptr);
 			vk_hInstance = VK_NULL_HANDLE;
 		}
 		return false;
@@ -519,7 +509,7 @@ namespace RE {
 	void destroy_vulkan_instance() {
 		vkDestroyDebugUtilsMessengerEXT(vk_hInstance, vk_hDebugMessenger, nullptr);
 		vk_hDebugMessenger = VK_NULL_HANDLE;
-		PUSH_TO_CALLSTACKTRACE(pfn_vkDestroyInstance(vk_hInstance, nullptr));
+		pfn_vkDestroyInstance(vk_hInstance, nullptr);
 		vk_hInstance = VK_NULL_HANDLE;
 		unload_all_vulkan_functions_of_instance();
 #ifdef RE_OS_WINDOWS
@@ -528,10 +518,6 @@ namespace RE {
 		dlclose(hLibVulkan);
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 		hLibVulkan = nullptr;
-	}
-
-	void reset_vulkan_validation_layer_report_count() {
-		u16VulkanDebugFocusCount = 0;
 	}
 
 	bool check_vulkan_result(const VkResult vk_eResult, const char *const pacFile, const char *const pacFunc, const uint32_t u32Line) {

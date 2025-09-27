@@ -219,9 +219,9 @@ namespace RE {
 	}
 	
 	bool create_render_pipeline_game_objects() {
-		if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_vulkan_shader_from_file("shaders/gameobject_vertex.glsl.spv", &vk_ahGameObjectShaders[0]), bool)) {
-			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_vulkan_shader_from_file("shaders/gameobject_fragment.glsl.spv", &vk_ahGameObjectShaders[1]), bool)) {
-				if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_game_object_pipelines(), bool))
+		if (create_vulkan_shader_from_file("shaders/gameobject_vertex.glsl.spv", &vk_ahGameObjectShaders[0])) {
+			if (create_vulkan_shader_from_file("shaders/gameobject_fragment.glsl.spv", &vk_ahGameObjectShaders[1])) {
+				if (create_game_object_pipelines())
 					return true;
 				vkDestroyShaderModule(vk_hDevice, vk_ahGameObjectShaders[1], nullptr);
 			}
@@ -231,7 +231,7 @@ namespace RE {
 	}
 
 	bool recreate_render_pipeline_game_objects() {
-		return PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_game_object_pipelines(), bool);
+		return create_game_object_pipelines();
 	}
 
 	void destroy_render_pipeline_game_objects() {

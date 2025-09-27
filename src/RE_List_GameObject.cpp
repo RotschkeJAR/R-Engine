@@ -11,14 +11,14 @@ namespace RE {
 
 	void add_new_game_objects() {
 		for (GameObject *const pObject : newGameObjects)
-			PUSH_TO_CALLSTACKTRACE(add_game_object(pObject));
+			add_game_object(pObject);
 		newGameObjects.clear();
 	}
 
 	void delete_marked_game_objects() {
 		bDeletingMarkedGameObjects = true;
 		for (GameObject *const pObject : deletableGameObjects)
-			PUSH_TO_CALLSTACKTRACE_DETAILED(delete pObject, append_to_string("GameObject: ", pObject));
+			delete pObject;
 		deletableGameObjects.clear();
 		bDeletingMarkedGameObjects = false;
 	}
@@ -27,21 +27,21 @@ namespace RE {
 		size_t batchIndex = 0;
 		for (ListBatch_GameObject *const pBatch : gameObjectBatchList) {
 			if (pBatch->has_space()) {
-				PUSH_TO_CALLSTACKTRACE(pBatch->add(pGameObject));
+				pBatch->add(pGameObject);
 				break;
 			}
 			batchIndex++;
 		}
 		if (batchIndex == gameObjectBatchList.size()) {
-			ListBatch_GameObject *const pNewBatch = PUSH_TO_CALLSTACKTRACE_AND_RETURN(new ListBatch_GameObject(), ListBatch_GameObject*);
-			PUSH_TO_CALLSTACKTRACE(pNewBatch->add(pGameObject));
+			ListBatch_GameObject *const pNewBatch = new ListBatch_GameObject();
+			pNewBatch->add(pGameObject);
 			gameObjectBatchList.push_back(pNewBatch);
 		}
 	}
 	
 	void remove_game_object(const GameObject *const pGameObject) {
 		for (ListBatch_GameObject *const pBatch : gameObjectBatchList)
-			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(pBatch->remove(pGameObject), bool)) {
+			if (pBatch->remove(pGameObject)) {
 				if (pBatch->empty()) {
 					gameObjectBatchList.erase(std::find(gameObjectBatchList.begin(), gameObjectBatchList.end(), pBatch));
 					delete pBatch;
@@ -65,29 +65,29 @@ namespace RE {
 
 	void start_game_objects() {
 		for (ListBatch_GameObject *const pBatch : gameObjectBatchList)
-			PUSH_TO_CALLSTACKTRACE(pBatch->start());
+			pBatch->start();
 	}
 
 	void update_game_objects() {
 		for (ListBatch_GameObject *const pBatch : gameObjectBatchList)
-			PUSH_TO_CALLSTACKTRACE(pBatch->update());
+			pBatch->update();
 	}
 
 	void end_game_objects() {
 		for (ListBatch_GameObject *const pBatch : gameObjectBatchList)
-			PUSH_TO_CALLSTACKTRACE(pBatch->end());
+			pBatch->end();
 	}
 
 	bool init_game_object_render_batches() {
 		size_t batchesInitializedCount = 0;
 		for (ListBatch_GameObject *const pBatch : gameObjectBatchList)
-			if (!PUSH_TO_CALLSTACKTRACE_AND_RETURN(pBatch->renderBatch.init(), bool))
+			if (!pBatch->renderBatch.init())
 				break;
 			else
 				batchesInitializedCount++;
 		if (batchesInitializedCount < gameObjectBatchList.size()) {
 			for (size_t batchesDestroyedCount = 0; batchesDestroyedCount < batchesInitializedCount; batchesDestroyedCount++)
-				PUSH_TO_CALLSTACKTRACE(gameObjectBatchList[batchesDestroyedCount]->renderBatch.destroy());
+				gameObjectBatchList[batchesDestroyedCount]->renderBatch.destroy();
 			return false;
 		}
 		return true;
@@ -95,22 +95,22 @@ namespace RE {
 
 	void destroy_game_object_render_batches() {
 		for (ListBatch_GameObject *const pBatch : gameObjectBatchList)
-			PUSH_TO_CALLSTACKTRACE(pBatch->renderBatch.destroy());
+			pBatch->renderBatch.destroy();
 	}
 
 	void load_game_object_vertices(bool &rbNeedsRender) {
 		for (ListBatch_GameObject *const pBatch : gameObjectBatchList)
-			PUSH_TO_CALLSTACKTRACE(pBatch->renderBatch.load_vertices(rbNeedsRender));
+			pBatch->renderBatch.load_vertices(rbNeedsRender);
 	}
 
 	void render_opaque_game_objects() {
 		for (ListBatch_GameObject *const pBatch : gameObjectBatchList)
-			PUSH_TO_CALLSTACKTRACE(pBatch->renderBatch.render_opaque());
+			pBatch->renderBatch.render_opaque();
 	}
 
 	void render_transparent_game_objects() {
 		for (ListBatch_GameObject *const pBatch : gameObjectBatchList)
-			PUSH_TO_CALLSTACKTRACE(pBatch->renderBatch.render_transparent());
+			pBatch->renderBatch.render_transparent();
 	}
 
 }

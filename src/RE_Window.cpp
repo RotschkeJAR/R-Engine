@@ -18,15 +18,15 @@ namespace RE {
 		u8WindowFlagBits = 1 << WINDOW_WAYLAND_SHOULD_RENDER_FRAME_BIT;
 		bool bSuccess;
 #ifdef RE_OS_WINDOWS
-		bSuccess = PUSH_TO_CALLSTACKTRACE_AND_RETURN(win64_create_window(), bool);
+		bSuccess = win64_create_window();
 #elif defined RE_OS_LINUX
 		switch (eLinuxWindowType) {
 			case X11:
-				bSuccess = PUSH_TO_CALLSTACKTRACE_AND_RETURN(x11_create_window(), bool);
+				bSuccess = x11_create_window();
 				break;
 			case Wayland:
 				u8WindowFlagBits = 0;
-				bSuccess = PUSH_TO_CALLSTACKTRACE_AND_RETURN(wayland_create_window(), bool);
+				bSuccess = wayland_create_window();
 				break;
 		}
 #endif
@@ -36,14 +36,14 @@ namespace RE {
 
 	void destroy_window() {
 #ifdef RE_OS_WINDOWS
-		PUSH_TO_CALLSTACKTRACE(win64_destroy_window());
+		win64_destroy_window();
 #elif defined RE_OS_LINUX
 		switch (eLinuxWindowType) {
 			case X11:
-				PUSH_TO_CALLSTACKTRACE(x11_destroy_window());
+				x11_destroy_window();
 				break;
 			case Wayland:
-				PUSH_TO_CALLSTACKTRACE(wayland_destroy_window());
+				wayland_destroy_window();
 				break;
 		}
 #endif
@@ -61,30 +61,30 @@ namespace RE {
 			return;
 		set_bits<uint8_t>(u8WindowFlagBits, bShowWindow, WINDOW_VISIBLE_BIT);
 #ifdef RE_OS_WINDOWS
-		PUSH_TO_CALLSTACKTRACE(win64_show_window());
+		win64_show_window();
 #elif defined RE_OS_LINUX
 		switch (eLinuxWindowType) {
 			case X11:
-				PUSH_TO_CALLSTACKTRACE(x11_show_window());
+				x11_show_window();
 				break;
 			case Wayland:
-				PUSH_TO_CALLSTACKTRACE(wayland_show_window());
+				wayland_show_window();
 				break;
 		}
 #endif
 	}
 
 	void window_proc() {
-		PUSH_TO_CALLSTACKTRACE(update_input_buffers());
+		update_input_buffers();
 #ifdef RE_OS_WINDOWS
-		PUSH_TO_CALLSTACKTRACE(win64_window_proc());
+		win64_window_proc();
 #elif defined RE_OS_LINUX
 		switch (eLinuxWindowType) {
 			case X11:
-				PUSH_TO_CALLSTACKTRACE(x11_window_proc());
+				x11_window_proc();
 				break;
 			case Wayland:
-				PUSH_TO_CALLSTACKTRACE(wayland_window_proc());
+				wayland_window_proc();
 				break;
 		}
 #endif
@@ -93,7 +93,7 @@ namespace RE {
 	void post_rendering_window_proc() {
 #ifdef RE_OS_LINUX
 		if (eLinuxWindowType == Wayland)
-			PUSH_TO_CALLSTACKTRACE(wayland_post_rendering_window_proc());
+			wayland_post_rendering_window_proc();
 #endif
 	}
 
@@ -114,7 +114,7 @@ namespace RE {
 			.hinstance = win_hInstance,
 			.hwnd = win_hWindow
 		};
-		return PUSH_TO_CALLSTACKTRACE_AND_RETURN(vkCreateWin32SurfaceKHR(vk_hInstance, &vk_win32SurfaceCreateInfo, nullptr, &vk_rhSurface) == VK_SUCCESS, bool);
+		return vkCreateWin32SurfaceKHR(vk_hInstance, &vk_win32SurfaceCreateInfo, nullptr, &vk_rhSurface) == VK_SUCCESS;
 #elif defined RE_OS_LINUX
 		switch (eLinuxWindowType) {
 			case X11:
@@ -124,7 +124,7 @@ namespace RE {
 						.dpy = x11_pDisplay,
 						.window = x11_hWindow
 					};
-					return PUSH_TO_CALLSTACKTRACE_AND_RETURN(vkCreateXlibSurfaceKHR(vk_hInstance, &vk_x11SurfaceCreateInfo, nullptr, &vk_rhSurface) == VK_SUCCESS, bool);
+					return vkCreateXlibSurfaceKHR(vk_hInstance, &vk_x11SurfaceCreateInfo, nullptr, &vk_rhSurface) == VK_SUCCESS;
 				}
 			case Wayland:
 				{
@@ -133,7 +133,7 @@ namespace RE {
 						.display = wl_pDisplay,
 						.surface = wl_pSurface
 					};
-					return PUSH_TO_CALLSTACKTRACE_AND_RETURN(vkCreateWaylandSurfaceKHR(vk_hInstance, &vk_waylandSurfaceCreateInfo, nullptr, &vk_rhSurface) == VK_SUCCESS, bool);
+					return vkCreateWaylandSurfaceKHR(vk_hInstance, &vk_waylandSurfaceCreateInfo, nullptr, &vk_rhSurface) == VK_SUCCESS;
 				}
 			default:
 				return false;
@@ -164,14 +164,14 @@ namespace RE {
 		if (!are_bits_true<uint8_t>(u8WindowFlagBits, WINDOW_CREATED_BIT))
 			return;
 #ifdef RE_OS_WINDOWS
-		PUSH_TO_CALLSTACKTRACE(win64_update_window_title());
+		win64_update_window_title();
 #elif defined RE_OS_LINUX
 		switch (eLinuxWindowType) {
 			case X11:
-				PUSH_TO_CALLSTACKTRACE(x11_update_window_title());
+				x11_update_window_title();
 				break;
 			case Wayland:
-				PUSH_TO_CALLSTACKTRACE(wayland_update_window_title());
+				wayland_update_window_title();
 				break;
 		}
 #endif

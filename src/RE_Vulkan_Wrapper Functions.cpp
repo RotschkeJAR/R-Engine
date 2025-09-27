@@ -31,9 +31,9 @@ namespace RE {
 		}
 		size_t shaderBinaryFileSize = static_cast<size_t>(shaderBinaryFile.tellg());
 		char *const pacShaderBinary = new char[shaderBinaryFileSize];
-		PUSH_TO_CALLSTACKTRACE(shaderBinaryFile.seekg(0));
-		PUSH_TO_CALLSTACKTRACE(shaderBinaryFile.read(pacShaderBinary, shaderBinaryFileSize));
-		PUSH_TO_CALLSTACKTRACE(shaderBinaryFile.close());
+		shaderBinaryFile.seekg(0);
+		shaderBinaryFile.read(pacShaderBinary, shaderBinaryFileSize);
+		shaderBinaryFile.close();
 		const VkShaderModuleCreateInfo vk_createInfo = {
 			.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
 			.codeSize = shaderBinaryFileSize,
@@ -72,7 +72,7 @@ namespace RE {
 			vk_memoryRequirements.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2;
 			vk_memoryRequirements.pNext = nullptr;
 			vkGetBufferMemoryRequirements2(vk_hDevice, &vk_bufferInfo, &vk_memoryRequirements);
-			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(alloc_required_memory(&vk_memoryRequirements.memoryRequirements, vk_eMemoryPropertyFlags, vk_phMemory), bool)) {
+			if (alloc_required_memory(&vk_memoryRequirements.memoryRequirements, vk_eMemoryPropertyFlags, vk_phMemory)) {
 				const VkBindBufferMemoryInfo vk_bindMemoryInfo = {
 					.sType = VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO,
 					.buffer = *vk_phBuffer,
@@ -123,7 +123,7 @@ namespace RE {
 			vk_memoryRequirements.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2;
 			vk_memoryRequirements.pNext = nullptr;
 			vkGetImageMemoryRequirements2(vk_hDevice, &vk_imageInfo, &vk_memoryRequirements);
-			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(alloc_required_memory(&vk_memoryRequirements.memoryRequirements, vk_eMemoryPropertyFlags, vk_phMemory), bool)) {
+			if (alloc_required_memory(&vk_memoryRequirements.memoryRequirements, vk_eMemoryPropertyFlags, vk_phMemory)) {
 				const VkBindImageMemoryInfo vk_bindMemoryInfo = {
 					.sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO,
 					.image = *vk_phImage,

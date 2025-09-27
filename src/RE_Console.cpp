@@ -13,18 +13,13 @@ namespace RE {
 #define TREAT_WARNING_AS_ERROR 1
 #define ERRORS_ALWAYS_FATAL 2
 #define SHOW_MSG_BOX 3
-#define VERBOSE_BEHAVIOUR 4
-#define LOG_TIME 5
-#define PRINT_CALL_STACK_TRACE 6
 
-	uint8_t u8ConsoleSettings = (1 << PRINT_COLORS) | (1 << SHOW_MSG_BOX) | (1 << LOG_TIME) | (1 << PRINT_CALL_STACK_TRACE);
+	uint8_t u8ConsoleSettings = (1 << PRINT_COLORS) | (1 << SHOW_MSG_BOX);
 
 	static void print_time() {
-		if (!are_bits_true<uint8_t>(u8ConsoleSettings, LOG_TIME))
-			return;
-		const std::time_t timePoint = std::time(nullptr);
-		const std::string sTimeString(std::ctime(&timePoint));
-		print("[", sTimeString.substr(0, sTimeString.size() - 1), "] ");
+		char acTimeString[50];
+		std::strftime(acTimeString, sizeof(acTimeString) / sizeof(acTimeString[0]), "%j. %b %Y, %H:%M:%S", std::gmtime(nullptr));
+		print("[", acTimeString, "] ");
 	}
 
 	[[nodiscard]]
@@ -55,8 +50,6 @@ namespace RE {
 			println("                                     ", sDetail.substr(lineBreak, nextLineBreak));
 			lineBreak = nextLineBreak;
 		}
-		if (are_bits_true<uint8_t>(u8ConsoleSettings, PRINT_CALL_STACK_TRACE))
-			print_call_stack_trace();
 	}
 
 	void print_colored(const char *const pacContent, const TerminalColor eColor, const bool bBackgroundColored, const bool bBold) {
@@ -137,33 +130,6 @@ namespace RE {
 	[[nodiscard]]
 	bool is_show_message_box_on_error(const bool bEnable) {
 		return are_bits_true<uint8_t>(u8ConsoleSettings, SHOW_MSG_BOX);
-	}
-
-	void enable_verbosity(const bool bEnable) {
-		set_bits<uint8_t>(u8ConsoleSettings, bEnable, VERBOSE_BEHAVIOUR);
-	}
-
-	[[nodiscard]]
-	bool is_verbose_behaviour_enabled() {
-		return are_bits_true<uint8_t>(u8ConsoleSettings, VERBOSE_BEHAVIOUR);
-	}
-
-	void enable_time_logging(const bool bEnable) {
-		set_bits<uint8_t>(u8ConsoleSettings, bEnable, LOG_TIME);
-	}
-
-	[[nodiscard]]
-	bool is_time_logging_enabled() {
-		return are_bits_true<uint8_t>(u8ConsoleSettings, LOG_TIME);
-	}
-
-	void enable_printing_call_stack_trace_on_error(const bool bEnable) {
-		set_bits<uint8_t>(u8ConsoleSettings, bEnable, PRINT_CALL_STACK_TRACE);
-	}
-
-	[[nodiscard]]
-	bool is_printing_call_stack_trace_on_error_enabled() {
-		return are_bits_true<uint8_t>(u8ConsoleSettings, PRINT_CALL_STACK_TRACE);
 	}
 
 }

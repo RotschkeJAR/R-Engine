@@ -16,7 +16,7 @@ namespace RE {
 		// Create actual sweapchain
 		const VkSwapchainKHR vk_hOldSwapchain = vk_hSwapchain;
 		if (vk_hOldSwapchain != VK_NULL_HANDLE) {
-			PUSH_TO_CALLSTACKTRACE(swapchain_destroyed_renderer());
+			swapchain_destroyed_renderer();
 			for (uint32_t u32SwapchainImageIndex = 0; u32SwapchainImageIndex < u32SwapchainImageCount; u32SwapchainImageIndex++)
 				vkDestroyImageView(vk_hDevice, vk_pahSwapchainImageViews[u32SwapchainImageIndex], nullptr);
 			vk_pahSwapchainImages.reset();
@@ -89,7 +89,7 @@ namespace RE {
 	}
 	
 	void destroy_swapchain() {
-		PUSH_TO_CALLSTACKTRACE(swapchain_destroyed_renderer());
+		swapchain_destroyed_renderer();
 		for (uint32_t u32SwapchainImageIndex = 0; u32SwapchainImageIndex < u32SwapchainImageCount; u32SwapchainImageIndex++)
 			vkDestroyImageView(vk_hDevice, vk_pahSwapchainImageViews[u32SwapchainImageIndex], nullptr);
 		vk_pahSwapchainImages.reset();
@@ -101,12 +101,12 @@ namespace RE {
 	bool recreate_swapchain() {
 		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &vk_surfaceCapabilities);
 		WAIT_FOR_IDLE_VULKAN_DEVICE();
-		if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_swapchain(), bool)) {
-			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(swapchain_created_renderer(), bool))
+		if (create_swapchain()) {
+			if (swapchain_created_renderer())
 				return true;
 			else
 				RE_ERROR("Failed notifying the renderer for recreated Vulkan swapchain");
-			PUSH_TO_CALLSTACKTRACE(destroy_swapchain());
+			destroy_swapchain();
 		} else
 			RE_ERROR("Failed recreating the Vulkan swapchain");
 		return false;

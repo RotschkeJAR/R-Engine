@@ -22,18 +22,18 @@ namespace RE {
 			RE_ERROR("A fatal error occured before and further attempts to initialize the engine will be dropped");
 		else if (bInitialized)
 			RE_ERROR("The engine is already initialized");
-		else if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_window(), bool)) {
-			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(init_vulkan_instance(), bool)) {
-				if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(init_render_system(), bool)) {
-					if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(init_renderer(), bool)) {
+		else if (create_window()) {
+			if (init_vulkan_instance()) {
+				if (init_render_system()) {
+					if (init_renderer()) {
 						bInitialized = true;
 						return true;
 					}
-					PUSH_TO_CALLSTACKTRACE(destroy_render_system());
+					destroy_render_system();
 				}
-				PUSH_TO_CALLSTACKTRACE(destroy_vulkan_instance());
+				destroy_vulkan_instance();
 			}
-			PUSH_TO_CALLSTACKTRACE(destroy_window());
+			destroy_window();
 		}
 		return false;
 	}
@@ -47,10 +47,10 @@ namespace RE {
 			return;
 		}
 		WAIT_FOR_IDLE_VULKAN_DEVICE();
-		PUSH_TO_CALLSTACKTRACE(destroy_renderer());
-		PUSH_TO_CALLSTACKTRACE(destroy_render_system());
-		PUSH_TO_CALLSTACKTRACE(destroy_vulkan_instance());
-		PUSH_TO_CALLSTACKTRACE(destroy_window());
+		destroy_renderer();
+		destroy_render_system();
+		destroy_vulkan_instance();
+		destroy_window();
 		bInitialized = false;
 	}
 
@@ -69,16 +69,16 @@ namespace RE {
 			return;
 		}
 		std::chrono::high_resolution_clock::time_point currentFrameTime = std::chrono::high_resolution_clock::now(), lastFrameTime;
-		PUSH_TO_CALLSTACKTRACE(show_window(true));
+		show_window(true);
 		bRunning = true;
 
 		// Game loop
 		while (!should_window_close() && are_scenes_present() && !bErrorOccured) {
-			PUSH_TO_CALLSTACKTRACE(window_proc());
-			PUSH_TO_CALLSTACKTRACE(game_logic_update());
+			window_proc();
+			game_logic_update();
 			if (should_render()) {
-				PUSH_TO_CALLSTACKTRACE(refresh_swapchain());
-				PUSH_TO_CALLSTACKTRACE(render());
+				refresh_swapchain();
+				render();
 			}
 
 			lastFrameTime = currentFrameTime;
@@ -94,8 +94,8 @@ namespace RE {
 
 		// Termination
 		bRunning = false;
-		PUSH_TO_CALLSTACKTRACE(show_window(false));
-		PUSH_TO_CALLSTACKTRACE(last_game_logic_update());
+		show_window(false);
+		last_game_logic_update();
 		fDeltaseconds = 0.0f;
 	}
 

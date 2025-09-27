@@ -15,8 +15,8 @@ namespace RE {
 			return true;
 		size_t singleSampledImageCreateIndex = 0;
 		while (singleSampledImageCreateIndex < RE_VK_FRAMES_IN_FLIGHT) {
-			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_vulkan_image(0, VK_IMAGE_TYPE_2D, vk_eSwapchainImageFormat, vk_rSingleSampledImageExtent3D, 1, 1, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, 1, nullptr, VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_ahSingleSampledWorldRenderImages[singleSampledImageCreateIndex], &vk_ahSingleSampledWorldRenderImageMemories[singleSampledImageCreateIndex]), bool)) {
-				if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_vulkan_image_view(vk_ahSingleSampledWorldRenderImages[singleSampledImageCreateIndex], VK_IMAGE_VIEW_TYPE_2D, vk_eSwapchainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1, &vk_ahSingleSampledWorldRenderImageViews[singleSampledImageCreateIndex]), bool)) {
+			if (create_vulkan_image(0, VK_IMAGE_TYPE_2D, vk_eSwapchainImageFormat, vk_rSingleSampledImageExtent3D, 1, 1, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, 1, nullptr, VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_ahSingleSampledWorldRenderImages[singleSampledImageCreateIndex], &vk_ahSingleSampledWorldRenderImageMemories[singleSampledImageCreateIndex])) {
+				if (create_vulkan_image_view(vk_ahSingleSampledWorldRenderImages[singleSampledImageCreateIndex], VK_IMAGE_VIEW_TYPE_2D, vk_eSwapchainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1, &vk_ahSingleSampledWorldRenderImageViews[singleSampledImageCreateIndex])) {
 					singleSampledImageCreateIndex++;
 					continue;
 				}

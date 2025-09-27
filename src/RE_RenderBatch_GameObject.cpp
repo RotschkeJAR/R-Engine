@@ -7,12 +7,12 @@ namespace RE {
 	
 	RenderBatch_GameObject::RenderBatch_GameObject(ListBatch_GameObject &rGameObjectBatch) : rGameObjectBatch(rGameObjectBatch) {
 		if (vk_hDevice)
-			PUSH_TO_CALLSTACKTRACE(init());
+			init();
 	}
 	
 	RenderBatch_GameObject::~RenderBatch_GameObject() {
 		if (vk_hDevice)
-			PUSH_TO_CALLSTACKTRACE(destroy());
+			destroy();
 	}
 	
 	bool RenderBatch_GameObject::init() {

@@ -85,40 +85,40 @@ namespace RE {
 	}
 
 	bool init_render_system() {
-		if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_vulkan_surface(vk_hSurface), bool)) {
-			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(alloc_physical_vulkan_device_list(), bool)) {
-				PUSH_TO_CALLSTACKTRACE(select_best_physical_vulkan_device());
-				PUSH_TO_CALLSTACKTRACE(fetch_vulkan_surface_infos());
-				PUSH_TO_CALLSTACKTRACE(select_best_vulkan_surface_format());
-				PUSH_TO_CALLSTACKTRACE(find_suitable_depth_stencil_formats());
-				if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(init_logical_vulkan_device(), bool)) {
-					if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(setup_logical_device_queues(), bool)) {
-						if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_swapchain(), bool))
+		if (create_vulkan_surface(vk_hSurface)) {
+			if (alloc_physical_vulkan_device_list()) {
+				select_best_physical_vulkan_device();
+				fetch_vulkan_surface_infos();
+				select_best_vulkan_surface_format();
+				find_suitable_depth_stencil_formats();
+				if (init_logical_vulkan_device()) {
+					if (setup_logical_device_queues()) {
+						if (create_swapchain())
 							return true;
-						PUSH_TO_CALLSTACKTRACE(destroy_logical_device_queues());
+						destroy_logical_device_queues();
 					}
-					PUSH_TO_CALLSTACKTRACE(destroy_logical_vulkan_device());
+					destroy_logical_vulkan_device();
 				}
-				PUSH_TO_CALLSTACKTRACE(free_physical_vulkan_device_list());
+				free_physical_vulkan_device_list();
 			}
-			PUSH_TO_CALLSTACKTRACE(destroy_vulkan_surface());
+			destroy_vulkan_surface();
 		}
 		return false;
 	}
 
 	void destroy_render_system() {
 		if (vk_hSwapchain)
-			PUSH_TO_CALLSTACKTRACE(destroy_swapchain());
-		PUSH_TO_CALLSTACKTRACE(destroy_logical_device_queues());
-		PUSH_TO_CALLSTACKTRACE(destroy_logical_vulkan_device());
-		PUSH_TO_CALLSTACKTRACE(free_physical_vulkan_device_list());
-		PUSH_TO_CALLSTACKTRACE(destroy_vulkan_surface());
+			destroy_swapchain();
+		destroy_logical_device_queues();
+		destroy_logical_vulkan_device();
+		free_physical_vulkan_device_list();
+		destroy_vulkan_surface();
 	}
 
 	bool refresh_swapchain() {
 		if (are_bits_true<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_BIT)) {
 			set_bits<uint8_t>(u8RenderSystemFlags, false, SWAPCHAIN_DIRTY_BIT);
-			if (!PUSH_TO_CALLSTACKTRACE_AND_RETURN(recreate_swapchain(), bool))
+			if (!recreate_swapchain())
 				return false;
 		}
 		return true;

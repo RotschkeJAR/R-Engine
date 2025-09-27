@@ -104,13 +104,13 @@ namespace RE {
 				missingFeatures.emplace("The swapchain extension doesn't exist on this GPU");
 
 			// Check if required queues exist
-			PUSH_TO_CALLSTACKTRACE(does_gpu_have_necessary_queues(vk_hPhysicalDevice, missingFeatures));
+			does_gpu_have_necessary_queues(vk_hPhysicalDevice, missingFeatures);
 
 			// Check if textures are supported
-			PUSH_TO_CALLSTACKTRACE(does_gpu_support_textures(vk_hPhysicalDevice, vk_thisPhysicalDeviceProperties.properties.limits, missingFeatures, discrepantFeatures));
+			does_gpu_support_textures(vk_hPhysicalDevice, vk_thisPhysicalDeviceProperties.properties.limits, missingFeatures, discrepantFeatures);
 
 			// Check if depth & stencil buffers are supported
-			PUSH_TO_CALLSTACKTRACE(does_gpu_support_depth_stencil_images(vk_hPhysicalDevice, missingFeatures));
+			does_gpu_support_depth_stencil_images(vk_hPhysicalDevice, missingFeatures);
 		}
 
 		if (!discrepantFeatures.empty()) {
@@ -174,7 +174,7 @@ namespace RE {
 
 	void select_best_physical_vulkan_device() {
 		if (u32PhysicalDevicesAvailableCount == 1)
-			PUSH_TO_CALLSTACKTRACE(select_physical_vulkan_device(vk_pahPhysicalDevicesAvailable[0]));
+			select_physical_vulkan_device(vk_pahPhysicalDevicesAvailable[0]);
 		else {
 			int32_t i32BestDeviceScore = std::numeric_limits<int32_t>::min();
 			VkPhysicalDevice vk_hBestPhysicalDevice;
@@ -196,9 +196,9 @@ namespace RE {
 						i32CurrentDeviceScore -= 2000;
 						break;
 				}
-				i32CurrentDeviceScore += PUSH_TO_CALLSTACKTRACE_AND_RETURN(rate_gpu_queues(vk_pahPhysicalDevicesAvailable[u32PhysicalDeviceAvailableIndex]), int32_t);
-				i32CurrentDeviceScore += PUSH_TO_CALLSTACKTRACE_AND_RETURN(rate_gpu_depth_stencil_image_formats(vk_pahPhysicalDevicesAvailable[u32PhysicalDeviceAvailableIndex], vk_eMsaaAvailable), int32_t);
-				i32CurrentDeviceScore += PUSH_TO_CALLSTACKTRACE_AND_RETURN(rate_gpu_texture_capacity(vk_thisPhysicalDeviceProperties.properties.limits), int32_t);
+				i32CurrentDeviceScore += rate_gpu_queues(vk_pahPhysicalDevicesAvailable[u32PhysicalDeviceAvailableIndex]);
+				i32CurrentDeviceScore += rate_gpu_depth_stencil_image_formats(vk_pahPhysicalDevicesAvailable[u32PhysicalDeviceAvailableIndex], vk_eMsaaAvailable);
+				i32CurrentDeviceScore += rate_gpu_texture_capacity(vk_thisPhysicalDeviceProperties.properties.limits);
 				i32CurrentDeviceScore += std::popcount<VkSampleCountFlags>(vk_eMsaaAvailable & ~VK_SAMPLE_COUNT_1_BIT) * 700;
 				if ((vk_eMsaaAvailable & VK_SAMPLE_COUNT_1_BIT) == 0)
 					i32CurrentDeviceScore -= 2000;
@@ -207,7 +207,7 @@ namespace RE {
 					vk_hBestPhysicalDevice = vk_pahPhysicalDevicesAvailable[u32PhysicalDeviceAvailableIndex];
 				}
 			}
-			PUSH_TO_CALLSTACKTRACE(select_physical_vulkan_device(vk_hBestPhysicalDevice));
+			select_physical_vulkan_device(vk_hBestPhysicalDevice);
 		}
 	}
 
@@ -231,7 +231,7 @@ namespace RE {
 		vkGetPhysicalDeviceMemoryProperties2(vk_hPhysicalDeviceSelected, &vk_physicalDeviceMemoryProperties2);
 		vk_physicalDeviceMemoryProperties = vk_physicalDeviceMemoryProperties2.memoryProperties;
 		vk_eAllowedMsaaSamples = vk_physicalDeviceProperties.limits.framebufferColorSampleCounts & vk_physicalDeviceProperties.limits.framebufferDepthSampleCounts & vk_physicalDeviceProperties.limits.framebufferStencilSampleCounts;
-		PUSH_TO_CALLSTACKTRACE(discard_incompatible_msaa_modes_for_depth_stencil_images(vk_eAllowedMsaaSamples));
+		discard_incompatible_msaa_modes_for_depth_stencil_images(vk_eAllowedMsaaSamples);
 	}
 
 }

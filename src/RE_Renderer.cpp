@@ -49,19 +49,25 @@ namespace RE {
 			return true;
 		size_t renderImageCreateIndex = 0;
 		while (renderImageCreateIndex < RE_VK_FRAMES_IN_FLIGHT) {
-			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_vulkan_image(0, VK_IMAGE_TYPE_2D, vk_eSwapchainImageFormat, vk_rRenderImageExtent3D, 1, 1, vk_eMsaaCount, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, 1, nullptr, VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_ahRenderImages[renderImageCreateIndex], &vk_ahRenderImageMemories[renderImageCreateIndex]), bool)) {
-				if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_vulkan_image_view(vk_ahRenderImages[renderImageCreateIndex], VK_IMAGE_VIEW_TYPE_2D, vk_eSwapchainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1, &vk_ahRenderImageViews[renderImageCreateIndex]), bool)) {
+			PRINT_DEBUG("Creating Vulkan image at index ", renderImageCreateIndex);
+			if (create_vulkan_image(0, VK_IMAGE_TYPE_2D, vk_eSwapchainImageFormat, vk_rRenderImageExtent3D, 1, 1, vk_eMsaaCount, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, 1, nullptr, VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_ahRenderImages[renderImageCreateIndex], &vk_ahRenderImageMemories[renderImageCreateIndex])) {
+				PRINT_DEBUG("Creating Vulkan image view for render image at index ", renderImageCreateIndex);
+				if (create_vulkan_image_view(vk_ahRenderImages[renderImageCreateIndex], VK_IMAGE_VIEW_TYPE_2D, vk_eSwapchainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1, &vk_ahRenderImageViews[renderImageCreateIndex])) {
 					renderImageCreateIndex++;
 					continue;
-				}
+				} else
+					RE_FATAL_ERROR("Failed creating Vulkan image view for render image at index ", renderImageCreateIndex);
+				PRINT_DEBUG("Destroying render image at index ", renderImageCreateIndex, " due to the failure of creating its Vulkan image view");
 				vkFreeMemory(vk_hDevice, vk_ahRenderImageMemories[renderImageCreateIndex], nullptr);
 				vkDestroyImage(vk_hDevice, vk_ahRenderImages[renderImageCreateIndex], nullptr);
-			}
+			} else
+				RE_FATAL_ERROR("Failed creating render image at index ", renderImageCreateIndex);
 			break;
 		}
 		if (renderImageCreateIndex == RE_VK_FRAMES_IN_FLIGHT)
 			return true;
 		for (size_t renderImageDestroyIndex = 0; renderImageDestroyIndex < renderImageCreateIndex; renderImageDestroyIndex++) {
+			PRINT_DEBUG("Destroying render image and its Vulkan image view at index ", renderImageDestroyIndex, " due to the failure of the whole process to create render images and its Vulkan image views");
 			vkDestroyImageView(vk_hDevice, vk_ahRenderImageViews[renderImageDestroyIndex], nullptr);
 			vkFreeMemory(vk_hDevice, vk_ahRenderImageMemories[renderImageDestroyIndex], nullptr);
 			vkDestroyImage(vk_hDevice, vk_ahRenderImages[renderImageDestroyIndex], nullptr);
@@ -73,6 +79,7 @@ namespace RE {
 		if (screenPercentageSettings.eMode == RE_SCREEN_PERCENTAGE_MODE_NORMAL && vk_eMsaaCount == VK_SAMPLE_COUNT_1_BIT)
 			return;
 		for (size_t renderImageDestroyIndex = 0; renderImageDestroyIndex < RE_VK_FRAMES_IN_FLIGHT; renderImageDestroyIndex++) {
+			PRINT_DEBUG("Destroying render image and its Vulkan image view at index ", renderImageDestroyIndex);
 			vkDestroyImageView(vk_hDevice, vk_ahRenderImageViews[renderImageDestroyIndex], nullptr);
 			vkFreeMemory(vk_hDevice, vk_ahRenderImageMemories[renderImageDestroyIndex], nullptr);
 			vkDestroyImage(vk_hDevice, vk_ahRenderImages[renderImageDestroyIndex], nullptr);
@@ -85,10 +92,12 @@ namespace RE {
 
 	bool init_renderer() {
 		constexpr VkQueueFlagBits vk_aeQueuesUsedForRendering[] = {VK_QUEUE_GRAPHICS_BIT, VK_QUEUE_TRANSFER_BIT};
-		if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(renderTasks[0].init(sizeof(vk_aeQueuesUsedForRendering) / sizeof(vk_aeQueuesUsedForRendering[0]), vk_aeQueuesUsedForRendering, false), bool)) {
+		PRINT_DEBUG("Initializing first render task");
+		if (renderTasks[0].init(sizeof(vk_aeQueuesUsedForRendering) / sizeof(vk_aeQueuesUsedForRendering[0]), vk_aeQueuesUsedForRendering, false)) {
 			size_t renderTaskCreateIndex = 1;
 			while (renderTaskCreateIndex < renderTasks.size()) {
-				if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(renderTasks[renderTaskCreateIndex].init(renderTasks[0]), bool)) {
+				PRINT_DEBUG("Initializing render task at index ", renderTaskCreateIndex, " by using the first render task's precomputed data");
+				if (renderTasks[renderTaskCreateIndex].init(renderTasks[0])) {
 					renderTaskCreateIndex++;
 					continue;
 				}
@@ -101,6 +110,7 @@ namespace RE {
 				};
 				size_t fenceCreateIndex = 0;
 				while (fenceCreateIndex < renderFences.size()) {
+					PRINT_DEBUG("Creating Vulkan fence at index ", fenceCreateIndex, " for render tasks");
 					if (vkCreateFence(vk_hDevice, &vk_fenceCreateInfo, nullptr, &renderFences[fenceCreateIndex]) == VK_SUCCESS) {
 						fenceCreateIndex++;
 						continue;
@@ -111,25 +121,25 @@ namespace RE {
 					Vulkan_Buffer stagingRectBuffer;
 					VulkanTask rectBufferCreateTask;
 					Vulkan_Fence stagingRectBufferTransferFence;
-					if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(init_render_elements(stagingRectBuffer, rectBufferCreateTask, stagingRectBufferTransferFence), bool)) {
-						if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_descriptor_sets(), bool)) {
-							if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_renderpass(), bool)) {
+					if (init_render_elements(stagingRectBuffer, rectBufferCreateTask, stagingRectBufferTransferFence)) {
+						if (create_descriptor_sets()) {
+							if (create_renderpass()) {
 								const VkPipelineLayoutCreateInfo vk_worldPipelineLayoutCreateInfo = {
 									.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO
 								};
 								if (vkCreatePipelineLayout(vk_hDevice, &vk_worldPipelineLayoutCreateInfo, nullptr, &vk_hWorldPipelineLayout) == VK_SUCCESS) {
-									if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_render_pipelines(), bool)) {
+									if (create_render_pipelines()) {
 										stagingRectBufferTransferFence.wait_for();
 										return true;
 									}
 									vkDestroyPipelineLayout(vk_hDevice, vk_hWorldPipelineLayout, nullptr);
 								}
-								PUSH_TO_CALLSTACKTRACE(destroy_renderpass());
+								destroy_renderpass();
 							}
-							PUSH_TO_CALLSTACKTRACE(destroy_descriptor_sets());
+							destroy_descriptor_sets();
 						}
 						stagingRectBufferTransferFence.wait_for();
-						PUSH_TO_CALLSTACKTRACE(destroy_render_elements());
+						destroy_render_elements();
 					}
 				} else
 					RE_FATAL_ERROR("Failed to create Vulkan fence at index ", fenceCreateIndex, " to wait on rendering to finish");
@@ -146,11 +156,11 @@ namespace RE {
 	}
 	
 	void destroy_renderer() {
-		PUSH_TO_CALLSTACKTRACE(destroy_render_pipelines());
+		destroy_render_pipelines();
 		vkDestroyPipelineLayout(vk_hDevice, vk_hWorldPipelineLayout, nullptr);
-		PUSH_TO_CALLSTACKTRACE(destroy_renderpass());
-		PUSH_TO_CALLSTACKTRACE(destroy_descriptor_sets());
-		PUSH_TO_CALLSTACKTRACE(destroy_render_elements());
+		destroy_renderpass();
+		destroy_descriptor_sets();
+		destroy_render_elements();
 		for (const VkFence &vk_rhFence : renderFences)
 			vkDestroyFence(vk_hDevice, vk_rhFence, nullptr);
 		for (VulkanTask &rRenderTask : renderTasks)
@@ -180,23 +190,23 @@ namespace RE {
 		}
 		VulkanTask depthImageLayoutTransitionTask;
 		Vulkan_Fence depthStencilImageLayoutTransitionFence;
-		if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_depth_stencil_images(vk_renderImageExtent3D, depthImageLayoutTransitionTask, depthStencilImageLayoutTransitionFence.get_fence()), bool)) {
-			if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_singlesampled_images(vk_renderImageExtent3D), bool)) {
-				if (PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_render_images(vk_renderImageExtent3D), bool)) {
+		if (create_depth_stencil_images(vk_renderImageExtent3D, depthImageLayoutTransitionTask, depthStencilImageLayoutTransitionFence.get_fence())) {
+			if (create_singlesampled_images(vk_renderImageExtent3D)) {
+				if (create_render_images(vk_renderImageExtent3D)) {
 					depthStencilImageLayoutTransitionFence.wait_for();
 					return true;
 				}
-				PUSH_TO_CALLSTACKTRACE(destroy_singlesampled_images());
+				destroy_singlesampled_images();
 			}
 			depthStencilImageLayoutTransitionFence.wait_for();
-			PUSH_TO_CALLSTACKTRACE(destroy_depth_stencil_images());
+			destroy_depth_stencil_images();
 		}
 		return false;
 	}
 
 	void swapchain_destroyed_renderer() {
-		PUSH_TO_CALLSTACKTRACE(destroy_render_images());
-		PUSH_TO_CALLSTACKTRACE(destroy_depth_stencil_images());
+		destroy_render_images();
+		destroy_depth_stencil_images();
 	}
 
 	void attach_camera(const Camera *const pCamera) {

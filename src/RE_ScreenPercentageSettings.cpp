@@ -103,17 +103,17 @@ namespace RE {
 	}
 	
 	void ScreenPercentageSettings::operator =(const ScreenPercentageSettings &rCopy) {
-		PUSH_TO_CALLSTACKTRACE(copy_from(rCopy));
+		copy_from(rCopy);
 	}
 	
 	[[nodiscard]]
 	bool ScreenPercentageSettings::operator ==(const ScreenPercentageSettings &rCompare) const {
-		return PUSH_TO_CALLSTACKTRACE_AND_RETURN(equals(rCompare), bool);
+		return equals(rCompare);
 	}
 	
 	[[nodiscard]]
 	bool ScreenPercentageSettings::operator !=(const ScreenPercentageSettings &rCompare) const {
-		return PUSH_TO_CALLSTACKTRACE_AND_RETURN(!equals(rCompare), bool);
+		return !equals(rCompare);
 	}
 
 }

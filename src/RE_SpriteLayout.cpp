@@ -7,7 +7,7 @@ namespace RE {
 	[[nodiscard]]
 	SpriteLayout create_sprite_layout() {
 		const SpriteLayoutSettings initialSpriteLayoutSettings;
-		return PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_sprite_layout(initialSpriteLayoutSettings), SpriteLayout);
+		return create_sprite_layout(initialSpriteLayoutSettings);
 	}
 
 	[[nodiscard]]
@@ -20,8 +20,8 @@ namespace RE {
 			RE_ERROR("Sprite layouts aren't valid anymore, when the engine doesn't run, so their settings cannot be changed either");
 			return;
 		}
-		PUSH_TO_CALLSTACKTRACE(destroy_sprite_layout(rSpriteLayout));
-		rSpriteLayout = PUSH_TO_CALLSTACKTRACE_AND_RETURN(create_sprite_layout(rNewSettings), SpriteLayout);
+		destroy_sprite_layout(rSpriteLayout);
+		rSpriteLayout = create_sprite_layout(rNewSettings);
 	}
 
 	void destroy_sprite_layout(const SpriteLayout spriteLayout) {

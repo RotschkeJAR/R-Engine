@@ -247,9 +247,8 @@ namespace RE {
 #define PRINT_LN(...) PRINT(STRIP_QUOTE_MACRO(__VA_ARGS__), "\n")
 
 #define PRINT_DEBUG(...) [&](const char *const pacFile, const char *const pacFunc, const uint32_t u32Line) { \
-			char acTimeString[50]; \
-			std::strftime(acTimeString, sizeof(acTimeString) / sizeof(acTimeString[0]), "%j. %b %Y, %H:%M:%S", std::gmtime(nullptr)); \
-			println("[", acTimeString, "] (", pacFile, ", line ", u32Line, "): ", STRIP_QUOTE_MACRO(__VA_ARGS__)); \
+			time_t currentTime = std::time(0); \
+			println("[", std::put_time(std::gmtime(&currentTime), "%d.%b %Y, %H:%M:%S"), "] (", pacFile, ", at line ", u32Line, ", in function \"", pacFunc, "\"): ", STRIP_QUOTE_MACRO(__VA_ARGS__)); \
 		} (__FILE__, __func__, __LINE__)
 	
 	void error(std::string sDetail, bool bTerminate);

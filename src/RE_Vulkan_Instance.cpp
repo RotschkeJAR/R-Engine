@@ -96,11 +96,13 @@ namespace RE {
 	}
 
 	static bool create_vulkan_instance() {
+		PRINT_DEBUG("Loading Vulkan function \"vkEnumerateInstanceVersion\"");
 		pfn_vkEnumerateInstanceVersion = reinterpret_cast<PFN_vkEnumerateInstanceVersion>(load_func_with_instance(VK_NULL_HANDLE, "vkEnumerateInstanceVersion"));
 		if (!pfn_vkEnumerateInstanceVersion) {
 			RE_FATAL_ERROR("Failed to get the Vulkan version on this computer. It either failed loading the function or its version is 1.0. The least version required is ", VK_API_VERSION_MAJOR(RE_VK_API_VERSION), ".", VK_API_VERSION_MINOR(RE_VK_API_VERSION));
 			return false;
 		}
+		PRINT_DEBUG("Querying latest Vulkan version");
 		uint32_t u32VulkanVersion;
 		if (pfn_vkEnumerateInstanceVersion(&u32VulkanVersion) != VK_SUCCESS) {
 			RE_FATAL_ERROR("Failed to get the Vulkan version on this computer");
@@ -112,6 +114,7 @@ namespace RE {
 			return false;
 		}
 
+		PRINT_DEBUG("Loading Vulkan functions \"vkCreateInstance\", \"vkEnumerateInstanceExtensionProperties\", \"vkEnumerateInstanceLayerProperties\"");
 		pfn_vkCreateInstance = reinterpret_cast<PFN_vkCreateInstance>(load_func_with_instance(VK_NULL_HANDLE, "vkCreateInstance"));
 		pfn_vkEnumerateInstanceExtensionProperties = reinterpret_cast<PFN_vkEnumerateInstanceExtensionProperties>(load_func_with_instance(VK_NULL_HANDLE, "vkEnumerateInstanceExtensionProperties"));
 		pfn_vkEnumerateInstanceLayerProperties = reinterpret_cast<PFN_vkEnumerateInstanceLayerProperties>(load_func_with_instance(VK_NULL_HANDLE, "vkEnumerateInstanceLayerProperties"));
@@ -122,10 +125,12 @@ namespace RE {
 
 		bool bFailure = false;
 		
+		PRINT_DEBUG("Querying supported Vulkan instance extensions");
 		uint32_t u32AvailableExtensionsCount = 0;
 		vkEnumerateInstanceExtensionProperties(nullptr, &u32AvailableExtensionsCount, nullptr);
 		std::vector<VkExtensionProperties> availableExtensions(u32AvailableExtensionsCount);
 		vkEnumerateInstanceExtensionProperties(nullptr, &u32AvailableExtensionsCount, availableExtensions.data());
+		PRINT_DEBUG("Checking if all necessary Vulkan instance extensions are supported");
 		constexpr uint32_t u32RequiredVulkanExtensionCount = 3;
 		std::array<const char*, u32RequiredVulkanExtensionCount> apacRequiredExtensions = {{VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_KHR_SURFACE_EXTENSION_NAME, "\0"}};
 		apacRequiredExtensions[u32RequiredVulkanExtensionCount - 1] = get_vulkan_required_surface_extension_name();
@@ -147,10 +152,12 @@ namespace RE {
 			} while (!missingExtensions.empty());
 		}
 
+		PRINT_DEBUG("Querying supported Vulkan instance layers");
 		uint32_t u32AvailableLayersCount = 0;
 		vkEnumerateInstanceLayerProperties(&u32AvailableLayersCount, nullptr);
 		std::vector<VkLayerProperties> availableLayers(u32AvailableLayersCount);
 		vkEnumerateInstanceLayerProperties(&u32AvailableLayersCount, availableLayers.data());
+		PRINT_DEBUG("Checking if all necessary Vulkan instance layers are supported");
 		constexpr uint32_t u32RequiredVulkanLayerCount = 1;
 		const std::array<const char*, u32RequiredVulkanLayerCount> apacRequiredLayers = {{VK_KHR_VALIDATION_LAYER_NAME}};
 		std::array<bool, u32RequiredVulkanLayerCount> abRequiredLayersPresent = {};
@@ -191,6 +198,7 @@ namespace RE {
 			.enabledExtensionCount = u32RequiredVulkanExtensionCount,
 			.ppEnabledExtensionNames = apacRequiredExtensions.data()
 		};
+		PRINT_DEBUG("Creating Vulkan instance");
 		const VkResult vk_eInstanceCreationResult = pfn_vkCreateInstance(&vk_instanceCreateInfo, nullptr, &vk_hInstance);
 		switch (vk_eInstanceCreationResult) {
 			case VK_SUCCESS:
@@ -468,6 +476,7 @@ namespace RE {
 			.pfnUserCallback = debug_callback,
 			.pUserData = nullptr
 		};
+		PRINT_DEBUG("Creating Vulkan debug messenger");
 		if (vkCreateDebugUtilsMessengerEXT(vk_hInstance, &vk_debugCreateInfo, nullptr, &vk_hDebugMessenger) != VK_SUCCESS) {
 			RE_FATAL_ERROR("Failed creating Vulkan debug messenger for validation layers");
 			return false;
@@ -476,6 +485,7 @@ namespace RE {
 	}
 
 	bool init_vulkan_instance() {
+		PRINT_DEBUG("Loading Vulkan's dynamic library");
 #ifdef RE_OS_WINDOWS
 		hLibVulkan = LoadLibraryW(L"vulkan-1.dll");
 #elif defined RE_OS_LINUX
@@ -486,6 +496,7 @@ namespace RE {
 			return false;
 		}
 
+		PRINT_DEBUG("Getting function pointer for \"vkGetInstanceProcAddr\"");
 #ifdef RE_OS_WINDOWS
 		pfn_vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(GetProcAddress(hLibVulkan, "vkGetInstanceProcAddr"));
 #elif defined RE_OS_LINUX
@@ -499,19 +510,29 @@ namespace RE {
 		if (create_vulkan_instance()) {
 			if (load_vulkan_1_0_with_instance() && load_vulkan_1_1_with_instance() && load_vulkan_1_3_with_instance() && load_extension_funcs_with_instance() && setup_validation_layers())
 				return true;
-			unload_all_vulkan_functions_of_instance();
+			PRINT_DEBUG("Destroying Vulkan instance");
 			pfn_vkDestroyInstance(vk_hInstance, nullptr);
 			vk_hInstance = VK_NULL_HANDLE;
+			unload_all_vulkan_functions_of_instance();
 		}
+		PRINT_DEBUG("Unloading Vulkan's dynamic library");
+#ifdef RE_OS_WINDOWS
+		FreeLibrary(hLibVulkan);
+#elif defined RE_OS_LINUX
+		dlclose(hLibVulkan);
+#endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 		return false;
 	}
 	
 	void destroy_vulkan_instance() {
+		PRINT_DEBUG("Destroying Vulkan debug messenger");
 		vkDestroyDebugUtilsMessengerEXT(vk_hInstance, vk_hDebugMessenger, nullptr);
 		vk_hDebugMessenger = VK_NULL_HANDLE;
+		PRINT_DEBUG("Destroying Vulkan instance");
 		pfn_vkDestroyInstance(vk_hInstance, nullptr);
 		vk_hInstance = VK_NULL_HANDLE;
 		unload_all_vulkan_functions_of_instance();
+		PRINT_DEBUG("Unloading Vulkan's dynamic library");
 #ifdef RE_OS_WINDOWS
 		FreeLibrary(hLibVulkan);
 #elif defined RE_OS_LINUX

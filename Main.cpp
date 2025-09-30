@@ -198,7 +198,7 @@ int main_func() {
 }
 
 #ifdef RE_OS_WINDOWS
-int WINAPI wWinMain(HINSTANCE win_hInstance, HINSTANCE win_hPrevInstance, PWSTR pawcCmdLine, int i32CmdShow) {
+int WINAPI wWinMain(const HINSTANCE win_hInstance, const HINSTANCE win_hPrevInstance, const PWSTR pawcCmdLine, const int i32CmdShow) {
 	win64_set_hinstance(win_hInstance);
 	return main_func();
 }

@@ -236,9 +236,8 @@ namespace RE {
 	PFN_vkGetDeviceGroupSurfacePresentModesKHR pfn_vkGetDeviceGroupSurfacePresentModesKHR = nullptr;
 	PFN_vkAcquireNextImage2KHR pfn_vkAcquireNextImage2KHR = nullptr;
 
-	static PFN_vkVoidFunction load_func_with_device(const char* pacFuncName) {
-		PFN_vkVoidFunction pFunc;
-		pFunc = vkGetDeviceProcAddr(vk_hDevice, pacFuncName);
+	static PFN_vkVoidFunction load_func_with_device(const char *const pacFuncName) {
+		const PFN_vkVoidFunction pFunc = vkGetDeviceProcAddr(vk_hDevice, pacFuncName);
 		if (!pFunc)
 			RE_FATAL_ERROR("Failed loading the Vulkan logical device-level function \"", pacFuncName, "\"");
 		return pFunc;
@@ -1162,6 +1161,7 @@ namespace RE {
 		std::vector<VkDeviceQueueCreateInfo> vk_paDeviceQueueCreateInfos;
 		create_queue_create_infos(&fQueuePriority, vk_paDeviceQueueCreateInfos);
 
+		PRINT_DEBUG("Creating logical Vulkan device");
 		VkPhysicalDeviceDynamicRenderingFeatures vk_physicalDeviceFeaturesEnabled_DynamicRendering = {
 			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES,
 			.dynamicRendering = VK_TRUE
@@ -1180,7 +1180,6 @@ namespace RE {
 			.sampleRateShading = vk_physicalDeviceFeatures.sampleRateShading,
 			.samplerAnisotropy = vk_physicalDeviceFeatures.samplerAnisotropy
 		};
-
 		const VkDeviceCreateInfo vk_deviceCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
 			.pNext = &vk_physicalDeviceFeaturesEnabled_TimelineSemaphore,
@@ -1195,7 +1194,8 @@ namespace RE {
 			return false;
 		}
 
-		if (!load_vulkan_1_0_device() && load_vulkan_1_1_device() && load_vulkan_1_2_device() && load_vulkan_1_3_device() /* && load_vulkan_1_4_device() */ && load_extension_funcs_with_device()) {
+		PRINT_DEBUG("Loading Vulkan logical device-level functions");
+		if (!load_vulkan_1_0_device() || !load_vulkan_1_1_device() || !load_vulkan_1_2_device() || !load_vulkan_1_3_device() /* || !load_vulkan_1_4_device() */ || !load_extension_funcs_with_device()) {
 			destroy_logical_vulkan_device();
 			return false;
 		}

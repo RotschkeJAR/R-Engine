@@ -13,22 +13,27 @@ namespace RE {
 		std::queue<std::string> missingFeatures, optionalFeaturesMissing, discrepantFeatures;
 
 		// Fetch general information about the GPU
+		PRINT_DEBUG("Fetching information about physical Vulkan device to check its suitability");
 		VkPhysicalDeviceProperties2 vk_thisPhysicalDeviceProperties;
 		vk_thisPhysicalDeviceProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
 		vk_thisPhysicalDeviceProperties.pNext = nullptr;
 		vkGetPhysicalDeviceProperties2(vk_hPhysicalDevice, &vk_thisPhysicalDeviceProperties);
+		PRINT_DEBUG("Judging physical Vulkan device ", vk_thisPhysicalDeviceProperties.properties.deviceName);
 
 		// Fetch extensions-data about the GPU
+		PRINT_DEBUG("Querying Vulkan extensions supported by physical Vulkan device");
 		uint32_t u32PhysicalDeviceExtensionCount;
 		vkEnumerateDeviceExtensionProperties(vk_hPhysicalDevice, nullptr, &u32PhysicalDeviceExtensionCount, nullptr);
 		std::vector<VkExtensionProperties> vk_paPhysicalDeviceExtensionProperties(u32PhysicalDeviceExtensionCount);
 		vkEnumerateDeviceExtensionProperties(vk_hPhysicalDevice, nullptr, &u32PhysicalDeviceExtensionCount, vk_paPhysicalDeviceExtensionProperties.data());
 
 		// Fetch surface-data about the GPU
+		PRINT_DEBUG("Querying Vulkan surface capabilities supported by physical Vulkan device");
 		VkSurfaceCapabilitiesKHR vk_physicalDeviceSurfaceCapabilities;
 		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk_hPhysicalDevice, vk_hSurface, &vk_physicalDeviceSurfaceCapabilities);
 
 		// Fetch supported GPU features
+		PRINT_DEBUG("Fetching information about supported features on physical Vulkan device");
 		VkPhysicalDeviceDynamicRenderingFeatures vk_physicalDeviceFeaturesAvailable_DynamicRendering;
 		vk_physicalDeviceFeaturesAvailable_DynamicRendering.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES;
 		vk_physicalDeviceFeaturesAvailable_DynamicRendering.pNext = nullptr;
@@ -52,17 +57,20 @@ namespace RE {
 			missingFeatures.push(append_to_string("The physical device should support at least Vulkan ", u32VulkanMajorVersion, ".", u32VulkanMinorVersion, "; it's latest version is ", u32PhysicalDeviceVulkanMajorVersion, ".", u32PhysicalDeviceVulkanMinorVersion));
 		else {
 			// Check if there are surface formats defined
+			PRINT_DEBUG("Fetching count of supported Vulkan surface formats on physical Vulkan device");
 			uint32_t u32PhysicalDeviceSurfaceFormatCount;
 			vkGetPhysicalDeviceSurfaceFormatsKHR(vk_hPhysicalDevice, vk_hSurface, &u32PhysicalDeviceSurfaceFormatCount, nullptr);
 			if (!u32PhysicalDeviceSurfaceFormatCount)
 				missingFeatures.emplace("No surface formats available");
 
+			PRINT_DEBUG("Querying Vulkan surface capabilities on physical Vulkan device");
 			VkSurfaceCapabilitiesKHR vk_surfaceCapabilities;
 			vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk_hPhysicalDevice, vk_hSurface, &vk_surfaceCapabilities);
 			if ((vk_surfaceCapabilities.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR) == 0)
 				missingFeatures.emplace("The presentation engine doesn't support presenting opaque swapchain images for correct output");
 
 			// Check if there are present modes defined
+			PRINT_DEBUG("Querying number of supported surface presentation modes on physical Vulkan device");
 			uint32_t u32PhysicalDevicePresentModeCount;
 			vkGetPhysicalDeviceSurfacePresentModesKHR(vk_hPhysicalDevice, vk_hSurface, &u32PhysicalDevicePresentModeCount, nullptr);
 			if (!u32PhysicalDevicePresentModeCount)
@@ -94,6 +102,7 @@ namespace RE {
 				missingFeatures.emplace("The dynamic rendering-feature should be supported");
 
 			// Check if the required extensions exist
+			PRINT_DEBUG("Checking if necessary Vulkan extensions are supported on physical Vulkan device");
 			bool bSwapchainExtists = false;
 			for (uint32_t u32PhysicalDeviceExtensionIndex = 0; u32PhysicalDeviceExtensionIndex < u32PhysicalDeviceExtensionCount; u32PhysicalDeviceExtensionIndex++)
 				if (are_string_contents_equal(vk_paPhysicalDeviceExtensionProperties[u32PhysicalDeviceExtensionIndex].extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME)) {
@@ -139,6 +148,7 @@ namespace RE {
 	}
 
 	bool alloc_physical_vulkan_device_list() {
+		PRINT_DEBUG("Getting all available physical Vulkan devices");
 		uint32_t u32TotalPhysicalDeviceCount;
 		vkEnumeratePhysicalDevices(vk_hInstance, &u32TotalPhysicalDeviceCount, nullptr);
 		if (!u32TotalPhysicalDeviceCount) {
@@ -157,6 +167,7 @@ namespace RE {
 			RE_FATAL_ERROR("There aren't any physical Vulkan devices supporting the necessary features");
 			return false;
 		}
+		PRINT_DEBUG("Saving all suitable, available physical Vulkan devices");
 		vk_pahPhysicalDevicesAvailable = std::make_unique<VkPhysicalDevice[]>(u32PhysicalDevicesAvailableCount);
 		uint32_t u32CurrentIndex = 0;
 		do {
@@ -176,6 +187,7 @@ namespace RE {
 		if (u32PhysicalDevicesAvailableCount == 1)
 			select_physical_vulkan_device(vk_pahPhysicalDevicesAvailable[0]);
 		else {
+			PRINT_DEBUG("Selecting best physical Vulkan device");
 			int32_t i32BestDeviceScore = std::numeric_limits<int32_t>::min();
 			VkPhysicalDevice vk_hBestPhysicalDevice;
 			VkPhysicalDeviceProperties2 vk_thisPhysicalDeviceProperties;
@@ -201,10 +213,11 @@ namespace RE {
 				i32CurrentDeviceScore += rate_gpu_texture_capacity(vk_thisPhysicalDeviceProperties.properties.limits);
 				i32CurrentDeviceScore += std::popcount<VkSampleCountFlags>(vk_eMsaaAvailable & ~VK_SAMPLE_COUNT_1_BIT) * 700;
 				if ((vk_eMsaaAvailable & VK_SAMPLE_COUNT_1_BIT) == 0)
-					i32CurrentDeviceScore -= 2000;
+					i32CurrentDeviceScore -= 5000;
 				if (i32CurrentDeviceScore > i32BestDeviceScore) {
 					i32BestDeviceScore = i32CurrentDeviceScore;
 					vk_hBestPhysicalDevice = vk_pahPhysicalDevicesAvailable[u32PhysicalDeviceAvailableIndex];
+					PRINT_DEBUG("New best physical Vulkan device ", vk_thisPhysicalDeviceProperties.properties.deviceName, " selected, whose score is ", i32CurrentDeviceScore);
 				}
 			}
 			select_physical_vulkan_device(vk_hBestPhysicalDevice);
@@ -219,6 +232,7 @@ namespace RE {
 		vk_physicalDeviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
 		vk_physicalDeviceProperties2.pNext = nullptr;
 		vkGetPhysicalDeviceProperties2(vk_hPhysicalDeviceSelected, &vk_physicalDeviceProperties2);
+		PRINT_DEBUG("New physical Vulkan device ", vk_physicalDeviceProperties2.properties.deviceName, " selected");
 		vk_physicalDeviceProperties = vk_physicalDeviceProperties2.properties;
 		VkPhysicalDeviceFeatures2 vk_physicalDeviceFeatures2;
 		vk_physicalDeviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;

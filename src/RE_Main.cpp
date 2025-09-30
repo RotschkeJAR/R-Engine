@@ -18,6 +18,7 @@ namespace RE {
 		RE_ERROR("The OS is unknown. The engine can't initialize");
 		return false;
 #endif
+		PRINT_DEBUG("Initializing the engine");
 		if (bErrorOccured)
 			RE_ERROR("A fatal error occured before and further attempts to initialize the engine will be dropped");
 		else if (bInitialized)
@@ -26,6 +27,7 @@ namespace RE {
 			if (init_vulkan_instance()) {
 				if (init_render_system()) {
 					if (init_renderer()) {
+						PRINT_DEBUG("Successfully initialized the engine");
 						bInitialized = true;
 						return true;
 					}
@@ -39,6 +41,7 @@ namespace RE {
 	}
 
 	void destroy_engine() {
+		PRINT_DEBUG("Destroying the engine");
 		if (!bInitialized) {
 			RE_ERROR("The engine is not initialized, so it cannot be destroyed");
 			return;

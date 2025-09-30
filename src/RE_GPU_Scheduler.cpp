@@ -10,17 +10,16 @@ namespace RE {
 
 	constexpr VkQueueFlags vk_aeRecommendedQueueTypes[] = {
 		VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT, // Rendering
-		VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_TRANSFER_BIT, // Image transfer and optional mipmap generation
 		VK_QUEUE_TRANSFER_BIT, // Transfer buffer data or images
 		VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT // General computing
 	};
 	constexpr uint8_t u8RecommendedQueueTypesCount = sizeof(vk_aeRecommendedQueueTypes) / sizeof(VkQueueFlags);
 #define QUEUE_INDEX_RENDERING 0
-#define QUEUE_INDEX_IMAGE_TRANSFER 1
-#define QUEUE_INDEX_TRANSFER 2
-#define QUEUE_INDEX_GENERAL_COMPUTING 3
+#define QUEUE_INDEX_TRANSFER 1
+#define QUEUE_INDEX_GENERAL_COMPUTING 2
 
 	void does_gpu_have_necessary_queues(const VkPhysicalDevice vk_hPhysicalDevice, std::queue<std::string> &rMissingFeatures) {
+		PRINT_DEBUG("Querying information about available queues on physical Vulkan device");
 		uint32_t u32PhysicalDeviceQueueFamilyCount;
 		vkGetPhysicalDeviceQueueFamilyProperties2(vk_hPhysicalDevice, &u32PhysicalDeviceQueueFamilyCount, nullptr);
 		std::vector<VkQueueFamilyProperties2> vk_paPhysicalDeviceQueueFamilyProperties;
@@ -31,6 +30,7 @@ namespace RE {
 		}
 		vkGetPhysicalDeviceQueueFamilyProperties2(vk_hPhysicalDevice, &u32PhysicalDeviceQueueFamilyCount, vk_paPhysicalDeviceQueueFamilyProperties.data());
 
+		PRINT_DEBUG("Checking if all essential queue types are supported by the physical Vulkan device");
 		VkQueueFlags vk_eAllExistingQueues = 0;
 		bool bPresentingSupported = false;
 		for (uint32_t u32QueueIndex = 0; u32QueueIndex < u32PhysicalDeviceQueueFamilyCount; u32QueueIndex++) {
@@ -52,6 +52,7 @@ namespace RE {
 
 	[[nodiscard]]
 	int32_t rate_gpu_queues(const VkPhysicalDevice vk_hPhysicalDevice) {
+		PRINT_DEBUG("Fetching information about available queues on physical Vulkan device");
 		uint32_t u32PhysicalDeviceQueueFamilyCount;
 		vkGetPhysicalDeviceQueueFamilyProperties2(vk_hPhysicalDevice, &u32PhysicalDeviceQueueFamilyCount, nullptr);
 		std::vector<VkQueueFamilyProperties2> vk_paPhysicalDeviceQueueFamilyProperties;
@@ -61,15 +62,17 @@ namespace RE {
 			vk_rQueueFamilyPropertiesStructure.pNext = nullptr;
 		}
 		vkGetPhysicalDeviceQueueFamilyProperties2(vk_hPhysicalDevice, &u32PhysicalDeviceQueueFamilyCount, vk_paPhysicalDeviceQueueFamilyProperties.data());
+		PRINT_DEBUG("Rating queues on physical Vulkan device");
 		int32_t i32Score = 0;
 		for (const VkQueueFamilyProperties2 vk_physicalDeviceQueueFamilyProperties : vk_paPhysicalDeviceQueueFamilyProperties)
 			for (const VkQueueFlags vk_eRecommendedQueueType : vk_aeRecommendedQueueTypes)
 				if ((vk_physicalDeviceQueueFamilyProperties.queueFamilyProperties.queueFlags & vk_eRecommendedQueueType) == vk_eRecommendedQueueType)
-					i32Score += 100 - std::popcount<VkQueueFlags>(vk_physicalDeviceQueueFamilyProperties.queueFamilyProperties.queueFlags ^ vk_eRecommendedQueueType) * 2;
+					i32Score += 100 - std::popcount<VkQueueFlags>(vk_physicalDeviceQueueFamilyProperties.queueFamilyProperties.queueFlags & (~vk_eRecommendedQueueType)) * 2;
 		return i32Score;
 	}
 
 	void create_queue_create_infos(const float *pfPriority, std::vector<VkDeviceQueueCreateInfo> &vk_rpaLogicalQueueCreateInfos) {
+		PRINT_DEBUG("Fetching information about available queues on physical Vulkan device");
 		uint32_t u32QueueFamilyCount;
 		vkGetPhysicalDeviceQueueFamilyProperties2(vk_hPhysicalDeviceSelected, &u32QueueFamilyCount, nullptr);
 		std::vector<VkQueueFamilyProperties2> vk_paQueueFamilyProperties;
@@ -84,6 +87,7 @@ namespace RE {
 		std::vector<uint32_t> selectedQueues;
 		selectedQueues.reserve(u32QueueFamilyCount);
 
+		PRINT_DEBUG("Sorting queue families into types");
 		std::vector<uint32_t> graphicsQueues, presentQueues, computeQueues, transferQueues;
 		graphicsQueues.reserve(u32QueueFamilyCount);
 		presentQueues.reserve(u32QueueFamilyCount);
@@ -104,10 +108,11 @@ namespace RE {
 		const uint8_t u8MaximumIntersections = std::max(graphicsQueues.size(), std::max(presentQueues.size(), std::max(computeQueues.size(), transferQueues.size())));
 
 		{
+			PRINT_DEBUG("Finding best transfer queue");
 			uint32_t u32BestQueue;
 			uint8_t u8MinimalAmountOfSideFeaturesInQueue = std::numeric_limits<uint8_t>::max();
 			for (const uint32_t u32QueueIndex : transferQueues) {
-				const uint8_t u8SideFeaturesCount = std::popcount<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags ^ vk_aeRecommendedQueueTypes[QUEUE_INDEX_TRANSFER]);
+				const uint8_t u8SideFeaturesCount = std::popcount<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags & (~vk_aeRecommendedQueueTypes[QUEUE_INDEX_TRANSFER]));
 				if (u8SideFeaturesCount < u8MinimalAmountOfSideFeaturesInQueue) {
 					u32BestQueue = u32QueueIndex;
 					u8MinimalAmountOfSideFeaturesInQueue = u8SideFeaturesCount;
@@ -116,36 +121,26 @@ namespace RE {
 			selectedQueues.push_back(u32BestQueue);
 		}
 
+		PRINT_DEBUG("Finding intersections to get perfect fitting queues for certain purposes");
 		std::vector<uint32_t> renderQueues;
 		renderQueues.reserve(u8MaximumIntersections);
-		std::set_intersection(graphicsQueues.begin(), graphicsQueues.end(), computeQueues.begin(), computeQueues.end(), std::back_inserter(renderQueues));
-		std::vector<uint32_t> imageTransferQueues;
-		imageTransferQueues.reserve(u8MaximumIntersections);
-		std::set_intersection(graphicsQueues.begin(), graphicsQueues.end(), transferQueues.begin(), transferQueues.end(), std::back_inserter(imageTransferQueues));
+		{
+			std::vector<uint32_t> graphicsComputeQueues;
+			graphicsComputeQueues.reserve(u8MaximumIntersections);
+			std::set_intersection(graphicsQueues.begin(), graphicsQueues.end(), computeQueues.begin(), computeQueues.end(), std::back_inserter(graphicsComputeQueues));
+			std::set_intersection(graphicsComputeQueues.begin(), graphicsComputeQueues.end(), transferQueues.begin(), transferQueues.end(), std::back_inserter(renderQueues));
+		}
 		std::vector<uint32_t> generalComputationQueues;
 		generalComputationQueues.reserve(u8MaximumIntersections);
 		std::set_intersection(computeQueues.begin(), computeQueues.end(), transferQueues.begin(), transferQueues.end(), std::back_inserter(generalComputationQueues));
 
 		if (!renderQueues.empty()) {
+			PRINT_DEBUG("Finding best render queue");
 			abRecommendedQueueTypesExisting[QUEUE_INDEX_RENDERING] = true;
 			uint32_t u32BestQueue;
 			uint8_t u8MinimalAmountOfSideFeaturesInQueue = std::numeric_limits<uint8_t>::max();
 			for (const uint32_t u32QueueIndex : renderQueues) {
-				const uint8_t u8SideFeaturesCount = std::popcount<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags ^ vk_aeRecommendedQueueTypes[QUEUE_INDEX_RENDERING]);
-				if (u8SideFeaturesCount < u8MinimalAmountOfSideFeaturesInQueue) {
-					u8MinimalAmountOfSideFeaturesInQueue = u8SideFeaturesCount;
-					u32BestQueue = u32QueueIndex;
-				}
-			}
-			if (std::find(selectedQueues.begin(), selectedQueues.end(), u32BestQueue) == selectedQueues.end())
-				selectedQueues.push_back(u32BestQueue);
-		}
-		if (!imageTransferQueues.empty()) {
-			abRecommendedQueueTypesExisting[QUEUE_INDEX_IMAGE_TRANSFER] = true;
-			uint32_t u32BestQueue;
-			uint8_t u8MinimalAmountOfSideFeaturesInQueue = std::numeric_limits<uint8_t>::max();
-			for (const uint32_t u32QueueIndex : imageTransferQueues) {
-				const uint8_t u8SideFeaturesCount = std::popcount<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags ^ vk_aeRecommendedQueueTypes[QUEUE_INDEX_IMAGE_TRANSFER]);
+				const uint8_t u8SideFeaturesCount = std::popcount<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags & (~vk_aeRecommendedQueueTypes[QUEUE_INDEX_RENDERING]));
 				if (u8SideFeaturesCount < u8MinimalAmountOfSideFeaturesInQueue) {
 					u8MinimalAmountOfSideFeaturesInQueue = u8SideFeaturesCount;
 					u32BestQueue = u32QueueIndex;
@@ -155,11 +150,12 @@ namespace RE {
 				selectedQueues.push_back(u32BestQueue);
 		}
 		if (!generalComputationQueues.empty()) {
+			PRINT_DEBUG("Finding best computation & transfer queue");
 			abRecommendedQueueTypesExisting[QUEUE_INDEX_GENERAL_COMPUTING] = true;
 			uint32_t u32BestQueue;
 			uint8_t u8MinimalAmountOfSideFeaturesInQueue = std::numeric_limits<uint8_t>::max();
 			for (const uint32_t u32QueueIndex : generalComputationQueues) {
-				const uint8_t u8SideFeaturesCount = std::popcount<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags ^ vk_aeRecommendedQueueTypes[QUEUE_INDEX_GENERAL_COMPUTING]);
+				const uint8_t u8SideFeaturesCount = std::popcount<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags & (~vk_aeRecommendedQueueTypes[QUEUE_INDEX_GENERAL_COMPUTING]));
 				if (u8SideFeaturesCount < u8MinimalAmountOfSideFeaturesInQueue) {
 					u8MinimalAmountOfSideFeaturesInQueue = u8SideFeaturesCount;
 					u32BestQueue = u32QueueIndex;
@@ -174,12 +170,13 @@ namespace RE {
 				continue;
 			switch (u8RecommendedQueueTypesIndex) {
 				case QUEUE_INDEX_RENDERING:
+					PRINT_DEBUG("Searching for queues suitable for rendering");
 					{
 						uint32_t u32BestQueue;
 						uint8_t u8MinimalAmountOfSideFeaturesInQueue = std::numeric_limits<uint8_t>::max();
 						for (const uint32_t u32QueueIndex : graphicsQueues) {
 							uint8_t u8SideFeaturesCount;
-							u8SideFeaturesCount = std::popcount<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags ^ VK_QUEUE_GRAPHICS_BIT);
+							u8SideFeaturesCount = std::popcount<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags & (~VK_QUEUE_GRAPHICS_BIT));
 							if (u8SideFeaturesCount < u8MinimalAmountOfSideFeaturesInQueue) {
 								u8MinimalAmountOfSideFeaturesInQueue = u8SideFeaturesCount;
 								u32BestQueue = u32QueueIndex;
@@ -189,33 +186,7 @@ namespace RE {
 							selectedQueues.push_back(u32BestQueue);
 						for (const uint32_t u32QueueIndex : computeQueues) {
 							uint8_t u8SideFeaturesCount;
-							u8SideFeaturesCount = std::popcount<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags ^ VK_QUEUE_COMPUTE_BIT);
-							if (u8SideFeaturesCount < u8MinimalAmountOfSideFeaturesInQueue) {
-								u8MinimalAmountOfSideFeaturesInQueue = u8SideFeaturesCount;
-								u32BestQueue = u32QueueIndex;
-							}
-						}
-						if (u8MinimalAmountOfSideFeaturesInQueue < std::numeric_limits<uint8_t>::max() && std::find(selectedQueues.begin(), selectedQueues.end(), u32BestQueue) == selectedQueues.end())
-							selectedQueues.push_back(u32BestQueue);
-					}
-					break;
-				case QUEUE_INDEX_IMAGE_TRANSFER:
-					{
-						uint32_t u32BestQueue;
-						uint8_t u8MinimalAmountOfSideFeaturesInQueue = std::numeric_limits<uint8_t>::max();
-						for (const uint32_t u32QueueIndex : graphicsQueues) {
-							uint8_t u8SideFeaturesCount;
-							u8SideFeaturesCount = std::popcount<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags ^ VK_QUEUE_GRAPHICS_BIT);
-							if (u8SideFeaturesCount < u8MinimalAmountOfSideFeaturesInQueue) {
-								u8MinimalAmountOfSideFeaturesInQueue = u8SideFeaturesCount;
-								u32BestQueue = u32QueueIndex;
-							}
-						}
-						if (u8MinimalAmountOfSideFeaturesInQueue < std::numeric_limits<uint8_t>::max() && std::find(selectedQueues.begin(), selectedQueues.end(), u32BestQueue) == selectedQueues.end())
-							selectedQueues.push_back(u32BestQueue);
-						for (const uint32_t u32QueueIndex : computeQueues) {
-							uint8_t u8SideFeaturesCount;
-							u8SideFeaturesCount = std::popcount<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags ^ VK_QUEUE_TRANSFER_BIT);
+							u8SideFeaturesCount = std::popcount<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags & (~VK_QUEUE_COMPUTE_BIT));
 							if (u8SideFeaturesCount < u8MinimalAmountOfSideFeaturesInQueue) {
 								u8MinimalAmountOfSideFeaturesInQueue = u8SideFeaturesCount;
 								u32BestQueue = u32QueueIndex;
@@ -226,12 +197,13 @@ namespace RE {
 					}
 					break;
 				case QUEUE_INDEX_GENERAL_COMPUTING:
+					PRINT_DEBUG("Searching for queues suitable for general computation");
 					{
 						uint32_t u32BestQueue;
 						uint8_t u8MinimalAmountOfSideFeaturesInQueue = std::numeric_limits<uint8_t>::max();
 						for (const uint32_t u32QueueIndex : graphicsQueues) {
 							uint8_t u8SideFeaturesCount;
-							u8SideFeaturesCount = std::popcount<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags ^ VK_QUEUE_COMPUTE_BIT);
+							u8SideFeaturesCount = std::popcount<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags & (~VK_QUEUE_COMPUTE_BIT));
 							if (u8SideFeaturesCount < u8MinimalAmountOfSideFeaturesInQueue) {
 								u8MinimalAmountOfSideFeaturesInQueue = u8SideFeaturesCount;
 								u32BestQueue = u32QueueIndex;
@@ -241,7 +213,7 @@ namespace RE {
 							selectedQueues.push_back(u32BestQueue);
 						for (const uint32_t u32QueueIndex : computeQueues) {
 							uint8_t u8SideFeaturesCount;
-							u8SideFeaturesCount = std::popcount<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags ^ VK_QUEUE_TRANSFER_BIT);
+							u8SideFeaturesCount = std::popcount<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags & (~VK_QUEUE_TRANSFER_BIT));
 							if (u8SideFeaturesCount < u8MinimalAmountOfSideFeaturesInQueue) {
 								u8MinimalAmountOfSideFeaturesInQueue = u8SideFeaturesCount;
 								u32BestQueue = u32QueueIndex;
@@ -254,6 +226,7 @@ namespace RE {
 			}
 		}
 
+		PRINT_DEBUG("Checking for any presentation support amongst the as yet selected queues");
 		bool bPresentQueueAmongstSelectedQueue = false;
 		for (const uint32_t u32SelectedQueueIndex : selectedQueues) {
 			VkBool32 vk_bPresentingSupported;
@@ -287,6 +260,7 @@ namespace RE {
 				selectedQueues.push_back(goodPresentQueues[0]);
 		}
 		
+		PRINT_DEBUG("Generating queue create info-structs");
 		u8LogicalQueueCount = selectedQueues.size();
 		vk_pahQueues = std::make_unique<VkQueue[]>(u8LogicalQueueCount);
 		vk_paeQueueTypes = std::make_unique<VkQueueFlags[]>(u8LogicalQueueCount);
@@ -321,25 +295,32 @@ namespace RE {
 		vk_queueInfoGet.flags = 0;
 		vk_queueInfoGet.queueIndex = 0;
 		for (uint8_t u8LogicalQueueIndex = 0; u8LogicalQueueIndex < u8LogicalQueueCount; u8LogicalQueueIndex++) {
+			PRINT_DEBUG("Getting logical queue at index ", u8LogicalQueueIndex);
 			vk_queueInfoGet.queueFamilyIndex = queueFamilyIndices[u8LogicalQueueIndex];
+			PRINT_LN(static_cast<bool>(vk_pahQueues), ", ", vk_pahQueues[u8LogicalQueueIndex], ", ", pfn_vkGetDeviceQueue2);
 			vkGetDeviceQueue2(vk_hDevice, &vk_queueInfoGet, &vk_pahQueues[u8LogicalQueueIndex]);
 		}
 		VkCommandPoolCreateInfo vk_commandPoolCreateInfo;
 		vk_commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 		vk_commandPoolCreateInfo.pNext = nullptr;
 		for (uint8_t u8LogicalQueueIndex = 0; u8LogicalQueueIndex < u8LogicalQueueCount; u8LogicalQueueIndex++) {
+			const uint8_t u8CommandPoolIndexForQueue = u8LogicalQueueIndex * COMMAND_POOLS_PER_QUEUE;
+			PRINT_DEBUG("Creating command pool at index ", u8CommandPoolIndexForQueue + COMMAND_POOL_OFFSET_NORMAL);
 			vk_commandPoolCreateInfo.queueFamilyIndex = queueFamilyIndices[u8LogicalQueueIndex];
 			vk_commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-			vkCreateCommandPool(vk_hDevice, &vk_commandPoolCreateInfo, nullptr, &vk_pahCommandPools[u8LogicalQueueIndex * COMMAND_POOLS_PER_QUEUE + COMMAND_POOL_OFFSET_NORMAL]);
+			vkCreateCommandPool(vk_hDevice, &vk_commandPoolCreateInfo, nullptr, &vk_pahCommandPools[u8CommandPoolIndexForQueue + COMMAND_POOL_OFFSET_NORMAL]);
+			PRINT_DEBUG("Creating command pool at index ", u8CommandPoolIndexForQueue + COMMAND_POOL_OFFSET_TRANSIENT);
 			vk_commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
-			vkCreateCommandPool(vk_hDevice, &vk_commandPoolCreateInfo, nullptr, &vk_pahCommandPools[u8LogicalQueueIndex * COMMAND_POOLS_PER_QUEUE + COMMAND_POOL_OFFSET_TRANSIENT]);
+			vkCreateCommandPool(vk_hDevice, &vk_commandPoolCreateInfo, nullptr, &vk_pahCommandPools[u8CommandPoolIndexForQueue + COMMAND_POOL_OFFSET_TRANSIENT]);
 		}
 		return true;
 	}
 
 	void destroy_logical_device_queues() {
-		for (uint8_t u8CommandPoolIndex = 0; u8CommandPoolIndex < u8LogicalQueueCount * 2; u8CommandPoolIndex++)
+		for (uint8_t u8CommandPoolIndex = 0; u8CommandPoolIndex < u8LogicalQueueCount * 2; u8CommandPoolIndex++) {
+			PRINT_DEBUG("Destroying command pool at index ", u8CommandPoolIndex);
 			vkDestroyCommandPool(vk_hDevice, vk_pahCommandPools[u8CommandPoolIndex], nullptr);
+		}
 		vk_pahQueues.reset();
 		vk_paeQueueTypes.reset();
 		queueFamilyIndices.reset();

@@ -17,9 +17,8 @@ namespace RE {
 	uint8_t u8ConsoleSettings = (1 << PRINT_COLORS) | (1 << SHOW_MSG_BOX);
 
 	static void print_time() {
-		char acTimeString[50];
-		std::strftime(acTimeString, sizeof(acTimeString) / sizeof(acTimeString[0]), "%j. %b %Y, %H:%M:%S", std::gmtime(nullptr));
-		print("[", acTimeString, "] ");
+		std::time_t currentTime = std::time(0);
+		print("[", std::put_time(std::gmtime(&currentTime), "%d.%b %Y, %H:%M:%S"), "] ");
 	}
 
 	[[nodiscard]]

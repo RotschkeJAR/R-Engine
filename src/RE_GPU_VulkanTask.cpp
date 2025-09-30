@@ -27,11 +27,14 @@ namespace RE {
 					break;
 			}
 		}
-		if (u8LateNextLogicalQueue < u8LogicalQueueCount && std::find(firstUsableQueues.begin(), firstUsableQueues.end(), u8LateNextLogicalQueue) != firstUsableQueues.end())
+		PRINT_DEBUG("Finding and returning next best queue");
+		if (u8LateNextLogicalQueue < u8LogicalQueueCount && std::find(firstUsableQueues.begin(), firstUsableQueues.end(), u8LateNextLogicalQueue) != firstUsableQueues.end()) {
+			PRINT_DEBUG("Selected late next queue ", u8LateNextLogicalQueue);
 			return u8LateNextLogicalQueue;
-		else if (firstUsableQueues.size() == 1)
+		} else if (firstUsableQueues.size() == 1) {
+			PRINT_DEBUG("Only one queue could be selected: ", firstUsableQueues[0]);
 			return firstUsableQueues[0];
-		else {
+		} else {
 			uint8_t u8BestQueue;
 			uint8_t u8MinimalAmountOfSideFeaturesInQueue = std::numeric_limits<uint8_t>::max();
 			for (const uint8_t u8LogicalQueueIndex : firstUsableQueues) {
@@ -41,6 +44,7 @@ namespace RE {
 					u8BestQueue = u8LogicalQueueIndex;
 				}
 			}
+			PRINT_DEBUG("Selected least used queue ", u8BestQueue);
 			return u8BestQueue;
 		}
 	}
@@ -368,7 +372,7 @@ namespace RE {
 				}
 				const uint8_t u8PreviousLogicalQueue = u32FunctionIndex > 0 ? get_logical_queue_index_for_function(u32FunctionIndex - 1) : RE_VK_LOGICAL_QUEUE_IGNORED;
 				uint8_t u8NextLogicalQueue = (u32FunctionsCount > 1 && u32FunctionIndex < (u32FunctionsCount - 1)) ?  get_logical_queue_index_for_function(u32FunctionIndex + 1) : RE_VK_LOGICAL_QUEUE_IGNORED;
-				paFunctions[u32FunctionIndex](commandBuffers[u32CommandBufferIndex], u8PreviousLogicalQueue, get_logical_queue_index_for_function(u32FunctionIndex), u8NextLogicalQueue), append_to_string("Function index ", u32FunctionIndex);
+				paFunctions[u32FunctionIndex](commandBuffers[u32CommandBufferIndex], u8PreviousLogicalQueue, get_logical_queue_index_for_function(u32FunctionIndex), u8NextLogicalQueue);
 			}
 			if (vkEndCommandBuffer(commandBuffers[commandBufferIndicesPerFunction[u32FunctionsCount - 1]]) != VK_SUCCESS)
 				std::abort();

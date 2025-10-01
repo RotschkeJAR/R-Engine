@@ -11,6 +11,7 @@ namespace RE {
 		removableQueues.reserve(firstUsableQueues.size());
 		VkQueueFlags vk_eQueueTypesInUse = 0;
 		for (uint32_t u32QueueTypeIndex = 0; u32QueueTypeIndex < u32QueueTypeCount; u32QueueTypeIndex++) {
+			PRINT_DEBUG("Looking for queue type at index ", u32QueueTypeIndex);
 			for (const uint8_t u8LogicalQueueIndex : firstUsableQueues)
 				if ((vk_paeQueueTypes[u8LogicalQueueIndex] & vk_paeRequiredQueueTypes[u32QueueTypeIndex]) == 0)
 					removableQueues.push_back(u8LogicalQueueIndex);
@@ -18,6 +19,7 @@ namespace RE {
 					vk_eQueueTypesInUse |= vk_paeRequiredQueueTypes[u32QueueTypeIndex];
 			if (!removableQueues.empty()) {
 				if (removableQueues.size() < firstUsableQueues.size()) {
+					PRINT_DEBUG("Removing ", removableQueues.size(), " imperfect queue(s)");
 					for (const uint8_t u8LogicalQueueToRemove : removableQueues)
 						firstUsableQueues.erase(std::find(firstUsableQueues.begin(), firstUsableQueues.end(), u8LogicalQueueToRemove));
 					removableQueues.clear();
@@ -73,6 +75,7 @@ namespace RE {
 	}
 	
 	bool VulkanTask::init(const uint32_t u32FunctionsCount, const VkQueueFlagBits *const vk_paeQueueTypePerFunctionRequiredInOrder, const bool bTransient) {
+		PRINT_DEBUG("Initializing Vulkan task based on queue types required");
 		paFunctions = std::make_unique<std::function<void (VkCommandBuffer, uint8_t, uint8_t, uint8_t)>[]>(u32FunctionsCount);
 		this->u32FunctionsCount = u32FunctionsCount;
 		VkQueueFlags vk_eAllRequiredQueueTypes = 0;
@@ -84,15 +87,17 @@ namespace RE {
 			if ((vk_paeQueueTypes[u8LogicalQueueIndex] & vk_eAllRequiredQueueTypes) == vk_eAllRequiredQueueTypes)
 				indicesOfPerfectQueues.push_back(u8LogicalQueueIndex);
 		if (!indicesOfPerfectQueues.empty()) [[likely]] {
+			PRINT_DEBUG("Finding least used, perfect queue for Vulkan task matching all queue types");
 			uint8_t u8BestQueue;
 			uint8_t u8MinimalAmountOfSideFeaturesInQueue = std::numeric_limits<uint8_t>::max();
 			for (const uint8_t u8LogicalQueueIndex : indicesOfPerfectQueues) {
-				const uint8_t u8SideFeaturesCount = std::popcount<VkQueueFlags>(vk_paeQueueTypes[u8LogicalQueueIndex] ^ vk_eAllRequiredQueueTypes);
+				const uint8_t u8SideFeaturesCount = std::popcount<VkQueueFlags>(vk_paeQueueTypes[u8LogicalQueueIndex] & (~vk_eAllRequiredQueueTypes));
 				if (u8SideFeaturesCount < u8MinimalAmountOfSideFeaturesInQueue) {
 					u8MinimalAmountOfSideFeaturesInQueue = u8SideFeaturesCount;
 					u8BestQueue = u8LogicalQueueIndex;
 				}
 			}
+			PRINT_DEBUG("Allocating single Vulkan command buffer");
 			u32CommandBufferCount = 1;
 			queueIndicesPerCommandBuffer = std::make_shared<uint8_t[]>(u32CommandBufferCount);
 			queueIndicesPerCommandBuffer[0] = u8BestQueue;
@@ -111,12 +116,15 @@ namespace RE {
 		} else [[unlikely]] {
 			std::vector<uint8_t> queuesToUseInOrder;
 			queuesToUseInOrder.reserve(u32FunctionsCount);
-			for (uint32_t u32FunctionIndex = 0; u32FunctionIndex < u32FunctionsCount; u32FunctionIndex++)
+			for (uint32_t u32FunctionIndex = 0; u32FunctionIndex < u32FunctionsCount; u32FunctionIndex++) {
+				PRINT_DEBUG("Checking queue type for function at index ", u32FunctionIndex);
 				if (u32FunctionIndex && (queuesToUseInOrder[u32FunctionIndex - 1] & vk_paeQueueTypePerFunctionRequiredInOrder[u32FunctionIndex]))
 					queuesToUseInOrder.push_back(queuesToUseInOrder[u32FunctionIndex - 1]);
 				else
 					queuesToUseInOrder.push_back(find_next_best_logical_queue(u32FunctionsCount - u32FunctionIndex, &vk_paeQueueTypePerFunctionRequiredInOrder[u32FunctionIndex], u8LogicalQueueCount));
+			}
 
+			PRINT_DEBUG("Saving data for command buffers");
 			uint8_t u8CurrentLogicalQueueIndex = queuesToUseInOrder[0];
 			u32CommandBufferCount = 1;
 			for (uint32_t u32FunctionIndex = 1; u32FunctionIndex < u32FunctionsCount; u32FunctionIndex++)
@@ -142,6 +150,7 @@ namespace RE {
 			const uint8_t u8CommandPoolIndexOffset = bTransient ? COMMAND_POOL_OFFSET_TRANSIENT : COMMAND_POOL_OFFSET_NORMAL;
 			uint32_t u32CommandBufferCreateIndex = 0;
 			while (u32CommandBufferCreateIndex < u32CommandBufferCount) {
+				PRINT_DEBUG("Allocating Vulkan command buffers at index ", u32CommandBufferCreateIndex, " for Vulkan task");
 				commandPoolPerCommandBuffer[u32CommandBufferCreateIndex] = vk_pahCommandPools[queueIndicesPerCommandBuffer[u32CommandBufferCreateIndex] * COMMAND_POOLS_PER_QUEUE + u8CommandPoolIndexOffset];
 				if (!alloc_vulkan_command_buffers(commandPoolPerCommandBuffer[u32CommandBufferCreateIndex], VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1, &commandBuffers[u32CommandBufferCreateIndex]))
 					break;
@@ -149,6 +158,7 @@ namespace RE {
 			}
 			if (u32CommandBufferCreateIndex == u32CommandBufferCount) {
 				if (u32CommandBufferCount > 1) {
+					PRINT_DEBUG("Creating Vulkan timeline semaphores for synchronization in Vulkan task");
 					const VkSemaphoreTypeCreateInfo vk_timelineSemaphoreCreateInfo = {
 						.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO,
 						.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE
@@ -164,6 +174,7 @@ namespace RE {
 				}
 				return true;
 			}
+			PRINT_DEBUG("Deallocating Vulkan command buffers due to failure");
 			for (uint32_t u32CommandBufferDeleteIndex = 0; u32CommandBufferDeleteIndex < u32CommandBufferCreateIndex; u32CommandBufferDeleteIndex++)
 				vkFreeCommandBuffers(vk_hDevice, commandPoolPerCommandBuffer[u32CommandBufferDeleteIndex], 1, &commandBuffers[u32CommandBufferDeleteIndex]);
 			commandBuffers.reset();
@@ -176,6 +187,7 @@ namespace RE {
 	}
 
 	bool VulkanTask::init(const uint32_t u32FunctionsCount, const uint8_t *const pau8LogicalQueueIndexPerFunctionRequiredInOrder, const bool bTransient) {
+		PRINT_DEBUG("Initializing Vulkan task based on logical queue indices");
 		this->u32FunctionsCount = u32FunctionsCount;
 		paFunctions = std::make_unique<std::function<void (VkCommandBuffer, uint8_t, uint8_t, uint8_t)>[]>(u32FunctionsCount);
 		commandBufferIndicesPerFunction = std::make_shared<uint32_t[]>(u32FunctionsCount);

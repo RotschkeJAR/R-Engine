@@ -46,7 +46,7 @@ namespace RE {
 		while (lineBreak != std::string::npos) {
 			lineBreak++;
 			const size_t nextLineBreak = sDetail.find("\n", lineBreak);
-			println("                                     ", sDetail.substr(lineBreak, nextLineBreak));
+			println("                                  ", sDetail.substr(lineBreak, nextLineBreak));
 			lineBreak = nextLineBreak;
 		}
 	}

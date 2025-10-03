@@ -148,6 +148,7 @@ namespace RE {
 			commandPoolPerCommandBuffer = std::make_shared<VkCommandPool[]>(u32CommandBufferCount);
 			commandBuffers = std::make_unique<VkCommandBuffer[]>(u32CommandBufferCount);
 			const uint8_t u8CommandPoolIndexOffset = bTransient ? COMMAND_POOL_OFFSET_TRANSIENT : COMMAND_POOL_OFFSET_NORMAL;
+			PRINT_DEBUG("Allocating ", u32CommandBufferCount, " Vulkan command buffers");
 			uint32_t u32CommandBufferCreateIndex = 0;
 			while (u32CommandBufferCreateIndex < u32CommandBufferCount) {
 				PRINT_DEBUG("Allocating Vulkan command buffers at index ", u32CommandBufferCreateIndex, " for Vulkan task");
@@ -174,9 +175,10 @@ namespace RE {
 				}
 				return true;
 			}
-			PRINT_DEBUG("Deallocating Vulkan command buffers due to failure");
-			for (uint32_t u32CommandBufferDeleteIndex = 0; u32CommandBufferDeleteIndex < u32CommandBufferCreateIndex; u32CommandBufferDeleteIndex++)
+			for (uint32_t u32CommandBufferDeleteIndex = 0; u32CommandBufferDeleteIndex < u32CommandBufferCreateIndex; u32CommandBufferDeleteIndex++) {
+				PRINT_DEBUG("Deallocating Vulkan command buffer at index ", u32CommandBufferDeleteIndex, " due to failure");
 				vkFreeCommandBuffers(vk_hDevice, commandPoolPerCommandBuffer[u32CommandBufferDeleteIndex], 1, &commandBuffers[u32CommandBufferDeleteIndex]);
+			}
 			commandBuffers.reset();
 			commandPoolPerCommandBuffer.reset();
 			queueIndicesPerCommandBuffer.reset();
@@ -201,6 +203,7 @@ namespace RE {
 			}
 			commandBufferIndicesPerFunction[u32FunctionIndex] = u32CommandBufferCount - 1;
 		}
+		PRINT_DEBUG("Preparing Vulkan command buffer allocation");
 		queueIndicesPerCommandBuffer = std::make_shared<uint8_t[]>(u32CommandBufferCount);
 		commandPoolPerCommandBuffer = std::make_shared<VkCommandPool[]>(u32CommandBufferCount);
 		uint32_t u32CommandBufferIndex = 1;
@@ -215,14 +218,17 @@ namespace RE {
 				u32CommandBufferIndex++;
 			}
 		commandBuffers = std::make_unique<VkCommandBuffer[]>(u32CommandBufferCount);
+		PRINT_DEBUG("Allocating ", u32CommandBufferCount, " Vulkan command buffers");
 		uint32_t u32CommandBufferCreateIndex = 0;
 		while (u32CommandBufferCreateIndex < u32CommandBufferCount) {
+			PRINT_DEBUG("Allocating Vulkan command buffer at index ", u32CommandBufferCreateIndex);
 			if (!alloc_vulkan_command_buffers(commandPoolPerCommandBuffer[u32CommandBufferCreateIndex], VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1, &commandBuffers[u32CommandBufferCreateIndex]))
 				break;
 			u32CommandBufferCreateIndex++;
 		}
 		if (u32CommandBufferCreateIndex == u32CommandBufferCount) {
 			if (u32CommandBufferCount > 1) {
+				PRINT_DEBUG("Creating Vulkan timeline semaphore");
 				const VkSemaphoreTypeCreateInfo vk_timelineSemaphoreCreateInfo = {
 					.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO,
 					.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE
@@ -238,8 +244,10 @@ namespace RE {
 			} else
 				return true;
 		}
-		for (uint32_t u32CommandBufferDeleteIndex = 0; u32CommandBufferDeleteIndex < u32CommandBufferCreateIndex; u32CommandBufferDeleteIndex++)
+		for (uint32_t u32CommandBufferDeleteIndex = 0; u32CommandBufferDeleteIndex < u32CommandBufferCreateIndex; u32CommandBufferDeleteIndex++) {
+			PRINT_DEBUG("Deallocating Vulkan command buffer at index ", u32CommandBufferDeleteIndex, " for failure allocating all buffers");
 			vkFreeCommandBuffers(vk_hDevice, commandPoolPerCommandBuffer[u32CommandBufferDeleteIndex], 1, &commandBuffers[u32CommandBufferDeleteIndex]);
+		}
 		commandBuffers.reset();
 		commandPoolPerCommandBuffer.reset();
 		queueIndicesPerCommandBuffer.reset();
@@ -249,6 +257,7 @@ namespace RE {
 	}
 
 	bool VulkanTask::init(const VulkanTask_Queues &rQueues, const bool bTransient) {
+		PRINT_DEBUG("Advanced initialization of Vulkan task");
 		u32FunctionsCount = rQueues.u32FunctionsCount;
 		const uint8_t *const pu8EndOfLogicalQueuesToUse = rQueues.pau8LogicalQueueIndices + u32FunctionsCount;
 		const uint32_t *const pu32EndOfSeparationIds = rQueues.pau32StrictSeparationIds + u32FunctionsCount;
@@ -259,6 +268,7 @@ namespace RE {
 		if (rQueues.pau8LogicalQueueIndices[0] < u8LogicalQueueCount)
 			u8CurrentLogicalQueueIndex = rQueues.pau8LogicalQueueIndices[0];
 		else {
+			PRINT_DEBUG("Finding first least used, suitable queue");
 			const uint32_t u32MaxExtentInFunctions = std::find_if(rQueues.pau32StrictSeparationIds, pu32EndOfSeparationIds, [&](const uint32_t u32SeparationId) { return u32SeparationId > 0; }) - rQueues.pau32StrictSeparationIds;
 			const uint32_t u32IndexToNextKnownLogicalQueue = std::find_if(rQueues.pau8LogicalQueueIndices, pu8EndOfLogicalQueuesToUse, [&](const uint8_t &ru8LogicalQueueIndex) -> bool { return ru8LogicalQueueIndex < u8LogicalQueueCount; }) - rQueues.pau8LogicalQueueIndices;
 			u8CurrentLogicalQueueIndex = find_next_best_logical_queue(u32MaxExtentInFunctions, rQueues.vk_paeQueueTypes, (u32IndexToNextKnownLogicalQueue == u32FunctionsCount) ? u8LogicalQueueCount : rQueues.pau8LogicalQueueIndices[u32IndexToNextKnownLogicalQueue]);
@@ -267,25 +277,30 @@ namespace RE {
 		logicalQueuesInOrder.reserve(u32FunctionsCount);
 		logicalQueuesInOrder.push_back(u8CurrentLogicalQueueIndex);
 		for (uint32_t u32FunctionIndex = 1; u32FunctionIndex < u32FunctionsCount; u32FunctionIndex++) {
+			PRINT_DEBUG("Checking info for function at index ", u32FunctionIndex);
 			if (rQueues.pau8LogicalQueueIndices[u32FunctionIndex] < u8LogicalQueueCount && rQueues.pau8LogicalQueueIndices[u32FunctionIndex] != u8CurrentLogicalQueueIndex) {
 				u8CurrentLogicalQueueIndex = rQueues.pau8LogicalQueueIndices[u32FunctionIndex];
 				logicalQueuesInOrder.push_back(u8CurrentLogicalQueueIndex);
 			} else if ((rQueues.vk_paeQueueTypes[u32FunctionIndex] & vk_paeQueueTypes[u8CurrentLogicalQueueIndex]) == 0) {
+				PRINT_DEBUG("Finding next queue for function");
 				const uint8_t *const pu8BeginOfLogicalQueuesToUse = rQueues.pau8LogicalQueueIndices + u32FunctionIndex;
 				const uint32_t *const pu32BeginOfSeparationIds = rQueues.pau32StrictSeparationIds + u32FunctionIndex;
-				uint32_t u32IndexToNextKnownLogicalQueue = std::find_if(pu8BeginOfLogicalQueuesToUse, pu8EndOfLogicalQueuesToUse, [&](const uint8_t u8LogicalQueueIndex) -> bool { return u8LogicalQueueIndex < u8LogicalQueueCount; }) - pu8BeginOfLogicalQueuesToUse;
+				const uint32_t u32IndexToNextKnownLogicalQueue = std::find_if(pu8BeginOfLogicalQueuesToUse, pu8EndOfLogicalQueuesToUse, [&](const uint8_t u8LogicalQueueIndex) -> bool { return u8LogicalQueueIndex < u8LogicalQueueCount; }) - pu8BeginOfLogicalQueuesToUse;
 				const uint32_t u32MaxExtentInFunctions = std::find_if(pu32BeginOfSeparationIds, pu32EndOfSeparationIds, [&](const uint32_t u32SeparationId) { return u32SeparationId > 0; }) - pu32BeginOfSeparationIds;
 				u8CurrentLogicalQueueIndex = find_next_best_logical_queue(u32MaxExtentInFunctions, &rQueues.vk_paeQueueTypes[u32FunctionIndex], (u32IndexToNextKnownLogicalQueue > u32MaxExtentInFunctions) ? u8LogicalQueueCount : rQueues.pau8LogicalQueueIndices[u32IndexToNextKnownLogicalQueue]);
 				logicalQueuesInOrder.push_back(u8CurrentLogicalQueueIndex);
 			}
 			commandBufferIndicesPerFunction[u32FunctionIndex] = static_cast<uint32_t>(logicalQueuesInOrder.size() - 1);
 		}
+		PRINT_DEBUG("Preparing Vulkan command buffer allocation");
 		u32CommandBufferCount = static_cast<uint32_t>(logicalQueuesInOrder.size());
 		queueIndicesPerCommandBuffer = std::make_shared<uint8_t[]>(u32CommandBufferCount);
 		commandPoolPerCommandBuffer = std::make_shared<VkCommandPool[]>(u32CommandBufferCount);
 		commandBuffers = std::make_unique<VkCommandBuffer[]>(u32CommandBufferCount);
+		PRINT_DEBUG("Allocating ", u32CommandBufferCount, " Vulkan command buffers");
 		uint32_t u32CommandBufferCreateIndex = 0;
 		while (u32CommandBufferCreateIndex < u32CommandBufferCount) {
+			PRINT_DEBUG("Allocating Vulkan command buffer at index ", u32CommandBufferCreateIndex);
 			queueIndicesPerCommandBuffer[u32CommandBufferCreateIndex] = logicalQueuesInOrder[u32CommandBufferCreateIndex];
 			commandPoolPerCommandBuffer[u32CommandBufferCreateIndex] = vk_pahCommandPools[logicalQueuesInOrder[u32CommandBufferCreateIndex] * COMMAND_POOLS_PER_QUEUE + (bTransient ? COMMAND_POOL_OFFSET_TRANSIENT : COMMAND_POOL_OFFSET_NORMAL)];
 			alloc_vulkan_command_buffers(commandPoolPerCommandBuffer[u32CommandBufferCreateIndex], VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1, &commandBuffers[u32CommandBufferCreateIndex]);
@@ -293,6 +308,7 @@ namespace RE {
 		}
 		if (u32CommandBufferCreateIndex == u32CommandBufferCount) {
 			if (u32CommandBufferCount > 1) {
+				PRINT_DEBUG("Creating Vulkan timeline semaphore");
 				const VkSemaphoreTypeCreateInfo vk_timelineSemaphoreCreateInfo = {
 					.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO,
 					.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE
@@ -308,8 +324,10 @@ namespace RE {
 			} else
 				return true;
 		}
-		for (uint32_t u32CommandBufferDeleteIndex = 0; u32CommandBufferDeleteIndex < u32CommandBufferCreateIndex; u32CommandBufferDeleteIndex++)
+		for (uint32_t u32CommandBufferDeleteIndex = 0; u32CommandBufferDeleteIndex < u32CommandBufferCreateIndex; u32CommandBufferDeleteIndex++) {
+			PRINT_DEBUG("Deallocating Vulkan command buffer at index ", u32CommandBufferDeleteIndex);
 			vkFreeCommandBuffers(vk_hDevice, commandPoolPerCommandBuffer[u32CommandBufferDeleteIndex], 1, &commandBuffers[u32CommandBufferDeleteIndex]);
+		}
 		paFunctions.reset();
 		commandBufferIndicesPerFunction.reset();
 		queueIndicesPerCommandBuffer.reset();
@@ -319,6 +337,7 @@ namespace RE {
 	}
 
 	bool VulkanTask::init(const VulkanTask &rCopy) {
+		PRINT_DEBUG("Copying initialized data for Vulkan task ", this, " from ", &rCopy);
 		u32FunctionsCount = rCopy.u32FunctionsCount;
 		u32CommandBufferCount = rCopy.u32CommandBufferCount;
 		queueIndicesPerCommandBuffer = rCopy.queueIndicesPerCommandBuffer;
@@ -326,14 +345,17 @@ namespace RE {
 		commandBufferIndicesPerFunction = rCopy.commandBufferIndicesPerFunction;
 		commandBuffers = std::make_unique<VkCommandBuffer[]>(u32CommandBufferCount);
 		paFunctions = std::make_unique<std::function<void (VkCommandBuffer, uint8_t, uint8_t, uint8_t)>[]>(rCopy.u32FunctionsCount);
+		PRINT_DEBUG("Allocating ", u32CommandBufferCount, " Vulkan command buffers");
 		uint32_t u32CommandBufferCreateIndex = 0;
 		while (u32CommandBufferCreateIndex < u32CommandBufferCount) {
+			PRINT_DEBUG("Allocating Vulkan command buffer at index ", u32CommandBufferCreateIndex);
 			if (!alloc_vulkan_command_buffers(commandPoolPerCommandBuffer[u32CommandBufferCreateIndex], VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1, &commandBuffers[u32CommandBufferCreateIndex]))
 				break;
 			u32CommandBufferCreateIndex++;
 		}
 		if (u32CommandBufferCreateIndex == u32CommandBufferCount) {
 			if (u32CommandBufferCount > 1) {
+				PRINT_DEBUG("Creating Vulkan timeline semaphore");
 				const VkSemaphoreTypeCreateInfo vk_timelineSemaphoreCreateInfo = {
 					.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO,
 					.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE
@@ -349,8 +371,10 @@ namespace RE {
 			} else
 				return true;
 		}
-		for (uint32_t u32CommandBufferDeleteIndex = 0; u32CommandBufferDeleteIndex < u32CommandBufferCreateIndex; u32CommandBufferDeleteIndex++)
+		for (uint32_t u32CommandBufferDeleteIndex = 0; u32CommandBufferDeleteIndex < u32CommandBufferCreateIndex; u32CommandBufferDeleteIndex++) {
+			PRINT_DEBUG("Deallocating Vulkan command buffer at index ", u32CommandBufferDeleteIndex, " due to failure allocating all buffers");
 			vkFreeCommandBuffers(vk_hDevice, commandPoolPerCommandBuffer[u32CommandBufferDeleteIndex], 1, &commandBuffers[u32CommandBufferDeleteIndex]);
+		}
 		commandBuffers.reset();
 		commandPoolPerCommandBuffer.reset();
 		queueIndicesPerCommandBuffer.reset();
@@ -360,10 +384,15 @@ namespace RE {
 	}
 
 	void VulkanTask::destroy() {
-		for (uint32_t u32CommandBufferIndex = 0; u32CommandBufferIndex < u32CommandBufferCount; u32CommandBufferIndex++)
+		PRINT_DEBUG("Destroying Vulkan task");
+		for (uint32_t u32CommandBufferIndex = 0; u32CommandBufferIndex < u32CommandBufferCount; u32CommandBufferIndex++) {
+			PRINT_DEBUG("Deallocating Vulkan command buffer at index ", u32CommandBufferIndex);
 			vkFreeCommandBuffers(vk_hDevice, commandPoolPerCommandBuffer[u32CommandBufferIndex], 1, &commandBuffers[u32CommandBufferIndex]);
-		if (u32CommandBufferCount > 1)
+		}
+		if (u32CommandBufferCount > 1) {
+			PRINT_DEBUG("Destroying Vulkan timeline semaphore");
 			vkDestroySemaphore(vk_hDevice, vk_hInternalSemaphore, nullptr);
+		}
 		queueIndicesPerCommandBuffer.reset();
 		commandPoolPerCommandBuffer.reset();
 		commandBuffers.reset();
@@ -372,20 +401,28 @@ namespace RE {
 	}
 
 	void VulkanTask::record(const VkCommandBufferUsageFlags vk_eUsageFlags) {
+		PRINT_DEBUG("Beginning to record 1st Vulkan command buffer in Vulkan task ", this);
 		uint32_t u32CommandBufferIndex = 0;
 		if (begin_recording_vulkan_command_buffer(commandBuffers[u32CommandBufferIndex], vk_eUsageFlags, nullptr)) {
 			for (uint32_t u32FunctionIndex = 0; u32FunctionIndex < u32FunctionsCount; u32FunctionIndex++) {
 				if (u32CommandBufferIndex != commandBufferIndicesPerFunction[u32FunctionIndex]) {
-					if (u32CommandBufferIndex > 0 && vkEndCommandBuffer(commandBuffers[u32CommandBufferIndex - 1]) != VK_SUCCESS)
-						std::abort();
+					if (u32CommandBufferIndex > 0) {
+						const uint32_t u32IndexToFinishingCommandBuffer = u32CommandBufferIndex - 1;
+						PRINT_DEBUG("Finishing to record Vulkan command buffer at index ", u32IndexToFinishingCommandBuffer);
+						if (vkEndCommandBuffer(commandBuffers[u32IndexToFinishingCommandBuffer]) != VK_SUCCESS)
+							std::abort();
+					}
 					u32CommandBufferIndex = commandBufferIndicesPerFunction[u32FunctionIndex];
+					PRINT_DEBUG("Beginning to record Vulkan command buffer at index ", u32CommandBufferIndex);
 					if (!begin_recording_vulkan_command_buffer(commandBuffers[u32CommandBufferIndex], vk_eUsageFlags, nullptr))
 						std::abort();
 				}
 				const uint8_t u8PreviousLogicalQueue = u32FunctionIndex > 0 ? get_logical_queue_index_for_function(u32FunctionIndex - 1) : RE_VK_LOGICAL_QUEUE_IGNORED;
 				uint8_t u8NextLogicalQueue = (u32FunctionsCount > 1 && u32FunctionIndex < (u32FunctionsCount - 1)) ?  get_logical_queue_index_for_function(u32FunctionIndex + 1) : RE_VK_LOGICAL_QUEUE_IGNORED;
+				PRINT_DEBUG("Calling function at index ", u32FunctionIndex, " to record Vulkan command buffer");
 				paFunctions[u32FunctionIndex](commandBuffers[u32CommandBufferIndex], u8PreviousLogicalQueue, get_logical_queue_index_for_function(u32FunctionIndex), u8NextLogicalQueue);
 			}
+			PRINT_DEBUG("Finishing to record last Vulkan command buffer in Vulkan task ", this);
 			if (vkEndCommandBuffer(commandBuffers[commandBufferIndicesPerFunction[u32FunctionsCount - 1]]) != VK_SUCCESS)
 				std::abort();
 		}

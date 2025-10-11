@@ -103,17 +103,19 @@ namespace RE {
 				return VK_APPS;
 			case RE_INPUT_KEY_WORLD_1:
 				return VK_OEM_102;
-			default: {
-				int64_t u64KeyId = static_cast<int64_t>(eKey);
-				if (u64KeyId >= static_cast<int64_t>(RE_INPUT_KEY_A) && u64KeyId <= static_cast<int64_t>(RE_INPUT_KEY_Z))
-					return VK_A + (u64KeyId - static_cast<int64_t>(RE_INPUT_KEY_A));
-				if (u64KeyId >= static_cast<int64_t>(RE_INPUT_KEY_TOP_0) && u64KeyId <= static_cast<int64_t>(RE_INPUT_KEY_TOP_9))
-					return VK_0 + (u64KeyId - static_cast<int64_t>(RE_INPUT_KEY_TOP_0));
-				if (u64KeyId >= static_cast<int64_t>(RE_INPUT_KEY_F1) && u64KeyId <= static_cast<int64_t>(RE_INPUT_KEY_F25))
-					return VK_F1 + (u64KeyId - static_cast<int64_t>(RE_INPUT_KEY_F1));
-				if (u64KeyId >= static_cast<int64_t>(RE_INPUT_KEY_NUMPAD_0) && u64KeyId <= static_cast<int64_t>(RE_INPUT_KEY_NUMPAD_9))
-					return VK_NUMPAD0 + (u64KeyId - static_cast<int64_t>(RE_INPUT_KEY_NUMPAD_0));
-				} return 0L;
+			default:
+				{
+					int64_t u64KeyId = static_cast<int64_t>(eKey);
+					if (u64KeyId >= static_cast<int64_t>(RE_INPUT_KEY_A) && u64KeyId <= static_cast<int64_t>(RE_INPUT_KEY_Z))
+						return VK_A + (u64KeyId - static_cast<int64_t>(RE_INPUT_KEY_A));
+					if (u64KeyId >= static_cast<int64_t>(RE_INPUT_KEY_TOP_0) && u64KeyId <= static_cast<int64_t>(RE_INPUT_KEY_TOP_9))
+						return VK_0 + (u64KeyId - static_cast<int64_t>(RE_INPUT_KEY_TOP_0));
+					if (u64KeyId >= static_cast<int64_t>(RE_INPUT_KEY_F1) && u64KeyId <= static_cast<int64_t>(RE_INPUT_KEY_F25))
+						return VK_F1 + (u64KeyId - static_cast<int64_t>(RE_INPUT_KEY_F1));
+					if (u64KeyId >= static_cast<int64_t>(RE_INPUT_KEY_NUMPAD_0) && u64KeyId <= static_cast<int64_t>(RE_INPUT_KEY_NUMPAD_9))
+						return VK_NUMPAD0 + (u64KeyId - static_cast<int64_t>(RE_INPUT_KEY_NUMPAD_0));
+				}
+				return 0L;
 		}
 	}
 
@@ -323,17 +325,19 @@ namespace RE {
 				return XK_Menu;
 			case RE_INPUT_KEY_WORLD_1:
 				return XK_less;
-			default: {
-				int64_t u64KeyId = static_cast<int64_t>(eKey);
-				if (u64KeyId >= static_cast<int64_t>(RE_INPUT_KEY_A) && u64KeyId <= static_cast<int64_t>(RE_INPUT_KEY_Z))
-					return XK_a + (u64KeyId - static_cast<int64_t>(RE_INPUT_KEY_A));
-				if (u64KeyId >= static_cast<int64_t>(RE_INPUT_KEY_TOP_0) && u64KeyId <= static_cast<int64_t>(RE_INPUT_KEY_TOP_9))
-					return XK_0 + (u64KeyId - static_cast<int64_t>(RE_INPUT_KEY_TOP_0));
-				if (u64KeyId >= static_cast<int64_t>(RE_INPUT_KEY_F1) && u64KeyId <= static_cast<int64_t>(RE_INPUT_KEY_F25))
-					return XK_F1 + (u64KeyId - static_cast<int64_t>(RE_INPUT_KEY_F1));
-				if (u64KeyId >= static_cast<int64_t>(RE_INPUT_KEY_NUMPAD_0) && u64KeyId <= static_cast<int64_t>(RE_INPUT_KEY_NUMPAD_9))
-					return XK_KP_0 + (u64KeyId - static_cast<int64_t>(RE_INPUT_KEY_NUMPAD_0));
-				} return 0L;
+			default:
+				{
+					int64_t u64KeyId = static_cast<int64_t>(eKey);
+					if (u64KeyId >= static_cast<int64_t>(RE_INPUT_KEY_A) && u64KeyId <= static_cast<int64_t>(RE_INPUT_KEY_Z))
+						return XK_a + (u64KeyId - static_cast<int64_t>(RE_INPUT_KEY_A));
+					if (u64KeyId >= static_cast<int64_t>(RE_INPUT_KEY_TOP_0) && u64KeyId <= static_cast<int64_t>(RE_INPUT_KEY_TOP_9))
+						return XK_0 + (u64KeyId - static_cast<int64_t>(RE_INPUT_KEY_TOP_0));
+					if (u64KeyId >= static_cast<int64_t>(RE_INPUT_KEY_F1) && u64KeyId <= static_cast<int64_t>(RE_INPUT_KEY_F25))
+						return XK_F1 + (u64KeyId - static_cast<int64_t>(RE_INPUT_KEY_F1));
+					if (u64KeyId >= static_cast<int64_t>(RE_INPUT_KEY_NUMPAD_0) && u64KeyId <= static_cast<int64_t>(RE_INPUT_KEY_NUMPAD_9))
+						return XK_KP_0 + (u64KeyId - static_cast<int64_t>(RE_INPUT_KEY_NUMPAD_0));
+				}
+				return 0L;
 		}
 	}
 

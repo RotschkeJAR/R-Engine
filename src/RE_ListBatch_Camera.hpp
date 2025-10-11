@@ -5,7 +5,7 @@
 
 namespace RE {
 
-#define MAX_CAMERAS_PER_BATCH 100
+#define MAX_CAMERAS_PER_BATCH std::numeric_limits<uint8_t>::max()
 	
 	class ListBatch_Camera final {
 		private:

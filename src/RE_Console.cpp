@@ -12,9 +12,8 @@ namespace RE {
 #define PRINT_COLORS 0
 #define TREAT_WARNING_AS_ERROR 1
 #define ERRORS_ALWAYS_FATAL 2
-#define SHOW_MSG_BOX 3
 
-	uint8_t u8ConsoleSettings = (1 << PRINT_COLORS) | (1 << SHOW_MSG_BOX);
+	uint8_t u8ConsoleSettings = 1 << PRINT_COLORS;
 
 	static void print_time() {
 		std::time_t currentTime = std::time(0);
@@ -69,13 +68,6 @@ namespace RE {
 			bErrorOccured = true;
 			println_colored("Terminating...", RE_TERMINAL_COLOR_BRIGHT_BLACK, false, false);
 		}
-		if (are_bits_true<uint8_t>(u8ConsoleSettings, SHOW_MSG_BOX)) {
-#ifdef RE_OS_WINDOWS
-			MessageBoxW(win_hWindow, convert_chars_to_wide(sDetail.c_str()).c_str(), bFatal ? L"Fatal Error" : L"Error", MB_OK | MB_ICONERROR);
-#elif defined RE_OS_LINUX
-			// TODO: Create message box on Linux, when error occurs
-#endif
-		}
 	}
 
 	void warning(const std::string sDetail) {
@@ -120,15 +112,6 @@ namespace RE {
 	[[nodiscard]]
 	bool are_errors_always_made_fatal() {
 		return are_bits_true<uint8_t>(u8ConsoleSettings, ERRORS_ALWAYS_FATAL);
-	}
-
-	void show_message_box_on_error(const bool bEnable) {
-		set_bits<uint8_t>(u8ConsoleSettings, bEnable, SHOW_MSG_BOX);
-	}
-
-	[[nodiscard]]
-	bool is_show_message_box_on_error(const bool bEnable) {
-		return are_bits_true<uint8_t>(u8ConsoleSettings, SHOW_MSG_BOX);
 	}
 
 }

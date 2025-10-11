@@ -2,34 +2,41 @@
 
 namespace RE {
 	
-	ListBatch_Camera::ListBatch_Camera() : u8Count(0U) {}
-	ListBatch_Camera::~ListBatch_Camera() {}
+	ListBatch_Camera::ListBatch_Camera() : u8Count(0) {
+		PRINT_DEBUG_CLASS("Constructing list-batch for cameras");
+	}
+	ListBatch_Camera::~ListBatch_Camera() {
+		PRINT_DEBUG_CLASS("Destructing list-batch for cameras");
+	}
 
 	void ListBatch_Camera::add(Camera *const pCamera) {
+		PRINT_DEBUG_CLASS("Adding camera ", pCamera, " at array index ", u8Count, ". Count increases to ", u8Count + 1);
 		apCameras[u8Count] = pCamera;
 		u8Count++;
 	}
 	
 	bool ListBatch_Camera::remove(const Camera *const pCamera) {
-		for (uint8_t u8Index = 0U; u8Index < u8Count; u8Index++)
+		PRINT_DEBUG_CLASS("Looking for camera ", pCamera);
+		for (uint8_t u8Index = 0; u8Index < u8Count; u8Index++)
 			if (apCameras[u8Index] == pCamera) {
+				PRINT_DEBUG_CLASS("Removing camera from batch at array index ", u8Index, ". Count decreases to ", u8Count - 1);
 				apCameras[u8Index] = apCameras[u8Count - 1U];
 				u8Count--;
 				return true;
 			}
+		PRINT_DEBUG_CLASS("Camera not found here");
 		return false;
 	}
 	
 	[[nodiscard]]
 	bool ListBatch_Camera::contains(const Camera *const pCamera) const {
-		for (uint8_t u8Index = 0U; u8Index < u8Count; u8Index++)
-			if (apCameras[u8Index] == pCamera)
-				return true;
-		return false;
+		const auto endOfSearch = apCameras.begin() + u8Count;
+		return std::find(apCameras.begin(), endOfSearch, pCamera) != endOfSearch;
 	}
 	
 	[[nodiscard]]
 	Camera* ListBatch_Camera::get(const uint8_t u8Index) {
+		PRINT_DEBUG_CLASS("Returning camera at array index ", u8Index, ", when count is ", u8Count);
 		return apCameras[u8Index];
 	}
 
@@ -49,8 +56,10 @@ namespace RE {
 	}
 
 	void ListBatch_Camera::update() {
-		for (uint8_t u8Index = 0U; u8Index < u8Count; u8Index++)
+		for (uint8_t u8Index = 0; u8Index < u8Count; u8Index++) {
+			PRINT_DEBUG_CLASS("Updating camera ", apCameras[u8Index]);
 			apCameras[u8Index]->update();
+		}
 	}
 
 }

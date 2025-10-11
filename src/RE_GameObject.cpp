@@ -9,12 +9,12 @@ namespace RE {
 		newGameObjects.push_back(this);
 	}
 	GameObject::~GameObject() {
-		PRINT_DEBUG("Removing game object ", this, " from list");
+		PRINT_DEBUG_CLASS("Removing game object from list");
 		remove_game_object(this);
 	}
 
 	void GameObject::mark_deletable() {
-		PRINT_DEBUG("Game object ", this, " has been marked deletable");
+		PRINT_DEBUG_CLASS("Game object has been marked deletable");
 		deletableGameObjects.push_back(this);
 	}
 

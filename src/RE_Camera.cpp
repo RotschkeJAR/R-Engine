@@ -17,7 +17,7 @@ namespace RE {
 		newCameras.push_back(this);
 	}
 	Camera::~Camera() {
-		PRINT_DEBUG("Destructing camera ", this);
+		PRINT_DEBUG_CLASS("Destructing camera");
 		deactivate();
 		remove_camera(this);
 	}
@@ -34,7 +34,7 @@ namespace RE {
 	}
 
 	void Camera::mark_deletable() {
-		PRINT_DEBUG("Marking camera ", this, " deletable");
+		PRINT_DEBUG_CLASS("Marking camera deletable");
 		mark_camera_deletable(this);
 	}
 	

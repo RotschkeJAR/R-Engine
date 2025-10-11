@@ -226,6 +226,7 @@ namespace RE {
 
 	template <class... T>
 	void print(const T... content) {
+		const std::ios_base::fmtflags ePreviousSettings = std::cout.setf(std::ios_base::showbase | std::ios_base::boolalpha);
 		([&]() {
 			if constexpr (std::is_same_v<T, int8_t>)
 				std::cout << static_cast<int16_t>(content);
@@ -236,6 +237,7 @@ namespace RE {
 			else
 				std::cout << content;
 		} (), ...);
+		std::cout.flags(ePreviousSettings);
 	}
 	template <class... T>
 	void println(const T... content) {
@@ -250,14 +252,15 @@ namespace RE {
 			time_t currentTime = std::time(0); \
 			println("[", std::put_time(std::gmtime(&currentTime), "%d.%b %Y, %H:%M:%S"), "] (", pacFile, ", at line ", u32Line, ", in function \"", pacFunc, "\"): ", STRIP_QUOTE_MACRO(__VA_ARGS__)); \
 		} (__FILE__, __func__, __LINE__)
+#define PRINT_DEBUG_CLASS(...) PRINT_DEBUG("{", this, "} ", __VA_ARGS__)
 	
 	void error(std::string sDetail, bool bTerminate);
 	void warning(std::string sDetail);
 	void note(std::string sDetail);
-#define FATAL_ERROR(...) error(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__)), true)
-#define ERROR(...) error(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__)), false)
-#define WARNING(...) warning(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__)))
-#define NOTE(...) note(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__)))
+#define FATAL_ERROR(...) error(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), " (in ", __FILE__, ", function \"", __func__, "\", at line ", __LINE__, ")"), true)
+#define ERROR(...) error(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), " (in ", __FILE__, ", function \"", __func__, "\", at line ", __LINE__, ")"), false)
+#define WARNING(...) warning(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), " (in ", __FILE__, ", function \"", __func__, "\", at line ", __LINE__, ")"))
+#define NOTE(...) note(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), " (in ", __FILE__, ", function \"", __func__, "\", at line ", __LINE__, ")"))
 
 #define DELETE_SAFELY(PTR_REF) [&](const char *const pacFile, const char *const pacFunc, const uint32_t u32Line) { \
 			if (!PTR_REF) \
@@ -859,9 +862,6 @@ namespace RE {
 	void make_errors_always_fatal(bool bEnable);
 	[[nodiscard]]
 	bool are_errors_always_made_fatal();
-	void show_message_box_on_error(bool bEnable);
-	[[nodiscard]]
-	bool is_show_message_box_on_error(bool bEnable);
 
 	// Cursor input
 	[[nodiscard]]

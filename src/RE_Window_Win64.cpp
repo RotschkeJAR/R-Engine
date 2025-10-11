@@ -15,6 +15,7 @@ namespace RE {
 	HKL win_keyboardLayout = nullptr;
 
 	static LRESULT CALLBACK win64_window_proc_callback(const HWND win_hWndParam, const UINT win_uMsg, const WPARAM win_wParam, const LPARAM win_lParam) {
+		PRINT_DEBUG("Message ", std::hex, win_uMsg, " received for window ", win_hWndParam, " with wide parameter ", win_wParam, " and long parameter ", win_lParam);
 		if (win_hWindow != win_hWndParam && bRunning)
 			RE_ERROR("Window process function has been called by another window (actual: ", win_hWindow, "; passed to procedure: ", win_hWndParam, ")");
 		else {

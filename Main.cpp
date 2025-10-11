@@ -183,7 +183,6 @@ class First : public Scene {
 
 int main_func() {
 	set_signal_handlers();
-	show_message_box_on_error(false);
 	if (init_engine()) {
 		set_fps_limit(60);
 		First first;

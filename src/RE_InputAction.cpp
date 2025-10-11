@@ -7,8 +7,11 @@ namespace RE {
 	InputAction::InputAction(const Input eInput) : u32KeyScancode(0), eInput(eInput) {}
 	InputAction::InputAction(const uint32_t u32KeyScancode) : u32KeyScancode(u32KeyScancode), eInput(RE_INPUT_UNKNOWN) {}
 	InputAction::~InputAction() {
-		if (is_updating())
+		PRINT_DEBUG_CLASS("Destructing input action");
+		if (is_updating()) {
+			PRINT_DEBUG_CLASS("Removing itself from being updatable for new input");
 			pUpdateInputObject = nullptr;
+		}
 	}
 
 	[[nodiscard]]
@@ -63,30 +66,36 @@ namespace RE {
 
 	[[nodiscard]]
 	bool InputAction::is_pressed() const {
+		PRINT_DEBUG_CLASS("Querying pressed-state for input ", std::hex, eInput, " or scancode ", u32KeyScancode);
 		return RE::is_pressed(eInput, u32KeyScancode);
 	}
 
 	[[nodiscard]]
 	bool InputAction::is_down() const {
+		PRINT_DEBUG_CLASS("Querying present-state for input ", std::hex, eInput, " or scancode ", u32KeyScancode);
 		return RE::is_down(eInput, u32KeyScancode);
 	}
 
 	[[nodiscard]]
 	bool InputAction::was_down() const {
+		PRINT_DEBUG_CLASS("Querying past-state for input ", std::hex, eInput, " or scancode ", u32KeyScancode);
 		return RE::was_down(eInput, u32KeyScancode);
 	}
 
 	[[nodiscard]]
 	bool InputAction::is_released() const {
+		PRINT_DEBUG_CLASS("Querying released-state for input ", std::hex, eInput, " or scancode ", u32KeyScancode);
 		return RE::is_released(eInput, u32KeyScancode);
 	}
 
 	[[nodiscard]]
 	bool InputAction::is_held_down() const {
+		PRINT_DEBUG_CLASS("Querying held-state for input ", std::hex, eInput, " or scancode ", u32KeyScancode);
 		return RE::is_held_down(eInput, u32KeyScancode);
 	}
 
 	void InputAction::reset_input_state() const {
+		PRINT_DEBUG_CLASS("Resetting input state at input ", std::hex, eInput, " or scancode ", u32KeyScancode);
 		reset_input_at(eInput, u32KeyScancode);
 	}
 

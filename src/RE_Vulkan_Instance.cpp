@@ -85,9 +85,10 @@ namespace RE {
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 
 	static PFN_vkVoidFunction load_func_with_instance(const VkInstance vk_hInstance, const char *const pacFuncName) {
-		PFN_vkVoidFunction pFunc = pfn_vkGetInstanceProcAddr(vk_hInstance, pacFuncName);
+		PRINT_DEBUG("Loading Vulkan instance-level function \"", pacFuncName, "\" with instance ", vk_hInstance);
+		const PFN_vkVoidFunction pFunc = pfn_vkGetInstanceProcAddr(vk_hInstance, pacFuncName);
 		if (!pFunc)
-			println_colored(append_to_string("Failed loading the Vulkan instance-level function \"", pacFuncName, "\"").c_str(), RE_TERMINAL_COLOR_RED, false, false);
+			RE_FATAL_ERROR("Failed loading the Vulkan instance-level function \"", pacFuncName, "\" with instance ", vk_hInstance);
 		return pFunc;
 	}
 
@@ -136,13 +137,19 @@ namespace RE {
 		apacRequiredExtensions[u32RequiredVulkanExtensionCount - 1] = get_vulkan_required_surface_extension_name();
 		std::array<bool, u32RequiredVulkanExtensionCount> abExtensionsPresent = {};
 		std::queue<const char*> missingExtensions;
-		for (uint32_t u32ExtensionIndex = 0; u32ExtensionIndex < u32AvailableExtensionsCount; u32ExtensionIndex++)
-			for (uint8_t u8RequiredExtensionIndex = 0; u8RequiredExtensionIndex < u32RequiredVulkanExtensionCount; u8RequiredExtensionIndex++)
+		for (uint32_t u32ExtensionIndex = 0; u32ExtensionIndex < u32AvailableExtensionsCount; u32ExtensionIndex++) {
+			PRINT_DEBUG("Vulkan instance extension at index ", u32ExtensionIndex, ", called \"", availableExtensions[u32ExtensionIndex].extensionName, "\", is supported");
+			for (uint8_t u8RequiredExtensionIndex = 0; u8RequiredExtensionIndex < u32RequiredVulkanExtensionCount; u8RequiredExtensionIndex++) {
+				PRINT_DEBUG("Comparing name to required extension at index ", u8RequiredExtensionIndex, " named \"", apacRequiredExtensions[u8RequiredExtensionIndex], "\"");
 				if (are_string_contents_equal(availableExtensions[u32ExtensionIndex].extensionName, apacRequiredExtensions[u8RequiredExtensionIndex]))
 					abExtensionsPresent[u8RequiredExtensionIndex] = true;
-		for (uint8_t u8RequiredExtensionIndex = 0; u8RequiredExtensionIndex < u32RequiredVulkanExtensionCount; u8RequiredExtensionIndex++)
+			}
+		}
+		for (uint8_t u8RequiredExtensionIndex = 0; u8RequiredExtensionIndex < u32RequiredVulkanExtensionCount; u8RequiredExtensionIndex++) {
+			PRINT_DEBUG("Checking availability of Vulkan instance extension at index ", u8RequiredExtensionIndex, ", called \"", apacRequiredExtensions[u8RequiredExtensionIndex], "\"");
 			if (!abExtensionsPresent[u8RequiredExtensionIndex])
 				missingExtensions.push(apacRequiredExtensions[u8RequiredExtensionIndex]);
+		}
 		if (!missingExtensions.empty()) {
 			bFailure = true;
 			println_colored("\tThe following Vulkan instance extensions are missing on this computer:", RE_TERMINAL_COLOR_RED, false, false);
@@ -162,13 +169,18 @@ namespace RE {
 		const std::array<const char*, u32RequiredVulkanLayerCount> apacRequiredLayers = {{VK_KHR_VALIDATION_LAYER_NAME}};
 		std::array<bool, u32RequiredVulkanLayerCount> abRequiredLayersPresent = {};
 		std::queue<const char*> missingLayers;
-		for (uint32_t u32LayerIndex = 0; u32LayerIndex < u32AvailableLayersCount; u32LayerIndex++)
-			for (uint8_t u8RequiredLayerIndex = 0; u8RequiredLayerIndex < u32RequiredVulkanLayerCount; u8RequiredLayerIndex++)
+		for (uint32_t u32LayerIndex = 0; u32LayerIndex < u32AvailableLayersCount; u32LayerIndex++) {
+			PRINT_DEBUG("Vulkan instance layer at index ", u32LayerIndex, ", called \"", availableLayers[u32LayerIndex], "\", is supported");
+			for (uint8_t u8RequiredLayerIndex = 0; u8RequiredLayerIndex < u32RequiredVulkanLayerCount; u8RequiredLayerIndex++) {
+				PRINT_DEBUG("Comparing name to required layer at index ", u8RequiredLayerIndex, " named \"", apacRequiredLayers[u8RequiredLayerIndex], "\"");
 				if (are_string_contents_equal(availableLayers[u32LayerIndex].layerName, apacRequiredLayers[u8RequiredLayerIndex]))
 					abRequiredLayersPresent[u8RequiredLayerIndex] = true;
-		for (uint8_t u8RequiredLayerIndex = 0; u8RequiredLayerIndex < u32RequiredVulkanLayerCount; u8RequiredLayerIndex++)
+			}
+		}
+		for (uint8_t u8RequiredLayerIndex = 0; u8RequiredLayerIndex < u32RequiredVulkanLayerCount; u8RequiredLayerIndex++) {
 			if (!abRequiredLayersPresent[u8RequiredLayerIndex])
 				missingLayers.push(apacRequiredLayers[u8RequiredLayerIndex]);
+		}
 		if (!missingLayers.empty()) {
 			bFailure = true;
 			println_colored("\tThe following Vulkan instance layers are missing on this computer:", RE_TERMINAL_COLOR_RED, false, false);
@@ -178,10 +190,12 @@ namespace RE {
 			} while (!missingLayers.empty());
 		}
 
-		if (bFailure)
+		if (bFailure) {
+			PRINT_DEBUG("Not all Vulkan instance extensions and/or layers are supported");
 			return false;
+		}
 
-		const std::string sAppName = get_app_name();
+		const std::u8string sAppName = get_app_name();
 		const VkApplicationInfo vk_appInfo = {
 			.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
 			.pApplicationName = sAppName.c_str(),
@@ -213,6 +227,7 @@ namespace RE {
 	}
 
 	static bool load_vulkan_1_0_with_instance() {
+		PRINT_DEBUG("Loading all instance-level Vulkan 1.0-functions");
 		// Skipped initialization of "pfn_vkCreateInstance", because it's already loaded
 		pfn_vkDestroyInstance = reinterpret_cast<PFN_vkDestroyInstance>(load_func("vkDestroyInstance"));
 		if (!pfn_vkDestroyInstance)
@@ -263,6 +278,7 @@ namespace RE {
 	}
 
 	static bool load_vulkan_1_1_with_instance() {
+		PRINT_DEBUG("Loading all instance-level Vulkan 1.1-functions");
 		// Skipped initialization of "pfn_vkEnumerateInstanceVersion", because it's already loaded
 		pfn_vkEnumeratePhysicalDeviceGroups = reinterpret_cast<PFN_vkEnumeratePhysicalDeviceGroups>(load_func("vkEnumeratePhysicalDeviceGroups"));
 		if (!pfn_vkEnumeratePhysicalDeviceGroups)
@@ -301,6 +317,7 @@ namespace RE {
 	}
 
 	static bool load_vulkan_1_3_with_instance() {
+		PRINT_DEBUG("Loading all instance-level Vulkan 1.3-functions");
 		pfn_vkGetPhysicalDeviceToolProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceToolProperties>(load_func("vkGetPhysicalDeviceToolProperties"));
 		if (!pfn_vkGetPhysicalDeviceToolProperties)
 			return false;
@@ -308,6 +325,7 @@ namespace RE {
 	}
 
 	static bool load_extension_funcs_with_instance() {
+		PRINT_DEBUG("Loading all instance-level extension-functions");
 		pfn_vkSetDebugUtilsObjectNameEXT = reinterpret_cast<PFN_vkSetDebugUtilsObjectNameEXT>(load_func("vkSetDebugUtilsObjectNameEXT"));
 		if (!pfn_vkSetDebugUtilsObjectNameEXT)
 			return false;
@@ -351,6 +369,7 @@ namespace RE {
 #elif defined RE_OS_LINUX
 		switch (eLinuxWindowType) {
 			case LinuxWindowType::X11:
+				PRINT_DEBUG("Loading X11-related Vulkan functions");
 				pfn_vkCreateXlibSurfaceKHR = reinterpret_cast<PFN_vkCreateXlibSurfaceKHR>(load_func("vkCreateXlibSurfaceKHR"));
 				if (!pfn_vkCreateXlibSurfaceKHR)
 					return false;
@@ -359,6 +378,7 @@ namespace RE {
 					return false;
 				break;
 			case LinuxWindowType::Wayland:
+				PRINT_DEBUG("Loading Wayland-related Vulkan functions");
 				pfn_vkCreateWaylandSurfaceKHR = reinterpret_cast<PFN_vkCreateWaylandSurfaceKHR>(load_func("vkCreateWaylandSurfaceKHR"));
 				if (!pfn_vkCreateWaylandSurfaceKHR)
 					return false;
@@ -375,6 +395,7 @@ namespace RE {
 
 	// Avoids dangling pointers and corruption (don't remove!)
 	static void unload_all_vulkan_functions_of_instance() {
+		PRINT_DEBUG("Resetting all instance-level function pointers to Vulkan");
 		// Vulkan 1.0
 		pfn_vkCreateInstance = nullptr;
 		pfn_vkDestroyInstance = nullptr;
@@ -441,6 +462,7 @@ namespace RE {
 	}
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(const VkDebugUtilsMessageSeverityFlagBitsEXT vk_eSeverityFlagBits, const VkDebugUtilsMessageTypeFlagsEXT vk_eMsgTypeBits, const VkDebugUtilsMessengerCallbackDataEXT *const vk_pCallbackData, void *const vk_pUserData) {
+		PRINT_DEBUG("Vulkan called debug message-callback");
 		TerminalColor eConsoleColor = RE_TERMINAL_COLOR_WHITE;
 		switch (vk_eSeverityFlagBits) {
 			case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
@@ -469,7 +491,7 @@ namespace RE {
 	}
 
 	static bool setup_validation_layers() {
-		VkDebugUtilsMessengerCreateInfoEXT vk_debugCreateInfo = {
+		constexpr VkDebugUtilsMessengerCreateInfoEXT vk_debugCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
 			.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
 			.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT,

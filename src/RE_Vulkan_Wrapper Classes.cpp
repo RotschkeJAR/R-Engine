@@ -7,21 +7,24 @@ namespace RE {
 	Vulkan_Buffer::Vulkan_Buffer() : vk_hBuffer(VK_NULL_HANDLE), vk_hMemory(VK_NULL_HANDLE) {}
 	
 	Vulkan_Buffer::Vulkan_Buffer(const VkDeviceSize vk_size, const VkBufferUsageFlags vk_eUsages, const uint32_t u32QueueFamilyCount, const uint32_t *const pu32QueueFamilies, const VkMemoryPropertyFlags vk_eMemoryPropertyFlags) : vk_hBuffer(VK_NULL_HANDLE), vk_hMemory(VK_NULL_HANDLE) {
+		PRINT_DEBUG_CLASS("Constructing Vulkan buffer wrapper");
 		init(vk_size, vk_eUsages, u32QueueFamilyCount, pu32QueueFamilies, vk_eMemoryPropertyFlags);
 	}
 	
 	Vulkan_Buffer::~Vulkan_Buffer() {
+		PRINT_DEBUG_CLASS("Destructing Vulkan buffer wrapper");
 		if (!is_valid())
 			return;
-		vkFreeMemory(vk_hDevice, vk_hMemory, nullptr);
-		vkDestroyBuffer(vk_hDevice, vk_hBuffer, nullptr);
+		destroy();
 	}
 
 	bool Vulkan_Buffer::init(const VkDeviceSize vk_size, const VkBufferUsageFlags vk_eUsages, const uint32_t u32QueueFamilyCount, const uint32_t *const pu32QueueFamilies, const VkMemoryPropertyFlags vk_eMemoryPropertyFlags) {
+		PRINT_DEBUG_CLASS("Initializing Vulkan buffer wrapper");
 		return create_vulkan_buffer(vk_size, vk_eUsages, u32QueueFamilyCount, pu32QueueFamilies, vk_eMemoryPropertyFlags, &vk_hBuffer, &vk_hMemory);
 	}
 
 	void Vulkan_Buffer::destroy() {
+		PRINT_DEBUG_CLASS("Destroying Vulkan buffer wrapper ", vk_hBuffer, " and its memory ", vk_hMemory);
 		vkFreeMemory(vk_hDevice, vk_hMemory, nullptr);
 		vkDestroyBuffer(vk_hDevice, vk_hBuffer, nullptr);
 		vk_hMemory = VK_NULL_HANDLE;
@@ -29,10 +32,12 @@ namespace RE {
 	}
 
 	bool Vulkan_Buffer::map_memory(const VkDeviceSize vk_offset, const VkDeviceSize vk_size, void **ppData) const {
+		PRINT_DEBUG_CLASS("Mapping Vulkan buffer wrapper's memory ", vk_hMemory, " beginning at byte ", vk_offset, " and sized ", vk_size);
 		return vkMapMemory(vk_hDevice, vk_hMemory, vk_offset, vk_size, 0, ppData) == VK_SUCCESS;
 	}
 
 	void Vulkan_Buffer::unmap_memory() const {
+		PRINT_DEBUG_CLASS("Unmapping Vulkan buffer wrapper's memory ", vk_hMemory);
 		vkUnmapMemory(vk_hDevice, vk_hMemory);
 	}
 
@@ -74,6 +79,7 @@ namespace RE {
 
 	
 	Vulkan_CommandBuffer::Vulkan_CommandBuffer(const VkCommandPool vk_hCommandPool, const VkCommandBufferLevel vk_eCommandBufferLevel) : vk_hCommandBuffer(VK_NULL_HANDLE), vk_hCommandPool(vk_hCommandPool) {
+		PRINT_DEBUG_CLASS("Constructing Vulkan command buffer wrapper");
 		/*const VkCommandBufferAllocateInfo vk_commandBufferAllocInfo = {
 			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
 			.commandPool = vk_hCommandPool,
@@ -85,12 +91,15 @@ namespace RE {
 	}
 	
 	Vulkan_CommandBuffer::~Vulkan_CommandBuffer() {
-		if(!is_valid())
+		PRINT_DEBUG_CLASS("Destructing Vulkan command buffer wrapper");
+		if (!is_valid())
 			return;
+		PRINT_DEBUG_CLASS("Destroying Vulkan command buffer wrapper ", vk_hCommandBuffer);
 		//vkFreeCommandBuffers(vk_hDevice, vk_hCommandPool, 1U, &vk_hCommandBuffer);
 	}
 
 	bool Vulkan_CommandBuffer::begin_recording(const VkCommandBufferUsageFlags vk_eUsageFlags, const VkCommandBufferInheritanceInfo *const vk_pInheritanceInfo) const {
+		PRINT_DEBUG_CLASS("Beginning to record Vulkan command buffer wrapper ", vk_hCommandBuffer);
 		/*const VkCommandBufferBeginInfo vk_beginRecordInfo = {
 			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
 			.flags = vk_eUsageFlags,
@@ -104,6 +113,7 @@ namespace RE {
 	}
 
 	bool Vulkan_CommandBuffer::end_recording() const {
+		PRINT_DEBUG_CLASS("Finishing to record Vulkan buffer wrapper ", vk_hCommandBuffer);
 		/*const bool bSuccess = vkEndCommandBuffer(vk_hCommandBuffer) == VK_SUCCESS;
 		if (!bSuccess)
 			RE_ERROR("Failed to finish recording command buffer ", vk_hCommandBuffer);
@@ -140,6 +150,7 @@ namespace RE {
 	
 	Vulkan_Fence::Vulkan_Fence() : Vulkan_Fence(0) {}
 	Vulkan_Fence::Vulkan_Fence(const VkFenceCreateFlags vk_eCreateFlags) : vk_hFence(VK_NULL_HANDLE) {
+		PRINT_DEBUG_CLASS("Constructing Vulkan fence wrapper");
 		const VkFenceCreateInfo vk_createInfo = {
 			.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
 			.flags = vk_eCreateFlags
@@ -149,16 +160,20 @@ namespace RE {
 	}
 	
 	Vulkan_Fence::~Vulkan_Fence() {
+		PRINT_DEBUG_CLASS("Destructing Vulkan fence wrapper");
 		if (!is_valid())
 			return;
+		PRINT_DEBUG_CLASS("Destroying Vulkan fence wrapper ", vk_hFence);
 		vkDestroyFence(vk_hDevice, vk_hFence, nullptr);
 	}
 
 	bool Vulkan_Fence::wait_for() const {
+		PRINT_DEBUG_CLASS("Waiting for Vulkan fence wrapper ", vk_hFence);
 		return vkWaitForFences(vk_hDevice, 1, &vk_hFence, VK_TRUE, std::numeric_limits<uint64_t>::max());
 	}
 
 	void Vulkan_Fence::reset() const {
+		PRINT_DEBUG_CLASS("Reseting Vulkan fence wrapper ", vk_hFence);
 		vkResetFences(vk_hDevice, 1, &vk_hFence);
 	}
 
@@ -192,6 +207,7 @@ namespace RE {
 	Vulkan_TimelineSemaphore::Vulkan_TimelineSemaphore() : Vulkan_TimelineSemaphore(0) {}
 
 	Vulkan_TimelineSemaphore::Vulkan_TimelineSemaphore(const uint64_t u64InitialValue) : vk_hTimelineSemaphore(VK_NULL_HANDLE) {
+		PRINT_DEBUG_CLASS("Constructing Vulkan timeline semaphore wrapper");
 		const VkSemaphoreTypeCreateInfo vk_timelineSemaphoreCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO,
 			.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE,
@@ -206,12 +222,15 @@ namespace RE {
 	}
 
 	Vulkan_TimelineSemaphore::~Vulkan_TimelineSemaphore() {
+		PRINT_DEBUG_CLASS("Destructing Vulkan timeline semaphore wrapper");
 		if (!is_valid())
 			return;
+		PRINT_DEBUG_CLASS("Destroying Vulkan timeline semaphore wrapper ", vk_hTimelineSemaphore);
 		vkDestroySemaphore(vk_hDevice, vk_hTimelineSemaphore, nullptr);
 	}
 
 	bool Vulkan_TimelineSemaphore::wait_for_reaching(const uint64_t u64Value) const {
+		PRINT_DEBUG_CLASS("Waiting for Vulkan timeline semaphore wrapper ", vk_hTimelineSemaphore, " reaching value ", u64Value);
 		const VkSemaphoreWaitInfo vk_waitSemaphoreInfo = {
 			.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO,
 			.semaphoreCount = 1,
@@ -222,6 +241,7 @@ namespace RE {
 	}
 	
 	void Vulkan_TimelineSemaphore::set_to(const uint64_t u64Value) const {
+		PRINT_DEBUG_CLASS("Signaling Vulkan timeline semaphore wrapper ", vk_hTimelineSemaphore, " to value ", u64Value);
 		const VkSemaphoreSignalInfo vk_signalSemaphoreInfo = {
 			.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO,
 			.semaphore = vk_hTimelineSemaphore,

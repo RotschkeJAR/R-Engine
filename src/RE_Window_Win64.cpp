@@ -22,8 +22,8 @@ namespace RE {
 			switch (win_uMsg) {
 				case WM_SIZE: /* resized */
 					{
-						RECT win_contentRect;
 						PRINT_DEBUG("Obtaining extent of the window content area on Windows");
+						RECT win_contentRect;
 						GetClientRect(win_hWndParam, &win_contentRect);
 						set_bits<uint8_t>(u8WindowFlagBits, win_wParam == SIZE_MINIMIZED, WINDOW_MINIMIZED_BIT);
 						set_bits<uint8_t>(u8WindowFlagBits, win_wParam == SIZE_MAXIMIZED, WINDOW_MAXIMIZED_BIT);
@@ -31,6 +31,7 @@ namespace RE {
 							PRINT_DEBUG("Posting custom window message to notify maximization");
 							PostMessageW(win_hWndParam, RE_WM_MAXIMIZED, (WPARAM) 0, (LPARAM) 0);
 						}
+						PRINT_DEBUG("Firing general window resize event");
 						window_resize_event(static_cast<uint32_t>(win_contentRect.right - win_contentRect.left), static_cast<uint32_t>(win_contentRect.bottom - win_contentRect.top));
 					}
 					return 0;
@@ -43,12 +44,12 @@ namespace RE {
 					return 0;
 				case WM_GETMINMAXINFO:
 					{
+						PRINT_DEBUG("Querying information about primary monitor to calculate minimum and maximum allowed extent of the window");
 						MINMAXINFO *win_pWindowSizeLimits = (MINMAXINFO*) win_lParam;
 						win_pWindowSizeLimits->ptMinTrackSize.x = MIN_WINDOW_WIDTH;
 						win_pWindowSizeLimits->ptMinTrackSize.y = MIN_WINDOW_HEIGHT;
 						MONITORINFO win_monitorInfo;
 						win_monitorInfo.cbSize = sizeof(MONITORINFO);
-						PRINT_DEBUG("Querying information about primary monitor to calculate minimum and maximum allowed extent of the window");
 						if (GetMonitorInfoW(MonitorFromWindow(win_hWndParam, MONITOR_DEFAULTTOPRIMARY), &win_monitorInfo) == TRUE) {
 							const Vector2i monitorSize(win_monitorInfo.rcWork.right - win_monitorInfo.rcWork.left, win_monitorInfo.rcWork.bottom - win_monitorInfo.rcWork.top);
 							if (!are_bits_true<uint8_t>(u8WindowFlagBits, WINDOW_MAXIMIZED_BIT)) {
@@ -91,6 +92,7 @@ namespace RE {
 							default:
 								break;
 						}
+						PRINT_DEBUG("Firing general input event");
 						input_event(key_from_virtual_keycode(static_cast<int64_t>(win_virtualKeyCode)), static_cast<uint32_t>(win_extScancode), (win_keyFlags & KF_UP) != KF_UP, bFallbackToInput);
 					}
 					return 0;
@@ -100,31 +102,38 @@ namespace RE {
 					}
 					return 0;
 				case WM_LBUTTONDOWN: /* left mouse button pressed */
+					PRINT_DEBUG("Firing general input event for LMB-pressed");
 					input_event(RE_INPUT_BUTTON_LEFT, 0, true, false);
 					SetCapture(win_hWndParam);
 					return 0;
 				case WM_LBUTTONUP: /* left mouse button released */
+					PRINT_DEBUG("Firing general input event for LMB-released");
 					input_event(RE_INPUT_BUTTON_LEFT, 0, false, false);
 					ReleaseCapture();
 					return 0;
 				case WM_RBUTTONDOWN: /* right mouse button pressed */
+					PRINT_DEBUG("Firing general input event for RMB-pressed");
 					input_event(RE_INPUT_BUTTON_RIGHT, 0, true, false);
 					SetCapture(win_hWndParam);
 					return 0;
 				case WM_RBUTTONUP: /* right mouse button released */
+					PRINT_DEBUG("Firing general input event for RMB-released");
 					input_event(RE_INPUT_BUTTON_RIGHT, 0, false, false);
 					ReleaseCapture();
 					return 0;
 				case WM_MBUTTONDOWN: /* middle mouse button pressed */
+					PRINT_DEBUG("Firing general input event for MMB-pressed");
 					input_event(RE_INPUT_BUTTON_MIDDLE, 0, true, false);
 					SetCapture(win_hWndParam);
 					return 0;
 				case WM_MBUTTONUP: /* middle mouse button released */
+					PRINT_DEBUG("Firing general input event for MMB-released");
 					input_event(RE_INPUT_BUTTON_MIDDLE, 0, false, false);
 					ReleaseCapture();
 					return 0;
 				case WM_MOUSEMOVE: /* mouse moved */
 					{
+						PRINT_DEBUG("Firing general input event for mouse movement");
 						const int32_t i32XPos = GET_X_LPARAM(win_lParam);
 						const int32_t i32YPos = GET_Y_LPARAM(win_lParam);
 						cursor_event(i32XPos, i32YPos);
@@ -139,6 +148,7 @@ namespace RE {
 					break;
 				case WM_MOUSEWHEEL: /* mouse wheel used/scrolled */
 					{
+						PRINT_DEBUG("Firing general input event for scrolling");
 						const int32_t deltaMouseWheel = GET_WHEEL_DELTA_WPARAM(win_wParam);
 						if (deltaMouseWheel > 0)
 							input_event(RE_INPUT_SCROLL_UP, 0, true, false);
@@ -148,15 +158,15 @@ namespace RE {
 					return 0;
 				case RE_WM_MAXIMIZED:
 					{
+						PRINT_DEBUG("Querying information about the monitor the window is currently displayed on");
 						MONITORINFO win_monitorInfo;
 						win_monitorInfo.cbSize = sizeof(MONITORINFO);
-						PRINT_DEBUG("Querying information about the monitor the window is currently displayed on");
 						if (GetMonitorInfoW(MonitorFromWindow(win_hWndParam, MONITOR_DEFAULTTOPRIMARY), &win_monitorInfo) == FALSE) {
 							RE_FATAL_ERROR("Failed getting monitor info, where the window is currently on, on Windows");
 							return 1;
 						}
-						const Vector2i monitorSize(std::abs(win_monitorInfo.rcWork.right - win_monitorInfo.rcWork.left), std::abs(win_monitorInfo.rcWork.bottom - win_monitorInfo.rcWork.top));
 						PRINT_DEBUG("Triggering Windows to resend window message querying minimum and maximum allowed extent of the window");
+						const Vector2i monitorSize(std::abs(win_monitorInfo.rcWork.right - win_monitorInfo.rcWork.left), std::abs(win_monitorInfo.rcWork.bottom - win_monitorInfo.rcWork.top));
 						SetWindowPos(win_hWndParam, nullptr, 0, 0, monitorSize[0], monitorSize[1], SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOZORDER);
 					}
 					return 0;
@@ -183,41 +193,42 @@ namespace RE {
 		}
 		PRINT_DEBUG("Converting title name to wide character string");
 		const std::wstring wideTitleStr = convert_chars_to_wide(pacWindowTitle);
-		WNDCLASSEXW win_WinClass = {};
-		win_WinClass.cbSize = sizeof(WNDCLASSEXW);
-		win_WinClass.lpfnWndProc = win64_window_proc_callback;
-		win_WinClass.hInstance = win_hInstance;
-		win_WinClass.lpszClassName = WINDOW_CLASS_NAME;
 		PRINT_DEBUG("Registering window class in Windows");
+		const WNDCLASSEXW win_WinClass = {
+			.cbSize = sizeof(WNDCLASSEXW),
+			.lpfnWndProc = win64_window_proc_callback,
+			.hInstance = win_hInstance,
+			.lpszClassName = WINDOW_CLASS_NAME
+		};
 		if (RegisterClassExW(&win_WinClass)) {
+			PRINT_DEBUG("Obtaining information about primary monitor");
 			const POINT win_pointZero = {};
 			MONITORINFO win_primaryMonitorInfo;
 			win_primaryMonitorInfo.cbSize = sizeof(MONITORINFO);
-			PRINT_DEBUG("Obtaining information about primary monitor");
 			const bool bMonitorInfoRetrieved = GetMonitorInfoW(MonitorFromPoint(win_pointZero, MONITOR_DEFAULTTOPRIMARY), &win_primaryMonitorInfo) == TRUE;
 			if (bMonitorInfoRetrieved) {
 				const Vector<LONG, 2> monitorWorkSize = {
 					std::clamp<LONG>(std::abs(win_primaryMonitorInfo.rcWork.right - win_primaryMonitorInfo.rcWork.left), MIN_MONITOR_WIDTH_FOR_CALCULATION, MAX_MONITOR_WIDTH_FOR_CALCULATION),
 					std::clamp<LONG>(std::abs(win_primaryMonitorInfo.rcWork.bottom - win_primaryMonitorInfo.rcWork.top), MIN_MONITOR_HEIGHT_FOR_CALCULATION, MAX_MONITOR_HEIGHT_FOR_CALCULATION)
 				};
+				PRINT_DEBUG("Adjusting window extent to Windows' conventions");
 				RECT win_adjustableSize = {
 					.left = 0,
 					.top = 0,
 					.right = monitorWorkSize[0] / 4 * 3,
 					.bottom = monitorWorkSize[1] / 4 * 3
 				};
-				PRINT_DEBUG("Adjusting window extent to Windows' conventions");
 				AdjustWindowRect(&win_adjustableSize, WINDOW_STYLE_FLAGS, FALSE);
+				PRINT_DEBUG("Creating window on Windows centered on the primary monitor");
 				windowSize[0] = win_adjustableSize.right - win_adjustableSize.left;
 				windowSize[1] = win_adjustableSize.bottom - win_adjustableSize.top;
-				PRINT_DEBUG("Creating window on Windows centered on the primary monitor");
 				win_hWindow = CreateWindowExW(0, WINDOW_CLASS_NAME, wideTitleStr.c_str(), WINDOW_STYLE_FLAGS, (monitorWorkSize[0] - windowSize[0]) / 2, (monitorWorkSize[1] - windowSize[1]) / 2, windowSize[0], windowSize[1], nullptr, nullptr, win_hInstance, nullptr);
 			} else {
 				PRINT_DEBUG("Creating window on Windows with default extent and position");
 				win_hWindow = CreateWindowExW(0, WINDOW_CLASS_NAME, wideTitleStr.c_str(), WINDOW_STYLE_FLAGS, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, nullptr, nullptr, win_hInstance, nullptr);
 				if (win_hWindow) {
-					RECT win_windowRect;
 					PRINT_DEBUG("Obtaining window's extent");
+					RECT win_windowRect;
 					if (GetWindowRect(win_hWindow, &win_windowRect) == TRUE) {
 						windowSize[0] = std::abs(win_windowRect.right - win_windowRect.left);
 						windowSize[1] = std::abs(win_windowRect.bottom - win_windowRect.top);
@@ -230,6 +241,7 @@ namespace RE {
 				}
 			}
 			if (win_hWindow) {
+				PRINT_DEBUG("Telling Windows this process' DPI awareness");
 				if (SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_UNAWARE) == TRUE)
 					return true;
 				else

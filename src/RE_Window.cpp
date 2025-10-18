@@ -15,6 +15,7 @@ namespace RE {
 	uint8_t u8WindowFlagBits;
 
 	bool create_window() {
+		PRINT_DEBUG("Creating window");
 		u8WindowFlagBits = 1 << WINDOW_WAYLAND_SHOULD_RENDER_FRAME_BIT;
 		bool bSuccess;
 #ifdef RE_OS_WINDOWS
@@ -35,6 +36,7 @@ namespace RE {
 	}
 
 	void destroy_window() {
+		PRINT_DEBUG("Destroying window");
 #ifdef RE_OS_WINDOWS
 		win64_destroy_window();
 #elif defined RE_OS_LINUX
@@ -51,6 +53,7 @@ namespace RE {
 	}
 
 	void window_resize_event(const uint32_t u32NewWidth, const uint32_t u32NewHeight) {
+		PRINT_DEBUG("Updating window dimensions after resize");
 		windowSize[0] = u32NewWidth;
 		windowSize[1] = u32NewHeight;
 		mark_swapchain_dirty();
@@ -59,6 +62,7 @@ namespace RE {
 	void show_window(const bool bShowWindow) {
 		if (are_bits_true<uint8_t>(u8WindowFlagBits, WINDOW_VISIBLE_BIT) == bShowWindow)
 			return;
+		PRINT_DEBUG("Showing/Hiding window");
 		set_bits<uint8_t>(u8WindowFlagBits, bShowWindow, WINDOW_VISIBLE_BIT);
 #ifdef RE_OS_WINDOWS
 		win64_show_window();
@@ -75,6 +79,7 @@ namespace RE {
 	}
 
 	void window_proc() {
+		PRINT_DEBUG("General window procedure called");
 		update_input_buffers();
 #ifdef RE_OS_WINDOWS
 		win64_window_proc();
@@ -91,6 +96,7 @@ namespace RE {
 	}
 
 	void post_rendering_window_proc() {
+		PRINT_DEBUG("General window procedure after rendering called");
 #ifdef RE_OS_LINUX
 		if (eLinuxWindowType == Wayland)
 			wayland_post_rendering_window_proc();
@@ -109,6 +115,7 @@ namespace RE {
 
 	bool create_vulkan_surface(VkSurfaceKHR &vk_rhSurface) {
 #ifdef RE_OS_WINDOWS
+		PRINT_DEBUG("Creating Vulkan surface linked to Windows");
 		const VkWin32SurfaceCreateInfoKHR vk_win32SurfaceCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR,
 			.hinstance = win_hInstance,
@@ -119,6 +126,7 @@ namespace RE {
 		switch (eLinuxWindowType) {
 			case X11:
 				{
+					PRINT_DEBUG("Creating Vulkan surface linked to X11");
 					const VkXlibSurfaceCreateInfoKHR vk_x11SurfaceCreateInfo = {
 						.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR,
 						.dpy = x11_pDisplay,
@@ -128,6 +136,7 @@ namespace RE {
 				}
 			case Wayland:
 				{
+					PRINT_DEBUG("Creating Vulkan surface linked to Wayland");
 					const VkWaylandSurfaceCreateInfoKHR vk_waylandSurfaceCreateInfo = {
 						.sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR,
 						.display = wl_pDisplay,
@@ -160,6 +169,7 @@ namespace RE {
 	void set_window_title(const char *const pacNewTitle) {
 		if (are_string_contents_equal(pacWindowTitle, pacNewTitle))
 			return;
+		PRINT_DEBUG("Updating window title");
 		pacWindowTitle = pacNewTitle;
 		if (!are_bits_true<uint8_t>(u8WindowFlagBits, WINDOW_CREATED_BIT))
 			return;

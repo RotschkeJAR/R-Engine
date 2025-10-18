@@ -6,12 +6,14 @@ namespace RE {
 	
 	[[nodiscard]]
 	SpriteLayout create_sprite_layout() {
+		PRINT_DEBUG("Creating sprite layout with default settings");
 		const SpriteLayoutSettings initialSpriteLayoutSettings;
 		return create_sprite_layout(initialSpriteLayoutSettings);
 	}
 
 	[[nodiscard]]
 	SpriteLayout create_sprite_layout(const SpriteLayoutSettings &rSettings) {
+		PRINT_DEBUG("Creating sprite layout");
 		return nullptr;
 	}
 
@@ -20,6 +22,7 @@ namespace RE {
 			RE_ERROR("Sprite layouts aren't valid anymore, when the engine doesn't run, so their settings cannot be changed either");
 			return;
 		}
+		PRINT_DEBUG("Recreating sprite layout at ", &rSpriteLayout, " to apply new settings");
 		destroy_sprite_layout(rSpriteLayout);
 		rSpriteLayout = create_sprite_layout(rNewSettings);
 	}
@@ -31,6 +34,7 @@ namespace RE {
 			RE_ERROR("Sprite layouts aren't valid anymore, when the engine doesn't run, so they cannot be destroyed either");
 			return;
 		}
+		PRINT_DEBUG("Destroying sprite layout");
 	}
 
 }

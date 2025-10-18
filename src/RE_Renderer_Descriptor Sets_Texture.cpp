@@ -7,6 +7,7 @@ namespace RE {
 	std::array<VulkanTask, 1> textureCreationTasks;
 	
 	bool does_gpu_support_textures(const VkPhysicalDevice vk_hPhysicalDevice, const VkPhysicalDeviceLimits &vk_rPhysicalDeviceLimits, std::queue<std::string> &rMissingFeatures, std::queue<std::string> &rDiscrepantFeatures) {
+		PRINT_DEBUG("Checking if physical Vulkan device ", vk_hPhysicalDevice, " supports textures");
 		constexpr VkFormatFeatureFlags vk_eRequiredTextureFormatFeatures = VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
 		VkFormatProperties2 vk_textureFormatFeatures;
 		vk_textureFormatFeatures.sType = VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2;
@@ -33,9 +34,11 @@ namespace RE {
 		for (const VkFormat vk_eTextureFormat : vk_aeTextureFormats) {
 			if ((vk_eTextureFormat == VK_FORMAT_B8G8R8A8_SRGB && a4bTextureFormatsSupported[0]) || (vk_eTextureFormat == VK_FORMAT_B8G8R8_SRGB && a4bTextureFormatsSupported[1]))
 				continue;
+			PRINT_DEBUG("Querying properties for Vulkan texture format ", std::hex, vk_eTextureFormat);
 			vkGetPhysicalDeviceFormatProperties2(vk_hPhysicalDevice, vk_eTextureFormat, &vk_textureFormatFeatures);
 			if ((vk_textureFormatFeatures.formatProperties.optimalTilingFeatures & vk_eRequiredTextureFormatFeatures) == vk_eRequiredTextureFormatFeatures) {
 				vk_imageFormat.format = vk_eTextureFormat;
+				PRINT_DEBUG("Querying properties of Vulkan images with the format");
 				switch (vkGetPhysicalDeviceImageFormatProperties2(vk_hPhysicalDevice, &vk_imageFormat, &vk_imageFormatProperties)) {
 					case VK_SUCCESS:
 						switch (vk_eTextureFormat) {
@@ -59,6 +62,7 @@ namespace RE {
 						}
 						break;
 					case VK_ERROR_FORMAT_NOT_SUPPORTED:
+						PRINT_DEBUG("Vulkan format is not supported for images by the GPU");
 						break;
 					default:
 						return false;
@@ -82,10 +86,13 @@ namespace RE {
 	}
 
 	int32_t rate_gpu_texture_capacity(const VkPhysicalDeviceLimits &vk_rPhysicalDeviceLimits) {
-		return (static_cast<int32_t>(std::clamp<uint32_t>(std::min(vk_rPhysicalDeviceLimits.maxPerStageDescriptorSamplers, vk_rPhysicalDeviceLimits.maxPerStageDescriptorSampledImages), 16, RE_VK_MAX_SAMPLED_IMAGES) - 16) * 1500 / RE_VK_MAX_SAMPLED_IMAGES - 499) + (static_cast<int32_t>(std::clamp<uint32_t>(vk_rPhysicalDeviceLimits.maxImageDimension2D, 0, 8192)) * 1500 / 8192 - 499);
+		const int32_t i32Score =  (static_cast<int32_t>(std::clamp<uint32_t>(std::min(vk_rPhysicalDeviceLimits.maxPerStageDescriptorSamplers, vk_rPhysicalDeviceLimits.maxPerStageDescriptorSampledImages), 16, RE_VK_MAX_SAMPLED_IMAGES) - 16) * 1500 / RE_VK_MAX_SAMPLED_IMAGES - 499) + (static_cast<int32_t>(std::clamp<uint32_t>(vk_rPhysicalDeviceLimits.maxImageDimension2D, 0, 8192)) * 1500 / 8192 - 499);
+		PRINT_DEBUG("Rated GPU's texture capacity with score ", i32Score);
+		return i32Score;
 	}
 
 	bool create_texture_descriptor_sets() {
+		PRINT_DEBUG("Initializing first task for creating textures and transferring them to GPU");
 		const uint8_t au8LogicalQueueIndices[] = {
 			u8LogicalQueueCount,
 			get_render_graphics_queue_logical_index()
@@ -104,19 +111,23 @@ namespace RE {
 		if (textureCreationTasks[0].init(textureCreationQueues, false)) {
 			uint16_t u16TextureCreationTaskInitIndex = 1;
 			while (u16TextureCreationTaskInitIndex < textureCreationTasks.size()) {
+				PRINT_DEBUG("Initializing next task at ", u16TextureCreationTaskInitIndex);
 				if (!textureCreationTasks[u16TextureCreationTaskInitIndex].init(textureCreationTasks[0]))
 					break;
 				u16TextureCreationTaskInitIndex++;
 			}
 			if (u16TextureCreationTaskInitIndex == textureCreationTasks.size())
 				return true;
-			for (uint16_t u16TextureCreationTaskDestroyIndex = 0; u16TextureCreationTaskDestroyIndex < u16TextureCreationTaskInitIndex; u16TextureCreationTaskDestroyIndex++)
+			for (uint16_t u16TextureCreationTaskDestroyIndex = 0; u16TextureCreationTaskDestroyIndex < u16TextureCreationTaskInitIndex; u16TextureCreationTaskDestroyIndex++) {
+				PRINT_DEBUG("Destroying task at index ", u16TextureCreationTaskInitIndex);
 				textureCreationTasks[u16TextureCreationTaskDestroyIndex].destroy();
+			}
 		}
 		return false;
 	}
 
 	void destroy_texture_descriptor_sets() {
+		PRINT_DEBUG("Destroying all tasks for loading textures");
 		for (VulkanTask &rTask : textureCreationTasks)
 			rTask.destroy();
 	}

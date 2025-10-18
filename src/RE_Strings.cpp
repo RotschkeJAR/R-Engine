@@ -3,12 +3,12 @@
 namespace RE {
 
 	[[nodiscard]]
-	bool is_string_empty(const char *const pacString) {
-		return !pacString || pacString[0] == '\0';
+	bool is_string_empty(const char8_t *const pacString) {
+		return !pacString || pacString[0] == u8'\0';
 	}
 
 	[[nodiscard]]
-	size_t get_string_length_safely(const char *const pacString) {
+	size_t get_string_length_safely(const char8_t *const pacString) {
 		return pacString ? std::strlen(pacString) : 0;
 	}
 
@@ -18,27 +18,29 @@ namespace RE {
 	}
 
 	[[nodiscard]]
-	bool are_string_contents_equal(const char *const pacString1, const char *const pacString2) {
-		return pacString1 && pacString2 && std::strcmp(pacString1, pacString2) == 0;
+	bool are_string_contents_equal(const char8_t *const pacString1, const char8_t *const pacString2) {
+		return pacString1 && pacString2 && std::u8string_view(pacString1) == std::u8string_view(pacString2);
 	}
 
 	[[nodiscard]]
-	size_t get_line_count(const char *const pacString) {
+	size_t get_line_count(const char8_t *const pacString) {
+		PRINT_DEBUG("Counting lines in C-style string");
 		size_t lineCount = 1;
 		const size_t stringLength = get_string_length_safely(pacString);
 		for (size_t characterIndex = 0; characterIndex < stringLength; characterIndex++)
-			if (pacString[characterIndex] == '\n')
+			if (pacString[characterIndex] == u8'\n')
 				lineCount++;
 		return lineCount;
 	}
 
 	[[nodiscard]]
-	std::string get_line(const char *const pacString, const size_t lineIndex) {
-		std::stringstream ss("");
+	std::u8string get_line(const char8_t *const pacString, const size_t lineIndex) {
+		PRINT_DEBUG("Trying to read line ", lineIndex, " from C-style string");
+		std::basic_stringstream<char8_t> ss;
 		size_t currentLineIndex = 0;
 		const size_t stringLength = get_string_length_safely(pacString);
-		for (size_t currentCharIndex = 0; currentCharIndex < stringLength; currentCharIndex++)
-			if (pacString[currentCharIndex] == '\n')
+		for (size_t currentCharIndex = 0; currentCharIndex < stringLength && currentLineIndex <= lineIndex; currentCharIndex++)
+			if (pacString[currentCharIndex] == u8'\n')
 				currentLineIndex++;
 			else if (currentLineIndex == lineIndex)
 				ss << pacString[currentCharIndex];
@@ -46,28 +48,25 @@ namespace RE {
 	}
 	
 	[[nodiscard]]
-	std::string convert_wide_chars_to_utf8(const wchar_t *const pawcString) {
+	std::u8string convert_wide_chars_to_utf8(const wchar_t *const pawcString) {
 		if (!pawcString)
-			return std::string("");
-		const size_t stringSize = std::wcslen(pawcString) + 1;
-		std::string sConverted("", stringSize);
-		std::wcstombs(&sConverted[0], pawcString, stringSize);
-		return sConverted;
+			return u8"";
+		PRINT_DEBUG("Converting wide character-string to UTF-8-string");
+		return std::format(u8"{}", pawcString);
 	}
 
 	[[nodiscard]]
-	std::wstring convert_chars_to_wide(const char *const pacString) {
+	std::wstring convert_chars_to_wide(const char8_t *const pacString) {
 		if (!pacString)
-			return std::wstring(L"");
-		const size_t stringSize = std::strlen(pacString) + 1;
-		std::wstring wsConverted(L"", stringSize);
-		std::mbstowcs(&wsConverted[0], pacString, stringSize);
-		return wsConverted;
+			return L"";
+		PRINT_DEBUG("Converting UTF-8-string to wide character-string");
+		return std::format(L"{}", pacString);
 	}
 
 	[[nodiscard]]
-	std::string get_app_name() {
-		std::string sAppName("");
+	std::u8string get_app_name() {
+		PRINT_DEBUG("Querying application name of this executable");
+		std::u8string sAppName;
 #ifdef RE_OS_WINDOWS
 # define PATH_SIZE 500
 		wchar_t awcBuffer[PATH_SIZE];

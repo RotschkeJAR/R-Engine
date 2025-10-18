@@ -6,9 +6,10 @@ namespace RE {
 	
 	Scene::Scene(const uint32_t u32Id) : u32Id(u32Id) {
 		if (!u32Id)
-			RE_ERROR("The scene's ID shouldn't be zero. It will be discarded if activated");
+			RE_WARNING("The scene's ID shouldn't be zero. It will be discarded if activated");
 	}
 	Scene::~Scene() {
+		PRINT_DEBUG("Destructing scene ", this, " with ID ", u32Id);
 		if (pCurrentScene == this) {
 			RE_ERROR("The scene, which is currently in use, has been deleted");
 			pCurrentScene = nullptr;

@@ -11,7 +11,9 @@ namespace RE {
 	VkPipeline vk_ahGameObjectPipelines[RE_VK_RENDERPIPELINE_COUNT] = {};
 
 	static bool create_game_object_pipelines() {
-		const VkPipeline vk_ahPreviousPipelines[RE_VK_RENDERPIPELINE_COUNT] = {vk_ahGameObjectPipelines[0], vk_ahGameObjectPipelines[1]};
+		PRINT_DEBUG("Copying old Vulkan graphics pipelines used for game object rendering");
+		const VkPipeline vk_ahPreviousPipelines[RE_VK_RENDERPIPELINE_COUNT];
+		std::copy(std::begin(vk_ahGameObjectPipelines), std::end(vk_ahGameObjectPipelines), std::begin(vk_ahPreviousPipelines));
 		const VkPipelineShaderStageCreateInfo vk_aShaderStages[RE_VK_SHADER_COUNT] = {
 			{
 				.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
@@ -208,10 +210,14 @@ namespace RE {
 				.basePipelineIndex = 0
 			}
 		};
+		PRINT_DEBUG("Creating ", RE_VK_RENDERPIPELINE_COUNT, " Vulkan graphics pipelines for game object rendering");
 		if (vkCreateGraphicsPipelines(vk_hDevice, VK_NULL_HANDLE, RE_VK_RENDERPIPELINE_COUNT, vk_aPipelineCreateInfo, nullptr, vk_ahGameObjectPipelines) == VK_SUCCESS) {
-			if (vk_ahPreviousPipelines[0] && vk_ahPreviousPipelines[1]) {
-				vkDestroyPipeline(vk_hDevice, vk_ahPreviousPipelines[0], nullptr);
-				vkDestroyPipeline(vk_hDevice, vk_ahPreviousPipelines[1], nullptr);
+			for (uint8_t u8PipelineIndex = 0; u8PipelineIndex < sizeof(vk_ahPreviousPipelines) / sizeof(vk_ahPreviousPipelines[0]); u8PipelineIndex++) {
+				const VkPipeline &vk_rhPreviousPipeline = vk_ahPreviousPipelines[u8PipelineIndex];
+				if (vk_rhPreviousPipeline) {
+					PRINT_DEBUG("Destroying old Vulkan graphics pipeline ", vk_rhPreviousPipeline, " at index ", u8PipelineIndex);
+					vkDestroyPipeline(vk_hDevice, vk_rhPreviousPipeline, nullptr);
+				}
 			}
 			return true;
 		}
@@ -219,28 +225,37 @@ namespace RE {
 	}
 	
 	bool create_render_pipeline_game_objects() {
+		PRINT_DEBUG("Creating vertex shader for game object rendering");
 		if (create_vulkan_shader_from_file("shaders/gameobject_vertex.glsl.spv", &vk_ahGameObjectShaders[0])) {
+			PRINT_DEBUG("Creating fragment shader for game object rendering");
 			if (create_vulkan_shader_from_file("shaders/gameobject_fragment.glsl.spv", &vk_ahGameObjectShaders[1])) {
+				PRINT_DEBUG("Creating render pipelines for rendering game objects");
 				if (create_game_object_pipelines())
 					return true;
+				PRINT_DEBUG("Destroying fragment shader for rendering game objects due to failure creating its render pipelines");
 				vkDestroyShaderModule(vk_hDevice, vk_ahGameObjectShaders[1], nullptr);
 			}
+			PRINT_DEBUG("Destroying vertex shader for rendering game objects due to failure creating its essential resources");
 			vkDestroyShaderModule(vk_hDevice, vk_ahGameObjectShaders[0], nullptr);
 		}
 		return false;
 	}
 
 	bool recreate_render_pipeline_game_objects() {
+		PRINT_DEBUG("Recreating render pipelines for game objects");
 		return create_game_object_pipelines();
 	}
 
 	void destroy_render_pipeline_game_objects() {
 		for (VkPipeline &vk_rhGameObjectPipeline : vk_ahGameObjectPipelines) {
+			PRINT_DEBUG("Destroying Vulkan pipeline ", vk_rhGameObjectPipeline, " for rendering game objects");
 			vkDestroyPipeline(vk_hDevice, vk_rhGameObjectPipeline, nullptr);
 			vk_rhGameObjectPipeline = VK_NULL_HANDLE;
 		}
-		for (const VkShaderModule &vk_rhGameObjectShader : vk_ahGameObjectShaders)
+		for (const VkShaderModule &vk_rhGameObjectShader : vk_ahGameObjectShaders) {
+			PRINT_DEBUG("Destroying Vulkan shader ", vk_rhGameObjectShader, " for rendering game objects");
 			vkDestroyShaderModule(vk_hDevice, vk_rhGameObjectShader, nullptr);
+		}
 	}
 
 }

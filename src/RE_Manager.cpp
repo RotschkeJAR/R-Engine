@@ -9,23 +9,27 @@ namespace RE {
 	Scene *pCurrentScene = nullptr, *pNextScene = nullptr;
 
 	static void update_proc() {
+		PRINT_DEBUG("Invoking update-procedure");
 		pCurrentScene->update();
 		update_game_objects();
 		update_cameras();
 	}
 
 	static void end_proc() {
+		PRINT_DEBUG("Invoking end-procedure");
 		pCurrentScene->end();
 		end_game_objects();
 		end_cameras();
 	}
 
 	static void delete_proc() {
+		PRINT_DEBUG("Invoking delete-procedure");
 		delete_marked_game_objects();
 		delete_marked_cameras();
 	}
 
 	static void add_proc() {
+		PRINT_DEBUG("Invoking add-procedure");
 		add_new_game_objects();
 		add_new_cameras();
 	}
@@ -36,17 +40,17 @@ namespace RE {
 	}
 
 	void game_logic_update() {
+		PRINT_DEBUG("Updating game's logic");
 		if (pNextScene != pCurrentScene && pNextScene) {
-			// End old scene
+			PRINT_DEBUG("Ending current scene ", pCurrentScene);
 			WAIT_FOR_IDLE_VULKAN_DEVICE();
 			if (pCurrentScene)
 				end_proc();
 			while (!deletableGameObjects.empty())
 				delete_proc();
 
+			PRINT_DEBUG("Switching to and starting new scene ", pNextScene);
 			pCurrentScene = pNextScene;
-
-			// Start new scene and game objects
 			pCurrentScene->start();
 			start_game_objects();
 			start_cameras();
@@ -55,11 +59,14 @@ namespace RE {
 			bool bNewObjectsAdded;
 			do {
 				for (GameObject *const pObj : newGameObjects)
-					if (is_object_active(pObj))
+					if (is_object_active(pObj)) {
+						PRINT_DEBUG("Starting and later adding new game object ", pObj);
 						pObj->start(pCurrentScene);
+					}
 				bNewObjectsAdded = !newGameObjects.empty();
 				add_proc();
 			} while (bNewObjectsAdded);
+			PRINT_DEBUG("Finished switching to new scene");
 		} else if (!pCurrentScene) {
 			RE_ERROR("There is no active scene at the moment");
 			return;
@@ -72,11 +79,14 @@ namespace RE {
 	}
 
 	void last_game_logic_update() {
+		PRINT_DEBUG("Ending scene");
 		if (pCurrentScene)
 			end_proc();
-		delete_proc();
+		while (!deletableGameObjects.empty())
+			delete_proc();
 		pCurrentScene = nullptr;
 		pNextScene = nullptr;
+		PRINT_DEBUG("Finished ending scene");
 	}
 
 	[[nodiscard]]
@@ -88,9 +98,10 @@ namespace RE {
 		if (!pNextSceneParam)
 			return;
 		else if (!pNextSceneParam->u32Id) {
-			RE_WARNING("A scene has been set for becoming the next one, but its ID is zero and therefore has been discarded");
+			RE_ERROR("A scene has been set for becoming the next one, but its ID is zero and therefore has been discarded");
 			return;
 		}
+		PRINT_DEBUG("Setting next scene ", pNextSceneParam);
 		pNextScene = pNextSceneParam;
 	}
 
@@ -112,7 +123,7 @@ namespace RE {
 
 	[[nodiscard]]
 	bool is_scene_current(const uint32_t u32SceneId) {
-		return get_current_scene() && get_current_scene_id() == u32SceneId;
+		return u32SceneId && get_current_scene_id() == u32SceneId;
 	}
 
 	[[nodiscard]]
@@ -128,7 +139,7 @@ namespace RE {
 
 	[[nodiscard]]
 	bool is_scene_next(const uint32_t u32SceneId) {
-		return get_next_scene() && get_next_scene_id() == u32SceneId;
+		return u32SceneId && get_next_scene_id() == u32SceneId;
 	}
 
 }

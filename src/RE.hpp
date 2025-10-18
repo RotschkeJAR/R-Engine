@@ -241,12 +241,12 @@ namespace RE {
 	}
 	template <class... T>
 	void println(const T... content) {
-		print(content..., "\n");
+		print(content..., '\n');
 	}
-	void print_colored(const char *pacContent, TerminalColor eColor, bool bBackgroundColored, bool bBold);
-	void println_colored(const char *pacContent, TerminalColor eColor, bool bBackgroundColored, bool bBold);
+	void print_colored(const char8_t *pacContent, TerminalColor eColor, bool bBackgroundColored, bool bBold);
+	void println_colored(const char8_t *pacContent, TerminalColor eColor, bool bBackgroundColored, bool bBold);
 #define PRINT(...) print(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE_MACRO(__VA_ARGS__))
-#define PRINT_LN(...) PRINT(STRIP_QUOTE_MACRO(__VA_ARGS__), "\n")
+#define PRINT_LN(...) PRINT(STRIP_QUOTE_MACRO(__VA_ARGS__), '\n')
 
 #define PRINT_DEBUG(...) [&](const char *const pacFile, const char *const pacFunc, const uint32_t u32Line) { \
 			time_t currentTime = std::time(0); \
@@ -254,74 +254,77 @@ namespace RE {
 		} (__FILE__, __func__, __LINE__)
 #define PRINT_DEBUG_CLASS(...) PRINT_DEBUG("{", this, "} ", __VA_ARGS__)
 	
-	void error(std::string sDetail, bool bTerminate);
-	void warning(std::string sDetail);
-	void note(std::string sDetail);
-#define FATAL_ERROR(...) error(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), " (in ", __FILE__, ", function \"", __func__, "\", at line ", __LINE__, ")"), true)
-#define ERROR(...) error(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), " (in ", __FILE__, ", function \"", __func__, "\", at line ", __LINE__, ")"), false)
-#define WARNING(...) warning(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), " (in ", __FILE__, ", function \"", __func__, "\", at line ", __LINE__, ")"))
-#define NOTE(...) note(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), " (in ", __FILE__, ", function \"", __func__, "\", at line ", __LINE__, ")"))
+	void error(const std::u8string &rsDetail, bool bTerminate);
+	void warning(const std::u8string &rsDetail);
+	void note(const std::u8string &rsDetail);
+#define FATAL_ERROR(...) error(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), u8" (in ", __FILE__, u8", function \"", __func__, u8"\", at line ", __LINE__, u8")"), true)
+#define ERROR(...) error(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), u8" (in ", __FILE__, u8", function \"", __func__, u8"\", at line ", __LINE__, u8")"), false)
+#define WARNING(...) warning(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), u8" (in ", __FILE__, u8", function \"", __func__, u8"\", at line ", __LINE__, u8")"))
+#define NOTE(...) note(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), u8" (in ", __FILE__, u8", function \"", __func__, u8"\", at line ", __LINE__, u8")"))
 
-#define DELETE_SAFELY(PTR_REF) [&](const char *const pacFile, const char *const pacFunc, const uint32_t u32Line) { \
+#define DELETE_SAFELY(PTR_REF) [&]() { \
 			if (!PTR_REF) \
 				break; \
 			PRINT_DEBUG("Safely deleting ", PTR_REF); \
 			delete (PTR_REF); \
 			(PTR_REF) = nullptr; \
-		} (__FILE__, __func__, __LINE__)
-#define DELETE_ARRAY_SAFELY(PTR_REF) [&](const char *const pacFile, const char *const pacFunc, const uint32_t u32Line) { \
+		} ()
+#define DELETE_ARRAY_SAFELY(PTR_REF) [&]() { \
 			if (!PTR_REF) \
 				break; \
 			PRINT_DEBUG("Safely deleting array ", PTR_REF); \
 			delete[] (PTR_REF); \
 			(PTR_REF) = nullptr; \
-		} (__FILE__, __func__, __LINE__)
+		} ()
 
 	template <class T>
 	[[nodiscard]]
-	const char* resolve_string_class(const T& rString) {
+	const char8_t* resolve_string_class(const T& rString) {
 		static_assert(!std::is_same_v<T, std::string_view>, "String views cannot be resolved");
-		static_assert(std::is_same_v<T, std::string> || std::is_same_v<T, const char*> || std::is_same_v<T, char*>, "This function only accepts string-like datatypes, that support plain characters (wide chars aren't accepted)");
-		if constexpr (std::is_same_v<T, std::string>)
+		static_assert(std::is_same_v<T, std::u8string> || std::is_same_v<T, const char*> || std::is_same_v<T, char*>, "This function only accepts string-like datatypes, that support plain characters (wide chars aren't accepted)");
+		if constexpr (std::is_same_v<T, std::u8string>)
 			return rString.c_str();
-		else if constexpr (std::is_same_v<T, const char*> || std::is_same_v<T, char*>)
-			return const_cast<const char*>(rString);
+		else if constexpr (std::is_same_v<T, const char8_t*> || std::is_same_v<T, char8_t*>)
+			return const_cast<const char8_t*>(rString);
 		else
 			return nullptr;
 	}
 
 	template <typename T>
 	[[nodiscard]]
-	std::string array_to_string(const T array[], const size_t arrayLength) {
-		std::ostringstream ss;
-		ss << '{';
+	std::u8string array_to_string(const T (&rArray)[], const size_t arrayLength) {
+		std::u8string sResult(arrayLength * sizeof(T));
+		sResult.append(u8'{');
 		for (size_t i = 0; i < arrayLength; i++) {
 			if (i)
-				ss << ", ";
+				sResult.append(u8", ");
 			if constexpr (std::is_same_v<T, int8_t>)
-				ss << static_cast<int16_t>(array[i]);
+				sResult.append(rArray[i]);
 			else if constexpr (std::is_same_v<T, uint8_t>)
-				ss << static_cast<uint16_t>(array[i]);
+				sResult.append(rArray[i]);
 			else
-				ss << array[i];
+				sResult.append(rArray[i]);
 		}
-		ss << '}';
-		return ss.str();
+		sResult.append(u8'}');
+		return sResult;
 	}
 
 	template <class... T>
 	[[nodiscard]]
-	std::string append_to_string(const T... strings) {
-		std::ostringstream ss;
+	std::u8string append_to_string(const T... strings) {
+		std::u8string sResult([&]() -> size_t {
+			size_t allocSize = 0 + ... + sizeof(strings);
+			return allocSize;
+		} ());
 		([&]() {
 			if constexpr (std::is_same_v<T, int8_t>)
-				ss << static_cast<int16_t>(strings);
+				sResult.append(strings);
 			else if constexpr (std::is_same_v<T, uint8_t>)
-				ss << static_cast<uint16_t>(strings);
+				sResult.append(strings);
 			else
-				ss << strings;
+				sResult.append(strings);
 		} (), ...);
-		return ss.str();
+		return sResult;
 	}
 
 	template <class... T>
@@ -336,25 +339,25 @@ namespace RE {
 			else
 				wss << strings;
 		} (), ...);
-		return std::wstring(wss.str());
+		return wss.str();
 	}
 
 	[[nodiscard]]
-	bool is_string_empty(const char *pacString);
+	bool is_string_empty(const char8_t *pacString);
 	[[nodiscard]]
-	size_t get_string_length_safely(const char *pacString);
+	size_t get_string_length_safely(const char8_t *pacString);
 	[[nodiscard]]
 	size_t get_wide_string_length_safely(const wchar_t *pacWideString);
 	[[nodiscard]]
-	bool are_string_contents_equal(const char *pacString1, const char *pacString2);
+	bool are_string_contents_equal(const char8_t *pacString1, const char8_t *pacString2);
 	[[nodiscard]]
-	size_t get_line_count(const char *pacString);
+	size_t get_line_count(const char8_t *pacString);
 	[[nodiscard]]
-	std::string get_line(const char *pacString, size_t lineIndex);
+	std::string get_line(const char8_t *pacString, size_t lineIndex);
 	[[nodiscard]]
 	std::string convert_wide_chars_to_utf8(const wchar_t *pwcString);
 	[[nodiscard]]
-	std::wstring convert_chars_to_wide(const char *pacString);
+	std::wstring convert_chars_to_wide(const char8_t *pacString);
 	[[nodiscard]]
 	std::string get_app_name();
 
@@ -660,15 +663,22 @@ namespace RE {
 
 		public:
 			RandomNumberGenerator();
-			RandomNumberGenerator(uint32_t u32Seed);
+			RandomNumberGenerator(size_t seed);
 			~RandomNumberGenerator();
-			void set_seed(uint32_t newSeed);
+			void seed(size_t newSeed);
+			void seed_randomly();
 
 			template <typename T>
 			[[nodiscard]]
 			T random(const T min, const T max) {
-				std::uniform_int_distribution<T> range(min, max);
-				return range(rng);
+				static_assert(std::is_integral_v<T> || std::is_floating_point_v<T>, "Only integers and floating-point numbers can be randomly generated");
+				if constexpr (std::is_integral_v<T>) {
+					std::uniform_int_distribution<T> range(min, max - 1);
+					return range(rng);
+				} else if constexpr (std::is_floating_point_v<T>) {
+					std::uniform_real_distribution<T> range(min, max);
+					return range(rng);
+				}
 			}
 			template <typename T>
 			[[nodiscard]]
@@ -678,7 +688,7 @@ namespace RE {
 			template <typename T>
 			[[nodiscard]]
 			T random() {
-				return random<T>(std::numeric_limits<T>::max());
+				return random<T>(std::numeric_limits<T>::min(), std::numeric_limits<T>::max());
 			}
 			[[nodiscard]]
 			bool random_bool();

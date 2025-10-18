@@ -36,6 +36,7 @@ namespace RE {
 	}
 
 	void set_signal_handlers() {
+		PRINT_DEBUG("Setting signal handlers");
 		if (std::signal(SIGSEGV, handle_signal) == SIG_ERR)
 			RE_ERROR("Failed to set signal handler for SIGSEGV (segmentation violation)");
 		if (std::signal(SIGILL, handle_signal) == SIG_ERR)

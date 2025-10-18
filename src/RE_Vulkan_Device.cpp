@@ -237,13 +237,15 @@ namespace RE {
 	PFN_vkAcquireNextImage2KHR pfn_vkAcquireNextImage2KHR = nullptr;
 
 	static PFN_vkVoidFunction load_func_with_device(const char *const pacFuncName) {
+		PRINT_DEBUG("Loading device-level Vulkan function \"", pacFuncName, "\" from logical device ", vk_hDevice);
 		const PFN_vkVoidFunction pFunc = vkGetDeviceProcAddr(vk_hDevice, pacFuncName);
 		if (!pFunc)
-			RE_FATAL_ERROR("Failed loading the Vulkan logical device-level function \"", pacFuncName, "\"");
+			RE_FATAL_ERROR("Failed loading the Vulkan logical device-level function \"", pacFuncName, "\" with device ", vk_hDevice);
 		return pFunc;
 	}
 
 	static bool load_vulkan_1_0_device() {
+		PRINT_DEBUG("Loading device-level Vulkan 1.0-functions");
 		pfn_vkGetDeviceQueue = reinterpret_cast<PFN_vkGetDeviceQueue>(load_func_with_device("vkGetDeviceQueue"));
 		if (!pfn_vkGetDeviceQueue)
 			return false;
@@ -605,6 +607,7 @@ namespace RE {
 	}
 
 	static bool load_vulkan_1_1_device() {
+		PRINT_DEBUG("Loading device-level Vulkan 1.1-functions");
 		pfn_vkBindBufferMemory2 = reinterpret_cast<PFN_vkBindBufferMemory2>(load_func_with_device("vkBindBufferMemory2"));
 		if (!pfn_vkBindBufferMemory2)
 			return false;
@@ -657,6 +660,7 @@ namespace RE {
 	}
 
 	static bool load_vulkan_1_2_device() {
+		PRINT_DEBUG("Loading device-level Vulkan 1.2-functions");
 		pfn_vkCmdDrawIndirectCount = reinterpret_cast<PFN_vkCmdDrawIndirectCount>(load_func_with_device("vkCmdDrawIndirectCount"));
 		if (!pfn_vkCmdDrawIndirectCount)
 			return false;
@@ -700,6 +704,7 @@ namespace RE {
 	}
 
 	static bool load_vulkan_1_3_device() {
+		PRINT_DEBUG("Loading device-level Vulkan 1.3-functions");
 		pfn_vkCreatePrivateDataSlot = reinterpret_cast<PFN_vkCreatePrivateDataSlot>(load_func_with_device("vkCreatePrivateDataSlot"));
 		if (!pfn_vkCreatePrivateDataSlot)
 			return false;
@@ -812,6 +817,7 @@ namespace RE {
 	}
 
 	/* static bool load_vulkan_1_4_device() {
+		PRINT_DEBUG("Loading device-level Vulkan 1.4-functions");
 		pfn_vkCmdSetLineStipple = reinterpret_cast<PFN_vkCmdSetLineStipple>(load_func_with_device("vkCmdSetLineStipple"));
 		if (!pfn_vkCmdSetLineStipple)
 			return false;
@@ -873,6 +879,7 @@ namespace RE {
 	} */
 
 	static bool load_extension_funcs_with_device() {
+		PRINT_DEBUG("Loading device-level Vulkan extension-functions");
 		pfn_vkQueueBeginDebugUtilsLabelEXT = reinterpret_cast<PFN_vkQueueBeginDebugUtilsLabelEXT>(load_func_with_device("vkQueueBeginDebugUtilsLabelEXT"));
 		if (!pfn_vkQueueBeginDebugUtilsLabelEXT)
 			return false;
@@ -920,6 +927,7 @@ namespace RE {
 
 	// Avoids dangling pointers (don't remove!)
 	static void unload_all_vulkan_functions_of_device() {
+		PRINT_DEBUG("Resetting all device-level function pointers to Vulkan");
 		// Vulkan 1.0
 		pfn_vkGetDeviceQueue = nullptr;
 		pfn_vkQueueSubmit = nullptr;
@@ -1157,6 +1165,7 @@ namespace RE {
 			VK_KHR_SWAPCHAIN_EXTENSION_NAME
 		};
 
+		PRINT_DEBUG("Creating create Vulkan queue-information structs");
 		constexpr float fQueuePriority = 1.0f;
 		std::vector<VkDeviceQueueCreateInfo> vk_paDeviceQueueCreateInfos;
 		create_queue_create_infos(&fQueuePriority, vk_paDeviceQueueCreateInfos);
@@ -1194,7 +1203,7 @@ namespace RE {
 			return false;
 		}
 
-		PRINT_DEBUG("Loading Vulkan logical device-level functions");
+		PRINT_DEBUG("Loading logical Vulkan device-level functions with device ", vk_hDevice);
 		if (!load_vulkan_1_0_device() || !load_vulkan_1_1_device() || !load_vulkan_1_2_device() || !load_vulkan_1_3_device() /* || !load_vulkan_1_4_device() */ || !load_extension_funcs_with_device()) {
 			destroy_logical_vulkan_device();
 			return false;
@@ -1203,6 +1212,7 @@ namespace RE {
 	}
 	
 	void destroy_logical_vulkan_device() {
+		PRINT_DEBUG("Destroying logical Vulkan device ", vk_hDevice);
 		vkDestroyDevice(vk_hDevice, nullptr);
 		unload_all_vulkan_functions_of_device();
 		vk_hDevice = VK_NULL_HANDLE;

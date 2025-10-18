@@ -17,6 +17,7 @@ namespace RE {
 	}
 
 	Texture alloc_texture_from_binary_data(const uint8_t *const pau8ImageBinaryData, const uint32_t u32Width, const uint32_t u32Height, const uint32_t u32Channels) {
+		PRINT_DEBUG("Allocating texture from binary data ", pau8ImageBinaryData, ", sized ", u32Width, "x", u32Height, " containing ", u32Channels, " channels");
 		return nullptr;
 	}
 	
@@ -39,13 +40,16 @@ namespace RE {
 	}
 	
 	Texture alloc_texture_loading_from_file(const char *const pacPathToTextureFile, int32_t &ri32Width, int32_t &ri32Height, int32_t &ri32Channels) {
+		PRINT_DEBUG("Loading image from ", pacPathToTextureFile, " and allocating texture from it");
 		return nullptr;
 	}
 
 	void free_texture(const Texture hTexture) {
+		PRINT_DEBUG("Freeing texture ", hTexture);
 	}
 
 	void free_texture_and_fix_dangling_pointers(const Texture hTexture) {
+		PRINT_DEBUG("Freeing texture ", hTexture, " and removing dangling pointers pointing to it");
 	}
 
 }

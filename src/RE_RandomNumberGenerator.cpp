@@ -3,34 +3,44 @@
 namespace RE {
 	
 	RandomNumberGenerator::RandomNumberGenerator() {
-		try {
-			std::random_device rd;
-			rng.seed(rd());
-		} catch (...) {
-			RE_ERROR("Failed seeding the random number generator due to the lack of a true random number generator. Using time instead");
-			rng.seed(time(nullptr));
-		}
+		seed_randomly();
 	}
-	RandomNumberGenerator::RandomNumberGenerator(const uint32_t u32Seed) : rng(u32Seed) {}
+	RandomNumberGenerator::RandomNumberGenerator(const size_t seed) : rng(seed) {}
 	RandomNumberGenerator::~RandomNumberGenerator() {}
 
-	void RandomNumberGenerator::set_seed(const uint32_t newSeed) {
+	void RandomNumberGenerator::seed(const size_t newSeed) {
+		PRINT_DEBUG_CLASS("Seeding random number generator with ", newSeed);
 		rng.seed(newSeed);
+	}
+
+	void RandomNumberGenerator::seed_randomly() {
+		PRINT_DEBUG_CLASS("Generating a random seed");
+		size_t randomSeed;
+		try {
+			std::random_device rd;
+			randomSeed = rd();
+		} catch (...) {
+			RE_ERROR("Failed seeding the random number generator due to the lack of a true random number generator");
+		}
+		seed(randomSeed);
 	}
 
 	[[nodiscard]]
 	bool RandomNumberGenerator::random_bool() {
-		return static_cast<bool>(random<uint16_t>() & 1U);
+		PRINT_DEBUG_CLASS("Rolling random boolean");
+		return random_bool(0.5);
 	}
 
 	[[nodiscard]]
 	bool RandomNumberGenerator::random_bool(const double dChance) {
-		return random_percentage() <= dChance;
+		PRINT_DEBUG_CLASS("Rolling random number and checking if it's equal or lower than ", dChance);
+		return random<double>(dChance) <= dChance;
 	}
 
 	[[nodiscard]]
 	double RandomNumberGenerator::random_percentage() {
-		return static_cast<double>(random<uint32_t>()) / std::numeric_limits<uint32_t>::max();
+		PRINT_DEBUG_CLASS("Generating random double");
+		return random<double>(1.0);
 	}
 
 }

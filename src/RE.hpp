@@ -234,6 +234,12 @@ namespace RE {
 				std::cout << static_cast<uint16_t>(content);
 			else if constexpr (std::is_same_v<T, std::wstring> || std::is_same_v<T, const wchar_t*> || std::is_same_v<T, wchar_t>)
 				std::wcout << content;
+			else if constexpr (std::is_same_v<T, char8_t>)
+				std::cout << reinterpret_cast<char>(content);
+			else if constexpr (std::is_same_v<T, char8_t*> || std::is_same_v<T, const char8_t*>)
+				std::cout << reinterpret_cast<const char*>(content);
+			else if constexpr (std::is_same_v<T, std::u8string>)
+				std::cout << reinterpret_cast<const char*>(content.c_str());
 			else
 				std::cout << content;
 		} (), ...);
@@ -243,24 +249,28 @@ namespace RE {
 	void println(const T... content) {
 		print(content..., '\n');
 	}
-	void print_colored(const char8_t *pacContent, TerminalColor eColor, bool bBackgroundColored, bool bBold);
-	void println_colored(const char8_t *pacContent, TerminalColor eColor, bool bBackgroundColored, bool bBold);
+	void print_colored(const std::string &rsContent, TerminalColor eColor, bool bBackgroundColored, bool bBold);
+	void println_colored(const std::string &rsContent, TerminalColor eColor, bool bBackgroundColored, bool bBold);
 #define PRINT(...) print(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE_MACRO(__VA_ARGS__))
 #define PRINT_LN(...) PRINT(STRIP_QUOTE_MACRO(__VA_ARGS__), '\n')
 
-#define PRINT_DEBUG(...) [&](const char *const pacFile, const char *const pacFunc, const uint32_t u32Line) { \
+#ifndef RE_DISABLE_PRINT_DEBUGS
+# define PRINT_DEBUG(...) [&](const char *const pacFile, const char *const pacFunc, const uint32_t u32Line) { \
 			time_t currentTime = std::time(0); \
 			println("[", std::put_time(std::gmtime(&currentTime), "%d.%b %Y, %H:%M:%S"), "] (", pacFile, ", at line ", u32Line, ", in function \"", pacFunc, "\"): ", STRIP_QUOTE_MACRO(__VA_ARGS__)); \
 		} (__FILE__, __func__, __LINE__)
+#else
+# define PRINT_DEBUG(...)
+#endif
 #define PRINT_DEBUG_CLASS(...) PRINT_DEBUG("{", this, "} ", __VA_ARGS__)
 	
-	void error(const std::u8string &rsDetail, bool bTerminate);
-	void warning(const std::u8string &rsDetail);
-	void note(const std::u8string &rsDetail);
-#define FATAL_ERROR(...) error(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), u8" (in ", __FILE__, u8", function \"", __func__, u8"\", at line ", __LINE__, u8")"), true)
-#define ERROR(...) error(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), u8" (in ", __FILE__, u8", function \"", __func__, u8"\", at line ", __LINE__, u8")"), false)
-#define WARNING(...) warning(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), u8" (in ", __FILE__, u8", function \"", __func__, u8"\", at line ", __LINE__, u8")"))
-#define NOTE(...) note(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), u8" (in ", __FILE__, u8", function \"", __func__, u8"\", at line ", __LINE__, u8")"))
+	void error(const std::string &rsDetail, bool bTerminate);
+	void warning(const std::string &rsDetail);
+	void note(const std::string &rsDetail);
+#define FATAL_ERROR(...) error(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), " (in ", __FILE__, ", function \"", __func__, "\", at line ", __LINE__, ")"), true)
+#define ERROR(...) error(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), " (in ", __FILE__, ", function \"", __func__, "\", at line ", __LINE__, ")"), false)
+#define WARNING(...) warning(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), " (in ", __FILE__, ", function \"", __func__, "\", at line ", __LINE__, ")"))
+#define NOTE(...) note(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), " (in ", __FILE__, ", function \"", __func__, "\", at line ", __LINE__, ")"))
 
 #define DELETE_SAFELY(PTR_REF) [&]() { \
 			if (!PTR_REF) \
@@ -293,8 +303,9 @@ namespace RE {
 	template <typename T>
 	[[nodiscard]]
 	std::u8string array_to_string(const T (&rArray)[], const size_t arrayLength) {
-		std::u8string sResult(arrayLength * sizeof(T));
-		sResult.append(u8'{');
+		std::u8string sResult;
+		sResult.reserve(arrayLength * sizeof(T));
+		sResult.append(u8"{");
 		for (size_t i = 0; i < arrayLength; i++) {
 			if (i)
 				sResult.append(u8", ");
@@ -305,59 +316,56 @@ namespace RE {
 			else
 				sResult.append(rArray[i]);
 		}
-		sResult.append(u8'}');
+		sResult.append(u8"}");
 		return sResult;
 	}
 
 	template <class... T>
 	[[nodiscard]]
-	std::u8string append_to_string(const T... strings) {
-		std::u8string sResult([&]() -> size_t {
-			size_t allocSize = 0 + ... + sizeof(strings);
-			return allocSize;
-		} ());
+	std::string append_to_string(const T... strings) {
+		std::stringstream sStream((10 + ... + sizeof(strings)));
 		([&]() {
 			if constexpr (std::is_same_v<T, int8_t>)
-				sResult.append(strings);
+				sStream << static_cast<int16_t>(strings);
 			else if constexpr (std::is_same_v<T, uint8_t>)
-				sResult.append(strings);
+				sStream << static_cast<uint16_t>(strings);
 			else
-				sResult.append(strings);
+				sStream << strings;
 		} (), ...);
-		return sResult;
+		return sStream.str();
 	}
 
 	template <class... T>
 	[[nodiscard]]
 	std::wstring append_to_wstring(const T... strings) {
-		std::wstringstream wss;
+		std::wstringstream wsStream((10 + ... + sizeof(strings)));
 		([&]() {
 			if constexpr (std::is_same_v<T, int8_t>)
-				wss << static_cast<int16_t>(strings);
+				wsStream << static_cast<int16_t>(strings);
 			else if constexpr (std::is_same_v<T, uint8_t>)
-				wss << static_cast<uint16_t>(strings);
+				wsStream << static_cast<uint16_t>(strings);
 			else
-				wss << strings;
+				wsStream << strings;
 		} (), ...);
-		return wss.str();
+		return wsStream.str();
 	}
 
 	[[nodiscard]]
-	bool is_string_empty(const char8_t *pacString);
+	bool is_string_empty(const char *pacString);
 	[[nodiscard]]
-	size_t get_string_length_safely(const char8_t *pacString);
+	size_t get_string_length_safely(const char *pacString);
 	[[nodiscard]]
 	size_t get_wide_string_length_safely(const wchar_t *pacWideString);
 	[[nodiscard]]
-	bool are_string_contents_equal(const char8_t *pacString1, const char8_t *pacString2);
+	bool are_string_contents_equal(const char *pacString1, const char *pacString2);
 	[[nodiscard]]
-	size_t get_line_count(const char8_t *pacString);
+	size_t get_line_count(const char *pacString);
 	[[nodiscard]]
-	std::string get_line(const char8_t *pacString, size_t lineIndex);
+	std::string get_line(const char *pacString, size_t lineIndex);
 	[[nodiscard]]
 	std::string convert_wide_chars_to_utf8(const wchar_t *pwcString);
 	[[nodiscard]]
-	std::wstring convert_chars_to_wide(const char8_t *pacString);
+	std::wstring convert_chars_to_wide(const char *pacString);
 	[[nodiscard]]
 	std::string get_app_name();
 

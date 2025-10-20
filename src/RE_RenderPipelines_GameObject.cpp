@@ -12,7 +12,7 @@ namespace RE {
 
 	static bool create_game_object_pipelines() {
 		PRINT_DEBUG("Copying old Vulkan graphics pipelines used for game object rendering");
-		const VkPipeline vk_ahPreviousPipelines[RE_VK_RENDERPIPELINE_COUNT];
+		VkPipeline vk_ahPreviousPipelines[RE_VK_RENDERPIPELINE_COUNT];
 		std::copy(std::begin(vk_ahGameObjectPipelines), std::end(vk_ahGameObjectPipelines), std::begin(vk_ahPreviousPipelines));
 		const VkPipelineShaderStageCreateInfo vk_aShaderStages[RE_VK_SHADER_COUNT] = {
 			{

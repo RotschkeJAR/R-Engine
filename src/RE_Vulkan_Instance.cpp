@@ -170,7 +170,7 @@ namespace RE {
 		std::array<bool, u32RequiredVulkanLayerCount> abRequiredLayersPresent = {};
 		std::queue<const char*> missingLayers;
 		for (uint32_t u32LayerIndex = 0; u32LayerIndex < u32AvailableLayersCount; u32LayerIndex++) {
-			PRINT_DEBUG("Vulkan instance layer at index ", u32LayerIndex, ", called \"", availableLayers[u32LayerIndex], "\", is supported");
+			PRINT_DEBUG("Vulkan instance layer at index ", u32LayerIndex, ", called \"", availableLayers[u32LayerIndex].layerName, "\", is supported");
 			for (uint8_t u8RequiredLayerIndex = 0; u8RequiredLayerIndex < u32RequiredVulkanLayerCount; u8RequiredLayerIndex++) {
 				PRINT_DEBUG("Comparing name to required layer at index ", u8RequiredLayerIndex, " named \"", apacRequiredLayers[u8RequiredLayerIndex], "\"");
 				if (are_string_contents_equal(availableLayers[u32LayerIndex].layerName, apacRequiredLayers[u8RequiredLayerIndex]))
@@ -195,7 +195,7 @@ namespace RE {
 			return false;
 		}
 
-		const std::u8string sAppName = get_app_name();
+		const std::string sAppName = get_app_name();
 		const VkApplicationInfo vk_appInfo = {
 			.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
 			.pApplicationName = sAppName.c_str(),

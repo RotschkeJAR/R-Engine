@@ -297,7 +297,6 @@ namespace RE {
 		for (uint8_t u8LogicalQueueIndex = 0; u8LogicalQueueIndex < u8LogicalQueueCount; u8LogicalQueueIndex++) {
 			PRINT_DEBUG("Getting logical queue at index ", u8LogicalQueueIndex);
 			vk_queueInfoGet.queueFamilyIndex = queueFamilyIndices[u8LogicalQueueIndex];
-			PRINT_LN(static_cast<bool>(vk_pahQueues), ", ", vk_pahQueues[u8LogicalQueueIndex], ", ", pfn_vkGetDeviceQueue2);
 			vkGetDeviceQueue2(vk_hDevice, &vk_queueInfoGet, &vk_pahQueues[u8LogicalQueueIndex]);
 		}
 		VkCommandPoolCreateInfo vk_commandPoolCreateInfo;

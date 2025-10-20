@@ -7,7 +7,7 @@
 
 namespace RE {
 
-#define DEFAULT_COLOR u8"\033[0m"
+#define DEFAULT_COLOR "\033[0m"
 
 #define PRINT_COLORS 0
 #define TREAT_WARNING_AS_ERROR 1
@@ -17,13 +17,13 @@ namespace RE {
 
 	static void print_time() {
 		std::time_t currentTime = std::time(0);
-		print(u8"[", std::put_time(std::gmtime(&currentTime), "%d.%b %Y, %H:%M:%S"), u8"] ");
+		print("[", std::put_time(std::gmtime(&currentTime), "%d.%b %Y, %H:%M:%S"), "] ");
 	}
 
 	[[nodiscard]]
-	static std::u8string escape_code_to_string(const TerminalColor eColor, const bool bBackgroundColored, const bool bBold) {
+	static std::string escape_code_to_string(const TerminalColor eColor, const bool bBackgroundColored, const bool bBold) {
 		if (!are_bits_true<uint8_t>(u8ConsoleSettings, PRINT_COLORS))
-			return u8"";
+			return "";
 		uint32_t u32Id = static_cast<uint32_t>(eColor);
 		if (u32Id >= static_cast<uint32_t>(RE_TERMINAL_COLOR_BRIGHT_BLACK))
 			u32Id += 90 - static_cast<uint32_t>(RE_TERMINAL_COLOR_BRIGHT_BLACK);
@@ -31,60 +31,60 @@ namespace RE {
 			u32Id += 30;
 		if (bBackgroundColored)
 			u32Id += 10;
-		std::u8string result(u8"\033[");
+		std::string result("\033[");
 		if (bBold)
-			result.append(u8"1;");
-		result.append(std::format(u8"{}", u32Id));
-		result.append(u8"m");
+			result.append("1;");
+		result.append(std::format("{}", u32Id));
+		result.append("m");
 		return result;
 	}
 
-	static void print_error_msg(const std::u8string &rsDetail) {
-		size_t lineBreak = sDetail.find(u8"\n");
-		println(u8" : ", sDetail.substr(0, lineBreak));
+	static void print_error_msg(const std::string &rsDetail) {
+		size_t lineBreak = rsDetail.find("\n");
+		println(" : ", rsDetail.substr(0, lineBreak));
 		while (lineBreak != std::string::npos) {
 			lineBreak++;
-			const size_t nextLineBreak = sDetail.find(u8"\n", lineBreak);
-			println(u8"                                  ", sDetail.substr(lineBreak, nextLineBreak));
+			const size_t nextLineBreak = rsDetail.find("\n", lineBreak);
+			println("                                  ", rsDetail.substr(lineBreak, nextLineBreak));
 			lineBreak = nextLineBreak;
 		}
 	}
 
-	void print_colored(const char8_t *const pacContent, const TerminalColor eColor, const bool bBackgroundColored, const bool bBold) {
-		print(escape_code_to_string(eColor, bBackgroundColored, bBold), pacContent, DEFAULT_COLOR);
+	void print_colored(const std::string &rsContent, const TerminalColor eColor, const bool bBackgroundColored, const bool bBold) {
+		print(escape_code_to_string(eColor, bBackgroundColored, bBold), rsContent, DEFAULT_COLOR);
 	}
 
-	void println_colored(const char8_t *const pacContent, const TerminalColor eColor, const bool bBackgroundColored, const bool bBold) {
-		println(escape_code_to_string(eColor, bBackgroundColored, bBold), pacContent, DEFAULT_COLOR);
+	void println_colored(const std::string &rsContent, const TerminalColor eColor, const bool bBackgroundColored, const bool bBold) {
+		println(escape_code_to_string(eColor, bBackgroundColored, bBold), rsContent, DEFAULT_COLOR);
 	}
 	
-	void error(const std::u8string &rsDetail, const bool bTerminate) {
+	void error(const std::string &rsDetail, const bool bTerminate) {
 		print_time();
-		print_colored(u8"ERROR", RE_TERMINAL_COLOR_RED, false, false);
-		print(u8"  ");
-		print_error_msg(sDetail);
+		print_colored("ERROR", RE_TERMINAL_COLOR_RED, false, false);
+		print("  ");
+		print_error_msg(rsDetail);
 		const bool bFatal = bTerminate || are_bits_true<uint8_t>(u8ConsoleSettings, ERRORS_ALWAYS_FATAL);
 		if (bFatal) {
 			bErrorOccured = true;
-			println_colored(u8"Terminating...", RE_TERMINAL_COLOR_BRIGHT_BLACK, false, false);
+			println_colored("Terminating...", RE_TERMINAL_COLOR_BRIGHT_BLACK, false, false);
 		}
 	}
 
-	void warning(const std::u8string &rsDetail) {
+	void warning(const std::string &rsDetail) {
 		if (are_bits_true<uint8_t>(u8ConsoleSettings, TREAT_WARNING_AS_ERROR))
-			error(sDetail, false);
+			error(rsDetail, false);
 		else {
 			print_time();
-			print_colored(u8"WARNING", RE_TERMINAL_COLOR_YELLOW, false, false);
-			print_error_msg(sDetail);
+			print_colored("WARNING", RE_TERMINAL_COLOR_YELLOW, false, false);
+			print_error_msg(rsDetail);
 		}
 	}
 
-	void note(const std::u8string &rsDetail) {
+	void note(const std::string &rsDetail) {
 		print_time();
-		print_colored(u8"NOTE", RE_TERMINAL_COLOR_WHITE, false, false);
-		print(u8"   ");
-		print_error_msg(sDetail);
+		print_colored("NOTE", RE_TERMINAL_COLOR_WHITE, false, false);
+		print("   ");
+		print_error_msg(rsDetail);
 	}
 
 	void enable_colorful_printing(const bool bEnable) {

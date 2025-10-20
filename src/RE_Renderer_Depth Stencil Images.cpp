@@ -486,7 +486,7 @@ namespace RE {
 			};
 			const auto endOfDepthOnlyFormatsAvailable = availableDepthStencilFormats.rbegin() + sizeof(vk_aeDepthOnlyFormats) / sizeof(vk_aeDepthOnlyFormats[0]);
 			for (uint8_t u8DepthOnlyFormatIndex = 0; u8DepthOnlyFormatIndex < sizeof(vk_aeDepthOnlyFormats) / sizeof(vk_aeDepthOnlyFormats[0]); u8DepthOnlyFormatIndex++) {
-				PRINT_DEBUG("Finding Vulkan depth-only format at index ", u8DepthOnlyFormatIndexs, " in available format list");
+				PRINT_DEBUG("Finding Vulkan depth-only format at index ", u8DepthOnlyFormatIndex, " in available format list");
 				if (std::find(availableDepthStencilFormats.rbegin(), endOfDepthOnlyFormatsAvailable, vk_aeDepthOnlyFormats[u8DepthOnlyFormatIndex]) != endOfDepthOnlyFormatsAvailable) {
 					PRINT_DEBUG("Vulkan depth-only format ", std::hex, vk_aeDepthOnlyFormats[u8DepthOnlyFormatIndex], " is available. Calculating index pointing to it");
 					u8IndexToSelectedDepthStencilFormat = std::find(availableDepthStencilFormats.begin(), availableDepthStencilFormats.end(), vk_aeDepthOnlyFormats[u8DepthOnlyFormatIndex]) - availableDepthStencilFormats.begin();
@@ -496,9 +496,9 @@ namespace RE {
 			uint8_t u8DepthImageCreateIndex = 0;
 			while (u8DepthImageCreateIndex < RE_VK_FRAMES_IN_FLIGHT) {
 				PRINT_DEBUG("Creating Vulkan depth-only image at index ", u8DepthImageCreateIndex);
-				if (create_vulkan_image(0, VK_IMAGE_TYPE_2D, vk_aeDepthOnlyFormats[u8SelectedDepthOnlyFormatIndex], vk_rDepthStencilImageExtent3D, 1, 1, vk_eMsaaCount, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, 1, nullptr, VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_ahDepthStencilImages[u8DepthImageCreateIndex], &vk_ahDepthStencilImageMemories[u8DepthImageCreateIndex])) {
+				if (create_vulkan_image(0, VK_IMAGE_TYPE_2D, availableDepthStencilFormats[u8IndexToSelectedDepthStencilFormat], vk_rDepthStencilImageExtent3D, 1, 1, vk_eMsaaCount, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, 1, nullptr, VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_ahDepthStencilImages[u8DepthImageCreateIndex], &vk_ahDepthStencilImageMemories[u8DepthImageCreateIndex])) {
 					PRINT_DEBUG("Creating Vulkan image view for depth-only image at index ", u8DepthImageCreateIndex);
-					if (create_vulkan_image_view(vk_ahDepthStencilImages[u8DepthImageCreateIndex], VK_IMAGE_VIEW_TYPE_2D, vk_aeDepthOnlyFormats[u8SelectedDepthOnlyFormatIndex], VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1, &vk_ahDepthStencilImageViews[u8DepthImageCreateIndex])) {
+					if (create_vulkan_image_view(vk_ahDepthStencilImages[u8DepthImageCreateIndex], VK_IMAGE_VIEW_TYPE_2D, availableDepthStencilFormats[u8IndexToSelectedDepthStencilFormat], VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1, &vk_ahDepthStencilImageViews[u8DepthImageCreateIndex])) {
 						u8DepthImageCreateIndex++;
 						continue;
 					} else

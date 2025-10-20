@@ -71,6 +71,7 @@ namespace RE {
 			RE_ERROR("There aren't any scenes yet. The engine won't launch");
 			return;
 		}
+		PRINT_DEBUG("Starting game loop");
 		std::chrono::high_resolution_clock::time_point currentFrameTime = std::chrono::high_resolution_clock::now(), lastFrameTime;
 		show_window(true);
 		bRunning = true;
@@ -84,18 +85,21 @@ namespace RE {
 				render();
 			}
 
+			PRINT_DEBUG("Calculating deltatime for next frame");
 			lastFrameTime = currentFrameTime;
 			currentFrameTime = std::chrono::high_resolution_clock::now();
 			fDeltaseconds = std::chrono::duration_cast<std::chrono::duration<float>>(currentFrameTime - lastFrameTime).count();
 			if (fDeltaseconds <= fMaxLagTime) {
 				const float fTimeToWait = fMinDeltatime - fDeltaseconds;
-				if (fTimeToWait > 0.0f)
+				if (fTimeToWait > 0.0f) {
+					PRINT_DEBUG("Main thread sleeps for ", fTimeToWait);
 					std::this_thread::sleep_for(std::chrono::duration<float>(fTimeToWait));
+				}
 			} else
 				fDeltaseconds = 0.0f;
 		}
 
-		// Termination
+		PRINT_DEBUG("Exiting game loop");
 		bRunning = false;
 		show_window(false);
 		last_game_logic_update();

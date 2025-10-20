@@ -386,7 +386,7 @@ namespace RE {
 	void VulkanTask::destroy() {
 		PRINT_DEBUG_CLASS("Destroying Vulkan task");
 		for (uint32_t u32CommandBufferIndex = 0; u32CommandBufferIndex < u32CommandBufferCount; u32CommandBufferIndex++) {
-			PRINT_DEBUG_CLASS("Deallocating Vulkan command buffer at index ", u32CommandBufferIndex);
+			PRINT_DEBUG_CLASS("Deallocating Vulkan command buffer at index ", u32CommandBufferIndex, " from array ", commandBuffers.get());
 			vkFreeCommandBuffers(vk_hDevice, commandPoolPerCommandBuffer[u32CommandBufferIndex], 1, &commandBuffers[u32CommandBufferIndex]);
 		}
 		if (u32CommandBufferCount > 1) {

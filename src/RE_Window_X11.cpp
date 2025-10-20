@@ -48,9 +48,9 @@ namespace RE {
 					if (x11_colormap) {
 						PRINT_DEBUG("Creating X11 window");
 						XSetWindowAttributes winAttrib = {
-							.colormap = x11_colormap,
 							.border_pixel = 0,
-							.event_mask = StructureNotifyMask | ExposureMask | KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask
+							.event_mask = StructureNotifyMask | ExposureMask | KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask,
+							.colormap = x11_colormap
 						};
 						windowSize[0] = monitorSize[0] / 4 * 3;
 						windowSize[1] = monitorSize[1] / 4 * 3;

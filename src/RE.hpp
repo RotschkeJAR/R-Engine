@@ -289,41 +289,43 @@ namespace RE {
 
 	template <class T>
 	[[nodiscard]]
-	const char8_t* resolve_string_class(const T& rString) {
+	const char* resolve_string_class(const T& rString) {
 		static_assert(!std::is_same_v<T, std::string_view>, "String views cannot be resolved");
-		static_assert(std::is_same_v<T, std::u8string> || std::is_same_v<T, const char*> || std::is_same_v<T, char*>, "This function only accepts string-like datatypes, that support plain characters (wide chars aren't accepted)");
+		static_assert(std::is_same_v<T, std::u8string> || std::is_same_v<T, const char*> || std::is_same_v<T, char*>, "This function only accepts string-like datatypes, that support plain characters (wide chars and unicodes except UTF-8 aren't accepted). String views cannot be resolved however");
 		if constexpr (std::is_same_v<T, std::u8string>)
-			return rString.c_str();
+			return reinterpret_cast<const char*>(rString.c_str());
 		else if constexpr (std::is_same_v<T, const char8_t*> || std::is_same_v<T, char8_t*>)
-			return const_cast<const char8_t*>(rString);
+			return reinterpret_cast<const char*>(rString);
+		else if constexpr (std::is_same_v<T, std::string>)
+			return rString.c_str();
+		else if constexpr (std::is_same_v<T, char*> || std::is_same_v<T, const char*>)
+			return rString;
 		else
 			return nullptr;
 	}
 
 	template <typename T>
 	[[nodiscard]]
-	std::u8string array_to_string(const T (&rArray)[], const size_t arrayLength) {
-		std::u8string sResult;
-		sResult.reserve(arrayLength * sizeof(T));
-		sResult.append(u8"{");
+	std::string array_to_string(const T (&rArray)[], const size_t arrayLength) {
+		std::stringstream sStream("{");
 		for (size_t i = 0; i < arrayLength; i++) {
 			if (i)
-				sResult.append(u8", ");
+				sStream << ", ";
 			if constexpr (std::is_same_v<T, int8_t>)
-				sResult.append(rArray[i]);
+				sStream << rArray[i];
 			else if constexpr (std::is_same_v<T, uint8_t>)
-				sResult.append(rArray[i]);
+				sStream << rArray[i];
 			else
-				sResult.append(rArray[i]);
+				sStream << rArray[i];
 		}
-		sResult.append(u8"}");
-		return sResult;
+		sStream << "}";
+		return sStream.str();
 	}
 
 	template <class... T>
 	[[nodiscard]]
 	std::string append_to_string(const T... strings) {
-		std::stringstream sStream((10 + ... + sizeof(strings)));
+		std::stringstream sStream;
 		([&]() {
 			if constexpr (std::is_same_v<T, int8_t>)
 				sStream << static_cast<int16_t>(strings);
@@ -338,7 +340,7 @@ namespace RE {
 	template <class... T>
 	[[nodiscard]]
 	std::wstring append_to_wstring(const T... strings) {
-		std::wstringstream wsStream((10 + ... + sizeof(strings)));
+		std::wstringstream wsStream;
 		([&]() {
 			if constexpr (std::is_same_v<T, int8_t>)
 				wsStream << static_cast<int16_t>(strings);

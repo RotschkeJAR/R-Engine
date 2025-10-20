@@ -192,6 +192,7 @@ int main_func() {
 		start_game_loop();
 		if (clonus)
 			delete clonus;
+		destroy_engine();
 	}
 	return 0;
 }

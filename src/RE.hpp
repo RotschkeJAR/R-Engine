@@ -9,8 +9,10 @@
 # endif
 # define WIN32_LEAN_AND_MEAN /* speeds compilation up */
 # include <windows.h>
+# include <processthreadsapi.h>
 #elif defined(__linux__)
 # define RE_OS_LINUX 1
+# include <pthread.h>
 #else
 # warning The targeted OS is unknown to R-Engine
 #endif
@@ -26,6 +28,8 @@
 #include <array>
 #include <variant>
 #include <ctime>
+#include <iomanip>
+#include <optional>
 
 namespace RE {
 
@@ -221,6 +225,11 @@ namespace RE {
 		RE_MSAA_MODE_64 = 6,
 		RE_MSAA_MODE_DISABLED = RE_MSAA_MODE_1
 	};
+
+	template <class SearchedType, class... Args>
+	consteval bool any_type_of() {
+		return (std::is_same_v<SearchedType, Args> || ...);
+	}
 
 	void set_signal_handlers();
 
@@ -579,6 +588,184 @@ namespace RE {
 	typedef Vector<uint32_t, 3> Vector3u;
 	typedef Vector<uint32_t, 4> Vector4u;
 
+	template <class __ReturnType, class... __ParamTypes>
+	class Thread final {
+		static_assert((!std::is_void_v<__ParamTypes> && ...), "This class is not supposed to get void-paramters");
+
+		public:
+			static constexpr bool bFunctionReturnsData = !std::is_void_v<__ReturnType>;
+			static constexpr bool bFunctionHasParameter = sizeof...(__ParamTypes) > 0;
+
+		private:
+			using FuncPtr = std::conditional_t<bFunctionHasParameter, __ReturnType (*)(__ParamTypes...), __ReturnType (*)(void)>;
+			FuncPtr function;
+			typename std::enable_if<bFunctionReturnsData, std::optional<__ReturnType>> returnedValue;
+			bool bJoinable;
+
+#ifdef RE_OS_WINDOWS
+			HANDLE win_hThread;
+			typename std::enable_if<bFunctionHasParameter, std::tuple<__ParamTypes...>> parameters;
+
+			static DWORD WINAPI thread_proc(const LPVOID pData) {
+				const Thread *const pThread = static_cast<const Thread*>(pData);
+				if constexpr (bFunctionReturnsData) {
+					if constexpr (bFunctionHasParameter)
+						pThread->returnedValue = std::apply(pThread->function, pThread->parameters);
+					else
+						pThread->returnedValue = pThread->function();
+				} else {
+					if constexpr (bFunctionHasParameter)
+						std::apply(pThread->function, pThread->parameters);
+					else
+						pThread->function();
+				}
+				return 0;
+			}
+
+			void create_thread() {
+				PRINT_DEBUG_CLASS("Creating Windows thread and calling function ", function);
+				if constexpr (bFunctionReturnsData)
+					returnedValue.reset();
+				win_hThread = CreateThread(
+					nullptr, 
+					0, 
+					thread_proc, 
+					static_cast<LPVOID>(this), 
+					0, 
+					nullptr
+				);
+				if (!win_hThread) {
+					ERROR("Failed to create new Windows thread");
+					return;
+				}
+				bJoinable = true;
+			}
+			
+		public:
+			Thread() : function(nullptr), bJoinable(false), win_hThread(nullptr) {}
+			Thread(FuncPtr pFunction, __ParamTypes... params) : function(pFunction) {
+				if constexpr (bFunctionHasParameter)
+					parameters = std::make_tuple<__ParamTypes...>(params...);
+				create_thread();
+			}
+			~Thread() {
+				if (is_joinable()) {
+					WARNING("Auto-joining Windows thread");
+					join();
+				}
+			}
+
+			void join() {
+				if (!is_joinable()) {
+					PRINT_DEBUG_CLASS("Windows thread ", win_hThread, " is not joinable");
+					return;
+				}
+				PRINT_DEBUG_CLASS("Joining Windows thread ", win_hThread);
+				if (WaitForSingleObject(win_hThread, INFINITE) != WAIT_OBJECT_0)
+					ERROR("Failed to join Windows thread ", win_hThread);
+				bJoinable = false;
+				win_hThread = nullptr;
+			}
+
+			void cancel() {
+				if (!is_valid()) {
+					PRINT_DEBUG_CLASS("Cannot cancel Windows thread, because it's invalid");
+					return;
+				}
+				PRINT_DEBUG_CLASS("Canceling Windows thread ", win_hThread);
+				if (!TerminateThread(win_hThread, 0))
+					ERROR("Failed to cancel the Windows thread ", win_hThread);
+				bJoinable = false;
+				win_hThread = nullptr;
+			}
+
+			HANDLE get_native_handle() const {
+				return win_hThread;
+			}
+
+			bool is_valid() const {
+				return win_hThread != nullptr;
+			}
+
+#elif defined RE_OS_LINUX
+			bool bValid;
+			pthread_t pt_hThread;
+
+			void create_thread() {
+				
+				bJoinable = true;
+			}
+			
+		public:
+			Thread() : function(nullptr), bJoinable(false), bValid(false) {}
+			Thread(FuncPtr pFunction, typename std::enable_if<bFunctionHasParameter, __ParamTypes...> params) : function(pFunction) {
+				create_thread();
+			}
+			~Thread() {
+				if (is_joinable()) {
+					WARNING("Auto-joining POSIX thread");
+					join();
+				}
+			}
+
+			void join() {
+				if (!is_joinable()) {
+					PRINT_DEBUG_CLASS("POSIX thread is not joinable");
+					return;
+				}
+				PRINT_DEBUG_CLASS("Joining POSIX thread");
+				pthread_join(pt_hThread, nullptr);
+				bJoinable = false;
+			}
+
+			void cancel() {
+				if (!is_valid()) {
+					PRINT_DEBUG_CLASS("Cannot cancel POSIX thread, because it's invalid");
+					return;
+				}
+				PRINT_DEBUG_CLASS("Canceling POSIX thread");
+				pthread_cancel(pt_hThread);
+				bJoinable = false;
+			}
+
+			pthread_t get_native_handle() const {
+				return pt_hThread;
+			}
+
+			bool is_valid() const {
+				return bValid;
+			}
+
+#else
+			static_assert(false, "There is no known API to handling threads on this system");
+
+		public:
+			Thread() {}
+			~Thread() {}
+
+			constexpr bool is_valid() const {
+				return false;
+			}
+#endif
+
+			bool is_joinable() const {
+				return bJoinable && is_valid();
+			}
+
+			__ReturnType call_function_in_current_thread(__ParamTypes... args) {
+				PRINT_DEBUG_CLASS("Calling function ", function, " in current thread");
+				return function(args...);
+			}
+
+			__ReturnType operator()(__ParamTypes... args) {
+				return call_function_in_current_thread(args...);
+			}
+
+			operator bool() const {
+				return is_valid();
+			}
+	};
+
 	class Color final {
 		public:
 			static constexpr uint8_t u8ColorChannelCount = 4;
@@ -815,58 +1002,60 @@ namespace RE {
 			bool has_valid_input_values() const;
 	};
 
-	struct ScreenPercentageSettings final {
-		ScreenPercentageMode eMode;
-		union {
-			float fScale;
-			Vector2u constSize;
-		};
+	class ScreenPercentageSettings final {
+		public:
+			ScreenPercentageMode eMode;
+			union {
+				float fScale;
+				Vector2u constSize;
+			};
 
-		ScreenPercentageSettings();
-		ScreenPercentageSettings(ScreenPercentageMode eMode);
-		ScreenPercentageSettings(float fScale);
-		ScreenPercentageSettings(const Vector2u &rConstSize);
-		ScreenPercentageSettings(ScreenPercentageMode eMode, const std::variant<float, Vector2u> &rSettings);
-		ScreenPercentageSettings(const ScreenPercentageSettings &rCopy);
-		~ScreenPercentageSettings();
-		void copy_from(const ScreenPercentageSettings &rCopy);
-		[[nodiscard]]
-		bool equals(const ScreenPercentageSettings &rCompare) const;
-		void operator =(const ScreenPercentageSettings &rCopy);
-		[[nodiscard]]
-		bool operator ==(const ScreenPercentageSettings &rCompare) const;
-		[[nodiscard]]
-		bool operator !=(const ScreenPercentageSettings &rCompare) const;
+			ScreenPercentageSettings();
+			ScreenPercentageSettings(ScreenPercentageMode eMode);
+			ScreenPercentageSettings(float fScale);
+			ScreenPercentageSettings(const Vector2u &rConstSize);
+			ScreenPercentageSettings(ScreenPercentageMode eMode, const std::variant<float, Vector2u> &rSettings);
+			ScreenPercentageSettings(const ScreenPercentageSettings &rCopy);
+			~ScreenPercentageSettings();
+			void copy_from(const ScreenPercentageSettings &rCopy);
+			[[nodiscard]]
+			bool equals(const ScreenPercentageSettings &rCompare) const;
+			void operator =(const ScreenPercentageSettings &rCopy);
+			[[nodiscard]]
+			bool operator ==(const ScreenPercentageSettings &rCompare) const;
+			[[nodiscard]]
+			bool operator !=(const ScreenPercentageSettings &rCompare) const;
 	};
 
-	struct SpriteLayoutSettings final {
-		TextureFilter eMagFilter;
-		TextureFilter eMinFilter;
-		TextureFilter eMipmapFilter;
-		TextureRepetition eTextureRepetitionU;
-		TextureRepetition eTextureRepetitionV;
-		float fMaxAnisotropy; // must be equal or greater than 1, otherwise anisotropic filtering is disabled
-		BorderColor eBorderColor;
+	class SpriteLayoutSettings final {
+		public:
+			TextureFilter eMagFilter;
+			TextureFilter eMinFilter;
+			TextureFilter eMipmapFilter;
+			TextureRepetition eTextureRepetitionU;
+			TextureRepetition eTextureRepetitionV;
+			float fMaxAnisotropy; // must be equal or greater than 1, otherwise anisotropic filtering is disabled
+			BorderColor eBorderColor;
 
-		SpriteLayoutSettings();
-		SpriteLayoutSettings(TextureFilter eMagFilter);
-		SpriteLayoutSettings(TextureFilter eMagFilter, TextureFilter eMinFilter);
-		SpriteLayoutSettings(TextureFilter eMagFilter, TextureFilter eMinFilter, TextureFilter eMipmapFilter);
-		SpriteLayoutSettings(TextureRepetition eTextureRepetitionU);
-		SpriteLayoutSettings(TextureRepetition eTextureRepetitionU, TextureRepetition eTextureRepetitionV);
-		SpriteLayoutSettings(float fMaxAnisotropy);
-		SpriteLayoutSettings(BorderColor eBorderColor);
-		SpriteLayoutSettings(TextureFilter eMagFilter, TextureFilter eMinFilter, TextureFilter eMipmapFilter, TextureRepetition eTextureRepetitionU, TextureRepetition eTextureRepetitionV, float fMaxAnisotropy, BorderColor eBorderColor);
-		SpriteLayoutSettings(const SpriteLayoutSettings &rCopy);
-		~SpriteLayoutSettings();
-		void copy_from(const SpriteLayoutSettings &rCopy);
-		[[nodiscard]]
-		bool equals(const SpriteLayoutSettings &rCompare) const;
-		void operator =(const SpriteLayoutSettings &rCopy);
-		[[nodiscard]]
-		bool operator ==(const SpriteLayoutSettings &rCompare) const;
-		[[nodiscard]]
-		bool operator !=(const SpriteLayoutSettings &rCompare) const;
+			SpriteLayoutSettings();
+			SpriteLayoutSettings(TextureFilter eMagFilter);
+			SpriteLayoutSettings(TextureFilter eMagFilter, TextureFilter eMinFilter);
+			SpriteLayoutSettings(TextureFilter eMagFilter, TextureFilter eMinFilter, TextureFilter eMipmapFilter);
+			SpriteLayoutSettings(TextureRepetition eTextureRepetitionU);
+			SpriteLayoutSettings(TextureRepetition eTextureRepetitionU, TextureRepetition eTextureRepetitionV);
+			SpriteLayoutSettings(float fMaxAnisotropy);
+			SpriteLayoutSettings(BorderColor eBorderColor);
+			SpriteLayoutSettings(TextureFilter eMagFilter, TextureFilter eMinFilter, TextureFilter eMipmapFilter, TextureRepetition eTextureRepetitionU, TextureRepetition eTextureRepetitionV, float fMaxAnisotropy, BorderColor eBorderColor);
+			SpriteLayoutSettings(const SpriteLayoutSettings &rCopy);
+			~SpriteLayoutSettings();
+			void copy_from(const SpriteLayoutSettings &rCopy);
+			[[nodiscard]]
+			bool equals(const SpriteLayoutSettings &rCompare) const;
+			void operator =(const SpriteLayoutSettings &rCopy);
+			[[nodiscard]]
+			bool operator ==(const SpriteLayoutSettings &rCompare) const;
+			[[nodiscard]]
+			bool operator !=(const SpriteLayoutSettings &rCompare) const;
 	};
 
 	// Window

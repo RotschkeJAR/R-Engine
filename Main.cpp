@@ -183,7 +183,9 @@ class First : public Scene {
 
 int main_func() {
 	set_signal_handlers();
-	if (init_engine()) {
+	Thread<void> threadie([]() {println("Hello World!");});
+	threadie.join();
+	/*if (init_engine()) {
 		set_fps_limit(60);
 		First first;
 		Second secondInStack;
@@ -193,7 +195,7 @@ int main_func() {
 		if (clonus)
 			delete clonus;
 		destroy_engine();
-	}
+	}*/
 	return 0;
 }
 

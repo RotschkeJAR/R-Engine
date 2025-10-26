@@ -5,11 +5,19 @@
 
 namespace RE {
 
+	struct GameObjectUniformData {
+		float a16fModelMatrix[16];
+		uint32_t u32TextureId;
+	};
+
 	class ListBatch_GameObject;
 	
 	class RenderBatch_GameObject {
 		private:
 			ListBatch_GameObject &rGameObjectBatch;
+			VkBuffer vk_hStagingUniformBuffer;
+			VkDeviceMemory vk_hStagingUniformBufferMemory;
+			GameObjectUniformData *pStagingUniformBufferData;
 
 		public:
 			RenderBatch_GameObject() = delete;
@@ -18,9 +26,7 @@ namespace RE {
 			bool init();
 			void destroy();
 
-			void load_vertices(bool &rbNeedsRender);
-			void render_opaque();
-			void render_transparent();
+			void fetch_render_data();
 	};
 
 }

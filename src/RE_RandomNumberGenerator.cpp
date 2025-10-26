@@ -43,4 +43,9 @@ namespace RE {
 		return random<double>(1.0);
 	}
 
+	[[nodiscard]]
+	bool RandomNumberGenerator::operator ()(const double &rdChance) {
+		return random_bool(rdChance);
+	}
+
 }

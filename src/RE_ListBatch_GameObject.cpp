@@ -33,7 +33,7 @@ namespace RE {
 		return std::find(apGameObjects.begin(), endOfSearch, pGameObject) != endOfSearch;
 	}
 	
-	GameObject* ListBatch_GameObject::get(const uint16_t u16Index) {
+	GameObject* ListBatch_GameObject::at(const uint16_t u16Index) const {
 		return apGameObjects[u16Index];
 	}
 	
@@ -68,6 +68,10 @@ namespace RE {
 			PRINT_DEBUG_CLASS("Ending game object ", apGameObjects[u16Index]);
 			apGameObjects[u16Index]->end(pCurrentScene);
 		}
+	}
+
+	GameObject* ListBatch_GameObject::operator[](const uint16_t u16Index) const {
+		return at(u16Index);
 	}
 
 }

@@ -24,42 +24,78 @@ OUT          = Game
 .PHONY: all, update_git, fetch_git
 
 all:
-	@make --no-print-directory $(LIB_BIN)/*
-	@make --no-print-directory $(RE)
-	@make --no-print-directory $(SH)/*.spv
 	@make --no-print-directory $(OUT)
 
 $(OUT): $(RE) *.cpp
-	@$(CC) $(CFLAG) -std=c++20 -x c++ -o "$(OUT)" *.cpp $(LDFLAG)
+	@for file in *.cpp; do \
+		echo $${file}; \
+		$(CC) $(CFLAG) -std=c++20 -x c++ -o "$(OUT)" "$${file}" $(LDFLAG); \
+	done
 
-$(RE): $(SRC)/*
+$(RE): $(SRC)/* $(SH)/*.spv $(LIB_BIN)/*
 	-@rm -f *.o $(BIN)/*.o
 	@if [ "$(wildcard $(BIN)/*.gch)" != "" ]; then \
 		mv $(BIN)/*.gch $(SRC); \
 	fi
-	@$(CC) $(CFLAG) -std=c++20 -x c++ -c $(SRC)/*.cpp -I$(LIB) -I$(LIB_SPEC) -I"$(HOME)/Vulkan SDK/x86_64/include" || (rm -f *.o; exit 1)
-	@mv *.o $(BIN)
-	@if [ "$(wildcard $(SRC)/*.gch)" != "" ]; then \
-		mv $(SRC)/*.gch $(BIN); \
+	@errorCaused=false; \
+	for file in $(SRC)/*.cpp; do \
+		echo $${file}; \
+		if ! $(CC) $(CFLAG) -std=c++20 -x c++ -c "$${file}" -I$(LIB) -I$(LIB_SPEC) -I"$(HOME)/Vulkan SDK/x86_64/include"; then \
+			errorCaused=true; \
+		fi; \
+	done; \
+	if ! $$errorCaused; then \
+		mv *.o $(BIN); \
+		if [ "$(wildcard $(SRC)/*.gch)" != "" ]; then \
+			mv $(SRC)/*.gch $(BIN); \
+		fi; \
+		rm -f $(RE); \
+		ar rs "$(RE)" $(BIN)/*.o $(LIB_BIN)/*.o || (rm -f $(RE); exit 1); \
+		echo "ENGINE - SUCCESS"; \
+	else \
+		rm -f *.o; \
+		rm $(SRC)/*.gch; \
+		echo "ENGINE - ERROR: Failed compiling"; \
 	fi
-	-@rm -f $(RE)
-	@ar rs "$(RE)" $(BIN)/*.o $(LIB_BIN)/*.o || (rm -f $(RE); exit 1)
 
 $(LIB_BIN)/*: $(LIB)/* $(LIB_SPEC)/*
-	@rm -f *.o $(LIB_BIN)/*.o
-	@if [ "$(wildcard $(LIB)/*.c)" != "" ]; then \
-		$(CC) $(CFLAG) -std=c2x -x c -c $(LIB)/*.c || (rm -f *.o; exit 1); \
+	@errorCaused=false; \
+	if [ "$(wildcard $(LIB)/*.c)" != "" ]; then \
+		for file in $(LIB)/*.c; do \
+			if ! $(CC) $(CFLAG) -std=c2x -x c -c "$${file}" || (rm -f *.o; exit 1); then \
+				errorCaused=true; \
+			fi; \
+		done; \
+	fi; \
+	if [ "$(wildcard $(LIB)/*.cpp)" != "" ]; then \
+		for file in $(LIB)/*.cpp; do \
+			if ! $(CC) $(CFLAG) -std=c++20 -x c++ -c "$${file}" || (rm -f *.o; exit 1); then \
+				errorCaused=true; \
+			fi; \
+		done; \
+	fi; \
+	if [ "$(wildcard $(LIB_SPEC)/*.c)" != "" ]; then \
+		for file in $(LIB_SPEC)/*.c; do \
+			if ! $(CC) $(CFLAG) -std=c2x -x c -c "$${file}" || (rm -f *.o; exit 1); then \
+				errorCaused=true; \
+			fi; \
+		done; \
+	fi; \
+	if [ "$(wildcard $(LIB_SPEC)/*.cpp)" != "" ]; then \
+		for file in $(LIB_SPEC)/*.cpp; do \
+			if ! $(CC) $(CFLAG) -std=c++20 -x c++ -c "$${file}" || (rm -f *.o; exit 1); then \
+				errorCaused=true; \
+			fi; \
+		done; \
+	fi; \
+	if ! $$errorCaused; then \
+		rm -f *.o $(LIB_BIN)/*.o; \
+		mv *.o $(LIB_BIN); \
+		echo "LIBRARIES - SUCCESS"
+	else \
+		rm -f *.o; \
+		echo "LIBRARIES - ERROR: Failed compiling libraries"
 	fi
-	@if [ "$(wildcard $(LIB)/*.cpp)" != "" ]; then \
-		$(CC) $(CFLAG) -std=c++20 -x c++ -c $(LIB)/*.cpp || (rm -f *.o; exit 1); \
-	fi
-	@if [ "$(wildcard $(LIB_SPEC)/*.c)" != "" ]; then \
-		$(CC) $(CFLAG) -std=c2x -x c -c $(LIB_SPEC)/*.c || (rm -f *.o; exit 1); \
-	fi
-	@if [ "$(wildcard $(LIB_SPEC)/*.cpp)" != "" ]; then \
-		$(CC) $(CFLAG) -std=c++20 -x c++ -c $(LIB_SPEC)/*.cpp || (rm -f *.o; exit 1); \
-	fi
-	@mv *.o $(LIB_BIN)
 
 $(SH)/*.spv: $(SH)/*.glsl
 	-@rm -f $(SH)/*.spv

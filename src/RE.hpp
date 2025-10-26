@@ -30,6 +30,9 @@
 #include <ctime>
 #include <iomanip>
 #include <optional>
+#include <atomic>
+#include <chrono>
+#include <functional>
 
 namespace RE {
 
@@ -589,22 +592,20 @@ namespace RE {
 	typedef Vector<uint32_t, 4> Vector4u;
 
 	template <class __ReturnType, class... __ParamTypes>
-	class Thread final {
-		static_assert((!std::is_void_v<__ParamTypes> && ...), "This class is not supposed to get void-paramters");
+	class [[deprecated]] Thread final {
+		static_assert((!std::is_void_v<__ParamTypes> && ...), "This class is not supposed to get void-paramters for functions without parameters. Leave it blank instead");
 
 		public:
 			static constexpr bool bFunctionReturnsData = !std::is_void_v<__ReturnType>;
 			static constexpr bool bFunctionHasParameter = sizeof...(__ParamTypes) > 0;
 
 		private:
-			using FuncPtr = std::conditional_t<bFunctionHasParameter, __ReturnType (*)(__ParamTypes...), __ReturnType (*)(void)>;
-			FuncPtr function;
+			std::function<__ReturnType(__ParamTypes...)> function;
 			typename std::enable_if<bFunctionReturnsData, std::optional<__ReturnType>> returnedValue;
-			bool bJoinable;
+			typename std::enable_if<bFunctionHasParameter, std::tuple<__ParamTypes...>> parameters;
 
 #ifdef RE_OS_WINDOWS
 			HANDLE win_hThread;
-			typename std::enable_if<bFunctionHasParameter, std::tuple<__ParamTypes...>> parameters;
 
 			static DWORD WINAPI thread_proc(const LPVOID pData) {
 				const Thread *const pThread = static_cast<const Thread*>(pData);
@@ -623,30 +624,22 @@ namespace RE {
 			}
 
 			void create_thread() {
-				PRINT_DEBUG_CLASS("Creating Windows thread and calling function ", function);
+				PRINT_DEBUG_CLASS("Creating Windows thread and calling function");
 				if constexpr (bFunctionReturnsData)
 					returnedValue.reset();
-				win_hThread = CreateThread(
-					nullptr, 
-					0, 
-					thread_proc, 
-					static_cast<LPVOID>(this), 
-					0, 
-					nullptr
-				);
+				win_hThread = CreateThread(nullptr, 0, thread_proc, static_cast<LPVOID>(this), 0, nullptr);
 				if (!win_hThread) {
 					ERROR("Failed to create new Windows thread");
 					return;
 				}
-				bJoinable = true;
 			}
 			
 		public:
-			Thread() : function(nullptr), bJoinable(false), win_hThread(nullptr) {}
-			Thread(FuncPtr pFunction, __ParamTypes... params) : function(pFunction) {
-				if constexpr (bFunctionHasParameter)
-					parameters = std::make_tuple<__ParamTypes...>(params...);
-				create_thread();
+			Thread() : function(nullptr), win_hThread(nullptr) {}
+			template <typename Func>
+			explicit Thread(Func &&rrFunction) : function(std::forward<Func>(rrFunction)) {}
+			Thread(Thread &&rrThread) {
+				*this = rrThread;
 			}
 			~Thread() {
 				if (is_joinable()) {
@@ -656,50 +649,103 @@ namespace RE {
 			}
 
 			void join() {
-				if (!is_joinable()) {
-					PRINT_DEBUG_CLASS("Windows thread ", win_hThread, " is not joinable");
-					return;
+				if (GetCurrentThread() == win_hThread) {
+					FATAL_ERROR("Windows thread ", win_hThread, " joined itself causing a deadlock");
+					std::abort();
 				}
 				PRINT_DEBUG_CLASS("Joining Windows thread ", win_hThread);
 				if (WaitForSingleObject(win_hThread, INFINITE) != WAIT_OBJECT_0)
 					ERROR("Failed to join Windows thread ", win_hThread);
-				bJoinable = false;
 				win_hThread = nullptr;
+			}
+
+			void join(const std::chrono::milliseconds timeout) {
+				if (GetCurrentThread() == win_hThread) {
+					FATAL_ERROR("Windows thread ", win_hThread, " joined itself causing a deadlock");
+					std::abort();
+				}
+				PRINT_DEBUG_CLASS("Joining Windows thread ", win_hThread, " for ", timeout.count(), " milliseconds");
+				switch (WaitForSingleObject(win_hThread, static_cast<DWORD>(timeout.count()))) {
+					case WAIT_TIMEOUT:
+						PRINT_DEBUG_CLASS("The Windows thread ", win_hThread, " didn't finish execution after ", timeout.count(), " milliseconds and the wait process timed out");
+						break;
+					case WAIT_OBJECT_0:
+						win_hThread = nullptr;
+						break;
+					default:
+						ERROR("Failed to join Windows thread ", win_hThread, " with time out");
+						break;
+				}
 			}
 
 			void cancel() {
-				if (!is_valid()) {
-					PRINT_DEBUG_CLASS("Cannot cancel Windows thread, because it's invalid");
-					return;
-				}
 				PRINT_DEBUG_CLASS("Canceling Windows thread ", win_hThread);
 				if (!TerminateThread(win_hThread, 0))
 					ERROR("Failed to cancel the Windows thread ", win_hThread);
-				bJoinable = false;
 				win_hThread = nullptr;
 			}
 
+			void detach() {
+				PRINT_DEBUG_CLASS("Detaching Windows thread ", win_hThread);
+				if (!CloseHandle(win_hThread))
+					ERROR("Failed to detach the Windows thread ", win_hThread);
+				win_hThread = nullptr;
+			}
+
+			[[nodiscard]]
 			HANDLE get_native_handle() const {
 				return win_hThread;
 			}
 
+			[[nodiscard]]
 			bool is_valid() const {
 				return win_hThread != nullptr;
 			}
 
+			void operator =(Thread &&rrThread) {
+				function = rrThread.function;
+				if constexpr (bFunctionReturnsData)
+					returnedValue = std::move(rrThread.returnedValue);
+				if constexpr (bFunctionHasParameter)
+					parameters = std::move(rrThread.parameters);
+				win_hThread = rrThread.win_hThread;
+				rrThread.win_hThread = nullptr;
+			}
+
 #elif defined RE_OS_LINUX
 			bool bValid;
-			pthread_t pt_hThread;
+			pthread_t px_hThread;
+
+			static void* thread_proc(void *const pData) {
+				const Thread *const pThread = static_cast<const Thread*>(pData);
+				if constexpr (bFunctionReturnsData) {
+					if constexpr (bFunctionHasParameter)
+						pThread->returnedValue = std::apply(pThread->function(), pThread->parameters);
+					else
+						pThread->returnedValue = pThread->function();
+				} else {
+					if constexpr (bFunctionHasParameter)
+						std::apply(pThread->function(), pThread->parameters);
+					else
+						pThread->function();
+				}
+				return nullptr;
+			}
 
 			void create_thread() {
-				
-				bJoinable = true;
+				PRINT_DEBUG_CLASS("Creating POSIX thread and calling function");
+				if constexpr (bFunctionReturnsData)
+					returnedValue.reset();
+				pthread_create(&px_hThread, nullptr, thread_proc, static_cast<void*>(this));
+				bValid = true;
 			}
 			
 		public:
-			Thread() : function(nullptr), bJoinable(false), bValid(false) {}
-			Thread(FuncPtr pFunction, typename std::enable_if<bFunctionHasParameter, __ParamTypes...> params) : function(pFunction) {
-				create_thread();
+			Thread() : function(nullptr), bValid(false) {}
+			template <typename Func>
+			explicit Thread(Func &&rrFunction) : function(std::forward<Func>(rrFunction)) {}
+			Thread(Thread &&rrThread) {
+				*this = rrThread;
 			}
 			~Thread() {
 				if (is_joinable()) {
@@ -709,58 +755,145 @@ namespace RE {
 			}
 
 			void join() {
-				if (!is_joinable()) {
-					PRINT_DEBUG_CLASS("POSIX thread is not joinable");
-					return;
+				if (pthread_equal(pthread_self(), px_hThread)) {
+					FATAL_ERROR("POSIX thread joined itself causing a deadlock");
+					std::abort();
 				}
 				PRINT_DEBUG_CLASS("Joining POSIX thread");
-				pthread_join(pt_hThread, nullptr);
-				bJoinable = false;
+				pthread_join(px_hThread, nullptr);
+				bValid = false;
+			}
+
+			void join(const std::chrono::milliseconds timeout) {
+				if (pthread_equal(pthread_self(), px_hThread)) {
+					FATAL_ERROR("POSIX thread joined itself causing a deadlock");
+					std::abort();
+				}
+				PRINT_DEBUG_CLASS("Joining POSIX thread for ", timeout.count(), " milliseconds");
+				const timespec timeToWait = {
+					.tv_sec = 0,
+					.tv_nsec = std::chrono::nanoseconds(timeout).count()
+				};
+				switch (pthread_timedjoin_np(px_hThread, nullptr, &timeToWait)) {
+					case ETIMEDOUT:
+						PRINT_DEBUG_CLASS("The POSIX thread didn't finish execution after ", timeout.count(), " milliseconds and the wait process timed out");
+						break;
+					case 0:
+						bValid = false;
+						break;
+					default:
+						PRINT_DEBUG_CLASS("Failed to join POSIX thread with time out");
+						break;
+				}
 			}
 
 			void cancel() {
-				if (!is_valid()) {
-					PRINT_DEBUG_CLASS("Cannot cancel POSIX thread, because it's invalid");
-					return;
-				}
 				PRINT_DEBUG_CLASS("Canceling POSIX thread");
-				pthread_cancel(pt_hThread);
-				bJoinable = false;
+				if (pthread_cancel(px_hThread))
+					ERROR("Failed to cancel POSIX thread");
+				bValid = false;
 			}
 
+			void detach() {
+				PRINT_DEBUG_CLASS("Detaching POSIX thread");
+				if (pthread_detach(px_hThread))
+					ERROR("Failed to detach POSIX thread");
+				bValid = false;
+			}
+
+			[[nodiscard]]
 			pthread_t get_native_handle() const {
-				return pt_hThread;
+				return px_hThread;
 			}
 
+			[[nodiscard]]
 			bool is_valid() const {
 				return bValid;
 			}
 
+			void operator =(Thread &&rrThread) {
+				function = rrThread.function;
+				if constexpr (bFunctionReturnsData)
+					returnedValue = std::move(rrThread.returnedValue);
+				if constexpr (bFunctionHasParameter)
+					parameters = std::move(rrThread.parameters);
+				bValid = rrThread.bValid;
+				rrThread.bValid = false;
+				px_hThread = rrThread.px_hThread;
+			}
+
 #else
-			static_assert(false, "There is no known API to handling threads on this system");
+			static_assert(false, "The OS is unknown and the API for thread handling either");
+
+			void create_thread() {}
 
 		public:
 			Thread() {}
+			template <typename Func>
+			explicit Thread(Func &&rrFunction) : function(std::forward<Func>(rrFunction)) {}
+			Thread(Thread &&rrThread) {}
 			~Thread() {}
 
-			constexpr bool is_valid() const {
+			void join() {}
+			void join(const std::chrono::milliseconds timeout) {}
+			void cancel() {}
+			[[nodiscard]]
+			void* get_native_handle() const {
+				return nullptr;
+			}
+			[[nodiscard]]
+			bool is_valid() const {
 				return false;
 			}
+
+			void operator =(Thread &&rrThread) {}
 #endif
 
+			template <typename Func>
+			void assign_function(Func &&rrFunction) {
+				PRINT_DEBUG_CLASS("Assigning new function");
+				function = std::forward<Func>(rrFunction);
+			}
+
+			void invoke(__ParamTypes... params) {
+				PRINT_DEBUG_CLASS("Invoking POSIX thread");
+				if constexpr (bFunctionHasParameter)
+					parameters = std::make_tuple(params...);
+				create_thread();
+			}
+
+			template <typename Func>
+			void assign_and_invoke(Func &&rrFunction, __ParamTypes... params) {
+				assign_function(rrFunction);
+				invoke(params...);
+			}
+
+			[[nodiscard]]
 			bool is_joinable() const {
-				return bJoinable && is_valid();
+				return is_valid();
 			}
 
+			[[nodiscard]]
+			__ReturnType get_returned_value() {
+				if constexpr (bFunctionReturnsData)
+					return returnedValue.value();
+			}
+
+			[[nodiscard]]
 			__ReturnType call_function_in_current_thread(__ParamTypes... args) {
-				PRINT_DEBUG_CLASS("Calling function ", function, " in current thread");
-				return function(args...);
+				PRINT_DEBUG_CLASS("Calling function in current thread");
+				if constexpr (bFunctionReturnsData)
+					return function(args...);
+				else
+					function(args...);
 			}
 
+			[[nodiscard]]
 			__ReturnType operator()(__ParamTypes... args) {
 				return call_function_in_current_thread(args...);
 			}
 
+			[[nodiscard]]
 			operator bool() const {
 				return is_valid();
 			}
@@ -865,24 +998,24 @@ namespace RE {
 			void seed(size_t newSeed);
 			void seed_randomly();
 
-			template <typename T>
+			template <class T>
 			[[nodiscard]]
-			T random(const T min, const T max) {
+			T random(const T rMin, const T rMax) {
 				static_assert(std::is_integral_v<T> || std::is_floating_point_v<T>, "Only integers and floating-point numbers can be randomly generated");
 				if constexpr (std::is_integral_v<T>) {
-					std::uniform_int_distribution<T> range(min, max - 1);
+					std::uniform_int_distribution<T> range(rMin, rMax - 1);
 					return range(rng);
 				} else if constexpr (std::is_floating_point_v<T>) {
-					std::uniform_real_distribution<T> range(min, max);
+					std::uniform_real_distribution<T> range(rMin, rMax);
 					return range(rng);
 				}
 			}
-			template <typename T>
+			template <class T>
 			[[nodiscard]]
-			T random(const T max) {
-				return random<T>(static_cast<T>(0.0), max);
+			T random(const T rMax) {
+				return random<T>(static_cast<T>(0.0), rMax);
 			}
-			template <typename T>
+			template <class T>
 			[[nodiscard]]
 			T random() {
 				return random<T>(std::numeric_limits<T>::min(), std::numeric_limits<T>::max());
@@ -893,6 +1026,27 @@ namespace RE {
 			bool random_bool(double dChance);
 			[[nodiscard]]
 			double random_percentage();
+
+			template <class T>
+			[[nodiscard]]
+			T operator ()(const T rMin, const T rMax) {
+				return random<T>(rMin, rMax);
+			}
+			template <class T>
+			[[nodiscard]]
+			T operator ()(const T &rMax) {
+				return random<T>(rMax);
+			}
+			template <class T>
+			[[nodiscard]]
+			T operator ()() {
+				if constexpr (std::is_same_v<T, bool>)
+					return random_bool();
+				else
+					return random<T>();
+			}
+			[[nodiscard]]
+			bool operator ()(const double &rdChance);
 	};
 
 	class Scene {

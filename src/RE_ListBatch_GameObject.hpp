@@ -21,7 +21,7 @@ namespace RE {
 			void add(GameObject *pGameObject);
 			bool remove(const GameObject *pGameObject);
 			bool contains(const GameObject *pGameObject) const;
-			GameObject* get(uint16_t u16Index);
+			GameObject* at(uint16_t u16Index) const;
 
 			uint16_t size() const;
 			bool empty() const;
@@ -30,6 +30,8 @@ namespace RE {
 			void start();
 			void update();
 			void end();
+
+			GameObject* operator[](uint16_t u16Index) const;
 
 		friend bool init_game_object_render_batches();
 		friend void destroy_game_object_render_batches();

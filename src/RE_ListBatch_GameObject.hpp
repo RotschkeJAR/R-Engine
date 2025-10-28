@@ -11,10 +11,11 @@ namespace RE {
 	class ListBatch_GameObject final {
 		private:
 			std::array<GameObject*, MAXIMUM_GAME_OBJECTS_PER_BATCH> apGameObjects;
-			RenderBatch_GameObject renderBatch;
 			uint16_t u16Count;
 
 		public:
+			RenderBatch_GameObject renderBatch;
+			
 			ListBatch_GameObject();
 			~ListBatch_GameObject();
 
@@ -32,13 +33,6 @@ namespace RE {
 			void end();
 
 			GameObject* operator[](uint16_t u16Index) const;
-
-		friend bool init_game_object_render_batches();
-		friend void destroy_game_object_render_batches();
-		friend void load_game_object_vertices(bool &rbNeedsRender);
-		friend void render_opaque_game_objects();
-		friend void render_transparent_game_objects();
-		friend void RenderBatch_GameObject::render_opaque();
 	};
 
 }

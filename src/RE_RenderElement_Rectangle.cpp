@@ -15,12 +15,16 @@ namespace RE {
 			if (rStagingRectBuffer.map_memory(RE_VK_RECT_BUFFER_VERTICES_OFFSET, RE_VK_RECT_BUFFER_VERTICES_SIZE, reinterpret_cast<void**>(&pafVertices))) {
 				pafVertices[0] = -1.0f;
 				pafVertices[1] = 1.0f;
-				pafVertices[2] = 1.0f;
+				pafVertices[2] = 0.0f;
 				pafVertices[3] = 1.0f;
 				pafVertices[4] = 1.0f;
-				pafVertices[5] = -1.0f;
-				pafVertices[6] = -1.0f;
+				pafVertices[5] = 0.0f;
+				pafVertices[6] = 1.0f;
 				pafVertices[7] = -1.0f;
+				pafVertices[8] = 0.0f;
+				pafVertices[9] = -1.0f;
+				pafVertices[10] = -1.0f;
+				pafVertices[11] = 0.0f;
 				PRINT_DEBUG("Unmapping memory area for vertex data of rectangle buffer");
 				rStagingRectBuffer.unmap_memory();
 				PRINT_DEBUG("Mapping memory of rectangle buffer to fill with index data");

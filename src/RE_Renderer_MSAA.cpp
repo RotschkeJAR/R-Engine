@@ -1,6 +1,7 @@
 #include "RE_Renderer_Internal.hpp"
 #include "RE_Vulkan_Wrapper Functions.hpp"
 #include "RE_GPU.hpp"
+#include "RE_Main.hpp"
 
 namespace RE {
 	
@@ -65,9 +66,7 @@ namespace RE {
 			RE_WARNING("MSAA mode ", std::pow(2, static_cast<int32_t>(eNewMsaaMode)), " is not supported on this GPU and has been dropped down to ", std::pow(2, static_cast<int32_t>(eNextMsaaMode)));
 		PRINT_DEBUG("New MSAA-mode ", eNextMsaaMode, " has been saved as ", std::hex, vk_eNewSampleCount);
 		vk_eMsaaCount = vk_eNewSampleCount;
-		if (vk_hDevice == VK_NULL_HANDLE)
-			return;
-		PRINT_DEBUG("Applying new MSAA-mode");
+		bRenderPipelinesDirty = bRunning;
 	}
 
 	[[nodiscard]]

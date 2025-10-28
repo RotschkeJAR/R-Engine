@@ -130,24 +130,10 @@ namespace RE {
 		}
 	}
 
-	void load_game_object_vertices(bool &rbNeedsRender) {
+	void fetch_game_object_render_data() {
 		for (ListBatch_GameObject *const pBatch : gameObjectBatchList) {
 			PRINT_DEBUG("Loading game object vertices in batch ", pBatch);
-			pBatch->renderBatch.load_vertices(rbNeedsRender);
-		}
-	}
-
-	void render_opaque_game_objects() {
-		for (ListBatch_GameObject *const pBatch : gameObjectBatchList) {
-			PRINT_DEBUG("Rendering opaque game objects in batch ", pBatch);
-			pBatch->renderBatch.render_opaque();
-		}
-	}
-
-	void render_transparent_game_objects() {
-		for (ListBatch_GameObject *const pBatch : gameObjectBatchList) {
-			PRINT_DEBUG("Rendering transparent game objects in batch ", pBatch);
-			pBatch->renderBatch.render_transparent();
+			pBatch->renderBatch.fetch_render_data();
 		}
 	}
 

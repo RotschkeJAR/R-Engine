@@ -183,19 +183,14 @@ class First : public Scene {
 
 int main_func() {
 	set_signal_handlers();
-	if (init_engine()) {
-		set_fps_limit(60);
-		{
-			First first;
-			Second secondInStack;
-			second = &secondInStack;
-			set_next_scene(&first);
-			start_game_loop();
-			if (clonus)
-				delete clonus;
-		}
-		destroy_engine();
-	}
+	set_fps_limit(60);
+	First first;
+	Second secondInStack;
+	second = &secondInStack;
+	set_next_scene(&first);
+	execute();
+	if (clonus)
+		delete clonus;
 	return 0;
 }
 

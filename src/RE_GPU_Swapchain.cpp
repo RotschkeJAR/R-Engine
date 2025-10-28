@@ -52,7 +52,7 @@ namespace RE {
 		vk_swapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 		vk_swapchainCreateInfo.clipped = VK_TRUE;
 		vk_swapchainCreateInfo.oldSwapchain = vk_hOldSwapchain;
-		if (are_bits_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_BIT))
+		if (bVsyncEnabled)
 			vk_swapchainCreateInfo.presentMode = vk_ePresentModeVsync;
 		else
 			vk_swapchainCreateInfo.presentMode = vk_ePresentModeNoVsync;

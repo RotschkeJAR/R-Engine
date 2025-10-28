@@ -5,8 +5,9 @@
 
 namespace RE {
 
-	struct GameObjectUniformData {
+	struct GameObjectInstanceData {
 		float a16fModelMatrix[16];
+		float a4fColor[4];
 		uint32_t u32TextureId;
 	};
 
@@ -15,9 +16,9 @@ namespace RE {
 	class RenderBatch_GameObject {
 		private:
 			ListBatch_GameObject &rGameObjectBatch;
-			VkBuffer vk_hStagingUniformBuffer;
-			VkDeviceMemory vk_hStagingUniformBufferMemory;
-			GameObjectUniformData *pStagingUniformBufferData;
+			VkBuffer vk_hStagingInstanceBuffer;
+			VkDeviceMemory vk_hStagingInstanceBufferMemory;
+			GameObjectInstanceData *pStagingInstanceBufferData;
 
 		public:
 			RenderBatch_GameObject() = delete;

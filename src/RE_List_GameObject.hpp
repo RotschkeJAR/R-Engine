@@ -21,9 +21,7 @@ namespace RE {
 
 	bool init_game_object_render_batches();
 	void destroy_game_object_render_batches();
-	void load_game_object_vertices(bool &rbNeedsRender);
-	void render_opaque_game_objects();
-	void render_transparent_game_objects();
+	void fetch_game_object_render_data();
 
 }
 

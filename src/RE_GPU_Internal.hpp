@@ -9,9 +9,7 @@ namespace RE {
 
 #define RE_VK_QUEUE_PRESENT_BIT (VK_QUEUE_OPTICAL_FLOW_BIT_NV << 1)
 
-#define SWAPCHAIN_DIRTY_BIT 0
-#define VSYNC_SETTING_BIT 1
-	extern uint8_t u8RenderSystemFlags;
+	extern bool bVsyncEnabled;
 
 	// Surface
 	extern VkSurfaceKHR vk_hSurface;

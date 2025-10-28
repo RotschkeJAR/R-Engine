@@ -9,6 +9,8 @@
 
 namespace RE {
 
+	extern bool bRenderPipelinesDirty;
+
 	// MSAA
 	extern VkSampleCountFlagBits vk_eMsaaCount;
 	extern std::array<VkImage, RE_VK_FRAMES_IN_FLIGHT> vk_ahSingleSampledWorldRenderImages;
@@ -22,6 +24,8 @@ namespace RE {
 	void destroy_depth_stencil_images();
 
 	// Descriptor Sets
+	extern VkDescriptorSetLayout vk_hCameraDescriptorSetLayout;
+	extern VkDescriptorSet vk_ahCameraDescriptorSets[RE_VK_FRAMES_IN_FLIGHT];
 	bool create_descriptor_sets();
 	void destroy_descriptor_sets();
 

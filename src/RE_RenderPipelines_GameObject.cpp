@@ -2,6 +2,7 @@
 #include "RE_Renderer.hpp"
 #include "RE_RenderElement.hpp"
 #include "RE_Vulkan_Wrapper Functions.hpp"
+#include "RE_RenderBatch_GameObject.hpp"
 
 namespace RE {
 
@@ -47,23 +48,33 @@ namespace RE {
 			}, {
 				.location = 1,
 				.binding = 1,
-				.format = VK_FORMAT_R32G32B32_SFLOAT,
-				.offset = offsetof(GameObjectInstanceData, afPosition)
+				.format = VK_FORMAT_R32G32B32A32_SFLOAT,
+				.offset = offsetof(GameObjectInstanceData, a16fModelMatrix)
 			}, {
 				.location = 2,
 				.binding = 1,
 				.format = VK_FORMAT_R32G32B32A32_SFLOAT,
-				.offset = offsetof(GameObjectInstanceData, afColor)
+				.offset = offsetof(GameObjectInstanceData, a16fModelMatrix) + sizeof(float) * 4
 			}, {
 				.location = 3,
 				.binding = 1,
-				.format = VK_FORMAT_R32_UINT,
-				.offset = offsetof(GameObjectInstanceData, u32TexId)
+				.format = VK_FORMAT_R32G32B32A32_SFLOAT,
+				.offset = offsetof(GameObjectInstanceData, a16fModelMatrix) + sizeof(float) * 4 * 2
 			}, {
 				.location = 4,
 				.binding = 1,
-				.format = VK_FORMAT_R32G32_SFLOAT,
-				.offset = offsetof(GameObjectInstanceData, afTexCoords)
+				.format = VK_FORMAT_R32G32B32A32_SFLOAT,
+				.offset = offsetof(GameObjectInstanceData, a16fModelMatrix) + sizeof(float) * 4 * 3
+			}, {
+				.location = 5,
+				.binding = 1,
+				.format = VK_FORMAT_R32G32B32A32_SFLOAT,
+				.offset = offsetof(GameObjectInstanceData, a4fColor)
+			}, {
+				.location = 6,
+				.binding = 1,
+				.format = VK_FORMAT_R32_UINT,
+				.offset = offsetof(GameObjectInstanceData, u32TextureId)
 			}
 		};
 		const VkPipelineVertexInputStateCreateInfo vk_vertexInput = {
@@ -96,7 +107,7 @@ namespace RE {
 		const VkPipelineMultisampleStateCreateInfo vk_multisampling = {
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
 			.rasterizationSamples = vk_eMsaaCount,
-			.sampleShadingEnable = vk_bSampleShadingEnabled,
+			.sampleShadingEnable = is_sample_shading_enabled() ? VK_TRUE : VK_FALSE,
 			.minSampleShading = fSampleShadingRate,
 			.pSampleMask = nullptr,
 			.alphaToCoverageEnable = VK_FALSE,

@@ -1275,9 +1275,7 @@ namespace RE {
 	}
 
 	// Program execution
-	bool init_engine();
-	void destroy_engine();
-	void start_game_loop();
+	bool execute();
 	[[nodiscard]]
 	float get_deltaseconds();
 	[[nodiscard]]
@@ -1336,7 +1334,7 @@ namespace RE {
 	[[nodiscard]]
 	SpriteLayout create_sprite_layout(const SpriteLayoutSettings &rSettings);
 	void change_sprite_layout_settings(SpriteLayout &rSpriteLayout, const SpriteLayoutSettings &rNewSettings);
-	void destroy_sprite_layout(SpriteLayout spriteLayout);
+	void destroy_sprite_layout(const SpriteLayout &rSpriteLayout);
 
 	// Renderer
 	void set_screen_percentage_settings(const ScreenPercentageSettings &rNewSettings);
@@ -1350,13 +1348,11 @@ namespace RE {
 	void get_supported_msaa_modes(uint8_t u8ListLength, MsaaMode *paeSupportedMsaaModes, uint8_t *pu8SupportedMsaaModeCount);
 	[[nodiscard]]
 	MsaaMode get_highest_supported_msaa_mode();
-	void enable_sample_shading(bool bEnable);
 	[[nodiscard]]
 	bool is_sample_shading_enabled();
 	void set_sample_shading_rate(float fNewSampleShadingRate);
 	[[nodiscard]]
 	float get_sample_shading_rate();
-
 
 #ifdef RE_OS_WINDOWS
 	void win64_set_hinstance(HINSTANCE win_hNewInstance);

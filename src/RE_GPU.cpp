@@ -13,12 +13,13 @@ namespace RE {
 	uint32_t u32SurfaceFormatsAvailableCount;
 	uint32_t u32IndexToSelectedSurfaceFormat;
 
-	uint8_t u8RenderSystemFlags = 1 << VSYNC_SETTING_BIT;
+	bool bSwapchainDirty = false;
+	bool bVsyncEnabled = true;
 
 	static void select_best_vulkan_surface_format() {
 		if (u32SurfaceFormatsAvailableCount == 1) {
 			u32IndexToSelectedSurfaceFormat = 0;
-			PRINT_DEBUG("Only one Vulkan surface format is available. Its color space is 0x", std::hex, vk_paSurfaceFormatsAvailable[0].colorSpace, " and format is 0x", vk_paSurfaceFormatsAvailable[0].format, std::dec);
+			PRINT_DEBUG("Only one Vulkan surface format is available. Its color space is ", std::hex, vk_paSurfaceFormatsAvailable[0].colorSpace, " and format is ", vk_paSurfaceFormatsAvailable[0].format, std::dec);
 		} else {
 			PRINT_DEBUG("Selecting best Vulkan surface format");
 			int32_t i32BestSurfaceFormatScore = std::numeric_limits<int32_t>::min();
@@ -48,7 +49,7 @@ namespace RE {
 				if (i32BestSurfaceFormatScore < i32CurrentSurfaceFormatScore) {
 					i32BestSurfaceFormatScore = i32CurrentSurfaceFormatScore;
 					u32IndexToSelectedSurfaceFormat = u32SurfaceFormatIndex;
-					PRINT_DEBUG("Found new best Vulkan surface format at index ", u32IndexToSelectedSurfaceFormat, ", which has color space 0x", std::hex, vk_paSurfaceFormatsAvailable[u32IndexToSelectedSurfaceFormat].colorSpace, " and format 0x", vk_paSurfaceFormatsAvailable[u32IndexToSelectedSurfaceFormat].format, std::dec, ". Its score was ", i32BestSurfaceFormatScore);
+					PRINT_DEBUG("Found new best Vulkan surface format at index ", u32IndexToSelectedSurfaceFormat, ", which has color space ", std::hex, vk_paSurfaceFormatsAvailable[u32IndexToSelectedSurfaceFormat].colorSpace, " and format ", vk_paSurfaceFormatsAvailable[u32IndexToSelectedSurfaceFormat].format, std::dec, ". Its score was ", i32BestSurfaceFormatScore);
 				}
 			}
 		}
@@ -123,8 +124,8 @@ namespace RE {
 	}
 
 	bool refresh_swapchain() {
-		if (are_bits_true<uint8_t>(u8RenderSystemFlags, SWAPCHAIN_DIRTY_BIT)) {
-			set_bits<uint8_t>(u8RenderSystemFlags, false, SWAPCHAIN_DIRTY_BIT);
+		if (bSwapchainDirty) {
+			bSwapchainDirty = false;
 			PRINT_DEBUG("Recreating Vulkan swapchain");
 			if (!recreate_swapchain())
 				return false;
@@ -133,19 +134,17 @@ namespace RE {
 	}
 
 	void mark_swapchain_dirty() {
-		set_bits<uint8_t>(u8RenderSystemFlags, bRunning, SWAPCHAIN_DIRTY_BIT);
+		bSwapchainDirty = true;
 	}
 
 	void enable_vsync(const bool bEnableVsync) {
-		if (are_bits_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_BIT) != bEnableVsync) {
-			set_bits<uint8_t>(u8RenderSystemFlags, bEnableVsync, VSYNC_SETTING_BIT);
-			set_bits<uint8_t>(u8RenderSystemFlags, bRunning, SWAPCHAIN_DIRTY_BIT);
-		}
+		bVsyncEnabled = bEnableVsync;
+		bSwapchainDirty = bRunning;
 	}
 
 	[[nodiscard]]
 	bool is_vsync_enabled() {
-		return are_bits_true<uint8_t>(u8RenderSystemFlags, VSYNC_SETTING_BIT);
+		return bVsyncEnabled;
 	}
 
 }

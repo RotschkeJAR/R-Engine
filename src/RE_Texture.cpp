@@ -22,25 +22,25 @@ namespace RE {
 	}
 	
 	Texture alloc_texture_loading_from_file(const char *const pacPathToTextureFile) {
-		Vector2i textureSize;
+		Vector2u textureSize;
 		return alloc_texture_loading_from_file(pacPathToTextureFile, textureSize);
 	}
 
-	Texture alloc_texture_loading_from_file(const char *const pacPathToTextureFile, Vector2i &rSize) {
+	Texture alloc_texture_loading_from_file(const char *const pacPathToTextureFile, Vector2u &rSize) {
 		return alloc_texture_loading_from_file(pacPathToTextureFile, rSize[0], rSize[1]);
 	}
 	
-	Texture alloc_texture_loading_from_file(const char *const pacPathToTextureFile, int32_t &ri32Width, int32_t &ri32Height) {
-		int32_t i32Channels;
-		return alloc_texture_loading_from_file(pacPathToTextureFile, ri32Width, ri32Height, i32Channels);
+	Texture alloc_texture_loading_from_file(const char *const pacPathToTextureFile, uint32_t &ru32Width, uint32_t &ru32Height) {
+		uint32_t u32Channels;
+		return alloc_texture_loading_from_file(pacPathToTextureFile, ru32Width, ru32Height, u32Channels);
 	}
 	
-	Texture alloc_texture_loading_from_file(const char *const pacPathToTextureFile, Vector2i &rSize, int32_t &ri32Channels) {
-		return alloc_texture_loading_from_file(pacPathToTextureFile, rSize[0], rSize[1], ri32Channels);
+	Texture alloc_texture_loading_from_file(const char *const pacPathToTextureFile, Vector2i &rSize, uint32_t &ru32Channels) {
+		return alloc_texture_loading_from_file(pacPathToTextureFile, rSize[0], rSize[1], ru32Channels);
 	}
 	
-	Texture alloc_texture_loading_from_file(const char *const pacPathToTextureFile, int32_t &ri32Width, int32_t &ri32Height, int32_t &ri32Channels) {
-		PRINT_DEBUG("Loading image from ", pacPathToTextureFile, " and allocating texture from it");
+	Texture alloc_texture_loading_from_file(const char *const pacPathToTextureFile, uint32_t &ru32Width, uint32_t &ru32Height, uint32_t &ru32Channels) {
+		PRINT_DEBUG("Loading image from \"", pacPathToTextureFile, "\" and allocating texture from it");
 		return nullptr;
 	}
 

@@ -53,9 +53,7 @@ namespace RE {
 			u32VulkanMinorVersion = VK_API_VERSION_MINOR(RE_VK_API_VERSION);
 		const uint32_t u32PhysicalDeviceVulkanMajorVersion = VK_API_VERSION_MAJOR(vk_thisPhysicalDeviceProperties.properties.apiVersion), 
 			u32PhysicalDeviceVulkanMinorVersion = VK_API_VERSION_MINOR(vk_thisPhysicalDeviceProperties.properties.apiVersion);
-		if ((u32PhysicalDeviceVulkanMajorVersion == u32VulkanMajorVersion && u32PhysicalDeviceVulkanMinorVersion < u32VulkanMinorVersion) || u32PhysicalDeviceVulkanMajorVersion < u32VulkanMajorVersion)
-			missingFeatures.push(append_to_string("The physical device should support at least Vulkan ", u32VulkanMajorVersion, ".", u32VulkanMinorVersion, "; it's latest version is ", u32PhysicalDeviceVulkanMajorVersion, ".", u32PhysicalDeviceVulkanMinorVersion));
-		else {
+		if (u32PhysicalDeviceVulkanMajorVersion == u32VulkanMajorVersion && u32PhysicalDeviceVulkanMinorVersion >= u32VulkanMinorVersion) {
 			// Check if there are surface formats defined
 			PRINT_DEBUG("Fetching count of supported Vulkan surface formats on physical Vulkan device");
 			uint32_t u32PhysicalDeviceSurfaceFormatCount;
@@ -120,6 +118,8 @@ namespace RE {
 
 			// Check if depth & stencil buffers are supported
 			does_gpu_support_depth_stencil_images(vk_hPhysicalDevice, missingFeatures);
+		} else {
+			missingFeatures.push(append_to_string("The physical device should support at least Vulkan ", u32VulkanMajorVersion, ".", u32VulkanMinorVersion, "; it's latest version is ", u32PhysicalDeviceVulkanMajorVersion, ".", u32PhysicalDeviceVulkanMinorVersion, " (higher major versions aren't backwards compatible)"));
 		}
 
 		if (!discrepantFeatures.empty()) {

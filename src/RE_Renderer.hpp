@@ -7,7 +7,6 @@ namespace RE {
 
 #define RE_VK_FRAMES_IN_FLIGHT 2
 
-	extern VkBool32 vk_bSampleShadingEnabled;
 	extern float fSampleShadingRate;
 
 	extern VkPipelineLayout vk_hWorldPipelineLayout;

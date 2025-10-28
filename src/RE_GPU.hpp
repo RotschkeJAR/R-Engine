@@ -5,8 +5,11 @@
 
 namespace RE {
 
+#define RE_VK_LOGICAL_QUEUE_IGNORED std::numeric_limits<uint8_t>::max()
+
 	extern std::unique_ptr<VkSurfaceFormatKHR[]> vk_paSurfaceFormatsAvailable;
 	extern uint32_t u32IndexToSelectedSurfaceFormat;
+	extern bool bSwapchainDirty;
 
 	// Physical Device
 	extern VkPhysicalDevice vk_hPhysicalDeviceSelected;
@@ -18,14 +21,14 @@ namespace RE {
 	extern std::unique_ptr<uint32_t[]> queueFamilyIndices;
 	extern uint8_t u8LogicalQueueCount;
 	void create_queue_create_infos(const float *pfPriority, std::vector<VkDeviceQueueCreateInfo> &vk_rpaLogicalQueueCreateInfos);
-
-#define RE_VK_LOGICAL_QUEUE_IGNORED std::numeric_limits<uint8_t>::max()
+	
 	struct VulkanTask_Queues final {
 		const uint8_t *pau8LogicalQueueIndices;
 		const VkQueueFlagBits *vk_paeQueueTypes;
 		const uint32_t *pau32StrictSeparationIds;
 		uint32_t u32FunctionsCount;
 	};
+
 	class VulkanTask final {
 		private:
 			std::shared_ptr<uint8_t[]> queueIndicesPerCommandBuffer;

@@ -109,7 +109,7 @@ namespace RE {
 				std::fill(commandBufferIndicesPerFunction.get(), commandBufferIndicesPerFunction.get() + u32FunctionsCount, 0);
 				return true;
 			} else
-				RE_FATAL_ERROR("Failed to allocate Vulkan command buffer for task");
+				RE_ERROR("Failed to allocate Vulkan command buffer for task");
 			commandBuffers.reset();
 			queueIndicesPerCommandBuffer.reset();
 			commandPoolPerCommandBuffer.reset();
@@ -171,7 +171,7 @@ namespace RE {
 					if (vkCreateSemaphore(vk_hDevice, &vk_semaphoreCreateInfo, nullptr, &vk_hInternalSemaphore) == VK_SUCCESS)
 						return true;
 					else
-						RE_FATAL_ERROR("Failed to create internal Vulkan timeline semaphore to synchronize command buffers within a task");
+						RE_ERROR("Failed to create internal Vulkan timeline semaphore to synchronize command buffers within a task");
 				}
 				return true;
 			}
@@ -240,7 +240,7 @@ namespace RE {
 				if (vkCreateSemaphore(vk_hDevice, &vk_semaphoreCreateInfo, nullptr, &vk_hInternalSemaphore) == VK_SUCCESS)
 					return true;
 				else
-					RE_FATAL_ERROR("Failed to create internal Vulkan timeline semaphore to synchronize command buffers within a task");
+					RE_ERROR("Failed to create internal Vulkan timeline semaphore to synchronize command buffers within a task");
 			} else
 				return true;
 		}
@@ -320,7 +320,7 @@ namespace RE {
 				if (vkCreateSemaphore(vk_hDevice, &vk_semaphoreCreateInfo, nullptr, &vk_hInternalSemaphore) == VK_SUCCESS)
 					return true;
 				else
-					RE_FATAL_ERROR("Failed to create internal Vulkan timeline semaphore to synchronize command buffers within a task");
+					RE_ERROR("Failed to create internal Vulkan timeline semaphore to synchronize command buffers within a task");
 			} else
 				return true;
 		}
@@ -367,7 +367,7 @@ namespace RE {
 				if (vkCreateSemaphore(vk_hDevice, &vk_semaphoreCreateInfo, nullptr, &vk_hInternalSemaphore) == VK_SUCCESS)
 					return true;
 				else
-					RE_FATAL_ERROR("Failed to create internal Vulkan timeline semaphore to synchronize command buffers within a task");
+					RE_ERROR("Failed to create internal Vulkan timeline semaphore to synchronize command buffers within a task");
 			} else
 				return true;
 		}

@@ -26,7 +26,7 @@ namespace RE {
 	}
 
 	[[nodiscard]]
-	static VkSamplerAddressMode get_vulkan_sampler_address_mode(const TextureRepitition eRepitition) {
+	static VkSamplerAddressMode get_vulkan_sampler_address_mode(const TextureRepetition eRepitition) {
 		switch (eRepitition) {
 			case RE_TEXTURE_REPETITION_REPEAT:
 				return VK_SAMPLER_ADDRESS_MODE_REPEAT;
@@ -100,7 +100,7 @@ namespace RE {
 		rSpriteLayout = create_sprite_layout(rNewSettings);
 	}
 
-	void destroy_sprite_layout(const SpriteLayout &rSpriteLayout) {
+	void destroy_sprite_layout(SpriteLayout spriteLayout) {
 		if (!spriteLayout) {
 			RE_NOTE("A null sprite layout had to be destroyed. The engine ignores that request");
 			return;
@@ -108,9 +108,8 @@ namespace RE {
 			RE_ERROR("Sprite layouts aren't valid anymore, when the engine doesn't run, so they cannot be destroyed either");
 			return;
 		}
-		PRINT_DEBUG("Destroying sprite layout ", rSpriteLayout);
-		vkDestroySampler(vk_hDevice, reinterpret_cast<VkSampler>(rSpriteLayout), nullptr);
-		rSpriteLayout = nullptr;
+		PRINT_DEBUG("Destroying sprite layout ", spriteLayout);
+		vkDestroySampler(vk_hDevice, reinterpret_cast<VkSampler>(spriteLayout), nullptr);
 	}
 
 }

@@ -1312,19 +1312,7 @@ namespace RE {
 
 	// Texture loading
 	[[nodiscard]]
-	Texture alloc_texture_from_binary_data(const uint8_t *pau8ImageBinaryData, Vector2u imageSize, uint32_t u32Channels);
-	[[nodiscard]]
-	Texture alloc_texture_from_binary_data(const uint8_t *pau8ImageBinaryData, uint32_t u32Width, uint32_t u32Height, uint32_t u32Channels);
-	[[nodiscard]]
 	Texture alloc_texture_loading_from_file(const char *pacPathToTextureFile);
-	[[nodiscard]]
-	Texture alloc_texture_loading_from_file(const char *pacPathToTextureFile, Vector2i &rSize);
-	[[nodiscard]]
-	Texture alloc_texture_loading_from_file(const char *pacPathToTextureFile, int32_t &ri32Width, int32_t &ri32Height);
-	[[nodiscard]]
-	Texture alloc_texture_loading_from_file(const char *pacPathToTextureFile, Vector2i &rSize, int32_t &ri32Channels);
-	[[nodiscard]]
-	Texture alloc_texture_loading_from_file(const char *pacPathToTextureFile, int32_t &ri32Width, int32_t &ri32Height, int32_t &ri32Channels);
 	void free_texture(Texture hTexture);
 	void free_texture_and_fix_dangling_pointers(Texture hTexture);
 
@@ -1334,7 +1322,7 @@ namespace RE {
 	[[nodiscard]]
 	SpriteLayout create_sprite_layout(const SpriteLayoutSettings &rSettings);
 	void change_sprite_layout_settings(SpriteLayout &rSpriteLayout, const SpriteLayoutSettings &rNewSettings);
-	void destroy_sprite_layout(const SpriteLayout &rSpriteLayout);
+	void destroy_sprite_layout(SpriteLayout spriteLayout);
 
 	// Renderer
 	void set_screen_percentage_settings(const ScreenPercentageSettings &rNewSettings);

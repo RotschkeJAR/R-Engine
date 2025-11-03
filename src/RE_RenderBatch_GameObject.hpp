@@ -8,7 +8,7 @@ namespace RE {
 	struct GameObjectInstanceData {
 		float a16fModelMatrix[16];
 		float a4fColor[4];
-		uint32_t u32TextureId;
+		uint32_t u32TextureUniformId;
 	};
 
 	class ListBatch_GameObject;

@@ -74,7 +74,7 @@ namespace RE {
 				.location = 6,
 				.binding = 1,
 				.format = VK_FORMAT_R32_UINT,
-				.offset = offsetof(GameObjectInstanceData, u32TextureId)
+				.offset = offsetof(GameObjectInstanceData, u32TextureUniformId)
 			}
 		};
 		const VkPipelineVertexInputStateCreateInfo vk_vertexInput = {

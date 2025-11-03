@@ -5,6 +5,7 @@
 #include "RE_Vulkan_Wrapper Classes.hpp"
 #include "RE_List_GameObject.hpp"
 #include "RE_Renderer.hpp"
+#include "RE_Sprite.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_WINDOWS_UTF8
@@ -13,6 +14,7 @@
 
 namespace RE {
 
+	[[nodiscard]]
 	Texture alloc_texture_from_binary_data(const uint8_t *const pau8TextureBinaries, const uint32_t u32Width, const uint32_t u32Height, const uint32_t u32Channels) {
 		if (!pau8TextureBinaries || !u32Width || !u32Height || !u32Channels) {
 			RE_ERROR("Textures cannot be allocated, when its binaries are null or width, height or number of channels are zero");
@@ -48,7 +50,7 @@ namespace RE {
 					std::memcpy(pau8StagingBufferContent, pau8TextureBinaries, vk_imageBufferSize);
 				});
 				PRINT_DEBUG("Creating Vulkan image for storing texture on GPU");
-				if (create_vulkan_image(0, VK_IMAGE_TYPE_2D, pVulkanTexture->vk_eFormat, VkExtent3D{}, 1, 1, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, 1, nullptr, VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &pVulkanTexture->vk_hImage, &pVulkanTexture->vk_hImageMemory)) {
+				if (create_vulkan_image(0, VK_IMAGE_TYPE_2D, pVulkanTexture->vk_eFormat, VkExtent3D{u32Width, u32Height, 1}, 1, 1, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, 1, nullptr, VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &pVulkanTexture->vk_hImage, &pVulkanTexture->vk_hImageMemory)) {
 					PRINT_DEBUG("Creating temporary Vulkan fence to wait for finishing texture creation on GPU");
 					Vulkan_Fence textureTransferFence;
 					if (textureTransferFence.is_valid()) {
@@ -56,7 +58,7 @@ namespace RE {
 						constexpr uint32_t u32TaskFunctions = 2;
 						const uint8_t au8LogicalQueues[u32TaskFunctions] = {RE_VK_LOGICAL_QUEUE_IGNORED, get_render_graphics_queue_logical_index()};
 						constexpr VkQueueFlagBits vk_aeRequiredQueueType[u32TaskFunctions] = {VK_QUEUE_TRANSFER_BIT, VK_QUEUE_GRAPHICS_BIT};
-						constexpr uint32_t au32SeparationIds[u32TaskFunctions] = {0, 0};
+						constexpr uint32_t au32SeparationIds[u32TaskFunctions] = {0, 1};
 						const VulkanTask_Queues requiredQueues = {
 							.pau8LogicalQueueIndices = au8LogicalQueues,
 							.vk_paeQueueTypes = vk_aeRequiredQueueType,
@@ -118,25 +120,28 @@ namespace RE {
 									.pRegions = &vk_copyRegion,
 								};
 								vkCmdCopyBufferToImage2(vk_hCommandBuffer, &vk_copyInfo);
-								const VkImageMemoryBarrier2 vk_imageLayoutFinalBarrier = {
-									.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-									.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-									.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
-									.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
-									.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,
-									.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-									.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-									.srcQueueFamilyIndex = queueFamilyIndices[u8CurrentLogicalQueue],
-									.dstQueueFamilyIndex = queueFamilyIndices[u8NextLogicalQueue],
-									.image = pVulkanTexture->vk_hImage,
-									.subresourceRange = {
-										.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-										.baseMipLevel = 0,
-										.levelCount = 1,
-										.baseArrayLayer = 0,
-										.layerCount = 1
-									}
-								};
+								VkImageMemoryBarrier2 vk_imageLayoutFinalBarrier;
+								vk_imageLayoutFinalBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+								vk_imageLayoutFinalBarrier.pNext = nullptr;
+								vk_imageLayoutFinalBarrier.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+								vk_imageLayoutFinalBarrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+								vk_imageLayoutFinalBarrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+								vk_imageLayoutFinalBarrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
+								vk_imageLayoutFinalBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+								vk_imageLayoutFinalBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+								vk_imageLayoutFinalBarrier.image = pVulkanTexture->vk_hImage;
+								vk_imageLayoutFinalBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+								vk_imageLayoutFinalBarrier.subresourceRange.baseMipLevel = 0;
+								vk_imageLayoutFinalBarrier.subresourceRange.levelCount = 1;
+								vk_imageLayoutFinalBarrier.subresourceRange.baseArrayLayer = 0;
+								vk_imageLayoutFinalBarrier.subresourceRange.layerCount = 1;
+								if (u8CurrentLogicalQueue == u8NextLogicalQueue) {
+									vk_imageLayoutFinalBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+									vk_imageLayoutFinalBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+								} else {
+									vk_imageLayoutFinalBarrier.srcQueueFamilyIndex = queueFamilyIndices[u8CurrentLogicalQueue];
+									vk_imageLayoutFinalBarrier.dstQueueFamilyIndex = queueFamilyIndices[u8NextLogicalQueue];
+								}
 								const VkDependencyInfo vk_transitImageLayoutFinalInfo = {
 									.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 									.imageMemoryBarrierCount = 1,
@@ -145,6 +150,8 @@ namespace RE {
 								vkCmdPipelineBarrier2(vk_hCommandBuffer, &vk_transitImageLayoutFinalInfo);
 							};
 							textureTransferTask.paFunctions[1] = [&](const VkCommandBuffer vk_hCommandBuffer, const uint8_t u8PreviousLogicalQueue, const uint8_t u8CurrentLogicalQueue, const uint8_t u8NextLogicalQueue) {
+								if (u8PreviousLogicalQueue == u8CurrentLogicalQueue)
+									return;
 								const VkImageMemoryBarrier2 vk_inheritImageBarrier = {
 									.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
 									.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
@@ -177,10 +184,9 @@ namespace RE {
 							if (textureTransferTask.submit(0, nullptr, 0, nullptr, textureTransferFence.get_fence())) {
 								PRINT_DEBUG("Creating Vulkan image view for Vulkan image ", pVulkanTexture->vk_hImage, " containing texture");
 								if (create_vulkan_image_view(pVulkanTexture->vk_hImage, VK_IMAGE_VIEW_TYPE_2D, pVulkanTexture->vk_eFormat, VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1, &pVulkanTexture->vk_hImageView)) {
-									PRINT_DEBUG("Waiting for transferring texture to GPU");
-									pVulkanTexture->u32Channels = u32Channels;
 									pVulkanTexture->a2u32Size[0] = u32Width;
 									pVulkanTexture->a2u32Size[1] = u32Height;
+									PRINT_DEBUG("Waiting for transferring texture to GPU");
 									textureTransferFence.wait_for();
 									return reinterpret_cast<Texture>(pVulkanTexture);
 								}
@@ -197,7 +203,8 @@ namespace RE {
 					vkFreeMemory(vk_hDevice, pVulkanTexture->vk_hImageMemory, nullptr);
 				} else
 					RE_FATAL_ERROR("Failed to create Vulkan image on GPU to permanently store the texture");
-			}
+			} else
+				RE_FATAL_ERROR("Failed to map temporary Vulkan buffer ", stagingImageBuffer.get_buffer(), " for transferring the texture");
 		} else
 			RE_FATAL_ERROR("Failed to create temporary Vulkan buffer to transfer texture to GPU");
 		delete pVulkanTexture;
@@ -206,6 +213,11 @@ namespace RE {
 	
 	Texture alloc_texture_loading_from_file(const char *const pacPathToTextureFile) {
 		PRINT_DEBUG("Loading image from \"", pacPathToTextureFile, "\"");
+		uint32_t u32Width, u32Height, u32Channels;
+		uint8_t *const pau8TextureBinaries = stbi_load(pacPathToTextureFile, reinterpret_cast<int32_t*>(&u32Width), reinterpret_cast<int32_t*>(&u32Height), reinterpret_cast<int32_t*>(&u32Channels), 0);
+		if (pau8TextureBinaries && u32Width && u32Height && u32Channels)
+			return alloc_texture_from_binary_data(pau8TextureBinaries, u32Width, u32Height, u32Channels);
+		RE_FATAL_ERROR("Failed loading image file \"", pacPathToTextureFile, "\"");
 		return nullptr;
 	}
 
@@ -220,11 +232,40 @@ namespace RE {
 		vkDestroyImage(vk_hDevice, pVulkanTexture->vk_hImage, nullptr);
 		vkFreeMemory(vk_hDevice, pVulkanTexture->vk_hImageMemory, nullptr);
 		delete pVulkanTexture;
+#ifndef RE_DISABLE_PRINT_DEBUGS
+		for (VulkanSprite *const pSprite : vulkanSprites)
+			if (pSprite->pTexture == pVulkanTexture)
+				RE_WARNING("There might be a dangling pointer in sprite ", reinterpret_cast<Sprite>(pSprite), " after texture ", hTexture, " (", pVulkanTexture->a2u32Size[0], "x", pVulkanTexture->a2u32Size[1], ") has been freed! Destroy the sprite or assign it a valid texture to avoid undefined behaviour or severe crashes");
+#endif
 	}
 
-	void free_texture_and_fix_dangling_pointers(const Texture hTexture) {
-		PRINT_DEBUG("Freeing texture ", hTexture, " and removing dangling pointers pointing to it");
-		free_texture(hTexture);
+	[[nodiscard]]
+	uint32_t get_width(const Texture hTexture) {
+		if (!hTexture) {
+			RE_ERROR("A null texture has been passed to get its width");
+			return 0;
+		}
+		PRINT_DEBUG("Reading and returning width of texture ", hTexture);
+		return reinterpret_cast<VulkanTexture*>(hTexture)->a2u32Size[0];
+	}
+
+	[[nodiscard]]
+	uint32_t get_height(const Texture hTexture) {
+		if (!hTexture) {
+			RE_ERROR("A null texture has been passed to get its height");
+			return 0;
+		}
+		PRINT_DEBUG("Reading and returning height of texture ", hTexture);
+		return reinterpret_cast<VulkanTexture*>(hTexture)->a2u32Size[1];
+	}
+
+	void get_extent(const Texture hTexture, uint32_t *const pa2u32Extent) {
+		if (!hTexture) {
+			RE_ERROR("A null texture has been passed to get its extent");
+			return;
+		}
+		PRINT_DEBUG("Reading and writing extent of texture ", hTexture, " to array pointer ", pa2u32Extent);
+		std::memcpy(pa2u32Extent, &reinterpret_cast<const VulkanTexture*>(hTexture)->a2u32Size, sizeof(uint32_t) * 2);
 	}
 
 }

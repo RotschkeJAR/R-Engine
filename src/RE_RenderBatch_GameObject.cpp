@@ -2,6 +2,7 @@
 #include "RE_Manager.hpp"
 #include "RE_Vulkan_Wrapper Functions.hpp"
 #include "RE_ListBatch_GameObject.hpp"
+#include "RE_Sprite.hpp"
 
 namespace RE {
 	
@@ -40,7 +41,7 @@ namespace RE {
 								pStagingInstanceBufferData[u16GameObjectIndex].a16fModelMatrix[u8ModelMatrixElementIndex] = 0.0f;
 								break;
 						}
-					pStagingInstanceBufferData[u16GameObjectIndex].u32TextureId = 0;
+					pStagingInstanceBufferData[u16GameObjectIndex].u32TextureUniformId = 0;
 				}
 				return true;
 			} else
@@ -68,6 +69,7 @@ namespace RE {
 				pStagingInstanceBufferData[u16GameObjectIndex].a16fModelMatrix[u8DimensionIndex * 5] = pGameObject->transform.scale[u8DimensionIndex];
 				pStagingInstanceBufferData[u16GameObjectIndex].a16fModelMatrix[u8DimensionIndex * 4 + 3] = pGameObject->transform.position[u8DimensionIndex];
 			}
+			pStagingInstanceBufferData[u16GameObjectIndex].u32TextureUniformId = reinterpret_cast<VulkanSprite*>(pGameObject->spriteRenderer.hSprite)->u16UniformIndex;
 		}
 	}
 

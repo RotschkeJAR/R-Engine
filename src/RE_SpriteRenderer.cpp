@@ -2,7 +2,7 @@
 
 namespace RE {
 	
-	SpriteRenderer::SpriteRenderer() : color(), sprite(), textureOffset(), textureCoordinates(1.0f, 1.0f) {}
+	SpriteRenderer::SpriteRenderer() : color(), textureOffset(), textureCoordinates(1.0f, 1.0f), hSprite(nullptr) {}
 	SpriteRenderer::~SpriteRenderer() {}
 
 }

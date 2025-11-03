@@ -316,7 +316,7 @@ namespace RE {
 			return nullptr;
 	}
 
-	template <typename T>
+	template <class T>
 	[[nodiscard]]
 	std::string array_to_string(const T (&rArray)[], const size_t arrayLength) {
 		std::stringstream sStream("{");
@@ -383,9 +383,10 @@ namespace RE {
 	[[nodiscard]]
 	std::string get_app_name();
 
-	template <typename T>
+	template <class T>
 	[[nodiscard]]
 	constexpr T nth_root(const T n, const T value) {
+		static_assert(std::is_arithmetic_v<T>, "This function accepts arithmetic datatypes only");
 		static_assert(n > static_cast<T>(0.0), "The 0th or negative root is forbidden for causing undefined behaviour");
 		if (n <= static_cast<T>(0.0)) {
 			FATAL_ERROR("The value of n shouldn't be zero or negative in an nth root");
@@ -394,7 +395,7 @@ namespace RE {
 		return std::pow(value, static_cast<T>(1.0) / n);
 	}
 
-	template <typename... T>
+	template <class... T>
 	[[nodiscard]]
 	constexpr uint64_t gen_bitmask(const T... bits) {
 		([&]() {static_assert(std::is_arithmetic_v<T>, "Only arithmetic values can be used for generating a bitmask");} (), ...);
@@ -414,14 +415,14 @@ namespace RE {
 		return u64Result;
 	}
 
-	template <typename T, typename... U>
+	template <class T, class... U>
 	[[nodiscard]]
 	constexpr bool are_bits_true(const T value, const U... bits) {
 		static_assert(std::is_arithmetic_v<T>, "Only arithmetic values can be used for checking bits");
 		return (value & static_cast<T>(gen_bitmask<U...>(bits...))) != static_cast<T>(0.0);
 	}
 
-	template <typename T>
+	template <class T>
 	[[nodiscard]]
 	constexpr bool are_bits_true_in_range(const T value, const T begin, const T end) {
 		static_assert(std::is_arithmetic_v<T>, "Only arithmetic values can be used for checking bits in a specific range");
@@ -435,7 +436,7 @@ namespace RE {
 		return true;
 	}
 
-	template <typename T, typename... U>
+	template <class T, class... U>
 	constexpr T set_bits(T& value, const bool bNewState, const U... bits) {
 		static_assert(std::is_arithmetic_v<T>, "Only arithmetic values can be used for setting bits");
 		const T bitmask = gen_bitmask<U...>(bits...);
@@ -446,7 +447,7 @@ namespace RE {
 		return value;
 	}
 
-	template <typename T>
+	template <class T>
 	constexpr T set_bits_in_range(T& value, const bool bNewState, const T begin, const T end) {
 		static_assert(std::is_arithmetic_v<T>, "Only arithmetic values can be used for setting bits in a specific range");
 		if (begin > end) {
@@ -458,7 +459,7 @@ namespace RE {
 		return value;
 	}
 	
-	template <typename T>
+	template <class T>
 	[[nodiscard]]
 	constexpr T sign(const T& rValue) {
 		static_assert(std::is_arithmetic_v<T>, "The sign-function only accepts arithmetic datatypes, such as integers and floating-point numbers");
@@ -468,34 +469,43 @@ namespace RE {
 			return (static_cast<T>(0.0) < rValue) - (rValue < static_cast<T>(0.0));
 	}
 
-	template <typename T, uint32_t u32Dimensions>
+	template <class T, uint32_t u32Dimensions>
 	class Vector final {
 		static_assert(u32Dimensions != 0, "A vector cannot have zero dimensions");
+		static_assert(std::is_arithmetic_v<T>, "A vector usually handles arithmetic datatypes only");
 
 		public:
-			std::array<T, u32Dimensions> data;
+			std::array<T, u32Dimensions> coords;
 
-			Vector() : data{} {}
-			template <typename P, uint32_t u32CopyDimensions>
-			Vector(const Vector<P, u32CopyDimensions> &rCopyVector) {
-				for (uint32_t u32CoordinateIndex = 0; u32CoordinateIndex < u32CopyDimensions && u32CoordinateIndex < u32Dimensions; u32CoordinateIndex++)
-					data[u32CoordinateIndex] = static_cast<T>(rCopyVector.data[u32CoordinateIndex]);
+			Vector() {
+				fill(static_cast<T>(0.0));
 			}
-			template <typename... V>
-			Vector(const V... values) : data{} {
+			template <class P, uint32_t u32CopyDimensions>
+			explicit Vector(const Vector<P, u32CopyDimensions> &rCopyVector) {
+				PRINT_DEBUG_CLASS("Copying coordinates from vector ", &rCopyVector);
+				if constexpr (u32CopyDimensions <= u32Dimensions) {
+					std::copy(rCopyVector.coords.begin(), rCopyVector.coords.end(), coords.begin());
+					std::fill(coords.begin() + u32CopyDimensions, coords.end(), static_cast<T>(0.0));
+				} else
+					std::copy(rCopyVector.begin(), rCopyVector.coords.end() - (u32CopyDimensions - u32Dimensions), coords.begin());
+			}
+			template <class... V>
+			Vector(const V... values) {
 				static_assert(sizeof...(values) <= u32Dimensions, "The vector gets more values for initialization, than its dimension allows to");
+				PRINT_DEBUG_CLASS("Filling vector with values");
 				uint32_t u32Index = 0;
 				([&]() {
-					data[u32Index] = static_cast<T>(values);
+					coords[u32Index] = static_cast<T>(values);
 					u32Index++;
 				} (), ...);
+				std::fill(coords.begin() + u32Index, coords.end(), static_cast<T>(0.0));
 			}
 			~Vector() {}
 
 			[[nodiscard]]
 			T sum() const {
 				T sum = static_cast<T>(0.0);
-				for (const T coord : data)
+				for (const T coord : coords)
 					sum += coord;
 				return sum;
 			}
@@ -503,7 +513,7 @@ namespace RE {
 			[[nodiscard]]
 			T area() const {
 				T result = static_cast<T>(1.0);
-				for (const T coord : data)
+				for (const T coord : coords)
 					result *= coord;
 				return result;
 			}
@@ -514,15 +524,23 @@ namespace RE {
 			}
 
 			void fill(const T value) {
-				data.fill(value);
+				PRINT_DEBUG_CLASS("Filling vector with value ", value);
+				coords.fill(value);
 			}
 
 			void copy_from(const Vector &rCopyVector) {
-				if (u32Dimensions != rCopyVector.get_dimensions()) {
-					WARNING("Tried to copy values from one vector (", rCopyVector.get_dimensions(), ") to another (", u32Dimensions, "). This process has been terminated due to undefined behaviour");
-					return;
-				}
-				std::copy(rCopyVector.data.begin(), rCopyVector.data.end(), data.begin());
+				PRINT_DEBUG_CLASS("Copying coordinates from vector ", &rCopyVector);
+				if (rCopyVector.get_dimensions() <= u32Dimensions) {
+					std::copy(rCopyVector.coords.begin(), rCopyVector.coords.end(), coords.begin());
+					std::fill(coords.begin() + rCopyVector.get_dimensions(), coords.end(), static_cast<T>(0.0));
+				} else
+					std::copy(rCopyVector.coords.begin(), rCopyVector.coords.end() - (rCopyVector.get_dimensions() - u32Dimensions), coords.begin());
+			}
+
+			void copy_from_array(const T *const paArray, const size_t arrayLength) {
+				PRINT_DEBUG_CLASS("Copying ", arrayLength, " elements from array ", paArray, " to this vector");
+				for (size_t i = 0; i < arrayLength; i++)
+					coords[i] = paArray[i];
 			}
 
 			[[nodiscard]]
@@ -530,7 +548,7 @@ namespace RE {
 				if (u32Dimensions != rCompareVector.get_dimensions())
 					return false;
 				for (uint32_t u32Index = 0; u32Index < u32Dimensions; u32Index++)
-					if (data[u32Index] != rCompareVector[u32Index])
+					if (coords[u32Index] != rCompareVector[u32Index])
 						return false;
 				return true;
 			}
@@ -543,14 +561,14 @@ namespace RE {
 			T& operator [](const uint32_t u32Index) {
 				if (u32Index >= u32Dimensions)
 					FATAL_ERROR("Index ", u32Index, " is out of bounds: [0, ", u32Dimensions, ")");
-				return data[u32Index];
+				return coords[u32Index];
 			}
 
 			[[nodiscard]]
 			T operator [](const uint32_t u32Index) const {
 				if (u32Index >= u32Dimensions)
 					FATAL_ERROR("Index ", u32Index, " is out of bounds: [0, ", u32Dimensions, ")");
-				return data[u32Index];
+				return coords[u32Index];
 			}
 
 			void operator =(const Vector &rCopyVector) {
@@ -572,7 +590,7 @@ namespace RE {
 				for (uint32_t i = 0; i < rVector.get_dimensions(); i++) {
 					if (i)
 						rStream << ", ";
-					rStream << rVector.data[i];
+					rStream << rVector.coords[i];
 				}
 				rStream << ")";
 				return rStream;
@@ -591,18 +609,18 @@ namespace RE {
 	typedef Vector<uint32_t, 3> Vector3u;
 	typedef Vector<uint32_t, 4> Vector4u;
 
-	template <class __ReturnType, class... __ParamTypes>
+	template <class ReturnType, class... ParamTypes>
 	class [[deprecated]] Thread final {
-		static_assert((!std::is_void_v<__ParamTypes> && ...), "This class is not supposed to get void-paramters for functions without parameters. Leave it blank instead");
+		static_assert((!std::is_void_v<ParamTypes> && ...), "This class is not supposed to get void-paramters for functions without parameters. Leave it blank instead");
 
 		public:
-			static constexpr bool bFunctionReturnsData = !std::is_void_v<__ReturnType>;
-			static constexpr bool bFunctionHasParameter = sizeof...(__ParamTypes) > 0;
+			static constexpr bool bFunctionReturnsData = !std::is_void_v<ReturnType>;
+			static constexpr bool bFunctionHasParameter = sizeof...(ParamTypes) > 0;
 
 		private:
-			std::function<__ReturnType(__ParamTypes...)> function;
-			typename std::enable_if<bFunctionReturnsData, std::optional<__ReturnType>> returnedValue;
-			typename std::enable_if<bFunctionHasParameter, std::tuple<__ParamTypes...>> parameters;
+			std::function<ReturnType(ParamTypes...)> function;
+			typename std::enable_if<bFunctionReturnsData, std::optional<ReturnType>> returnedValue;
+			typename std::enable_if<bFunctionHasParameter, std::tuple<ParamTypes...>> parameters;
 
 #ifdef RE_OS_WINDOWS
 			HANDLE win_hThread;
@@ -855,7 +873,7 @@ namespace RE {
 				function = std::forward<Func>(rrFunction);
 			}
 
-			void invoke(__ParamTypes... params) {
+			void invoke(ParamTypes... params) {
 				PRINT_DEBUG_CLASS("Invoking POSIX thread");
 				if constexpr (bFunctionHasParameter)
 					parameters = std::make_tuple(params...);
@@ -863,7 +881,7 @@ namespace RE {
 			}
 
 			template <typename Func>
-			void assign_and_invoke(Func &&rrFunction, __ParamTypes... params) {
+			void assign_and_invoke(Func &&rrFunction, ParamTypes... params) {
 				assign_function(rrFunction);
 				invoke(params...);
 			}
@@ -874,13 +892,13 @@ namespace RE {
 			}
 
 			[[nodiscard]]
-			__ReturnType get_returned_value() {
+			ReturnType get_returned_value() {
 				if constexpr (bFunctionReturnsData)
 					return returnedValue.value();
 			}
 
 			[[nodiscard]]
-			__ReturnType call_function_in_current_thread(__ParamTypes... args) {
+			ReturnType call_function_in_current_thread(ParamTypes... args) {
 				PRINT_DEBUG_CLASS("Calling function in current thread");
 				if constexpr (bFunctionReturnsData)
 					return function(args...);
@@ -889,7 +907,7 @@ namespace RE {
 			}
 
 			[[nodiscard]]
-			__ReturnType operator()(__ParamTypes... args) {
+			ReturnType operator()(ParamTypes... args) {
 				return call_function_in_current_thread(args...);
 			}
 
@@ -959,29 +977,15 @@ namespace RE {
 			bool operator !=(const Transform &rCompareTransform) const;
 	};
 
-	struct Texture_T final {};
-	typedef Texture_T* Texture;
-
-	struct SpriteLayout_T final {};
-	typedef SpriteLayout_T* SpriteLayout;
-
-	struct Sprite final {
-		Texture hTexture;
-		SpriteLayout hSpriteLayout;
-
-		Sprite();
-		Sprite(Texture hTexture);
-		Sprite(SpriteLayout hSpriteLayout);
-		Sprite(Texture hTexture, SpriteLayout hSpriteLayout);
-		Sprite(const Sprite &rCopy);
-		~Sprite();
-	};
+	typedef class Texture_T final {} *Texture;
+	typedef class SpriteLayout_T final {} *SpriteLayout;
+	typedef class Sprite_T final {} *Sprite;
 
 	class SpriteRenderer final {
 		public:
 			Color color;
-			Sprite sprite;
 			Vector2f textureOffset, textureCoordinates;
+			Sprite hSprite;
 
 			SpriteRenderer();
 			~SpriteRenderer();
@@ -1000,8 +1004,8 @@ namespace RE {
 
 			template <class T>
 			[[nodiscard]]
-			T random(const T rMin, const T rMax) {
-				static_assert(std::is_integral_v<T> || std::is_floating_point_v<T>, "Only integers and floating-point numbers can be randomly generated");
+			T random(const T &rMin, const T &rMax) {
+				static_assert(std::is_arithmetic_v<T>, "This function accepts arithmetic datatypes only");
 				if constexpr (std::is_integral_v<T>) {
 					std::uniform_int_distribution<T> range(rMin, rMax - 1);
 					return range(rng);
@@ -1012,7 +1016,7 @@ namespace RE {
 			}
 			template <class T>
 			[[nodiscard]]
-			T random(const T rMax) {
+			T random(const T &rMax) {
 				return random<T>(static_cast<T>(0.0), rMax);
 			}
 			template <class T>
@@ -1312,17 +1316,34 @@ namespace RE {
 
 	// Texture loading
 	[[nodiscard]]
+	Texture alloc_texture_from_binary_data(const uint8_t *pau8TextureBinaries, uint32_t u32Width, uint32_t u32Height, uint32_t u32Channels);
+	[[nodiscard]]
 	Texture alloc_texture_loading_from_file(const char *pacPathToTextureFile);
 	void free_texture(Texture hTexture);
-	void free_texture_and_fix_dangling_pointers(Texture hTexture);
+	[[nodiscard]]
+	uint32_t get_width_of_texture(Texture hTexture);
+	[[nodiscard]]
+	uint32_t get_height_of_texture(Texture hTexture);
+	void get_extent_of_texture(Texture hTexture, uint32_t *pa2u32Extent);
 
 	// Sprite layout creation
 	[[nodiscard]]
-	SpriteLayout create_sprite_layout();
-	[[nodiscard]]
 	SpriteLayout create_sprite_layout(const SpriteLayoutSettings &rSettings);
-	void change_sprite_layout_settings(SpriteLayout &rSpriteLayout, const SpriteLayoutSettings &rNewSettings);
-	void destroy_sprite_layout(SpriteLayout spriteLayout);
+	bool change_sprite_layout_settings(SpriteLayout hSpriteLayout, const SpriteLayoutSettings &rNewSettings);
+	void destroy_sprite_layout(SpriteLayout hSpriteLayout);
+	float get_maximum_allowed_anisotropy();
+
+	// Sprite
+	[[nodiscard]]
+	Sprite create_sprite(Texture hTexture, SpriteLayout hSpriteLayout);
+	void change_texture_in_sprite(Sprite hSprite, Texture hTexture);
+	void change_layout_in_sprite(Sprite hSprite, SpriteLayout hSpriteLayout);
+	void set_default_layout_in_sprite(Sprite hSprite);
+	void destroy_sprite(Sprite hSprite);
+	[[nodiscard]]
+	Texture get_texture_from_sprite(Sprite hSprite);
+	[[nodiscard]]
+	SpriteLayout get_sprite_layout_from_sprite(Sprite hSprite);
 
 	// Renderer
 	void set_screen_percentage_settings(const ScreenPercentageSettings &rNewSettings);

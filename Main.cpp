@@ -86,8 +86,10 @@ class OC : public GameObject {
 		}
 		~OC() {}
 		void start(Scene *pStartingScene) {
-			spriteRenderer.sprite.hTexture = alloc_texture_loading_from_file("Image.png");
-			spriteRenderer.sprite.hSpriteLayout = create_sprite_layout();
+			const Texture hTexture = alloc_texture_loading_from_file("Image.png");
+			const SpriteLayoutSettings spriteLayoutSettings;
+			const SpriteLayout hSpriteLayout = create_sprite_layout(spriteLayoutSettings);
+			spriteRenderer.hSprite = create_sprite(hTexture, hSpriteLayout);
 		}
 		void update(Scene *pCurrentScene) {
 			transform.position[0] = pObjy->transform.position[0];
@@ -98,8 +100,11 @@ class OC : public GameObject {
 			spriteRenderer.textureOffset[1] = pObjy->transform.position[1];
 		}
 		void end(Scene *pEndingScene) {
-			free_texture(spriteRenderer.sprite.hTexture);
-			destroy_sprite_layout(spriteRenderer.sprite.hSpriteLayout);
+			const Texture hTexture = get_texture_from_sprite(spriteRenderer.hSprite);
+			const SpriteLayout hSpriteLayout = get_sprite_layout_from_sprite(spriteRenderer.hSprite);
+			destroy_sprite(spriteRenderer.hSprite);
+			destroy_sprite_layout(hSpriteLayout);
+			free_texture(hTexture);
 		}
 };
 
@@ -184,13 +189,15 @@ class First : public Scene {
 int main_func() {
 	set_signal_handlers();
 	set_fps_limit(60);
-	First first;
-	Second secondInStack;
-	second = &secondInStack;
-	set_next_scene(&first);
-	execute();
-	if (clonus)
-		delete clonus;
+	{
+		First first;
+		Second secondInStack;
+		second = &secondInStack;
+		set_next_scene(&first);
+		execute();
+		if (clonus)
+			delete clonus;
+	}
 	return 0;
 }
 

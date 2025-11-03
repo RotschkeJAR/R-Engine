@@ -164,7 +164,7 @@ namespace RE {
 							if (create_renderpass()) {
 								PRINT_DEBUG("Creating Vulkan pipeline layout");
 								const VkDescriptorSetLayout vk_ahWorldPipelineLayoutDescriptors[] = {
-									vk_hCameraDescriptorSetLayout
+									vk_hPermanentDescLayout
 								};
 								const VkPipelineLayoutCreateInfo vk_worldPipelineLayoutCreateInfo = {
 									.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
@@ -243,6 +243,11 @@ namespace RE {
 	void swapchain_destroyed_renderer() {
 		PRINT_DEBUG("Destroying swapchain-related Vulkan objects in Renderer");
 		destroy_render_image_resources();
+	}
+
+	bool wait_for_rendering_finished() {
+		PRINT_DEBUG("Waiting for all render process finished");
+		return vkWaitForFences(vk_hDevice, renderFences.size(), renderFences.data(), VK_TRUE, std::numeric_limits<uint64_t>::max()) == VK_SUCCESS;
 	}
 
 	void attach_camera(const Camera *const pCamera) {

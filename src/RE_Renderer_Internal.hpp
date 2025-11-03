@@ -24,8 +24,8 @@ namespace RE {
 	void destroy_depth_stencil_images();
 
 	// Descriptor Sets
-	extern VkDescriptorSetLayout vk_hCameraDescriptorSetLayout;
-	extern VkDescriptorSet vk_ahCameraDescriptorSets[RE_VK_FRAMES_IN_FLIGHT];
+	extern VkDescriptorSetLayout vk_hPermanentDescLayout;
+	extern VkDescriptorPool vk_hPermanentDescPool;
 	bool create_descriptor_sets();
 	void destroy_descriptor_sets();
 

@@ -32,7 +32,7 @@ namespace RE {
 						bRunning = true;
 
 						// Game loop
-						while (!should_window_close() && are_scenes_present() && !bErrorOccured) {
+						while (!should_window_close() && bRunning && are_scenes_present() && !bErrorOccured) {
 							window_proc();
 							game_logic_update();
 							if (should_render() && fDeltaseconds > 0.0f) {

@@ -6,12 +6,11 @@
 
 namespace RE {
 
-	struct VulkanTexture {
+	struct VulkanTexture final {
 		VkImage vk_hImage;
 		VkDeviceMemory vk_hImageMemory;
 		VkImageView vk_hImageView;
 		VkFormat vk_eFormat;
-		uint32_t u32Channels;
 		uint32_t a2u32Size[2];
 	};
 

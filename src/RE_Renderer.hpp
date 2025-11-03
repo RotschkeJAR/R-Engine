@@ -8,8 +8,8 @@ namespace RE {
 #define RE_VK_FRAMES_IN_FLIGHT 2
 
 	extern float fSampleShadingRate;
-
 	extern VkPipelineLayout vk_hWorldPipelineLayout;
+	extern uint8_t u8CurrentFrameInFlightIndex;
 
 	extern const Camera *pActiveCamera;
 
@@ -19,6 +19,7 @@ namespace RE {
 	void render();
 	bool swapchain_created_renderer();
 	void swapchain_destroyed_renderer();
+	bool wait_for_rendering_finished();
 	void attach_camera(const Camera *pCamera);
 
 	// Depth-stencil buffers
@@ -30,7 +31,13 @@ namespace RE {
 	void find_suitable_depth_stencil_formats();
 	void discard_incompatible_msaa_modes_for_depth_stencil_images(VkSampleCountFlags &vk_reMsaaAvailable);
 
+	// Descriptor sets
+#define RE_VK_UNIFORM_BINDING_CAMERA 0
+#define RE_VK_UNIFORM_BINDING_TEXTURE 1
+	extern VkDescriptorSet vk_ahPermanentDescSets[RE_VK_FRAMES_IN_FLIGHT];
+
 	// Textures
+#define RE_VK_MAX_SAMPLED_IMAGES 0x7FFF
 	bool does_gpu_support_textures(VkPhysicalDevice vk_hPhysicalDevice, const VkPhysicalDeviceLimits &vk_rPhysicalDeviceLimits, std::queue<std::string> &rMissingFeatures, std::queue<std::string> &rDiscrepantFeatures);
 	int32_t rate_gpu_texture_capacity(const VkPhysicalDeviceLimits &vk_rPhysicalDeviceLimits);
 

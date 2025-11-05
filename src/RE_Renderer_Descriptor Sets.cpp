@@ -17,7 +17,7 @@ namespace RE {
 				.pImmutableSamplers = nullptr
 			}, {
 				.binding = 1,
-				.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+				.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 				.descriptorCount = 1,
 				.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
 				.pImmutableSamplers = nullptr
@@ -31,7 +31,7 @@ namespace RE {
 					.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 					.descriptorCount = RE_VK_FRAMES_IN_FLIGHT
 				}, {
-					.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+					.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 					.descriptorCount = RE_VK_FRAMES_IN_FLIGHT
 				}
 			};

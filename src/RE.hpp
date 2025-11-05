@@ -956,36 +956,17 @@ namespace RE {
 			bool operator !=(const Color &rCompareColor) const;
 	};
 
-	class Transform final {
-		public:
-			Vector3f position, scale;
-
-			Transform();
-			Transform(const Vector3f &rPositionCopy);
-			Transform(const Vector3f &rPositionCopy, const Vector3f &rScaleCopy);
-			Transform(const Transform &rCopyTransform);
-			~Transform();
-			void reset_position();
-			void copy_from(const Transform &rCopyTransform);
-			[[nodiscard]]
-			bool equals(const Transform &rCompareTransform) const;
-
-			void operator =(const Transform &rCopyTransform);
-			[[nodiscard]]
-			bool operator ==(const Transform &rCompareTransform) const;
-			[[nodiscard]]
-			bool operator !=(const Transform &rCompareTransform) const;
-	};
-
 	typedef class Texture_T final {} *Texture;
 	typedef class SpriteLayout_T final {} *SpriteLayout;
 	typedef class Sprite_T final {} *Sprite;
+	typedef class Mesh_T final {} *Mesh;
 
 	class SpriteRenderer final {
 		public:
 			Color color;
 			Vector2f textureOffset, textureCoordinates;
 			Sprite hSprite;
+			Mesh hMesh;
 
 			SpriteRenderer();
 			~SpriteRenderer();
@@ -1068,6 +1049,27 @@ namespace RE {
 			virtual void start();
 			virtual void update();
 			virtual void end();
+	};
+
+	class Transform final {
+		public:
+			Vector3f position, scale;
+
+			Transform();
+			Transform(const Vector3f &rPositionCopy);
+			Transform(const Vector3f &rPositionCopy, const Vector3f &rScaleCopy);
+			Transform(const Transform &rCopyTransform);
+			~Transform();
+			void reset_position();
+			void copy_from(const Transform &rCopyTransform);
+			[[nodiscard]]
+			bool equals(const Transform &rCompareTransform) const;
+
+			void operator =(const Transform &rCopyTransform);
+			[[nodiscard]]
+			bool operator ==(const Transform &rCompareTransform) const;
+			[[nodiscard]]
+			bool operator !=(const Transform &rCompareTransform) const;
 	};
 
 	class Camera {

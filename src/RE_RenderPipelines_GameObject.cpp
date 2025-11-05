@@ -31,7 +31,7 @@ namespace RE {
 		constexpr VkVertexInputBindingDescription vk_aVertexBindings[] = {
 			{
 				.binding = 0,
-				.stride = RE_VK_RECT_BUFFER_VERTEX_STRIDE_SIZE,
+				.stride = sizeof(float) * 3,
 				.inputRate = VK_VERTEX_INPUT_RATE_VERTEX
 			}, {
 				.binding = 1,
@@ -43,7 +43,7 @@ namespace RE {
 			{
 				.location = 0,
 				.binding = 0,
-				.format = RE_VK_RECT_BUFFER_VERTEX_FORMAT,
+				.format = sizeof(float) * 3,
 				.offset = 0
 			}, {
 				.location = 1,

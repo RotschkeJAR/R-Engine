@@ -43,6 +43,10 @@ namespace RE {
 	void destroy_swapchain();
 	bool recreate_swapchain();
 
+	// Default transfer task
+	bool init_default_transfer_task();
+	void destroy_default_transfer_task();
+
 }
 
 #endif /* __RE_GPU_INTERNAL_H__ */

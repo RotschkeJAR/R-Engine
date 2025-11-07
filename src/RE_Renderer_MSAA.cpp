@@ -7,48 +7,49 @@ namespace RE {
 	
 	VkSampleCountFlags vk_eAllowedMsaaSamples;
 	VkSampleCountFlagBits vk_eMsaaCount = VK_SAMPLE_COUNT_1_BIT;
-	std::array<VkImage, RE_VK_FRAMES_IN_FLIGHT> vk_ahSingleSampledWorldRenderImages;
-	std::array<VkDeviceMemory, RE_VK_FRAMES_IN_FLIGHT> vk_ahSingleSampledWorldRenderImageMemories;
+	VkImage vk_hSingleSampledWorldRenderImages;
+	static VkDeviceMemory vk_hSingleSampledWorldRenderImageMemories;
 	std::array<VkImageView, RE_VK_FRAMES_IN_FLIGHT> vk_ahSingleSampledWorldRenderImageViews;
 
 	bool create_singlesampled_images(const VkExtent3D &vk_rSingleSampledImageExtent3D) {
 		if (vk_eMsaaCount == VK_SAMPLE_COUNT_1_BIT)
 			return true;
-		size_t singleSampledImageCreateIndex = 0;
-		while (singleSampledImageCreateIndex < vk_ahSingleSampledWorldRenderImages.size()) {
-			PRINT_DEBUG("Creating Vulkan image at index ", singleSampledImageCreateIndex, " for rendering multisampled");
-			if (create_vulkan_image(0, VK_IMAGE_TYPE_2D, vk_eSwapchainImageFormat, vk_rSingleSampledImageExtent3D, 1, 1, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, 1, nullptr, VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_ahSingleSampledWorldRenderImages[singleSampledImageCreateIndex], &vk_ahSingleSampledWorldRenderImageMemories[singleSampledImageCreateIndex])) {
-				PRINT_DEBUG("Creating Vulkan image view for multisampled image at index ", singleSampledImageCreateIndex);
-				if (create_vulkan_image_view(vk_ahSingleSampledWorldRenderImages[singleSampledImageCreateIndex], VK_IMAGE_VIEW_TYPE_2D, vk_eSwapchainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1, &vk_ahSingleSampledWorldRenderImageViews[singleSampledImageCreateIndex])) {
-					singleSampledImageCreateIndex++;
+		PRINT_DEBUG("Creating Vulkan image for rendering multisampled");
+		if (create_vulkan_image(0, VK_IMAGE_TYPE_2D, vk_eSwapchainImageFormat, vk_rSingleSampledImageExtent3D, 1, RE_VK_FRAMES_IN_FLIGHT, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, 1, nullptr, VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_hSingleSampledWorldRenderImages, &vk_hSingleSampledWorldRenderImageMemories)) {
+			size_t singleSampledImageViewCreateIndex = 0;
+			while (singleSampledImageViewCreateIndex < RE_VK_FRAMES_IN_FLIGHT) {
+				PRINT_DEBUG("Creating Vulkan image view for multisampled image at index ", singleSampledImageViewCreateIndex);
+				if (create_vulkan_image_view(vk_hSingleSampledWorldRenderImages, VK_IMAGE_VIEW_TYPE_2D, vk_eSwapchainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, singleSampledImageViewCreateIndex, 1, &vk_ahSingleSampledWorldRenderImageViews[singleSampledImageViewCreateIndex])) {
+					singleSampledImageViewCreateIndex++;
 					continue;
-				}
-				PRINT_DEBUG("Destroying multisampled Vulkan image at index ", singleSampledImageCreateIndex, " due to failing creating its image view");
-				vkFreeMemory(vk_hDevice, vk_ahSingleSampledWorldRenderImageMemories[singleSampledImageCreateIndex], nullptr);
-				vkDestroyImage(vk_hDevice, vk_ahSingleSampledWorldRenderImages[singleSampledImageCreateIndex], nullptr);
+				} else
+					RE_FATAL_ERROR("Failed to create Vulkan image view at index ", singleSampledImageViewCreateIndex, " pointing at singlesampled image");
+				break;
 			}
-			break;
-		}
-		if (singleSampledImageCreateIndex == vk_ahSingleSampledWorldRenderImages.size())
-			return true;
-		for (size_t singleSampledImageDestroyIndex = 0; singleSampledImageDestroyIndex < singleSampledImageCreateIndex; singleSampledImageDestroyIndex++) {
-			PRINT_DEBUG("Destroying multisampled Vulkan image and its image view at index ", singleSampledImageDestroyIndex, " due to failure creating all images");
-			vkDestroyImageView(vk_hDevice, vk_ahSingleSampledWorldRenderImageViews[singleSampledImageDestroyIndex], nullptr);
-			vkFreeMemory(vk_hDevice, vk_ahSingleSampledWorldRenderImageMemories[singleSampledImageDestroyIndex], nullptr);
-			vkDestroyImage(vk_hDevice, vk_ahSingleSampledWorldRenderImages[singleSampledImageDestroyIndex], nullptr);
-		}
+			if (singleSampledImageViewCreateIndex == RE_VK_FRAMES_IN_FLIGHT)
+				return true;
+			for (size_t singleSampledImageDestroyIndex = 0; singleSampledImageDestroyIndex < singleSampledImageViewCreateIndex; singleSampledImageDestroyIndex++) {
+				PRINT_DEBUG("Destroying Vulkan image view at index ", singleSampledImageDestroyIndex, " pointing at singlesampled image due to failure creating all images");
+				vkDestroyImageView(vk_hDevice, vk_ahSingleSampledWorldRenderImageViews[singleSampledImageDestroyIndex], nullptr);
+			}
+			PRINT_DEBUG("Destroying singlesampled Vulkan image ", vk_hSingleSampledWorldRenderImages, " and its memory ", vk_hSingleSampledWorldRenderImageMemories, " due to failing creating its image views");
+			vkFreeMemory(vk_hDevice, vk_hSingleSampledWorldRenderImageMemories, nullptr);
+			vkDestroyImage(vk_hDevice, vk_hSingleSampledWorldRenderImages, nullptr);
+		} else
+			RE_FATAL_ERROR("Failed to create singlesampled Vulkan image");
 		return false;
 	}
 
 	void destroy_singlesampled_images() {
 		if (vk_eMsaaCount == VK_SAMPLE_COUNT_1_BIT)
 			return;
-		for (size_t singleSampledImageDestroyIndex = 0; singleSampledImageDestroyIndex < vk_ahSingleSampledWorldRenderImages.size(); singleSampledImageDestroyIndex++) {
-			PRINT_DEBUG("Destroying multisampled Vulkan image and its image view at index ", singleSampledImageDestroyIndex);
+		for (size_t singleSampledImageDestroyIndex = 0; singleSampledImageDestroyIndex < RE_VK_FRAMES_IN_FLIGHT; singleSampledImageDestroyIndex++) {
+			PRINT_DEBUG("Destroying Vulkan image view at index ", singleSampledImageDestroyIndex, " pointing at singlesampled image");
 			vkDestroyImageView(vk_hDevice, vk_ahSingleSampledWorldRenderImageViews[singleSampledImageDestroyIndex], nullptr);
-			vkFreeMemory(vk_hDevice, vk_ahSingleSampledWorldRenderImageMemories[singleSampledImageDestroyIndex], nullptr);
-			vkDestroyImage(vk_hDevice, vk_ahSingleSampledWorldRenderImages[singleSampledImageDestroyIndex], nullptr);
 		}
+		PRINT_DEBUG("Destroying singlesampled Vulkan image ", vk_hSingleSampledWorldRenderImages, " and its memory ", vk_hSingleSampledWorldRenderImageMemories);
+		vkFreeMemory(vk_hDevice, vk_hSingleSampledWorldRenderImageMemories, nullptr);
+		vkDestroyImage(vk_hDevice, vk_hSingleSampledWorldRenderImages, nullptr);
 	}
 
 	void set_msaa_mode(const MsaaMode eNewMsaaMode) {

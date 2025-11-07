@@ -20,7 +20,7 @@ namespace RE {
 	 */
 	extern VkBuffer vk_hRectBuffer;
 	
-	bool init_render_elements(Vulkan_Buffer &rStagingRectBuffer, VulkanTask &rRectBufferCreateTask, Vulkan_Fence &rRectBufferTransferFence);
+	bool init_render_elements(Vulkan_Buffer &rStagingRectBuffer);
 	void destroy_render_elements();
 
 }

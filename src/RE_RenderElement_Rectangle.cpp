@@ -7,7 +7,7 @@ namespace RE {
 	VkDeviceMemory vk_hRectBufferMemory;
 	VkPipeline vk_hRectObaquePipeline, vk_hRectTransparentPipeline;
 	
-	bool init_render_element_rectangle(Vulkan_Buffer &rStagingRectBuffer, VulkanTask &rRectBufferCreateTask, Vulkan_Fence &rRectBufferTransferFence) {
+	bool init_render_element_rectangle(Vulkan_Buffer &rStagingRectBuffer) {
 		PRINT_DEBUG("Initializing temporary, staging Vulkan buffer for rectangle data");
 		if (rStagingRectBuffer.init(RE_VK_RECT_BUFFER_TOTAL_SIZE, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 1, nullptr, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
 			PRINT_DEBUG("Mapping memory of rectangle buffer to fill with vertex data");
@@ -40,67 +40,55 @@ namespace RE {
 					rStagingRectBuffer.unmap_memory();
 					PRINT_DEBUG("Creating permanent Vulkan buffer for rendering rectangles");
 					if (create_vulkan_buffer(RE_VK_RECT_BUFFER_TOTAL_SIZE, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 1, nullptr, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_hRectBuffer, &vk_hRectBufferMemory)) {
-						const uint8_t pau8LogicalQueuesToUse[] = {std::numeric_limits<uint8_t>::max(), get_render_graphics_queue_logical_index()};
-						constexpr VkQueueFlagBits vk_paeQueueTypesToUse[] = {VK_QUEUE_TRANSFER_BIT, VK_QUEUE_GRAPHICS_BIT};
-						constexpr uint32_t pau32SeparationIds[] = {0, 0};
-						const VulkanTask_Queues queuesToUse = {
-							.pau8LogicalQueueIndices = pau8LogicalQueuesToUse,
-							.vk_paeQueueTypes = vk_paeQueueTypesToUse,
-							.pau32StrictSeparationIds = pau32SeparationIds,
-							.u32FunctionsCount = 2
+						VkBufferMemoryBarrier2 vk_rectBufferOwnershipBarrier;
+						vk_rectBufferOwnershipBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2;
+						vk_rectBufferOwnershipBarrier.pNext = nullptr;
+						vk_rectBufferOwnershipBarrier.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+						vk_rectBufferOwnershipBarrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+						vk_rectBufferOwnershipBarrier.dstStageMask = VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT;
+						vk_rectBufferOwnershipBarrier.dstAccessMask = VK_ACCESS_2_INDEX_READ_BIT | VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT;
+						vk_rectBufferOwnershipBarrier.buffer = vk_hRectBuffer;
+						vk_rectBufferOwnershipBarrier.offset = 0;
+						vk_rectBufferOwnershipBarrier.size = RE_VK_RECT_BUFFER_TOTAL_SIZE;
+						const VkDependencyInfo vk_rectBufferOwnership = {
+							.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+							.bufferMemoryBarrierCount = 1,
+							.pBufferMemoryBarriers = &vk_rectBufferOwnershipBarrier
 						};
-						PRINT_DEBUG("Initializing task for transferring data of rectangle buffer to GPU");
-						if (rRectBufferCreateTask.init(queuesToUse, true)) {
-							VkBufferMemoryBarrier2 vk_rectBufferOwnershipBarrier;
-							vk_rectBufferOwnershipBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2;
-							vk_rectBufferOwnershipBarrier.pNext = nullptr;
-							vk_rectBufferOwnershipBarrier.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
-							vk_rectBufferOwnershipBarrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
-							vk_rectBufferOwnershipBarrier.dstStageMask = VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT;
-							vk_rectBufferOwnershipBarrier.dstAccessMask = VK_ACCESS_2_INDEX_READ_BIT | VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT;
-							vk_rectBufferOwnershipBarrier.buffer = vk_hRectBuffer;
-							vk_rectBufferOwnershipBarrier.offset = 0;
-							vk_rectBufferOwnershipBarrier.size = RE_VK_RECT_BUFFER_TOTAL_SIZE;
-							const VkDependencyInfo vk_rectBufferOwnership = {
-								.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-								.bufferMemoryBarrierCount = 1,
-								.pBufferMemoryBarriers = &vk_rectBufferOwnershipBarrier
+						auto transferFunc = [&](const VkCommandBuffer vk_hCommandBuffer, const uint8_t u8PreviousLogicalQueue, const uint8_t u8CurrentLogicalQueue, const uint8_t u8NextLogicalQueue) {
+							PRINT_DEBUG("Copy rectangle buffer data to GPU");
+							constexpr VkBufferCopy2 vk_transferRectBufferRegion = {
+								.sType = VK_STRUCTURE_TYPE_BUFFER_COPY_2,
+								.size = RE_VK_RECT_BUFFER_TOTAL_SIZE
 							};
-							rRectBufferCreateTask.paFunctions[0] = [&](const VkCommandBuffer vk_hCommandBuffer, const uint8_t u8PreviousLogicalQueue, const uint8_t u8CurrentLogicalQueue, const uint8_t u8NextLogicalQueue) {
-								PRINT_DEBUG("Copy rectangle buffer data to GPU");
-								constexpr VkBufferCopy2 vk_transferRectBufferRegion = {
-									.sType = VK_STRUCTURE_TYPE_BUFFER_COPY_2,
-									.size = RE_VK_RECT_BUFFER_TOTAL_SIZE
-								};
-								const VkCopyBufferInfo2 vk_transferRectBuffer = {
-									.sType = VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2,
-									.srcBuffer = rStagingRectBuffer.get_buffer(),
-									.dstBuffer = vk_hRectBuffer,
-									.regionCount = 1,
-									.pRegions = &vk_transferRectBufferRegion
-								};
-								vkCmdCopyBuffer2(vk_hCommandBuffer, &vk_transferRectBuffer);
-								if (u8CurrentLogicalQueue == u8NextLogicalQueue)
-									return;
-								PRINT_DEBUG("Transferring ownership of rectangle buffer to render queue");
-								vk_rectBufferOwnershipBarrier.srcQueueFamilyIndex = queueFamilyIndices[u8CurrentLogicalQueue];
-								vk_rectBufferOwnershipBarrier.dstQueueFamilyIndex = queueFamilyIndices[u8NextLogicalQueue];
-								vkCmdPipelineBarrier2(vk_hCommandBuffer, &vk_rectBufferOwnership);
+							const VkCopyBufferInfo2 vk_transferRectBuffer = {
+								.sType = VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2,
+								.srcBuffer = rStagingRectBuffer.get_buffer(),
+								.dstBuffer = vk_hRectBuffer,
+								.regionCount = 1,
+								.pRegions = &vk_transferRectBufferRegion
 							};
-							rRectBufferCreateTask.paFunctions[1] = [&](const VkCommandBuffer vk_hCommandBuffer, const uint8_t u8PreviousLogicalQueue, const uint8_t u8CurrentLogicalQueue, const uint8_t u8NextLogicalQueue) {
-								if (u8PreviousLogicalQueue == u8CurrentLogicalQueue)
-									return;
-								PRINT_DEBUG("Acquiring ownership of rectangle buffer in render queue");
-								vk_rectBufferOwnershipBarrier.srcQueueFamilyIndex = queueFamilyIndices[u8PreviousLogicalQueue];
-								vk_rectBufferOwnershipBarrier.dstQueueFamilyIndex = queueFamilyIndices[u8CurrentLogicalQueue];
-								vkCmdPipelineBarrier2(vk_hCommandBuffer, &vk_rectBufferOwnership);
-							};
-							PRINT_DEBUG("Recording task for transferring data of rectangle buffer");
-							rRectBufferCreateTask.record(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-							PRINT_DEBUG("Submitting task to GPU");
-							if (rRectBufferCreateTask.submit(0, nullptr, 0, nullptr, rRectBufferTransferFence.get_fence()))
-								return true;
-						}
+							vkCmdCopyBuffer2(vk_hCommandBuffer, &vk_transferRectBuffer);
+							if (u8CurrentLogicalQueue == u8NextLogicalQueue)
+								return;
+							PRINT_DEBUG("Transferring ownership of rectangle buffer to render queue");
+							vk_rectBufferOwnershipBarrier.srcQueueFamilyIndex = queueFamilyIndices[u8CurrentLogicalQueue];
+							vk_rectBufferOwnershipBarrier.dstQueueFamilyIndex = queueFamilyIndices[u8NextLogicalQueue];
+							vkCmdPipelineBarrier2(vk_hCommandBuffer, &vk_rectBufferOwnership);
+						};
+						auto acquireOwnershipFunc = [&](const VkCommandBuffer vk_hCommandBuffer, const uint8_t u8PreviousLogicalQueue, const uint8_t u8CurrentLogicalQueue, const uint8_t u8NextLogicalQueue) {
+							if (u8PreviousLogicalQueue == u8CurrentLogicalQueue)
+								return;
+							PRINT_DEBUG("Acquiring ownership of rectangle buffer in render queue");
+							vk_rectBufferOwnershipBarrier.srcQueueFamilyIndex = queueFamilyIndices[u8PreviousLogicalQueue];
+							vk_rectBufferOwnershipBarrier.dstQueueFamilyIndex = queueFamilyIndices[u8CurrentLogicalQueue];
+							vkCmdPipelineBarrier2(vk_hCommandBuffer, &vk_rectBufferOwnership);
+						};
+						PRINT_DEBUG("Submitting task to GPU");
+						if (submit_transfer_task(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, transferFunc, acquireOwnershipFunc, 0, nullptr, 0, nullptr, VK_NULL_HANDLE))
+							return true;
+						else
+							RE_FATAL_ERROR("Failed to submit task to transfer rectangle buffer to GPU");
 						PRINT_DEBUG("Destroying temporary Vulkan buffer for rectangle data due to failure");
 						vkFreeMemory(vk_hDevice, vk_hRectBufferMemory, nullptr);
 						vkDestroyBuffer(vk_hDevice, vk_hRectBuffer, nullptr);

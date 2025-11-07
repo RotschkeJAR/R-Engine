@@ -166,7 +166,7 @@ namespace RE {
 					};
 					const VkSemaphoreCreateInfo vk_semaphoreCreateInfo = {
 						.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
-					.pNext = &vk_timelineSemaphoreCreateInfo
+						.pNext = &vk_timelineSemaphoreCreateInfo
 					};
 					if (vkCreateSemaphore(vk_hDevice, &vk_semaphoreCreateInfo, nullptr, &vk_hInternalSemaphore) == VK_SUCCESS)
 						return true;
@@ -420,7 +420,7 @@ namespace RE {
 				const uint8_t u8PreviousLogicalQueue = u32FunctionIndex > 0 ? get_logical_queue_index_for_function(u32FunctionIndex - 1) : RE_VK_LOGICAL_QUEUE_IGNORED;
 				uint8_t u8NextLogicalQueue = (u32FunctionsCount > 1 && u32FunctionIndex < (u32FunctionsCount - 1)) ? get_logical_queue_index_for_function(u32FunctionIndex + 1) : RE_VK_LOGICAL_QUEUE_IGNORED;
 				PRINT_DEBUG_CLASS("Calling function at index ", u32FunctionIndex, " to record Vulkan command buffer");
-				paFunctions[u32FunctionIndex](commandBuffers[u32CommandBufferIndex], u8PreviousLogicalQueue, get_logical_queue_index_for_function(u32FunctionIndex), u8NextLogicalQueue);
+				paFunctions[u32FunctionIndex](commandBuffers[u32CommandBufferIndex], u8PreviousLogicalQueue, get_logical_queue_index_for_function(u32FunctionIndex),	u8NextLogicalQueue);
 			}
 			PRINT_DEBUG_CLASS("Finishing to record last Vulkan command buffer in Vulkan task ", this);
 			if (vkEndCommandBuffer(commandBuffers[commandBufferIndicesPerFunction[u32FunctionsCount - 1]]) != VK_SUCCESS)
@@ -453,23 +453,7 @@ namespace RE {
 			PRINT_DEBUG_CLASS("Multiple command buffers to submit");
 			uint64_t u64TimelineSemaphoreValue;
 			vkGetSemaphoreCounterValue(vk_hDevice, vk_hInternalSemaphore, &u64TimelineSemaphoreValue);
-			if (u64TimelineSemaphoreValue + u32CommandBufferCount < u64TimelineSemaphoreValue) {
-				PRINT_DEBUG_CLASS("Recreating Vulkan timeline semaphore to reset its value");
-				// Reset timeline semaphore by recreating due to upcoming overflow
-				vkDestroySemaphore(vk_hDevice, vk_hInternalSemaphore, nullptr);
-				constexpr VkSemaphoreTypeCreateInfo vk_timelineSemaphoreCreateInfo = {
-					.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO,
-					.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE
-				};
-				const VkSemaphoreCreateInfo vk_semaphoreCreateInfo = {
-					.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
-					.pNext = &vk_timelineSemaphoreCreateInfo
-				};
-				if (vkCreateSemaphore(vk_hDevice, &vk_semaphoreCreateInfo, nullptr, &vk_hInternalSemaphore) != VK_SUCCESS)
-					return false;
-				u64TimelineSemaphoreValue = 0;
-			}
-
+			
 			PRINT_DEBUG_CLASS("Submitting first command buffer");
 			VkSemaphoreSubmitInfo vk_a2InternalSemaphoreSubmissionInfo[2];
 			vk_a2InternalSemaphoreSubmissionInfo[0].sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;

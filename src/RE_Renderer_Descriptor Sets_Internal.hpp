@@ -5,6 +5,8 @@
 
 namespace RE {
 
+	extern VkDescriptorPool vk_hPermanentDescPool;
+
 	// Camera
 	bool create_camera_descriptor_sets();
 	void destroy_camera_descriptor_sets();

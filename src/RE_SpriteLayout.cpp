@@ -102,7 +102,7 @@ namespace RE {
 			return nullptr;
 		}
 		PRINT_DEBUG("Creating sprite layout");
-		VulkanSpriteLayout *pVulkanSpriteLayout = new VulkanSpriteLayout;
+		VulkanSpriteLayout *const pVulkanSpriteLayout = new VulkanSpriteLayout;
 		if (!create_vulkan_sampler_for_sprite_layout(rSettings, pVulkanSpriteLayout->vk_hSampler)) {
 			RE_FATAL_ERROR("Failed to create sprite layout");
 			delete pVulkanSpriteLayout;
@@ -120,16 +120,14 @@ namespace RE {
 			return false;
 		}
 		PRINT_DEBUG("Recreating Vulkan sampler in sprite layout ", hSpriteLayout);
-		VulkanSpriteLayout *pVulkanSpriteLayout = reinterpret_cast<VulkanSpriteLayout*>(hSpriteLayout);
+		VulkanSpriteLayout *const pVulkanSpriteLayout = reinterpret_cast<VulkanSpriteLayout*>(hSpriteLayout);
 		const VkSampler vk_hOldSampler = pVulkanSpriteLayout->vk_hSampler;
 		if (create_vulkan_sampler_for_sprite_layout(rNewSettings, pVulkanSpriteLayout->vk_hSampler)) {
 			vkDestroySampler(vk_hDevice, vk_hOldSampler, nullptr);
 			std::vector<VkDescriptorImageInfo> textureInfos;
 			std::vector<VkWriteDescriptorSet> updateInfos;
-			std::vector<VkCopyDescriptorSet> copyInfos;
 			textureInfos.reserve(std::clamp<uint16_t>(vulkanSprites.size() / 3, 1, std::numeric_limits<uint16_t>::max()));
 			updateInfos.reserve(textureInfos.capacity());
-			copyInfos.reserve(textureInfos.capacity() * (RE_VK_FRAMES_IN_FLIGHT - 1));
 			for (uint16_t u16UniformIndex = 0; u16UniformIndex < vulkanSprites.size(); u16UniformIndex++) {
 				if (vulkanSprites[u16UniformIndex]->pLayout != pVulkanSpriteLayout)
 					continue;
@@ -140,7 +138,7 @@ namespace RE {
 				updateInfos.emplace_back();
 				updateInfos.back().sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 				updateInfos.back().pNext = nullptr;
-				updateInfos.back().dstSet = vk_ahPermanentDescSets[0];
+				updateInfos.back().dstSet = vk_hTextureDescSet;
 				updateInfos.back().dstBinding = RE_VK_UNIFORM_BINDING_TEXTURE;
 				updateInfos.back().dstArrayElement = u16UniformIndex;
 				updateInfos.back().descriptorCount = 1;
@@ -148,21 +146,9 @@ namespace RE {
 				updateInfos.back().pImageInfo = const_cast<const VkDescriptorImageInfo*>(&textureInfos.back());
 				updateInfos.back().pBufferInfo = nullptr;
 				updateInfos.back().pTexelBufferView = nullptr;
-				for (uint8_t u8CopyIndex = 0; u8CopyIndex < RE_VK_FRAMES_IN_FLIGHT - 1; u8CopyIndex++) {
-					copyInfos.emplace_back();
-					copyInfos.back().sType = VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET;
-					copyInfos.back().pNext = nullptr;
-					copyInfos.back().srcSet = vk_ahPermanentDescSets[0];
-					copyInfos.back().srcBinding = RE_VK_UNIFORM_BINDING_TEXTURE;
-					copyInfos.back().srcArrayElement = u16UniformIndex;
-					copyInfos.back().dstSet = vk_ahPermanentDescSets[u8CopyIndex + 1];
-					copyInfos.back().dstBinding = RE_VK_UNIFORM_BINDING_TEXTURE;
-					copyInfos.back().dstArrayElement = u16UniformIndex;
-					copyInfos.back().descriptorCount = 1;
-				}
 			}
 			wait_for_rendering_finished();
-			vkUpdateDescriptorSets(vk_hDevice, updateInfos.size(), updateInfos.data(), copyInfos.size(), copyInfos.data());
+			vkUpdateDescriptorSets(vk_hDevice, updateInfos.size(), updateInfos.data(), 0, nullptr);
 			return true;
 		} else {
 			RE_ERROR("Failed recreating Vulkan sampler in sprite layout ", hSpriteLayout, ". The old sampler object will be kept");
@@ -177,10 +163,12 @@ namespace RE {
 			return;
 		} else if (!vk_hDevice) {
 			RE_ERROR("Sprite layouts aren't valid anymore, when the engine doesn't run, so they cannot be destroyed either");
+			RE_NOTE("The engine will attempt to free some memory used for sprite layout ", hSpriteLayout);
+			delete reinterpret_cast<const VulkanSpriteLayout*>(hSpriteLayout);
 			return;
 		}
 		PRINT_DEBUG("Destroying sprite layout ", hSpriteLayout);
-		const VulkanSpriteLayout *pVulkanSpriteLayout = reinterpret_cast<VulkanSpriteLayout*>(hSpriteLayout);
+		const VulkanSpriteLayout *const pVulkanSpriteLayout = reinterpret_cast<VulkanSpriteLayout*>(hSpriteLayout);
 		vkDestroySampler(vk_hDevice, pVulkanSpriteLayout->vk_hSampler, nullptr);
 		delete pVulkanSpriteLayout;
 #ifndef RE_DISABLE_PRINT_DEBUGS

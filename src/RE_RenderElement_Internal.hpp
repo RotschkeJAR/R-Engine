@@ -6,7 +6,7 @@
 namespace RE {
 	
 	// Game Objects
-	bool init_render_element_rectangle(Vulkan_Buffer &rStagingRectBuffer, VulkanTask &rRectBufferCreateTask, Vulkan_Fence &rRectBufferTransferFence);
+	bool init_render_element_rectangle(Vulkan_Buffer &rStagingRectBuffer);
 	void destroy_render_element_rectangle();
 
 }

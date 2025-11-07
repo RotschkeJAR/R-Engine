@@ -2,9 +2,9 @@
 
 namespace RE {
 	
-	bool init_render_elements(Vulkan_Buffer &rStagingRectBuffer, VulkanTask &rRectBufferCreateTask, Vulkan_Fence &rRectBufferTransferFence) {
+	bool init_render_elements(Vulkan_Buffer &rStagingRectBuffer) {
 		PRINT_DEBUG("Initializing render elements");
-		return init_render_element_rectangle(rStagingRectBuffer, rRectBufferCreateTask, rRectBufferTransferFence);
+		return init_render_element_rectangle(rStagingRectBuffer);
 	}
 
 	void destroy_render_elements() {

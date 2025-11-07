@@ -43,7 +43,7 @@ namespace RE {
 			{
 				.location = 0,
 				.binding = 0,
-				.format = sizeof(float) * 3,
+				.format = VK_FORMAT_R32G32B32_SFLOAT,
 				.offset = 0
 			}, {
 				.location = 1,

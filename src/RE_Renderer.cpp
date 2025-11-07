@@ -24,9 +24,9 @@ namespace RE {
 
 	float fSampleShadingRate = 0.2f;
 
-	std::array<VkImage, RE_VK_FRAMES_IN_FLIGHT> vk_ahRenderImages;
-	std::array<VkDeviceMemory, RE_VK_FRAMES_IN_FLIGHT> vk_ahRenderImageMemories;
-	std::array<VkImageView, RE_VK_FRAMES_IN_FLIGHT> vk_ahRenderImageViews;
+	VkImage vk_hRenderImages;
+	VkDeviceMemory vk_hRenderImageMemories;
+	std::array<VkImageView, RE_VK_FRAMES_IN_FLIGHT> renderImageViews;
 
 	std::array<VulkanTask, RE_VK_FRAMES_IN_FLIGHT> renderTasks;
 	std::array<VkFence, RE_VK_FRAMES_IN_FLIGHT> renderFences;
@@ -41,32 +41,29 @@ namespace RE {
 	static bool create_render_images(const VkExtent3D &vk_rRenderImageExtent3D) {
 		if (screenPercentageSettings.eMode == RE_SCREEN_PERCENTAGE_MODE_NORMAL && vk_eMsaaCount == VK_SAMPLE_COUNT_1_BIT)
 			return true;
-		PRINT_DEBUG("Creating render images");
-		size_t renderImageCreateIndex = 0;
-		while (renderImageCreateIndex < RE_VK_FRAMES_IN_FLIGHT) {
-			PRINT_DEBUG("Creating Vulkan image at index ", renderImageCreateIndex);
-			if (create_vulkan_image(0, VK_IMAGE_TYPE_2D, vk_eSwapchainImageFormat, vk_rRenderImageExtent3D, 1, 1, vk_eMsaaCount, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, 1, nullptr, VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_ahRenderImages[renderImageCreateIndex], &vk_ahRenderImageMemories[renderImageCreateIndex])) {
-				PRINT_DEBUG("Creating Vulkan image view for render image at index ", renderImageCreateIndex);
-				if (create_vulkan_image_view(vk_ahRenderImages[renderImageCreateIndex], VK_IMAGE_VIEW_TYPE_2D, vk_eSwapchainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1, &vk_ahRenderImageViews[renderImageCreateIndex])) {
+		PRINT_DEBUG("Creating Vulkan image array as target for rendering");
+		if (create_vulkan_image(0, VK_IMAGE_TYPE_2D, vk_eSwapchainImageFormat, vk_rRenderImageExtent3D, 1, RE_VK_FRAMES_IN_FLIGHT, vk_eMsaaCount, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, 1, nullptr, VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_hRenderImages, &vk_hRenderImageMemories)) {
+			size_t renderImageCreateIndex = 0;
+			while (renderImageCreateIndex < RE_VK_FRAMES_IN_FLIGHT) {
+				PRINT_DEBUG("Creating Vulkan image view at index ", renderImageCreateIndex, " for render image array");
+				if (create_vulkan_image_view(vk_hRenderImages, VK_IMAGE_VIEW_TYPE_2D, vk_eSwapchainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, renderImageCreateIndex, 1, &renderImageViews[renderImageCreateIndex])) {
 					renderImageCreateIndex++;
 					continue;
 				} else
 					RE_FATAL_ERROR("Failed creating Vulkan image view for render image at index ", renderImageCreateIndex);
-				PRINT_DEBUG("Destroying render image at index ", renderImageCreateIndex, " due to the failure of creating its Vulkan image view");
-				vkFreeMemory(vk_hDevice, vk_ahRenderImageMemories[renderImageCreateIndex], nullptr);
-				vkDestroyImage(vk_hDevice, vk_ahRenderImages[renderImageCreateIndex], nullptr);
-			} else
-				RE_FATAL_ERROR("Failed creating render image at index ", renderImageCreateIndex);
-			break;
-		}
-		if (renderImageCreateIndex == RE_VK_FRAMES_IN_FLIGHT)
-			return true;
-		for (size_t renderImageDestroyIndex = 0; renderImageDestroyIndex < renderImageCreateIndex; renderImageDestroyIndex++) {
-			PRINT_DEBUG("Destroying render image and its Vulkan image view at index ", renderImageDestroyIndex, " due to the failure of the whole process to create render images and its Vulkan image views");
-			vkDestroyImageView(vk_hDevice, vk_ahRenderImageViews[renderImageDestroyIndex], nullptr);
-			vkFreeMemory(vk_hDevice, vk_ahRenderImageMemories[renderImageDestroyIndex], nullptr);
-			vkDestroyImage(vk_hDevice, vk_ahRenderImages[renderImageDestroyIndex], nullptr);
-		}
+				break;
+			}
+			if (renderImageCreateIndex == RE_VK_FRAMES_IN_FLIGHT)
+				return true;
+			for (size_t renderImageDestroyIndex = 0; renderImageDestroyIndex < renderImageCreateIndex; renderImageDestroyIndex++) {
+				PRINT_DEBUG("Destroying Vulkan image view at index ", renderImageDestroyIndex, " due to the failure creating all image views pointing at the render image array");
+				vkDestroyImageView(vk_hDevice, renderImageViews[renderImageDestroyIndex], nullptr);
+			}
+			PRINT_DEBUG("Destroying Vulkan image ", vk_hRenderImages, "and its memory ", vk_hRenderImageMemories, " due to failure creating its image views");
+			vkFreeMemory(vk_hDevice, vk_hRenderImageMemories, nullptr);
+			vkDestroyImage(vk_hDevice, vk_hRenderImages, nullptr);
+		} else
+			RE_FATAL_ERROR("Failed creating render image");
 		return false;
 	}
 
@@ -74,11 +71,12 @@ namespace RE {
 		if (screenPercentageSettings.eMode == RE_SCREEN_PERCENTAGE_MODE_NORMAL && vk_eMsaaCount == VK_SAMPLE_COUNT_1_BIT)
 			return;
 		for (size_t renderImageDestroyIndex = 0; renderImageDestroyIndex < RE_VK_FRAMES_IN_FLIGHT; renderImageDestroyIndex++) {
-			PRINT_DEBUG("Destroying render image and its Vulkan image view at index ", renderImageDestroyIndex);
-			vkDestroyImageView(vk_hDevice, vk_ahRenderImageViews[renderImageDestroyIndex], nullptr);
-			vkFreeMemory(vk_hDevice, vk_ahRenderImageMemories[renderImageDestroyIndex], nullptr);
-			vkDestroyImage(vk_hDevice, vk_ahRenderImages[renderImageDestroyIndex], nullptr);
+			PRINT_DEBUG("Destroying Vulkan image view at index ", renderImageDestroyIndex, " pointing at render image array");
+			vkDestroyImageView(vk_hDevice, renderImageViews[renderImageDestroyIndex], nullptr);
 		}
+		PRINT_DEBUG("Destroying Vulkan image ", vk_hRenderImages, " and its memory ", vk_hRenderImageMemories);
+		vkFreeMemory(vk_hDevice, vk_hRenderImageMemories, nullptr);
+		vkDestroyImage(vk_hDevice, vk_hRenderImages, nullptr);
 	}
 
 	static bool create_render_image_resources() {
@@ -125,7 +123,7 @@ namespace RE {
 	}
 
 	uint8_t get_render_graphics_queue_logical_index() {
-		return renderTasks[0].get_logical_queue_index_for_function(1);
+		return renderTasks[0].get_logical_queue_index_for_function(0);
 	}
 
 	bool init_renderer() {
@@ -156,41 +154,43 @@ namespace RE {
 					break;
 				}
 				if (fenceCreateIndex == static_cast<uint8_t>(renderFences.size())) {
-					Vulkan_Buffer stagingRectBuffer;
-					VulkanTask rectBufferCreateTask;
-					Vulkan_Fence stagingRectBufferTransferFence;
-					if (init_render_elements(stagingRectBuffer, rectBufferCreateTask, stagingRectBufferTransferFence)) {
-						if (create_descriptor_sets()) {
-							if (create_renderpass()) {
-								PRINT_DEBUG("Creating Vulkan pipeline layout");
-								const VkDescriptorSetLayout vk_ahWorldPipelineLayoutDescriptors[] = {
-									vk_hPermanentDescLayout
-								};
-								const VkPipelineLayoutCreateInfo vk_worldPipelineLayoutCreateInfo = {
-									.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-									.setLayoutCount = sizeof(vk_ahWorldPipelineLayoutDescriptors) / sizeof(vk_ahWorldPipelineLayoutDescriptors[0]),
-									.pSetLayouts = vk_ahWorldPipelineLayoutDescriptors
-								};
-								if (vkCreatePipelineLayout(vk_hDevice, &vk_worldPipelineLayoutCreateInfo, nullptr, &vk_hWorldPipelineLayout) == VK_SUCCESS) {
-									if (create_render_pipelines()) {
-										if (init_game_object_render_batches()) {
-											PRINT_DEBUG("Waiting for Vulkan fence to signal completion of transferring Vulkan buffer containing rectangle data to GPU");
-											stagingRectBufferTransferFence.wait_for();
-											return true;
+					if (init_general_transfer_task()) {
+						Vulkan_Buffer stagingRectBuffer;
+						if (init_render_elements(stagingRectBuffer)) {
+							if (create_descriptor_sets()) {
+								if (create_renderpass()) {
+									PRINT_DEBUG("Creating Vulkan pipeline layout");
+									const VkDescriptorSetLayout vk_ahWorldPipelineLayoutDescriptors[] = {
+										vk_hCameraDescLayout,
+										vk_hTextureDescLayout
+									};
+									const VkPipelineLayoutCreateInfo vk_worldPipelineLayoutCreateInfo = {
+										.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+										.setLayoutCount = sizeof(vk_ahWorldPipelineLayoutDescriptors) / sizeof(vk_ahWorldPipelineLayoutDescriptors[0]),
+										.pSetLayouts = vk_ahWorldPipelineLayoutDescriptors
+									};
+									if (vkCreatePipelineLayout(vk_hDevice, &vk_worldPipelineLayoutCreateInfo, nullptr, &vk_hWorldPipelineLayout) == VK_SUCCESS) {
+										if (create_render_pipelines()) {
+											if (init_game_object_render_batches()) {
+												PRINT_DEBUG("Waiting for pending transfer tasks to finish");
+												wait_for_transfer(std::numeric_limits<uint64_t>::max());
+												return true;
+											}
+											destroy_render_pipelines();
 										}
-										destroy_render_pipelines();
-									}
-									PRINT_DEBUG("Destroying Vulkan pipeline layout due to failure initializing the whole renderer");
-									vkDestroyPipelineLayout(vk_hDevice, vk_hWorldPipelineLayout, nullptr);
-								} else
-									RE_FATAL_ERROR("Failed creating a Vulkan graphics pipeline for rendering objects in world");
-								destroy_renderpass();
+										PRINT_DEBUG("Destroying Vulkan pipeline layout due to failure initializing the whole renderer");
+										vkDestroyPipelineLayout(vk_hDevice, vk_hWorldPipelineLayout, nullptr);
+									} else
+										RE_FATAL_ERROR("Failed creating a Vulkan graphics pipeline for rendering objects in world");
+									destroy_renderpass();
+								}
+								destroy_descriptor_sets();
 							}
-							destroy_descriptor_sets();
+							PRINT_DEBUG("Waiting for pending transfer task to finish before destroying further due to failure creating essential resources");
+							wait_for_transfer(std::numeric_limits<uint64_t>::max());
+							destroy_render_elements();
 						}
-						PRINT_DEBUG("Waiting for Vulkan fence to signal completion of transferring Vulkan buffer containing rectangle data to GPU due to failure initializing the whole renderer");
-						stagingRectBufferTransferFence.wait_for();
-						destroy_render_elements();
+						destroy_general_transfer_task();
 					}
 				} else
 					RE_FATAL_ERROR("Failed to create Vulkan fence at index ", fenceCreateIndex, " to wait on rendering to finish");
@@ -211,6 +211,7 @@ namespace RE {
 	
 	void destroy_renderer() {
 		PRINT_DEBUG("Destroying renderer");
+		destroy_general_transfer_task();
 		destroy_game_object_render_batches();
 		destroy_render_pipelines();
 		vkDestroyPipelineLayout(vk_hDevice, vk_hWorldPipelineLayout, nullptr);
@@ -233,6 +234,7 @@ namespace RE {
 			recreate_render_pipelines();
 			bRenderPipelinesDirty = false;
 		}
+		wait_for_transfer(std::numeric_limits<uint64_t>::max());
 	}
 
 	bool swapchain_created_renderer() {

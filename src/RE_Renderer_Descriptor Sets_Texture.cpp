@@ -1,6 +1,9 @@
 #include "RE_Renderer_Internal.hpp"
 
 namespace RE {
+
+	VkDescriptorSetLayout vk_hTextureDescLayout;
+	VkDescriptorSet vk_hTextureDescSet;
 	
 	bool does_gpu_support_textures(const VkPhysicalDevice vk_hPhysicalDevice, const VkPhysicalDeviceLimits &vk_rPhysicalDeviceLimits, std::queue<std::string> &rMissingFeatures, std::queue<std::string> &rDiscrepantFeatures) {
 		PRINT_DEBUG("Checking if physical Vulkan device ", vk_hPhysicalDevice, " supports textures");
@@ -88,12 +91,40 @@ namespace RE {
 	}
 
 	bool create_texture_descriptor_sets() {
-		PRINT_DEBUG("Creating texture descriptor sets");
-		return true;
+		PRINT_DEBUG("Creating Vulkan descriptor set layout for textures");
+		const VkDescriptorSetLayoutBinding vk_textureDescBinding = {
+			.binding = RE_VK_UNIFORM_BINDING_TEXTURE,
+			.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+			.descriptorCount = 1,
+			.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT
+		};
+		const VkDescriptorSetLayoutCreateInfo vk_textureDescLayoutInfo = {
+			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+			.bindingCount = 1,
+			.pBindings = &vk_textureDescBinding
+		};
+		if (vkCreateDescriptorSetLayout(vk_hDevice, &vk_textureDescLayoutInfo, nullptr, &vk_hTextureDescLayout) == VK_SUCCESS) {
+			PRINT_DEBUG("Allocating Vulkan descriptor set for using textures");
+			const VkDescriptorSetAllocateInfo vk_textureDescSetAllocInfo = {
+				.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+				.descriptorPool = vk_hPermanentDescPool,
+				.descriptorSetCount = 1,
+				.pSetLayouts = &vk_hTextureDescLayout
+			};
+			if (vkAllocateDescriptorSets(vk_hDevice, &vk_textureDescSetAllocInfo, &vk_hTextureDescSet) == VK_SUCCESS)
+				return true;
+			else
+				RE_FATAL_ERROR("Failed allocating Vulkan descriptor set with layout ", vk_hTextureDescLayout, " in pool ", vk_hPermanentDescPool, " for textures");
+			PRINT_DEBUG("Destroying Vulkan descriptor set layout due to failure allocating the texture descriptor set");
+			vkDestroyDescriptorSetLayout(vk_hDevice, vk_hTextureDescLayout, nullptr);
+		} else
+			RE_FATAL_ERROR("Failed creating Vulkan descriptor set layout for textures");
+		return false;
 	}
 
 	void destroy_texture_descriptor_sets() {
-		PRINT_DEBUG("Destroying texture descriptor sets");
+		PRINT_DEBUG("Destroying Vulkan descriptor set layout ", vk_hTextureDescLayout, " used for textures");
+		vkDestroyDescriptorSetLayout(vk_hDevice, vk_hTextureDescLayout, nullptr);
 	}
 
 }

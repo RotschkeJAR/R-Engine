@@ -5,8 +5,6 @@
 
 namespace RE {
 
-#define RE_VK_LOGICAL_QUEUE_IGNORED std::numeric_limits<uint8_t>::max()
-
 	extern std::unique_ptr<VkSurfaceFormatKHR[]> vk_paSurfaceFormatsAvailable;
 	extern uint32_t u32IndexToSelectedSurfaceFormat;
 	extern bool bSwapchainDirty;
@@ -18,6 +16,7 @@ namespace RE {
 	extern VkPhysicalDeviceMemoryProperties vk_physicalDeviceMemoryProperties;
 
 	// Scheduler
+#define RE_VK_LOGICAL_QUEUE_IGNORED std::numeric_limits<uint8_t>::max()
 	extern std::unique_ptr<uint32_t[]> queueFamilyIndices;
 	extern uint8_t u8LogicalQueueCount;
 	void create_queue_create_infos(const float *pfPriority, std::vector<VkDeviceQueueCreateInfo> &vk_rpaLogicalQueueCreateInfos);
@@ -37,10 +36,11 @@ namespace RE {
 			std::shared_ptr<uint32_t[]> commandBufferIndicesPerFunction;
 			VkSemaphore vk_hInternalSemaphore;
 			uint32_t u32CommandBufferCount;
+			uint32_t u32FunctionsCount;
 
 		public:
-			uint32_t u32FunctionsCount;
 			std::unique_ptr<std::function<void (VkCommandBuffer vk_hCommandBuffer, uint8_t u8PreviousLogicalQueue, uint8_t u8CurrentLogicalQueue, uint8_t u8NextLogicalQueue)>[]> paFunctions;
+			std::function<void (const VkCommandBuffer *vk_pahCommandBuffers, const uint32_t *pau32CommandBufferIndicesPerFunction)> pParallelRecordingFunc;
 
 			VulkanTask();
 			VulkanTask(uint32_t u32FunctionsCount, const VkQueueFlagBits *vk_paeQueueTypePerFunctionRequiredInOrder, bool bTransient);

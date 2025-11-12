@@ -24,6 +24,7 @@ OUT          = Game
 .PHONY: all, update_git, fetch_git
 
 all:
+	@make --no-print-directory $(SH)/*.spv
 	@make --no-print-directory $(OUT)
 
 $(OUT): $(RE) *.cpp
@@ -32,7 +33,7 @@ $(OUT): $(RE) *.cpp
 		$(CC) $(CFLAG) -std=c++20 -x c++ -o "$(OUT)" "$${file}" $(LDFLAG); \
 	done
 
-$(RE): $(SRC)/* $(SH)/*.spv $(LIB_BIN)/*
+$(RE): $(SRC)/* $(LIB_BIN)/*
 	-@rm -f *.o $(BIN)/*.o
 	@if [ "$(wildcard $(BIN)/*.gch)" != "" ]; then \
 		mv $(BIN)/*.gch $(SRC); \

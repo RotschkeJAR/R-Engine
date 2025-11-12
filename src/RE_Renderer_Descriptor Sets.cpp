@@ -12,7 +12,7 @@ namespace RE {
 				.descriptorCount = RE_VK_FRAMES_IN_FLIGHT
 			}, {
 				.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-				.descriptorCount = 1
+				.descriptorCount = RE_VK_MAX_SAMPLED_IMAGES
 			}
 		};
 		const VkDescriptorPoolCreateInfo vk_permanentDescPoolInfo = {

@@ -13,7 +13,7 @@ namespace RE {
 		VK_QUEUE_TRANSFER_BIT, // Transfer buffer data or images
 		VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT // General computing
 	};
-	constexpr uint8_t u8RecommendedQueueTypesCount = sizeof(vk_aeRecommendedQueueTypes) / sizeof(VkQueueFlags);
+	constexpr uint8_t u8RecommendedQueueTypesCount = sizeof(vk_aeRecommendedQueueTypes) / sizeof(vk_aeRecommendedQueueTypes[0]);
 #define QUEUE_INDEX_RENDERING 0
 #define QUEUE_INDEX_TRANSFER 1
 #define QUEUE_INDEX_GENERAL_COMPUTING 2

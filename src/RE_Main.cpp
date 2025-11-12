@@ -67,9 +67,8 @@ namespace RE {
 				destroy_vulkan_instance();
 			}
 			destroy_window();
-			return !bErrorOccured;
 		}
-		return false;
+		return !bErrorOccured;
 #endif
 	}
 

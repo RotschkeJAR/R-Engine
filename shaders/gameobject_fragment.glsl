@@ -2,9 +2,9 @@
 
 layout(location = 0) in vec4 O_color;
 layout(location = 1) in vec2 O_textureCoords;
-layout(location = 2) in uint O_textureId;
+layout(location = 2) flat in uint O_textureId;
 
-layout(binding = 1) uniform sampler2D U_textures[0x7FFF];
+layout(set = 1, binding = 0) uniform sampler2D U_textures[0x7FFF];
 
 layout(location = 0) out vec4 color;
 

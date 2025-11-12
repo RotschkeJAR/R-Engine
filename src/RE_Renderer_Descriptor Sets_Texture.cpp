@@ -95,7 +95,7 @@ namespace RE {
 		const VkDescriptorSetLayoutBinding vk_textureDescBinding = {
 			.binding = RE_VK_UNIFORM_BINDING_TEXTURE,
 			.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-			.descriptorCount = 1,
+			.descriptorCount = RE_VK_MAX_SAMPLED_IMAGES,
 			.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT
 		};
 		const VkDescriptorSetLayoutCreateInfo vk_textureDescLayoutInfo = {

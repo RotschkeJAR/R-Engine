@@ -8,7 +8,7 @@ layout(location = 7) in uint I_instance_textureId;
 
 layout(location = 0) out vec4 O_color;
 layout(location = 1) out vec2 O_textureCoords;
-layout(location = 2) out uint O_textureId;
+layout(location = 2) flat out uint O_textureId;
 
 layout(binding = 0) uniform CameraMatrices {
 	mat4 view;
@@ -19,4 +19,5 @@ void main() {
 	gl_Position = cam.projection * cam.view * I_instance_modelMatrix * vec4(I_vertex_position, 1.0);
 	O_color = I_instance_color;
 	O_textureCoords = I_vertex_textureCoords;
+	O_textureId = I_instance_textureId;
 }

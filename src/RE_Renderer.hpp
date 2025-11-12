@@ -34,7 +34,7 @@ namespace RE {
 
 	// Descriptor sets
 #define RE_VK_UNIFORM_BINDING_CAMERA 0
-#define RE_VK_UNIFORM_BINDING_TEXTURE 1
+#define RE_VK_UNIFORM_BINDING_TEXTURE 0
 
 	// Textures
 #define RE_VK_MAX_SAMPLED_IMAGES 0x7FFF

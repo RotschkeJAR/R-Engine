@@ -47,31 +47,36 @@ namespace RE {
 				.offset = 0
 			}, {
 				.location = 1,
-				.binding = 1,
-				.format = VK_FORMAT_R32G32B32A32_SFLOAT,
-				.offset = offsetof(GameObjectInstanceData, a16fModelMatrix)
+				.binding = 0,
+				.format = VK_FORMAT_R32G32_SFLOAT,
+				.offset = sizeof(float) * 3
 			}, {
 				.location = 2,
 				.binding = 1,
 				.format = VK_FORMAT_R32G32B32A32_SFLOAT,
-				.offset = offsetof(GameObjectInstanceData, a16fModelMatrix) + sizeof(float) * 4
+				.offset = offsetof(GameObjectInstanceData, a16fModelMatrix)
 			}, {
 				.location = 3,
 				.binding = 1,
 				.format = VK_FORMAT_R32G32B32A32_SFLOAT,
-				.offset = offsetof(GameObjectInstanceData, a16fModelMatrix) + sizeof(float) * 4 * 2
+				.offset = offsetof(GameObjectInstanceData, a16fModelMatrix) + sizeof(float) * 4
 			}, {
 				.location = 4,
 				.binding = 1,
 				.format = VK_FORMAT_R32G32B32A32_SFLOAT,
-				.offset = offsetof(GameObjectInstanceData, a16fModelMatrix) + sizeof(float) * 4 * 3
+				.offset = offsetof(GameObjectInstanceData, a16fModelMatrix) + sizeof(float) * 4 * 2
 			}, {
 				.location = 5,
 				.binding = 1,
 				.format = VK_FORMAT_R32G32B32A32_SFLOAT,
-				.offset = offsetof(GameObjectInstanceData, a4fColor)
+				.offset = offsetof(GameObjectInstanceData, a16fModelMatrix) + sizeof(float) * 4 * 3
 			}, {
 				.location = 6,
+				.binding = 1,
+				.format = VK_FORMAT_R32G32B32A32_SFLOAT,
+				.offset = offsetof(GameObjectInstanceData, a4fColor)
+			}, {
+				.location = 7,
 				.binding = 1,
 				.format = VK_FORMAT_R32_UINT,
 				.offset = offsetof(GameObjectInstanceData, u32TextureUniformId)

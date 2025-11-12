@@ -11,16 +11,12 @@
 
 namespace RE {
 
-	typedef uint16_t REindex_t;
-#define RE_VK_RECT_INDEX_BUFFER_SIZE (RE_VK_RENDERABLE_RECTANGLES_COUNT * 6)
-#define RE_VK_RECT_INDEX_BUFFER_SIZE_BYTES (RE_VK_RECT_INDEX_BUFFER_SIZE * sizeof(REindex_t))
-
 #define RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE 2
 #define RE_VK_SWAPCHAIN_SEMAPHORE_COUNT (u32SwapchainImageCount * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE)
 
 	const Camera *pActiveCamera = nullptr;
 
-	ScreenPercentageSettings screenPercentageSettings(RE_SCREEN_PERCENTAGE_MODE_NORMAL);
+	ScreenPercentageSettings screenPercentageSettings;
 
 	float fSampleShadingRate = 0.2f;
 

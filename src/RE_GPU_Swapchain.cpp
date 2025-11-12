@@ -31,31 +31,22 @@ namespace RE {
 			vk_swapchainResolution.height = std::clamp<uint32_t>(windowSize[1], vk_surfaceCapabilities.minImageExtent.height, vk_surfaceCapabilities.maxImageExtent.height);
 		}
 		PRINT_DEBUG("Creating swapchain");
-		VkSwapchainCreateInfoKHR vk_swapchainCreateInfo;
-		vk_swapchainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-		vk_swapchainCreateInfo.pNext = nullptr;
-		vk_swapchainCreateInfo.flags = 0;
-		vk_swapchainCreateInfo.surface = vk_hSurface;
-		vk_swapchainCreateInfo.minImageCount = std::clamp(vk_surfaceCapabilities.minImageCount + 1, vk_surfaceCapabilities.minImageCount, vk_surfaceCapabilities.maxImageCount > 0 ? vk_surfaceCapabilities.maxImageCount : std::numeric_limits<uint32_t>::max());
-		vk_swapchainCreateInfo.imageFormat = vk_paSurfaceFormatsAvailable[u32IndexToSelectedSurfaceFormat].format;
-		vk_swapchainCreateInfo.imageColorSpace = vk_paSurfaceFormatsAvailable[u32IndexToSelectedSurfaceFormat].colorSpace;
-		vk_swapchainCreateInfo.imageExtent = vk_swapchainResolution;
-		vk_swapchainCreateInfo.imageArrayLayers = 1;
-		vk_swapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-		if (u8LogicalQueueCount > 1) {
-			vk_swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-			vk_swapchainCreateInfo.queueFamilyIndexCount = u8LogicalQueueCount;
-			vk_swapchainCreateInfo.pQueueFamilyIndices = queueFamilyIndices.get();
-		} else
-			vk_swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-		vk_swapchainCreateInfo.preTransform = vk_surfaceCapabilities.currentTransform;
-		vk_swapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-		vk_swapchainCreateInfo.clipped = VK_TRUE;
-		vk_swapchainCreateInfo.oldSwapchain = vk_hOldSwapchain;
-		if (bVsyncEnabled)
-			vk_swapchainCreateInfo.presentMode = vk_ePresentModeVsync;
-		else
-			vk_swapchainCreateInfo.presentMode = vk_ePresentModeNoVsync;
+		const VkSwapchainCreateInfoKHR vk_swapchainCreateInfo = {
+			.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
+			.surface = vk_hSurface,
+			.minImageCount = std::clamp(vk_surfaceCapabilities.minImageCount + 1, vk_surfaceCapabilities.minImageCount, vk_surfaceCapabilities.maxImageCount > 0 ? vk_surfaceCapabilities.maxImageCount : std::numeric_limits<uint32_t>::max()),
+			.imageFormat = vk_paSurfaceFormatsAvailable[u32IndexToSelectedSurfaceFormat].format,
+			.imageColorSpace = vk_paSurfaceFormatsAvailable[u32IndexToSelectedSurfaceFormat].colorSpace,
+			.imageExtent = vk_swapchainResolution,
+			.imageArrayLayers = 1,
+			.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+			.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
+			.preTransform = vk_surfaceCapabilities.currentTransform,
+			.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+			.presentMode = bVsyncEnabled ? vk_ePresentModeVsync : vk_ePresentModeNoVsync,
+			.clipped = VK_TRUE,
+			.oldSwapchain = vk_hOldSwapchain
+		};
 		if (vkCreateSwapchainKHR(vk_hDevice, &vk_swapchainCreateInfo, nullptr, &vk_hSwapchain) != VK_SUCCESS) {
 			RE_ERROR("Failed creating Vulkan swapchain");
 			return false;

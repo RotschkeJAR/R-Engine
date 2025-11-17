@@ -40,7 +40,6 @@ namespace RE {
 
 		public:
 			std::unique_ptr<std::function<void (VkCommandBuffer vk_hCommandBuffer, uint8_t u8PreviousLogicalQueue, uint8_t u8CurrentLogicalQueue, uint8_t u8NextLogicalQueue)>[]> paFunctions;
-			std::function<void (const VkCommandBuffer *vk_pahCommandBuffers, const uint32_t *pau32CommandBufferIndicesPerFunction)> pParallelRecordingFunc;
 
 			VulkanTask();
 			VulkanTask(uint32_t u32FunctionsCount, const VkQueueFlagBits *vk_paeQueueTypePerFunctionRequiredInOrder, bool bTransient);

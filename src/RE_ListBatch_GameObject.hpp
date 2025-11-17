@@ -2,7 +2,6 @@
 #define __RE_BATCH_GAME_OBJECT_H__
 
 #include "RE_Renderer.hpp"
-#include "RE_RenderBatch_GameObject.hpp"
 
 namespace RE {
 
@@ -14,8 +13,6 @@ namespace RE {
 			uint16_t u16Count;
 
 		public:
-			RenderBatch_GameObject renderBatch;
-			
 			ListBatch_GameObject();
 			~ListBatch_GameObject();
 

@@ -5,7 +5,6 @@ namespace RE {
 	std::unique_ptr<uint32_t[]> queueFamilyIndices;
 	std::unique_ptr<VkQueue[]> vk_pahQueues;
 	std::unique_ptr<VkQueueFlags[]> vk_paeQueueTypes;
-	std::unique_ptr<VkCommandPool[]> vk_pahCommandPools;
 	uint8_t u8LogicalQueueCount = 0;
 
 	constexpr VkQueueFlags vk_aeRecommendedQueueTypes[] = {
@@ -265,7 +264,6 @@ namespace RE {
 		vk_pahQueues = std::make_unique<VkQueue[]>(u8LogicalQueueCount);
 		vk_paeQueueTypes = std::make_unique<VkQueueFlags[]>(u8LogicalQueueCount);
 		queueFamilyIndices = std::make_unique<uint32_t[]>(u8LogicalQueueCount);
-		vk_pahCommandPools = std::make_unique<VkCommandPool[]>(u8LogicalQueueCount * 2);
 		vk_rpaLogicalQueueCreateInfos.resize(u8LogicalQueueCount);
 		uint32_t u32LogicalQueueCreateIndex = 0;
 		for (const uint32_t u32QueueIndex : selectedQueues) {
@@ -299,31 +297,13 @@ namespace RE {
 			vk_queueInfoGet.queueFamilyIndex = queueFamilyIndices[u8LogicalQueueIndex];
 			vkGetDeviceQueue2(vk_hDevice, &vk_queueInfoGet, &vk_pahQueues[u8LogicalQueueIndex]);
 		}
-		VkCommandPoolCreateInfo vk_commandPoolCreateInfo;
-		vk_commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-		vk_commandPoolCreateInfo.pNext = nullptr;
-		for (uint8_t u8LogicalQueueIndex = 0; u8LogicalQueueIndex < u8LogicalQueueCount; u8LogicalQueueIndex++) {
-			const uint8_t u8CommandPoolIndexForQueue = u8LogicalQueueIndex * COMMAND_POOLS_PER_QUEUE;
-			PRINT_DEBUG("Creating command pool at index ", u8CommandPoolIndexForQueue + COMMAND_POOL_OFFSET_NORMAL);
-			vk_commandPoolCreateInfo.queueFamilyIndex = queueFamilyIndices[u8LogicalQueueIndex];
-			vk_commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-			vkCreateCommandPool(vk_hDevice, &vk_commandPoolCreateInfo, nullptr, &vk_pahCommandPools[u8CommandPoolIndexForQueue + COMMAND_POOL_OFFSET_NORMAL]);
-			PRINT_DEBUG("Creating command pool at index ", u8CommandPoolIndexForQueue + COMMAND_POOL_OFFSET_TRANSIENT);
-			vk_commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
-			vkCreateCommandPool(vk_hDevice, &vk_commandPoolCreateInfo, nullptr, &vk_pahCommandPools[u8CommandPoolIndexForQueue + COMMAND_POOL_OFFSET_TRANSIENT]);
-		}
 		return true;
 	}
 
 	void destroy_logical_device_queues() {
-		for (uint8_t u8CommandPoolIndex = 0; u8CommandPoolIndex < u8LogicalQueueCount * 2; u8CommandPoolIndex++) {
-			PRINT_DEBUG("Destroying command pool at index ", u8CommandPoolIndex);
-			vkDestroyCommandPool(vk_hDevice, vk_pahCommandPools[u8CommandPoolIndex], nullptr);
-		}
 		vk_pahQueues.reset();
 		vk_paeQueueTypes.reset();
 		queueFamilyIndices.reset();
-		vk_pahCommandPools.reset();
 	}
 
 }

@@ -113,6 +113,9 @@ namespace RE {
 			// Check if required queues exist
 			does_gpu_have_necessary_queues(vk_hPhysicalDevice, missingFeatures);
 
+			// Check if vertex buffers are properly supported
+			does_gpu_support_vertex_buffers(vk_hPhysicalDevice, missingFeatures);
+
 			// Check if textures are supported
 			does_gpu_support_textures(vk_hPhysicalDevice, vk_thisPhysicalDeviceProperties.properties.limits, missingFeatures, discrepantFeatures);
 

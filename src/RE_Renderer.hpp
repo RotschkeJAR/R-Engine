@@ -14,6 +14,7 @@ namespace RE {
 
 	extern const Camera *pActiveCamera;
 
+	uint8_t get_render_buffer_transfer_queue_logical_index();
 	uint8_t get_render_graphics_queue_logical_index();
 	bool init_renderer();
 	void destroy_renderer();
@@ -22,6 +23,9 @@ namespace RE {
 	void swapchain_destroyed_renderer();
 	bool wait_for_rendering_finished();
 	void attach_camera(const Camera *pCamera);
+
+	// Render pipelines
+	bool does_gpu_support_vertex_buffers(VkPhysicalDevice vk_hPhysicalDevice, std::queue<std::string> &rMissingFeatures);
 
 	// Depth-stencil buffers
 	extern std::vector<VkFormat> availableDepthStencilFormats;

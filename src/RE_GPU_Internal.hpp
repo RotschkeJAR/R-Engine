@@ -27,10 +27,6 @@ namespace RE {
 	// Scheduler
 	extern std::unique_ptr<VkQueue[]> vk_pahQueues;
 	extern std::unique_ptr<VkQueueFlags[]> vk_paeQueueTypes;
-#define COMMAND_POOLS_PER_QUEUE 2
-#define COMMAND_POOL_OFFSET_NORMAL 0
-#define COMMAND_POOL_OFFSET_TRANSIENT 1
-	extern std::unique_ptr<VkCommandPool[]> vk_pahCommandPools;
 	void does_gpu_have_necessary_queues(VkPhysicalDevice vk_hPhysicalDevice, std::queue<std::string> &rMissingFeatures);
 	[[nodiscard]]
 	int32_t rate_gpu_queues(VkPhysicalDevice vk_hPhysicalDevice);

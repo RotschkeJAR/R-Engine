@@ -6,10 +6,30 @@
 #include "RE_Texture.hpp"
 #include "RE_Vulkan_Wrapper Functions.hpp"
 #include "RE_Vulkan_Wrapper Classes.hpp"
+#include "RE_RenderPipelines.hpp"
 
 namespace RE {
 
 	extern bool bRenderPipelinesDirty;
+
+	// Render image
+	extern VkImage vk_hRenderImages;
+	extern std::array<VkImageView, RE_VK_FRAMES_IN_FLIGHT> renderImageViews;
+	bool create_render_image_resources();
+	void destroy_render_image_resources();
+
+	// Render task
+	extern std::array<VkFence, RE_VK_FRAMES_IN_FLIGHT> renderFences;
+	extern uint8_t u8CurrentFrameInFlightIndex;
+	bool create_render_tasks();
+	void destroy_render_tasks();
+
+	// Render buffer
+	extern VkBuffer vk_hRenderBuffer;
+	extern VkDrawIndexedIndirectCommand *vk_pRenderBufferDrawCommand;
+	extern GameObjectInstanceData *paRenderBufferInstanceData;
+	bool create_render_buffers();
+	void destroy_render_buffers();
 
 	// MSAA
 	extern VkSampleCountFlagBits vk_eMsaaCount;

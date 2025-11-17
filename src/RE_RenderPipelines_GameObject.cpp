@@ -2,7 +2,6 @@
 #include "RE_Renderer.hpp"
 #include "RE_RenderElement.hpp"
 #include "RE_Vulkan_Wrapper Functions.hpp"
-#include "RE_RenderBatch_GameObject.hpp"
 
 namespace RE {
 
@@ -31,7 +30,7 @@ namespace RE {
 		constexpr VkVertexInputBindingDescription vk_aVertexBindings[] = {
 			{
 				.binding = 0,
-				.stride = sizeof(float) * 3,
+				.stride = sizeof(float) * 5,
 				.inputRate = VK_VERTEX_INPUT_RATE_VERTEX
 			}, {
 				.binding = 1,
@@ -79,7 +78,7 @@ namespace RE {
 				.location = 7,
 				.binding = 1,
 				.format = VK_FORMAT_R32_UINT,
-				.offset = offsetof(GameObjectInstanceData, u32TextureUniformId)
+				.offset = offsetof(GameObjectInstanceData, u32TextureId)
 			}
 		};
 		const VkPipelineVertexInputStateCreateInfo vk_vertexInput = {

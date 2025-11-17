@@ -104,37 +104,4 @@ namespace RE {
 		}
 	}
 
-	bool init_game_object_render_batches() {
-		size_t batchesInitializedCount = 0;
-		for (ListBatch_GameObject *const pBatch : gameObjectBatchList) {
-			PRINT_DEBUG("Initializing game object batch ", pBatch, " for rendering");
-			if (!pBatch->renderBatch.init())
-				break;
-			else
-				batchesInitializedCount++;
-		}
-		if (batchesInitializedCount < gameObjectBatchList.size()) {
-			for (size_t batchesDestroyedCount = 0; batchesDestroyedCount < batchesInitializedCount; batchesDestroyedCount++) {
-				PRINT_DEBUG("Destroying game object batch ", gameObjectBatchList[batchesDestroyedCount], " at index ", batchesDestroyedCount, " for rendering due to failure initializing another batch");
-				gameObjectBatchList[batchesDestroyedCount]->renderBatch.destroy();
-			}
-			return false;
-		}
-		return true;
-	}
-
-	void destroy_game_object_render_batches() {
-		for (ListBatch_GameObject *const pBatch : gameObjectBatchList) {
-			PRINT_DEBUG("Destroying game object batch ", pBatch, " for rendering");
-			pBatch->renderBatch.destroy();
-		}
-	}
-
-	void fetch_game_object_render_data() {
-		for (ListBatch_GameObject *const pBatch : gameObjectBatchList) {
-			PRINT_DEBUG("Loading game object vertices in batch ", pBatch);
-			pBatch->renderBatch.fetch_render_data();
-		}
-	}
-
 }

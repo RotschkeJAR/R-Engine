@@ -19,10 +19,6 @@ namespace RE {
 	void update_game_objects();
 	void end_game_objects();
 
-	bool init_game_object_render_batches();
-	void destroy_game_object_render_batches();
-	void fetch_game_object_render_data();
-
 }
 
 #endif /* __RE_LIST_GAME_OBJECT_H__ */

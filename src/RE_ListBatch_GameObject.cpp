@@ -3,7 +3,7 @@
 
 namespace RE {
 
-	ListBatch_GameObject::ListBatch_GameObject() : u16Count(0), renderBatch(*this) {
+	ListBatch_GameObject::ListBatch_GameObject() : u16Count(0) {
 		PRINT_DEBUG_CLASS("Constructing list-batch for game objects");
 	}
 	ListBatch_GameObject::~ListBatch_GameObject() {

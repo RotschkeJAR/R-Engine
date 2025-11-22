@@ -1,4 +1,4 @@
-#include "RE_Renderer_Internal.cpp"
+#include "RE_Renderer_Internal.hpp"
 
 namespace RE {
 

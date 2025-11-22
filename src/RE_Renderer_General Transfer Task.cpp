@@ -57,16 +57,16 @@ namespace RE {
 		signalSemaphores.back().sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
 		signalSemaphores.back().pNext = nullptr;
 		signalSemaphores.back().semaphore = vk_hTransferTimelineSemaphore;
-		signalSemaphores.back().stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+		signalSemaphores.back().stageMask = VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT;
 		signalSemaphores.back().deviceIndex = 0;
 		wait_for_transfer(std::numeric_limits<uint64_t>::max());
-		transferToGpuTask.paFunctions[0] = pTransferFunction;
-		transferToGpuTask.paFunctions[1] = pOwnershipAcquireFunction;
-		transferToGpuTask.record(vk_eUsageFlags);
+		transferToGpuTask.record(0, vk_eUsageFlags, pTransferFunction);
+		transferToGpuTask.record(1, vk_eUsageFlags, pOwnershipAcquireFunction);
 		u64TransferTimelineSemaphoreValue++;
 		signalSemaphores.back().value = u64TransferTimelineSemaphoreValue;
 		copySignalSemaphoresThread.join();
-		return transferToGpuTask.submit(u32WaitSemaphoreCount, vk_paWaitSemaphores, signalSemaphores.size(), signalSemaphores.data(), vk_hFence);
+		constexpr VkPipelineStageFlags2 vk_a1eInternSemaphoreWaitStages[1] = {VK_PIPELINE_STAGE_2_TRANSFER_BIT};
+		return transferToGpuTask.submit(u32WaitSemaphoreCount, vk_paWaitSemaphores, vk_eInternSemaphoreWaitStages, signalSemaphores.size(), signalSemaphores.data(), vk_hFence);
 	}
 
 	void wait_for_transfer(const uint64_t u64Timeout) {

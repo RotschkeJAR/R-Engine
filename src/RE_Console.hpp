@@ -4,6 +4,10 @@
 #include "RE.hpp"
 
 namespace RE {
+
+	extern uint32_t u32VulkanErrorCount, u32VulkanWarningCount;
+
+	void print_error_count();
 	
 #define RE_FATAL_ERROR(...) error(append_to_string("[R-Engine] ", STRIP_QUOTE_MACRO(__VA_ARGS__)), true)
 #define RE_ERROR(...) error(append_to_string("[R-Engine] ", STRIP_QUOTE_MACRO(__VA_ARGS__)), false)

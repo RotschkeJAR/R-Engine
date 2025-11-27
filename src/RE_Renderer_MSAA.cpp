@@ -6,10 +6,10 @@
 namespace RE {
 	
 	VkSampleCountFlags vk_eAllowedMsaaSamples;
-	VkSampleCountFlagBits vk_eMsaaCount = VK_SAMPLE_COUNT_1_BIT;
+	VkSampleCountFlagBits vk_eMsaaCount = VK_SAMPLE_COUNT_4_BIT;
 	VkImage vk_hSingleSampledWorldRenderImages;
 	static VkDeviceMemory vk_hSingleSampledWorldRenderImageMemories;
-	std::array<VkImageView, RE_VK_FRAMES_IN_FLIGHT> vk_ahSingleSampledWorldRenderImageViews;
+	VkImageView vk_ahSingleSampledWorldRenderImageViews[RE_VK_FRAMES_IN_FLIGHT];
 
 	bool create_singlesampled_images(const VkExtent3D &vk_rSingleSampledImageExtent3D) {
 		if (vk_eMsaaCount == VK_SAMPLE_COUNT_1_BIT)

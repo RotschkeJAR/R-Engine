@@ -13,6 +13,7 @@ namespace RE {
 #define TREAT_WARNING_AS_ERROR 1
 #define ERRORS_ALWAYS_FATAL 2
 
+	uint32_t u32ErrorCount = 0, u32VulkanErrorCount = 0, u32WarningCount = 0, u32VulkanWarningCount = 0;
 	uint8_t u8ConsoleSettings = 1 << PRINT_COLORS;
 
 	static void print_time() {
@@ -50,6 +51,15 @@ namespace RE {
 		}
 	}
 
+	void print_error_count() {
+		println("Error Count:");
+		println("===============================");
+		println("\tErrors:          ", u32ErrorCount);
+		println("\tWarnings:        ", u32WarningCount);
+		println("\tVulkan Errors:   ", u32VulkanErrorCount);
+		println("\tVulkan Warnings: ", u32VulkanWarningCount);
+	}
+
 	void print_colored(const std::string &rsContent, const TerminalColor eColor, const bool bBackgroundColored, const bool bBold) {
 		print(escape_code_to_string(eColor, bBackgroundColored, bBold), rsContent, DEFAULT_COLOR);
 	}
@@ -68,6 +78,7 @@ namespace RE {
 			bErrorOccured = true;
 			println_colored("Terminating...", RE_TERMINAL_COLOR_BRIGHT_BLACK, false, false);
 		}
+		u32ErrorCount++;
 	}
 
 	void warning(const std::string &rsDetail) {
@@ -77,6 +88,7 @@ namespace RE {
 			print_time();
 			print_colored("WARNING", RE_TERMINAL_COLOR_YELLOW, false, false);
 			print_error_msg(rsDetail);
+			u32WarningCount++;
 		}
 	}
 

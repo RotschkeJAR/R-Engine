@@ -90,7 +90,6 @@ namespace RE {
 	}
 	
 	void destroy_swapchain() {
-		swapchain_destroyed_renderer();
 		for (uint32_t u32SwapchainImageIndex = 0; u32SwapchainImageIndex < u32SwapchainImageCount; u32SwapchainImageIndex++) {
 			PRINT_DEBUG("Destroying Vulkan image view for swapchain image at index ", u32SwapchainImageIndex);
 			vkDestroyImageView(vk_hDevice, vk_pahSwapchainImageViews[u32SwapchainImageIndex], nullptr);

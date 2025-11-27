@@ -467,9 +467,11 @@ namespace RE {
 		switch (vk_eSeverityFlagBits) {
 			case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
 				eConsoleColor = RE_TERMINAL_COLOR_BRIGHT_RED;
+				u32VulkanErrorCount++;
 				break;
 			case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
 				eConsoleColor = RE_TERMINAL_COLOR_BRIGHT_YELLOW;
+				u32VulkanWarningCount++;
 				break;
 			case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
 				eConsoleColor = RE_TERMINAL_COLOR_BRIGHT_BLACK;

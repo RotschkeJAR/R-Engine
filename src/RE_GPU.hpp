@@ -29,8 +29,10 @@ namespace RE {
 	};
 
 	class VulkanTask final {
+		using SubmitInfo = std::tuple<VkSubmitInfo2, VkQueue>;
+
 		private:
-			std::shared_ptr<uint8_t[]> queueIndicesPerCommandPool;
+			std::shared_ptr<uint8_t[]> queueIndexPerCommandPool;
 			std::unique_ptr<VkCommandPool[]> commandPools;
 			std::shared_ptr<uint8_t[]> commandPoolIndexPerCommandBuffer;
 			std::unique_ptr<VkCommandBuffer[]> commandBuffers;
@@ -40,8 +42,6 @@ namespace RE {
 			bool bTransient;
 
 		public:
-			std::unique_ptr<std::function<void (VkCommandBuffer vk_hCommandBuffer, uint8_t u8PreviousLogicalQueue, uint8_t u8CurrentLogicalQueue, uint8_t u8NextLogicalQueue)>[]> paFunctions;
-
 			VulkanTask();
 			VulkanTask(uint32_t u32FunctionsCount, const VkQueueFlagBits *vk_paeQueueTypePerFunctionRequiredInOrder, bool bIndividualResets, bool bTransient);
 			VulkanTask(uint32_t u32FunctionsCount, const uint8_t *pau8LogicalQueueIndexPerFunctionRequiredInOrder, bool bIndividualResets, bool bTransient);
@@ -53,9 +53,10 @@ namespace RE {
 			bool init(const VulkanTask_Queues &rQueues, bool bIndividualResets, bool bTransient);
 			bool init(const VulkanTask &rCopy, bool bIndividualResets, bool bTransient);
 			void destroy();
-			void record(uint32_t u32FunctionIndex, VkCommandBufferUsageFlags vk_eUsageFlags, std::function<void (VkCommandBuffer vk_hCommandBuffer, uint8_t u8PreviousLogicalQueue, uint8_t u8CurrentLogicalQueue, uint8_t u8NextLogicalQueue)> pRecorderFunction);
-			bool submit(uint32_t u32SemaphoresToWaitForCount, const VkSemaphoreSubmitInfo *vk_paSemaphoresToWaitFor, const VkPipelineStageFlags2 *vk_paeInternSemaphoreWaits, uint32_t u32SemaphoresToSignal, const VkSemaphoreSubmitInfo *vk_paSemaphoresToSignal, VkFence vk_hFenceToSignal);
+			void record(uint32_t u32FunctionIndex, VkCommandBufferUsageFlags vk_eUsageFlags, std::function<void (VkCommandBuffer vk_hCommandBuffer, uint8_t u8PreviousLogicalQueue, uint8_t u8CurrentLogicalQueue, uint8_t u8NextLogicalQueue)> pRecorderFunction) const;
+			bool submit(uint32_t u32SemaphoresToWaitForCount, const VkSemaphoreSubmitInfo *vk_paSemaphoresToWaitFor, const VkPipelineStageFlags2 *vk_paeInternSemaphoreWaits, uint32_t u32SemaphoresToSignal, const VkSemaphoreSubmitInfo *vk_paSemaphoresToSignal, VkFence vk_hFenceToSignal) const;
 			void reset_all(VkCommandPoolResetFlags vk_eResetFlags) const;
+			VkCommandPool get_command_pool_of_function(uint32_t u32FunctionIndex) const;
 			uint32_t get_function_count() const;
 			uint8_t get_logical_queue_index_for_function(uint32_t u32FunctionIndex) const;
 			bool is_valid() const;

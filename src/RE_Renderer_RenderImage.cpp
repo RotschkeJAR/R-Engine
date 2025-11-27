@@ -1,12 +1,14 @@
 #include "RE_Renderer_Internal.hpp"
+#include "RE_Main.hpp"
 
 namespace RE {
 
+	ScreenPercentageSettings screenPercentageSettings;
 	VkImage vk_hRenderImages;
 	VkDeviceMemory vk_hRenderImageMemories;
-	std::array<VkImageView, RE_VK_FRAMES_IN_FLIGHT> renderImageViews;
+	VkImageView vk_ahRenderImageViews[RE_VK_FRAMES_IN_FLIGHT];
 	
-	static bool create_render_images() {
+	static bool create_render_images(const VkExtent3D &vk_rRenderImageExtent3D) {
 		if (screenPercentageSettings.eMode == RE_SCREEN_PERCENTAGE_MODE_NORMAL && vk_eMsaaCount == VK_SAMPLE_COUNT_1_BIT)
 			return true;
 		PRINT_DEBUG("Creating Vulkan image array as target for rendering");
@@ -14,7 +16,7 @@ namespace RE {
 			size_t renderImageCreateIndex = 0;
 			while (renderImageCreateIndex < RE_VK_FRAMES_IN_FLIGHT) {
 				PRINT_DEBUG("Creating Vulkan image view at index ", renderImageCreateIndex, " for render image array");
-				if (create_vulkan_image_view(vk_hRenderImages, VK_IMAGE_VIEW_TYPE_2D, vk_eSwapchainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, renderImageCreateIndex, 1, &renderImageViews[renderImageCreateIndex])) {
+				if (create_vulkan_image_view(vk_hRenderImages, VK_IMAGE_VIEW_TYPE_2D, vk_eSwapchainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, renderImageCreateIndex, 1, &vk_ahRenderImageViews[renderImageCreateIndex])) {
 					renderImageCreateIndex++;
 					continue;
 				} else
@@ -25,7 +27,7 @@ namespace RE {
 				return true;
 			for (size_t renderImageDestroyIndex = 0; renderImageDestroyIndex < renderImageCreateIndex; renderImageDestroyIndex++) {
 				PRINT_DEBUG("Destroying Vulkan image view at index ", renderImageDestroyIndex, " due to the failure creating all image views pointing at the render image array");
-				vkDestroyImageView(vk_hDevice, renderImageViews[renderImageDestroyIndex], nullptr);
+				vkDestroyImageView(vk_hDevice, vk_ahRenderImageViews[renderImageDestroyIndex], nullptr);
 			}
 			PRINT_DEBUG("Destroying Vulkan image ", vk_hRenderImages, "and its memory ", vk_hRenderImageMemories, " due to failure creating its image views");
 			vkFreeMemory(vk_hDevice, vk_hRenderImageMemories, nullptr);
@@ -40,7 +42,7 @@ namespace RE {
 			return;
 		for (size_t renderImageDestroyIndex = 0; renderImageDestroyIndex < RE_VK_FRAMES_IN_FLIGHT; renderImageDestroyIndex++) {
 			PRINT_DEBUG("Destroying Vulkan image view at index ", renderImageDestroyIndex, " pointing at render image array");
-			vkDestroyImageView(vk_hDevice, renderImageViews[renderImageDestroyIndex], nullptr);
+			vkDestroyImageView(vk_hDevice, vk_ahRenderImageViews[renderImageDestroyIndex], nullptr);
 		}
 		PRINT_DEBUG("Destroying Vulkan image ", vk_hRenderImages, " and its memory ", vk_hRenderImageMemories);
 		vkFreeMemory(vk_hDevice, vk_hRenderImageMemories, nullptr);
@@ -70,6 +72,11 @@ namespace RE {
 		if (create_depth_stencil_images(vk_renderImageExtent3D, depthImageLayoutTransitionTask, depthStencilImageLayoutTransitionFence.get_fence())) {
 			if (create_singlesampled_images(vk_renderImageExtent3D)) {
 				if (create_render_images(vk_renderImageExtent3D)) {
+					for (uint8_t u8FramesInFlightIndex = 0; u8FramesInFlightIndex < RE_VK_FRAMES_IN_FLIGHT; u8FramesInFlightIndex++) {
+						renderTasks[u8FramesInFlightIndex].record(RENDER_TASK_SUBINDEX_IMAGE_TRANSFER, 0, [](const VkCommandBuffer vk_hCommandBuffer, const uint8_t u8PreviousLogicalQueue, const uint8_t u8CurrentLogicalQueue, const uint8_t u8NextLogicalQueue) {
+							
+						});
+					}
 					PRINT_DEBUG("Waiting for Vulkan fence signaling completion of image layout transfer of all depth images");
 					depthStencilImageLayoutTransitionFence.wait_for();
 					return true;
@@ -88,6 +95,34 @@ namespace RE {
 		destroy_render_images();
 		destroy_singlesampled_images();
 		destroy_depth_stencil_images();
+	}
+
+	void set_screen_percentage_settings(const ScreenPercentageSettings &rNewSettings) {
+		if (screenPercentageSettings.eMode == rNewSettings.eMode)
+			switch (rNewSettings.eMode) {
+				case RE_SCREEN_PERCENTAGE_MODE_NORMAL:
+					return;
+				case RE_SCREEN_PERCENTAGE_MODE_SCALED:
+					if (screenPercentageSettings.fScale == rNewSettings.fScale)
+						return;
+					break;
+				case RE_SCREEN_PERCENTAGE_MODE_CONST_SIZE:
+					if (screenPercentageSettings.constSize == rNewSettings.constSize)
+						return;
+					break;
+			}
+		PRINT_DEBUG("Updating screen percentage settings");
+		screenPercentageSettings = rNewSettings;
+		if (!bSwapchainDirty && bRunning) {
+			PRINT_DEBUG("Immediatly applying new screen percentage settings");
+			destroy_render_image_resources();
+			create_render_image_resources();
+		}
+	}
+
+	[[nodiscard]]
+	ScreenPercentageSettings get_screen_percentage_settings() {
+		return screenPercentageSettings;
 	}
 
 }

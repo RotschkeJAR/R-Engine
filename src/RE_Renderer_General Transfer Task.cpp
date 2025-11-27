@@ -14,7 +14,7 @@ namespace RE {
 
 	bool init_general_transfer_task() {
 		PRINT_DEBUG("Creating Vulkan timeline semaphore for waiting between general transfer tasks");
-		const VkSemaphoreTypeCreateInfo vk_timelineSemaphoreCreateInfo = {
+		constexpr VkSemaphoreTypeCreateInfo vk_timelineSemaphoreCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO,
 			.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE
 		};
@@ -33,7 +33,7 @@ namespace RE {
 				.pau32StrictSeparationIds = au32SeparationIds,
 				.u32FunctionsCount = 2
 			};
-			if (transferToGpuTask.init(queuesToUse, false))
+			if (transferToGpuTask.init(queuesToUse, false, false))
 				return true;
 			else
 				RE_FATAL_ERROR("Failed initializing general transfer task");
@@ -48,7 +48,7 @@ namespace RE {
 		vkDestroySemaphore(vk_hDevice, vk_hTransferTimelineSemaphore, nullptr);
 	}
 
-	bool submit_transfer_task(const VkCommandBufferUsageFlags vk_eUsageFlags, const std::function<void (VkCommandBuffer vk_hCommandBuffer, uint8_t u8PreviousLogicalQueue, uint8_t u8CurrentLogicalQueue, uint8_t u8NextLogicalQueue)> pTransferFunction, const std::function<void (VkCommandBuffer vk_hCommandBuffer, uint8_t u8PreviousLogicalQueue, uint8_t u8CurrentLogicalQueue, uint8_t u8NextLogicalQueue)> pOwnershipAcquireFunction, const uint32_t u32WaitSemaphoreCount, const VkSemaphoreSubmitInfo *const vk_paWaitSemaphores, const uint32_t u32SignalSemaphoreCount, const VkSemaphoreSubmitInfo *const vk_paSignalSemaphores, const VkFence vk_hFence) {
+	bool submit_transfer_task(const VkCommandBufferUsageFlags vk_eUsageFlags, std::function<void (VkCommandBuffer vk_hCommandBuffer, uint8_t u8PreviousLogicalQueue, uint8_t u8CurrentLogicalQueue, uint8_t u8NextLogicalQueue)> pTransferFunction, std::function<void (VkCommandBuffer vk_hCommandBuffer, uint8_t u8PreviousLogicalQueue, uint8_t u8CurrentLogicalQueue, uint8_t u8NextLogicalQueue)> pOwnershipAcquireFunction, const uint32_t u32WaitSemaphoreCount, const VkSemaphoreSubmitInfo *const vk_paWaitSemaphores, const uint32_t u32SignalSemaphoreCount, const VkSemaphoreSubmitInfo *const vk_paSignalSemaphores, const VkFence vk_hFence) {
 		std::vector<VkSemaphoreSubmitInfo> signalSemaphores;
 		signalSemaphores.resize(u32SignalSemaphoreCount + 1);
 		std::jthread copySignalSemaphoresThread([&]() {
@@ -60,13 +60,14 @@ namespace RE {
 		signalSemaphores.back().stageMask = VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT;
 		signalSemaphores.back().deviceIndex = 0;
 		wait_for_transfer(std::numeric_limits<uint64_t>::max());
+		transferToGpuTask.reset_all(0);
 		transferToGpuTask.record(0, vk_eUsageFlags, pTransferFunction);
 		transferToGpuTask.record(1, vk_eUsageFlags, pOwnershipAcquireFunction);
 		u64TransferTimelineSemaphoreValue++;
 		signalSemaphores.back().value = u64TransferTimelineSemaphoreValue;
 		copySignalSemaphoresThread.join();
 		constexpr VkPipelineStageFlags2 vk_a1eInternSemaphoreWaitStages[1] = {VK_PIPELINE_STAGE_2_TRANSFER_BIT};
-		return transferToGpuTask.submit(u32WaitSemaphoreCount, vk_paWaitSemaphores, vk_eInternSemaphoreWaitStages, signalSemaphores.size(), signalSemaphores.data(), vk_hFence);
+		return transferToGpuTask.submit(u32WaitSemaphoreCount, vk_paWaitSemaphores, vk_a1eInternSemaphoreWaitStages, signalSemaphores.size(), signalSemaphores.data(), vk_hFence);
 	}
 
 	void wait_for_transfer(const uint64_t u64Timeout) {

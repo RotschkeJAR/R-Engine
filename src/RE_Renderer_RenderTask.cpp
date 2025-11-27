@@ -10,11 +10,11 @@ namespace RE {
 	bool create_render_tasks() {
 		PRINT_DEBUG("Initializing first render task");
 		constexpr VkQueueFlagBits vk_aeQueuesUsedForRendering[] = {VK_QUEUE_TRANSFER_BIT, VK_QUEUE_GRAPHICS_BIT, VK_QUEUE_TRANSFER_BIT};
-		if (renderTasks[0].init(sizeof(vk_aeQueuesUsedForRendering) / sizeof(vk_aeQueuesUsedForRendering[0]), vk_aeQueuesUsedForRendering, false)) {
+		if (renderTasks[0].init(sizeof(vk_aeQueuesUsedForRendering) / sizeof(vk_aeQueuesUsedForRendering[0]), vk_aeQueuesUsedForRendering, true, false)) {
 			size_t renderTaskCreateIndex = 1;
 			while (renderTaskCreateIndex < renderTasks.size()) {
 				PRINT_DEBUG("Initializing render task at index ", renderTaskCreateIndex, " by using the first render task's precomputed data");
-				if (renderTasks[renderTaskCreateIndex].init(renderTasks[0])) {
+				if (renderTasks[renderTaskCreateIndex].init(renderTasks[0], true, false)) {
 					renderTaskCreateIndex++;
 					continue;
 				}

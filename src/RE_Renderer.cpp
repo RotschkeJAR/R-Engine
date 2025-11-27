@@ -13,8 +13,6 @@ namespace RE {
 #define RE_VK_SWAPCHAIN_SEMAPHORE_COUNT (u32SwapchainImageCount * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE)
 
 	const Camera *pActiveCamera = nullptr;
-
-	ScreenPercentageSettings screenPercentageSettings;
 	
 	VkPipelineLayout vk_hWorldPipelineLayout;
 
@@ -22,10 +20,12 @@ namespace RE {
 	bool bRenderPipelinesDirty = false;
 
 	bool init_renderer() {
-		if (init_general_transfer_task()) {
-			Vulkan_Buffer stagingRectBuffer;
-			if (init_render_elements(stagingRectBuffer)) {
-				if (create_render_tasks()) {
+		PRINT_DEBUG("Initializing renderer");
+		if (create_render_tasks()) {
+			if (init_general_transfer_task()) {
+				PRINT_DEBUG("Creating temporary staging Vulkan buffer for rendering rectangle");
+				Vulkan_Buffer stagingRectBuffer;
+				if (init_render_elements(stagingRectBuffer)) {
 					if (create_render_buffers()) {
 						if (create_descriptor_sets()) {
 							if (create_renderpass()) {
@@ -41,9 +41,13 @@ namespace RE {
 								};
 								if (vkCreatePipelineLayout(vk_hDevice, &vk_worldPipelineLayoutCreateInfo, nullptr, &vk_hWorldPipelineLayout) == VK_SUCCESS) {
 									if (create_render_pipelines()) {
-										PRINT_DEBUG("Waiting for pending transfer tasks to finish");
-										wait_for_transfer(std::numeric_limits<uint64_t>::max());
-										return true;
+										if (swapchain_created_renderer()) {
+											PRINT_DEBUG("Waiting for pending transfer tasks to finish");
+											wait_for_transfer(std::numeric_limits<uint64_t>::max());
+											PRINT_DEBUG("Successfully initialized the renderer");
+											return true;
+										}
+										destroy_render_pipelines();
 									}
 									PRINT_DEBUG("Destroying Vulkan pipeline layout due to failure initializing the whole renderer");
 									vkDestroyPipelineLayout(vk_hDevice, vk_hWorldPipelineLayout, nullptr);
@@ -55,19 +59,21 @@ namespace RE {
 						}
 						destroy_render_buffers();
 					}
-					destroy_render_tasks();
+					PRINT_DEBUG("Waiting for pending transfer task to finish before destroying further due to failure creating essential resources");
+					wait_for_transfer(std::numeric_limits<uint64_t>::max());
+					destroy_render_elements();
 				}
-				PRINT_DEBUG("Waiting for pending transfer task to finish before destroying further due to failure creating essential resources");
-				wait_for_transfer(std::numeric_limits<uint64_t>::max());
-				destroy_render_elements();
+				destroy_general_transfer_task();
 			}
-			destroy_general_transfer_task();
+			destroy_render_tasks();
 		}
+		PRINT_DEBUG("Destroyed renderer after failure initializing it");
 		return false;
 	}
 	
 	void destroy_renderer() {
 		PRINT_DEBUG("Destroying renderer");
+		swapchain_destroyed_renderer();
 		destroy_render_pipelines();
 		vkDestroyPipelineLayout(vk_hDevice, vk_hWorldPipelineLayout, nullptr);
 		destroy_renderpass();
@@ -75,6 +81,7 @@ namespace RE {
 		destroy_render_buffers();
 		destroy_render_elements();
 		destroy_general_transfer_task();
+		destroy_render_tasks();
 	}
 
 	void render() {
@@ -100,34 +107,6 @@ namespace RE {
 
 	void attach_camera(const Camera *const pCamera) {
 		pActiveCamera = pCamera;
-	}
-
-	void set_screen_percentage_settings(const ScreenPercentageSettings &rNewSettings) {
-		if (screenPercentageSettings.eMode == rNewSettings.eMode)
-			switch (rNewSettings.eMode) {
-				case RE_SCREEN_PERCENTAGE_MODE_NORMAL:
-					return;
-				case RE_SCREEN_PERCENTAGE_MODE_SCALED:
-					if (screenPercentageSettings.fScale == rNewSettings.fScale)
-						return;
-					break;
-				case RE_SCREEN_PERCENTAGE_MODE_CONST_SIZE:
-					if (screenPercentageSettings.constSize == rNewSettings.constSize)
-						return;
-					break;
-			}
-		PRINT_DEBUG("Updating screen percentage settings");
-		screenPercentageSettings = rNewSettings;
-		if (!bSwapchainDirty && bRunning) {
-			PRINT_DEBUG("Immediatly applying new screen percentage settings");
-			destroy_render_image_resources();
-			create_render_image_resources();
-		}
-	}
-
-	[[nodiscard]]
-	ScreenPercentageSettings get_screen_percentage_settings() {
-		return screenPercentageSettings;
 	}
 
 	[[nodiscard]]

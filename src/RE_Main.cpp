@@ -68,6 +68,8 @@ namespace RE {
 			}
 			destroy_window();
 		}
+		PRINT_DEBUG("Finished execution");
+		print_error_count();
 		return !bErrorOccured;
 #endif
 	}

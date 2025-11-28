@@ -19,6 +19,8 @@ namespace RE {
 	float fSampleShadingRate = 0.2f;
 	bool bRenderPipelinesDirty = false;
 
+	uint8_t u8CurrentFrameInFlightIndex = 0;
+
 	bool init_renderer() {
 		PRINT_DEBUG("Initializing renderer");
 		if (create_render_tasks()) {
@@ -90,6 +92,7 @@ namespace RE {
 			recreate_render_pipelines();
 			bRenderPipelinesDirty = false;
 		}
+		record_command_buffer_transfering_render_image();
 		wait_for_transfer(std::numeric_limits<uint64_t>::max());
 		vkWaitForFences(vk_hDevice, 1, &renderFences[u8CurrentFrameInFlightIndex], VK_TRUE, std::numeric_limits<uint64_t>::max());
 		u8CurrentFrameInFlightIndex = (u8CurrentFrameInFlightIndex + 1) % RE_VK_FRAMES_IN_FLIGHT;

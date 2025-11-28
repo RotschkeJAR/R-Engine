@@ -866,11 +866,14 @@ namespace RE {
 				float fScale;
 				Vector2u constSize;
 			};
+			TextureFilter eScalingFilter;
 
 			ScreenPercentageSettings();
 			ScreenPercentageSettings(ScreenPercentageMode eMode);
 			ScreenPercentageSettings(float fScale);
+			ScreenPercentageSettings(float fScale, TextureFilter eScalingFilter);
 			ScreenPercentageSettings(const Vector2u &rConstSize);
+			ScreenPercentageSettings(const Vector2u &rConstSize, TextureFilter eScalingFilter);
 			ScreenPercentageSettings(ScreenPercentageMode eMode, const std::variant<float, Vector2u> &rSettings);
 			ScreenPercentageSettings(const ScreenPercentageSettings &rCopy);
 			~ScreenPercentageSettings();

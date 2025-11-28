@@ -6,47 +6,22 @@
 namespace RE {
 	
 	VkSampleCountFlags vk_eAllowedMsaaSamples;
-	VkSampleCountFlagBits vk_eMsaaCount = VK_SAMPLE_COUNT_4_BIT;
+	VkSampleCountFlagBits vk_eMsaaCount = VK_SAMPLE_COUNT_1_BIT;
 	VkImage vk_hSingleSampledWorldRenderImages;
 	static VkDeviceMemory vk_hSingleSampledWorldRenderImageMemories;
-	VkImageView vk_ahSingleSampledWorldRenderImageViews[RE_VK_FRAMES_IN_FLIGHT];
 
-	bool create_singlesampled_images(const VkExtent3D &vk_rSingleSampledImageExtent3D) {
-		if (vk_eMsaaCount == VK_SAMPLE_COUNT_1_BIT)
+	bool create_singlesampled_images(const bool bResolvingRequired, const bool bBlittingRequired) {
+		if (!bResolvingRequired || !bBlittingRequired)
 			return true;
 		PRINT_DEBUG("Creating Vulkan image for rendering multisampled");
-		if (create_vulkan_image(0, VK_IMAGE_TYPE_2D, vk_eSwapchainImageFormat, vk_rSingleSampledImageExtent3D, 1, RE_VK_FRAMES_IN_FLIGHT, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, 1, nullptr, VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_hSingleSampledWorldRenderImages, &vk_hSingleSampledWorldRenderImageMemories)) {
-			size_t singleSampledImageViewCreateIndex = 0;
-			while (singleSampledImageViewCreateIndex < RE_VK_FRAMES_IN_FLIGHT) {
-				PRINT_DEBUG("Creating Vulkan image view for multisampled image at index ", singleSampledImageViewCreateIndex);
-				if (create_vulkan_image_view(vk_hSingleSampledWorldRenderImages, VK_IMAGE_VIEW_TYPE_2D, vk_eSwapchainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, singleSampledImageViewCreateIndex, 1, &vk_ahSingleSampledWorldRenderImageViews[singleSampledImageViewCreateIndex])) {
-					singleSampledImageViewCreateIndex++;
-					continue;
-				} else
-					RE_FATAL_ERROR("Failed to create Vulkan image view at index ", singleSampledImageViewCreateIndex, " pointing at singlesampled image");
-				break;
-			}
-			if (singleSampledImageViewCreateIndex == RE_VK_FRAMES_IN_FLIGHT)
-				return true;
-			for (size_t singleSampledImageDestroyIndex = 0; singleSampledImageDestroyIndex < singleSampledImageViewCreateIndex; singleSampledImageDestroyIndex++) {
-				PRINT_DEBUG("Destroying Vulkan image view at index ", singleSampledImageDestroyIndex, " pointing at singlesampled image due to failure creating all images");
-				vkDestroyImageView(vk_hDevice, vk_ahSingleSampledWorldRenderImageViews[singleSampledImageDestroyIndex], nullptr);
-			}
-			PRINT_DEBUG("Destroying singlesampled Vulkan image ", vk_hSingleSampledWorldRenderImages, " and its memory ", vk_hSingleSampledWorldRenderImageMemories, " due to failing creating its image views");
-			vkFreeMemory(vk_hDevice, vk_hSingleSampledWorldRenderImageMemories, nullptr);
-			vkDestroyImage(vk_hDevice, vk_hSingleSampledWorldRenderImages, nullptr);
-		} else
+		if (create_vulkan_image(0, VK_IMAGE_TYPE_2D, vk_eSwapchainImageFormat, VkExtent3D{vk_renderImageSize.width, vk_renderImageSize.height, 1}, 1, RE_VK_FRAMES_IN_FLIGHT, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, 1, nullptr, VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_hSingleSampledWorldRenderImages, &vk_hSingleSampledWorldRenderImageMemories))
+			return true;
+		else
 			RE_FATAL_ERROR("Failed to create singlesampled Vulkan image");
 		return false;
 	}
 
 	void destroy_singlesampled_images() {
-		if (vk_eMsaaCount == VK_SAMPLE_COUNT_1_BIT)
-			return;
-		for (size_t singleSampledImageDestroyIndex = 0; singleSampledImageDestroyIndex < RE_VK_FRAMES_IN_FLIGHT; singleSampledImageDestroyIndex++) {
-			PRINT_DEBUG("Destroying Vulkan image view at index ", singleSampledImageDestroyIndex, " pointing at singlesampled image");
-			vkDestroyImageView(vk_hDevice, vk_ahSingleSampledWorldRenderImageViews[singleSampledImageDestroyIndex], nullptr);
-		}
 		PRINT_DEBUG("Destroying singlesampled Vulkan image ", vk_hSingleSampledWorldRenderImages, " and its memory ", vk_hSingleSampledWorldRenderImageMemories);
 		vkFreeMemory(vk_hDevice, vk_hSingleSampledWorldRenderImageMemories, nullptr);
 		vkDestroyImage(vk_hDevice, vk_hSingleSampledWorldRenderImages, nullptr);

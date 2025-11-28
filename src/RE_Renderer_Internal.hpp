@@ -15,8 +15,10 @@ namespace RE {
 	// Render image
 	extern VkImage vk_hRenderImages;
 	extern VkImageView vk_ahRenderImageViews[RE_VK_FRAMES_IN_FLIGHT];
+	extern VkExtent2D vk_renderImageSize;
 	bool create_render_image_resources();
 	void destroy_render_image_resources();
+	bool record_command_buffer_transfering_render_image();
 
 	// Render task
 #define RENDER_TASK_SUBINDEX_BUFFER_TRANSFER 0
@@ -38,13 +40,13 @@ namespace RE {
 	// MSAA
 	extern VkSampleCountFlagBits vk_eMsaaCount;
 	extern VkImage vk_hSingleSampledWorldRenderImages;
-	bool create_singlesampled_images(const VkExtent3D &vk_rSingleSampledImageExtent3D);
+	bool create_singlesampled_images(bool bResolvingRequired, bool bBlittingRequired);
 	void destroy_singlesampled_images();
 
 	// Depth-stencil images
 	extern VkImage vk_a2hDepthStencilImages[2];
 	extern VkImageView vk_a4hDepthStencilImageViews[4];
-	bool create_depth_stencil_images(const VkExtent3D &vk_rDepthStencilImageExtent3D, VulkanTask &rDepthStencilImageLayoutTransitionTask, VkFence vk_hDepthStencilImageLayoutTransitionFence);
+	bool create_depth_stencil_images(VulkanTask &rDepthStencilImageLayoutTransitionTask, VkFence vk_hDepthStencilImageLayoutTransitionFence);
 	void destroy_depth_stencil_images();
 
 	// Descriptor Sets

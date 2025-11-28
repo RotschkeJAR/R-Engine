@@ -4,7 +4,7 @@
 namespace RE {
 	
 	ScreenPercentageSettings::ScreenPercentageSettings() : eMode(RE_SCREEN_PERCENTAGE_MODE_NORMAL) {}
-	ScreenPercentageSettings::ScreenPercentageSettings(const ScreenPercentageMode eMode) : eMode(eMode) {
+	ScreenPercentageSettings::ScreenPercentageSettings(const ScreenPercentageMode eMode) : eMode(eMode), eScalingFilter(RE_TEXTURE_FILTER_LINEAR) {
 		switch (eMode) {
 			case RE_SCREEN_PERCENTAGE_MODE_NORMAL:
 				break;
@@ -20,9 +20,11 @@ namespace RE {
 				break;
 		}
 	}
-	ScreenPercentageSettings::ScreenPercentageSettings(const float fScale) : eMode(RE_SCREEN_PERCENTAGE_MODE_SCALED), fScale(fScale) {}
-	ScreenPercentageSettings::ScreenPercentageSettings(const Vector2u &rConstSize) : eMode(RE_SCREEN_PERCENTAGE_MODE_CONST_SIZE), constSize(rConstSize) {}
-	ScreenPercentageSettings::ScreenPercentageSettings(ScreenPercentageMode eMode, const std::variant<float, Vector2u> &rSettings) {
+	ScreenPercentageSettings::ScreenPercentageSettings(const float fScale) : ScreenPercentageSettings(fScale, RE_TEXTURE_FILTER_LINEAR) {}
+	ScreenPercentageSettings::ScreenPercentageSettings(const float fScale, const TextureFilter eScalingFilter) : eMode(RE_SCREEN_PERCENTAGE_MODE_SCALED), fScale(fScale), eScalingFilter(eScalingFilter) {}
+	ScreenPercentageSettings::ScreenPercentageSettings(const Vector2u &rConstSize) : ScreenPercentageSettings(rConstSize, RE_TEXTURE_FILTER_LINEAR) {}
+	ScreenPercentageSettings::ScreenPercentageSettings(const Vector2u &rConstSize, const TextureFilter eScalingFilter) : eMode(RE_SCREEN_PERCENTAGE_MODE_CONST_SIZE), constSize(rConstSize), eScalingFilter(eScalingFilter) {}
+	ScreenPercentageSettings::ScreenPercentageSettings(ScreenPercentageMode eMode, const std::variant<float, Vector2u> &rSettings) : eScalingFilter(RE_TEXTURE_FILTER_LINEAR) {
 		switch (eMode) {
 			case RE_SCREEN_PERCENTAGE_MODE_NORMAL:
 				break;
@@ -49,7 +51,7 @@ namespace RE {
 		}
 		this->eMode = eMode;
 	}
-	ScreenPercentageSettings::ScreenPercentageSettings(const ScreenPercentageSettings &rCopy) : eMode(rCopy.eMode) {
+	ScreenPercentageSettings::ScreenPercentageSettings(const ScreenPercentageSettings &rCopy) : eMode(rCopy.eMode), eScalingFilter(rCopy.eScalingFilter) {
 		switch (rCopy.eMode) {
 			case RE_SCREEN_PERCENTAGE_MODE_NORMAL:
 				break;
@@ -64,7 +66,6 @@ namespace RE {
 				eMode = RE_SCREEN_PERCENTAGE_MODE_NORMAL;
 				return;
 		}
-		eMode = rCopy.eMode;
 	}
 	ScreenPercentageSettings::~ScreenPercentageSettings() {}
 
@@ -83,11 +84,12 @@ namespace RE {
 				return;
 		}
 		eMode = rCopy.eMode;
+		eScalingFilter = rCopy.eScalingFilter;
 	}
 
 	[[nodiscard]]
 	bool ScreenPercentageSettings::equals(const ScreenPercentageSettings &rCompare) const {
-		if (eMode != rCompare.eMode)
+		if (eMode != rCompare.eMode || eScalingFilter != rCompare.eScalingFilter)
 			return false;
 		switch (eMode) {
 			case RE_SCREEN_PERCENTAGE_MODE_NORMAL:

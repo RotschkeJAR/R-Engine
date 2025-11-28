@@ -241,7 +241,7 @@ namespace RE {
 		}
 	}
 
-	bool create_depth_stencil_images(const VkExtent3D &vk_rDepthStencilImageExtent3D, VulkanTask &rDepthStencilImageLayoutTransitionTask, VkFence vk_hDepthStencilImageLayoutTransitionFence) {
+	bool create_depth_stencil_images(VulkanTask &rDepthStencilImageLayoutTransitionTask, VkFence vk_hDepthStencilImageLayoutTransitionFence) {
 		if (!bStencilsEnabled && std::none_of(availableDepthStencilFormats.rbegin(), availableDepthStencilFormats.rend(), 
 				[](const VkFormat vk_eFormat) -> bool {
 					switch (vk_eFormat) {
@@ -257,6 +257,11 @@ namespace RE {
 			RE_WARNING("The selected GPU doesn't support any format to use depth images only. The engine will use a depth-stencil-combined image format instead, which might result in reserving unused memory");
 			bStencilsEnabled = true;
 		}
+		VkExtent3D vk_depthStencilImageExtent3D {
+			.width = vk_renderImageSize.width,
+			.height = vk_renderImageSize.height,
+			.depth = 1
+		};
 		PRINT_DEBUG("Initializing task for transitioning image layout of depth/stencil images");
 		const uint8_t a1u8RenderGraphicsLogicalQueueIndex[1] = {
 			get_render_graphics_queue_logical_index()
@@ -267,8 +272,8 @@ namespace RE {
 			if (are_depth_stencil_images_separated(vk_eSelectedDepthFormat)) {
 				if (bSeparateStencilsSupported) {
 					PRINT_DEBUG("Creating Vulkan depth image array in format ", std::hex, vk_eSelectedDepthFormat);
-					if (create_vulkan_image(0, VK_IMAGE_TYPE_2D, vk_eSelectedDepthFormat, vk_rDepthStencilImageExtent3D, 1, RE_VK_FRAMES_IN_FLIGHT, vk_eMsaaCount, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, 1, nullptr, VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_a2hDepthStencilImages[0], &vk_a2hDepthStencilImageMemories[0])) {
-						if (create_vulkan_image(0, VK_IMAGE_TYPE_2D, VK_FORMAT_S8_UINT, vk_rDepthStencilImageExtent3D, 1, RE_VK_FRAMES_IN_FLIGHT, vk_eMsaaCount, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, 1, nullptr, VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_a2hDepthStencilImages[1], &vk_a2hDepthStencilImageMemories[1])) {
+					if (create_vulkan_image(0, VK_IMAGE_TYPE_2D, vk_eSelectedDepthFormat, vk_depthStencilImageExtent3D, 1, RE_VK_FRAMES_IN_FLIGHT, vk_eMsaaCount, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, 1, nullptr, VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_a2hDepthStencilImages[0], &vk_a2hDepthStencilImageMemories[0])) {
+						if (create_vulkan_image(0, VK_IMAGE_TYPE_2D, VK_FORMAT_S8_UINT, vk_depthStencilImageExtent3D, 1, RE_VK_FRAMES_IN_FLIGHT, vk_eMsaaCount, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, 1, nullptr, VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_a2hDepthStencilImages[1], &vk_a2hDepthStencilImageMemories[1])) {
 							uint8_t u8RenderInFlightImageCreateIndex = 0;
 							while (u8RenderInFlightImageCreateIndex < RE_VK_FRAMES_IN_FLIGHT) {
 								PRINT_DEBUG("Creating Vulkan image view for depth image at index ", u8RenderInFlightImageCreateIndex);
@@ -373,7 +378,7 @@ namespace RE {
 				}
 			}
 			PRINT_DEBUG("Creating Vulkan depth-stencil-combined image");
-			if (create_vulkan_image(0, VK_IMAGE_TYPE_2D, vk_eSelectedDepthFormat, vk_rDepthStencilImageExtent3D, 1, RE_VK_FRAMES_IN_FLIGHT, vk_eMsaaCount, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, 1, nullptr, VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_a2hDepthStencilImages[0], &vk_a2hDepthStencilImageMemories[0])) {
+			if (create_vulkan_image(0, VK_IMAGE_TYPE_2D, vk_eSelectedDepthFormat, vk_depthStencilImageExtent3D, 1, RE_VK_FRAMES_IN_FLIGHT, vk_eMsaaCount, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, 1, nullptr, VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_a2hDepthStencilImages[0], &vk_a2hDepthStencilImageMemories[0])) {
 				uint8_t u8DepthStencilImageViewCreateIndex = 0;
 				while (u8DepthStencilImageViewCreateIndex < RE_VK_FRAMES_IN_FLIGHT) {
 					PRINT_DEBUG("Creating Vulkan image view for depth-stencil-combined image at index ", u8DepthStencilImageViewCreateIndex);
@@ -442,7 +447,7 @@ namespace RE {
 				}
 			}
 			PRINT_DEBUG("Creating Vulkan depth-only image");
-			if (create_vulkan_image(0, VK_IMAGE_TYPE_2D, availableDepthStencilFormats[u8IndexToSelectedDepthStencilFormat], vk_rDepthStencilImageExtent3D, 1, RE_VK_FRAMES_IN_FLIGHT, vk_eMsaaCount, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, 1, nullptr, VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_a2hDepthStencilImages[0], &vk_a2hDepthStencilImageMemories[0])) {
+			if (create_vulkan_image(0, VK_IMAGE_TYPE_2D, availableDepthStencilFormats[u8IndexToSelectedDepthStencilFormat], vk_depthStencilImageExtent3D, 1, RE_VK_FRAMES_IN_FLIGHT, vk_eMsaaCount, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, 1, nullptr, VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_a2hDepthStencilImages[0], &vk_a2hDepthStencilImageMemories[0])) {
 				uint8_t u8DepthImageViewCreateIndex = 0;
 				while (u8DepthImageViewCreateIndex < RE_VK_FRAMES_IN_FLIGHT) {
 					PRINT_DEBUG("Creating Vulkan image view for depth-only image at index ", u8DepthImageViewCreateIndex);

@@ -5,7 +5,6 @@ namespace RE {
 	std::array<VulkanTask, RE_VK_FRAMES_IN_FLIGHT> renderTasks;
 	std::array<VkFence, RE_VK_FRAMES_IN_FLIGHT> renderFences;
 	std::array<VkSemaphore, RE_VK_FRAMES_IN_FLIGHT> swapchainSemaphores;
-	uint8_t u8CurrentFrameInFlightIndex = 0;
 
 	bool create_render_tasks() {
 		PRINT_DEBUG("Initializing first render task");

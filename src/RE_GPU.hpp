@@ -18,8 +18,13 @@ namespace RE {
 	// Scheduler
 #define RE_VK_LOGICAL_QUEUE_IGNORED std::numeric_limits<uint8_t>::max()
 	extern std::unique_ptr<uint32_t[]> queueFamilyIndices;
+	extern std::unique_ptr<VkQueue[]> vk_pahQueues;
+	extern std::unique_ptr<VkQueueFlags[]> vk_paeQueueTypes;
+	extern std::vector<bool> presentationAvailablePerQueue;
 	extern uint8_t u8LogicalQueueCount;
 	void create_queue_create_infos(const float *pfPriority, std::vector<VkDeviceQueueCreateInfo> &vk_rpaLogicalQueueCreateInfos);
+	[[nodiscard]]
+	VkQueue get_present_queue(uint8_t u8PreferredQueueIndex);
 	
 	struct VulkanTask_Queues final {
 		const uint8_t *pau8LogicalQueueIndices;
@@ -39,18 +44,19 @@ namespace RE {
 			VkSemaphore vk_hInternalSemaphore;
 			uint32_t u32FunctionsCount;
 			uint8_t u8CommandPoolCount;
+			uint8_t u8LogicalPresentQueueIndex;
 			bool bTransient;
 
 		public:
 			VulkanTask();
-			VulkanTask(uint32_t u32FunctionsCount, const VkQueueFlagBits *vk_paeQueueTypePerFunctionRequiredInOrder, bool bIndividualResets, bool bTransient);
-			VulkanTask(uint32_t u32FunctionsCount, const uint8_t *pau8LogicalQueueIndexPerFunctionRequiredInOrder, bool bIndividualResets, bool bTransient);
-			VulkanTask(const VulkanTask_Queues &rQueues, bool bIndividualResets, bool bTransient);
+			VulkanTask(uint32_t u32FunctionsCount, const VkQueueFlagBits *vk_paeQueueTypePerFunctionRequiredInOrder, bool bIndividualResets, bool bIncludePresentation, bool bTransient);
+			VulkanTask(uint32_t u32FunctionsCount, const uint8_t *pau8LogicalQueueIndexPerFunctionRequiredInOrder, bool bIndividualResets, bool bIncludePresentation, bool bTransient);
+			VulkanTask(const VulkanTask_Queues &rQueues, bool bIndividualResets, bool bIncludePresentation, bool bTransient);
 			VulkanTask(const VulkanTask &rCopy, bool bIndividualResets, bool bTransient);
 			~VulkanTask();
-			bool init(uint32_t u32FunctionsCount, const VkQueueFlagBits *vk_paeQueueTypePerFunctionRequiredInOrder, bool bIndividualResets, bool bTransient);
-			bool init(uint32_t u32FunctionsCount, const uint8_t *pau8LogicalQueueIndexPerFunctionRequiredInOrder, bool bIndividualResets, bool bTransient);
-			bool init(const VulkanTask_Queues &rQueues, bool bIndividualResets, bool bTransient);
+			bool init(uint32_t u32FunctionsCount, const VkQueueFlagBits *vk_paeQueueTypePerFunctionRequiredInOrder, bool bIndividualResets, bool bIncludePresentation, bool bTransient);
+			bool init(uint32_t u32FunctionsCount, const uint8_t *pau8LogicalQueueIndexPerFunctionRequiredInOrder, bool bIndividualResets, bool bIncludePresentation, bool bTransient);
+			bool init(const VulkanTask_Queues &rQueues, bool bIndividualResets, bool bIncludePresentation, bool bTransient);
 			bool init(const VulkanTask &rCopy, bool bIndividualResets, bool bTransient);
 			void destroy();
 			bool record(uint32_t u32FunctionIndex, VkCommandBufferUsageFlags vk_eUsageFlags, std::function<void (VkCommandBuffer vk_hCommandBuffer, uint8_t u8PreviousLogicalQueue, uint8_t u8CurrentLogicalQueue, uint8_t u8NextLogicalQueue)> pRecorderFunction) const;
@@ -59,6 +65,7 @@ namespace RE {
 			VkCommandPool get_command_pool_of_function(uint32_t u32FunctionIndex) const;
 			uint32_t get_function_count() const;
 			uint8_t get_logical_queue_index_for_function(uint32_t u32FunctionIndex) const;
+			uint8_t get_logical_queue_index_for_presentation() const;
 			bool is_valid() const;
 	};
 
@@ -69,6 +76,8 @@ namespace RE {
 	extern std::unique_ptr<VkImage[]> vk_pahSwapchainImages;
 	extern std::unique_ptr<VkImageView[]> vk_pahSwapchainImageViews;
 	extern uint32_t u32SwapchainImageCount;
+	bool create_swapchain();
+	void destroy_swapchain();
 
 	bool init_render_system();
 	void destroy_render_system();

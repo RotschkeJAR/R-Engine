@@ -59,7 +59,6 @@ namespace RE {
 		PRINT_DEBUG("Destroying Vulkan surface");
 		vkDestroySurfaceKHR(vk_hInstance, vk_hSurface, nullptr);
 		vk_paSurfaceFormatsAvailable.reset();
-		vk_hSurface = VK_NULL_HANDLE;
 	}
 
 	static void fetch_vulkan_surface_infos() {
@@ -101,9 +100,7 @@ namespace RE {
 				find_suitable_depth_stencil_formats();
 				if (init_logical_vulkan_device()) {
 					if (setup_logical_device_queues()) {
-						if (create_swapchain())
-							return true;
-						destroy_logical_device_queues();
+						return true;
 					}
 					destroy_logical_vulkan_device();
 				}

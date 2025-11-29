@@ -3,25 +3,45 @@
 
 namespace RE {
 
-	ScreenPercentageSettings screenPercentageSettings;
+	static ScreenPercentageSettings screenPercentageSettings(RE_SCREEN_PERCENTAGE_MODE_NORMAL);
 	VkImage vk_hRenderImages;
-	VkDeviceMemory vk_hRenderImageMemories;
+	static VkDeviceMemory vk_hRenderImageMemories;
 	VkImageView vk_ahRenderImageViews[RE_VK_FRAMES_IN_FLIGHT];
 	VkExtent2D vk_renderImageSize;
-	static VkImageResolve2 vk_resolveRegion;
-	static VkResolveImageInfo2 vk_resolveInfo;
-	static VkImageBlit2 vk_blitRegion;
-	static VkBlitImageInfo2 vk_blitInfo;
 	
-	static bool create_render_images(const bool bResolvingRequired, const bool bBlittingRequired) {
+	static bool create_render_images(const std::vector<uint32_t> &rRenderQueuesFamilyIndices, const bool bResolvingRequired, const bool bBlittingRequired) {
 		if (!bResolvingRequired && !bBlittingRequired)
 			return true;
 		PRINT_DEBUG("Creating Vulkan image array as target for rendering");
-		if (create_vulkan_image(0, VK_IMAGE_TYPE_2D, vk_eSwapchainImageFormat, VkExtent3D{vk_renderImageSize.width, vk_renderImageSize.height, 1}, 1, RE_VK_FRAMES_IN_FLIGHT, vk_eMsaaCount, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, 1, nullptr, VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_hRenderImages, &vk_hRenderImageMemories)) {
+		if (create_vulkan_image(
+				0,
+				VK_IMAGE_TYPE_2D,
+				vk_eSwapchainImageFormat,
+				VkExtent3D{vk_renderImageSize.width, vk_renderImageSize.height, 1},
+				1,
+				RE_VK_FRAMES_IN_FLIGHT,
+				vk_eMsaaCount,
+				VK_IMAGE_TILING_OPTIMAL,
+				VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+				rRenderQueuesFamilyIndices.size(),
+				rRenderQueuesFamilyIndices.data(),
+				VK_IMAGE_LAYOUT_UNDEFINED,
+				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+				&vk_hRenderImages,
+				&vk_hRenderImageMemories)) {
 			size_t renderImageCreateIndex = 0;
 			while (renderImageCreateIndex < RE_VK_FRAMES_IN_FLIGHT) {
 				PRINT_DEBUG("Creating Vulkan image view at index ", renderImageCreateIndex, " for render image array");
-				if (create_vulkan_image_view(vk_hRenderImages, VK_IMAGE_VIEW_TYPE_2D, vk_eSwapchainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, renderImageCreateIndex, 1, &vk_ahRenderImageViews[renderImageCreateIndex])) {
+				if (create_vulkan_image_view(
+						vk_hRenderImages,
+						VK_IMAGE_VIEW_TYPE_2D,
+						vk_eSwapchainImageFormat,
+						VK_IMAGE_ASPECT_COLOR_BIT,
+						0,
+						1,
+						renderImageCreateIndex,
+						1,
+						&vk_ahRenderImageViews[renderImageCreateIndex])) {
 					renderImageCreateIndex++;
 					continue;
 				} else
@@ -54,6 +74,20 @@ namespace RE {
 		vkDestroyImage(vk_hDevice, vk_hRenderImages, nullptr);
 	}
 
+	void get_queues_for_render_images(std::vector<uint32_t> &rRenderTaskQueueIndices) {
+		constexpr uint32_t au32FunctionsToLookup[] = {
+			RENDER_TASK_SUBINDEX_RENDERING,
+			RENDER_TASK_SUBINDEX_IMAGE_BLIT
+		};
+		constexpr uint32_t u32FunctionsToLookupCount = sizeof(au32FunctionsToLookup) / sizeof(au32FunctionsToLookup[0]);
+		rRenderTaskQueueIndices.reserve(u32FunctionsToLookupCount);
+		for (uint32_t u32FunctionToLookupIndex = 0; u32FunctionToLookupIndex < u32FunctionsToLookupCount; u32FunctionToLookupIndex++) {
+			const uint32_t u32QueueFamilyIndex = queueFamilyIndices[renderTasks[0].get_logical_queue_index_for_function(au32FunctionsToLookup[u32FunctionToLookupIndex])];
+			if (std::find(rRenderTaskQueueIndices.begin(), rRenderTaskQueueIndices.end(), u32QueueFamilyIndex) == rRenderTaskQueueIndices.end())
+				rRenderTaskQueueIndices.push_back(u32QueueFamilyIndex);
+		}
+	}
+
 	bool create_render_image_resources() {
 		PRINT_DEBUG("Calculating size of image being rendered to");
 		switch (screenPercentageSettings.eMode) {
@@ -74,66 +108,10 @@ namespace RE {
 		VulkanTask depthImageLayoutTransitionTask;
 		Vulkan_Fence depthStencilImageLayoutTransitionFence;
 		if (create_depth_stencil_images(depthImageLayoutTransitionTask, depthStencilImageLayoutTransitionFence.get_fence())) {
-			if (create_singlesampled_images(bResolvingRequired, bBlittingRequired)) {
-				if (create_render_images(bResolvingRequired, bBlittingRequired)) {
-					vk_resolveRegion.sType = VK_STRUCTURE_TYPE_IMAGE_RESOLVE_2;
-					vk_resolveRegion.pNext = nullptr;
-					vk_resolveRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-					vk_resolveRegion.srcSubresource.mipLevel = 0;
-					vk_resolveRegion.srcSubresource.layerCount = 1;
-					vk_resolveRegion.srcOffset.x = 0;
-					vk_resolveRegion.srcOffset.y = 0;
-					vk_resolveRegion.srcOffset.z = 0;
-					vk_resolveRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-					vk_resolveRegion.dstSubresource.mipLevel = 0;
-					vk_resolveRegion.dstSubresource.layerCount = 1;
-					vk_resolveRegion.dstOffset.x = 0;
-					vk_resolveRegion.dstOffset.y = 0;
-					vk_resolveRegion.dstOffset.z = 0;
-					vk_resolveRegion.extent.width = vk_renderImageSize.width;
-					vk_resolveRegion.extent.height = vk_renderImageSize.height;
-					vk_resolveRegion.extent.depth = 1;
-					vk_resolveInfo.sType = VK_STRUCTURE_TYPE_RESOLVE_IMAGE_INFO_2;
-					vk_resolveInfo.pNext = nullptr;
-					vk_resolveInfo.srcImage = vk_hRenderImages;
-					vk_resolveInfo.srcImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-					vk_resolveInfo.dstImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-					vk_resolveInfo.regionCount = 1;
-					vk_resolveInfo.pRegions = &vk_resolveRegion;
-					vk_blitRegion.sType = VK_STRUCTURE_TYPE_IMAGE_BLIT_2;
-					vk_blitRegion.pNext = nullptr;
-					vk_blitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-					vk_blitRegion.srcSubresource.mipLevel = 0;
-					vk_blitRegion.srcSubresource.layerCount = 1;
-					vk_blitRegion.srcOffsets[0].x = 0;
-					vk_blitRegion.srcOffsets[0].y = 0;
-					vk_blitRegion.srcOffsets[0].z = 0;
-					vk_blitRegion.srcOffsets[1].x = vk_renderImageSize.width;
-					vk_blitRegion.srcOffsets[1].y = vk_renderImageSize.height;
-					vk_blitRegion.srcOffsets[1].z = 1;
-					vk_blitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-					vk_blitRegion.dstSubresource.mipLevel = 0;
-					vk_blitRegion.dstSubresource.layerCount = 1;
-					vk_blitRegion.dstOffsets[0].x = 0;
-					vk_blitRegion.dstOffsets[0].y = 0;
-					vk_blitRegion.dstOffsets[0].z = 0;
-					vk_blitRegion.dstOffsets[1].x = vk_swapchainResolution.width;
-					vk_blitRegion.dstOffsets[1].y = vk_swapchainResolution.height;
-					vk_blitRegion.dstOffsets[1].z = 1;
-					vk_blitInfo.sType = VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2;
-					vk_blitInfo.pNext = nullptr;
-					vk_blitInfo.srcImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-					vk_blitInfo.dstImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-					vk_blitInfo.regionCount = 1;
-					vk_blitInfo.pRegions = &vk_blitRegion;
-					switch (screenPercentageSettings.eScalingFilter) {
-						case RE_TEXTURE_FILTER_NEAREST:
-							vk_blitInfo.filter = VK_FILTER_NEAREST;
-							break;
-						case RE_TEXTURE_FILTER_LINEAR:
-							vk_blitInfo.filter = VK_FILTER_LINEAR;
-							break;
-					}
+			std::vector<uint32_t> renderTaskQueueIndices;
+			get_queues_for_render_images(renderTaskQueueIndices);
+			if (create_singlesampled_images(renderTaskQueueIndices, bResolvingRequired, bBlittingRequired)) {
+				if (create_render_images(renderTaskQueueIndices, bResolvingRequired, bBlittingRequired)) {
 					PRINT_DEBUG("Waiting for Vulkan fence signaling completion of image layout transfer of all depth images");
 					depthStencilImageLayoutTransitionFence.wait_for();
 					return true;
@@ -155,17 +133,116 @@ namespace RE {
 		destroy_depth_stencil_images();
 	}
 
-	bool record_command_buffer_transfering_render_image() {
-		const bool bResolvingRequired = vk_eMsaaCount != VK_SAMPLE_COUNT_1_BIT, bBlittingRequired = screenPercentageSettings.eMode != RE_SCREEN_PERCENTAGE_MODE_NORMAL;
-		if (!bResolvingRequired && !bBlittingRequired)
-			return true;
-		if (!renderTasks[u8CurrentFrameInFlightIndex].record(RENDER_TASK_SUBINDEX_IMAGE_TRANSFER, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, [&](const VkCommandBuffer vk_hCommandBuffer, const uint8_t u8PreviousLogicalQueue, const uint8_t u8CurrentLogicalQueue, const uint8_t u8NextLogicalQueue) {
-				if (bResolvingRequired) {
-					vkCmdResolveImage2(vk_hCommandBuffer, &vk_resolveInfo);
-					if (bBlittingRequired)
-						vkCmdBlitImage2(vk_hCommandBuffer, &vk_blitInfo);
-				} else if (bBlittingRequired)
+	bool record_command_buffer_blitting_render_image(const uint32_t u32SwapchainImageIndex) {
+		if (renderTasks[u8CurrentFrameInFlightIndex].record(RENDER_TASK_SUBINDEX_IMAGE_BLIT, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, [&](const VkCommandBuffer vk_hCommandBuffer, const uint8_t u8PreviousLogicalQueue, const uint8_t u8CurrentLogicalQueue, const uint8_t u8NextLogicalQueue) {
+				VkImageMemoryBarrier2 vk_aImageLayoutTransferRegion[2];
+				vk_aImageLayoutTransferRegion[1].sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+				vk_aImageLayoutTransferRegion[1].pNext = nullptr;
+				vk_aImageLayoutTransferRegion[1].srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+				vk_aImageLayoutTransferRegion[1].dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+				vk_aImageLayoutTransferRegion[1].image = vk_pahSwapchainImages[u32SwapchainImageIndex];
+				vk_aImageLayoutTransferRegion[1].subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+				vk_aImageLayoutTransferRegion[1].subresourceRange.baseMipLevel = 0;
+				vk_aImageLayoutTransferRegion[1].subresourceRange.levelCount = 1;
+				vk_aImageLayoutTransferRegion[1].subresourceRange.baseArrayLayer = 0;
+				vk_aImageLayoutTransferRegion[1].subresourceRange.layerCount = 1;
+				VkDependencyInfo vk_imageLayoutTransferInfo;
+				vk_imageLayoutTransferInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+				vk_imageLayoutTransferInfo.pNext = nullptr;
+				vk_imageLayoutTransferInfo.dependencyFlags = 0;
+				vk_imageLayoutTransferInfo.memoryBarrierCount = 0;
+				vk_imageLayoutTransferInfo.pMemoryBarriers = nullptr;
+				vk_imageLayoutTransferInfo.bufferMemoryBarrierCount = 0;
+				vk_imageLayoutTransferInfo.pBufferMemoryBarriers = nullptr;
+				if (screenPercentageSettings.eMode != RE_SCREEN_PERCENTAGE_MODE_NORMAL) {
+					vk_aImageLayoutTransferRegion[0].sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+					vk_aImageLayoutTransferRegion[0].pNext = nullptr;
+					vk_aImageLayoutTransferRegion[0].srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+					vk_aImageLayoutTransferRegion[0].srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
+					vk_aImageLayoutTransferRegion[0].dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+					vk_aImageLayoutTransferRegion[0].dstAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;
+					vk_aImageLayoutTransferRegion[0].oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+					vk_aImageLayoutTransferRegion[0].newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+					vk_aImageLayoutTransferRegion[0].srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+					vk_aImageLayoutTransferRegion[0].dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+					vk_aImageLayoutTransferRegion[0].image = vk_hSingleSampledWorldRenderImages;
+					vk_aImageLayoutTransferRegion[0].subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+					vk_aImageLayoutTransferRegion[0].subresourceRange.baseMipLevel = 0;
+					vk_aImageLayoutTransferRegion[0].subresourceRange.levelCount = 1;
+					vk_aImageLayoutTransferRegion[0].subresourceRange.baseArrayLayer = u8CurrentFrameInFlightIndex;
+					vk_aImageLayoutTransferRegion[0].subresourceRange.layerCount = 1;
+					vk_aImageLayoutTransferRegion[1].srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+					vk_aImageLayoutTransferRegion[1].srcAccessMask = VK_ACCESS_2_NONE;
+					vk_aImageLayoutTransferRegion[1].dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+					vk_aImageLayoutTransferRegion[1].dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+					vk_aImageLayoutTransferRegion[1].oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+					vk_aImageLayoutTransferRegion[1].newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+					vk_imageLayoutTransferInfo.imageMemoryBarrierCount = 2;
+					vk_imageLayoutTransferInfo.pImageMemoryBarriers = vk_aImageLayoutTransferRegion;
+					vkCmdPipelineBarrier2(vk_hCommandBuffer, &vk_imageLayoutTransferInfo);
+					const VkImageBlit2 vk_blitRegion = {
+						.sType = VK_STRUCTURE_TYPE_IMAGE_BLIT_2,
+						.srcSubresource = {
+							.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+							.mipLevel = 0,
+							.baseArrayLayer = u8CurrentFrameInFlightIndex,
+							.layerCount = 1
+						},
+						.srcOffsets = {
+							{}, 
+							{
+								.x = static_cast<int32_t>(vk_renderImageSize.width),
+								.y = static_cast<int32_t>(vk_renderImageSize.height),
+								.z = 1
+							}
+						},
+						.dstSubresource = {
+							.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+							.mipLevel = 0,
+							.baseArrayLayer = 0,
+							.layerCount = 1
+						},
+						.dstOffsets = {
+							{},
+							{
+								.x = static_cast<int32_t>(vk_swapchainResolution.width),
+								.y = static_cast<int32_t>(vk_swapchainResolution.height),
+								.z = 1
+							}
+						}
+					};
+					VkBlitImageInfo2 vk_blitInfo;
+					vk_blitInfo.sType = VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2;
+					vk_blitInfo.pNext = nullptr;
+					vk_blitInfo.srcImage = vk_eMsaaCount != VK_SAMPLE_COUNT_1_BIT ? vk_hSingleSampledWorldRenderImages : vk_hRenderImages;
+					vk_blitInfo.srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+					vk_blitInfo.dstImage = vk_pahSwapchainImages[u32SwapchainImageIndex];
+					vk_blitInfo.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+					vk_blitInfo.regionCount = 1;
+					vk_blitInfo.pRegions = &vk_blitRegion;
+					switch (screenPercentageSettings.eScalingFilter) {
+						case RE_TEXTURE_FILTER_NEAREST:
+							vk_blitInfo.filter = VK_FILTER_NEAREST;
+							break;
+						case RE_TEXTURE_FILTER_LINEAR:
+							vk_blitInfo.filter = VK_FILTER_LINEAR;
+							break;
+					}
 					vkCmdBlitImage2(vk_hCommandBuffer, &vk_blitInfo);
+					vk_aImageLayoutTransferRegion[1].srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+					vk_aImageLayoutTransferRegion[1].srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+					vk_aImageLayoutTransferRegion[1].oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+				} else {
+					vk_aImageLayoutTransferRegion[1].srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+					vk_aImageLayoutTransferRegion[1].srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
+					vk_aImageLayoutTransferRegion[1].oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+				}
+				vk_aImageLayoutTransferRegion[1].dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+				vk_aImageLayoutTransferRegion[1].dstAccessMask = VK_ACCESS_2_NONE;
+				vk_aImageLayoutTransferRegion[1].newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+				vk_imageLayoutTransferInfo.imageMemoryBarrierCount = 1;
+				vk_imageLayoutTransferInfo.pImageMemoryBarriers = &vk_aImageLayoutTransferRegion[1];
+				vkCmdPipelineBarrier2(vk_hCommandBuffer, &vk_imageLayoutTransferInfo);
 		})) {
 			return true;
 		} else

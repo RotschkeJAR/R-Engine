@@ -9,14 +9,52 @@ namespace RE {
 	VkSampleCountFlagBits vk_eMsaaCount = VK_SAMPLE_COUNT_1_BIT;
 	VkImage vk_hSingleSampledWorldRenderImages;
 	static VkDeviceMemory vk_hSingleSampledWorldRenderImageMemories;
+	VkImageView vk_ahSingleSampledWorldRenderImageViews[RE_VK_FRAMES_IN_FLIGHT];
 
-	bool create_singlesampled_images(const bool bResolvingRequired, const bool bBlittingRequired) {
+	bool create_singlesampled_images(const std::vector<uint32_t> &rRenderQueuesFamilyIndices, const bool bResolvingRequired, const bool bBlittingRequired) {
 		if (!bResolvingRequired || !bBlittingRequired)
 			return true;
 		PRINT_DEBUG("Creating Vulkan image for rendering multisampled");
-		if (create_vulkan_image(0, VK_IMAGE_TYPE_2D, vk_eSwapchainImageFormat, VkExtent3D{vk_renderImageSize.width, vk_renderImageSize.height, 1}, 1, RE_VK_FRAMES_IN_FLIGHT, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, 1, nullptr, VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_hSingleSampledWorldRenderImages, &vk_hSingleSampledWorldRenderImageMemories))
-			return true;
-		else
+		if (create_vulkan_image(
+				0,
+				VK_IMAGE_TYPE_2D,
+				vk_eSwapchainImageFormat,
+				VkExtent3D{vk_renderImageSize.width, vk_renderImageSize.height, 1},
+				1,
+				RE_VK_FRAMES_IN_FLIGHT,
+				VK_SAMPLE_COUNT_1_BIT,
+				VK_IMAGE_TILING_OPTIMAL,
+				VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+				rRenderQueuesFamilyIndices.size(),
+				rRenderQueuesFamilyIndices.data(),
+				VK_IMAGE_LAYOUT_UNDEFINED,
+				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+				&vk_hSingleSampledWorldRenderImages,
+				&vk_hSingleSampledWorldRenderImageMemories)) {
+			uint8_t u8FrameInFlightIndex = 0;
+			while (u8FrameInFlightIndex < RE_VK_FRAMES_IN_FLIGHT) {
+				if (create_vulkan_image_view(
+						vk_hSingleSampledWorldRenderImages,
+						VK_IMAGE_VIEW_TYPE_2D,
+						vk_eSwapchainImageFormat,
+						VK_IMAGE_ASPECT_COLOR_BIT,
+						0,
+						1,
+						u8FrameInFlightIndex,
+						1,
+						&vk_ahSingleSampledWorldRenderImageViews[u8FrameInFlightIndex])) {
+					u8FrameInFlightIndex++;
+					continue;
+				} else
+					RE_FATAL_ERROR("Failed creating Vulkan image view at index ", u8FrameInFlightIndex, " pointing at singlesampled image");
+				break;
+			}
+			if (u8FrameInFlightIndex == RE_VK_FRAMES_IN_FLIGHT)
+				return true;
+			else
+				for (uint8_t u8SingleSampledImageViewDestroyIndex = 0; u8SingleSampledImageViewDestroyIndex < u8FrameInFlightIndex; u8SingleSampledImageViewDestroyIndex++)
+					vkDestroyImageView(vk_hDevice, vk_ahSingleSampledWorldRenderImageViews[u8SingleSampledImageViewDestroyIndex], nullptr);
+		} else
 			RE_FATAL_ERROR("Failed to create singlesampled Vulkan image");
 		return false;
 	}

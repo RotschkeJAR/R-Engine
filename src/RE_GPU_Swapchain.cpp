@@ -16,6 +16,7 @@ namespace RE {
 		// Create actual sweapchain
 		const VkSwapchainKHR vk_hOldSwapchain = vk_hSwapchain;
 		if (vk_hOldSwapchain != VK_NULL_HANDLE) {
+			PRINT_DEBUG("Cleaning up ressources used for outdated swapchain");
 			swapchain_destroyed_renderer();
 			for (uint32_t u32SwapchainImageIndex = 0; u32SwapchainImageIndex < u32SwapchainImageCount; u32SwapchainImageIndex++) {
 				PRINT_DEBUG("Destroying Vulkan image view for swapchain image at index ", u32SwapchainImageIndex);
@@ -24,23 +25,32 @@ namespace RE {
 			vk_pahSwapchainImages.reset();
 			vk_pahSwapchainImageViews.reset();
 		}
+		PRINT_DEBUG("Computing information for Vulkan swapchain creation");
 		if (vk_surfaceCapabilities.currentExtent.width != std::numeric_limits<uint32_t>::max() || vk_surfaceCapabilities.currentExtent.height != std::numeric_limits<uint32_t>::max() || !vk_surfaceCapabilities.currentExtent.width || !vk_surfaceCapabilities.currentExtent.height)
 			vk_swapchainResolution = vk_surfaceCapabilities.currentExtent;
 		else {
 			vk_swapchainResolution.width = std::clamp<uint32_t>(windowSize[0], vk_surfaceCapabilities.minImageExtent.width, vk_surfaceCapabilities.maxImageExtent.width);
 			vk_swapchainResolution.height = std::clamp<uint32_t>(windowSize[1], vk_surfaceCapabilities.minImageExtent.height, vk_surfaceCapabilities.maxImageExtent.height);
 		}
+		std::vector<uint32_t> queuesToShareAcross;
+		get_queues_for_render_images(queuesToShareAcross);
 		PRINT_DEBUG("Creating swapchain");
 		const VkSwapchainCreateInfoKHR vk_swapchainCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
 			.surface = vk_hSurface,
-			.minImageCount = std::clamp(vk_surfaceCapabilities.minImageCount + 1, vk_surfaceCapabilities.minImageCount, vk_surfaceCapabilities.maxImageCount > 0 ? vk_surfaceCapabilities.maxImageCount : std::numeric_limits<uint32_t>::max()),
+			.minImageCount = std::clamp(
+					vk_surfaceCapabilities.minImageCount + 1,
+					vk_surfaceCapabilities.minImageCount,
+					vk_surfaceCapabilities.maxImageCount > 0 ? vk_surfaceCapabilities.maxImageCount : std::numeric_limits<uint32_t>::max()
+			),
 			.imageFormat = vk_paSurfaceFormatsAvailable[u32IndexToSelectedSurfaceFormat].format,
 			.imageColorSpace = vk_paSurfaceFormatsAvailable[u32IndexToSelectedSurfaceFormat].colorSpace,
 			.imageExtent = vk_swapchainResolution,
 			.imageArrayLayers = 1,
 			.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-			.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
+			.imageSharingMode = queuesToShareAcross.size() == 1 ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT,
+			.queueFamilyIndexCount = static_cast<uint32_t>(queuesToShareAcross.size()),
+			.pQueueFamilyIndices = queuesToShareAcross.data(),
 			.preTransform = vk_surfaceCapabilities.currentTransform,
 			.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
 			.presentMode = bVsyncEnabled ? vk_ePresentModeVsync : vk_ePresentModeNoVsync,
@@ -85,7 +95,7 @@ namespace RE {
 			vk_hSwapchain = VK_NULL_HANDLE;
 			return false;
 		}
-		
+		swapchain_created_renderer();
 		return true;
 	}
 	
@@ -99,6 +109,7 @@ namespace RE {
 		PRINT_DEBUG("Destroying swapchain");
 		vkDestroySwapchainKHR(vk_hDevice, vk_hSwapchain, nullptr);
 		vk_hSwapchain = VK_NULL_HANDLE;
+		swapchain_destroyed_renderer();
 	}
 
 	bool recreate_swapchain() {
@@ -106,11 +117,7 @@ namespace RE {
 		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk_hPhysicalDeviceSelected, vk_hSurface, &vk_surfaceCapabilities);
 		WAIT_FOR_IDLE_VULKAN_DEVICE();
 		if (create_swapchain()) {
-			if (swapchain_created_renderer())
-				return true;
-			else
-				RE_ERROR("Failed notifying the renderer for recreated Vulkan swapchain");
-			destroy_swapchain();
+			return true;
 		} else
 			RE_ERROR("Failed recreating the Vulkan swapchain");
 		return false;

@@ -5,7 +5,8 @@ namespace RE {
 	std::unique_ptr<uint32_t[]> queueFamilyIndices;
 	std::unique_ptr<VkQueue[]> vk_pahQueues;
 	std::unique_ptr<VkQueueFlags[]> vk_paeQueueTypes;
-	uint8_t u8LogicalQueueCount = 0;
+	std::vector<bool> presentationAvailablePerQueue;
+	uint8_t u8LogicalQueueCount;
 
 	constexpr VkQueueFlags vk_aeRecommendedQueueTypes[] = {
 		VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT, // Rendering
@@ -109,12 +110,12 @@ namespace RE {
 		{
 			PRINT_DEBUG("Finding best transfer queue");
 			uint32_t u32BestQueue;
-			uint8_t u8MinimalAmountOfSideFeaturesInQueue = std::numeric_limits<uint8_t>::max();
+			uint8_t u8LeastSideFeaturesInQueue = std::numeric_limits<uint8_t>::max();
 			for (const uint32_t u32QueueIndex : transferQueues) {
 				const uint8_t u8SideFeaturesCount = std::popcount<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags & (~vk_aeRecommendedQueueTypes[QUEUE_INDEX_TRANSFER]));
-				if (u8SideFeaturesCount < u8MinimalAmountOfSideFeaturesInQueue) {
+				if (u8SideFeaturesCount < u8LeastSideFeaturesInQueue) {
 					u32BestQueue = u32QueueIndex;
-					u8MinimalAmountOfSideFeaturesInQueue = u8SideFeaturesCount;
+					u8LeastSideFeaturesInQueue = u8SideFeaturesCount;
 				}
 			}
 			selectedQueues.push_back(u32BestQueue);
@@ -137,11 +138,11 @@ namespace RE {
 			PRINT_DEBUG("Finding best render queue");
 			abRecommendedQueueTypesExisting[QUEUE_INDEX_RENDERING] = true;
 			uint32_t u32BestQueue;
-			uint8_t u8MinimalAmountOfSideFeaturesInQueue = std::numeric_limits<uint8_t>::max();
+			uint8_t u8LeastSideFeaturesInQueue = std::numeric_limits<uint8_t>::max();
 			for (const uint32_t u32QueueIndex : renderQueues) {
 				const uint8_t u8SideFeaturesCount = std::popcount<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags & (~vk_aeRecommendedQueueTypes[QUEUE_INDEX_RENDERING]));
-				if (u8SideFeaturesCount < u8MinimalAmountOfSideFeaturesInQueue) {
-					u8MinimalAmountOfSideFeaturesInQueue = u8SideFeaturesCount;
+				if (u8SideFeaturesCount < u8LeastSideFeaturesInQueue) {
+					u8LeastSideFeaturesInQueue = u8SideFeaturesCount;
 					u32BestQueue = u32QueueIndex;
 				}
 			}
@@ -152,11 +153,11 @@ namespace RE {
 			PRINT_DEBUG("Finding best computation & transfer queue");
 			abRecommendedQueueTypesExisting[QUEUE_INDEX_GENERAL_COMPUTING] = true;
 			uint32_t u32BestQueue;
-			uint8_t u8MinimalAmountOfSideFeaturesInQueue = std::numeric_limits<uint8_t>::max();
+			uint8_t u8LeastSideFeaturesInQueue = std::numeric_limits<uint8_t>::max();
 			for (const uint32_t u32QueueIndex : generalComputationQueues) {
 				const uint8_t u8SideFeaturesCount = std::popcount<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags & (~vk_aeRecommendedQueueTypes[QUEUE_INDEX_GENERAL_COMPUTING]));
-				if (u8SideFeaturesCount < u8MinimalAmountOfSideFeaturesInQueue) {
-					u8MinimalAmountOfSideFeaturesInQueue = u8SideFeaturesCount;
+				if (u8SideFeaturesCount < u8LeastSideFeaturesInQueue) {
+					u8LeastSideFeaturesInQueue = u8SideFeaturesCount;
 					u32BestQueue = u32QueueIndex;
 				}
 			}
@@ -172,26 +173,26 @@ namespace RE {
 					PRINT_DEBUG("Searching for queues suitable for rendering");
 					{
 						uint32_t u32BestQueue;
-						uint8_t u8MinimalAmountOfSideFeaturesInQueue = std::numeric_limits<uint8_t>::max();
+						uint8_t u8LeastSideFeaturesInQueue = std::numeric_limits<uint8_t>::max();
 						for (const uint32_t u32QueueIndex : graphicsQueues) {
 							uint8_t u8SideFeaturesCount;
 							u8SideFeaturesCount = std::popcount<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags & (~VK_QUEUE_GRAPHICS_BIT));
-							if (u8SideFeaturesCount < u8MinimalAmountOfSideFeaturesInQueue) {
-								u8MinimalAmountOfSideFeaturesInQueue = u8SideFeaturesCount;
+							if (u8SideFeaturesCount < u8LeastSideFeaturesInQueue) {
+								u8LeastSideFeaturesInQueue = u8SideFeaturesCount;
 								u32BestQueue = u32QueueIndex;
 							}
 						}
-						if (u8MinimalAmountOfSideFeaturesInQueue < std::numeric_limits<uint8_t>::max() && std::find(selectedQueues.begin(), selectedQueues.end(), u32BestQueue) == selectedQueues.end())
+						if (u8LeastSideFeaturesInQueue < std::numeric_limits<uint8_t>::max() && std::find(selectedQueues.begin(), selectedQueues.end(), u32BestQueue) == selectedQueues.end())
 							selectedQueues.push_back(u32BestQueue);
 						for (const uint32_t u32QueueIndex : computeQueues) {
 							uint8_t u8SideFeaturesCount;
 							u8SideFeaturesCount = std::popcount<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags & (~VK_QUEUE_COMPUTE_BIT));
-							if (u8SideFeaturesCount < u8MinimalAmountOfSideFeaturesInQueue) {
-								u8MinimalAmountOfSideFeaturesInQueue = u8SideFeaturesCount;
+							if (u8SideFeaturesCount < u8LeastSideFeaturesInQueue) {
+								u8LeastSideFeaturesInQueue = u8SideFeaturesCount;
 								u32BestQueue = u32QueueIndex;
 							}
 						}
-						if (u8MinimalAmountOfSideFeaturesInQueue < std::numeric_limits<uint8_t>::max() && std::find(selectedQueues.begin(), selectedQueues.end(), u32BestQueue) == selectedQueues.end())
+						if (u8LeastSideFeaturesInQueue < std::numeric_limits<uint8_t>::max() && std::find(selectedQueues.begin(), selectedQueues.end(), u32BestQueue) == selectedQueues.end())
 							selectedQueues.push_back(u32BestQueue);
 					}
 					break;
@@ -199,26 +200,26 @@ namespace RE {
 					PRINT_DEBUG("Searching for queues suitable for general computation");
 					{
 						uint32_t u32BestQueue;
-						uint8_t u8MinimalAmountOfSideFeaturesInQueue = std::numeric_limits<uint8_t>::max();
+						uint8_t u8LeastSideFeaturesInQueue = std::numeric_limits<uint8_t>::max();
 						for (const uint32_t u32QueueIndex : graphicsQueues) {
 							uint8_t u8SideFeaturesCount;
 							u8SideFeaturesCount = std::popcount<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags & (~VK_QUEUE_COMPUTE_BIT));
-							if (u8SideFeaturesCount < u8MinimalAmountOfSideFeaturesInQueue) {
-								u8MinimalAmountOfSideFeaturesInQueue = u8SideFeaturesCount;
+							if (u8SideFeaturesCount < u8LeastSideFeaturesInQueue) {
+								u8LeastSideFeaturesInQueue = u8SideFeaturesCount;
 								u32BestQueue = u32QueueIndex;
 							}
 						}
-						if (u8MinimalAmountOfSideFeaturesInQueue < std::numeric_limits<uint8_t>::max() && std::find(selectedQueues.begin(), selectedQueues.end(), u32BestQueue) == selectedQueues.end())
+						if (u8LeastSideFeaturesInQueue < std::numeric_limits<uint8_t>::max() && std::find(selectedQueues.begin(), selectedQueues.end(), u32BestQueue) == selectedQueues.end())
 							selectedQueues.push_back(u32BestQueue);
 						for (const uint32_t u32QueueIndex : computeQueues) {
 							uint8_t u8SideFeaturesCount;
 							u8SideFeaturesCount = std::popcount<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags & (~VK_QUEUE_TRANSFER_BIT));
-							if (u8SideFeaturesCount < u8MinimalAmountOfSideFeaturesInQueue) {
-								u8MinimalAmountOfSideFeaturesInQueue = u8SideFeaturesCount;
+							if (u8SideFeaturesCount < u8LeastSideFeaturesInQueue) {
+								u8LeastSideFeaturesInQueue = u8SideFeaturesCount;
 								u32BestQueue = u32QueueIndex;
 							}
 						}
-						if (u8MinimalAmountOfSideFeaturesInQueue < std::numeric_limits<uint8_t>::max() && std::find(selectedQueues.begin(), selectedQueues.end(), u32BestQueue) == selectedQueues.end())
+						if (u8LeastSideFeaturesInQueue < std::numeric_limits<uint8_t>::max() && std::find(selectedQueues.begin(), selectedQueues.end(), u32BestQueue) == selectedQueues.end())
 							selectedQueues.push_back(u32BestQueue);
 					}
 					break;
@@ -246,12 +247,12 @@ namespace RE {
 				goodPresentQueues.push_back(presentQueues[0]);
 			if (goodPresentQueues.size() > 1) {
 				uint32_t u32BestQueue;
-				uint8_t u8MinimalAmountOfSideFeaturesInQueue = std::numeric_limits<uint8_t>::max();
+				uint8_t u8LeastSideFeaturesInQueue = std::numeric_limits<uint8_t>::max();
 				for (const uint32_t u32QueueIndex : goodPresentQueues) {
 					uint8_t u8SideFeaturesCount = std::popcount<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags);
-					if (u8SideFeaturesCount < u8MinimalAmountOfSideFeaturesInQueue) {
+					if (u8SideFeaturesCount < u8LeastSideFeaturesInQueue) {
 						u32BestQueue = u32QueueIndex;
-						u8MinimalAmountOfSideFeaturesInQueue = u8SideFeaturesCount;
+						u8LeastSideFeaturesInQueue = u8SideFeaturesCount;
 					}
 				}
 				selectedQueues.push_back(u32BestQueue);
@@ -265,24 +266,24 @@ namespace RE {
 		vk_paeQueueTypes = std::make_unique<VkQueueFlags[]>(u8LogicalQueueCount);
 		queueFamilyIndices = std::make_unique<uint32_t[]>(u8LogicalQueueCount);
 		vk_rpaLogicalQueueCreateInfos.resize(u8LogicalQueueCount);
-		uint32_t u32LogicalQueueCreateIndex = 0;
+		presentationAvailablePerQueue.reserve(u8LogicalQueueCount);
+		uint8_t u8LogicalQueueCreateIndex = 0;
 		for (const uint32_t u32QueueIndex : selectedQueues) {
-			vk_paeQueueTypes[u32LogicalQueueCreateIndex] = vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags;
+			vk_paeQueueTypes[u8LogicalQueueCreateIndex] = vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags;
 			VkBool32 vk_bPresentingSupported;
-			vkGetPhysicalDeviceSurfaceSupportKHR(vk_hPhysicalDeviceSelected, u32LogicalQueueCreateIndex, vk_hSurface, &vk_bPresentingSupported);
-			if (vk_bPresentingSupported == VK_TRUE)
-				vk_paeQueueTypes[u32LogicalQueueCreateIndex] |= RE_VK_QUEUE_PRESENT_BIT;
+			vkGetPhysicalDeviceSurfaceSupportKHR(vk_hPhysicalDeviceSelected, u8LogicalQueueCreateIndex, vk_hSurface, &vk_bPresentingSupported);
+			presentationAvailablePerQueue.push_back(vk_bPresentingSupported == VK_TRUE);
 
-			queueFamilyIndices[u32LogicalQueueCreateIndex] = u32QueueIndex;
+			queueFamilyIndices[u8LogicalQueueCreateIndex] = u32QueueIndex;
 
-			vk_rpaLogicalQueueCreateInfos[u32LogicalQueueCreateIndex].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-			vk_rpaLogicalQueueCreateInfos[u32LogicalQueueCreateIndex].pNext = nullptr;
-			vk_rpaLogicalQueueCreateInfos[u32LogicalQueueCreateIndex].flags = 0;
-			vk_rpaLogicalQueueCreateInfos[u32LogicalQueueCreateIndex].queueFamilyIndex = u32QueueIndex;
-			vk_rpaLogicalQueueCreateInfos[u32LogicalQueueCreateIndex].queueCount = 1;
-			vk_rpaLogicalQueueCreateInfos[u32LogicalQueueCreateIndex].pQueuePriorities = pfPriority;
+			vk_rpaLogicalQueueCreateInfos[u8LogicalQueueCreateIndex].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+			vk_rpaLogicalQueueCreateInfos[u8LogicalQueueCreateIndex].pNext = nullptr;
+			vk_rpaLogicalQueueCreateInfos[u8LogicalQueueCreateIndex].flags = 0;
+			vk_rpaLogicalQueueCreateInfos[u8LogicalQueueCreateIndex].queueFamilyIndex = u32QueueIndex;
+			vk_rpaLogicalQueueCreateInfos[u8LogicalQueueCreateIndex].queueCount = 1;
+			vk_rpaLogicalQueueCreateInfos[u8LogicalQueueCreateIndex].pQueuePriorities = pfPriority;
 
-			u32LogicalQueueCreateIndex++;
+			u8LogicalQueueCreateIndex++;
 		}
 	}
 
@@ -304,6 +305,16 @@ namespace RE {
 		vk_pahQueues.reset();
 		vk_paeQueueTypes.reset();
 		queueFamilyIndices.reset();
+	}
+
+	[[nodiscard]]
+	VkQueue get_present_queue(const uint8_t u8PreferredQueueIndex) {
+		if (presentationAvailablePerQueue[u8PreferredQueueIndex])
+			return vk_pahQueues[u8PreferredQueueIndex];
+		for (uint8_t u8LogicalQueueIndex = 0; u8LogicalQueueIndex < u8LogicalQueueCount; u8LogicalQueueIndex++)
+			if (presentationAvailablePerQueue[u8LogicalQueueIndex])
+				return vk_pahQueues[u8LogicalQueueIndex];
+		return VK_NULL_HANDLE;
 	}
 
 }

@@ -33,7 +33,7 @@ namespace RE {
 				.pau32StrictSeparationIds = au32SeparationIds,
 				.u32FunctionsCount = 2
 			};
-			if (transferToGpuTask.init(queuesToUse, false, false))
+			if (transferToGpuTask.init(queuesToUse, false, false, false))
 				return true;
 			else
 				RE_FATAL_ERROR("Failed initializing general transfer task");

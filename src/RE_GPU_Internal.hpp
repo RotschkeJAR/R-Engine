@@ -7,8 +7,6 @@
 
 namespace RE {
 
-#define RE_VK_QUEUE_PRESENT_BIT (VK_QUEUE_OPTICAL_FLOW_BIT_NV << 1)
-
 	extern bool bVsyncEnabled;
 
 	// Surface
@@ -25,8 +23,6 @@ namespace RE {
 	void select_physical_vulkan_device(VkPhysicalDevice vk_hPhysicalDevice);
 	
 	// Scheduler
-	extern std::unique_ptr<VkQueue[]> vk_pahQueues;
-	extern std::unique_ptr<VkQueueFlags[]> vk_paeQueueTypes;
 	void does_gpu_have_necessary_queues(VkPhysicalDevice vk_hPhysicalDevice, std::queue<std::string> &rMissingFeatures);
 	[[nodiscard]]
 	int32_t rate_gpu_queues(VkPhysicalDevice vk_hPhysicalDevice);
@@ -35,8 +31,6 @@ namespace RE {
 
 	// Swapchain
 	extern VkPresentModeKHR vk_ePresentModeVsync, vk_ePresentModeNoVsync;
-	bool create_swapchain();
-	void destroy_swapchain();
 	bool recreate_swapchain();
 
 	// Default transfer task

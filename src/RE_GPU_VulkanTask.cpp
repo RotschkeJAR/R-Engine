@@ -19,16 +19,16 @@ namespace RE {
 
 	VulkanTask::VulkanTask() {}
 
-	VulkanTask::VulkanTask(const uint32_t u32FunctionsCount, const VkQueueFlagBits *const vk_paeQueueTypePerFunctionRequiredInOrder, const bool bIndividualResets, const bool bTransient) {
-		init(u32FunctionsCount, vk_paeQueueTypePerFunctionRequiredInOrder, bIndividualResets, bTransient);
+	VulkanTask::VulkanTask(const uint32_t u32FunctionsCount, const VkQueueFlagBits *const vk_paeQueueTypePerFunctionRequiredInOrder, const bool bIndividualResets, const bool bIncludePresentation, const bool bTransient) {
+		init(u32FunctionsCount, vk_paeQueueTypePerFunctionRequiredInOrder, bIndividualResets, bIncludePresentation, bTransient);
 	}
 
-	VulkanTask::VulkanTask(const uint32_t u32FunctionsCount, const uint8_t *pau8LogicalQueueIndexPerFunctionRequiredInOrder, const bool bIndividualResets, const bool bTransient) {
-		init(u32FunctionsCount, pau8LogicalQueueIndexPerFunctionRequiredInOrder, bIndividualResets, bTransient);
+	VulkanTask::VulkanTask(const uint32_t u32FunctionsCount, const uint8_t *pau8LogicalQueueIndexPerFunctionRequiredInOrder, const bool bIndividualResets, const bool bIncludePresentation, const bool bTransient) {
+		init(u32FunctionsCount, pau8LogicalQueueIndexPerFunctionRequiredInOrder, bIndividualResets, bIncludePresentation, bTransient);
 	}
 
-	VulkanTask::VulkanTask(const VulkanTask_Queues &rQueues, const bool bIndividualResets, const bool bTransient) {
-		init(rQueues, bIndividualResets, bTransient);
+	VulkanTask::VulkanTask(const VulkanTask_Queues &rQueues, const bool bIndividualResets, const bool bIncludePresentation, const bool bTransient) {
+		init(rQueues, bIndividualResets, bIncludePresentation, bTransient);
 	}
 
 	VulkanTask::VulkanTask(const VulkanTask &rCopy, const bool bIndividualResets, const bool bTransient) {
@@ -40,7 +40,7 @@ namespace RE {
 			destroy();
 	}
 	
-	bool VulkanTask::init(const uint32_t u32FunctionsCount, const VkQueueFlagBits *const vk_paeQueueTypePerFunctionRequiredInOrder, const bool bIndividualResets, const bool bTransient) {
+	bool VulkanTask::init(const uint32_t u32FunctionsCount, const VkQueueFlagBits *const vk_paeQueueTypePerFunctionRequiredInOrder, const bool bIndividualResets, const bool bIncludePresentation, const bool bTransient) {
 		PRINT_DEBUG_CLASS("Initializing Vulkan task based on queue types in ", vk_paeQueueTypePerFunctionRequiredInOrder, " containing ", u32FunctionsCount, " functions");
 		std::vector<uint8_t> logicalQueuesPerFunction;
 		logicalQueuesPerFunction.reserve(u32FunctionsCount);
@@ -92,10 +92,10 @@ namespace RE {
 				}
 			}
 		}
-		return init(u32FunctionsCount, logicalQueuesPerFunction.data(), bIndividualResets, bTransient);
+		return init(u32FunctionsCount, logicalQueuesPerFunction.data(), bIndividualResets, bIncludePresentation, bTransient);
 	}
 
-	bool VulkanTask::init(const uint32_t u32FunctionsCount, const uint8_t *const pau8LogicalQueueIndexPerFunctionRequiredInOrder, const bool bIndividualResets, const bool bTransient) {
+	bool VulkanTask::init(const uint32_t u32FunctionsCount, const uint8_t *const pau8LogicalQueueIndexPerFunctionRequiredInOrder, const bool bIndividualResets, const bool bIncludePresentation, const bool bTransient) {
 		PRINT_DEBUG_CLASS("Initializing Vulkan task based on logical queue indices in ", pau8LogicalQueueIndexPerFunctionRequiredInOrder, " containing ", u32FunctionsCount, " functions");
 		this->u32FunctionsCount = u32FunctionsCount;
 		this->bTransient = bTransient;
@@ -162,6 +162,22 @@ namespace RE {
 					commandBuffers[u32FunctionIndex] = std::get<1>(commandBuffersPerPool[u8LogicalQueueIndex]).back();
 					std::get<1>(commandBuffersPerPool[u8LogicalQueueIndex]).pop_back();
 				}
+				if (bIncludePresentation) {
+					const uint8_t u8LogicalQueueIndexOfLastFunction = queueIndexPerCommandPool[commandPoolIndexPerCommandBuffer[u32FunctionsCount - 1]];
+					if (presentationAvailablePerQueue[u8LogicalQueueIndexOfLastFunction])
+						u8LogicalPresentQueueIndex = u8LogicalQueueIndexOfLastFunction;
+					else {
+						uint32_t u8LeastSideFeaturesInQueue = std::numeric_limits<uint8_t>::max();
+						for (uint8_t u8LogicalQueueIndex = 0; u8LogicalQueueIndex < u8LogicalQueueCount; u8LogicalQueueIndex++) {
+							const uint32_t u32SideFeaturesCount = std::popcount<VkQueueFlags>(vk_paeQueueTypes[u8LogicalQueueIndex]);
+							if (u32SideFeaturesCount < u8LeastSideFeaturesInQueue) {
+								u8LeastSideFeaturesInQueue = u32SideFeaturesCount;
+								u8LogicalPresentQueueIndex = u8LogicalQueueIndex;
+							}
+						}
+					}
+				} else
+					u8LogicalPresentQueueIndex = RE_VK_LOGICAL_QUEUE_IGNORED;
 				if (u8CommandPoolCount > 1) {
 					PRINT_DEBUG_CLASS("Creating Vulkan timeline semaphore");
 					const VkSemaphoreTypeCreateInfo vk_timelineSemaphoreInfo = {
@@ -192,7 +208,7 @@ namespace RE {
 		return false;
 	}
 
-	bool VulkanTask::init(const VulkanTask_Queues &rQueues, const bool bIndividualResets, const bool bTransient) {
+	bool VulkanTask::init(const VulkanTask_Queues &rQueues, const bool bIndividualResets, const bool bIncludePresentation, const bool bTransient) {
 		PRINT_DEBUG_CLASS("Initializing Vulkan task based on logical queue indices, types and separation IDs");
 		std::vector<uint8_t> logicalQueuesPerFunction;
 		logicalQueuesPerFunction.reserve(rQueues.u32FunctionsCount);
@@ -238,13 +254,14 @@ namespace RE {
 				PRINT_DEBUG_CLASS("Next logical queue added ", logicalQueuesPerFunction.back());
 			}
 		}
-		return init(logicalQueuesPerFunction.size(), logicalQueuesPerFunction.data(), bIndividualResets, bTransient);
+		return init(logicalQueuesPerFunction.size(), logicalQueuesPerFunction.data(), bIndividualResets, bIncludePresentation, bTransient);
 	}
 
 	bool VulkanTask::init(const VulkanTask &rCopy, const bool bIndividualResets, const bool bTransient) {
 		PRINT_DEBUG_CLASS("Copying initialized data to Vulkan task ", this, " from ", &rCopy);
 		u32FunctionsCount = rCopy.u32FunctionsCount;
 		u8CommandPoolCount = rCopy.u8CommandPoolCount;
+		u8LogicalPresentQueueIndex = rCopy.u8LogicalPresentQueueIndex;
 		this->bTransient = rCopy.bTransient;
 		queueIndexPerCommandPool = rCopy.queueIndexPerCommandPool;
 		commandPools = std::make_unique<VkCommandPool[]>(u8CommandPoolCount);
@@ -336,7 +353,7 @@ namespace RE {
 				commandBuffers[u32FunctionIndex], 
 				u32FunctionIndex > 0 ? queueIndexPerCommandPool[commandPoolIndexPerCommandBuffer[u32FunctionIndex - 1]] : RE_VK_LOGICAL_QUEUE_IGNORED, 
 				queueIndexPerCommandPool[commandPoolIndexPerCommandBuffer[u32FunctionIndex]], 
-				u32FunctionIndex < (u32FunctionsCount - 1) ? queueIndexPerCommandPool[commandPoolIndexPerCommandBuffer[u32FunctionIndex + 1]] : RE_VK_LOGICAL_QUEUE_IGNORED);
+				u32FunctionIndex < (u32FunctionsCount - 1) ? queueIndexPerCommandPool[commandPoolIndexPerCommandBuffer[u32FunctionIndex + 1]] : u8LogicalPresentQueueIndex);
 			PRINT_DEBUG_CLASS("Finishing to record Vulkan command buffer of function at index ", u32FunctionIndex);
 			if (vkEndCommandBuffer(commandBuffers[u32FunctionIndex]) == VK_SUCCESS)
 				return true;
@@ -435,6 +452,10 @@ namespace RE {
 
 	uint8_t VulkanTask::get_logical_queue_index_for_function(const uint32_t u32FunctionIndex) const {
 		return queueIndexPerCommandPool[commandPoolIndexPerCommandBuffer[u32FunctionIndex]];
+	}
+
+	uint8_t VulkanTask::get_logical_queue_index_for_presentation() const {
+		return u8LogicalPresentQueueIndex;
 	}
 
 	bool VulkanTask::is_valid() const {

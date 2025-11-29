@@ -18,12 +18,12 @@ namespace RE {
 	extern VkExtent2D vk_renderImageSize;
 	bool create_render_image_resources();
 	void destroy_render_image_resources();
-	bool record_command_buffer_transfering_render_image();
+	bool record_command_buffer_blitting_render_image(uint32_t u32SwapchainImageIndex);
 
 	// Render task
 #define RENDER_TASK_SUBINDEX_BUFFER_TRANSFER 0
 #define RENDER_TASK_SUBINDEX_RENDERING 1
-#define RENDER_TASK_SUBINDEX_IMAGE_TRANSFER 2
+#define RENDER_TASK_SUBINDEX_IMAGE_BLIT 2
 	extern std::array<VulkanTask, RE_VK_FRAMES_IN_FLIGHT> renderTasks;
 	extern std::array<VkFence, RE_VK_FRAMES_IN_FLIGHT> renderFences;
 	extern uint8_t u8CurrentFrameInFlightIndex;
@@ -40,10 +40,13 @@ namespace RE {
 	// MSAA
 	extern VkSampleCountFlagBits vk_eMsaaCount;
 	extern VkImage vk_hSingleSampledWorldRenderImages;
-	bool create_singlesampled_images(bool bResolvingRequired, bool bBlittingRequired);
+	extern VkImageView vk_ahSingleSampledWorldRenderImageViews[RE_VK_FRAMES_IN_FLIGHT];
+	bool create_singlesampled_images(const std::vector<uint32_t> &rRenderQueuesFamilyIndices, bool bResolvingRequired, bool bBlittingRequired);
 	void destroy_singlesampled_images();
 
 	// Depth-stencil images
+#define DEPTH_IMAGE_INDEX 0
+#define STENCIL_IMAGE_INDEX 1
 	extern VkImage vk_a2hDepthStencilImages[2];
 	extern VkImageView vk_a4hDepthStencilImageViews[4];
 	bool create_depth_stencil_images(VulkanTask &rDepthStencilImageLayoutTransitionTask, VkFence vk_hDepthStencilImageLayoutTransitionFence);

@@ -15,7 +15,7 @@ namespace RE {
 	static VkDeviceMemory vk_hCameraUniformBufferMemory;
 	static float *pfCameraUniforms;
 	VkDescriptorSetLayout vk_hCameraDescLayout;
-	std::array<VkDescriptorSet, RE_VK_FRAMES_IN_FLIGHT> vk_ahCameraDescSets;
+	std::array<VkDescriptorSet, RE_VK_FRAMES_IN_FLIGHT> cameraDescSets;
 	
 	bool create_camera_descriptor_sets() {
 		PRINT_DEBUG("Creating Vulkan uniform buffer for rendering with view and projection matrices");
@@ -61,7 +61,7 @@ namespace RE {
 						.descriptorSetCount = camDescLayoutArray.size(),
 						.pSetLayouts = camDescLayoutArray.data()
 					};
-					if (vkAllocateDescriptorSets(vk_hDevice, &vk_camDescSetAllocInfo, vk_ahCameraDescSets.data()) == VK_SUCCESS) {
+					if (vkAllocateDescriptorSets(vk_hDevice, &vk_camDescSetAllocInfo, cameraDescSets.data()) == VK_SUCCESS) {
 						PRINT_DEBUG("Writing to Vulkan camera descriptor sets");
 						VkDescriptorBufferInfo vk_aDescBufferInfos[RE_VK_FRAMES_IN_FLIGHT];
 						VkWriteDescriptorSet vk_aWriteCamDescriptorSets[RE_VK_FRAMES_IN_FLIGHT];
@@ -71,7 +71,7 @@ namespace RE {
 							vk_aDescBufferInfos[u8DescriptorSetIndex].range = RE_VK_CAMERA_UNIFORM_BUFFER_SIZE_BYTES;
 							vk_aWriteCamDescriptorSets[u8DescriptorSetIndex].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 							vk_aWriteCamDescriptorSets[u8DescriptorSetIndex].pNext = nullptr;
-							vk_aWriteCamDescriptorSets[u8DescriptorSetIndex].dstSet = vk_ahCameraDescSets[u8DescriptorSetIndex];
+							vk_aWriteCamDescriptorSets[u8DescriptorSetIndex].dstSet = cameraDescSets[u8DescriptorSetIndex];
 							vk_aWriteCamDescriptorSets[u8DescriptorSetIndex].dstBinding = RE_VK_UNIFORM_BINDING_CAMERA;
 							vk_aWriteCamDescriptorSets[u8DescriptorSetIndex].dstArrayElement = 0;
 							vk_aWriteCamDescriptorSets[u8DescriptorSetIndex].descriptorCount = 1;

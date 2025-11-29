@@ -16,6 +16,11 @@ namespace RE {
 	
 	VkPipelineLayout vk_hWorldPipelineLayout;
 
+	VkQueue vk_hPresentQueue;
+
+	std::vector<VkSemaphore> swapchainSemaphores;
+	uint32_t u32CurrentSwapchainSemaphoreIndex = 0;
+
 	float fSampleShadingRate = 0.2f;
 	bool bRenderPipelinesDirty = false;
 
@@ -43,11 +48,37 @@ namespace RE {
 								};
 								if (vkCreatePipelineLayout(vk_hDevice, &vk_worldPipelineLayoutCreateInfo, nullptr, &vk_hWorldPipelineLayout) == VK_SUCCESS) {
 									if (create_render_pipelines()) {
-										if (swapchain_created_renderer()) {
-											PRINT_DEBUG("Waiting for pending transfer tasks to finish");
-											wait_for_transfer(std::numeric_limits<uint64_t>::max());
-											PRINT_DEBUG("Successfully initialized the renderer");
-											return true;
+										if (create_swapchain()) {
+											const VkSemaphoreTypeCreateInfo vk_swapchainSemaphoreTypeCreateInfo = {
+												.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO,
+												.semaphoreType = VK_SEMAPHORE_TYPE_BINARY
+											};
+											const VkSemaphoreCreateInfo vk_swapchainSemaphoreCreateInfo = {
+												.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+												.pNext = &vk_swapchainSemaphoreTypeCreateInfo
+											};
+											swapchainSemaphores.reserve(RE_VK_SWAPCHAIN_SEMAPHORE_COUNT);
+											while (swapchainSemaphores.size() < RE_VK_SWAPCHAIN_SEMAPHORE_COUNT) {
+												VkSemaphore vk_hCreatedSemaphore;
+												if (vkCreateSemaphore(vk_hDevice, &vk_swapchainSemaphoreCreateInfo, nullptr, &vk_hCreatedSemaphore) != VK_SUCCESS) {
+													RE_FATAL_ERROR("Failed creating a Vulkan semaphore for synchronizing presentation operations");
+													break;
+												}
+												swapchainSemaphores.push_back(vk_hCreatedSemaphore);
+											}
+											if (swapchainSemaphores.size() == RE_VK_SWAPCHAIN_SEMAPHORE_COUNT) {
+												vk_hPresentQueue = vk_pahQueues[renderTasks[0].get_logical_queue_index_for_presentation()];
+												PRINT_DEBUG("Waiting for pending transfer tasks to finish");
+												wait_for_transfer(std::numeric_limits<uint64_t>::max());
+												PRINT_DEBUG("Successfully initialized the renderer");
+												return true;
+											} else {
+												for (const VkSemaphore vk_hSwapchainSemaphore : swapchainSemaphores)
+													vkDestroySemaphore(vk_hDevice, vk_hSwapchainSemaphore, nullptr);
+												swapchainSemaphores.clear();
+												swapchainSemaphores.shrink_to_fit();
+											}
+											destroy_swapchain();
 										}
 										destroy_render_pipelines();
 									}
@@ -75,7 +106,11 @@ namespace RE {
 	
 	void destroy_renderer() {
 		PRINT_DEBUG("Destroying renderer");
-		swapchain_destroyed_renderer();
+		for (const VkSemaphore vk_hSwapchainSemaphore : swapchainSemaphores)
+			vkDestroySemaphore(vk_hDevice, vk_hSwapchainSemaphore, nullptr);
+		swapchainSemaphores.clear();
+		swapchainSemaphores.shrink_to_fit();
+		destroy_swapchain();
 		destroy_render_pipelines();
 		vkDestroyPipelineLayout(vk_hDevice, vk_hWorldPipelineLayout, nullptr);
 		destroy_renderpass();
@@ -92,10 +127,44 @@ namespace RE {
 			recreate_render_pipelines();
 			bRenderPipelinesDirty = false;
 		}
-		record_command_buffer_transfering_render_image();
+		PRINT_DEBUG("Acquiring next Vulkan swapchain image");
+		const VkAcquireNextImageInfoKHR vk_acquireInfo = {
+			.sType = VK_STRUCTURE_TYPE_ACQUIRE_NEXT_IMAGE_INFO_KHR,
+			.swapchain = vk_hSwapchain,
+			.timeout = std::numeric_limits<uint64_t>::max(),
+			.semaphore = swapchainSemaphores[u32CurrentSwapchainSemaphoreIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE],
+			.deviceMask = 1
+		};
+		uint32_t u32SwapchainImageIndex;
+		vkAcquireNextImage2KHR(vk_hDevice, &vk_acquireInfo, &u32SwapchainImageIndex);
+		PRINT_DEBUG("Waiting for pending transfers and frame-in-flight at index ", u8CurrentFrameInFlightIndex, " being finished rendering");
 		wait_for_transfer(std::numeric_limits<uint64_t>::max());
 		vkWaitForFences(vk_hDevice, 1, &renderFences[u8CurrentFrameInFlightIndex], VK_TRUE, std::numeric_limits<uint64_t>::max());
+		vkResetFences(vk_hDevice, 1, &renderFences[u8CurrentFrameInFlightIndex]);
+		record_command_buffer_blitting_render_image(u32SwapchainImageIndex);
+		const VkSemaphoreSubmitInfo vk_waitSwapchainImageAcquireSemaphore = {
+			.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+			.semaphore = vk_acquireInfo.semaphore,
+			.stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT
+		};
+		const VkSemaphoreSubmitInfo vk_signalSwapchainImagePresentSemaphore = {
+			.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+			.semaphore = swapchainSemaphores[u32CurrentSwapchainSemaphoreIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE + 1]
+		};
+		const VkPipelineStageFlags2 vk_aeRenderWaitStages[] = {VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT};
+		renderTasks[u8CurrentFrameInFlightIndex].submit(1, &vk_waitSwapchainImageAcquireSemaphore, vk_aeRenderWaitStages, 1, &vk_signalSwapchainImagePresentSemaphore, renderFences[u8CurrentFrameInFlightIndex]);
+		PRINT_DEBUG("Submitting swapchain image at index ", u32SwapchainImageIndex, " to presentation");
+		const VkPresentInfoKHR vk_presentInfo = {
+			.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+			.waitSemaphoreCount = 1,
+			.pWaitSemaphores = &vk_signalSwapchainImagePresentSemaphore.semaphore,
+			.swapchainCount = 1,
+			.pSwapchains = &vk_hSwapchain,
+			.pImageIndices = &u32SwapchainImageIndex
+		};
+		vkQueuePresentKHR(vk_hPresentQueue, &vk_presentInfo);
 		u8CurrentFrameInFlightIndex = (u8CurrentFrameInFlightIndex + 1) % RE_VK_FRAMES_IN_FLIGHT;
+		u32CurrentSwapchainSemaphoreIndex = (u32CurrentSwapchainSemaphoreIndex + 1) % u32SwapchainImageCount;
 	}
 
 	bool swapchain_created_renderer() {

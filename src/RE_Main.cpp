@@ -57,9 +57,9 @@ namespace RE {
 						PRINT_DEBUG("Exiting game loop");
 						bRunning = false;
 						show_window(false);
+						WAIT_FOR_IDLE_VULKAN_DEVICE();
 						last_game_logic_update();
 						fDeltaseconds = 0.0f;
-						WAIT_FOR_IDLE_VULKAN_DEVICE();
 						destroy_renderer();
 					}
 					destroy_render_system();

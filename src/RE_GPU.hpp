@@ -5,6 +5,8 @@
 
 namespace RE {
 
+	extern VkSurfaceKHR vk_hSurface;
+
 	extern std::unique_ptr<VkSurfaceFormatKHR[]> vk_paSurfaceFormatsAvailable;
 	extern uint32_t u32IndexToSelectedSurfaceFormat;
 	extern bool bSwapchainDirty;

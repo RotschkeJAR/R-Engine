@@ -92,6 +92,12 @@ namespace RE {
 
 	bool create_texture_descriptor_sets() {
 		PRINT_DEBUG("Creating Vulkan descriptor set layout for textures");
+		constexpr VkDescriptorBindingFlags vk_eBindingFlags = VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
+		const VkDescriptorSetLayoutBindingFlagsCreateInfo vk_bindingFlagsInfo = {
+			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO,
+			.bindingCount = 1,
+			.pBindingFlags = &vk_eBindingFlags
+		};
 		const VkDescriptorSetLayoutBinding vk_textureDescBinding = {
 			.binding = RE_VK_UNIFORM_BINDING_TEXTURE,
 			.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
@@ -100,6 +106,7 @@ namespace RE {
 		};
 		const VkDescriptorSetLayoutCreateInfo vk_textureDescLayoutInfo = {
 			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+			.pNext = &vk_bindingFlagsInfo,
 			.bindingCount = 1,
 			.pBindings = &vk_textureDescBinding
 		};

@@ -169,6 +169,8 @@ namespace RE {
 					else {
 						uint32_t u8LeastSideFeaturesInQueue = std::numeric_limits<uint8_t>::max();
 						for (uint8_t u8LogicalQueueIndex = 0; u8LogicalQueueIndex < u8LogicalQueueCount; u8LogicalQueueIndex++) {
+							if (!presentationAvailablePerQueue[u8LogicalQueueIndex])
+								continue;
 							const uint32_t u32SideFeaturesCount = std::popcount<VkQueueFlags>(vk_paeQueueTypes[u8LogicalQueueIndex]);
 							if (u32SideFeaturesCount < u8LeastSideFeaturesInQueue) {
 								u8LeastSideFeaturesInQueue = u32SideFeaturesCount;
@@ -275,7 +277,7 @@ namespace RE {
 			const VkCommandPoolCreateInfo vk_cmdPoolCreateInfo = {
 				.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
 				.flags = vk_eCommandPoolCreateFlags,
-				.queueFamilyIndex = queueIndexPerCommandPool[u8CommandPoolCreateIndex]
+				.queueFamilyIndex = queueFamilyIndices[queueIndexPerCommandPool[u8CommandPoolCreateIndex]]
 			};
 			if (vkCreateCommandPool(vk_hDevice, &vk_cmdPoolCreateInfo, nullptr, &commandPools[u8CommandPoolCreateIndex]) != VK_SUCCESS) {
 				RE_FATAL_ERROR("Failed allocating Vulkan command pool at index ", u8CommandPoolCreateIndex);
@@ -292,7 +294,6 @@ namespace RE {
 				while ((u32CommandBufferCreateIndex + u32CommandBufferAllocCount) < u32FunctionsCount && commandPoolIndexPerCommandBuffer[u32CommandBufferCreateIndex] == commandPoolIndexPerCommandBuffer[u32CommandBufferCreateIndex + u32CommandBufferAllocCount])
 					u32CommandBufferAllocCount++;
 				PRINT_DEBUG_CLASS("Allocating ", u32CommandBufferAllocCount, " Vulkan command buffer/-s at function index ", u32CommandBufferCreateIndex, " (and onward)");
-				PRINT_LN(commandPoolIndexPerCommandBuffer[u32CommandBufferCreateIndex]);
 				if (!alloc_vulkan_command_buffers(commandPools[commandPoolIndexPerCommandBuffer[u32CommandBufferCreateIndex]], VK_COMMAND_BUFFER_LEVEL_PRIMARY, u32CommandBufferAllocCount, &commandBuffers[u32CommandBufferCreateIndex])) {
 					RE_FATAL_ERROR("Failed allocating ", u32CommandBufferAllocCount, " Vulkan command buffer at index ", u32CommandBufferCreateIndex);
 					break;

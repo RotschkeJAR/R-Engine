@@ -53,10 +53,11 @@ namespace RE {
 		return vkCreateShaderModule(vk_hDevice, &vk_createInfo, nullptr, vk_phShader) == VK_SUCCESS;
 	}
 	
-	bool create_vulkan_buffer(const VkDeviceSize vk_size, const VkBufferUsageFlags vk_eUsages, const uint32_t u32QueueFamilyCount, const uint32_t *const pau32QueueFamilies, const VkMemoryPropertyFlags vk_eMemoryPropertyFlags, VkBuffer *const vk_phBuffer, VkDeviceMemory *const vk_phMemory) {
+	bool create_vulkan_buffer(const VkBufferCreateFlags vk_eCreateFlags, const VkDeviceSize vk_size, const VkBufferUsageFlags vk_eUsages, const uint32_t u32QueueFamilyCount, const uint32_t *const pau32QueueFamilies, const VkMemoryPropertyFlags vk_eMemoryPropertyFlags, VkBuffer *const vk_phBuffer, VkDeviceMemory *const vk_phMemory) {
 		PRINT_DEBUG("Creating Vulkan buffer");
 		VkBufferCreateInfo vk_createInfo = {
 			.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+			.flags = vk_eCreateFlags,
 			.size = vk_size,
 			.usage = vk_eUsages
 		};

@@ -33,6 +33,7 @@
 #include <atomic>
 #include <chrono>
 #include <functional>
+#include <thread>
 
 namespace RE {
 
@@ -613,6 +614,70 @@ namespace RE {
 	typedef Vector<uint32_t, 2> Vector2u;
 	typedef Vector<uint32_t, 3> Vector3u;
 	typedef Vector<uint32_t, 4> Vector4u;
+
+	template <uint32_t u32NumOfThreads = 10>
+	class Threadpool final {
+		private:
+			std::array<std::jthread, u32NumOfThreads> threads;
+			std::array<uint64_t, u32NumOfThreads> agePerThread;
+
+			uint32_t wait_for_oldest_thread() {
+				const uint32_t u32OldThreadIndex = std::min_element(agePerThread.begin(), agePerThread.end()) - agePerThread.begin();
+				std::jthread greatestAgeFindThread([&]() {
+					agePerThread[u32OldThreadIndex] = (*std::max_element(agePerThread.begin(), agePerThread.end())) + 1;
+				});
+				if (threads[u32OldThreadIndex].joinable())
+					threads[u32OldThreadIndex].join();
+				return u32OldThreadIndex;
+			}
+
+		public:
+			Threadpool() {}
+			~Threadpool() {}
+
+			template <class F, class... paramTypes>
+			void execute(F &&rrFunction, paramTypes... params) {
+				const uint32_t u32OldThreadIndex = wait_for_oldest_thread();
+				threads[u32OldThreadIndex] = std::jthread(rrFunction, params...);
+			}
+
+			void move_thread(std::jthread &&rrThread) {
+				const uint32_t u32OldThreadIndex = wait_for_oldest_thread();
+				threads[u32OldThreadIndex] = rrThread;
+			}
+
+			bool joinable() {
+				for (std::jthread &rThread : threads)
+					if (rThread.joinable())
+						return true;
+				return false;
+			}
+
+			void join() {
+				std::jthread ageResetThread([&]() {
+					agePerThread.fill(0);
+				});
+				for (std::jthread &rThread : threads)
+					if (rThread.joinable())
+						rThread.join();
+			}
+
+			uint32_t free_slots() {
+				uint32_t u32FreeSlots = 0;
+				for (std::jthread &rThread : threads)
+					if (!rThread.joinable())
+						u32FreeSlots++;
+				return u32FreeSlots;
+			}
+
+			uint32_t occupied_slots() {
+				return get_amount_of_threads() - free_slots();
+			}
+
+			constexpr uint32_t get_amount_of_threads() {
+				return u32NumOfThreads;
+			}
+	};
 
 	class Color final {
 		public:

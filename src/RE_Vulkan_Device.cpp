@@ -1171,8 +1171,14 @@ namespace RE {
 		create_queue_create_infos(&fQueuePriority, vk_paDeviceQueueCreateInfos);
 
 		PRINT_DEBUG("Creating logical Vulkan device");
+		VkPhysicalDeviceDescriptorIndexingFeatures vk_physicalDeviceFeaturesEnabled_DescriptorIndexing = {
+			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES,
+			.descriptorBindingUpdateUnusedWhilePending = VK_TRUE,
+			.descriptorBindingPartiallyBound = VK_TRUE
+		};
 		VkPhysicalDeviceDynamicRenderingFeatures vk_physicalDeviceFeaturesEnabled_DynamicRendering = {
 			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES,
+			.pNext = &vk_physicalDeviceFeaturesEnabled_DescriptorIndexing,
 			.dynamicRendering = VK_TRUE
 		};
 		VkPhysicalDeviceSynchronization2Features vk_physicalDeviceFeaturesEnabled_Synchronization2 = {

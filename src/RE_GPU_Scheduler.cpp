@@ -271,7 +271,7 @@ namespace RE {
 		for (const uint32_t u32QueueIndex : selectedQueues) {
 			vk_paeQueueTypes[u8LogicalQueueCreateIndex] = vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags;
 			VkBool32 vk_bPresentingSupported;
-			vkGetPhysicalDeviceSurfaceSupportKHR(vk_hPhysicalDeviceSelected, u8LogicalQueueCreateIndex, vk_hSurface, &vk_bPresentingSupported);
+			vkGetPhysicalDeviceSurfaceSupportKHR(vk_hPhysicalDeviceSelected, u32QueueIndex, vk_hSurface, &vk_bPresentingSupported);
 			presentationAvailablePerQueue.push_back(vk_bPresentingSupported == VK_TRUE);
 
 			queueFamilyIndices[u8LogicalQueueCreateIndex] = u32QueueIndex;

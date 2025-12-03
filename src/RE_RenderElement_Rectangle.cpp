@@ -9,22 +9,30 @@ namespace RE {
 	
 	bool init_render_element_rectangle(Vulkan_Buffer &rStagingRectBuffer) {
 		PRINT_DEBUG("Initializing temporary, staging Vulkan buffer for rectangle data");
-		if (rStagingRectBuffer.init(RE_VK_RECT_BUFFER_TOTAL_SIZE, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 1, nullptr, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
+		if (rStagingRectBuffer.init(0, RE_VK_RECT_BUFFER_TOTAL_SIZE, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 1, nullptr, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
 			PRINT_DEBUG("Mapping memory of rectangle buffer to fill with vertex data");
 			float *pafVertices;
 			if (rStagingRectBuffer.map_memory(RE_VK_RECT_BUFFER_VERTICES_OFFSET, RE_VK_RECT_BUFFER_VERTICES_SIZE, reinterpret_cast<void**>(&pafVertices))) {
 				pafVertices[0] = -1.0f;
 				pafVertices[1] = 1.0f;
 				pafVertices[2] = 0.0f;
-				pafVertices[3] = 1.0f;
-				pafVertices[4] = 1.0f;
-				pafVertices[5] = 0.0f;
+				pafVertices[3] = 0.0f;
+				pafVertices[4] = 0.0f;
+				pafVertices[5] = 1.0f;
 				pafVertices[6] = 1.0f;
-				pafVertices[7] = -1.0f;
+				pafVertices[7] = 0.0f;
 				pafVertices[8] = 0.0f;
-				pafVertices[9] = -1.0f;
-				pafVertices[10] = -1.0f;
-				pafVertices[11] = 0.0f;
+				pafVertices[9] = 0.0f;
+				pafVertices[10] = 1.0f;
+				pafVertices[11] = -1.0f;
+				pafVertices[12] = 0.0f;
+				pafVertices[13] = 0.0f;
+				pafVertices[14] = 0.0f;
+				pafVertices[15] = -1.0f;
+				pafVertices[16] = -1.0f;
+				pafVertices[17] = 0.0f;
+				pafVertices[18] = 0.0f;
+				pafVertices[19] = 0.0f;
 				PRINT_DEBUG("Unmapping memory area for vertex data of rectangle buffer");
 				rStagingRectBuffer.unmap_memory();
 				PRINT_DEBUG("Mapping memory of rectangle buffer to fill with index data");
@@ -39,7 +47,7 @@ namespace RE {
 					PRINT_DEBUG("Unmapping memory area for index data of rectangle buffer");
 					rStagingRectBuffer.unmap_memory();
 					PRINT_DEBUG("Creating permanent Vulkan buffer for rendering rectangles");
-					if (create_vulkan_buffer(RE_VK_RECT_BUFFER_TOTAL_SIZE, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 1, nullptr, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_hRectBuffer, &vk_hRectBufferMemory)) {
+					if (create_vulkan_buffer(0, RE_VK_RECT_BUFFER_TOTAL_SIZE, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 1, nullptr, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vk_hRectBuffer, &vk_hRectBufferMemory)) {
 						VkBufferMemoryBarrier2 vk_rectBufferOwnershipBarrier;
 						vk_rectBufferOwnershipBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2;
 						vk_rectBufferOwnershipBarrier.pNext = nullptr;

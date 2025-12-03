@@ -20,7 +20,6 @@ namespace RE {
 			.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 			.pImageInfo = &vk_spriteInfo
 		};
-		wait_for_rendering_finished();
 		vkUpdateDescriptorSets(vk_hDevice, 1, &vk_writeSpriteInfo, 0, nullptr);
 	}
 
@@ -48,12 +47,14 @@ namespace RE {
 	void change_texture_in_sprite(const Sprite hSprite, const Texture hTexture) {
 		VulkanSprite *const pSprite = reinterpret_cast<VulkanSprite*>(hSprite);
 		pSprite->pTexture = reinterpret_cast<VulkanTexture*>(hTexture);
+		wait_for_rendering_finished();
 		write_to_texture_descriptor_set(*pSprite);
 	}
 
 	void change_layout_in_sprite(const Sprite hSprite, const SpriteLayout hSpriteLayout) {
 		VulkanSprite *const pSprite = reinterpret_cast<VulkanSprite*>(hSprite);
 		pSprite->pLayout = reinterpret_cast<VulkanSpriteLayout*>(hSpriteLayout);
+		wait_for_rendering_finished();
 		write_to_texture_descriptor_set(*pSprite);
 	}
 

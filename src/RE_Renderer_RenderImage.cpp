@@ -3,7 +3,7 @@
 
 namespace RE {
 
-	static ScreenPercentageSettings screenPercentageSettings(RE_SCREEN_PERCENTAGE_MODE_NORMAL);
+	ScreenPercentageSettings screenPercentageSettings(RE_SCREEN_PERCENTAGE_MODE_NORMAL);
 	VkImage vk_hRenderImages;
 	static VkDeviceMemory vk_hRenderImageMemories;
 	VkImageView vk_ahRenderImageViews[RE_VK_FRAMES_IN_FLIGHT];
@@ -133,7 +133,7 @@ namespace RE {
 		destroy_depth_stencil_images();
 	}
 
-	bool record_command_buffer_blitting_render_image(const uint32_t u32SwapchainImageIndex) {
+	bool record_cmd_blitting_render_image() {
 		if (renderTasks[u8CurrentFrameInFlightIndex].record(RENDER_TASK_SUBINDEX_IMAGE_BLIT, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, [&](const VkCommandBuffer vk_hCommandBuffer, const uint8_t u8PreviousLogicalQueue, const uint8_t u8CurrentLogicalQueue, const uint8_t u8NextLogicalQueue) {
 				VkImageMemoryBarrier2 vk_aImageLayoutTransferRegion[2];
 				vk_aImageLayoutTransferRegion[1].sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
@@ -155,23 +155,24 @@ namespace RE {
 				vk_imageLayoutTransferInfo.bufferMemoryBarrierCount = 0;
 				vk_imageLayoutTransferInfo.pBufferMemoryBarriers = nullptr;
 				if (screenPercentageSettings.eMode != RE_SCREEN_PERCENTAGE_MODE_NORMAL) {
+					PRINT_DEBUG("Transferring render image's layout from optimal for rendering to transfer source and swapchain image's to transfer destination");
 					vk_aImageLayoutTransferRegion[0].sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
 					vk_aImageLayoutTransferRegion[0].pNext = nullptr;
 					vk_aImageLayoutTransferRegion[0].srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
-					vk_aImageLayoutTransferRegion[0].srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
+					vk_aImageLayoutTransferRegion[0].srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
 					vk_aImageLayoutTransferRegion[0].dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
 					vk_aImageLayoutTransferRegion[0].dstAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;
 					vk_aImageLayoutTransferRegion[0].oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 					vk_aImageLayoutTransferRegion[0].newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 					vk_aImageLayoutTransferRegion[0].srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 					vk_aImageLayoutTransferRegion[0].dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-					vk_aImageLayoutTransferRegion[0].image = vk_hSingleSampledWorldRenderImages;
+					vk_aImageLayoutTransferRegion[0].image = vk_eMsaaCount != VK_SAMPLE_COUNT_1_BIT ? vk_hSingleSampledWorldRenderImages : vk_hRenderImages;
 					vk_aImageLayoutTransferRegion[0].subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 					vk_aImageLayoutTransferRegion[0].subresourceRange.baseMipLevel = 0;
 					vk_aImageLayoutTransferRegion[0].subresourceRange.levelCount = 1;
 					vk_aImageLayoutTransferRegion[0].subresourceRange.baseArrayLayer = u8CurrentFrameInFlightIndex;
 					vk_aImageLayoutTransferRegion[0].subresourceRange.layerCount = 1;
-					vk_aImageLayoutTransferRegion[1].srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+					vk_aImageLayoutTransferRegion[1].srcStageMask = VK_PIPELINE_STAGE_2_NONE;
 					vk_aImageLayoutTransferRegion[1].srcAccessMask = VK_ACCESS_2_NONE;
 					vk_aImageLayoutTransferRegion[1].dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
 					vk_aImageLayoutTransferRegion[1].dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
@@ -180,6 +181,7 @@ namespace RE {
 					vk_imageLayoutTransferInfo.imageMemoryBarrierCount = 2;
 					vk_imageLayoutTransferInfo.pImageMemoryBarriers = vk_aImageLayoutTransferRegion;
 					vkCmdPipelineBarrier2(vk_hCommandBuffer, &vk_imageLayoutTransferInfo);
+					PRINT_DEBUG("Blitting rendered image");
 					const VkImageBlit2 vk_blitRegion = {
 						.sType = VK_STRUCTURE_TYPE_IMAGE_BLIT_2,
 						.srcSubresource = {
@@ -211,15 +213,15 @@ namespace RE {
 							}
 						}
 					};
-					VkBlitImageInfo2 vk_blitInfo;
-					vk_blitInfo.sType = VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2;
-					vk_blitInfo.pNext = nullptr;
-					vk_blitInfo.srcImage = vk_eMsaaCount != VK_SAMPLE_COUNT_1_BIT ? vk_hSingleSampledWorldRenderImages : vk_hRenderImages;
-					vk_blitInfo.srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-					vk_blitInfo.dstImage = vk_pahSwapchainImages[u32SwapchainImageIndex];
-					vk_blitInfo.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-					vk_blitInfo.regionCount = 1;
-					vk_blitInfo.pRegions = &vk_blitRegion;
+					VkBlitImageInfo2 vk_blitInfo = {
+						.sType = VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2,
+						.srcImage = vk_aImageLayoutTransferRegion[0].image,
+						.srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+						.dstImage = vk_pahSwapchainImages[u32SwapchainImageIndex],
+						.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+						.regionCount = 1,
+						.pRegions = &vk_blitRegion
+					};
 					switch (screenPercentageSettings.eScalingFilter) {
 						case RE_TEXTURE_FILTER_NEAREST:
 							vk_blitInfo.filter = VK_FILTER_NEAREST;
@@ -234,10 +236,11 @@ namespace RE {
 					vk_aImageLayoutTransferRegion[1].oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 				} else {
 					vk_aImageLayoutTransferRegion[1].srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
-					vk_aImageLayoutTransferRegion[1].srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
+					vk_aImageLayoutTransferRegion[1].srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
 					vk_aImageLayoutTransferRegion[1].oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 				}
-				vk_aImageLayoutTransferRegion[1].dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+				PRINT_DEBUG("Transferring swapchain image's layout to presentable source");
+				vk_aImageLayoutTransferRegion[1].dstStageMask = VK_PIPELINE_STAGE_2_NONE;
 				vk_aImageLayoutTransferRegion[1].dstAccessMask = VK_ACCESS_2_NONE;
 				vk_aImageLayoutTransferRegion[1].newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 				vk_imageLayoutTransferInfo.imageMemoryBarrierCount = 1;

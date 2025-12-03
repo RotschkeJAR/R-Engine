@@ -6,16 +6,20 @@
 
 namespace RE {
 
-#define RE_VK_FRAMES_IN_FLIGHT 2
+	struct GameObjectInstanceData final {
+		float a16fModelMatrix[16];
+		float a4fColor[4];
+		uint32_t u32TextureId;
+	};
 
-	extern float fSampleShadingRate;
-	extern VkPipelineLayout vk_hWorldPipelineLayout;
-	extern uint8_t u8CurrentFrameInFlightIndex;
+#define RE_VK_FRAMES_IN_FLIGHT 2
 
 	extern const Camera *pActiveCamera;
 
-	uint8_t get_render_buffer_transfer_queue_logical_index();
-	uint8_t get_render_graphics_queue_logical_index();
+	extern VkPipelineLayout vk_hWorldPipelineLayout;
+	extern float fSampleShadingRate;
+	extern uint8_t u8CurrentFrameInFlightIndex;
+
 	bool init_renderer();
 	void destroy_renderer();
 	void render();
@@ -26,6 +30,10 @@ namespace RE {
 
 	// Render Images
 	void get_queues_for_render_images(std::vector<uint32_t> &rRenderTaskQueueIndices);
+
+	// Render buffer
+	extern GameObjectInstanceData *paRenderBufferInstanceData;
+	extern std::atomic<uint32_t> gameObjectToRenderCount;
 
 	// Render pipelines
 	bool does_gpu_support_vertex_buffers(VkPhysicalDevice vk_hPhysicalDevice, std::queue<std::string> &rMissingFeatures);

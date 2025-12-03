@@ -74,13 +74,19 @@ namespace RE {
 		const VkSampleCountFlagBits vk_eNewSampleCount = static_cast<VkSampleCountFlagBits>(VK_SAMPLE_COUNT_1_BIT << eNextMsaaMode);
 		if (vk_eNewSampleCount == vk_eMsaaCount) {
 			if (eNewMsaaMode != eNextMsaaMode)
-				RE_WARNING("MSAA mode ", std::pow(2, static_cast<int32_t>(eNewMsaaMode)), " is not supported on this GPU and has been dropped down to ", std::pow(2, static_cast<int32_t>(eNextMsaaMode)), ", but is already set");
+				RE_WARNING("MSAA mode ", eNewMsaaMode, " is not supported on this GPU and has been dropped down to ", eNextMsaaMode, ", but is already set");
 			return;
 		} else if (eNewMsaaMode != eNextMsaaMode)
-			RE_WARNING("MSAA mode ", std::pow(2, static_cast<int32_t>(eNewMsaaMode)), " is not supported on this GPU and has been dropped down to ", std::pow(2, static_cast<int32_t>(eNextMsaaMode)));
-		PRINT_DEBUG("New MSAA-mode ", eNextMsaaMode, " has been saved as ", std::hex, vk_eNewSampleCount);
+			RE_WARNING("MSAA mode ", eNewMsaaMode, " is not supported on this GPU and has been dropped down to ", eNextMsaaMode);
+		PRINT_DEBUG("New MSAA mode ", eNextMsaaMode, " has been saved as ", std::hex, vk_eNewSampleCount);
 		vk_eMsaaCount = vk_eNewSampleCount;
-		bRenderPipelinesDirty = bRunning;
+		if (bRunning) {
+			PRINT_DEBUG("Recreating render images and render pipeline to adjust to new MSAA mode");
+			WAIT_FOR_IDLE_VULKAN_DEVICE();
+			recreate_render_pipelines();
+			destroy_render_image_resources();
+			create_render_image_resources();
+		}
 	}
 
 	[[nodiscard]]

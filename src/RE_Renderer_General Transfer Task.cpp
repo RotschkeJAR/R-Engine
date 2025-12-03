@@ -24,7 +24,7 @@ namespace RE {
 		};
 		if (vkCreateSemaphore(vk_hDevice, &vk_semaphoreCreateInfo, nullptr, &vk_hTransferTimelineSemaphore) == VK_SUCCESS) {
 			PRINT_DEBUG("Initializing general transfer task");
-			const uint8_t au8LogicalQueues[] = {RE_VK_LOGICAL_QUEUE_IGNORED, get_render_graphics_queue_logical_index()};
+			const uint8_t au8LogicalQueues[] = {RE_VK_LOGICAL_QUEUE_IGNORED, renderTasks[0].get_logical_queue_index_for_function(RENDER_TASK_SUBINDEX_RENDERING)};
 			constexpr VkQueueFlagBits vk_aeQueueTypes[] = {VK_QUEUE_TRANSFER_BIT, VK_QUEUE_GRAPHICS_BIT};
 			constexpr uint32_t au32SeparationIds[] = {0, 1};
 			const VulkanTask_Queues queuesToUse = {

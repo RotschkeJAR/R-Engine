@@ -7,7 +7,7 @@ namespace RE {
 
 	bool create_vulkan_shader_from_file(const char *pacPathToFile, VkShaderModule *vk_phShader);
 	
-	bool create_vulkan_buffer(VkDeviceSize vk_size, VkBufferUsageFlags vk_eUsages, uint32_t u32QueueCount, const uint32_t *pau32Queues, VkMemoryPropertyFlags vk_eMemoryPropertyFlags, VkBuffer *vk_phBuffer, VkDeviceMemory *vk_phMemory);
+	bool create_vulkan_buffer(VkBufferCreateFlags vk_eCreateFlags, VkDeviceSize vk_size, VkBufferUsageFlags vk_eUsages, uint32_t u32QueueCount, const uint32_t *pau32Queues, VkMemoryPropertyFlags vk_eMemoryPropertyFlags, VkBuffer *vk_phBuffer, VkDeviceMemory *vk_phMemory);
 
 	bool create_vulkan_image(VkImageCreateFlags vk_eCreateFlags, VkImageType vk_eType, VkFormat vk_eFormat, VkExtent3D vk_extent, uint32_t u32MipLevels, uint32_t u32ArrayLayerCount, VkSampleCountFlagBits vk_eSamples, VkImageTiling vk_eTiling, VkImageUsageFlags vk_eUsages, uint32_t u32QueueCount, const uint32_t *pau32Queues, VkImageLayout vk_eLayout, VkMemoryPropertyFlags vk_eMemoryPropertyFlags, VkImage *vk_phImage, VkDeviceMemory *vk_phMemory);
 

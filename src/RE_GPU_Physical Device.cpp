@@ -43,9 +43,12 @@ namespace RE {
 		VkPhysicalDeviceTimelineSemaphoreFeatures vk_physicalDeviceFeaturesAvailable_TimelineSemaphore;
 		vk_physicalDeviceFeaturesAvailable_TimelineSemaphore.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES;
 		vk_physicalDeviceFeaturesAvailable_TimelineSemaphore.pNext = &vk_physicalDeviceFeaturesAvailable_Synchronization2;
+		VkPhysicalDeviceDescriptorIndexingFeatures vk_physicalDeviceFeaturesAvailable_DescriptorIndexing;
+		vk_physicalDeviceFeaturesAvailable_DescriptorIndexing.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
+		vk_physicalDeviceFeaturesAvailable_DescriptorIndexing.pNext = &vk_physicalDeviceFeaturesAvailable_TimelineSemaphore;
 		VkPhysicalDeviceFeatures2 vk_physicalDeviceFeaturesAvailable;
 		vk_physicalDeviceFeaturesAvailable.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-		vk_physicalDeviceFeaturesAvailable.pNext = &vk_physicalDeviceFeaturesAvailable_TimelineSemaphore;
+		vk_physicalDeviceFeaturesAvailable.pNext = &vk_physicalDeviceFeaturesAvailable_DescriptorIndexing;
 		vkGetPhysicalDeviceFeatures2(vk_hPhysicalDevice, &vk_physicalDeviceFeaturesAvailable);
 
 		// Check if required Vulkan version is supported
@@ -80,12 +83,18 @@ namespace RE {
 				missingFeatures.emplace("Swapchain images neither support being used for color attachments nor/or transfer operations");
 
 			// Check if sample shading is supported
-			if (vk_physicalDeviceFeaturesAvailable.features.sampleRateShading == VK_FALSE)
+			if (vk_physicalDeviceFeaturesAvailable.features.sampleRateShading != VK_TRUE)
 				optionalFeaturesMissing.emplace("Sample shading is not supported on this GPU");
 
 			// Check if anisotropy is supported
-			if (vk_physicalDeviceFeaturesAvailable.features.samplerAnisotropy == VK_FALSE)
+			if (vk_physicalDeviceFeaturesAvailable.features.samplerAnisotropy != VK_TRUE)
 				optionalFeaturesMissing.emplace("Anisotropic filtering is not supported on this GPU");
+
+			// Check if descriptor set layout binding flags are supported
+			if (vk_physicalDeviceFeaturesAvailable_DescriptorIndexing.descriptorBindingUpdateUnusedWhilePending != VK_TRUE)
+				missingFeatures.emplace("Descriptor sets cannot be updated, when unused ones are updated");
+			if (vk_physicalDeviceFeaturesAvailable_DescriptorIndexing.descriptorBindingPartiallyBound != VK_TRUE)
+				missingFeatures.emplace("Descriptor sets cannot be partially unupdated");
 
 			// Check if timeline semaphores are supported
 			if (vk_physicalDeviceFeaturesAvailable_TimelineSemaphore.timelineSemaphore != VK_TRUE)

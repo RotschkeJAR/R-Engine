@@ -12,10 +12,10 @@ namespace RE {
 
 		public:
 			Vulkan_Buffer();
-			Vulkan_Buffer(VkDeviceSize vk_size, VkBufferUsageFlags vk_eUsages, uint32_t u32QueueCount, const uint32_t *pau32Queues, VkMemoryPropertyFlags vk_eMemoryPropertyFlags);
+			Vulkan_Buffer(VkBufferCreateFlags vk_eCreateFlags, VkDeviceSize vk_size, VkBufferUsageFlags vk_eUsages, uint32_t u32QueueCount, const uint32_t *pau32Queues, VkMemoryPropertyFlags vk_eMemoryPropertyFlags);
 			~Vulkan_Buffer();
 
-			bool init(VkDeviceSize vk_size, VkBufferUsageFlags vk_eUsages, uint32_t u32QueueCount, const uint32_t *pau32Queues, VkMemoryPropertyFlags vk_eMemoryPropertyFlags);
+			bool init(VkBufferCreateFlags vk_eCreateFlags, VkDeviceSize vk_size, VkBufferUsageFlags vk_eUsages, uint32_t u32QueueCount, const uint32_t *pau32Queues, VkMemoryPropertyFlags vk_eMemoryPropertyFlags);
 			void destroy();
 			bool map_memory(VkDeviceSize vk_offset, VkDeviceSize vk_size, void **ppData) const;
 			void unmap_memory() const;

@@ -69,12 +69,4 @@ namespace RE {
 		return vkWaitForFences(vk_hDevice, renderFences.size(), renderFences.data(), VK_TRUE, std::numeric_limits<uint64_t>::max()) == VK_SUCCESS;
 	}
 
-	uint8_t get_render_buffer_transfer_queue_logical_index() {
-		return renderTasks[0].get_logical_queue_index_for_function(0);
-	}
-
-	uint8_t get_render_graphics_queue_logical_index() {
-		return renderTasks[0].get_logical_queue_index_for_function(1);
-	}
-
 }

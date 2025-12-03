@@ -45,7 +45,7 @@ namespace RE {
 		}
 		PRINT_DEBUG("Creating temporary staging Vulkan buffer for transferring texture binaries");
 		const VkDeviceSize vk_imageBufferSize = sizeof(uint8_t) * u32Width * u32Height * u32Channels;
-		Vulkan_Buffer stagingImageBuffer(vk_imageBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 1, nullptr, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+		Vulkan_Buffer stagingImageBuffer(0, vk_imageBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 1, nullptr, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 		if (stagingImageBuffer.is_valid()) {
 			uint8_t *pau8StagingBufferContent;
 			if (stagingImageBuffer.map_memory(0, vk_imageBufferSize, reinterpret_cast<void**>(&pau8StagingBufferContent))) {
@@ -53,7 +53,22 @@ namespace RE {
 					std::memcpy(pau8StagingBufferContent, pau8TextureBinaries, vk_imageBufferSize);
 				});
 				PRINT_DEBUG("Creating Vulkan image for storing texture on GPU");
-				if (create_vulkan_image(0, VK_IMAGE_TYPE_2D, pVulkanTexture->vk_eFormat, VkExtent3D{u32Width, u32Height, 1}, 1, 1, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, 1, nullptr, VK_IMAGE_LAYOUT_UNDEFINED, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &pVulkanTexture->vk_hImage, &pVulkanTexture->vk_hImageMemory)) {
+				if (create_vulkan_image(
+						0,
+						VK_IMAGE_TYPE_2D,
+						pVulkanTexture->vk_eFormat,
+						VkExtent3D{u32Width, u32Height, 1},
+						1,
+						1,
+						VK_SAMPLE_COUNT_1_BIT,
+						VK_IMAGE_TILING_OPTIMAL,
+						VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+						1,
+						nullptr,
+						VK_IMAGE_LAYOUT_UNDEFINED,
+						VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+						&pVulkanTexture->vk_hImage,
+						&pVulkanTexture->vk_hImageMemory)) {
 					PRINT_DEBUG("Assigning commands and recording Vulkan task for transferring texture to GPU");
 					const auto transferFunc = [&](const VkCommandBuffer vk_hCommandBuffer, const uint8_t u8PreviousLogicalQueue, const uint8_t u8CurrentLogicalQueue, const uint8_t u8NextLogicalQueue) {
 						const VkImageMemoryBarrier2 vk_imageLayoutBarrier = {

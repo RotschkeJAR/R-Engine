@@ -69,7 +69,7 @@ namespace RE {
 
 	void render() {
 		PRINT_DEBUG("Invoking render-procedure");
-		bool bSkipRendering = false;
+		bool bSkipRendering;
 		if (acquire_next_swapchain_image(bSkipRendering)) {
 			if (bSkipRendering)
 				return;

@@ -57,7 +57,7 @@ namespace RE {
 		signalSemaphores.back().sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
 		signalSemaphores.back().pNext = nullptr;
 		signalSemaphores.back().semaphore = vk_hTransferTimelineSemaphore;
-		signalSemaphores.back().stageMask = VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT;
+		signalSemaphores.back().stageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
 		signalSemaphores.back().deviceIndex = 0;
 		wait_for_transfer(std::numeric_limits<uint64_t>::max());
 		transferToGpuTask.reset_all(0);

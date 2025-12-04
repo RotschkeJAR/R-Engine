@@ -4,16 +4,10 @@
 
 namespace RE {
 	
-	Camera::Camera() : scale(1.0f, 1.0f), view(10.0f, 10.0f) {
-		newCameras.push_back(this);
-	}
-	Camera::Camera(const Vector3f &rPosition) : position(rPosition), scale(1.0f, 1.0f), view(10.0f, 10.0f) {
-		newCameras.push_back(this);
-	}
-	Camera::Camera(const Vector3f &rPosition, const Vector2f &rScale) : position(rPosition), scale(rScale), view(10.0f, 10.0f) {
-		newCameras.push_back(this);
-	}
-	Camera::Camera(const Vector3f &rPosition, const Vector2f &rScale, const Vector2f &rView) : position(rPosition), scale(rScale), view(rView) {
+	Camera::Camera() : Camera(Transform()) {}
+	Camera::Camera(const Transform &rTransform) : transform(rTransform), view(10.0f, 10.0f), bIgnoreAspectRatio(false) {}
+	Camera::Camera(const Vector2f &rView) : Camera(rView, false) {}
+	Camera::Camera(const Vector2f &rView, const bool bIgnoreAspectRatio) : view(rView), bIgnoreAspectRatio(bIgnoreAspectRatio) {
 		newCameras.push_back(this);
 	}
 	Camera::~Camera() {
@@ -39,26 +33,26 @@ namespace RE {
 	}
 	
 	[[nodiscard]]
-	bool Camera::has_same_transform(const Camera &rCompareCamera) const {
-		return position == rCompareCamera.position 
-			&& scale == rCompareCamera.scale 
-			&& view == rCompareCamera.view;
+	bool Camera::equals(const Camera &rCompareCamera) const {
+		return transform == rCompareCamera.transform
+			&& view == rCompareCamera.view
+			&& bIgnoreAspectRatio == rCompareCamera.bIgnoreAspectRatio;
 	}
 
 	void Camera::operator =(const Camera &rCopyCamera) {
-		position = rCopyCamera.position;
-		scale = rCopyCamera.scale;
+		transform = rCopyCamera.transform;
 		view = rCopyCamera.view;
+		bIgnoreAspectRatio = rCopyCamera.bIgnoreAspectRatio;
 	}
 
 	[[nodiscard]]
 	bool Camera::operator ==(const Camera &rCompareCamera) const {
-		return has_same_transform(rCompareCamera);
+		return equals(rCompareCamera);
 	}
 
 	[[nodiscard]]
 	bool Camera::operator !=(const Camera &rCompareCamera) const {
-		return !has_same_transform(rCompareCamera);
+		return !equals(rCompareCamera);
 	}
 
 }

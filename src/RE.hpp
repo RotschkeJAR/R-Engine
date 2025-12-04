@@ -34,10 +34,14 @@
 #include <chrono>
 #include <functional>
 #include <thread>
+#include <concepts>
 
 namespace RE {
 
 #define STRIP_QUOTE_MACRO(...) __VA_ARGS__
+
+	template <class T>
+	concept Arithmetic = std::is_arithmetic_v<T>;
 
 	enum TerminalColor {
 		RE_TERMINAL_COLOR_BLACK = 0x0,
@@ -389,8 +393,7 @@ namespace RE {
 
 	template <class T>
 	[[nodiscard]]
-	constexpr T nth_root(const T n, const T value) {
-		static_assert(std::is_arithmetic_v<T>, "This function accepts arithmetic datatypes only");
+	constexpr T nth_root(const T n, const T value) requires Arithmetic<T> {
 		static_assert(n > static_cast<T>(0.0), "The 0th or negative root is forbidden for causing undefined behaviour");
 		if (n <= static_cast<T>(0.0)) {
 			FATAL_ERROR("The value of n shouldn't be zero or negative in an nth root");
@@ -421,15 +424,13 @@ namespace RE {
 
 	template <class T, class... U>
 	[[nodiscard]]
-	constexpr bool are_bits_true(const T value, const U... bits) {
-		static_assert(std::is_arithmetic_v<T>, "Only arithmetic values can be used for checking bits");
+	constexpr bool are_bits_true(const T value, const U... bits) requires Arithmetic<T> {
 		return (value & static_cast<T>(gen_bitmask<U...>(bits...))) != static_cast<T>(0.0);
 	}
 
 	template <class T>
 	[[nodiscard]]
-	constexpr bool are_bits_true_in_range(const T value, const T begin, const T end) {
-		static_assert(std::is_arithmetic_v<T>, "Only arithmetic values can be used for checking bits in a specific range");
+	constexpr bool are_bits_true_in_range(const T value, const T begin, const T end) requires Arithmetic<T> {
 		if (begin > end) {
 			FATAL_ERROR("Start (", begin, ") of the range is larger than end (", end, ")");
 			return false;
@@ -441,8 +442,7 @@ namespace RE {
 	}
 
 	template <class T, class... U>
-	constexpr T set_bits(T& value, const bool bNewState, const U... bits) {
-		static_assert(std::is_arithmetic_v<T>, "Only arithmetic values can be used for setting bits");
+	constexpr T set_bits(T& value, const bool bNewState, const U... bits) requires Arithmetic<T> {
 		const T bitmask = gen_bitmask<U...>(bits...);
 		if (bNewState)
 			value |= bitmask;
@@ -452,8 +452,7 @@ namespace RE {
 	}
 
 	template <class T>
-	constexpr T set_bits_in_range(T& value, const bool bNewState, const T begin, const T end) {
-		static_assert(std::is_arithmetic_v<T>, "Only arithmetic values can be used for setting bits in a specific range");
+	constexpr T set_bits_in_range(T& value, const bool bNewState, const T begin, const T end) requires Arithmetic<T> {
 		if (begin > end) {
 			FATAL_ERROR("Start (", begin, ") of the range is larger than end (", end, ")");
 			return value;
@@ -465,20 +464,48 @@ namespace RE {
 	
 	template <class T>
 	[[nodiscard]]
-	constexpr T sign(const T& rValue) {
-		static_assert(std::is_arithmetic_v<T>, "The sign-function only accepts arithmetic datatypes, such as integers and floating-point numbers");
+	constexpr T sign(const T& rValue) requires Arithmetic<T> {
 		if constexpr (std::is_unsigned_v<T>)
 			return static_cast<T>(0.0) > rValue;
 		else
 			return (static_cast<T>(0.0) < rValue) - (rValue < static_cast<T>(0.0));
 	}
 
+	template <class T>
+	[[nodiscard]]
+	constexpr T degrees_to_radians(const T degrees) requires std::floating_point<T> {
+		return degrees * (std::numbers::pi / 180.0f);
+	}
+
+	template <class T>
+	[[nodiscard]]
+	constexpr T radians_to_degrees(const T radians) requires std::floating_point<T> {
+		return radians * (180.0f / std::numbers::pi);
+	}
+
+	template <class T>
+	[[nodiscard]]
+	constexpr T sin_deg(const T degrees) requires std::floating_point<T> {
+		return std::sin(degrees_to_radians<T>(degrees));
+	}
+
+	template <class T>
+	[[nodiscard]]
+	constexpr T cos_deg(const T degrees) requires std::floating_point<T> {
+		return std::cos(degrees_to_radians<T>(degrees));
+	}
+
+	template <class T>
+	[[nodiscard]]
+	constexpr T tan_deg(const T degrees) requires std::floating_point<T> {
+		return std::tan(degrees_to_radians<T>(degrees));
+	}
 
 
-	template <class T, uint32_t u32Dimensions>
+
+	template <Arithmetic T, uint32_t u32Dimensions>
 	class Vector final {
 		static_assert(u32Dimensions != 0, "A vector cannot have zero dimensions");
-		static_assert(std::is_arithmetic_v<T>, "A vector usually handles arithmetic datatypes only");
 
 		public:
 			std::array<T, u32Dimensions> coords;
@@ -837,22 +864,22 @@ namespace RE {
 
 	class Camera {
 		public:
-			Vector3f position;
-			Vector2f scale;
+			Transform transform;
 
 			Vector2f view;
+			bool bIgnoreAspectRatio;
 
 			Camera();
-			Camera(const Vector3f &rPosition);
-			Camera(const Vector3f &rPosition, const Vector2f &rScale);
-			Camera(const Vector3f &rPosition, const Vector2f &rScale, const Vector2f &rView);
+			Camera(const Transform &rTransform);
+			Camera(const Vector2f &rView);
+			Camera(const Vector2f &rView, bool bIgnoreAspectRatio);
 			virtual ~Camera();
 			virtual void update();
 			void activate() const;
 			void deactivate() const;
 			void mark_deletable();
 			[[nodiscard]]
-			bool has_same_transform(const Camera &rCompareCamera) const;
+			bool equals(const Camera &rCompareCamera) const;
 
 			void operator =(const Camera &rCopyCamera);
 			[[nodiscard]]

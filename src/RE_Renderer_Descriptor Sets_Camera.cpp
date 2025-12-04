@@ -115,7 +115,7 @@ namespace RE {
 		vk_cameraProjectionOnscreen.offset.x = 0;
 		vk_cameraProjectionOnscreen.offset.y = 0;
 		vk_cameraProjectionOnscreen.extent = vk_renderImageSize;
-		if (pActiveCamera) {
+		/*if (pActiveCamera) {
 			for (uint32_t u32DimensionIndex = 0; u32DimensionIndex < pActiveCamera->position.get_dimensions(); u32DimensionIndex++)
 				pfCameraUniforms[u8CurrentFrameInFlightIndex * RE_VK_CAMERA_UNIFORM_BUFFER_SIZE + RE_VK_VIEW_MATRIX_OFFSET + 3 + 4 * u32DimensionIndex] = pActiveCamera->position[u32DimensionIndex];
 			constexpr float fNear = 100.0f,
@@ -127,13 +127,13 @@ namespace RE {
 				fBottom = pActiveCamera->position[1] - pActiveCamera->view[1] / 2.0f,
 				fWidth = fRight - fLeft,
 				fHeight = fTop - fBottom;
-			pfCameraUniforms[u8CurrentFrameInFlightIndex * RE_VK_CAMERA_UNIFORM_BUFFER_SIZE + RE_VK_PROJECTION_MATRIX_OFFSET + 0] = 2.0f / fWidth;
-			pfCameraUniforms[u8CurrentFrameInFlightIndex * RE_VK_CAMERA_UNIFORM_BUFFER_SIZE + RE_VK_PROJECTION_MATRIX_OFFSET + 5] = 2.0f / fHeight;
-			pfCameraUniforms[u8CurrentFrameInFlightIndex * RE_VK_CAMERA_UNIFORM_BUFFER_SIZE + RE_VK_PROJECTION_MATRIX_OFFSET + 10] = -2.0f / fDistance;
+			pfCameraUniforms[u8CurrentFrameInFlightIndex * RE_VK_CAMERA_UNIFORM_BUFFER_SIZE + RE_VK_PROJECTION_MATRIX_OFFSET + 0] = 1.0f / fWidth;
+			pfCameraUniforms[u8CurrentFrameInFlightIndex * RE_VK_CAMERA_UNIFORM_BUFFER_SIZE + RE_VK_PROJECTION_MATRIX_OFFSET + 5] = 1.0f / fHeight;
+			pfCameraUniforms[u8CurrentFrameInFlightIndex * RE_VK_CAMERA_UNIFORM_BUFFER_SIZE + RE_VK_PROJECTION_MATRIX_OFFSET + 10] = -1.0f / fDistance;
 			pfCameraUniforms[u8CurrentFrameInFlightIndex * RE_VK_CAMERA_UNIFORM_BUFFER_SIZE + RE_VK_PROJECTION_MATRIX_OFFSET + 3] = -(fRight + fLeft) / fWidth;
 			pfCameraUniforms[u8CurrentFrameInFlightIndex * RE_VK_CAMERA_UNIFORM_BUFFER_SIZE + RE_VK_PROJECTION_MATRIX_OFFSET + 7] = -(fTop + fBottom) / fHeight;
 			pfCameraUniforms[u8CurrentFrameInFlightIndex * RE_VK_CAMERA_UNIFORM_BUFFER_SIZE + RE_VK_PROJECTION_MATRIX_OFFSET + 11] = -(fFar + fNear) / fDistance;
-		}
+		}*/
 	}
 
 }

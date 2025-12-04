@@ -6,6 +6,7 @@ namespace RE {
 #define CLAMP_CHANNEL_VALUE(CHANNEL_FLOAT) std::clamp(CHANNEL_FLOAT, 0.0f, MAX_CHANNEL_VALUE)
 	
 	Color::Color() : a4fChannels{MAX_CHANNEL_VALUE, MAX_CHANNEL_VALUE, MAX_CHANNEL_VALUE, MAX_CHANNEL_VALUE} {}
+	Color::Color(float fRed, float fGreen, float fBlue, float fAlpha) : a4fChannels{CLAMP_CHANNEL_VALUE(fRed), CLAMP_CHANNEL_VALUE(fGreen), CLAMP_CHANNEL_VALUE(fBlue), CLAMP_CHANNEL_VALUE(fAlpha)} {}
 	Color::Color(const Color &rCopyColor) : a4fChannels{rCopyColor.a4fChannels[0], rCopyColor.a4fChannels[1], rCopyColor.a4fChannels[2], rCopyColor.a4fChannels[3]} {}
 	Color::~Color() {}
 

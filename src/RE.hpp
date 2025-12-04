@@ -688,6 +688,7 @@ namespace RE {
 
 		public:
 			Color();
+			Color(float fRed, float fGreen, float fBlue, float fAlpha);
 			Color(const Color &rCopyColor);
 			~Color();
 			float get_channel(uint8_t u8ChannelIndex) const;
@@ -934,12 +935,12 @@ namespace RE {
 			TextureFilter eScalingFilter;
 
 			ScreenPercentageSettings();
-			ScreenPercentageSettings(ScreenPercentageMode eMode);
 			ScreenPercentageSettings(float fScale);
 			ScreenPercentageSettings(float fScale, TextureFilter eScalingFilter);
 			ScreenPercentageSettings(const Vector2u &rConstSize);
 			ScreenPercentageSettings(const Vector2u &rConstSize, TextureFilter eScalingFilter);
 			ScreenPercentageSettings(ScreenPercentageMode eMode, const std::variant<float, Vector2u> &rSettings);
+			ScreenPercentageSettings(ScreenPercentageMode eMode, const std::variant<float, Vector2u> &rSettings, TextureFilter eScalingFilter);
 			ScreenPercentageSettings(const ScreenPercentageSettings &rCopy);
 			~ScreenPercentageSettings();
 			void copy_from(const ScreenPercentageSettings &rCopy);
@@ -1098,6 +1099,7 @@ namespace RE {
 	SpriteLayout create_sprite_layout(const SpriteLayoutSettings &rSettings);
 	bool change_sprite_layout_settings(SpriteLayout hSpriteLayout, const SpriteLayoutSettings &rNewSettings);
 	void destroy_sprite_layout(SpriteLayout hSpriteLayout);
+	[[nodiscard]]
 	float get_maximum_allowed_anisotropy();
 
 	// Sprite
@@ -1124,6 +1126,10 @@ namespace RE {
 	void get_supported_msaa_modes(uint8_t u8ListLength, MsaaMode *paeSupportedMsaaModes, uint8_t *pu8SupportedMsaaModeCount);
 	[[nodiscard]]
 	MsaaMode get_highest_supported_msaa_mode();
+	void set_background_color(const Color &rColor);
+	void set_background_color(float fRed, float fGreen, float fBlue, float fAlpha);
+	[[nodiscard]]
+	Color get_background_color();
 	[[nodiscard]]
 	bool is_sample_shading_enabled();
 	void set_sample_shading_rate(float fNewSampleShadingRate);

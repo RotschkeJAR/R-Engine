@@ -178,6 +178,7 @@ namespace RE {
 #endif
 	}
 
+	[[nodiscard]]
 	float get_maximum_allowed_anisotropy() {
 		return vk_physicalDeviceProperties.limits.maxSamplerAnisotropy;
 	}

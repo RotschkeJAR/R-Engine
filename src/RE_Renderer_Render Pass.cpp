@@ -24,7 +24,7 @@ namespace RE {
 			.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
 			.clearValue = {
 				.color = {
-					.float32 = {0.0f, 0.0f, 0.0f, 0.0f}
+					.float32 = {backgroundClearColor[0], backgroundClearColor[1], backgroundClearColor[2], backgroundClearColor[3]}
 				}
 			}
 		};

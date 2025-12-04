@@ -124,8 +124,7 @@ namespace RE {
 		if (bSwapchainDirty) {
 			bSwapchainDirty = false;
 			PRINT_DEBUG("Recreating Vulkan swapchain");
-			if (!recreate_swapchain())
-				return false;
+			return recreate_swapchain();
 		}
 		return true;
 	}

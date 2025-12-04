@@ -9,6 +9,8 @@
 
 namespace RE {
 
+	extern Color backgroundClearColor;
+
 	// Presentation
 #define RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE 2
 #define RE_VK_SWAPCHAIN_SEMAPHORE_COUNT (u32SwapchainImageCount * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE)
@@ -17,7 +19,7 @@ namespace RE {
 	extern uint32_t u32CurrentSwapchainSemaphoreIndex, u32SwapchainImageIndex;
 	bool setup_presentation();
 	void destroy_presentation();
-	bool acquire_next_swapchain_image();
+	bool acquire_next_swapchain_image(bool &rbSkipRendering);
 	bool present_swapchain_image();
 
 	// Render image

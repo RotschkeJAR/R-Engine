@@ -42,16 +42,30 @@ namespace RE {
 		u32CurrentSwapchainSemaphoreIndex = 0;
 	}
 
-	bool acquire_next_swapchain_image() {
+	bool acquire_next_swapchain_image(bool &rbSkipRendering) {
 		PRINT_DEBUG("Acquiring next Vulkan swapchain image");
-		const VkAcquireNextImageInfoKHR vk_acquireInfo = {
-			.sType = VK_STRUCTURE_TYPE_ACQUIRE_NEXT_IMAGE_INFO_KHR,
-			.swapchain = vk_hSwapchain,
-			.timeout = std::numeric_limits<uint64_t>::max(),
-			.semaphore = swapchainSemaphores[u32CurrentSwapchainSemaphoreIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE],
-			.deviceMask = 1
-		};
-		return vkAcquireNextImage2KHR(vk_hDevice, &vk_acquireInfo, &u32SwapchainImageIndex) == VK_SUCCESS;
+		for (uint8_t u8Retries = 0; u8Retries < 2; u8Retries++) {
+			const VkAcquireNextImageInfoKHR vk_acquireInfo = {
+				.sType = VK_STRUCTURE_TYPE_ACQUIRE_NEXT_IMAGE_INFO_KHR,
+				.swapchain = vk_hSwapchain,
+				.timeout = std::numeric_limits<uint64_t>::max(),
+				.semaphore = swapchainSemaphores[u32CurrentSwapchainSemaphoreIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE],
+				.deviceMask = 1
+			};
+			switch (vkAcquireNextImage2KHR(vk_hDevice, &vk_acquireInfo, &u32SwapchainImageIndex)) {
+				case VK_SUCCESS:
+					return true;
+				case VK_SUBOPTIMAL_KHR:
+				case VK_ERROR_OUT_OF_DATE_KHR:
+					mark_swapchain_dirty();
+					refresh_swapchain();
+					break;
+				default:
+					return false;
+			}
+		}
+		rbSkipRendering = true;
+		return true;
 	}
 
 	bool present_swapchain_image() {
@@ -64,7 +78,16 @@ namespace RE {
 			.pSwapchains = &vk_hSwapchain,
 			.pImageIndices = &u32SwapchainImageIndex
 		};
-		return vkQueuePresentKHR(vk_hPresentQueue, &vk_presentInfo) == VK_SUCCESS;
+		switch (vkQueuePresentKHR(vk_hPresentQueue, &vk_presentInfo)) {
+			case VK_SUCCESS:
+				return true;
+			case VK_SUBOPTIMAL_KHR:
+			case VK_ERROR_OUT_OF_DATE_KHR:
+				mark_swapchain_dirty();
+				return true;
+			default:
+				return false;
+		}
 	}
 
 }

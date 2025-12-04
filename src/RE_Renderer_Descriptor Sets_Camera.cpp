@@ -118,8 +118,8 @@ namespace RE {
 		if (pActiveCamera) {
 			for (uint32_t u32DimensionIndex = 0; u32DimensionIndex < pActiveCamera->position.get_dimensions(); u32DimensionIndex++)
 				pfCameraUniforms[u8CurrentFrameInFlightIndex * RE_VK_CAMERA_UNIFORM_BUFFER_SIZE + RE_VK_VIEW_MATRIX_OFFSET + 3 + 4 * u32DimensionIndex] = pActiveCamera->position[u32DimensionIndex];
-			constexpr float fNear = 0.1f,
-				fFar = 100.0f,
+			constexpr float fNear = 100.0f,
+				fFar = -100.0f,
 				fDistance = fFar - fNear;
 			const float fLeft = pActiveCamera->position[0] - pActiveCamera->view[0] / 2.0f,
 				fRight = pActiveCamera->position[0] + pActiveCamera->view[0] / 2.0f,

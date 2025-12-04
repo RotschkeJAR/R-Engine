@@ -35,10 +35,8 @@ namespace RE {
 						while (!should_window_close() && bRunning && are_scenes_present() && !bErrorOccured) {
 							window_proc();
 							game_logic_update();
-							if (should_render() && fDeltaseconds > 0.0f) {
-								refresh_swapchain();
+							if (should_render() && fDeltaseconds > 0.0f)
 								render();
-							}
 
 							PRINT_DEBUG("Calculating deltatime for next frame");
 							lastFrameTime = currentFrameTime;

@@ -3,7 +3,7 @@
 
 namespace RE {
 
-	ScreenPercentageSettings screenPercentageSettings(RE_SCREEN_PERCENTAGE_MODE_NORMAL);
+	ScreenPercentageSettings screenPercentageSettings;
 	VkImage vk_hRenderImages;
 	static VkDeviceMemory vk_hRenderImageMemories;
 	VkImageView vk_ahRenderImageViews[RE_VK_FRAMES_IN_FLIGHT];

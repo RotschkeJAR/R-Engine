@@ -4,27 +4,17 @@
 namespace RE {
 	
 	ScreenPercentageSettings::ScreenPercentageSettings() : eMode(RE_SCREEN_PERCENTAGE_MODE_NORMAL) {}
-	ScreenPercentageSettings::ScreenPercentageSettings(const ScreenPercentageMode eMode) : eMode(eMode), eScalingFilter(RE_TEXTURE_FILTER_LINEAR) {
-		switch (eMode) {
-			case RE_SCREEN_PERCENTAGE_MODE_NORMAL:
-				break;
-			case RE_SCREEN_PERCENTAGE_MODE_SCALED:
-				fScale = 1.0f;
-				break;
-			case RE_SCREEN_PERCENTAGE_MODE_CONST_SIZE:
-				constSize = windowSize;
-				break;
-			default:
-				RE_WARNING("Unknown screen percentage mode ", std::hex, eMode, ". Falling back to normal");
-				this->eMode = RE_SCREEN_PERCENTAGE_MODE_NORMAL;
-				break;
+	ScreenPercentageSettings::ScreenPercentageSettings(const float fScale) : ScreenPercentageSettings(fScale, RE_TEXTURE_FILTER_LINEAR) {}
+	ScreenPercentageSettings::ScreenPercentageSettings(const float fScale, const TextureFilter eScalingFilter) : eMode(RE_SCREEN_PERCENTAGE_MODE_SCALED), fScale(fScale), eScalingFilter(eScalingFilter) {
+		if (fScale == 1.0f) {
+			RE_NOTE("Screen percentage equals 100%. The mode will be set to normal");
+			eMode = RE_SCREEN_PERCENTAGE_MODE_NORMAL;
 		}
 	}
-	ScreenPercentageSettings::ScreenPercentageSettings(const float fScale) : ScreenPercentageSettings(fScale, RE_TEXTURE_FILTER_LINEAR) {}
-	ScreenPercentageSettings::ScreenPercentageSettings(const float fScale, const TextureFilter eScalingFilter) : eMode(RE_SCREEN_PERCENTAGE_MODE_SCALED), fScale(fScale), eScalingFilter(eScalingFilter) {}
 	ScreenPercentageSettings::ScreenPercentageSettings(const Vector2u &rConstSize) : ScreenPercentageSettings(rConstSize, RE_TEXTURE_FILTER_LINEAR) {}
 	ScreenPercentageSettings::ScreenPercentageSettings(const Vector2u &rConstSize, const TextureFilter eScalingFilter) : eMode(RE_SCREEN_PERCENTAGE_MODE_CONST_SIZE), constSize(rConstSize), eScalingFilter(eScalingFilter) {}
-	ScreenPercentageSettings::ScreenPercentageSettings(ScreenPercentageMode eMode, const std::variant<float, Vector2u> &rSettings) : eScalingFilter(RE_TEXTURE_FILTER_LINEAR) {
+	ScreenPercentageSettings::ScreenPercentageSettings(ScreenPercentageMode eMode, const std::variant<float, Vector2u> &rSettings) : ScreenPercentageSettings(eMode, rSettings, RE_TEXTURE_FILTER_LINEAR) {}
+	ScreenPercentageSettings::ScreenPercentageSettings(ScreenPercentageMode eMode, const std::variant<float, Vector2u> &rSettings, const TextureFilter eScalingFilter) : eScalingFilter(eScalingFilter) {
 		switch (eMode) {
 			case RE_SCREEN_PERCENTAGE_MODE_NORMAL:
 				break;

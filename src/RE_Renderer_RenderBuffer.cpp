@@ -96,9 +96,9 @@ namespace RE {
 		for (ListBatch_GameObject *const pBatch : gameObjectBatchList) {
 			for (uint16_t u16Index = 0; u16Index < pBatch->size(); u16Index++) {
 				const GameObject *const pGameObject = pBatch->at(u16Index);
-				paRenderBufferInstanceData[gameObjectToRenderCount].a16fModelMatrix[3] = pGameObject->transform.position[0];
-				paRenderBufferInstanceData[gameObjectToRenderCount].a16fModelMatrix[7] = pGameObject->transform.position[1];
-				paRenderBufferInstanceData[gameObjectToRenderCount].a16fModelMatrix[11] = pGameObject->transform.position[2];
+				paRenderBufferInstanceData[gameObjectToRenderCount].a16fModelMatrix[12] = pGameObject->transform.position[0];
+				paRenderBufferInstanceData[gameObjectToRenderCount].a16fModelMatrix[13] = pGameObject->transform.position[1];
+				paRenderBufferInstanceData[gameObjectToRenderCount].a16fModelMatrix[14] = pGameObject->transform.position[2];
 				paRenderBufferInstanceData[gameObjectToRenderCount].a16fModelMatrix[0] = pGameObject->transform.scale[0];
 				paRenderBufferInstanceData[gameObjectToRenderCount].a16fModelMatrix[5] = pGameObject->transform.scale[1];
 				paRenderBufferInstanceData[gameObjectToRenderCount].a16fModelMatrix[10] = pGameObject->transform.scale[2];

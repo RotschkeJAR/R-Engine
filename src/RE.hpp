@@ -35,13 +35,14 @@
 #include <functional>
 #include <thread>
 #include <concepts>
+#include <numbers>
 
 namespace RE {
 
 #define STRIP_QUOTE_MACRO(...) __VA_ARGS__
 
 	template <class T>
-	concept Arithmetic = std::is_arithmetic_v<T>;
+	concept Is_Arithmetic = std::is_arithmetic_v<T>;
 
 	enum TerminalColor {
 		RE_TERMINAL_COLOR_BLACK = 0x0,
@@ -393,7 +394,7 @@ namespace RE {
 
 	template <class T>
 	[[nodiscard]]
-	constexpr T nth_root(const T n, const T value) requires Arithmetic<T> {
+	constexpr T nth_root(const T n, const T value) requires Is_Arithmetic<T> {
 		static_assert(n > static_cast<T>(0.0), "The 0th or negative root is forbidden for causing undefined behaviour");
 		if (n <= static_cast<T>(0.0)) {
 			FATAL_ERROR("The value of n shouldn't be zero or negative in an nth root");
@@ -424,13 +425,13 @@ namespace RE {
 
 	template <class T, class... U>
 	[[nodiscard]]
-	constexpr bool are_bits_true(const T value, const U... bits) requires Arithmetic<T> {
+	constexpr bool are_bits_true(const T value, const U... bits) requires Is_Arithmetic<T> {
 		return (value & static_cast<T>(gen_bitmask<U...>(bits...))) != static_cast<T>(0.0);
 	}
 
 	template <class T>
 	[[nodiscard]]
-	constexpr bool are_bits_true_in_range(const T value, const T begin, const T end) requires Arithmetic<T> {
+	constexpr bool are_bits_true_in_range(const T value, const T begin, const T end) requires Is_Arithmetic<T> {
 		if (begin > end) {
 			FATAL_ERROR("Start (", begin, ") of the range is larger than end (", end, ")");
 			return false;
@@ -442,33 +443,76 @@ namespace RE {
 	}
 
 	template <class T, class... U>
-	constexpr T set_bits(T& value, const bool bNewState, const U... bits) requires Arithmetic<T> {
+	constexpr T set_bits(T& rValue, const bool bNewState, const U... bits) requires Is_Arithmetic<T> {
 		const T bitmask = gen_bitmask<U...>(bits...);
 		if (bNewState)
-			value |= bitmask;
+			rValue |= bitmask;
 		else
-			value &= ~bitmask;
-		return value;
+			rValue &= ~bitmask;
+		return rValue;
 	}
 
 	template <class T>
-	constexpr T set_bits_in_range(T& value, const bool bNewState, const T begin, const T end) requires Arithmetic<T> {
+	constexpr T set_bits_in_range(T &rValue, const bool bNewState, const T begin, const T end) requires Is_Arithmetic<T> {
 		if (begin > end) {
 			FATAL_ERROR("Start (", begin, ") of the range is larger than end (", end, ")");
-			return value;
+			return rValue;
 		}
 		for (T i = begin; i < end; i++)
-			set_bits<T>(value, bNewState, i);
-		return value;
+			set_bits<T>(rValue, bNewState, i);
+		return rValue;
 	}
 	
 	template <class T>
 	[[nodiscard]]
-	constexpr T sign(const T& rValue) requires Arithmetic<T> {
+	constexpr T sign(const T value) requires Is_Arithmetic<T> {
 		if constexpr (std::is_unsigned_v<T>)
-			return static_cast<T>(0.0) > rValue;
+			return static_cast<T>(0.0) > value;
 		else
-			return (static_cast<T>(0.0) < rValue) - (rValue < static_cast<T>(0.0));
+			return (static_cast<T>(0.0) < value) - (value < static_cast<T>(0.0));
+	}
+
+	template <class T>
+	[[nodiscard]]
+	constexpr bool multiple_of(const T value, const T multiple) requires Is_Arithmetic<T> {
+		if constexpr (std::is_same_v<T, float>)
+			return std::fmodf(value, multiple) == 0.0f;
+		else if constexpr (std::is_same_v<T, double>)
+			return std::fmod(value, multiple) == 0.0;
+		else if constexpr (std::is_same_v<T, long double>)
+			return std::fmodl(value, multiple) == 0.0;
+		else
+			return (value % multiple) == 0;
+	}
+
+	template <class T>
+	[[nodiscard]]
+	constexpr T next_multiple(const T value, const T multiple) requires Is_Arithmetic<T> {
+		if (value == static_cast<T>(0.0))
+			return multiple;
+		if constexpr (std::is_same_v<T, float>)
+			return multiple - std::fmodf(value, multiple) + value;
+		else if constexpr (std::is_same_v<T, double>)
+			return multiple - std::fmod(value, multiple) + value;
+		else if constexpr (std::is_same_v<T, long double>)
+			return multiple - std::fmodl(value, multiple) + value;
+		else
+			return multiple - (value % multiple) + value;
+	}
+
+	template <class T>
+	[[nodiscard]]
+	constexpr T previous_multiple(const T value, const T multiple) requires Is_Arithmetic<T> {
+		if (value == static_cast<T>(0.0))
+			return -multiple;
+		if constexpr (std::is_same_v<T, float>)
+			return value - std::fmodf(value, multiple);
+		else if constexpr (std::is_same_v<T, double>)
+			return value - std::fmod(value, multiple);
+		else if constexpr (std::is_same_v<T, long double>)
+			return value - std::fmodl(value, multiple);
+		else
+			return value - (value % multiple);
 	}
 
 	template <class T>
@@ -503,7 +547,7 @@ namespace RE {
 
 
 
-	template <Arithmetic T, uint32_t u32Dimensions>
+	template <Is_Arithmetic T, uint32_t u32Dimensions>
 	class Vector final {
 		static_assert(u32Dimensions != 0, "A vector cannot have zero dimensions");
 
@@ -867,15 +911,17 @@ namespace RE {
 			Transform transform;
 
 			Vector2f view;
+			float fViewDistance;
 			bool bIgnoreAspectRatio;
 
 			Camera();
 			Camera(const Transform &rTransform);
 			Camera(const Vector2f &rView);
-			Camera(const Vector2f &rView, bool bIgnoreAspectRatio);
+			Camera(const Vector2f &rView, float fViewDistance);
+			Camera(const Vector2f &rView, float fViewDistance, bool bIgnoreAspectRatio);
 			virtual ~Camera();
 			virtual void update();
-			void activate() const;
+			void activate();
 			void deactivate() const;
 			void mark_deletable();
 			[[nodiscard]]

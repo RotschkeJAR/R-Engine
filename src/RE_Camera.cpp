@@ -5,9 +5,10 @@
 namespace RE {
 	
 	Camera::Camera() : Camera(Transform()) {}
-	Camera::Camera(const Transform &rTransform) : transform(rTransform), view(10.0f, 10.0f), bIgnoreAspectRatio(false) {}
-	Camera::Camera(const Vector2f &rView) : Camera(rView, false) {}
-	Camera::Camera(const Vector2f &rView, const bool bIgnoreAspectRatio) : view(rView), bIgnoreAspectRatio(bIgnoreAspectRatio) {
+	Camera::Camera(const Transform &rTransform) : transform(rTransform), view(100.0f, 100.0f), fViewDistance(100.0f), bIgnoreAspectRatio(false) {}
+	Camera::Camera(const Vector2f &rView) : Camera(rView, 100.0f) {}
+	Camera::Camera(const Vector2f &rView, const float fViewDistance) : Camera(rView, fViewDistance, false) {}
+	Camera::Camera(const Vector2f &rView, const float fViewDistance, const bool bIgnoreAspectRatio) : view(rView), fViewDistance(fViewDistance), bIgnoreAspectRatio(bIgnoreAspectRatio) {
 		newCameras.push_back(this);
 	}
 	Camera::~Camera() {
@@ -18,13 +19,14 @@ namespace RE {
 
 	void Camera::update() {}
 
-	void Camera::activate() const {
+	void Camera::activate() {
+		PRINT_DEBUG_CLASS("Activating this camera");
 		attach_camera(this);
 	}
 
 	void Camera::deactivate() const {
-		if (pActiveCamera == this)
-			attach_camera(nullptr);
+		PRINT_DEBUG_CLASS("Deactivating this camera");
+		attach_camera(nullptr);
 	}
 
 	void Camera::mark_deletable() {
@@ -36,12 +38,14 @@ namespace RE {
 	bool Camera::equals(const Camera &rCompareCamera) const {
 		return transform == rCompareCamera.transform
 			&& view == rCompareCamera.view
+			&& fViewDistance == rCompareCamera.fViewDistance
 			&& bIgnoreAspectRatio == rCompareCamera.bIgnoreAspectRatio;
 	}
 
 	void Camera::operator =(const Camera &rCopyCamera) {
 		transform = rCopyCamera.transform;
 		view = rCopyCamera.view;
+		fViewDistance = rCopyCamera.fViewDistance;
 		bIgnoreAspectRatio = rCopyCamera.bIgnoreAspectRatio;
 	}
 

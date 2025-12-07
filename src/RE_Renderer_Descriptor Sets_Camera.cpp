@@ -11,20 +11,26 @@ namespace RE {
 #define RE_VK_CAMERA_UNIFORM_BUFFER_SIZE (RE_VK_VIEW_MATRIX_SIZE + RE_VK_PROJECTION_MATRIX_SIZE)
 #define RE_VK_CAMERA_UNIFORM_BUFFER_SIZE_BYTES (RE_VK_CAMERA_UNIFORM_BUFFER_SIZE * sizeof(float))
 
-	const Camera *pActiveCamera = nullptr;
+	static Camera *pActiveCamera = nullptr;
 	static VkBuffer vk_hCameraUniformBuffer;
 	static VkDeviceMemory vk_hCameraUniformBufferMemory;
-	static float *pfCameraUniforms;
+	static std::array<float*, RE_VK_FRAMES_IN_FLIGHT> cameraUniforms;
 	VkDescriptorSetLayout vk_hCameraDescLayout;
 	std::array<VkDescriptorSet, RE_VK_FRAMES_IN_FLIGHT> cameraDescSets;
 	VkRect2D vk_cameraProjectionOnscreen;
 	
 	bool create_camera_descriptor_sets() {
 		PRINT_DEBUG("Creating Vulkan uniform buffer for rendering with view and projection matrices");
-		constexpr VkDeviceSize vk_cameraUniformBufferBytes = RE_VK_CAMERA_UNIFORM_BUFFER_SIZE_BYTES * RE_VK_FRAMES_IN_FLIGHT;
+		VkDeviceSize vk_alignmentOffsetBytes = next_multiple<VkDeviceSize>(RE_VK_CAMERA_UNIFORM_BUFFER_SIZE_BYTES, vk_physicalDeviceProperties.limits.minUniformBufferOffsetAlignment);
+		if (!multiple_of(vk_alignmentOffsetBytes, sizeof(float)))
+			vk_alignmentOffsetBytes = next_multiple<VkDeviceSize>(vk_alignmentOffsetBytes, sizeof(float));
+		const VkDeviceSize vk_cameraUniformBufferBytes = (vk_alignmentOffsetBytes * (RE_VK_FRAMES_IN_FLIGHT - 1)) + RE_VK_CAMERA_UNIFORM_BUFFER_SIZE_BYTES;
 		if (create_vulkan_buffer(0, vk_cameraUniformBufferBytes, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 1, nullptr, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &vk_hCameraUniformBuffer, &vk_hCameraUniformBufferMemory)) {
 			PRINT_DEBUG("Mapping camera uniform buffer's memory ", vk_hCameraUniformBufferMemory);
-			if (vkMapMemory(vk_hDevice, vk_hCameraUniformBufferMemory, 0, vk_cameraUniformBufferBytes, 0, reinterpret_cast<void**>(&pfCameraUniforms)) == VK_SUCCESS) {
+			float *pafCameraUniformBuffer;
+			if (vkMapMemory(vk_hDevice, vk_hCameraUniformBufferMemory, 0, vk_cameraUniformBufferBytes, 0, reinterpret_cast<void**>(&pafCameraUniformBuffer)) == VK_SUCCESS) {
+				cameraUniforms[0] = pafCameraUniformBuffer;
+				cameraUniforms[1] = pafCameraUniformBuffer + vk_alignmentOffsetBytes / sizeof(float);
 				std::jthread cameraUniformBufferInitThread([&]() {
 					for (uint8_t u8FrameInFlightIndex = 0; u8FrameInFlightIndex < RE_VK_FRAMES_IN_FLIGHT; u8FrameInFlightIndex++) {
 						for (uint8_t u8MatrixElementIndex = 0; u8MatrixElementIndex < RE_VK_VIEW_MATRIX_SIZE; u8MatrixElementIndex++)
@@ -33,12 +39,12 @@ namespace RE {
 								case 5:
 								case 10:
 								case 15:
-									pfCameraUniforms[u8FrameInFlightIndex * RE_VK_CAMERA_UNIFORM_BUFFER_SIZE + RE_VK_VIEW_MATRIX_OFFSET + u8MatrixElementIndex] = 1.0f;
-									pfCameraUniforms[u8FrameInFlightIndex * RE_VK_CAMERA_UNIFORM_BUFFER_SIZE + RE_VK_PROJECTION_MATRIX_OFFSET + u8MatrixElementIndex] = 1.0f;
+									cameraUniforms[u8FrameInFlightIndex][RE_VK_VIEW_MATRIX_OFFSET + u8MatrixElementIndex] = 1.0f;
+									cameraUniforms[u8FrameInFlightIndex][RE_VK_PROJECTION_MATRIX_OFFSET + u8MatrixElementIndex] = 1.0f;
 									break;
 								default:
-									pfCameraUniforms[u8FrameInFlightIndex * RE_VK_CAMERA_UNIFORM_BUFFER_SIZE + RE_VK_VIEW_MATRIX_OFFSET + u8MatrixElementIndex] = 0.0f;
-									pfCameraUniforms[u8FrameInFlightIndex * RE_VK_CAMERA_UNIFORM_BUFFER_SIZE + RE_VK_PROJECTION_MATRIX_OFFSET + u8MatrixElementIndex] = 0.0f;
+									cameraUniforms[u8FrameInFlightIndex][RE_VK_VIEW_MATRIX_OFFSET + u8MatrixElementIndex] = 0.0f;
+									cameraUniforms[u8FrameInFlightIndex][RE_VK_PROJECTION_MATRIX_OFFSET + u8MatrixElementIndex] = 0.0f;
 									break;
 							}
 					}
@@ -69,7 +75,8 @@ namespace RE {
 						VkWriteDescriptorSet vk_aWriteCamDescriptorSets[RE_VK_FRAMES_IN_FLIGHT];
 						for (uint8_t u8DescriptorSetIndex = 0; u8DescriptorSetIndex < RE_VK_FRAMES_IN_FLIGHT; u8DescriptorSetIndex++) {
 							vk_aDescBufferInfos[u8DescriptorSetIndex].buffer = vk_hCameraUniformBuffer;
-							vk_aDescBufferInfos[u8DescriptorSetIndex].offset = RE_VK_CAMERA_UNIFORM_BUFFER_SIZE_BYTES * u8DescriptorSetIndex;
+							vk_aDescBufferInfos[u8DescriptorSetIndex].offset = vk_alignmentOffsetBytes * u8DescriptorSetIndex;
+							PRINT_LN(vk_aDescBufferInfos[u8DescriptorSetIndex].offset);
 							vk_aDescBufferInfos[u8DescriptorSetIndex].range = RE_VK_CAMERA_UNIFORM_BUFFER_SIZE_BYTES;
 							vk_aWriteCamDescriptorSets[u8DescriptorSetIndex].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 							vk_aWriteCamDescriptorSets[u8DescriptorSetIndex].pNext = nullptr;
@@ -112,28 +119,46 @@ namespace RE {
 	}
 
 	void calculate_camera_matrices() {
-		vk_cameraProjectionOnscreen.offset.x = 0;
-		vk_cameraProjectionOnscreen.offset.y = 0;
-		vk_cameraProjectionOnscreen.extent = vk_renderImageSize;
-		/*if (pActiveCamera) {
-			for (uint32_t u32DimensionIndex = 0; u32DimensionIndex < pActiveCamera->position.get_dimensions(); u32DimensionIndex++)
-				pfCameraUniforms[u8CurrentFrameInFlightIndex * RE_VK_CAMERA_UNIFORM_BUFFER_SIZE + RE_VK_VIEW_MATRIX_OFFSET + 3 + 4 * u32DimensionIndex] = pActiveCamera->position[u32DimensionIndex];
-			constexpr float fNear = 100.0f,
-				fFar = -100.0f,
-				fDistance = fFar - fNear;
-			const float fLeft = pActiveCamera->position[0] - pActiveCamera->view[0] / 2.0f,
-				fRight = pActiveCamera->position[0] + pActiveCamera->view[0] / 2.0f,
-				fTop = pActiveCamera->position[1] + pActiveCamera->view[1] / 2.0f,
-				fBottom = pActiveCamera->position[1] - pActiveCamera->view[1] / 2.0f,
-				fWidth = fRight - fLeft,
-				fHeight = fTop - fBottom;
-			pfCameraUniforms[u8CurrentFrameInFlightIndex * RE_VK_CAMERA_UNIFORM_BUFFER_SIZE + RE_VK_PROJECTION_MATRIX_OFFSET + 0] = 1.0f / fWidth;
-			pfCameraUniforms[u8CurrentFrameInFlightIndex * RE_VK_CAMERA_UNIFORM_BUFFER_SIZE + RE_VK_PROJECTION_MATRIX_OFFSET + 5] = 1.0f / fHeight;
-			pfCameraUniforms[u8CurrentFrameInFlightIndex * RE_VK_CAMERA_UNIFORM_BUFFER_SIZE + RE_VK_PROJECTION_MATRIX_OFFSET + 10] = -1.0f / fDistance;
-			pfCameraUniforms[u8CurrentFrameInFlightIndex * RE_VK_CAMERA_UNIFORM_BUFFER_SIZE + RE_VK_PROJECTION_MATRIX_OFFSET + 3] = -(fRight + fLeft) / fWidth;
-			pfCameraUniforms[u8CurrentFrameInFlightIndex * RE_VK_CAMERA_UNIFORM_BUFFER_SIZE + RE_VK_PROJECTION_MATRIX_OFFSET + 7] = -(fTop + fBottom) / fHeight;
-			pfCameraUniforms[u8CurrentFrameInFlightIndex * RE_VK_CAMERA_UNIFORM_BUFFER_SIZE + RE_VK_PROJECTION_MATRIX_OFFSET + 11] = -(fFar + fNear) / fDistance;
-		}*/
+		if (pActiveCamera) {
+			pActiveCamera->update();
+			cameraUniforms[u8CurrentFrameInFlightIndex][RE_VK_VIEW_MATRIX_OFFSET + 12] = pActiveCamera->transform.position[0];
+			cameraUniforms[u8CurrentFrameInFlightIndex][RE_VK_VIEW_MATRIX_OFFSET + 13] = pActiveCamera->transform.position[1];
+			cameraUniforms[u8CurrentFrameInFlightIndex][RE_VK_VIEW_MATRIX_OFFSET + 14] = pActiveCamera->transform.position[2];
+			cameraUniforms[u8CurrentFrameInFlightIndex][RE_VK_PROJECTION_MATRIX_OFFSET + 0] = 1.0f / pActiveCamera->view[0];
+			cameraUniforms[u8CurrentFrameInFlightIndex][RE_VK_PROJECTION_MATRIX_OFFSET + 5] = -1.0f / pActiveCamera->view[1];
+			cameraUniforms[u8CurrentFrameInFlightIndex][RE_VK_PROJECTION_MATRIX_OFFSET + 10] = 1.0f / pActiveCamera->fViewDistance;
+			if (!pActiveCamera->bIgnoreAspectRatio) {
+				vk_cameraProjectionOnscreen.offset.x = 0;
+				vk_cameraProjectionOnscreen.offset.y = 0;
+				vk_cameraProjectionOnscreen.extent = vk_renderImageSize;
+			} else {
+				vk_cameraProjectionOnscreen.offset.x = 0;
+				vk_cameraProjectionOnscreen.offset.y = 0;
+				vk_cameraProjectionOnscreen.extent = vk_renderImageSize;
+			}
+		} else {
+			vk_cameraProjectionOnscreen.offset.x = 0;
+			vk_cameraProjectionOnscreen.offset.y = 0;
+			vk_cameraProjectionOnscreen.extent = vk_renderImageSize;
+		}
+	}
+
+	void attach_camera(Camera *pCam) {
+		if (pActiveCamera == pCam)
+			return;
+		else if (!pCam) {
+			PRINT_DEBUG("Dettaching camera and copying recent camera matrices");
+			pActiveCamera = nullptr;
+			const uint8_t u8IndexToCopyFrom = !u8CurrentFrameInFlightIndex ? (RE_VK_FRAMES_IN_FLIGHT - 1) : u8CurrentFrameInFlightIndex;
+			for (uint8_t u8CameraUniformBufferIndex = 0; u8CameraUniformBufferIndex < RE_VK_FRAMES_IN_FLIGHT; u8CameraUniformBufferIndex++) {
+				if (u8CameraUniformBufferIndex == u8IndexToCopyFrom)
+					continue;
+				std::memcpy(cameraUniforms[u8CameraUniformBufferIndex], cameraUniforms[u8IndexToCopyFrom], RE_VK_CAMERA_UNIFORM_BUFFER_SIZE_BYTES);
+			}
+		} else {
+			PRINT_DEBUG("Attaching new camera ", pCam);
+			pActiveCamera = pCam;
+		}
 	}
 
 }

@@ -10,7 +10,7 @@ layout(location = 0) out vec4 color;
 
 void main() {
 	if (O_textureId < 0x8000)
-		color = texture(U_textures[O_textureId - 1], O_textureCoords) * O_color;
+		color = texture(U_textures[O_textureId], O_textureCoords) * O_color;
 	else
 		color = O_color;
 }

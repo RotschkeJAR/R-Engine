@@ -8,13 +8,8 @@ namespace RE {
 
 	bool setup_presentation() {
 		PRINT_DEBUG("Creating ", RE_VK_SWAPCHAIN_SEMAPHORE_COUNT, " Vulkan swapchain semaphores");
-		const VkSemaphoreTypeCreateInfo vk_swapchainSemaphoreTypeCreateInfo = {
-			.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO,
-			.semaphoreType = VK_SEMAPHORE_TYPE_BINARY
-		};
 		const VkSemaphoreCreateInfo vk_swapchainSemaphoreCreateInfo = {
-			.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
-			.pNext = &vk_swapchainSemaphoreTypeCreateInfo
+			.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
 		};
 		swapchainSemaphores.reserve(RE_VK_SWAPCHAIN_SEMAPHORE_COUNT);
 		while (swapchainSemaphores.size() < RE_VK_SWAPCHAIN_SEMAPHORE_COUNT) {
@@ -42,30 +37,25 @@ namespace RE {
 		u32CurrentSwapchainSemaphoreIndex = 0;
 	}
 
-	bool acquire_next_swapchain_image(bool &rbSkipRendering) {
+	bool acquire_next_swapchain_image() {
 		PRINT_DEBUG("Acquiring next Vulkan swapchain image");
-		for (uint8_t u8Retries = 0; u8Retries < 2; u8Retries++) {
-			const VkAcquireNextImageInfoKHR vk_acquireInfo = {
-				.sType = VK_STRUCTURE_TYPE_ACQUIRE_NEXT_IMAGE_INFO_KHR,
-				.swapchain = vk_hSwapchain,
-				.timeout = std::numeric_limits<uint64_t>::max(),
-				.semaphore = swapchainSemaphores[u32CurrentSwapchainSemaphoreIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE],
-				.deviceMask = 1
-			};
-			switch (vkAcquireNextImage2KHR(vk_hDevice, &vk_acquireInfo, &u32SwapchainImageIndex)) {
-				case VK_SUCCESS:
-					return true;
-				case VK_SUBOPTIMAL_KHR:
-				case VK_ERROR_OUT_OF_DATE_KHR:
-					mark_swapchain_dirty();
-					refresh_swapchain();
-					break;
-				default:
-					return false;
-			}
+		const VkAcquireNextImageInfoKHR vk_acquireInfo = {
+			.sType = VK_STRUCTURE_TYPE_ACQUIRE_NEXT_IMAGE_INFO_KHR,
+			.swapchain = vk_hSwapchain,
+			.timeout = std::numeric_limits<uint64_t>::max(),
+			.semaphore = swapchainSemaphores[u32CurrentSwapchainSemaphoreIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE],
+			.deviceMask = 1
+		};
+		switch (vkAcquireNextImage2KHR(vk_hDevice, &vk_acquireInfo, &u32SwapchainImageIndex)) {
+			case VK_SUCCESS:
+				return true;
+			case VK_SUBOPTIMAL_KHR:
+			case VK_ERROR_OUT_OF_DATE_KHR:
+				mark_swapchain_dirty();
+				return true;
+			default:
+				return false;
 		}
-		rbSkipRendering = true;
-		return true;
 	}
 
 	bool present_swapchain_image() {

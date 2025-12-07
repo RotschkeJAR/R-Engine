@@ -69,10 +69,7 @@ namespace RE {
 
 	void render() {
 		PRINT_DEBUG("Invoking render-procedure");
-		bool bSkipRendering;
-		if (acquire_next_swapchain_image(bSkipRendering)) {
-			if (bSkipRendering)
-				return;
+		if (acquire_next_swapchain_image()) {
 			PRINT_DEBUG("Waiting for pending transfers and frame-in-flight at index ", u8CurrentFrameInFlightIndex, " being finished rendering");
 			wait_for_transfer(std::numeric_limits<uint64_t>::max());
 			vkWaitForFences(vk_hDevice, 1, &renderFences[u8CurrentFrameInFlightIndex], VK_TRUE, std::numeric_limits<uint64_t>::max());
@@ -173,10 +170,6 @@ namespace RE {
 	void swapchain_destroyed_renderer() {
 		PRINT_DEBUG("Destroying swapchain-related Vulkan objects in Renderer");
 		destroy_render_image_resources();
-	}
-
-	void attach_camera(const Camera *const pCamera) {
-		pActiveCamera = pCamera;
 	}
 
 	void set_background_color(const Color &rColor) {

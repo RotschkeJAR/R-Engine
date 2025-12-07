@@ -14,8 +14,6 @@ namespace RE {
 
 #define RE_VK_FRAMES_IN_FLIGHT 2
 
-	extern const Camera *pActiveCamera;
-
 	extern VkPipelineLayout vk_hWorldPipelineLayout;
 	extern float fSampleShadingRate;
 	extern uint8_t u8CurrentFrameInFlightIndex;
@@ -26,7 +24,7 @@ namespace RE {
 	bool swapchain_created_renderer();
 	void swapchain_destroyed_renderer();
 	bool wait_for_rendering_finished();
-	void attach_camera(const Camera *pCamera);
+	void attach_camera(Camera *pCamera);
 
 	// Render Images
 	void get_queues_for_render_images(std::vector<uint32_t> &rRenderTaskQueueIndices);

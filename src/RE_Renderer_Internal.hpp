@@ -19,7 +19,7 @@ namespace RE {
 	extern uint32_t u32CurrentSwapchainSemaphoreIndex, u32SwapchainImageIndex;
 	bool setup_presentation();
 	void destroy_presentation();
-	bool acquire_next_swapchain_image(bool &rbSkipRendering);
+	bool acquire_next_swapchain_image();
 	bool present_swapchain_image();
 
 	// Render image

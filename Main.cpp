@@ -114,7 +114,7 @@ class OC : public GameObject {
 class Background : public GameObject {
 	public:
 		Background() : GameObject(2, 1) {
-			transform.position[2] = 0.9f;
+			transform.position[2] = 0.5f;
 			transform.scale[0] = 0.1f;
 			transform.scale[1] = 0.1f;
 			spriteRenderer.color.set_green(0.0f);

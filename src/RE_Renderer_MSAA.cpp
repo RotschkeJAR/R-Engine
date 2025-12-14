@@ -1,5 +1,5 @@
 #include "RE_Renderer_Internal.hpp"
-#include "RE_Vulkan_Wrapper Functions.hpp"
+#include "RE_Vulkan_Wrappers.hpp"
 #include "RE_GPU.hpp"
 #include "RE_Main.hpp"
 
@@ -8,7 +8,7 @@ namespace RE {
 	VkSampleCountFlags vk_eAllowedMsaaSamples;
 	VkSampleCountFlagBits vk_eMsaaCount = VK_SAMPLE_COUNT_1_BIT;
 	VkImage vk_hSingleSampledWorldRenderImages;
-	static VkDeviceMemory vk_hSingleSampledWorldRenderImageMemories;
+	static VulkanMemory singleSampledWorldRenderImageMemory;
 	VkImageView vk_ahSingleSampledWorldRenderImageViews[RE_VK_FRAMES_IN_FLIGHT];
 
 	bool create_singlesampled_images(const std::vector<uint32_t> &rRenderQueuesFamilyIndices, const bool bResolvingRequired, const bool bBlittingRequired) {
@@ -19,7 +19,11 @@ namespace RE {
 				0,
 				VK_IMAGE_TYPE_2D,
 				vk_eSwapchainImageFormat,
-				VkExtent3D{vk_renderImageSize.width, vk_renderImageSize.height, 1},
+				VkExtent3D {
+					.width = vk_renderImageSize.width,
+					.height = vk_renderImageSize.height,
+					.depth = 1
+				},
 				1,
 				RE_VK_FRAMES_IN_FLIGHT,
 				VK_SAMPLE_COUNT_1_BIT,
@@ -28,20 +32,30 @@ namespace RE {
 				rRenderQueuesFamilyIndices.size(),
 				rRenderQueuesFamilyIndices.data(),
 				VK_IMAGE_LAYOUT_UNDEFINED,
+				RE_VK_GPU_RAM,
 				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 				&vk_hSingleSampledWorldRenderImages,
-				&vk_hSingleSampledWorldRenderImageMemories)) {
+				&singleSampledWorldRenderImageMemory)) {
 			uint8_t u8FrameInFlightIndex = 0;
 			while (u8FrameInFlightIndex < RE_VK_FRAMES_IN_FLIGHT) {
 				if (create_vulkan_image_view(
+						0,
 						vk_hSingleSampledWorldRenderImages,
 						VK_IMAGE_VIEW_TYPE_2D,
 						vk_eSwapchainImageFormat,
-						VK_IMAGE_ASPECT_COLOR_BIT,
-						0,
-						1,
-						u8FrameInFlightIndex,
-						1,
+						VkComponentMapping {
+							.r = VK_COMPONENT_SWIZZLE_IDENTITY,
+							.g = VK_COMPONENT_SWIZZLE_IDENTITY,
+							.b = VK_COMPONENT_SWIZZLE_IDENTITY,
+							.a = VK_COMPONENT_SWIZZLE_IDENTITY
+						},
+						VkImageSubresourceRange {
+							.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+							.baseMipLevel = 0,
+							.levelCount = 1,
+							.baseArrayLayer = u8FrameInFlightIndex,
+							.layerCount = 1
+						},
 						&vk_ahSingleSampledWorldRenderImageViews[u8FrameInFlightIndex])) {
 					u8FrameInFlightIndex++;
 					continue;
@@ -51,18 +65,21 @@ namespace RE {
 			}
 			if (u8FrameInFlightIndex == RE_VK_FRAMES_IN_FLIGHT)
 				return true;
-			else
-				for (uint8_t u8SingleSampledImageViewDestroyIndex = 0; u8SingleSampledImageViewDestroyIndex < u8FrameInFlightIndex; u8SingleSampledImageViewDestroyIndex++)
-					vkDestroyImageView(vk_hDevice, vk_ahSingleSampledWorldRenderImageViews[u8SingleSampledImageViewDestroyIndex], nullptr);
+			for (uint8_t u8SingleSampledImageViewDestroyIndex = 0; u8SingleSampledImageViewDestroyIndex < u8FrameInFlightIndex; u8SingleSampledImageViewDestroyIndex++)
+				vkDestroyImageView(vk_hDevice, vk_ahSingleSampledWorldRenderImageViews[u8SingleSampledImageViewDestroyIndex], nullptr);
+			vkDestroyImage(vk_hDevice, vk_hSingleSampledWorldRenderImages, nullptr);
+			singleSampledWorldRenderImageMemory.free();
 		} else
 			RE_FATAL_ERROR("Failed to create singlesampled Vulkan image");
 		return false;
 	}
 
 	void destroy_singlesampled_images() {
-		PRINT_DEBUG("Destroying singlesampled Vulkan image ", vk_hSingleSampledWorldRenderImages, " and its memory ", vk_hSingleSampledWorldRenderImageMemories);
-		vkFreeMemory(vk_hDevice, vk_hSingleSampledWorldRenderImageMemories, nullptr);
+		PRINT_DEBUG("Destroying singlesampled Vulkan image ", vk_hSingleSampledWorldRenderImages, " and its memory and image views");
+		for (const VkImageView vk_hImageView : vk_ahSingleSampledWorldRenderImageViews)
+			vkDestroyImageView(vk_hDevice, vk_hImageView, nullptr);
 		vkDestroyImage(vk_hDevice, vk_hSingleSampledWorldRenderImages, nullptr);
+		singleSampledWorldRenderImageMemory.free();
 	}
 
 	void set_msaa_mode(const MsaaMode eNewMsaaMode) {

@@ -55,11 +55,4 @@ namespace RE {
 		return u8Count < MAX_CAMERAS_PER_BATCH;
 	}
 
-	void ListBatch_Camera::update() {
-		for (uint8_t u8Index = 0; u8Index < u8Count; u8Index++) {
-			PRINT_DEBUG_CLASS("Updating camera ", apCameras[u8Index]);
-			apCameras[u8Index]->update();
-		}
-	}
-
 }

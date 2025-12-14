@@ -5,7 +5,7 @@ namespace RE {
 
 	ScreenPercentageSettings screenPercentageSettings;
 	VkImage vk_hRenderImages;
-	static VkDeviceMemory vk_hRenderImageMemories;
+	static VulkanMemory renderImageMemory;
 	VkImageView vk_ahRenderImageViews[RE_VK_FRAMES_IN_FLIGHT];
 	VkExtent2D vk_renderImageSize;
 	
@@ -17,7 +17,11 @@ namespace RE {
 				0,
 				VK_IMAGE_TYPE_2D,
 				vk_eSwapchainImageFormat,
-				VkExtent3D{vk_renderImageSize.width, vk_renderImageSize.height, 1},
+				VkExtent3D {
+					.width = vk_renderImageSize.width,
+					.height = vk_renderImageSize.height,
+					.depth = 1
+				},
 				1,
 				RE_VK_FRAMES_IN_FLIGHT,
 				vk_eMsaaCount,
@@ -26,37 +30,47 @@ namespace RE {
 				rRenderQueuesFamilyIndices.size(),
 				rRenderQueuesFamilyIndices.data(),
 				VK_IMAGE_LAYOUT_UNDEFINED,
+				RE_VK_GPU_RAM,
 				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 				&vk_hRenderImages,
-				&vk_hRenderImageMemories)) {
-			size_t renderImageCreateIndex = 0;
-			while (renderImageCreateIndex < RE_VK_FRAMES_IN_FLIGHT) {
-				PRINT_DEBUG("Creating Vulkan image view at index ", renderImageCreateIndex, " for render image array");
+				&renderImageMemory)) {
+			uint32_t u32RenderImageCreateIndex = 0;
+			while (u32RenderImageCreateIndex < RE_VK_FRAMES_IN_FLIGHT) {
+				PRINT_DEBUG("Creating Vulkan image view at index ", u32RenderImageCreateIndex, " for render image array");
 				if (create_vulkan_image_view(
+						0,
 						vk_hRenderImages,
 						VK_IMAGE_VIEW_TYPE_2D,
 						vk_eSwapchainImageFormat,
-						VK_IMAGE_ASPECT_COLOR_BIT,
-						0,
-						1,
-						renderImageCreateIndex,
-						1,
-						&vk_ahRenderImageViews[renderImageCreateIndex])) {
-					renderImageCreateIndex++;
+						VkComponentMapping {
+							.r = VK_COMPONENT_SWIZZLE_IDENTITY,
+							.g = VK_COMPONENT_SWIZZLE_IDENTITY,
+							.b = VK_COMPONENT_SWIZZLE_IDENTITY,
+							.a = VK_COMPONENT_SWIZZLE_IDENTITY
+						},
+						VkImageSubresourceRange {
+							.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+							.baseMipLevel = 0,
+							.levelCount = 1,
+							.baseArrayLayer = u32RenderImageCreateIndex,
+							.layerCount = 1
+						},
+						&vk_ahRenderImageViews[u32RenderImageCreateIndex])) {
+					u32RenderImageCreateIndex++;
 					continue;
 				} else
-					RE_FATAL_ERROR("Failed creating Vulkan image view for render image at index ", renderImageCreateIndex);
+					RE_FATAL_ERROR("Failed creating Vulkan image view for render image at index ", u32RenderImageCreateIndex);
 				break;
 			}
-			if (renderImageCreateIndex == RE_VK_FRAMES_IN_FLIGHT)
+			if (u32RenderImageCreateIndex == RE_VK_FRAMES_IN_FLIGHT)
 				return true;
-			for (size_t renderImageDestroyIndex = 0; renderImageDestroyIndex < renderImageCreateIndex; renderImageDestroyIndex++) {
+			for (size_t renderImageDestroyIndex = 0; renderImageDestroyIndex < u32RenderImageCreateIndex; renderImageDestroyIndex++) {
 				PRINT_DEBUG("Destroying Vulkan image view at index ", renderImageDestroyIndex, " due to the failure creating all image views pointing at the render image array");
 				vkDestroyImageView(vk_hDevice, vk_ahRenderImageViews[renderImageDestroyIndex], nullptr);
 			}
-			PRINT_DEBUG("Destroying Vulkan image ", vk_hRenderImages, "and its memory ", vk_hRenderImageMemories, " due to failure creating its image views");
-			vkFreeMemory(vk_hDevice, vk_hRenderImageMemories, nullptr);
+			PRINT_DEBUG("Destroying Vulkan image ", vk_hRenderImages, "and its memory due to failure creating its image views");
 			vkDestroyImage(vk_hDevice, vk_hRenderImages, nullptr);
+			renderImageMemory.free();
 		} else
 			RE_FATAL_ERROR("Failed creating render image");
 		return false;
@@ -69,12 +83,12 @@ namespace RE {
 			PRINT_DEBUG("Destroying Vulkan image view at index ", renderImageDestroyIndex, " pointing at render image array");
 			vkDestroyImageView(vk_hDevice, vk_ahRenderImageViews[renderImageDestroyIndex], nullptr);
 		}
-		PRINT_DEBUG("Destroying Vulkan image ", vk_hRenderImages, " and its memory ", vk_hRenderImageMemories);
-		vkFreeMemory(vk_hDevice, vk_hRenderImageMemories, nullptr);
+		PRINT_DEBUG("Destroying Vulkan image ", vk_hRenderImages, " and its memory");
 		vkDestroyImage(vk_hDevice, vk_hRenderImages, nullptr);
+		renderImageMemory.free();
 	}
 
-	void get_queues_for_render_images(std::vector<uint32_t> &rRenderTaskQueueIndices) {
+	static void get_queues_for_render_images(std::vector<uint32_t> &rRenderTaskQueueIndices) {
 		constexpr uint32_t au32FunctionsToLookup[] = {
 			RENDER_TASK_SUBINDEX_RENDERING,
 			RENDER_TASK_SUBINDEX_IMAGE_BLIT
@@ -82,10 +96,17 @@ namespace RE {
 		constexpr uint32_t u32FunctionsToLookupCount = sizeof(au32FunctionsToLookup) / sizeof(au32FunctionsToLookup[0]);
 		rRenderTaskQueueIndices.reserve(u32FunctionsToLookupCount);
 		for (uint32_t u32FunctionToLookupIndex = 0; u32FunctionToLookupIndex < u32FunctionsToLookupCount; u32FunctionToLookupIndex++) {
-			const uint32_t u32QueueFamilyIndex = queueFamilyIndices[renderTasks[0].get_logical_queue_index_for_function(au32FunctionsToLookup[u32FunctionToLookupIndex])];
+			const uint32_t u32QueueFamilyIndex = queueFamilyIndices[renderTasks[0].logical_queue_index_for_function(au32FunctionsToLookup[u32FunctionToLookupIndex])];
 			if (std::find(rRenderTaskQueueIndices.begin(), rRenderTaskQueueIndices.end(), u32QueueFamilyIndex) == rRenderTaskQueueIndices.end())
 				rRenderTaskQueueIndices.push_back(u32QueueFamilyIndex);
 		}
+	}
+
+	void get_queues_for_swapchain_images(std::vector<uint32_t> &rRenderTaskQueueIndices) {
+		get_queues_for_render_images(rRenderTaskQueueIndices);
+		const uint32_t u32PresentIndex = renderTasks[0].logical_queue_index_for_presentation();
+		if (std::find(rRenderTaskQueueIndices.begin(), rRenderTaskQueueIndices.end(), u32PresentIndex) == rRenderTaskQueueIndices.end())
+			rRenderTaskQueueIndices.push_back(u32PresentIndex);
 	}
 
 	bool create_render_image_resources() {
@@ -106,8 +127,8 @@ namespace RE {
 		}
 		const bool bBlittingRequired = screenPercentageSettings.eMode != RE_SCREEN_PERCENTAGE_MODE_NORMAL, bResolvingRequired = vk_eMsaaCount != VK_SAMPLE_COUNT_1_BIT;
 		VulkanTask depthImageLayoutTransitionTask;
-		Vulkan_Fence depthStencilImageLayoutTransitionFence;
-		if (create_depth_stencil_images(depthImageLayoutTransitionTask, depthStencilImageLayoutTransitionFence.get_fence())) {
+		Vulkan_Fence depthStencilImageLayoutTransitionFence(0);
+		if (create_depth_stencil_images(depthImageLayoutTransitionTask, depthStencilImageLayoutTransitionFence.get())) {
 			std::vector<uint32_t> renderTaskQueueIndices;
 			get_queues_for_render_images(renderTaskQueueIndices);
 			if (create_singlesampled_images(renderTaskQueueIndices, bResolvingRequired, bBlittingRequired)) {

@@ -50,7 +50,6 @@ namespace RE {
 			rMissingFeatures.emplace("No queue supports presenting images");
 	}
 
-	[[nodiscard]]
 	int32_t rate_gpu_queues(const VkPhysicalDevice vk_hPhysicalDevice) {
 		PRINT_DEBUG("Fetching information about available queues on physical Vulkan device");
 		uint32_t u32PhysicalDeviceQueueFamilyCount;

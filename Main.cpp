@@ -40,25 +40,25 @@ class Clonus : public GameObject {
 
 Clonus* clonus = nullptr;
 
-class Objy;
-Objy *pObjy = nullptr;
+class Playy;
+Playy *pPlayy = nullptr;
 
-class Objy : public GameObject {
+class Playy : public GameObject {
 	public:
 		RandomNumberGenerator rng;
 		InputAction left, right, up, down;
 		uint64_t hits, misses;
 
-		Objy() : GameObject(1, 1), left(RE_INPUT_KEY_ARROW_LEFT), right(RE_INPUT_KEY_ARROW_RIGHT), up(RE_INPUT_KEY_ARROW_UP), down(RE_INPUT_KEY_ARROW_DOWN), hits(0), misses(0) {
-			pObjy = this;
+		Playy() : GameObject(1, 1), left(RE_INPUT_KEY_ARROW_LEFT), right(RE_INPUT_KEY_ARROW_RIGHT), up(RE_INPUT_KEY_ARROW_UP), down(RE_INPUT_KEY_ARROW_DOWN), hits(0), misses(0) {
+			pPlayy = this;
 			transform.position[0] = 0.7f;
 			transform.position[1] = 0.7f;
 			transform.position[2] = 0.7f;
 			transform.scale[0] = 0.6f;
 			transform.scale[1] = 0.6f;
 		}
-		~Objy() {
-			pObjy = nullptr;
+		~Playy() {
+			pPlayy = nullptr;
 		}
 		void start(Scene* pStartingScene) {
 			PRINT_LN("start objy");
@@ -71,23 +71,25 @@ class Objy : public GameObject {
 				misses++;
 			transform.position[0] += (right.is_down() - left.is_down()) * 0.62f * get_deltaseconds();
 			transform.position[1] += (up.is_down() - down.is_down()) * 0.62f * get_deltaseconds();
-			spriteRenderer.color.set_red(std::fmodf(transform.position[0], 1.0f));
-			spriteRenderer.color.set_green(std::fmodf(transform.position[1], 1.0f));
-			spriteRenderer.color.set_blue(std::fmodf(transform.position[2], 1.0f));
+			spriteRenderer.color.set_red(std::fmodf(std::abs(transform.position[0]), 1.0f));
+			spriteRenderer.color.set_green(std::fmodf(std::abs(transform.position[1]), 1.0f));
+			spriteRenderer.color.set_blue(std::fmodf(std::abs(transform.position[2]), 1.0f));
 		}
 		void end(Scene* pEndingScene) {
 			PRINT_LN(append_to_string(hits, ", ", misses).c_str());
 		}
 };
 
-class OC : public GameObject {
+class Imagy : public GameObject {
 	public:
-		OC() : GameObject(3, 1) {
+		Imagy() : GameObject(3, 1) {
+			transform.position[0] = 0.8f;
+			transform.position[1] = 0.8f;
 			transform.position[2] = 0.8f;
 			transform.scale[0] = 0.3f;
 			transform.scale[1] = 0.3f;
 		}
-		~OC() {}
+		~Imagy() {}
 		void start(Scene *pStartingScene) {
 			const Texture hTexture = alloc_texture_loading_from_file("Image.png");
 			const SpriteLayoutSettings spriteLayoutSettings;
@@ -95,12 +97,12 @@ class OC : public GameObject {
 			spriteRenderer.hSprite = create_sprite(hTexture, hSpriteLayout);
 		}
 		void update(Scene *pCurrentScene) {
-			transform.position[0] = pObjy->transform.position[0];
-			transform.position[1] = pObjy->transform.position[1];
-			spriteRenderer.textureCoordinates[0] = pObjy->transform.position[0];
-			spriteRenderer.textureCoordinates[1] = pObjy->transform.position[1];
-			spriteRenderer.textureOffset[0] = pObjy->transform.position[0];
-			spriteRenderer.textureOffset[1] = pObjy->transform.position[1];
+			transform.position[0] = pPlayy->transform.position[0];
+			transform.position[1] = pPlayy->transform.position[1];
+			spriteRenderer.textureCoordinates[0] = pPlayy->transform.position[0];
+			spriteRenderer.textureCoordinates[1] = pPlayy->transform.position[1];
+			spriteRenderer.textureOffset[0] = pPlayy->transform.position[0];
+			spriteRenderer.textureOffset[1] = pPlayy->transform.position[1];
 		}
 		void end(Scene *pEndingScene) {
 			const Texture hTexture = get_texture_from_sprite(spriteRenderer.hSprite);
@@ -115,8 +117,8 @@ class Background : public GameObject {
 	public:
 		Background() : GameObject(2, 1) {
 			transform.position[2] = 0.5f;
-			transform.scale[0] = 0.1f;
-			transform.scale[1] = 0.1f;
+			transform.scale[0] = 2.0f;
+			transform.scale[1] = 2.0f;
 			spriteRenderer.color.set_green(0.0f);
 			spriteRenderer.color.set_blue(0.0f);
 			spriteRenderer.color.set_alpha(0.4f);
@@ -129,15 +131,15 @@ class PlayerCamera : public Camera {
 
 	public:
 		PlayerCamera() : zoomerIn(RE_INPUT_SCROLL_UP), zoomerOut(RE_INPUT_SCROLL_DOWN) {
-			transform.position[2] = 10.0f;
+			transform.position[2] = -10.0f;
 			view[0] = 1.33f;
 			view[1] = view[0];
 		}
 		~PlayerCamera() {}
-		void update() {
-			if (pObjy) {
-				transform.position[0] = pObjy->transform.position[0];
-				transform.position[1] = pObjy->transform.position[1];
+		void update_before_render() {
+			if (pPlayy) {
+				transform.position[0] = pPlayy->transform.position[0];
+				transform.position[1] = pPlayy->transform.position[1];
 			}
 			if (zoomerIn.is_down())
 				view[0] -= get_deltaseconds();
@@ -148,8 +150,8 @@ class PlayerCamera : public Camera {
 
 class First : public Scene {
 	public:
-		OC another;
-		Objy objy;
+		Playy objy;
+		Imagy imagy;
 		Background background;
 		PlayerCamera playerCam;
 		InputAction trigger;

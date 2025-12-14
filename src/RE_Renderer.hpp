@@ -27,7 +27,7 @@ namespace RE {
 	void attach_camera(Camera *pCamera);
 
 	// Render Images
-	void get_queues_for_render_images(std::vector<uint32_t> &rRenderTaskQueueIndices);
+	void get_queues_for_swapchain_images(std::vector<uint32_t> &rRenderTaskQueueIndices);
 
 	// Render buffer
 	extern GameObjectInstanceData *paRenderBufferInstanceData;
@@ -58,10 +58,6 @@ namespace RE {
 	// MSAA
 	extern VkSampleCountFlags vk_eAllowedMsaaSamples;
 	extern VkSampleCountFlagBits vk_eMsaaCount;
-
-	// General transfer task
-	bool submit_transfer_task(VkCommandBufferUsageFlags vk_eUsageFlags, std::function<void (VkCommandBuffer vk_hCommandBuffer, uint8_t u8PreviousLogicalQueue, uint8_t u8CurrentLogicalQueue, uint8_t u8NextLogicalQueue)> pTransferFunction, std::function<void (VkCommandBuffer vk_hCommandBuffer, uint8_t u8PreviousLogicalQueue, uint8_t u8CurrentLogicalQueue, uint8_t u8NextLogicalQueue)> pOwnershipAcquireFunction, uint32_t u32WaitSemaphoreCount, const VkSemaphoreSubmitInfo *vk_paWaitSemaphores, uint32_t u32SignalSemaphoreCount, const VkSemaphoreSubmitInfo *vk_paSignalSemaphores, VkFence vk_hFence);
-	void wait_for_transfer(uint64_t u64Timeout);
 
 }
 

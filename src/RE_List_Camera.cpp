@@ -87,10 +87,7 @@ namespace RE {
 	}
 
 	void update_cameras() {
-		for (ListBatch_Camera *const pBatch : cameraBatchList) {
-			PRINT_DEBUG("Updating cameras in batch ", pBatch);
-			pBatch->update();
-		}
+		PRINT_DEBUG("Updating cameras");
 	}
 
 	void end_cameras() {

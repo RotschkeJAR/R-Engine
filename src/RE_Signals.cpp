@@ -11,9 +11,8 @@ namespace RE {
 	 */
 
 	void handle_abort(const int32_t i32SignalId) {
-		print("\nABORTION\nIf the application doesn't terminate, the user has to explicitly kill the process.\n");
-		if (std::signal(SIGABRT, SIG_DFL) == SIG_ERR)
-			println("Failed reassigning the signal handler for SIGABRT (abortion). This might lead to infinite recursion");
+		println("\nABORTION\nIf the application doesn't terminate, the user has to explicitly kill the process");
+		std::signal(SIGABRT, SIG_DFL);
 		std::abort();
 	}
 

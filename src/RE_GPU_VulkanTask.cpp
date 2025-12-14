@@ -1,4 +1,5 @@
 #include "RE_GPU_Internal.hpp"
+#include "RE_Vulkan_Wrappers.hpp"
 
 namespace RE {
 
@@ -35,8 +36,22 @@ namespace RE {
 		init(rCopy, bIndividualResets, bTransient);
 	}
 
+	VulkanTask::VulkanTask(VulkanTask &&rrTask) {
+		queueIndexPerCommandPool = rrTask.queueIndexPerCommandPool;
+		rrTask.queueIndexPerCommandPool.reset();
+		commandPools = std::move(rrTask.commandPools);
+		commandPoolIndexPerCommandBuffer = rrTask.commandPoolIndexPerCommandBuffer;
+		rrTask.commandPoolIndexPerCommandBuffer.reset();
+		commandBuffers = std::move(rrTask.commandBuffers);
+		vk_hInternalSemaphore = rrTask.vk_hInternalSemaphore;
+		u32FunctionsCount = rrTask.u32FunctionsCount;
+		u8CommandPoolCount = rrTask.u8CommandPoolCount;
+		u8LogicalPresentQueueIndex = rrTask.u8LogicalPresentQueueIndex;
+		bTransient = rrTask.bTransient;
+	}
+
 	VulkanTask::~VulkanTask() {
-		if (is_valid())
+		if (valid())
 			destroy();
 	}
 	
@@ -443,23 +458,23 @@ namespace RE {
 			vkResetCommandPool(vk_hDevice, commandPools[u8CommandPoolIndex], vk_eResetFlags);
 	}
 
-	VkCommandPool VulkanTask::get_command_pool_of_function(uint32_t u32FunctionIndex) const {
+	VkCommandPool VulkanTask::command_pool_of_function(uint32_t u32FunctionIndex) const {
 		return commandPools[commandPoolIndexPerCommandBuffer[u32FunctionIndex]];
 	}
 
-	uint32_t VulkanTask::get_function_count() const {
+	uint32_t VulkanTask::function_count() const {
 		return u32FunctionsCount;
 	}
 
-	uint8_t VulkanTask::get_logical_queue_index_for_function(const uint32_t u32FunctionIndex) const {
+	uint8_t VulkanTask::logical_queue_index_for_function(const uint32_t u32FunctionIndex) const {
 		return queueIndexPerCommandPool[commandPoolIndexPerCommandBuffer[u32FunctionIndex]];
 	}
 
-	uint8_t VulkanTask::get_logical_queue_index_for_presentation() const {
+	uint8_t VulkanTask::logical_queue_index_for_presentation() const {
 		return u8LogicalPresentQueueIndex;
 	}
 
-	bool VulkanTask::is_valid() const {
+	bool VulkanTask::valid() const {
 		return static_cast<bool>(commandBuffers);
 	}
 

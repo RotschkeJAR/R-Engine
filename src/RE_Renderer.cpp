@@ -1,7 +1,5 @@
 #include "RE_Renderer_Internal.hpp"
 #include "RE_Window.hpp"
-#include "RE_Vulkan_Wrapper Classes.hpp"
-#include "RE_Vulkan_Wrapper Functions.hpp"
 #include "RE_RenderElement.hpp"
 #include "RE_Main.hpp"
 #include "RE_List_GameObject.hpp"
@@ -17,36 +15,43 @@ namespace RE {
 	bool init_renderer() {
 		PRINT_DEBUG("Initializing renderer");
 		if (create_render_tasks()) {
-			if (init_general_transfer_task()) {
-				PRINT_DEBUG("Creating temporary staging Vulkan buffer for rendering rectangle");
-				Vulkan_Buffer stagingRectBuffer;
-				if (init_render_elements(stagingRectBuffer)) {
-					if (create_render_buffers()) {
-						if (create_descriptor_sets()) {
-							if (create_renderpass()) {
-								if (create_swapchain()) {
-									if (setup_presentation()) {
-										if (create_render_pipelines()) {
-											PRINT_DEBUG("Waiting for pending transfer tasks to finish");
-											wait_for_transfer(std::numeric_limits<uint64_t>::max());
-											PRINT_DEBUG("Successfully initialized the renderer");
-											return true;
-										}
-										destroy_presentation();
+			PRINT_DEBUG("Creating temporary staging Vulkan buffer for rendering rectangle");
+			const uint8_t a2u8LogicalQueueIndices[2] = {RE_VK_LOGICAL_QUEUE_IGNORED, renderTasks[0].logical_queue_index_for_function(RENDER_TASK_SUBINDEX_RENDERING)};
+			constexpr VkQueueFlagBits vk_a2eQueueTypes[2] = {VK_QUEUE_TRANSFER_BIT, VK_QUEUE_GRAPHICS_BIT};
+			constexpr uint32_t a2u32SeparationIds[2] = {0, 1};
+			const VulkanTask_Queues occupiedTransferQueues = {
+				.pau8LogicalQueueIndices = a2u8LogicalQueueIndices,
+				.vk_paeQueueTypes = vk_a2eQueueTypes,
+				.pau32StrictSeparationIds = a2u32SeparationIds,
+				.u32FunctionsCount = 2
+			};
+			VulkanTask rectBufferTransferTask(occupiedTransferQueues, false, false, true);
+			Vulkan_Fence rectBufferTransferFence(0);
+			Vulkan_Buffer stagingRectBuffer;
+			if (init_render_elements(stagingRectBuffer, &rectBufferTransferTask, rectBufferTransferFence)) {
+				if (create_render_buffers()) {
+					if (create_descriptor_sets()) {
+						if (create_renderpass()) {
+							if (create_swapchain()) {
+								if (setup_presentation()) {
+									if (create_render_pipelines()) {
+										rectBufferTransferFence.wait_for();
+										PRINT_DEBUG("Successfully initialized the renderer");
+										return true;
 									}
-									destroy_swapchain();
+									destroy_presentation();
 								}
-								destroy_renderpass();
+								destroy_swapchain();
 							}
-							destroy_descriptor_sets();
+							destroy_renderpass();
 						}
-						destroy_render_buffers();
+						destroy_descriptor_sets();
 					}
-					PRINT_DEBUG("Waiting for pending transfer task to finish before destroying further due to failure creating essential resources");
-					wait_for_transfer(std::numeric_limits<uint64_t>::max());
-					destroy_render_elements();
+					destroy_render_buffers();
 				}
-				destroy_general_transfer_task();
+				PRINT_DEBUG("Waiting for pending transfer task to finish before destroying further due to failure creating essential resources");
+				rectBufferTransferFence.wait_for();
+				destroy_render_elements();
 			}
 			destroy_render_tasks();
 		}
@@ -63,15 +68,13 @@ namespace RE {
 		destroy_descriptor_sets();
 		destroy_render_buffers();
 		destroy_render_elements();
-		destroy_general_transfer_task();
 		destroy_render_tasks();
 	}
 
 	void render() {
 		PRINT_DEBUG("Invoking render-procedure");
 		if (acquire_next_swapchain_image()) {
-			PRINT_DEBUG("Waiting for pending transfers and frame-in-flight at index ", u8CurrentFrameInFlightIndex, " being finished rendering");
-			wait_for_transfer(std::numeric_limits<uint64_t>::max());
+			PRINT_DEBUG("Waiting for pending frame-in-flight at index ", u8CurrentFrameInFlightIndex, " being finished rendering");
 			vkWaitForFences(vk_hDevice, 1, &renderFences[u8CurrentFrameInFlightIndex], VK_TRUE, std::numeric_limits<uint64_t>::max());
 			vkResetFences(vk_hDevice, 1, &renderFences[u8CurrentFrameInFlightIndex]);
 			calculate_camera_matrices();
@@ -117,8 +120,8 @@ namespace RE {
 					vkCmdBindDescriptorSets(vk_hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hGraphicsPipelineLayout, 0, sizeof(vk_ahDescSets) / sizeof(vk_ahDescSets[0]), vk_ahDescSets, 0, nullptr);
 					PRINT_DEBUG("Setting viewport and scissors");
 					const VkViewport vk_viewport = {
-						.x = 0.0f,
-						.y = 0.0f,
+						.x = static_cast<float>(vk_cameraProjectionOnscreen.offset.x),
+						.y = static_cast<float>(vk_cameraProjectionOnscreen.offset.y),
 						.width = static_cast<float>(vk_cameraProjectionOnscreen.extent.width),
 						.height = static_cast<float>(vk_cameraProjectionOnscreen.extent.height),
 						.minDepth = 0.0f,

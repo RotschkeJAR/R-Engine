@@ -21,7 +21,7 @@ namespace RE {
 			swapchainSemaphores.push_back(vk_hCreatedSemaphore);
 		}
 		if (swapchainSemaphores.size() == RE_VK_SWAPCHAIN_SEMAPHORE_COUNT) {
-			vk_hPresentQueue = vk_pahQueues[renderTasks[0].get_logical_queue_index_for_presentation()];
+			vk_hPresentQueue = vk_pahQueues[renderTasks[0].logical_queue_index_for_presentation()];
 			return true;
 		}
 		destroy_presentation();

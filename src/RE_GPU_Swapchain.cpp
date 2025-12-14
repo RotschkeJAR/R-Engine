@@ -1,6 +1,7 @@
 #include "RE_GPU_Internal.hpp"
 #include "RE_Renderer.hpp"
 #include "RE_Window.hpp"
+#include "RE_Vulkan_Wrappers.hpp"
 
 namespace RE {
 
@@ -33,7 +34,7 @@ namespace RE {
 			vk_swapchainResolution.height = std::clamp<uint32_t>(windowSize[1], vk_surfaceCapabilities.minImageExtent.height, vk_surfaceCapabilities.maxImageExtent.height);
 		}
 		std::vector<uint32_t> queuesToShareAcross;
-		get_queues_for_render_images(queuesToShareAcross);
+		get_queues_for_swapchain_images(queuesToShareAcross);
 		PRINT_DEBUG("Creating swapchain");
 		const VkSwapchainCreateInfoKHR vk_swapchainCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
@@ -76,7 +77,25 @@ namespace RE {
 		uint32_t u32SwapchainImageCreateIndex = 0;
 		while (u32SwapchainImageCreateIndex < u32SwapchainImageCount) {
 			PRINT_DEBUG("Creating Vulkan image view for swapchain image at index ", u32SwapchainImageCreateIndex);
-			if (create_vulkan_image_view(vk_pahSwapchainImages[u32SwapchainImageCreateIndex], VK_IMAGE_VIEW_TYPE_2D, vk_eSwapchainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1, &vk_pahSwapchainImageViews[u32SwapchainImageCreateIndex])) {
+			if (create_vulkan_image_view(
+					0, 
+					vk_pahSwapchainImages[u32SwapchainImageCreateIndex], 
+					VK_IMAGE_VIEW_TYPE_2D, 
+					vk_eSwapchainImageFormat, 
+					VkComponentMapping {
+						.r = VK_COMPONENT_SWIZZLE_IDENTITY,
+						.g = VK_COMPONENT_SWIZZLE_IDENTITY,
+						.b = VK_COMPONENT_SWIZZLE_IDENTITY,
+						.a = VK_COMPONENT_SWIZZLE_IDENTITY
+					}, 
+					VkImageSubresourceRange {
+						.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+						.baseMipLevel = 0,
+						.levelCount = 1,
+						.baseArrayLayer = 0,
+						.layerCount = 1
+					}, 
+					&vk_pahSwapchainImageViews[u32SwapchainImageCreateIndex])) {
 				u32SwapchainImageCreateIndex++;
 				continue;
 			} else

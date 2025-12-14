@@ -2,7 +2,6 @@
 #define __RE_GPU_INTERNAL_H__
 
 #include "RE_GPU.hpp"
-#include "RE_Vulkan_Wrapper Functions.hpp"
 #include "RE_Renderer.hpp"
 
 namespace RE {
@@ -24,7 +23,6 @@ namespace RE {
 	
 	// Scheduler
 	void does_gpu_have_necessary_queues(VkPhysicalDevice vk_hPhysicalDevice, std::queue<std::string> &rMissingFeatures);
-	[[nodiscard]]
 	int32_t rate_gpu_queues(VkPhysicalDevice vk_hPhysicalDevice);
 	bool setup_logical_device_queues();
 	void destroy_logical_device_queues();
@@ -33,9 +31,13 @@ namespace RE {
 	extern VkPresentModeKHR vk_ePresentModeVsync, vk_ePresentModeNoVsync;
 	bool recreate_swapchain();
 
-	// Default transfer task
-	bool init_default_transfer_task();
-	void destroy_default_transfer_task();
+	// Memory
+	extern std::vector<std::tuple<VkMemoryHeap, VkDeviceSize>> vulkanMemoryHeaps;
+	extern std::vector<VkMemoryType> vulkanMemoryTypes;
+	extern uint32_t u32VulkanMemoryAllocCount;
+	bool does_gpu_support_memory(VkPhysicalDevice vk_hPhysicalDevice, const VkPhysicalDeviceLimits &vk_rPhysicalDeviceLimits, std::queue<std::string> &rMissingFeatures);
+	int32_t rate_gpu_memory_capacity(VkPhysicalDevice vk_hPhysicalDevice, const VkPhysicalDeviceProperties &vk_rPhysicalDeviceProperties);
+	void fetch_gpu_memory_info();
 
 }
 

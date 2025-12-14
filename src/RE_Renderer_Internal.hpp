@@ -4,8 +4,7 @@
 #include "RE_Renderer.hpp"
 #include "RE_GPU.hpp"
 #include "RE_Texture.hpp"
-#include "RE_Vulkan_Wrapper Functions.hpp"
-#include "RE_Vulkan_Wrapper Classes.hpp"
+#include "RE_Vulkan_Wrappers.hpp"
 
 namespace RE {
 
@@ -90,10 +89,6 @@ namespace RE {
 	void destroy_renderpass();
 	void record_cmd_begin_renderpass(VkCommandBuffer vk_hCommandBuffer);
 	void record_cmd_end_renderpass(VkCommandBuffer vk_hCommandBuffer);
-
-	// General transfer task
-	bool init_general_transfer_task();
-	void destroy_general_transfer_task();
 
 }
 

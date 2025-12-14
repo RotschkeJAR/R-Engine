@@ -1,18 +1,19 @@
 #include "RE_Renderer_Internal.hpp"
-#include "RE_Vulkan_Wrapper Functions.hpp"
+#include "RE_Vulkan_Wrappers.hpp"
 #include "RE_ListBatch_GameObject.hpp"
 #include "RE_List_GameObject.hpp"
 #include "RE_Sprite.hpp"
+#include "RE_Manager.hpp"
 
 namespace RE {
 	
-	VkBuffer vk_hStagingRenderBuffer;
-	VkDeviceMemory vk_hStagingRenderBufferMemory;
+	static VkBuffer vk_hStagingRenderBuffer;
+	static VulkanMemory stagingRenderBufferMemory;
 	VkDrawIndexedIndirectCommand *vk_pRenderBufferDrawCommand;
 	GameObjectInstanceData *paRenderBufferInstanceData;
 
 	VkBuffer vk_hRenderBuffer;
-	VkDeviceMemory vk_hRenderBufferMemory;
+	static VulkanMemory renderBufferMemory;
 
 	size_t gameObjectCountRenderBuffer;
 	std::atomic<uint32_t> gameObjectToRenderCount;
@@ -27,56 +28,61 @@ namespace RE {
 				VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 				1,
 				nullptr,
+				RE_VK_CPU_RAM,
 				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
 				&vk_hStagingRenderBuffer,
-				&vk_hStagingRenderBufferMemory)) {
+				&stagingRenderBufferMemory)) {
 			PRINT_DEBUG("Mapping to staging render buffer's memory");
 			void *pStagingRenderBufferContent;
-			vkMapMemory(vk_hDevice, vk_hStagingRenderBufferMemory, 0, vk_renderBufferByteSize, 0, &pStagingRenderBufferContent);
-			vk_pRenderBufferDrawCommand = reinterpret_cast<VkDrawIndexedIndirectCommand*>(pStagingRenderBufferContent);
-			paRenderBufferInstanceData = reinterpret_cast<GameObjectInstanceData*>(vk_pRenderBufferDrawCommand + 1);
-			PRINT_DEBUG("Creating render buffer on GPU");
-			const uint32_t a2u32QueuesForRenderBuffer[2] = {
-				queueFamilyIndices[renderTasks[0].get_logical_queue_index_for_function(RENDER_TASK_SUBINDEX_BUFFER_TRANSFER)],
-				queueFamilyIndices[renderTasks[0].get_logical_queue_index_for_function(RENDER_TASK_SUBINDEX_RENDERING)]
-			};
-			if (create_vulkan_buffer(
-					0,
-					vk_renderBufferByteSize,
-					VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-					a2u32QueuesForRenderBuffer[0] == a2u32QueuesForRenderBuffer[1] ? 1 : 2,
-					a2u32QueuesForRenderBuffer,
-					VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-					&vk_hRenderBuffer,
-					&vk_hRenderBufferMemory)) {
-				Threadpool renderBufferInitializerThreads;
-				std::atomic<size_t> index;
-				for (uint32_t i = 0; i < renderBufferInitializerThreads.get_amount_of_threads(); i++)
-					renderBufferInitializerThreads.execute([&]() {
-						while (true) {
-							const size_t ownIndex = index.fetch_add(1);
-							if (ownIndex >= gameObjectCountRenderBuffer)
-								return;
-							for (uint8_t u8MatrixIndex = 0; u8MatrixIndex < 16; u8MatrixIndex++)
-								switch (u8MatrixIndex) {
-									case 0:
-									case 5:
-									case 10:
-									case 15:
-										paRenderBufferInstanceData[ownIndex].a16fModelMatrix[u8MatrixIndex] = 1.0f;
-										break;
-									default:
-										paRenderBufferInstanceData[ownIndex].a16fModelMatrix[u8MatrixIndex] = 0.0f;
-								}
-							paRenderBufferInstanceData[ownIndex].u32TextureId = 0x8000;
-						}
-					});
-				return true;
+			if (stagingRenderBufferMemory.map(0, 0, vk_renderBufferByteSize, &pStagingRenderBufferContent)) {
+				vk_pRenderBufferDrawCommand = reinterpret_cast<VkDrawIndexedIndirectCommand*>(pStagingRenderBufferContent);
+				paRenderBufferInstanceData = reinterpret_cast<GameObjectInstanceData*>(vk_pRenderBufferDrawCommand + 1);
+				PRINT_DEBUG("Creating render buffer on GPU");
+				const uint32_t a2u32QueuesForRenderBuffer[2] = {
+					queueFamilyIndices[renderTasks[0].logical_queue_index_for_function(RENDER_TASK_SUBINDEX_BUFFER_TRANSFER)],
+					queueFamilyIndices[renderTasks[0].logical_queue_index_for_function(RENDER_TASK_SUBINDEX_RENDERING)]
+				};
+				if (create_vulkan_buffer(
+						0,
+						vk_renderBufferByteSize,
+						VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+						a2u32QueuesForRenderBuffer[0] == a2u32QueuesForRenderBuffer[1] ? 1 : 2,
+						a2u32QueuesForRenderBuffer,
+						RE_VK_GPU_RAM,
+						VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+						&vk_hRenderBuffer,
+						&renderBufferMemory)) {
+					Threadpool renderBufferInitializerThreads;
+					std::atomic<size_t> index;
+					for (uint32_t i = 0; i < renderBufferInitializerThreads.get_amount_of_threads(); i++)
+						renderBufferInitializerThreads.execute([&]() {
+							while (true) {
+								const size_t ownIndex = index.fetch_add(1);
+								if (ownIndex >= gameObjectCountRenderBuffer)
+									return;
+								for (uint8_t u8MatrixIndex = 0; u8MatrixIndex < 16; u8MatrixIndex++)
+									switch (u8MatrixIndex) {
+										case 0:
+										case 5:
+										case 10:
+										case 15:
+											paRenderBufferInstanceData[ownIndex].a16fModelMatrix[u8MatrixIndex] = 1.0f;
+											break;
+										default:
+											paRenderBufferInstanceData[ownIndex].a16fModelMatrix[u8MatrixIndex] = 0.0f;
+									}
+								paRenderBufferInstanceData[ownIndex].u32TextureId = 0x8000;
+							}
+						});
+					return true;
+				} else
+					RE_FATAL_ERROR("Failed to create render buffer on GPU");
+				stagingRenderBufferMemory.unmap();
 			} else
-				RE_FATAL_ERROR("Failed to create render buffer on GPU");
+				RE_FATAL_ERROR("Failed to map CPU to staging render buffer");
 			PRINT_DEBUG("Destroying staging render buffer due to failure creating render buffer on GPU");
 			vkDestroyBuffer(vk_hDevice, vk_hStagingRenderBuffer, nullptr);
-			vkFreeMemory(vk_hDevice, vk_hStagingRenderBufferMemory, nullptr);
+			stagingRenderBufferMemory.free();
 		} else
 			RE_FATAL_ERROR("Failed to create staging render buffer in Vulkan");
 		return false;
@@ -85,10 +91,10 @@ namespace RE {
 	void destroy_render_buffers() {
 		PRINT_DEBUG("Destroying both staging and render buffer in Vulkan");
 		vkDestroyBuffer(vk_hDevice, vk_hRenderBuffer, nullptr);
-		vkFreeMemory(vk_hDevice, vk_hRenderBufferMemory, nullptr);
-		vkUnmapMemory(vk_hDevice, vk_hStagingRenderBufferMemory);
+		renderBufferMemory.free();
+		stagingRenderBufferMemory.unmap();
 		vkDestroyBuffer(vk_hDevice, vk_hStagingRenderBuffer, nullptr);
-		vkFreeMemory(vk_hDevice, vk_hStagingRenderBufferMemory, nullptr);
+		stagingRenderBufferMemory.free();
 	}
 
 	bool record_cmd_transfer_buffer() {
@@ -96,6 +102,8 @@ namespace RE {
 		for (ListBatch_GameObject *const pBatch : gameObjectBatchList) {
 			for (uint16_t u16Index = 0; u16Index < pBatch->size(); u16Index++) {
 				const GameObject *const pGameObject = pBatch->at(u16Index);
+				if (pGameObject->u32SceneParentId && pGameObject->u32SceneParentId != pCurrentScene->u32Id)
+					continue;
 				paRenderBufferInstanceData[gameObjectToRenderCount].a16fModelMatrix[12] = pGameObject->transform.position[0];
 				paRenderBufferInstanceData[gameObjectToRenderCount].a16fModelMatrix[13] = pGameObject->transform.position[1];
 				paRenderBufferInstanceData[gameObjectToRenderCount].a16fModelMatrix[14] = pGameObject->transform.position[2];

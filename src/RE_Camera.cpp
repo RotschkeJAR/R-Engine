@@ -17,7 +17,7 @@ namespace RE {
 		remove_camera(this);
 	}
 
-	void Camera::update() {}
+	void Camera::update_before_render() {}
 
 	void Camera::activate() {
 		PRINT_DEBUG_CLASS("Activating this camera");

@@ -1,6 +1,5 @@
-#include "RE_Vulkan_Wrapper Classes.hpp"
-#include "RE_GPU.hpp"
-#include "RE_Vulkan_Wrapper Functions.hpp"
+#include "RE_Vulkan_Wrappers.hpp"
+#include "RE_Console.hpp"
 
 namespace RE {
 
@@ -23,7 +22,7 @@ namespace RE {
 
 	Vulkan_TimelineSemaphore::~Vulkan_TimelineSemaphore() {
 		PRINT_DEBUG_CLASS("Destructing Vulkan timeline semaphore wrapper");
-		if (!is_valid())
+		if (!valid())
 			return;
 		PRINT_DEBUG_CLASS("Destroying Vulkan timeline semaphore wrapper ", vk_hTimelineSemaphore);
 		vkDestroySemaphore(vk_hDevice, vk_hTimelineSemaphore, nullptr);
@@ -51,28 +50,28 @@ namespace RE {
 	}
 	
 	[[nodiscard]]
-	VkSemaphore Vulkan_TimelineSemaphore::get_timeline_semaphore() const {
+	VkSemaphore Vulkan_TimelineSemaphore::get() const noexcept {
 		return vk_hTimelineSemaphore;
 	}
 	
 	[[nodiscard]]
-	const VkSemaphore* Vulkan_TimelineSemaphore::get_timeline_semaphore_ptr() const {
+	const VkSemaphore* Vulkan_TimelineSemaphore::get_ptr() const noexcept {
 		return &vk_hTimelineSemaphore;
 	}
 	
 	[[nodiscard]]
-	bool Vulkan_TimelineSemaphore::is_valid() const {
+	bool Vulkan_TimelineSemaphore::valid() const noexcept {
 		return vk_hTimelineSemaphore != VK_NULL_HANDLE;
 	}
 
 	[[nodiscard]]
 	Vulkan_TimelineSemaphore::operator VkSemaphore() const {
-		return get_timeline_semaphore();
+		return get();
 	}
 	
 	[[nodiscard]]
 	Vulkan_TimelineSemaphore::operator const VkSemaphore*() const {
-		return get_timeline_semaphore_ptr();
+		return get_ptr();
 	}
 
 }

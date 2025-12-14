@@ -29,8 +29,6 @@ namespace RE {
 			bool empty() const;
 			[[nodiscard]]
 			bool has_space() const;
-
-			void update();
 	};
 
 }

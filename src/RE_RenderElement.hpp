@@ -2,7 +2,7 @@
 #define __RE_RENDER_ELEMENT_H__
 
 #include "RE_Renderer.hpp"
-#include "RE_Vulkan_Wrapper Classes.hpp"
+#include "RE_Vulkan_Wrappers.hpp"
 #include "RE_GPU.hpp"
 
 namespace RE {
@@ -19,7 +19,7 @@ namespace RE {
 	 */
 	extern VkBuffer vk_hRectBuffer;
 	
-	bool init_render_elements(Vulkan_Buffer &rStagingRectBuffer);
+	bool init_render_elements(Vulkan_Buffer &rStagingRectBuffer, VulkanTask *pTransferTask, Vulkan_Fence &rTransferFence);
 	void destroy_render_elements();
 
 }

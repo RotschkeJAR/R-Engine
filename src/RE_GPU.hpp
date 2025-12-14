@@ -15,7 +15,6 @@ namespace RE {
 	extern VkPhysicalDevice vk_hPhysicalDeviceSelected;
 	extern VkPhysicalDeviceProperties vk_physicalDeviceProperties;
 	extern VkPhysicalDeviceFeatures vk_physicalDeviceFeatures;
-	extern VkPhysicalDeviceMemoryProperties vk_physicalDeviceMemoryProperties;
 
 	// Scheduler
 #define RE_VK_LOGICAL_QUEUE_IGNORED std::numeric_limits<uint8_t>::max()
@@ -36,8 +35,6 @@ namespace RE {
 	};
 
 	class VulkanTask final {
-		using SubmitInfo = std::tuple<VkSubmitInfo2, VkQueue>;
-
 		private:
 			std::shared_ptr<uint8_t[]> queueIndexPerCommandPool;
 			std::unique_ptr<VkCommandPool[]> commandPools;
@@ -55,6 +52,7 @@ namespace RE {
 			VulkanTask(uint32_t u32FunctionsCount, const uint8_t *pau8LogicalQueueIndexPerFunctionRequiredInOrder, bool bIndividualResets, bool bIncludePresentation, bool bTransient);
 			VulkanTask(const VulkanTask_Queues &rQueues, bool bIndividualResets, bool bIncludePresentation, bool bTransient);
 			VulkanTask(const VulkanTask &rCopy, bool bIndividualResets, bool bTransient);
+			VulkanTask(VulkanTask &&rrTask);
 			~VulkanTask();
 			bool init(uint32_t u32FunctionsCount, const VkQueueFlagBits *vk_paeQueueTypePerFunctionRequiredInOrder, bool bIndividualResets, bool bIncludePresentation, bool bTransient);
 			bool init(uint32_t u32FunctionsCount, const uint8_t *pau8LogicalQueueIndexPerFunctionRequiredInOrder, bool bIndividualResets, bool bIncludePresentation, bool bTransient);
@@ -64,11 +62,11 @@ namespace RE {
 			bool record(uint32_t u32FunctionIndex, VkCommandBufferUsageFlags vk_eUsageFlags, std::function<void (VkCommandBuffer vk_hCommandBuffer, uint8_t u8PreviousLogicalQueue, uint8_t u8CurrentLogicalQueue, uint8_t u8NextLogicalQueue)> pRecorderFunction) const;
 			bool submit(uint32_t u32SemaphoresToWaitForCount, const VkSemaphoreSubmitInfo *vk_paSemaphoresToWaitFor, const VkPipelineStageFlags2 *vk_paeInternSemaphoreWaits, uint32_t u32SemaphoresToSignal, const VkSemaphoreSubmitInfo *vk_paSemaphoresToSignal, VkFence vk_hFenceToSignal) const;
 			void reset_all(VkCommandPoolResetFlags vk_eResetFlags) const;
-			VkCommandPool get_command_pool_of_function(uint32_t u32FunctionIndex) const;
-			uint32_t get_function_count() const;
-			uint8_t get_logical_queue_index_for_function(uint32_t u32FunctionIndex) const;
-			uint8_t get_logical_queue_index_for_presentation() const;
-			bool is_valid() const;
+			VkCommandPool command_pool_of_function(uint32_t u32FunctionIndex) const;
+			uint32_t function_count() const;
+			uint8_t logical_queue_index_for_function(uint32_t u32FunctionIndex) const;
+			uint8_t logical_queue_index_for_presentation() const;
+			bool valid() const;
 	};
 
 	// Swapchain
@@ -85,6 +83,50 @@ namespace RE {
 	void destroy_render_system();
 	bool refresh_swapchain();
 	void mark_swapchain_dirty();
+
+	// Memory
+	bool does_memory_type_exist(VkMemoryPropertyFlags vk_eProperties);
+	enum VulkanMemoryType {
+		RE_VK_GPU_RAM,
+		RE_VK_CPU_RAM,
+		RE_VK_SHARED_RAM
+	};
+	bool does_have_vulkan_memory_type(VulkanMemoryType eMemoryType);
+	class VulkanMemory final {
+		private:
+			VkDeviceMemory vk_hMemory;
+			VkDeviceSize vk_size;
+			uint8_t u8MemoryTypeIndex;
+			bool bCoherent;
+
+		public:
+			VulkanMemory();
+			VulkanMemory(VkDeviceSize vk_size, VulkanMemoryType eType, VkMemoryPropertyFlags vk_eProperties, uint32_t u32DesiredMemoryTypes);
+			VulkanMemory(VkDeviceSize vk_size, uint8_t u8MemoryTypeIndex);
+			VulkanMemory(VulkanMemory &rMemory) = delete;
+			explicit VulkanMemory(VulkanMemory &&rrMemory);
+			~VulkanMemory();
+			
+			bool alloc(VkDeviceSize vk_size, VulkanMemoryType eType, VkMemoryPropertyFlags vk_eProperties, uint32_t u32DesiredMemoryTypes);
+			bool alloc(VkDeviceSize vk_size, uint8_t u8MemoryTypeIndex);
+			void free();
+			bool map(VkMemoryMapFlags vk_eFlags, VkDeviceSize vk_offset, VkDeviceSize vk_size, void **ppData) const;
+			void unmap();
+
+			bool valid() const noexcept;
+			VkDeviceMemory get() const noexcept;
+			VkDeviceSize size() const noexcept;
+			uint8_t type_index() const noexcept;
+			bool cpu_coherent() const noexcept;
+
+			void operator =(VulkanMemory &&rrMemory) noexcept;
+			constexpr bool operator ==(const VulkanMemory &rOtherMemory) const noexcept {
+				return false;
+			}
+			constexpr bool operator !=(const VulkanMemory &rOtherMemory) const noexcept {
+				return true;
+			}
+		};
 
 }
 

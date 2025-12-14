@@ -5,7 +5,6 @@ namespace RE {
 	VkPhysicalDevice vk_hPhysicalDeviceSelected = VK_NULL_HANDLE;
 	VkPhysicalDeviceProperties vk_physicalDeviceProperties;
 	VkPhysicalDeviceFeatures vk_physicalDeviceFeatures;
-	VkPhysicalDeviceMemoryProperties vk_physicalDeviceMemoryProperties;
 	std::unique_ptr<VkPhysicalDevice[]> vk_pahPhysicalDevicesAvailable;
 	uint32_t u32PhysicalDevicesAvailableCount;
 
@@ -119,6 +118,9 @@ namespace RE {
 			if (!bSwapchainExtists)
 				missingFeatures.emplace("The swapchain extension doesn't exist on this GPU");
 
+			// Check if memory is properly supported
+			does_gpu_support_memory(vk_hPhysicalDevice, vk_thisPhysicalDeviceProperties.properties.limits, missingFeatures);
+
 			// Check if required queues exist
 			does_gpu_have_necessary_queues(vk_hPhysicalDevice, missingFeatures);
 
@@ -202,34 +204,33 @@ namespace RE {
 			PRINT_DEBUG("Selecting best physical Vulkan device");
 			int32_t i32BestDeviceScore = std::numeric_limits<int32_t>::min();
 			VkPhysicalDevice vk_hBestPhysicalDevice;
-			VkPhysicalDeviceProperties2 vk_thisPhysicalDeviceProperties;
-			vk_thisPhysicalDeviceProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-			vk_thisPhysicalDeviceProperties.pNext = nullptr;
+			VkPhysicalDeviceProperties vk_thisPhysicalDeviceProperties;
 			for (uint32_t u32PhysicalDeviceAvailableIndex = 0; u32PhysicalDeviceAvailableIndex < u32PhysicalDevicesAvailableCount; u32PhysicalDeviceAvailableIndex++) {
-				vkGetPhysicalDeviceProperties2(vk_pahPhysicalDevicesAvailable[u32PhysicalDeviceAvailableIndex], &vk_thisPhysicalDeviceProperties);
+				vkGetPhysicalDeviceProperties(vk_pahPhysicalDevicesAvailable[u32PhysicalDeviceAvailableIndex], &vk_thisPhysicalDeviceProperties);
 	
-				VkSampleCountFlags vk_eMsaaAvailable = vk_thisPhysicalDeviceProperties.properties.limits.framebufferColorSampleCounts & vk_thisPhysicalDeviceProperties.properties.limits.framebufferDepthSampleCounts & vk_thisPhysicalDeviceProperties.properties.limits.framebufferStencilSampleCounts;
+				VkSampleCountFlags vk_eMsaaAvailable = vk_thisPhysicalDeviceProperties.limits.framebufferColorSampleCounts & vk_thisPhysicalDeviceProperties.limits.framebufferDepthSampleCounts & vk_thisPhysicalDeviceProperties.limits.framebufferStencilSampleCounts;
 				int32_t i32CurrentDeviceScore = 0;
-				switch (vk_thisPhysicalDeviceProperties.properties.deviceType) {
+				switch (vk_thisPhysicalDeviceProperties.deviceType) {
 					case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
 						i32CurrentDeviceScore += 1500;
 						break;
 					case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
 						break;
 					default:
-						i32CurrentDeviceScore -= 2000;
+						i32CurrentDeviceScore -= 3000;
 						break;
 				}
+				i32CurrentDeviceScore += rate_gpu_memory_capacity(vk_pahPhysicalDevicesAvailable[u32PhysicalDeviceAvailableIndex], vk_thisPhysicalDeviceProperties);
 				i32CurrentDeviceScore += rate_gpu_queues(vk_pahPhysicalDevicesAvailable[u32PhysicalDeviceAvailableIndex]);
 				i32CurrentDeviceScore += rate_gpu_depth_stencil_image_formats(vk_pahPhysicalDevicesAvailable[u32PhysicalDeviceAvailableIndex], vk_eMsaaAvailable);
-				i32CurrentDeviceScore += rate_gpu_texture_capacity(vk_thisPhysicalDeviceProperties.properties.limits);
+				i32CurrentDeviceScore += rate_gpu_texture_capacity(vk_thisPhysicalDeviceProperties.limits);
 				i32CurrentDeviceScore += std::popcount<VkSampleCountFlags>(vk_eMsaaAvailable & ~VK_SAMPLE_COUNT_1_BIT) * 700;
 				if ((vk_eMsaaAvailable & VK_SAMPLE_COUNT_1_BIT) == 0)
-					i32CurrentDeviceScore -= 5000;
+					i32CurrentDeviceScore -= 1000;
 				if (i32CurrentDeviceScore > i32BestDeviceScore) {
 					i32BestDeviceScore = i32CurrentDeviceScore;
 					vk_hBestPhysicalDevice = vk_pahPhysicalDevicesAvailable[u32PhysicalDeviceAvailableIndex];
-					PRINT_DEBUG("New best physical Vulkan device ", vk_thisPhysicalDeviceProperties.properties.deviceName, " selected, whose score is ", i32CurrentDeviceScore);
+					PRINT_DEBUG("New best physical Vulkan device ", vk_thisPhysicalDeviceProperties.deviceName, " selected, whose score is ", i32CurrentDeviceScore);
 				}
 			}
 			select_physical_vulkan_device(vk_hBestPhysicalDevice);
@@ -239,25 +240,16 @@ namespace RE {
 	void select_physical_vulkan_device(const VkPhysicalDevice vk_hPhysicalDevice) {
 		if (vk_hPhysicalDeviceSelected == vk_hPhysicalDevice)
 			return;
+		else if (vk_hPhysicalDeviceSelected) {
+			WAIT_FOR_IDLE_VULKAN_DEVICE();
+		}
 		vk_hPhysicalDeviceSelected = vk_hPhysicalDevice;
-		VkPhysicalDeviceProperties2 vk_physicalDeviceProperties2;
-		vk_physicalDeviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-		vk_physicalDeviceProperties2.pNext = nullptr;
-		vkGetPhysicalDeviceProperties2(vk_hPhysicalDeviceSelected, &vk_physicalDeviceProperties2);
-		PRINT_DEBUG("New physical Vulkan device ", vk_physicalDeviceProperties2.properties.deviceName, " selected");
-		vk_physicalDeviceProperties = vk_physicalDeviceProperties2.properties;
-		VkPhysicalDeviceFeatures2 vk_physicalDeviceFeatures2;
-		vk_physicalDeviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-		vk_physicalDeviceFeatures2.pNext = nullptr;
-		vkGetPhysicalDeviceFeatures2(vk_hPhysicalDeviceSelected, &vk_physicalDeviceFeatures2);
-		vk_physicalDeviceFeatures = vk_physicalDeviceFeatures2.features;
-		VkPhysicalDeviceMemoryProperties2 vk_physicalDeviceMemoryProperties2;
-		vk_physicalDeviceMemoryProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2;
-		vk_physicalDeviceMemoryProperties2.pNext = nullptr;
-		vkGetPhysicalDeviceMemoryProperties2(vk_hPhysicalDeviceSelected, &vk_physicalDeviceMemoryProperties2);
-		vk_physicalDeviceMemoryProperties = vk_physicalDeviceMemoryProperties2.memoryProperties;
+		vkGetPhysicalDeviceProperties(vk_hPhysicalDeviceSelected, &vk_physicalDeviceProperties);
+		PRINT_DEBUG("New physical Vulkan device ", vk_physicalDeviceProperties.deviceName, " selected");
+		vkGetPhysicalDeviceFeatures(vk_hPhysicalDeviceSelected, &vk_physicalDeviceFeatures);
 		vk_eAllowedMsaaSamples = vk_physicalDeviceProperties.limits.framebufferColorSampleCounts & vk_physicalDeviceProperties.limits.framebufferDepthSampleCounts & vk_physicalDeviceProperties.limits.framebufferStencilSampleCounts;
 		discard_incompatible_msaa_modes_for_depth_stencil_images(vk_eAllowedMsaaSamples);
+		fetch_gpu_memory_info();
 	}
 
 }

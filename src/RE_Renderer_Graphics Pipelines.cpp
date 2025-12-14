@@ -1,6 +1,6 @@
 #include "RE_Renderer_Internal.hpp"
 #include "RE_RenderElement.hpp"
-#include "RE_Vulkan_Wrapper Functions.hpp"
+#include "RE_Vulkan_Wrappers.hpp"
 
 namespace RE {
 
@@ -10,7 +10,7 @@ namespace RE {
 	static VkShaderModule vk_ahShaders[RE_VK_SHADER_COUNT];
 	VkPipeline vk_hGraphicsPipeline = VK_NULL_HANDLE;
 
-	static bool create_graphics_pipeline() {
+	static bool create_render_pipeline_internal() {
 		PRINT_DEBUG("Copying old Vulkan graphics pipelines used for game object rendering");
 		const VkPipeline vk_hPreviousPipeline = vk_hGraphicsPipeline;
 		const VkPipelineShaderStageCreateInfo vk_aShaderStages[RE_VK_SHADER_COUNT] = {
@@ -241,11 +241,11 @@ namespace RE {
 		};
 		if (vkCreatePipelineLayout(vk_hDevice, &vk_worldPipelineLayoutCreateInfo, nullptr, &vk_hGraphicsPipelineLayout) == VK_SUCCESS) {
 			PRINT_DEBUG("Creating vertex shader for game object rendering");
-			if (create_vulkan_shader_from_file("shaders/gameobject_vertex.glsl.spv", &vk_ahShaders[0])) {
+			if (create_vulkan_shader_from_file("shaders/gameobject_vertex.glsl.spv", 0, &vk_ahShaders[0])) {
 				PRINT_DEBUG("Creating fragment shader for game object rendering");
-				if (create_vulkan_shader_from_file("shaders/gameobject_fragment.glsl.spv", &vk_ahShaders[1])) {
+				if (create_vulkan_shader_from_file("shaders/gameobject_fragment.glsl.spv", 0, &vk_ahShaders[1])) {
 					PRINT_DEBUG("Creating render pipelines for rendering game objects");
-					if (create_graphics_pipeline())
+					if (create_render_pipeline_internal())
 						return true;
 					PRINT_DEBUG("Destroying fragment shader for rendering game objects due to failure creating its render pipelines");
 					vkDestroyShaderModule(vk_hDevice, vk_ahShaders[1], nullptr);
@@ -262,7 +262,7 @@ namespace RE {
 
 	bool recreate_render_pipelines() {
 		PRINT_DEBUG("Recreating Vulkan graphics pipeline");
-		return create_graphics_pipeline();
+		return create_render_pipeline_internal();
 	}
 
 	void destroy_render_pipelines() {

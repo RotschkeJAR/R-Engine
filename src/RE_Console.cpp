@@ -1,9 +1,9 @@
 #include "RE_Internal Header.hpp"
 #include "RE_Console.hpp"
 #include "RE_Main.hpp"
-#include "RE_Window_Win64.hpp"
 
 #include <time.h>
+#include <csignal>
 
 namespace RE {
 
@@ -13,8 +13,9 @@ namespace RE {
 #define TREAT_WARNING_AS_ERROR 1
 #define ERRORS_ALWAYS_FATAL 2
 
-	uint32_t u32ErrorCount = 0, u32VulkanErrorCount = 0, u32WarningCount = 0, u32VulkanWarningCount = 0;
-	uint8_t u8ConsoleSettings = 1 << PRINT_COLORS;
+	uint32_t u32VulkanErrorCount = 0, u32VulkanWarningCount = 0;
+	static uint32_t u32ErrorCount = 0, u32WarningCount = 0;
+	static uint8_t u8ConsoleSettings = 1 << PRINT_COLORS;
 
 	static void print_time() {
 		std::time_t currentTime = std::time(0);
@@ -23,8 +24,6 @@ namespace RE {
 
 	[[nodiscard]]
 	static std::string escape_code_to_string(const TerminalColor eColor, const bool bBackgroundColored, const bool bBold) {
-		if (!are_bits_true<uint8_t>(u8ConsoleSettings, PRINT_COLORS))
-			return "";
 		uint32_t u32Id = static_cast<uint32_t>(eColor);
 		if (u32Id >= static_cast<uint32_t>(RE_TERMINAL_COLOR_BRIGHT_BLACK))
 			u32Id += 90 - static_cast<uint32_t>(RE_TERMINAL_COLOR_BRIGHT_BLACK);
@@ -46,7 +45,7 @@ namespace RE {
 		while (lineBreak != std::string::npos) {
 			lineBreak++;
 			const size_t nextLineBreak = rsDetail.find("\n", lineBreak);
-			println("                                  ", rsDetail.substr(lineBreak, nextLineBreak));
+			println("                                      ", rsDetail.substr(lineBreak, nextLineBreak));
 			lineBreak = nextLineBreak;
 		}
 	}
@@ -61,41 +60,65 @@ namespace RE {
 	}
 
 	void print_colored(const std::string &rsContent, const TerminalColor eColor, const bool bBackgroundColored, const bool bBold) {
-		print(escape_code_to_string(eColor, bBackgroundColored, bBold), rsContent, DEFAULT_COLOR);
+		if (are_bits_true<uint8_t>(u8ConsoleSettings, PRINT_COLORS))
+			print(escape_code_to_string(eColor, bBackgroundColored, bBold), rsContent, DEFAULT_COLOR);
+		else
+			print(rsContent);
 	}
 
 	void println_colored(const std::string &rsContent, const TerminalColor eColor, const bool bBackgroundColored, const bool bBold) {
-		println(escape_code_to_string(eColor, bBackgroundColored, bBold), rsContent, DEFAULT_COLOR);
+		if (are_bits_true<uint8_t>(u8ConsoleSettings, PRINT_COLORS))
+			println(escape_code_to_string(eColor, bBackgroundColored, bBold), rsContent, DEFAULT_COLOR);
+		else
+			println(rsContent);
+	}
+
+	void abort(const std::string &rsDetail) {
+		print_time();
+		print_colored("ABORTION", RE_TERMINAL_COLOR_BRIGHT_BLACK, false, false);
+		print("   ");
+		print_error_msg(rsDetail);
+		print_error_count();
+		std::signal(SIGABRT, SIG_DFL);
+		std::abort();
+	}
+
+	void fatal_error(const std::string &rsDetail) {
+		print_time();
+		print_colored("FATAL ERROR", RE_TERMINAL_COLOR_RED, false, false);
+		print_error_msg(rsDetail);
+		bErrorOccured = true;
+		u32ErrorCount++;
 	}
 	
-	void error(const std::string &rsDetail, const bool bTerminate) {
-		print_time();
-		print_colored("ERROR", RE_TERMINAL_COLOR_RED, false, false);
-		print("  ");
-		print_error_msg(rsDetail);
-		const bool bFatal = bTerminate || are_bits_true<uint8_t>(u8ConsoleSettings, ERRORS_ALWAYS_FATAL);
-		if (bFatal) {
-			bErrorOccured = true;
-			println_colored("Terminating...", RE_TERMINAL_COLOR_BRIGHT_BLACK, false, false);
+	void error(const std::string &rsDetail) {
+		if (are_bits_true<uint8_t>(u8ConsoleSettings, ERRORS_ALWAYS_FATAL)) {
+			fatal_error(rsDetail);
+			return;
 		}
+		print_time();
+		print_colored("ERROR", RE_TERMINAL_COLOR_BRIGHT_RED, false, false);
+		print("      ");
+		print_error_msg(rsDetail);
 		u32ErrorCount++;
 	}
 
 	void warning(const std::string &rsDetail) {
-		if (are_bits_true<uint8_t>(u8ConsoleSettings, TREAT_WARNING_AS_ERROR))
-			error(rsDetail, false);
-		else {
-			print_time();
-			print_colored("WARNING", RE_TERMINAL_COLOR_YELLOW, false, false);
-			print_error_msg(rsDetail);
-			u32WarningCount++;
+		if (are_bits_true<uint8_t>(u8ConsoleSettings, TREAT_WARNING_AS_ERROR)) {
+			error(rsDetail);
+			return;
 		}
+		print_time();
+		print_colored("WARNING", RE_TERMINAL_COLOR_YELLOW, false, false);
+		print("    ");
+		print_error_msg(rsDetail);
+		u32WarningCount++;
 	}
 
 	void note(const std::string &rsDetail) {
 		print_time();
 		print_colored("NOTE", RE_TERMINAL_COLOR_WHITE, false, false);
-		print("   ");
+		print("       ");
 		print_error_msg(rsDetail);
 	}
 

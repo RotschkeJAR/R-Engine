@@ -2,13 +2,13 @@
 #define __RE_TEXTURE_H__
 
 #include "RE_Internal Header.hpp"
-#include "RE_Vulkan_Instance.hpp"
+#include "RE_GPU.hpp"
 
 namespace RE {
 
 	struct VulkanTexture final {
 		VkImage vk_hImage;
-		VkDeviceMemory vk_hImageMemory;
+		VulkanMemory imageMemory;
 		VkImageView vk_hImageView;
 		VkFormat vk_eFormat;
 		uint32_t a2u32Size[2];

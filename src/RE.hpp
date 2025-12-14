@@ -41,8 +41,35 @@ namespace RE {
 
 #define STRIP_QUOTE_MACRO(...) __VA_ARGS__
 
-	template <class T>
-	concept Is_Arithmetic = std::is_arithmetic_v<T>;
+	template <class... T>
+	concept Arithmetics = (std::is_arithmetic_v<T> && ...);
+
+	template <class... T>
+	concept Integrals = (std::is_integral_v<T> && ...);
+
+	template <class... T>
+	concept Floating_Point_Numbers  = (std::is_floating_point_v<T> && ...);
+
+	template <class TargetedType, class... T>
+	concept Are_Same = (std::is_same_v<T, TargetedType> && ...);
+
+	template <class T, T value1, T value2>
+	concept Less_Than = (value1 < value2);
+
+	template <class T, T value1, T value2>
+	concept Less_Than_Equal = (value1 <= value2);
+
+	template <class T, T value1, T value2>
+	concept Greater_Than = (value1 > value2);
+
+	template <class T, T value1, T value2>
+	concept Greater_Than_Equal = (value1 >= value2);
+
+	template <class T, T value1, T value2>
+	concept Equal = (value1 == value2);
+
+	template <class T, T value1, T value2>
+	concept Not_Equal = (value1 != value2);
 
 	enum TerminalColor {
 		RE_TERMINAL_COLOR_BLACK = 0x0,
@@ -235,11 +262,6 @@ namespace RE {
 		RE_MSAA_MODE_DISABLED = RE_MSAA_MODE_1
 	};
 
-	template <class SearchedType, class... Args>
-	consteval bool any_type_of() {
-		return (std::is_same_v<SearchedType, Args> || ...);
-	}
-
 	void set_signal_handlers();
 
 	template <class... T>
@@ -282,13 +304,16 @@ namespace RE {
 #endif
 #define PRINT_DEBUG_CLASS(...) PRINT_DEBUG("{", this, "} ", __VA_ARGS__)
 	
-	void error(const std::string &rsDetail, bool bTerminate);
+	void abort(const std::string &rsDetail);
+	void fatal_error(const std::string &rsDetail);
+	void error(const std::string &rsDetail);
 	void warning(const std::string &rsDetail);
 	void note(const std::string &rsDetail);
-#define FATAL_ERROR(...) error(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), " (in ", __FILE__, ", function \"", __func__, "\", at line ", __LINE__, ")"), true)
-#define ERROR(...) error(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), " (in ", __FILE__, ", function \"", __func__, "\", at line ", __LINE__, ")"), false)
-#define WARNING(...) warning(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), " (in ", __FILE__, ", function \"", __func__, "\", at line ", __LINE__, ")"))
-#define NOTE(...) note(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), " (in ", __FILE__, ", function \"", __func__, "\", at line ", __LINE__, ")"))
+#define ABORT(...) RE::abort(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), "\nIn ", __FILE__, ", function \"", __func__, "\", at line ", __LINE__, ")"))
+#define FATAL_ERROR(...) fatal_error(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), "\nIn ", __FILE__, ", function \"", __func__, "\", at line ", __LINE__, ")"))
+#define ERROR(...) error(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), "\nIn ", __FILE__, ", function \"", __func__, "\", at line ", __LINE__, ")"))
+#define WARNING(...) warning(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), "\nIn ", __FILE__, ", function \"", __func__, "\", at line ", __LINE__, ")"))
+#define NOTE(...) note(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), "\nIn ", __FILE__, ", function \"", __func__, "\", at line ", __LINE__, ")"))
 
 #define DELETE_SAFELY(PTR_REF) [&]() { \
 			if (!PTR_REF) \
@@ -392,9 +417,9 @@ namespace RE {
 	[[nodiscard]]
 	std::string get_app_name();
 
-	template <class T>
+	template <class T> requires Arithmetics<T>
 	[[nodiscard]]
-	constexpr T nth_root(const T n, const T value) requires Is_Arithmetic<T> {
+	constexpr T nth_root(const T n, const T value) noexcept {
 		static_assert(n > static_cast<T>(0.0), "The 0th or negative root is forbidden for causing undefined behaviour");
 		if (n <= static_cast<T>(0.0)) {
 			FATAL_ERROR("The value of n shouldn't be zero or negative in an nth root");
@@ -403,15 +428,14 @@ namespace RE {
 		return std::pow(value, static_cast<T>(1.0) / n);
 	}
 
-	template <class... T>
+	template <class... T> requires Integrals<T...>
 	[[nodiscard]]
-	constexpr uint64_t gen_bitmask(const T... bits) {
-		([&]() {static_assert(std::is_arithmetic_v<T>, "Only arithmetic values can be used for generating a bitmask");} (), ...);
+	constexpr uint64_t gen_bitmask(const T... bits) noexcept {
 		return (... | (1UL << static_cast<uint64_t>(bits)));
 	}
 
 	[[nodiscard]]
-	constexpr uint64_t gen_bitmask_in_range(const uint64_t u64Begin, const uint64_t u64End) {
+	constexpr uint64_t gen_bitmask_in_range(const uint64_t u64Begin, const uint64_t u64End) noexcept {
 		if (u64Begin > u64End) {
 			FATAL_ERROR("Start (", u64Begin, ") of the range is larger than end (", u64End, ")");
 			return 0;
@@ -423,27 +447,28 @@ namespace RE {
 		return u64Result;
 	}
 
-	template <class T, class... U>
+	template <class T, class... U> requires Arithmetics<T>
 	[[nodiscard]]
-	constexpr bool are_bits_true(const T value, const U... bits) requires Is_Arithmetic<T> {
-		return (value & static_cast<T>(gen_bitmask<U...>(bits...))) != static_cast<T>(0.0);
+	constexpr bool are_bits_true(const T value, const U... bits) noexcept {
+		const T bitmask = static_cast<T>(gen_bitmask<U...>(bits...));
+		return (value & bitmask) == bitmask;
 	}
 
-	template <class T>
+	template <class T> requires Integrals<T>
 	[[nodiscard]]
-	constexpr bool are_bits_true_in_range(const T value, const T begin, const T end) requires Is_Arithmetic<T> {
+	constexpr bool are_bits_true_in_range(const T value, const T begin, const T end) noexcept {
 		if (begin > end) {
 			FATAL_ERROR("Start (", begin, ") of the range is larger than end (", end, ")");
 			return false;
 		}
 		for (T i = begin; i < end; i++)
-			if (!are_bits_true<T>(value, i))
+			if (!are_bits_true<T, T>(value, i))
 				return false;
 		return true;
 	}
 
-	template <class T, class... U>
-	constexpr T set_bits(T& rValue, const bool bNewState, const U... bits) requires Is_Arithmetic<T> {
+	template <class T, class... U> requires Integrals<T>
+	constexpr T set_bits(T& rValue, const bool bNewState, const U... bits) noexcept {
 		const T bitmask = gen_bitmask<U...>(bits...);
 		if (bNewState)
 			rValue |= bitmask;
@@ -452,8 +477,8 @@ namespace RE {
 		return rValue;
 	}
 
-	template <class T>
-	constexpr T set_bits_in_range(T &rValue, const bool bNewState, const T begin, const T end) requires Is_Arithmetic<T> {
+	template <class T> requires Integrals<T>
+	constexpr T set_bits_in_range(T &rValue, const bool bNewState, const T begin, const T end) noexcept {
 		if (begin > end) {
 			FATAL_ERROR("Start (", begin, ") of the range is larger than end (", end, ")");
 			return rValue;
@@ -462,19 +487,26 @@ namespace RE {
 			set_bits<T>(rValue, bNewState, i);
 		return rValue;
 	}
+
+	template <class T> requires std::integral<T>
+	void for_each_bit(const T bitmask, const std::function<void (T bitIndex)> iterFunction) {
+		for (T bitIndex = 0; bitIndex < sizeof(T) * 8; bitIndex++)
+			if (are_bits_true<T>(bitmask, bitIndex))
+				std::invoke(iterFunction, bitIndex);
+	}
 	
-	template <class T>
+	template <class T> requires Arithmetics<T>
 	[[nodiscard]]
-	constexpr T sign(const T value) requires Is_Arithmetic<T> {
+	constexpr T sign(const T value) noexcept {
 		if constexpr (std::is_unsigned_v<T>)
 			return static_cast<T>(0.0) > value;
 		else
-			return (static_cast<T>(0.0) < value) - (value < static_cast<T>(0.0));
+			return (static_cast<T>(0.0) < value ? 1 : 0) - (value < static_cast<T>(0.0) ? 1 : 0);
 	}
 
-	template <class T>
+	template <class T> requires Arithmetics<T>
 	[[nodiscard]]
-	constexpr bool multiple_of(const T value, const T multiple) requires Is_Arithmetic<T> {
+	constexpr bool multiple_of(const T value, const T multiple) {
 		if constexpr (std::is_same_v<T, float>)
 			return std::fmodf(value, multiple) == 0.0f;
 		else if constexpr (std::is_same_v<T, double>)
@@ -485,9 +517,9 @@ namespace RE {
 			return (value % multiple) == 0;
 	}
 
-	template <class T>
+	template <class T> requires Arithmetics<T>
 	[[nodiscard]]
-	constexpr T next_multiple(const T value, const T multiple) requires Is_Arithmetic<T> {
+	constexpr T next_multiple(const T value, const T multiple) {
 		if (value == static_cast<T>(0.0))
 			return multiple;
 		if constexpr (std::is_same_v<T, float>)
@@ -500,9 +532,9 @@ namespace RE {
 			return multiple - (value % multiple) + value;
 	}
 
-	template <class T>
+	template <class T> requires Arithmetics<T>
 	[[nodiscard]]
-	constexpr T previous_multiple(const T value, const T multiple) requires Is_Arithmetic<T> {
+	constexpr T previous_multiple(const T value, const T multiple) {
 		if (value == static_cast<T>(0.0))
 			return -multiple;
 		if constexpr (std::is_same_v<T, float>)
@@ -515,67 +547,64 @@ namespace RE {
 			return value - (value % multiple);
 	}
 
-	template <class T>
+	template <class T> requires std::floating_point<T>
 	[[nodiscard]]
-	constexpr T degrees_to_radians(const T degrees) requires std::floating_point<T> {
+	constexpr T degrees_to_radians(const T degrees) noexcept {
 		return degrees * (std::numbers::pi / 180.0f);
 	}
 
-	template <class T>
+	template <class T> requires std::floating_point<T>
 	[[nodiscard]]
-	constexpr T radians_to_degrees(const T radians) requires std::floating_point<T> {
+	constexpr T radians_to_degrees(const T radians) noexcept {
 		return radians * (180.0f / std::numbers::pi);
 	}
 
-	template <class T>
+	template <class T> requires std::floating_point<T>
 	[[nodiscard]]
-	constexpr T sin_deg(const T degrees) requires std::floating_point<T> {
+	constexpr T sin_deg(const T degrees) noexcept {
 		return std::sin(degrees_to_radians<T>(degrees));
 	}
 
-	template <class T>
+	template <class T> requires std::floating_point<T>
 	[[nodiscard]]
-	constexpr T cos_deg(const T degrees) requires std::floating_point<T> {
+	constexpr T cos_deg(const T degrees) noexcept {
 		return std::cos(degrees_to_radians<T>(degrees));
 	}
 
-	template <class T>
+	template <class T> requires std::floating_point<T>
 	[[nodiscard]]
-	constexpr T tan_deg(const T degrees) requires std::floating_point<T> {
+	constexpr T tan_deg(const T degrees) noexcept {
 		return std::tan(degrees_to_radians<T>(degrees));
 	}
 
 
 
-	template <Is_Arithmetic T, uint32_t u32Dimensions>
+	template <class T, size_t dimensionCount> requires Arithmetics<T> && Greater_Than<size_t, dimensionCount, 0>
 	class Vector final {
-		static_assert(u32Dimensions != 0, "A vector cannot have zero dimensions");
-
 		public:
-			std::array<T, u32Dimensions> coords;
+			std::array<T, dimensionCount> coords;
 
 			Vector() {
 				fill(static_cast<T>(0.0));
 			}
-			template <class P, uint32_t u32CopyDimensions>
-			explicit Vector(const Vector<P, u32CopyDimensions> &rCopyVector) {
+			template <class P, size_t u32CopyDimensions>
+			explicit Vector(const Vector<P, u32CopyDimensions> &rCopyVector) requires Arithmetics<P> && Less_Than_Equal<size_t, u32CopyDimensions, dimensionCount> {
 				PRINT_DEBUG_CLASS("Copying coordinates from vector ", &rCopyVector);
-				if constexpr (u32CopyDimensions <= u32Dimensions) {
+				if constexpr (u32CopyDimensions <= dimensionCount) {
 					std::copy(rCopyVector.coords.begin(), rCopyVector.coords.end(), coords.begin());
 					std::fill(coords.begin() + u32CopyDimensions, coords.end(), static_cast<T>(0.0));
 				} else
-					std::copy(rCopyVector.begin(), rCopyVector.coords.end() - (u32CopyDimensions - u32Dimensions), coords.begin());
+					std::copy(rCopyVector.begin(), rCopyVector.coords.end() - (u32CopyDimensions - dimensionCount), coords.begin());
 			}
 			template <class... V>
-			Vector(const V... values) {
-				static_assert(sizeof...(values) <= u32Dimensions, "The vector gets more values for initialization, than its dimension allows to");
+			Vector(const V... values) requires Arithmetics<V...> && Less_Than_Equal<size_t, sizeof...(V), dimensionCount> {
 				PRINT_DEBUG_CLASS("Filling vector with values");
-				uint32_t u32Index = 0;
+				size_t dimensionIndex = 0;
 				([&]() {
-					coords[u32Index] = static_cast<T>(values);
-					u32Index++;
+					coords[dimensionIndex] = static_cast<T>(values);
+					dimensionIndex++;
 				} (), ...);
-				std::fill(coords.begin() + u32Index, coords.end(), static_cast<T>(0.0));
+				std::fill(coords.begin() + dimensionIndex, coords.end(), static_cast<T>(0.0));
 			}
 			~Vector() {}
 
@@ -597,7 +626,7 @@ namespace RE {
 
 			[[nodiscard]]
 			T length() const {
-				return nth_root<T>(static_cast<T>(u32Dimensions), sum());
+				return nth_root<T>(static_cast<T>(dimensionCount), sum());
 			}
 
 			void fill(const T value) {
@@ -607,11 +636,11 @@ namespace RE {
 
 			void copy_from(const Vector &rCopyVector) {
 				PRINT_DEBUG_CLASS("Copying coordinates from vector ", &rCopyVector);
-				if (rCopyVector.get_dimensions() <= u32Dimensions) {
+				if (rCopyVector.dimensions() <= dimensionCount) {
 					std::copy(rCopyVector.coords.begin(), rCopyVector.coords.end(), coords.begin());
-					std::fill(coords.begin() + rCopyVector.get_dimensions(), coords.end(), static_cast<T>(0.0));
+					std::fill(coords.begin() + rCopyVector.dimensions(), coords.end(), static_cast<T>(0.0));
 				} else
-					std::copy(rCopyVector.coords.begin(), rCopyVector.coords.end() - (rCopyVector.get_dimensions() - u32Dimensions), coords.begin());
+					std::copy(rCopyVector.coords.begin(), rCopyVector.coords.end() - (rCopyVector.dimensions() - dimensionCount), coords.begin());
 			}
 
 			void copy_from_array(const T *const paArray, const size_t arrayLength) {
@@ -622,30 +651,30 @@ namespace RE {
 
 			[[nodiscard]]
 			bool equals(const Vector &rCompareVector) const {
-				if (u32Dimensions != rCompareVector.get_dimensions())
+				if (dimensionCount != rCompareVector.dimensions())
 					return false;
-				for (uint32_t u32Index = 0; u32Index < u32Dimensions; u32Index++)
-					if (coords[u32Index] != rCompareVector[u32Index])
+				for (size_t dimensionIndex = 0; dimensionIndex < dimensionCount; dimensionIndex++)
+					if (coords[dimensionIndex] != rCompareVector[dimensionIndex])
 						return false;
 				return true;
 			}
 
 			[[nodiscard]]
-			constexpr uint32_t get_dimensions() const {
-				return u32Dimensions;
+			constexpr size_t dimensions() const {
+				return dimensionCount;
 			}
 
-			T& operator [](const uint32_t u32Index) {
-				if (u32Index >= u32Dimensions)
-					FATAL_ERROR("Index ", u32Index, " is out of bounds: [0, ", u32Dimensions, ")");
-				return coords[u32Index];
+			T& operator [](const size_t dimensionIndex) {
+				if (dimensionIndex >= dimensionCount)
+					FATAL_ERROR("Index ", dimensionIndex, " is out of bounds: [0, ", dimensionCount, ")");
+				return coords[dimensionIndex];
 			}
 
 			[[nodiscard]]
-			T operator [](const uint32_t u32Index) const {
-				if (u32Index >= u32Dimensions)
-					FATAL_ERROR("Index ", u32Index, " is out of bounds: [0, ", u32Dimensions, ")");
-				return coords[u32Index];
+			T operator [](const size_t dimensionIndex) const {
+				if (dimensionIndex >= dimensionCount)
+					FATAL_ERROR("Index ", dimensionIndex, " is out of bounds: [0, ", dimensionCount, ")");
+				return coords[dimensionIndex];
 			}
 
 			void operator =(const Vector &rCopyVector) {
@@ -664,7 +693,7 @@ namespace RE {
 
 			friend std::ostream& operator <<(std::ostream &rStream, const Vector &rVector) {
 				rStream << "(";
-				for (uint32_t i = 0; i < rVector.get_dimensions(); i++) {
+				for (size_t i = 0; i < rVector.dimensions(); i++) {
 					if (i)
 						rStream << ", ";
 					rStream << rVector.coords[i];
@@ -686,20 +715,20 @@ namespace RE {
 	typedef Vector<uint32_t, 3> Vector3u;
 	typedef Vector<uint32_t, 4> Vector4u;
 
-	template <uint32_t u32NumOfThreads = 10>
+	template <size_t numOfThreads = 10> requires Greater_Than<size_t, numOfThreads, 0>
 	class Threadpool final {
 		private:
-			std::array<std::jthread, u32NumOfThreads> threads;
-			std::array<uint64_t, u32NumOfThreads> agePerThread;
+			std::array<std::jthread, numOfThreads> threads;
+			std::array<uint64_t, numOfThreads> agePerThread;
 
-			uint32_t wait_for_oldest_thread() {
-				const uint32_t u32OldThreadIndex = std::min_element(agePerThread.begin(), agePerThread.end()) - agePerThread.begin();
+			size_t wait_for_oldest_thread() {
+				const size_t oldThreadIndex = std::min_element(agePerThread.begin(), agePerThread.end()) - agePerThread.begin();
 				std::jthread greatestAgeFindThread([&]() {
-					agePerThread[u32OldThreadIndex] = (*std::max_element(agePerThread.begin(), agePerThread.end())) + 1;
+					agePerThread[oldThreadIndex] = (*std::max_element(agePerThread.begin(), agePerThread.end())) + 1;
 				});
-				if (threads[u32OldThreadIndex].joinable())
-					threads[u32OldThreadIndex].join();
-				return u32OldThreadIndex;
+				if (threads[oldThreadIndex].joinable())
+					threads[oldThreadIndex].join();
+				return oldThreadIndex;
 			}
 
 		public:
@@ -708,13 +737,13 @@ namespace RE {
 
 			template <class F, class... paramTypes>
 			void execute(F &&rrFunction, paramTypes... params) {
-				const uint32_t u32OldThreadIndex = wait_for_oldest_thread();
-				threads[u32OldThreadIndex] = std::jthread(rrFunction, params...);
+				const size_t oldThreadIndex = wait_for_oldest_thread();
+				threads[oldThreadIndex] = std::jthread(rrFunction, params...);
 			}
 
 			void move_thread(std::jthread &&rrThread) {
-				const uint32_t u32OldThreadIndex = wait_for_oldest_thread();
-				threads[u32OldThreadIndex] = rrThread;
+				const size_t oldThreadIndex = wait_for_oldest_thread();
+				threads[oldThreadIndex] = rrThread;
 			}
 
 			bool joinable() {
@@ -733,20 +762,20 @@ namespace RE {
 						rThread.join();
 			}
 
-			uint32_t free_slots() {
-				uint32_t u32FreeSlots = 0;
+			size_t free_slots() {
+				size_t numOfFreeSlots = 0;
 				for (std::jthread &rThread : threads)
 					if (!rThread.joinable())
-						u32FreeSlots++;
-				return u32FreeSlots;
+						numOfFreeSlots++;
+				return numOfFreeSlots;
 			}
 
-			uint32_t occupied_slots() {
+			size_t occupied_slots() {
 				return get_amount_of_threads() - free_slots();
 			}
 
-			constexpr uint32_t get_amount_of_threads() {
-				return u32NumOfThreads;
+			consteval size_t get_amount_of_threads() {
+				return numOfThreads;
 			}
 	};
 
@@ -819,7 +848,7 @@ namespace RE {
 
 			template <class T>
 			[[nodiscard]]
-			T random(const T &rMin, const T &rMax) {
+			T random(const T &rMin, const T &rMax) requires Arithmetics<T> {
 				static_assert(std::is_arithmetic_v<T>, "This function accepts arithmetic datatypes only");
 				if constexpr (std::is_integral_v<T>) {
 					std::uniform_int_distribution<T> range(rMin, rMax - 1);
@@ -831,12 +860,12 @@ namespace RE {
 			}
 			template <class T>
 			[[nodiscard]]
-			T random(const T &rMax) {
+			T random(const T &rMax) requires Arithmetics<T> {
 				return random<T>(static_cast<T>(0.0), rMax);
 			}
 			template <class T>
 			[[nodiscard]]
-			T random() {
+			T random() requires Arithmetics<T> {
 				return random<T>(std::numeric_limits<T>::min(), std::numeric_limits<T>::max());
 			}
 			[[nodiscard]]
@@ -848,17 +877,17 @@ namespace RE {
 
 			template <class T>
 			[[nodiscard]]
-			T operator ()(const T rMin, const T rMax) {
+			T operator ()(const T rMin, const T rMax) requires Arithmetics<T> {
 				return random<T>(rMin, rMax);
 			}
 			template <class T>
 			[[nodiscard]]
-			T operator ()(const T &rMax) {
+			T operator ()(const T &rMax) requires Arithmetics<T> {
 				return random<T>(rMax);
 			}
 			template <class T>
 			[[nodiscard]]
-			T operator ()() {
+			T operator ()() requires Arithmetics<T> {
 				if constexpr (std::is_same_v<T, bool>)
 					return random_bool();
 				else
@@ -920,7 +949,7 @@ namespace RE {
 			Camera(const Vector2f &rView, float fViewDistance);
 			Camera(const Vector2f &rView, float fViewDistance, bool bIgnoreAspectRatio);
 			virtual ~Camera();
-			virtual void update();
+			virtual void update_before_render();
 			void activate();
 			void deactivate() const;
 			void mark_deletable();

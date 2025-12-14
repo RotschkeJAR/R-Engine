@@ -9,7 +9,10 @@ namespace RE {
 			.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
 			.flags = vk_eFlags
 		};
-		return vkCreateFence(vk_hDevice, &vk_createInfo, nullptr, vk_phFence) == VK_SUCCESS;
+		if (vkCreateFence(vk_hDevice, &vk_createInfo, nullptr, vk_phFence) == VK_SUCCESS)
+			return true;
+		RE_ERROR("Failed to create a Vulkan fence");
+		return false;
 	}
 
 	Vulkan_Fence::Vulkan_Fence() : vk_hFence(VK_NULL_HANDLE) {}

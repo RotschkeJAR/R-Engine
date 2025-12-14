@@ -39,6 +39,7 @@ namespace RE {
 			PRINT_DEBUG("Mapping camera uniform buffer's memory");
 			float *pafCameraUniformBuffer;
 			if (cameraUniformBufferMemory.map(0, 0, vk_cameraUniformBufferBytes, reinterpret_cast<void**>(&pafCameraUniformBuffer))) {
+				PRINT_DEBUG("Initializing camera matrices with default values");
 				cameraUniforms[0] = pafCameraUniformBuffer;
 				cameraUniforms[1] = pafCameraUniformBuffer + vk_alignmentOffsetBytes / sizeof(float);
 				std::jthread cameraUniformBufferInitThread([&]() {
@@ -59,6 +60,7 @@ namespace RE {
 							}
 					}
 				});
+				PRINT_DEBUG("Creating Vulkan descriptor set layout for camera");
 				const VkDescriptorSetLayoutBinding vk_camDescBinding = {
 					.binding = RE_VK_UNIFORM_BINDING_CAMERA,
 					.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -71,6 +73,7 @@ namespace RE {
 					.pBindings = &vk_camDescBinding
 				};
 				if (vkCreateDescriptorSetLayout(vk_hDevice, &vk_camDescLayoutInfo, nullptr, &vk_hCameraDescLayout) == VK_SUCCESS) {
+					PRINT_DEBUG("Allocating Vulkan descriptor sets for camera");
 					std::array<VkDescriptorSetLayout, RE_VK_FRAMES_IN_FLIGHT> camDescLayoutArray;
 					camDescLayoutArray.fill(vk_hCameraDescLayout);
 					const VkDescriptorSetAllocateInfo vk_camDescSetAllocInfo = {
@@ -86,7 +89,6 @@ namespace RE {
 						for (uint8_t u8DescriptorSetIndex = 0; u8DescriptorSetIndex < RE_VK_FRAMES_IN_FLIGHT; u8DescriptorSetIndex++) {
 							vk_aDescBufferInfos[u8DescriptorSetIndex].buffer = vk_hCameraUniformBuffer;
 							vk_aDescBufferInfos[u8DescriptorSetIndex].offset = vk_alignmentOffsetBytes * u8DescriptorSetIndex;
-							PRINT_LN(vk_aDescBufferInfos[u8DescriptorSetIndex].offset);
 							vk_aDescBufferInfos[u8DescriptorSetIndex].range = RE_VK_CAMERA_UNIFORM_BUFFER_SIZE_BYTES;
 							vk_aWriteCamDescriptorSets[u8DescriptorSetIndex].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 							vk_aWriteCamDescriptorSets[u8DescriptorSetIndex].pNext = nullptr;
@@ -130,7 +132,9 @@ namespace RE {
 
 	void calculate_camera_matrices() {
 		if (pActiveCamera) {
+			PRINT_DEBUG("Updating camera before transferring its matrices");
 			pActiveCamera->update_before_render();
+			PRINT_DEBUG("Updating camera matrices");
 			cameraUniforms[u8CurrentFrameInFlightIndex][RE_VK_VIEW_MATRIX_OFFSET + 12] = -pActiveCamera->transform.position[0];
 			cameraUniforms[u8CurrentFrameInFlightIndex][RE_VK_VIEW_MATRIX_OFFSET + 13] = -pActiveCamera->transform.position[1];
 			cameraUniforms[u8CurrentFrameInFlightIndex][RE_VK_VIEW_MATRIX_OFFSET + 14] = -pActiveCamera->transform.position[2];
@@ -138,6 +142,7 @@ namespace RE {
 			cameraUniforms[u8CurrentFrameInFlightIndex][RE_VK_PROJECTION_MATRIX_OFFSET + 5] = -1.0f / pActiveCamera->view[1];
 			cameraUniforms[u8CurrentFrameInFlightIndex][RE_VK_PROJECTION_MATRIX_OFFSET + 10] = 1.0f / pActiveCamera->fViewDistance;
 			if (!pActiveCamera->bIgnoreAspectRatio) {
+				PRINT_DEBUG("Calculating projection on screen depending on camera's projection's aspect ratio");
 				const float fFactor = std::min(vk_renderImageSize.width / pActiveCamera->view[0], vk_renderImageSize.height / pActiveCamera->view[1]);
 				vk_cameraProjectionOnscreen.extent.width = static_cast<uint32_t>(std::roundf(pActiveCamera->view[0] * fFactor));
 				vk_cameraProjectionOnscreen.extent.height = static_cast<uint32_t>(std::roundf(pActiveCamera->view[1] * fFactor));

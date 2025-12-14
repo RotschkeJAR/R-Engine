@@ -49,7 +49,7 @@ namespace RE {
 				if (vkBindImageMemory(vk_hDevice, *vk_phImage, pMemory->get(), 0) == VK_SUCCESS)
 					return true;
 				else
-					RE_FATAL_ERROR("Failed to bind memory to a Vulkan image");
+					RE_ERROR("Failed to bind memory to a Vulkan image");
 				PRINT_DEBUG("Freeing memory after failing to bind memory and Vulkan image");
 				pMemory->free();
 			}
@@ -57,7 +57,7 @@ namespace RE {
 			vkDestroyImage(vk_hDevice, *vk_phImage, nullptr);
 			*vk_phImage = VK_NULL_HANDLE;
 		} else
-			RE_FATAL_ERROR("Failed to create a Vulkan image");
+			RE_ERROR("Failed to create a Vulkan image");
 		return false;
 	}
 

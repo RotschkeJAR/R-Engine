@@ -3,10 +3,8 @@
 
 namespace RE {
 
-	Vulkan_TimelineSemaphore::Vulkan_TimelineSemaphore() : Vulkan_TimelineSemaphore(0) {}
-
-	Vulkan_TimelineSemaphore::Vulkan_TimelineSemaphore(const uint64_t u64InitialValue) : vk_hTimelineSemaphore(VK_NULL_HANDLE) {
-		PRINT_DEBUG_CLASS("Constructing Vulkan timeline semaphore wrapper");
+	bool create_vulkan_timeline_semaphore(const VkSemaphoreCreateFlags vk_eFlags, const uint64_t u64InitialValue, VkSemaphore *const vk_phSemaphore) {
+		PRINT_DEBUG("Creating a Vulkan timeline semaphore starting at value ", u64InitialValue);
 		const VkSemaphoreTypeCreateInfo vk_timelineSemaphoreCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO,
 			.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE,
@@ -14,17 +12,41 @@ namespace RE {
 		};
 		const VkSemaphoreCreateInfo vk_semaphoreCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
-			.pNext = &vk_timelineSemaphoreCreateInfo
+			.pNext = &vk_timelineSemaphoreCreateInfo,
+			.flags = vk_eFlags
 		};
-		if (vkCreateSemaphore(vk_hDevice, &vk_semaphoreCreateInfo, nullptr, &vk_hTimelineSemaphore) != VK_SUCCESS)
-			RE_ERROR("Failed to create a Vulkan timeline semaphore");
+		if (vkCreateSemaphore(vk_hDevice, &vk_semaphoreCreateInfo, nullptr, vk_phSemaphore) == VK_SUCCESS)
+			return true;
+		RE_ERROR("Failed to create a Vulkan timeline semaphore");
+		return false;
+	}
+
+	Vulkan_TimelineSemaphore::Vulkan_TimelineSemaphore() : vk_hTimelineSemaphore(VK_NULL_HANDLE) {}
+
+	Vulkan_TimelineSemaphore::Vulkan_TimelineSemaphore(const VkSemaphoreCreateFlags vk_eFlags, const uint64_t u64InitialValue) : vk_hTimelineSemaphore(VK_NULL_HANDLE) {
+		PRINT_DEBUG_CLASS("Constructing Vulkan timeline semaphore wrapper");
+		create(vk_eFlags, u64InitialValue);
+	}
+
+	Vulkan_TimelineSemaphore::Vulkan_TimelineSemaphore(Vulkan_TimelineSemaphore &&rrCopy) : vk_hTimelineSemaphore(rrCopy.vk_hTimelineSemaphore) {
+		PRINT_DEBUG_CLASS("Constructing Vulkan timeline semaphore wrapper by moving ownership from another wrapper");
+		rrCopy.vk_hTimelineSemaphore = VK_NULL_HANDLE;
 	}
 
 	Vulkan_TimelineSemaphore::~Vulkan_TimelineSemaphore() {
 		PRINT_DEBUG_CLASS("Destructing Vulkan timeline semaphore wrapper");
 		if (!valid())
 			return;
-		PRINT_DEBUG_CLASS("Destroying Vulkan timeline semaphore wrapper ", vk_hTimelineSemaphore);
+		destroy();
+	}
+
+	bool Vulkan_TimelineSemaphore::create(const VkSemaphoreCreateFlags vk_eFlags, const uint64_t u64InitialValue) {
+		PRINT_DEBUG_CLASS("Creating Vulkan timeline semaphore wrapper");
+		return create_vulkan_timeline_semaphore(vk_eFlags, u64InitialValue, &vk_hTimelineSemaphore);
+	}
+	
+	void Vulkan_TimelineSemaphore::destroy() {
+		PRINT_DEBUG_CLASS("Destroying Vulkan timeline semaphore wrapper");
 		vkDestroySemaphore(vk_hDevice, vk_hTimelineSemaphore, nullptr);
 	}
 

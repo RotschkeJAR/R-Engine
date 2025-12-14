@@ -18,7 +18,10 @@ namespace RE {
 			.offset = vk_offset,
 			.range = vk_range
 		};
-		return vkCreateBufferView(vk_hDevice, &vk_createInfo, nullptr, vk_phBufferView) == VK_SUCCESS;
+		if (vkCreateBufferView(vk_hDevice, &vk_createInfo, nullptr, vk_phBufferView) == VK_SUCCESS)
+			return true;
+		RE_ERROR("Failed to create a Vulkan timeline semaphore");
+		return false;
 	}
 
 	Vulkan_BufferView::Vulkan_BufferView() : vk_hBufferView(VK_NULL_HANDLE) {}

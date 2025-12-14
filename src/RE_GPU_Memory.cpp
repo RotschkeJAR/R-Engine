@@ -10,8 +10,10 @@ namespace RE {
 	uint32_t u32VulkanMemoryAllocCount = 0;
 
 	bool does_gpu_support_memory(const VkPhysicalDevice vk_hPhysicalDevice, const VkPhysicalDeviceLimits &vk_rPhysicalDeviceLimits, std::queue<std::string> &rMissingFeatures) {
+		PRINT_DEBUG("Querying memory properties of physical Vulkan device ", vk_hPhysicalDevice);
 		VkPhysicalDeviceMemoryProperties vk_physicalDeviceMemoryInfo;
 		vkGetPhysicalDeviceMemoryProperties(vk_hPhysicalDevice, &vk_physicalDeviceMemoryInfo);
+		PRINT_DEBUG("Checking memory types and sizes");
 		VkDeviceSize vk_a2MemoryHeapSizes[2] = {};
 		bool a2bMemoryTypesSupported[2] = {};
 		for (uint32_t u32TypeIndex = 0; u32TypeIndex < vk_physicalDeviceMemoryInfo.memoryTypeCount; u32TypeIndex++) {
@@ -44,18 +46,21 @@ namespace RE {
 	}
 
 	int32_t rate_gpu_memory_capacity(const VkPhysicalDevice vk_hPhysicalDevice, const VkPhysicalDeviceProperties &vk_rPhysicalDeviceProperties) {
+		PRINT_DEBUG("Rating memory capacity of physical Vulkan device ", vk_hPhysicalDevice);
 		int32_t i32Score;
 		if (vk_rPhysicalDeviceProperties.limits.maxMemoryAllocationCount >= RE_VK_MIN_MEMORY_ALLOCS)
 			i32Score = static_cast<int32_t>(std::round(static_cast<double>(vk_rPhysicalDeviceProperties.limits.maxMemoryAllocationCount - RE_VK_MIN_MEMORY_ALLOCS) / std::numeric_limits<uint32_t>::max() * 1000.0));
 		else
 			i32Score = -2000;
+		PRINT_DEBUG("Physical device supports a maximum of ", vk_rPhysicalDeviceProperties.limits.maxMemoryAllocationCount, " memory allocations and has been rated with score of ", i32Score);
 		VkPhysicalDeviceMemoryProperties vk_physicalDeviceMemoryInfo;
 		vkGetPhysicalDeviceMemoryProperties(vk_hPhysicalDevice, &vk_physicalDeviceMemoryInfo);
 		for (uint32_t u32HeapIndex = 0; u32HeapIndex < vk_physicalDeviceMemoryInfo.memoryHeapCount; u32HeapIndex++)
-			i32Score += vk_physicalDeviceMemoryInfo.memoryHeaps[u32HeapIndex].size / RE_VK_MIN_MEMORY_HEAP_BYTES;
+			i32Score += vk_physicalDeviceMemoryInfo.memoryHeaps[u32HeapIndex].size / RE_VK_MIN_MEMORY_HEAP_BYTES - 1;
 		{ // Test physical memory regions
 			bool a2bPhysicalMemorySupports[2] = {};
 			for (uint32_t u32TypeIndex = 0; u32TypeIndex < vk_physicalDeviceMemoryInfo.memoryTypeCount; u32TypeIndex++) {
+				PRINT_DEBUG("Checking physical memory at type index ", u32TypeIndex);
 				const uint32_t u32HeapIndex = vk_physicalDeviceMemoryInfo.memoryTypes[u32TypeIndex].heapIndex;
 				const bool bPhysicalMemory = (vk_physicalDeviceMemoryInfo.memoryTypes[u32TypeIndex].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) 
 						&& (vk_physicalDeviceMemoryInfo.memoryHeaps[u32HeapIndex].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT);
@@ -76,26 +81,37 @@ namespace RE {
 				i32Score += 1000;
 		}
 		// Test memory properties
+		PRINT_DEBUG("Checking memory properties and constellations");
 		constexpr VkMemoryPropertyFlags vk_aeSuitableMemoryProperties[] = {
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT
 		};
 		constexpr uint32_t u32SuitableMemoryCount = sizeof(vk_aeSuitableMemoryProperties) / sizeof(vk_aeSuitableMemoryProperties[0]);
 		bool abSupportedMemoryProperties[u32SuitableMemoryCount] = {};
-		for (uint32_t u32MemoryTypeIndex = 0; u32MemoryTypeIndex < vk_physicalDeviceMemoryInfo.memoryTypeCount; u32MemoryTypeIndex++)
-			for (uint32_t u32SuitableMemoryIndex = 0; u32SuitableMemoryIndex < u32SuitableMemoryCount; u32SuitableMemoryIndex++)
+		for (uint32_t u32MemoryTypeIndex = 0; u32MemoryTypeIndex < vk_physicalDeviceMemoryInfo.memoryTypeCount; u32MemoryTypeIndex++) {
+			PRINT_DEBUG("Checking properties of memory type at index ", u32MemoryTypeIndex);
+			for (uint32_t u32SuitableMemoryIndex = 0; u32SuitableMemoryIndex < u32SuitableMemoryCount; u32SuitableMemoryIndex++) {
+				PRINT_DEBUG("Checking for suitable constellation at index ", u32SuitableMemoryIndex);
 				if (are_bits_true<VkMemoryPropertyFlags>(vk_physicalDeviceMemoryInfo.memoryTypes[u32MemoryTypeIndex].propertyFlags, vk_aeSuitableMemoryProperties[u32SuitableMemoryIndex]))
 					if (!abSupportedMemoryProperties[u32SuitableMemoryIndex]) {
 						abSupportedMemoryProperties[u32SuitableMemoryIndex] = true;
 						switch (u32SuitableMemoryIndex) {
 							case 0:
-								i32Score += 400;
+								i32Score += 200;
 								break;
 							case 1:
-								i32Score += 1000;
+								i32Score += 200;
 								break;
 							case 2:
+								i32Score += 400;
+								break;
+							case 3:
+								i32Score += 1000;
+								break;
+							case 4:
 								i32Score += 1000;
 								break;
 							default:
@@ -104,11 +120,14 @@ namespace RE {
 						if (std::all_of(std::begin(abSupportedMemoryProperties), std::end(abSupportedMemoryProperties), [](const bool bValue) -> bool {return bValue;}))
 							goto RETURN_DEVICE_SCORE;
 					}
+			}
+		}
 		RETURN_DEVICE_SCORE:
 			return i32Score;
 	}
 
 	void fetch_gpu_memory_info() {
+		PRINT_DEBUG("Fetching memory properties of selected physical Vulkan device");
 		VkPhysicalDeviceMemoryProperties vk_physicalDeviceMemoryInfo;
 		vkGetPhysicalDeviceMemoryProperties(vk_hPhysicalDeviceSelected, &vk_physicalDeviceMemoryInfo);
 		vulkanMemoryHeaps.reserve(vk_physicalDeviceMemoryInfo.memoryHeapCount);

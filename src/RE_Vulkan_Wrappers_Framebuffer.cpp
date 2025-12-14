@@ -22,7 +22,10 @@ namespace RE {
 			.height = u32Height,
 			.layers = u32Layers
 		};
-		return vkCreateFramebuffer(vk_hDevice, &vk_createInfo, nullptr, vk_phFramebuffer) == VK_SUCCESS;
+		if (vkCreateFramebuffer(vk_hDevice, &vk_createInfo, nullptr, vk_phFramebuffer) == VK_SUCCESS)
+			return true;
+		RE_ERROR("Failed to create a Vulkan framebuffer");
+		return false;
 	}
 
 	Vulkan_Framebuffer::Vulkan_Framebuffer() : vk_hFramebuffer(VK_NULL_HANDLE) {}

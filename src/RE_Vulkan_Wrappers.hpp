@@ -318,15 +318,20 @@ namespace RE {
 			operator bool() const;
 	};
 
+	bool create_vulkan_timeline_semaphore(VkSemaphoreCreateFlags vk_eFlags, uint64_t u64InitialValue, VkSemaphore *vk_phSemaphore);
 	class Vulkan_TimelineSemaphore final {
 		private:
 			VkSemaphore vk_hTimelineSemaphore;
 
 		public:
 			Vulkan_TimelineSemaphore();
-			Vulkan_TimelineSemaphore(uint64_t u64InitialValue);
+			Vulkan_TimelineSemaphore(VkSemaphoreCreateFlags vk_eFlags, uint64_t u64InitialValue = 0);
+			Vulkan_TimelineSemaphore(Vulkan_TimelineSemaphore &rCopy) = delete;
+			Vulkan_TimelineSemaphore(Vulkan_TimelineSemaphore &&rrCopy);
 			~Vulkan_TimelineSemaphore();
 
+			bool create(VkSemaphoreCreateFlags vk_eFlags, uint64_t u64InitialValue = 0);
+			void destroy();
 			bool wait_for_reaching(uint64_t u64Value) const;
 			void set_to(uint64_t u64Value) const;
 

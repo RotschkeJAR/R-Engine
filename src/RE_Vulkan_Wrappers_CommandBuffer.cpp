@@ -10,7 +10,10 @@ namespace RE {
 			.level = vk_eLevel,
 			.commandBufferCount = u32Count
 		};
-		return vkAllocateCommandBuffers(vk_hDevice, &vk_allocInfo, vk_pahCommandBuffers) == VK_SUCCESS;
+		if (vkAllocateCommandBuffers(vk_hDevice, &vk_allocInfo, vk_pahCommandBuffers) == VK_SUCCESS)
+			return true;
+		RE_ERROR("Failed to allocate ", u32Count, " Vulkan command buffer(s)");
+		return false;
 	}
 
 	bool begin_recording_vulkan_command_buffer(
@@ -22,7 +25,10 @@ namespace RE {
 			.flags = vk_eUsage,
 			.pInheritanceInfo = vk_pInheritance
 		};
-		return vkBeginCommandBuffer(vk_hCommandBuffer, &vk_beginInfo) == VK_SUCCESS;
+		if (vkBeginCommandBuffer(vk_hCommandBuffer, &vk_beginInfo) == VK_SUCCESS)
+			return true;
+		RE_ERROR("Failed to begin recording Vulkan command buffer ", vk_hCommandBuffer);
+		return false;
 	}
 
 }

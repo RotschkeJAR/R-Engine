@@ -20,7 +20,10 @@ namespace RE {
 			.components = vk_rComponentMapping,
 			.subresourceRange = vk_rSubresourceRange
 		};
-		return vkCreateImageView(vk_hDevice, &vk_createInfo, nullptr, vk_phImageView) == VK_SUCCESS;
+		if (vkCreateImageView(vk_hDevice, &vk_createInfo, nullptr, vk_phImageView) == VK_SUCCESS)
+			return true;
+		RE_ERROR("Failed to create a Vulkan image view");
+		return false;
 	}
 
 	Vulkan_ImageView::Vulkan_ImageView() : vk_hImageView(VK_NULL_HANDLE) {}

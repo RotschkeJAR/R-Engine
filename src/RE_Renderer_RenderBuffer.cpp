@@ -22,36 +22,85 @@ namespace RE {
 		PRINT_DEBUG("Creating staging render buffer in Vulkan");
 		gameObjectCountRenderBuffer = std::clamp<size_t>(gameObjectBatchList.size(), 3, std::numeric_limits<size_t>::max()) * MAXIMUM_GAME_OBJECTS_PER_BATCH;
 		const VkDeviceSize vk_renderBufferByteSize = gameObjectCountRenderBuffer * sizeof(GameObjectInstanceData) + sizeof(VkDrawIndexedIndirectCommand);
-		if (create_vulkan_buffer(
-				0,
-				vk_renderBufferByteSize,
-				VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-				1,
-				nullptr,
-				RE_VK_CPU_RAM,
-				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-				&vk_hStagingRenderBuffer,
-				&stagingRenderBufferMemory)) {
-			PRINT_DEBUG("Mapping to staging render buffer's memory");
-			void *pStagingRenderBufferContent;
-			if (stagingRenderBufferMemory.map(0, 0, vk_renderBufferByteSize, &pStagingRenderBufferContent)) {
-				vk_pRenderBufferDrawCommand = reinterpret_cast<VkDrawIndexedIndirectCommand*>(pStagingRenderBufferContent);
-				paRenderBufferInstanceData = reinterpret_cast<GameObjectInstanceData*>(vk_pRenderBufferDrawCommand + 1);
-				PRINT_DEBUG("Creating render buffer on GPU");
-				const uint32_t a2u32QueuesForRenderBuffer[2] = {
-					queueFamilyIndices[renderTasks[0].logical_queue_index_for_function(RENDER_TASK_SUBINDEX_BUFFER_TRANSFER)],
-					queueFamilyIndices[renderTasks[0].logical_queue_index_for_function(RENDER_TASK_SUBINDEX_RENDERING)]
-				};
-				if (create_vulkan_buffer(
-						0,
-						vk_renderBufferByteSize,
-						VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-						a2u32QueuesForRenderBuffer[0] == a2u32QueuesForRenderBuffer[1] ? 1 : 2,
-						a2u32QueuesForRenderBuffer,
-						RE_VK_GPU_RAM,
-						VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-						&vk_hRenderBuffer,
-						&renderBufferMemory)) {
+		if (is_transfer_necessary()) {
+			if (create_vulkan_buffer(
+					0,
+					vk_renderBufferByteSize,
+					VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+					1,
+					nullptr,
+					RE_VK_CPU_RAM,
+					0,
+					&vk_hStagingRenderBuffer,
+					&stagingRenderBufferMemory)) {
+				PRINT_DEBUG("Mapping to staging render buffer's memory");
+				void *pStagingRenderBufferContent;
+				if (stagingRenderBufferMemory.map(0, 0, vk_renderBufferByteSize, &pStagingRenderBufferContent)) {
+					vk_pRenderBufferDrawCommand = reinterpret_cast<VkDrawIndexedIndirectCommand*>(pStagingRenderBufferContent);
+					paRenderBufferInstanceData = reinterpret_cast<GameObjectInstanceData*>(vk_pRenderBufferDrawCommand + 1);
+					PRINT_DEBUG("Creating render buffer on GPU");
+					const uint32_t a2u32QueuesForRenderBuffer[2] = {
+						queueFamilyIndices[renderTasks[0].logical_queue_index_for_function(RENDER_TASK_SUBINDEX_BUFFER_TRANSFER)],
+						queueFamilyIndices[renderTasks[0].logical_queue_index_for_function(RENDER_TASK_SUBINDEX_RENDERING)]
+					};
+					if (create_vulkan_buffer(
+							0,
+							vk_renderBufferByteSize,
+							VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+							a2u32QueuesForRenderBuffer[0] == a2u32QueuesForRenderBuffer[1] ? 1 : 2,
+							a2u32QueuesForRenderBuffer,
+							RE_VK_GPU_RAM,
+							0,
+							&vk_hRenderBuffer,
+							&renderBufferMemory)) {
+						Threadpool renderBufferInitializerThreads;
+						std::atomic<size_t> index;
+						for (uint32_t i = 0; i < renderBufferInitializerThreads.get_amount_of_threads(); i++)
+							renderBufferInitializerThreads.execute([&]() {
+								while (true) {
+									const size_t ownIndex = index.fetch_add(1);
+									if (ownIndex >= gameObjectCountRenderBuffer)
+										return;
+									for (uint8_t u8MatrixIndex = 0; u8MatrixIndex < 16; u8MatrixIndex++)
+										switch (u8MatrixIndex) {
+											case 0:
+											case 5:
+											case 10:
+											case 15:
+												paRenderBufferInstanceData[ownIndex].a16fModelMatrix[u8MatrixIndex] = 1.0f;
+												break;
+											default:
+												paRenderBufferInstanceData[ownIndex].a16fModelMatrix[u8MatrixIndex] = 0.0f;
+										}
+									paRenderBufferInstanceData[ownIndex].u32TextureId = 0x8000;
+								}
+							});
+						return true;
+					} else
+						RE_FATAL_ERROR("Failed to create render buffer on GPU");
+					stagingRenderBufferMemory.unmap();
+				} else
+					RE_FATAL_ERROR("Failed to map CPU to staging render buffer");
+				PRINT_DEBUG("Destroying staging render buffer due to failure creating render buffer on GPU");
+				vkDestroyBuffer(vk_hDevice, vk_hStagingRenderBuffer, nullptr);
+				stagingRenderBufferMemory.free();
+			} else
+				RE_FATAL_ERROR("Failed to create staging render buffer in Vulkan");
+		} else {
+			if (create_vulkan_buffer(
+					0,
+					vk_renderBufferByteSize,
+					VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+					1,
+					nullptr,
+					RE_VK_SHARED_RAM,
+					0,
+					&vk_hRenderBuffer,
+					&renderBufferMemory)) {
+				void *pRenderBufferContent;
+				if (renderBufferMemory.map(0, 0, vk_renderBufferByteSize, &pRenderBufferContent)) {
+					vk_pRenderBufferDrawCommand = reinterpret_cast<VkDrawIndexedIndirectCommand*>(pRenderBufferContent);
+					paRenderBufferInstanceData = reinterpret_cast<GameObjectInstanceData*>(vk_pRenderBufferDrawCommand + 1);
 					Threadpool renderBufferInitializerThreads;
 					std::atomic<size_t> index;
 					for (uint32_t i = 0; i < renderBufferInitializerThreads.get_amount_of_threads(); i++)
@@ -74,17 +123,16 @@ namespace RE {
 								paRenderBufferInstanceData[ownIndex].u32TextureId = 0x8000;
 							}
 						});
-					return true;
-				} else
-					RE_FATAL_ERROR("Failed to create render buffer on GPU");
-				stagingRenderBufferMemory.unmap();
-			} else
-				RE_FATAL_ERROR("Failed to map CPU to staging render buffer");
-			PRINT_DEBUG("Destroying staging render buffer due to failure creating render buffer on GPU");
-			vkDestroyBuffer(vk_hDevice, vk_hStagingRenderBuffer, nullptr);
-			stagingRenderBufferMemory.free();
-		} else
-			RE_FATAL_ERROR("Failed to create staging render buffer in Vulkan");
+					bool bPrerecordingSuccessful = true;
+					for (uint8_t u8FrameInFlightIndex = 0; u8FrameInFlightIndex < RE_VK_FRAMES_IN_FLIGHT; u8FrameInFlightIndex++)
+						if (!renderTasks[u8FrameInFlightIndex].record(RENDER_TASK_SUBINDEX_BUFFER_TRANSFER, 0, [&](const VkCommandBuffer vk_hCommandBuffer, const uint8_t u8PreviousLogicalQueue, const uint8_t u8CurrentLogicalQueue, const uint8_t u8NextLogicalQueue) {})) {
+							bPrerecordingSuccessful = false;
+							break;
+						}
+					return bPrerecordingSuccessful;
+				}
+			}
+		}
 		return false;
 	}
 
@@ -123,22 +171,25 @@ namespace RE {
 		vk_pRenderBufferDrawCommand->firstIndex = 0;
 		vk_pRenderBufferDrawCommand->vertexOffset = 0;
 		vk_pRenderBufferDrawCommand->firstInstance = 0;
-		return renderTasks[u8CurrentFrameInFlightIndex].record(RENDER_TASK_SUBINDEX_BUFFER_TRANSFER, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, [&](const VkCommandBuffer vk_hCommandBuffer, const uint8_t u8PreviousLogicalQueue, const uint8_t u8CurrentLogicalQueue, const uint8_t u8NextLogicalQueue) {
-			const VkBufferCopy2 vk_copyRenderBufferRegion = {
-				.sType = VK_STRUCTURE_TYPE_BUFFER_COPY_2,
-				.srcOffset = 0,
-				.dstOffset = 0,
-				.size = sizeof(VkDrawIndexedIndirectCommand) + gameObjectToRenderCount * sizeof(GameObjectInstanceData),
-			};
-			const VkCopyBufferInfo2 vk_copyRenderBufferInfo = {
-				.sType = VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2,
-				.srcBuffer = vk_hStagingRenderBuffer,
-				.dstBuffer = vk_hRenderBuffer,
-				.regionCount = 1,
-				.pRegions = &vk_copyRenderBufferRegion
-			};
-			vkCmdCopyBuffer2(vk_hCommandBuffer, &vk_copyRenderBufferInfo);
-		});
+		if (is_transfer_necessary())
+			return renderTasks[u8CurrentFrameInFlightIndex].record(RENDER_TASK_SUBINDEX_BUFFER_TRANSFER, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, [&](const VkCommandBuffer vk_hCommandBuffer, const uint8_t u8PreviousLogicalQueue, const uint8_t u8CurrentLogicalQueue, const uint8_t u8NextLogicalQueue) {
+				const VkBufferCopy2 vk_copyRenderBufferRegion = {
+					.sType = VK_STRUCTURE_TYPE_BUFFER_COPY_2,
+					.srcOffset = 0,
+					.dstOffset = 0,
+					.size = sizeof(VkDrawIndexedIndirectCommand) + gameObjectToRenderCount * sizeof(GameObjectInstanceData),
+				};
+				const VkCopyBufferInfo2 vk_copyRenderBufferInfo = {
+					.sType = VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2,
+					.srcBuffer = vk_hStagingRenderBuffer,
+					.dstBuffer = vk_hRenderBuffer,
+					.regionCount = 1,
+					.pRegions = &vk_copyRenderBufferRegion
+				};
+				vkCmdCopyBuffer2(vk_hCommandBuffer, &vk_copyRenderBufferInfo);
+			});
+		else
+			return true;
 	}
 
 }

@@ -1,5 +1,5 @@
-#ifndef __RE_VULKAN_WRAPPER_CLASSES_H__
-#define __RE_VULKAN_WRAPPER_CLASSES_H__
+#ifndef __RE_VULKAN_WRAPPERS_H__
+#define __RE_VULKAN_WRAPPERS_H__
 
 #include "RE_GPU.hpp"
 
@@ -318,6 +318,36 @@ namespace RE {
 			operator bool() const;
 	};
 
+	bool create_vulkan_semaphore(VkSemaphoreCreateFlags vk_eFlags, VkSemaphore *vk_phSemaphore);
+	class Vulkan_Semaphore final {
+		private:
+			VkSemaphore vk_hSemaphore;
+
+		public:
+			Vulkan_Semaphore();
+			Vulkan_Semaphore(VkSemaphoreCreateFlags vk_eFlags);
+			Vulkan_Semaphore(Vulkan_Semaphore &rCopy) = delete;
+			Vulkan_Semaphore(Vulkan_Semaphore &&rrCopy);
+			~Vulkan_Semaphore();
+
+			bool create(VkSemaphoreCreateFlags vk_eFlags);
+			void destroy();
+
+			[[nodiscard]]
+			VkSemaphore get() const noexcept;
+			[[nodiscard]]
+			const VkSemaphore* get_ptr() const noexcept;
+			[[nodiscard]]
+			bool valid() const noexcept;
+
+			[[nodiscard]]
+			operator VkSemaphore() const;
+			[[nodiscard]]
+			operator const VkSemaphore*() const;
+			[[nodiscard]]
+			operator bool() const;
+	};
+
 	bool create_vulkan_timeline_semaphore(VkSemaphoreCreateFlags vk_eFlags, uint64_t u64InitialValue, VkSemaphore *vk_phSemaphore);
 	class Vulkan_TimelineSemaphore final {
 		private:
@@ -352,4 +382,4 @@ namespace RE {
 
 }
 
-#endif /* __RE_VULKAN_WRAPPER_CLASSES_H__ */
+#endif /* __RE_VULKAN_WRAPPERS_H__ */

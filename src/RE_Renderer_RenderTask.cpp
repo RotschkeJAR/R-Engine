@@ -20,15 +20,11 @@ namespace RE {
 				break;
 			}
 			if (renderTaskCreateIndex == renderTasks.size()) {
-				constexpr VkFenceCreateInfo vk_fenceCreateInfo = {
-					.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
-					.flags = VK_FENCE_CREATE_SIGNALED_BIT
-				};
 				size_t syncObjCreateIndex = 0;
 				while (syncObjCreateIndex < renderFences.size()) {
 					renderTasks[syncObjCreateIndex].record(RENDER_TASK_SUBINDEX_BUFFER_TRANSFER, 0, [&](const VkCommandBuffer vk_hCommandBuffer, const uint8_t u8PreviousLogicalQueue, const uint8_t u8CurrentLogicalQueue, const uint8_t u8NextLogicalQueue) {});
 					PRINT_DEBUG("Creating Vulkan fence at index ", syncObjCreateIndex, " for render tasks");
-					if (vkCreateFence(vk_hDevice, &vk_fenceCreateInfo, nullptr, &renderFences[syncObjCreateIndex]) == VK_SUCCESS) {
+					if (create_vulkan_fence(0, &renderFences[syncObjCreateIndex])) {
 						syncObjCreateIndex++;
 						continue;
 					}

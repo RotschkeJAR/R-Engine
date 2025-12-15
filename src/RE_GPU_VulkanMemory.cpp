@@ -24,12 +24,11 @@ namespace RE {
 	}
 
 	bool VulkanMemory::alloc(const VkDeviceSize vk_size, const VulkanMemoryType eType, VkMemoryPropertyFlags vk_eProperties, const uint32_t u32DesiredMemoryTypes) {
-		if ((vk_eProperties & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) && !does_memory_type_exist(VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT)) {
-			PRINT_DEBUG_CLASS("Removing 'lazily allocated'-flag for allocating Vulkan memory");
+		PRINT_DEBUG_CLASS("Filtering redundant Vulkan memory properties out");
+		if ((vk_eProperties & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) && !does_memory_type_exist(VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT))
 			vk_eProperties &= ~VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
-		}
+		vk_eProperties &= ~(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 		std::optional<uint8_t> memoryTypeSelected;
-		const VkMemoryPropertyFlags vk_eMandatoryProperties = vk_eProperties & ~(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 		for (uint8_t u8MemoryTypeIndex = 0; u8MemoryTypeIndex < vulkanMemoryTypes.size(); u8MemoryTypeIndex++) {
 			PRINT_DEBUG_CLASS("Checking if memory type at index ", u8MemoryTypeIndex, " supports required properties");
 			const VkMemoryType &vk_rType = vulkanMemoryTypes[u8MemoryTypeIndex];
@@ -54,7 +53,7 @@ namespace RE {
 						break;
 				}
 			}
-			if (((vk_rType.propertyFlags ^ vk_eMandatoryProperties) & vk_eMandatoryProperties) == 0) {
+			if (((vk_rType.propertyFlags ^ vk_eProperties) & vk_eProperties) == 0) {
 				PRINT_DEBUG_CLASS("Memory type at index ", u8MemoryTypeIndex, " supports mandatory properties");
 				memoryTypeSelected = u8MemoryTypeIndex;
 				if (((vk_eProperties ^ vk_rType.propertyFlags) & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) == 0) {

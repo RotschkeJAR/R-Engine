@@ -9,14 +9,6 @@ namespace RE {
 
 #define DEFAULT_COLOR "\033[0m"
 
-#define PRINT_COLORS 0
-#define TREAT_WARNING_AS_ERROR 1
-#define ERRORS_ALWAYS_FATAL 2
-
-	uint32_t u32VulkanErrorCount = 0, u32VulkanWarningCount = 0;
-	static uint32_t u32ErrorCount = 0, u32WarningCount = 0;
-	static uint8_t u8ConsoleSettings = 1 << PRINT_COLORS;
-
 	static void print_time() {
 		std::time_t currentTime = std::time(0);
 		print("[", std::put_time(std::gmtime(&currentTime), "%d.%b %Y, %H:%M:%S"), "] ");
@@ -50,15 +42,6 @@ namespace RE {
 		}
 	}
 
-	void print_error_count() {
-		println("Error Count:");
-		println("===============================");
-		println("\tErrors:          ", u32ErrorCount);
-		println("\tWarnings:        ", u32WarningCount);
-		println("\tVulkan Errors:   ", u32VulkanErrorCount);
-		println("\tVulkan Warnings: ", u32VulkanWarningCount);
-	}
-
 	void print_colored(const std::string &rsContent, const TerminalColor eColor, const bool bBackgroundColored, const bool bBold) {
 		if (are_bits_true<uint8_t>(u8ConsoleSettings, PRINT_COLORS))
 			print(escape_code_to_string(eColor, bBackgroundColored, bBold), rsContent, DEFAULT_COLOR);
@@ -78,17 +61,15 @@ namespace RE {
 		print_colored("ABORTION", RE_TERMINAL_COLOR_BRIGHT_BLACK, false, false);
 		print("   ");
 		print_error_msg(rsDetail);
-		print_error_count();
 		std::signal(SIGABRT, SIG_DFL);
 		std::abort();
 	}
 
-	void fatal_error(const std::string &rsDetail) {
+	void fatal_error(const Context hContext, const std::string &rsDetail) {
 		print_time();
 		print_colored("FATAL ERROR", RE_TERMINAL_COLOR_RED, false, false);
 		print_error_msg(rsDetail);
-		bErrorOccured = true;
-		u32ErrorCount++;
+		GET_CONTEXT(hContext)->bErrorOccured = true;
 	}
 	
 	void error(const std::string &rsDetail) {
@@ -100,7 +81,6 @@ namespace RE {
 		print_colored("ERROR", RE_TERMINAL_COLOR_BRIGHT_RED, false, false);
 		print("      ");
 		print_error_msg(rsDetail);
-		u32ErrorCount++;
 	}
 
 	void warning(const std::string &rsDetail) {
@@ -112,7 +92,6 @@ namespace RE {
 		print_colored("WARNING", RE_TERMINAL_COLOR_YELLOW, false, false);
 		print("    ");
 		print_error_msg(rsDetail);
-		u32WarningCount++;
 	}
 
 	void note(const std::string &rsDetail) {
@@ -122,31 +101,31 @@ namespace RE {
 		print_error_msg(rsDetail);
 	}
 
-	void enable_colorful_printing(const bool bEnable) {
-		set_bits<uint8_t>(u8ConsoleSettings, bEnable, PRINT_COLORS);
+	void enable_colorful_printing(const Context hContext, const bool bEnable) {
+		set_bits<uint8_t>(GET_CONTEXT(hContext)->u8ConsoleSettings, bEnable, PRINT_COLORS);
 	}
 
 	[[nodiscard]]
-	bool is_colorful_printing_enabled() {
-		return are_bits_true<uint8_t>(u8ConsoleSettings, PRINT_COLORS);
+	bool is_colorful_printing_enabled(const Context hContext) {
+		return are_bits_true<uint8_t>(GET_CONTEXT(hContext)->u8ConsoleSettings, PRINT_COLORS);
 	}
 
-	void treat_warnings_as_errors(const bool bEnable) {
-		set_bits<uint8_t>(u8ConsoleSettings, bEnable, TREAT_WARNING_AS_ERROR);
-	}
-
-	[[nodiscard]]
-	bool are_warnings_always_treated_as_errors() {
-		return are_bits_true<uint8_t>(u8ConsoleSettings, TREAT_WARNING_AS_ERROR);
-	}
-
-	void make_errors_always_fatal(const bool bEnable) {
-		set_bits<uint8_t>(u8ConsoleSettings, bEnable, ERRORS_ALWAYS_FATAL);
+	void treat_warnings_as_errors(const Context hContext, const bool bEnable) {
+		set_bits<uint8_t>(GET_CONTEXT(hContext)->u8ConsoleSettings, bEnable, TREAT_WARNING_AS_ERROR);
 	}
 
 	[[nodiscard]]
-	bool are_errors_always_made_fatal() {
-		return are_bits_true<uint8_t>(u8ConsoleSettings, ERRORS_ALWAYS_FATAL);
+	bool are_warnings_always_treated_as_errors(const Context hContext) {
+		return are_bits_true<uint8_t>(GET_CONTEXT(hContext)->u8ConsoleSettings, TREAT_WARNING_AS_ERROR);
+	}
+
+	void make_errors_always_fatal(const Context hContext, const bool bEnable) {
+		set_bits<uint8_t>(GET_CONTEXT(hContext)->u8ConsoleSettings, bEnable, ERRORS_ALWAYS_FATAL);
+	}
+
+	[[nodiscard]]
+	bool are_errors_always_fatal(const Context hContext) {
+		return are_bits_true<uint8_t>(GET_CONTEXT(hContext)->u8ConsoleSettings, ERRORS_ALWAYS_FATAL);
 	}
 
 }

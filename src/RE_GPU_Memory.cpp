@@ -165,6 +165,21 @@ namespace RE {
 		}
 	}
 
+	bool does_vulkan_memory_type_reside_on_cpu(const uint8_t u8MemoryTypeIndex) {
+		return !(vulkanMemoryTypes[u8MemoryTypeIndex].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) 
+				|| !(std::get<VkMemoryHeap>(vulkanMemoryHeaps[vulkanMemoryTypes[u8MemoryTypeIndex].heapIndex]).flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT);
+	}
+
+	bool does_vulkan_memory_type_reside_on_gpu(const uint8_t u8MemoryTypeIndex) {
+		return (vulkanMemoryTypes[u8MemoryTypeIndex].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) 
+				&& (std::get<VkMemoryHeap>(vulkanMemoryHeaps[vulkanMemoryTypes[u8MemoryTypeIndex].heapIndex]).flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT);
+	}
+
+	bool is_transfer_necessary() {
+		return vk_physicalDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_CPU 
+				|| vk_physicalDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
+	}
+
 	uint32_t get_remaining_vulkan_allocations() {
 		return vk_physicalDeviceProperties.limits.maxMemoryAllocationCount - u32VulkanMemoryAllocCount;
 	}

@@ -85,13 +85,17 @@ namespace RE {
 	void mark_swapchain_dirty();
 
 	// Memory
-	bool does_memory_type_exist(VkMemoryPropertyFlags vk_eProperties);
 	enum VulkanMemoryType {
 		RE_VK_GPU_RAM,
 		RE_VK_CPU_RAM,
 		RE_VK_SHARED_RAM
 	};
+	bool does_memory_type_exist(VkMemoryPropertyFlags vk_eProperties);
 	bool does_have_vulkan_memory_type(VulkanMemoryType eMemoryType);
+	bool does_vulkan_memory_type_reside_on_cpu(uint8_t u8MemoryTypeIndex);
+	bool does_vulkan_memory_type_reside_on_gpu(uint8_t u8MemoryTypeIndex);
+	bool is_transfer_necessary();
+	uint32_t get_remaining_vulkan_allocations();
 	class VulkanMemory final {
 		private:
 			VkDeviceMemory vk_hMemory;

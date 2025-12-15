@@ -19,6 +19,7 @@
 #undef ERROR
 #undef WARNING
 #undef NOTE
+#include "RE_Context.hpp"
 #include "RE_Console.hpp"
 
 #ifdef RE_OS_WINDOWS

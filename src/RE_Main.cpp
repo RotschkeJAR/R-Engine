@@ -6,21 +6,16 @@
 
 namespace RE {
 
-#define LOWEST_SMOOTH_FPS 10
-#define DELTATIME_FOR_LOWEST_SMOOTH_FPS (1.0f / LOWEST_SMOOTH_FPS)
-
-	float fDeltaseconds = 0.0f, fMinDeltatime = 1.0f / 60, fMaxLagTime = DELTATIME_FOR_LOWEST_SMOOTH_FPS;
-	bool bErrorOccured = false, bRunning = false;
-
-	bool execute() {
+	bool execute(const Context hContext) {
+		DEFINE_PCONTEXT(hContext);
 #if !(defined RE_OS_WINDOWS) && !(defined RE_OS_LINUX)
 # warning The targeted OS is unknown, so the engine will terminate immediatly upon execution
 		RE_ERROR("The OS is unknown. The engine can't initialize");
 		return false;
 #else
-		if (bErrorOccured)
+		if (pContext->bErrorOccured)
 			RE_ERROR("A fatal error occured before and further attempts to run the engine will be dropped");
-		else if (bRunning)
+		else if (pContext->bRunning)
 			RE_ERROR("The engine is already running");
 		else if (create_window()) {
 			if (init_vulkan_instance()) {
@@ -29,13 +24,13 @@ namespace RE {
 						PRINT_DEBUG("Starting game loop");
 						std::chrono::high_resolution_clock::time_point currentFrameTime = std::chrono::high_resolution_clock::now(), lastFrameTime;
 						show_window(true);
-						bRunning = true;
+						pContext->bRunning = true;
 
 						// Game loop
-						while (!should_window_close() && bRunning && are_scenes_present() && !bErrorOccured) {
+						while (!should_window_close() && pContext->bRunning && are_scenes_present() && !pContext->bErrorOccured) {
 							window_proc();
 							game_logic_update();
-							if (should_render() && fDeltaseconds > 0.0f) {
+							if (should_render() && pContext->fDeltaseconds > 0.0f) {
 								refresh_swapchain();
 								render();
 							}
@@ -51,15 +46,15 @@ namespace RE {
 									std::this_thread::sleep_for(std::chrono::duration<float>(fTimeToWait));
 								}
 							} else
-								fDeltaseconds = 0.0f;
+								pContext->fDeltaseconds = 0.0f;
 						}
 
 						PRINT_DEBUG("Exiting game loop");
-						bRunning = false;
+						pContext->bRunning = false;
 						show_window(false);
 						WAIT_FOR_IDLE_VULKAN_DEVICE();
 						last_game_logic_update();
-						fDeltaseconds = 0.0f;
+						pContext->fDeltaseconds = 0.0f;
 						destroy_renderer();
 					}
 					destroy_render_system();
@@ -69,42 +64,43 @@ namespace RE {
 			destroy_window();
 		}
 		PRINT_DEBUG("Finished execution");
-		print_error_count();
-		return !bErrorOccured;
+		return !pContext->bErrorOccured;
 #endif
 	}
 
 	[[nodiscard]]
-	float get_deltaseconds() {
-		return fDeltaseconds;
+	float get_deltaseconds(const Context hContext) {
+		return GET_CONTEXT(hContext)->fDeltaseconds;
 	}
 
 	[[nodiscard]]
-	float get_fps_rate() {
-		return fDeltaseconds > 0.0f ? (1.0f / fDeltaseconds) : -1.0f;
+	float get_fps_rate(const Context hContext) {
+		DEFINE_PCONTEXT(hContext);
+		return pContext->fDeltaseconds > 0.0f ? (1.0f / pContext->fDeltaseconds) : -1.0f;
 	}
 
-	void set_fps_limit(const uint32_t u32MaxFramesPerSecond) {
-		fMinDeltatime = u32MaxFramesPerSecond ? (1.0f / static_cast<float>(u32MaxFramesPerSecond)) : -1.0f;
+	void set_fps_limit(const Context hContext, const uint32_t u32MaxFramesPerSecond) {
+		GET_CONTEXT(hContext)->fMinDeltatime = u32MaxFramesPerSecond ? (1.0f / static_cast<float>(u32MaxFramesPerSecond)) : -1.0f;
 	}
 
 	[[nodiscard]]
-	uint32_t get_fps_limit() {
-		return fMinDeltatime > 0.0f ? static_cast<uint32_t>(std::round(1.0f / fMinDeltatime)) : 0;
+	uint32_t get_fps_limit(const Context hContext) {
+		DEFINE_PCONTEXT(hContext);
+		return pContext->fMinDeltatime > 0.0f ? static_cast<uint32_t>(std::round(1.0f / pContext->fMinDeltatime)) : 0;
 	}
 
-	void set_max_lag_time(const float fSecondsOfLag) {
+	void set_max_lag_time(const Context hContext, const float fSecondsOfLag) {
 		if (fSecondsOfLag <= 0.0f) {
 			RE_WARNING("Maximum lag time cannot be zero or negative. Old value will be kept");
 			return;
 		} else if (fSecondsOfLag < DELTATIME_FOR_LOWEST_SMOOTH_FPS)
 			RE_WARNING("The new maximum lag time (", fSecondsOfLag, " seconds = ", static_cast<uint32_t>(std::round(1.0f / fSecondsOfLag)), " FPS) might be too low causing the simulation to stutter or freeze. Common fixed deltatime for ", LOWEST_SMOOTH_FPS, " FPS is ", DELTATIME_FOR_LOWEST_SMOOTH_FPS, " seconds");
-		fMaxLagTime = fSecondsOfLag;
+		GET_CONTEXT(hContext)->fMaxLagTime = fSecondsOfLag;
 	}
 
 	[[nodiscard]]
-	float get_max_lag_time() {
-		return fMaxLagTime;
+	float get_max_lag_time(const Context hContext) {
+		return GET_CONTEXT(hContext)->fMaxLagTime;
 	}
 
 }

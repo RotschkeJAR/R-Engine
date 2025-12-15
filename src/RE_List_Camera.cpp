@@ -43,7 +43,7 @@ namespace RE {
 			}
 		}
 		PRINT_DEBUG("Adding camera to a new batch");
-		ListBatch_Camera *const pNewBatch = new ListBatch_Camera();
+		ListBatch_Camera *const pNewBatch = new ListBatch_Camera;
 		pNewBatch->add(pCamera);
 		cameraBatchList.push_back(pNewBatch);
 	}

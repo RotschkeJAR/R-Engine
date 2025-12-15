@@ -24,7 +24,7 @@ namespace RE {
 				while (syncObjCreateIndex < renderFences.size()) {
 					renderTasks[syncObjCreateIndex].record(RENDER_TASK_SUBINDEX_BUFFER_TRANSFER, 0, [&](const VkCommandBuffer vk_hCommandBuffer, const uint8_t u8PreviousLogicalQueue, const uint8_t u8CurrentLogicalQueue, const uint8_t u8NextLogicalQueue) {});
 					PRINT_DEBUG("Creating Vulkan fence at index ", syncObjCreateIndex, " for render tasks");
-					if (create_vulkan_fence(0, &renderFences[syncObjCreateIndex])) {
+					if (create_vulkan_fence(VK_FENCE_CREATE_SIGNALED_BIT, &renderFences[syncObjCreateIndex])) {
 						syncObjCreateIndex++;
 						continue;
 					}

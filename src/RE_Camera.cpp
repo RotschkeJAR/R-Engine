@@ -5,7 +5,9 @@
 namespace RE {
 	
 	Camera::Camera() : Camera(Transform()) {}
-	Camera::Camera(const Transform &rTransform) : transform(rTransform), view(100.0f, 100.0f), fViewDistance(100.0f), bIgnoreAspectRatio(false) {}
+	Camera::Camera(const Transform &rTransform) : transform(rTransform), view(100.0f, 100.0f), fViewDistance(100.0f), bIgnoreAspectRatio(false) {
+		newCameras.push_back(this);
+	}
 	Camera::Camera(const Vector2f &rView) : Camera(rView, 100.0f) {}
 	Camera::Camera(const Vector2f &rView, const float fViewDistance) : Camera(rView, fViewDistance, false) {}
 	Camera::Camera(const Vector2f &rView, const float fViewDistance, const bool bIgnoreAspectRatio) : view(rView), fViewDistance(fViewDistance), bIgnoreAspectRatio(bIgnoreAspectRatio) {

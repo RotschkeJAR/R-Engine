@@ -24,14 +24,18 @@ namespace RE {
 
 	static void delete_proc() {
 		PRINT_DEBUG("Invoking delete-procedure");
-		delete_marked_game_objects();
-		delete_marked_cameras();
+		while (!deletableGameObjects.empty() || !deletableCameras.empty()) {
+			delete_marked_game_objects();
+			delete_marked_cameras();
+		}
 	}
 
 	static void add_proc() {
 		PRINT_DEBUG("Invoking add-procedure");
-		add_new_game_objects();
-		add_new_cameras();
+		while (!newGameObjects.empty() || !newCameras.empty()) {
+			add_new_game_objects();
+			add_new_cameras();
+		}
 	}
 
 	[[nodiscard]]
@@ -43,11 +47,9 @@ namespace RE {
 		PRINT_DEBUG("Updating game's logic");
 		if (pNextScene != pCurrentScene && pNextScene) {
 			PRINT_DEBUG("Ending current scene ", pCurrentScene);
-			WAIT_FOR_IDLE_VULKAN_DEVICE();
 			if (pCurrentScene)
 				end_proc();
-			while (!deletableGameObjects.empty())
-				delete_proc();
+			delete_proc();
 
 			PRINT_DEBUG("Switching to and starting new scene ", pNextScene);
 			pCurrentScene = pNextScene;
@@ -72,10 +74,8 @@ namespace RE {
 			return;
 		}
 		update_proc();
-		while (!deletableGameObjects.empty())
-			delete_proc();
-		while (!newGameObjects.empty())
-			add_proc();
+		delete_proc();
+		add_proc();
 	}
 
 	void last_game_logic_update() {

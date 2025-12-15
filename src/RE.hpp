@@ -37,10 +37,6 @@
 
 namespace RE {
 
-	typedef class Context_T final {} *Context;
-	Context alloc_context();
-	void free_context(Context hContext);
-
 #define STRIP_QUOTE_MACRO(...) __VA_ARGS__
 
 	template <class... T>
@@ -307,12 +303,12 @@ namespace RE {
 #define PRINT_DEBUG_CLASS(...) PRINT_DEBUG("{", this, "} ", __VA_ARGS__)
 	
 	void abort(const std::string &rsDetail);
-	void fatal_error(Context hContext, const std::string &rsDetail);
-	void error(Context hContext, const std::string &rsDetail);
-	void warning(Context hContext, const std::string &rsDetail);
-	void note(Context hContext, const std::string &rsDetail);
+	void fatal_error(const std::string &rsDetail);
+	void error(const std::string &rsDetail);
+	void warning(const std::string &rsDetail);
+	void note(const std::string &rsDetail);
 #define ABORT(...) RE::abort(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), "\nIn ", __FILE__, ", function \"", __func__, "\", at line ", __LINE__))
-#define FATAL_ERROR(CONTEXT_HANDLE, ...) fatal_error(CONTEXT_HANDLE, append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), "\nIn ", __FILE__, ", function \"", __func__, "\", at line ", __LINE__))
+#define FATAL_ERROR(...) fatal_error(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), "\nIn ", __FILE__, ", function \"", __func__, "\", at line ", __LINE__))
 #define ERROR(...) error(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), "\nIn ", __FILE__, ", function \"", __func__, "\", at line ", __LINE__))
 #define WARNING(...) warning(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), "\nIn ", __FILE__, ", function \"", __func__, "\", at line ", __LINE__))
 #define NOTE(...) note(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), "\nIn ", __FILE__, ", function \"", __func__, "\", at line ", __LINE__))
@@ -1092,15 +1088,15 @@ namespace RE {
 	void set_window_title(const char *pacNewTitle);
 	
 	// Console
-	void enable_colorful_printing(Context hContext, bool bEnable);
+	void enable_colorful_printing(bool bEnable);
 	[[nodiscard]]
-	bool is_colorful_printing_enabled(Context hContext);
-	void treat_warnings_as_errors(Context hContext, bool bEnable);
+	bool is_colorful_printing_enabled();
+	void treat_warnings_as_errors(bool bEnable);
 	[[nodiscard]]
-	bool are_warnings_always_treated_as_errors(Context hContext);
-	void make_errors_always_fatal(Context hContext, bool bEnable);
+	bool are_warnings_always_treated_as_errors();
+	void make_errors_always_fatal(bool bEnable);
 	[[nodiscard]]
-	bool are_errors_always_fatal(Context hContext);
+	bool are_errors_always_fatal();
 
 	// Cursor input
 	[[nodiscard]]
@@ -1151,17 +1147,17 @@ namespace RE {
 	}
 
 	// Program execution
-	bool execute(Context hContext);
+	bool execute();
 	[[nodiscard]]
-	float get_deltaseconds(Context hContext);
+	float get_deltaseconds();
 	[[nodiscard]]
-	float get_fps_rate(Context hContext);
-	void set_fps_limit(Context hContext, uint32_t u32MaxFramesPerSecond);
+	float get_fps_rate();
+	void set_fps_limit(uint32_t u32MaxFramesPerSecond);
 	[[nodiscard]]
-	uint32_t get_fps_limit(Context hContext);
-	void set_max_lag_time(Context hContext, float fSecondsOfLag);
+	uint32_t get_fps_limit();
+	void set_max_lag_time(float fSecondsOfLag);
 	[[nodiscard]]
-	float get_max_lag_time(Context hContext);
+	float get_max_lag_time();
 	
 	// Manager
 	void set_next_scene(Scene *pNextSceneParam);

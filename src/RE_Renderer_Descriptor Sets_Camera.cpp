@@ -33,7 +33,7 @@ namespace RE {
 				1,
 				nullptr,
 				RE_VK_CPU_RAM,
-				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+				VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 				&vk_hCameraUniformBuffer,
 				&cameraUniformBufferMemory)) {
 			PRINT_DEBUG("Mapping camera uniform buffer's memory");
@@ -164,7 +164,7 @@ namespace RE {
 			pActiveCamera = nullptr;
 			if (!bRunning)
 				return;
-			const uint8_t u8IndexToCopyFrom = !u8CurrentFrameInFlightIndex ? (RE_VK_FRAMES_IN_FLIGHT - 1) : u8CurrentFrameInFlightIndex;
+			const uint8_t u8IndexToCopyFrom = u8CurrentFrameInFlightIndex == 0 ? (RE_VK_FRAMES_IN_FLIGHT - 1) : u8CurrentFrameInFlightIndex;
 			for (uint8_t u8CameraUniformBufferIndex = 0; u8CameraUniformBufferIndex < RE_VK_FRAMES_IN_FLIGHT; u8CameraUniformBufferIndex++) {
 				if (u8CameraUniformBufferIndex == u8IndexToCopyFrom)
 					continue;

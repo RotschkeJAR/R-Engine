@@ -23,7 +23,7 @@ namespace RE {
 
 	Vulkan_TimelineSemaphore::Vulkan_TimelineSemaphore() : vk_hTimelineSemaphore(VK_NULL_HANDLE) {}
 
-	Vulkan_TimelineSemaphore::Vulkan_TimelineSemaphore(const VkSemaphoreCreateFlags vk_eFlags, const uint64_t u64InitialValue) : vk_hTimelineSemaphore(VK_NULL_HANDLE) {
+	Vulkan_TimelineSemaphore::Vulkan_TimelineSemaphore(const VkSemaphoreCreateFlags vk_eFlags, const uint64_t u64InitialValue) : Vulkan_TimelineSemaphore() {
 		PRINT_DEBUG_CLASS("Constructing Vulkan timeline semaphore wrapper");
 		create(vk_eFlags, u64InitialValue);
 	}
@@ -35,12 +35,15 @@ namespace RE {
 
 	Vulkan_TimelineSemaphore::~Vulkan_TimelineSemaphore() {
 		PRINT_DEBUG_CLASS("Destructing Vulkan timeline semaphore wrapper");
-		if (!valid())
-			return;
-		destroy();
+		if (valid())
+			destroy();
 	}
 
 	bool Vulkan_TimelineSemaphore::create(const VkSemaphoreCreateFlags vk_eFlags, const uint64_t u64InitialValue) {
+#ifndef RE_DISABLE_PRINT_DEBUGS
+		if (valid())
+			RE_ERROR("Creating another Vulkan timeline semaphore wrapper, when the old one hasn't been destroyed yet");
+#endif
 		PRINT_DEBUG_CLASS("Creating Vulkan timeline semaphore wrapper");
 		return create_vulkan_timeline_semaphore(vk_eFlags, u64InitialValue, &vk_hTimelineSemaphore);
 	}

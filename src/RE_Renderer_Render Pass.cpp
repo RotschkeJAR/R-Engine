@@ -15,7 +15,7 @@ namespace RE {
 		PRINT_DEBUG("Beginning dynamic renderpass in command buffer ", vk_hCommandBuffer);
 		VkRenderingAttachmentInfo vk_colorAttachment = {
 			.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-			.imageView = vk_ahRenderImageViews[u8CurrentFrameInFlightIndex],
+			.imageView = aRenderImageViews[u8CurrentFrameInFlightIndex].get(),
 			.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 			.resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT,
 			.resolveImageView = vk_pahSwapchainImageViews[u32SwapchainImageIndex],
@@ -31,7 +31,7 @@ namespace RE {
 		const bool bBlittingRequired = screenPercentageSettings.eMode != RE_SCREEN_PERCENTAGE_MODE_NORMAL;
 		if (vk_eMsaaCount != VK_SAMPLE_COUNT_1_BIT) {
 			if (bBlittingRequired)
-				vk_colorAttachment.resolveImageView = vk_ahSingleSampledWorldRenderImageViews[u8CurrentFrameInFlightIndex];
+				vk_colorAttachment.resolveImageView = aSingleSampledWorldRenderImageViews[u8CurrentFrameInFlightIndex];
 		} else {
 			vk_colorAttachment.resolveMode = VK_RESOLVE_MODE_NONE;
 			if (!bBlittingRequired)
@@ -40,7 +40,7 @@ namespace RE {
 		const bool bDepthStencilImagesSeparated = are_depth_stencil_images_separated(availableDepthStencilFormats[u8IndexToSelectedDepthStencilFormat]);
 		const VkRenderingAttachmentInfo vk_depthAttachment = {
 			.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-			.imageView = vk_a4hDepthStencilImageViews[u8CurrentFrameInFlightIndex * 2 + DEPTH_IMAGE_INDEX],
+			.imageView = a4DepthStencilImageViews[u8CurrentFrameInFlightIndex * 2 + DEPTH_IMAGE_INDEX].get(),
 			.imageLayout = bDepthStencilImagesSeparated ? VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
 			.resolveMode = VK_RESOLVE_MODE_NONE,
 			.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
@@ -53,7 +53,9 @@ namespace RE {
 		};
 		const VkRenderingAttachmentInfo vk_stencilAttachment = {
 			.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-			.imageView = vk_a4hDepthStencilImageViews[u8CurrentFrameInFlightIndex * 2 + STENCIL_IMAGE_INDEX],
+			.imageView = are_depth_stencil_images_separated(availableDepthStencilFormats[u8IndexToSelectedDepthStencilFormat]) ? 
+					a4DepthStencilImageViews[u8CurrentFrameInFlightIndex * 2 + STENCIL_IMAGE_INDEX].get() : 
+					a4DepthStencilImageViews[u8CurrentFrameInFlightIndex * 2 + DEPTH_IMAGE_INDEX].get(),
 			.imageLayout = bDepthStencilImagesSeparated ? VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
 			.resolveMode = VK_RESOLVE_MODE_NONE,
 			.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
@@ -67,7 +69,9 @@ namespace RE {
 		const VkRenderingInfo vk_renderInfo = {
 			.sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
 			.flags = 0,
-			.renderArea = vk_cameraProjectionOnscreen,
+			.renderArea = {
+				.extent = vk_renderImageSize
+			},
 			.layerCount = 1,
 			.viewMask = 0,
 			.colorAttachmentCount = 1,

@@ -187,7 +187,7 @@ namespace RE {
 			.renderPass = VK_NULL_HANDLE,
 			.subpass = 0,
 			.basePipelineHandle = vk_hPreviousPipeline,
-			.basePipelineIndex = 0
+			.basePipelineIndex = -1
 		};
 		PRINT_DEBUG("Creating Vulkan graphics pipeline for game object rendering");
 		if (vkCreateGraphicsPipelines(vk_hDevice, VK_NULL_HANDLE, 1, &vk_pipelineCreateInfo, nullptr, &vk_hGraphicsPipeline) == VK_SUCCESS) {

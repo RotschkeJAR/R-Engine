@@ -55,7 +55,7 @@ namespace RE {
 			const uint32_t u32QueueFamilyCount, 
 			const uint32_t *const pau32QueueFamilies, 
 			const VulkanMemoryType eMemoryType, 
-			const VkMemoryPropertyFlags vk_eMemoryPropertyFlags) : vk_hBuffer(VK_NULL_HANDLE) {
+			const VkMemoryPropertyFlags vk_eMemoryPropertyFlags) : Vulkan_Buffer() {
 		PRINT_DEBUG_CLASS("Constructing Vulkan buffer wrapper");
 		create(vk_eFlags, 
 				vk_size, 
@@ -73,9 +73,8 @@ namespace RE {
 	
 	Vulkan_Buffer::~Vulkan_Buffer() {
 		PRINT_DEBUG_CLASS("Destructing Vulkan buffer wrapper");
-		if (!valid())
-			return;
-		destroy();
+		if (valid())
+			destroy();
 	}
 
 	bool Vulkan_Buffer::create(const VkBufferCreateFlags vk_eFlags, 
@@ -85,6 +84,10 @@ namespace RE {
 			const uint32_t *const pau32QueueFamilies, 
 			const VulkanMemoryType eMemoryType, 
 			const VkMemoryPropertyFlags vk_eMemoryPropertyFlags) {
+#ifndef RE_DISABLE_PRINT_DEBUGS
+		if (valid())
+			RE_ERROR("Creating another Vulkan buffer wrapper, when the old one hasn't been destroyed yet");
+#endif
 		PRINT_DEBUG_CLASS("Creating Vulkan buffer wrapper");
 		return create_vulkan_buffer(vk_eFlags, 
 				vk_size, 

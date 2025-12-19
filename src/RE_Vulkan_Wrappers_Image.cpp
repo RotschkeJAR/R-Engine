@@ -63,20 +63,20 @@ namespace RE {
 
 	Vulkan_Image::Vulkan_Image() : vk_hImage(VK_NULL_HANDLE) {}
 	
-	Vulkan_Image::Vulkan_Image(VkImageCreateFlags vk_eFlags, 
-			VkImageType vk_eType, 
-			VkFormat vk_eFormat, 
+	Vulkan_Image::Vulkan_Image(const VkImageCreateFlags vk_eFlags, 
+			const VkImageType vk_eType, 
+			const VkFormat vk_eFormat, 
 			const VkExtent3D &vk_rExtent, 
-			uint32_t u32MipmapCount, 
-			uint32_t u32LayerCount, 
-			VkSampleCountFlagBits vk_eSamples, 
-			VkImageTiling vk_eTiling, 
-			VkImageUsageFlags vk_eUsage, 
-			uint32_t u32QueueFamilyCount, 
-			const uint32_t *pau32QueueFamilies, 
-			VkImageLayout vk_eInitialLayout, 
-			VulkanMemoryType eMemoryType, 
-			VkMemoryPropertyFlags vk_eMemoryProperties) : vk_hImage(VK_NULL_HANDLE) {
+			const uint32_t u32MipmapCount, 
+			const uint32_t u32LayerCount, 
+			const VkSampleCountFlagBits vk_eSamples, 
+			const VkImageTiling vk_eTiling, 
+			const VkImageUsageFlags vk_eUsage, 
+			const uint32_t u32QueueFamilyCount, 
+			const uint32_t *const pau32QueueFamilies, 
+			const VkImageLayout vk_eInitialLayout, 
+			const VulkanMemoryType eMemoryType, 
+			const VkMemoryPropertyFlags vk_eMemoryProperties) : Vulkan_Image() {
 		PRINT_DEBUG_CLASS("Constructing Vulkan image wrapper");
 		create(vk_eFlags, 
 				vk_eType, 
@@ -101,25 +101,28 @@ namespace RE {
 
 	Vulkan_Image::~Vulkan_Image() {
 		PRINT_DEBUG_CLASS("Destructing Vulkan image wrapper");
-		if (!valid())
-			return;
-		destroy();
+		if (valid())
+			destroy();
 	}
 
-	bool Vulkan_Image::create(VkImageCreateFlags vk_eFlags, 
-			VkImageType vk_eType, 
-			VkFormat vk_eFormat, 
+	bool Vulkan_Image::create(const VkImageCreateFlags vk_eFlags, 
+			const VkImageType vk_eType, 
+			const VkFormat vk_eFormat, 
 			const VkExtent3D &vk_rExtent, 
-			uint32_t u32MipmapCount, 
-			uint32_t u32LayerCount, 
-			VkSampleCountFlagBits vk_eSamples, 
-			VkImageTiling vk_eTiling, 
-			VkImageUsageFlags vk_eUsage, 
-			uint32_t u32QueueFamilyCount, 
-			const uint32_t *pau32QueueFamilies, 
-			VkImageLayout vk_eInitialLayout, 
-			VulkanMemoryType eMemoryType, 
-			VkMemoryPropertyFlags vk_eMemoryProperties) {
+			const uint32_t u32MipmapCount, 
+			const uint32_t u32LayerCount, 
+			const VkSampleCountFlagBits vk_eSamples, 
+			const VkImageTiling vk_eTiling, 
+			const VkImageUsageFlags vk_eUsage, 
+			const uint32_t u32QueueFamilyCount, 
+			const uint32_t *const pau32QueueFamilies, 
+			const VkImageLayout vk_eInitialLayout, 
+			const VulkanMemoryType eMemoryType, 
+			const VkMemoryPropertyFlags vk_eMemoryProperties) {
+#ifndef RE_DISABLE_PRINT_DEBUGS
+		if (valid())
+			RE_ERROR("Creating another Vulkan image wrapper, when the old one hasn't been destroyed yet");
+#endif
 		PRINT_DEBUG_CLASS("Creating Vulkan image wrapper");
 		return create_vulkan_image(vk_eFlags, 
 				vk_eType, 

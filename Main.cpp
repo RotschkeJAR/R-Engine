@@ -178,11 +178,12 @@ class First : public Scene {
 				bCamActive = !bCamActive;
 			} else if (is_pressed(RE_INPUT_KEY_SPACE, 0)) {
 				bMsaaEight = !bMsaaEight;
-				set_msaa_mode(bMsaaEight ? RE_MSAA_MODE_8 : RE_MSAA_MODE_1);
 				if (bMsaaEight) {
+					set_msaa_mode(RE_MSAA_MODE_8);
 					const ScreenPercentageSettings constSized(Vector2u{50, 50});
 					set_screen_percentage_settings(constSized);
 				} else {
+					set_msaa_mode(RE_MSAA_MODE_1);
 					const ScreenPercentageSettings normal;
 					set_screen_percentage_settings(normal);
 				}

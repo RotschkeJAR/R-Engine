@@ -130,7 +130,7 @@ namespace RE {
 			constexpr bool operator !=(const VulkanMemory &rOtherMemory) const noexcept {
 				return true;
 			}
-		};
+	};
 
 }
 

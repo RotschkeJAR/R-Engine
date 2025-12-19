@@ -16,7 +16,7 @@ namespace RE {
 
 	Vulkan_Semaphore::Vulkan_Semaphore() : vk_hSemaphore(VK_NULL_HANDLE) {}
 
-	Vulkan_Semaphore::Vulkan_Semaphore(VkSemaphoreCreateFlags vk_eFlags) : vk_hSemaphore(VK_NULL_HANDLE) {
+	Vulkan_Semaphore::Vulkan_Semaphore(VkSemaphoreCreateFlags vk_eFlags) : Vulkan_Semaphore() {
 		PRINT_DEBUG_CLASS("Constructing Vulkan semaphore wrapper");
 		create(vk_eFlags);
 	}
@@ -28,12 +28,15 @@ namespace RE {
 
 	Vulkan_Semaphore::~Vulkan_Semaphore() {
 		PRINT_DEBUG_CLASS("Deconstructing Vulkan semaphore wrapper");
-		if (!valid())
-			return;
-		destroy();
+		if (valid())
+			destroy();
 	}
 
 	bool Vulkan_Semaphore::create(VkSemaphoreCreateFlags vk_eFlags) {
+#ifndef RE_DISABLE_PRINT_DEBUGS
+		if (valid())
+			RE_ERROR("Creating another Vulkan semaphore wrapper, when the old one hasn't been destroyed yet");
+#endif
 		PRINT_DEBUG_CLASS("Creating Vulkan semaphore wrapper");
 		return create_vulkan_semaphore(vk_eFlags, &vk_hSemaphore);
 	}

@@ -46,28 +46,28 @@ namespace RE {
 	concept Integrals = (std::is_integral_v<T> && ...);
 
 	template <class... T>
-	concept Floating_Point_Numbers = (std::is_floating_point_v<T> && ...);
+	concept FloatingPointNumbers = (std::is_floating_point_v<T> && ...);
 
 	template <class TargetedType, class... T>
-	concept Are_Same = (std::is_same_v<T, TargetedType> && ...);
+	concept AreSame = (std::is_same_v<T, TargetedType> && ...);
 
 	template <class T, T value1, T value2>
-	concept Less_Than = (value1 < value2);
+	concept LessThan = (value1 < value2);
 
 	template <class T, T value1, T value2>
-	concept Less_Than_Equal = (value1 <= value2);
+	concept LessThanEqual = (value1 <= value2);
 
 	template <class T, T value1, T value2>
-	concept Greater_Than = (value1 > value2);
+	concept GreaterThan = (value1 > value2);
 
 	template <class T, T value1, T value2>
-	concept Greater_Than_Equal = (value1 >= value2);
+	concept GreaterThanEqual = (value1 >= value2);
 
 	template <class T, T value1, T value2>
 	concept Equal = (value1 == value2);
 
 	template <class T, T value1, T value2>
-	concept Not_Equal = (value1 != value2);
+	concept NotEqual = (value1 != value2);
 
 	enum TerminalColor {
 		RE_TERMINAL_COLOR_BLACK = 0x0,
@@ -576,8 +576,7 @@ namespace RE {
 	}
 
 
-
-	template <class T, size_t dimensionCount> requires Arithmetics<T> && Greater_Than<size_t, dimensionCount, 0>
+	template <class T, size_t dimensionCount> requires Arithmetics<T> && GreaterThan<size_t, dimensionCount, 0>
 	class Vector final {
 		public:
 			std::array<T, dimensionCount> coords;
@@ -586,7 +585,7 @@ namespace RE {
 				fill(static_cast<T>(0.0));
 			}
 			template <class P, size_t u32CopyDimensions>
-			explicit Vector(const Vector<P, u32CopyDimensions> &rCopyVector) requires Arithmetics<P> && Less_Than_Equal<size_t, u32CopyDimensions, dimensionCount> {
+			explicit Vector(const Vector<P, u32CopyDimensions> &rCopyVector) requires Arithmetics<P> && LessThanEqual<size_t, u32CopyDimensions, dimensionCount> {
 				PRINT_DEBUG_CLASS("Copying coordinates from vector ", &rCopyVector);
 				if constexpr (u32CopyDimensions <= dimensionCount) {
 					std::copy(rCopyVector.coords.begin(), rCopyVector.coords.end(), coords.begin());
@@ -595,7 +594,7 @@ namespace RE {
 					std::copy(rCopyVector.begin(), rCopyVector.coords.end() - (u32CopyDimensions - dimensionCount), coords.begin());
 			}
 			template <class... V>
-			Vector(const V... values) requires Arithmetics<V...> && Less_Than_Equal<size_t, sizeof...(V), dimensionCount> {
+			Vector(const V... values) requires Arithmetics<V...> && LessThanEqual<size_t, sizeof...(V), dimensionCount> {
 				PRINT_DEBUG_CLASS("Filling vector with values");
 				size_t dimensionIndex = 0;
 				([&]() {
@@ -713,7 +712,7 @@ namespace RE {
 	typedef Vector<uint32_t, 3> Vector3u;
 	typedef Vector<uint32_t, 4> Vector4u;
 
-	template <size_t numOfThreads = 10> requires Greater_Than<size_t, numOfThreads, 0>
+	template <size_t numOfThreads = 10> requires GreaterThan<size_t, numOfThreads, 0>
 	class Threadpool final {
 		private:
 			std::array<std::jthread, numOfThreads> threads;

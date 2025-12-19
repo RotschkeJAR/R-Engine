@@ -23,8 +23,8 @@ namespace RE {
 
 	// Render image
 	extern ScreenPercentageSettings screenPercentageSettings;
-	extern VkImage vk_hRenderImages;
-	extern VkImageView vk_ahRenderImageViews[RE_VK_FRAMES_IN_FLIGHT];
+	extern Vulkan_Image renderImages;
+	extern Vulkan_ImageView aRenderImageViews[RE_VK_FRAMES_IN_FLIGHT];
 	extern VkExtent2D vk_renderImageSize;
 	bool create_render_image_resources();
 	void destroy_render_image_resources();
@@ -48,23 +48,23 @@ namespace RE {
 	void destroy_render_tasks();
 
 	// Render buffer
-	extern VkBuffer vk_hRenderBuffer;
+	extern Vulkan_Buffer renderBuffer;
 	extern VkDrawIndexedIndirectCommand *vk_pRenderBufferDrawCommand;
 	bool create_render_buffers();
 	void destroy_render_buffers();
 	bool record_cmd_transfer_buffer();
 
 	// MSAA
-	extern VkImage vk_hSingleSampledWorldRenderImages;
-	extern VkImageView vk_ahSingleSampledWorldRenderImageViews[RE_VK_FRAMES_IN_FLIGHT];
+	extern Vulkan_Image singleSampledWorldRenderImages;
+	extern Vulkan_ImageView aSingleSampledWorldRenderImageViews[RE_VK_FRAMES_IN_FLIGHT];
 	bool create_singlesampled_images(const std::vector<uint32_t> &rRenderQueuesFamilyIndices, bool bResolvingRequired, bool bBlittingRequired);
 	void destroy_singlesampled_images();
 
 	// Depth-stencil images
 #define DEPTH_IMAGE_INDEX 0
 #define STENCIL_IMAGE_INDEX 1
-	extern VkImage vk_a2hDepthStencilImages[2];
-	extern VkImageView vk_a4hDepthStencilImageViews[4];
+	extern Vulkan_Image a2DepthStencilImages[2];
+	extern Vulkan_ImageView a4DepthStencilImageViews[4];
 	bool create_depth_stencil_images(VulkanTask &rDepthStencilImageLayoutTransitionTask, VkFence vk_hDepthStencilImageLayoutTransitionFence);
 	void destroy_depth_stencil_images();
 	bool are_depth_stencil_images_separated(VkFormat vk_eFormat);

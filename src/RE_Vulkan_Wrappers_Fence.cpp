@@ -17,7 +17,7 @@ namespace RE {
 
 	Vulkan_Fence::Vulkan_Fence() : vk_hFence(VK_NULL_HANDLE) {}
 
-	Vulkan_Fence::Vulkan_Fence(const VkFenceCreateFlags vk_eFlags) : vk_hFence(VK_NULL_HANDLE) {
+	Vulkan_Fence::Vulkan_Fence(const VkFenceCreateFlags vk_eFlags) : Vulkan_Fence() {
 		PRINT_DEBUG_CLASS("Constructing Vulkan fence wrapper");
 		create(vk_eFlags);
 	}
@@ -29,12 +29,15 @@ namespace RE {
 	
 	Vulkan_Fence::~Vulkan_Fence() {
 		PRINT_DEBUG_CLASS("Destructing Vulkan fence wrapper");
-		if (!valid())
-			return;
-		destroy();
+		if (valid())
+			destroy();
 	}
 
 	bool Vulkan_Fence::create(const VkFenceCreateFlags vk_eFlags) {
+#ifndef RE_DISABLE_PRINT_DEBUGS
+		if (valid())
+			RE_ERROR("Creating another Vulkan fence wrapper, when the old one hasn't been destroyed yet");
+#endif
 		PRINT_DEBUG_CLASS("Creating Vulkan fence wrapper");
 		return create_vulkan_fence(vk_eFlags, &vk_hFence);
 	}

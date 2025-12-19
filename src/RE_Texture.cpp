@@ -227,7 +227,7 @@ namespace RE {
 				} else
 					RE_FATAL_ERROR("Failed to create Vulkan image on GPU to permanently store the texture");
 			} else
-				RE_FATAL_ERROR("Failed to map temporary Vulkan buffer ", stagingImageBuffer.get(), " for transferring the texture");
+				RE_FATAL_ERROR("Failed to map temporary Vulkan buffer for transferring the texture");
 		} else
 			RE_FATAL_ERROR("Failed to create temporary Vulkan buffer to transfer texture to GPU");
 		delete pVulkanTexture;

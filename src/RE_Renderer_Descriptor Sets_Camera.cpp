@@ -13,8 +13,7 @@ namespace RE {
 #define RE_VK_CAMERA_UNIFORM_BUFFER_SIZE_BYTES (RE_VK_CAMERA_UNIFORM_BUFFER_SIZE * sizeof(float))
 
 	static Camera *pActiveCamera = nullptr;
-	static VkBuffer vk_hCameraUniformBuffer;
-	static VulkanMemory cameraUniformBufferMemory;
+	static Vulkan_Buffer cameraUniformBuffer;
 	static std::array<float*, RE_VK_FRAMES_IN_FLIGHT> cameraUniforms;
 	VkDescriptorSetLayout vk_hCameraDescLayout;
 	std::array<VkDescriptorSet, RE_VK_FRAMES_IN_FLIGHT> cameraDescSets;
@@ -26,19 +25,17 @@ namespace RE {
 		if (!multiple_of(vk_alignmentOffsetBytes, sizeof(float)))
 			vk_alignmentOffsetBytes = next_multiple<VkDeviceSize>(vk_alignmentOffsetBytes, sizeof(float));
 		const VkDeviceSize vk_cameraUniformBufferBytes = (vk_alignmentOffsetBytes * (RE_VK_FRAMES_IN_FLIGHT - 1)) + RE_VK_CAMERA_UNIFORM_BUFFER_SIZE_BYTES;
-		if (create_vulkan_buffer(
+		if (cameraUniformBuffer.create(
 				0,
 				vk_cameraUniformBufferBytes,
 				VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 				1,
 				nullptr,
 				RE_VK_CPU_RAM,
-				VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-				&vk_hCameraUniformBuffer,
-				&cameraUniformBufferMemory)) {
+				VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
 			PRINT_DEBUG("Mapping camera uniform buffer's memory");
 			float *pafCameraUniformBuffer;
-			if (cameraUniformBufferMemory.map(0, 0, vk_cameraUniformBufferBytes, reinterpret_cast<void**>(&pafCameraUniformBuffer))) {
+			if (cameraUniformBuffer.get_memory().map(0, 0, vk_cameraUniformBufferBytes, reinterpret_cast<void**>(&pafCameraUniformBuffer))) {
 				PRINT_DEBUG("Initializing camera matrices with default values");
 				cameraUniforms[0] = pafCameraUniformBuffer;
 				cameraUniforms[1] = pafCameraUniformBuffer + vk_alignmentOffsetBytes / sizeof(float);
@@ -87,7 +84,7 @@ namespace RE {
 						VkDescriptorBufferInfo vk_aDescBufferInfos[RE_VK_FRAMES_IN_FLIGHT];
 						VkWriteDescriptorSet vk_aWriteCamDescriptorSets[RE_VK_FRAMES_IN_FLIGHT];
 						for (uint8_t u8DescriptorSetIndex = 0; u8DescriptorSetIndex < RE_VK_FRAMES_IN_FLIGHT; u8DescriptorSetIndex++) {
-							vk_aDescBufferInfos[u8DescriptorSetIndex].buffer = vk_hCameraUniformBuffer;
+							vk_aDescBufferInfos[u8DescriptorSetIndex].buffer = cameraUniformBuffer.get();
 							vk_aDescBufferInfos[u8DescriptorSetIndex].offset = vk_alignmentOffsetBytes * u8DescriptorSetIndex;
 							vk_aDescBufferInfos[u8DescriptorSetIndex].range = RE_VK_CAMERA_UNIFORM_BUFFER_SIZE_BYTES;
 							vk_aWriteCamDescriptorSets[u8DescriptorSetIndex].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -109,13 +106,12 @@ namespace RE {
 					vkDestroyDescriptorSetLayout(vk_hDevice, vk_hCameraDescLayout, nullptr);
 				} else
 					RE_FATAL_ERROR("Failed creating Vulkan descriptor set layout for camera uniforms");
-				PRINT_DEBUG("Unmapping memory of camera uniform buffer ", vk_hCameraUniformBuffer, " due to failure creating camera descriptor sets");
-				cameraUniformBufferMemory.unmap();
+				PRINT_DEBUG("Unmapping memory of camera uniform buffer due to failure creating camera descriptor sets");
+				cameraUniformBuffer.get_memory().unmap();
 			} else
 				RE_FATAL_ERROR("Failed mapping camera's uniform buffer's memory");
-			PRINT_DEBUG("Destroying camera uniform buffer ", vk_hCameraUniformBuffer, " and its memory due to failure creating camera descriptor sets");
-			vkDestroyBuffer(vk_hDevice, vk_hCameraUniformBuffer, nullptr);
-			cameraUniformBufferMemory.free();
+			PRINT_DEBUG("Destroying camera uniform buffer and its memory due to failure creating camera descriptor sets");
+			cameraUniformBuffer.destroy();
 		} else
 			RE_FATAL_ERROR("Failed creating Vulkan uniform buffer for the camera");
 		return false;
@@ -124,10 +120,9 @@ namespace RE {
 	void destroy_camera_descriptor_sets() {
 		PRINT_DEBUG("Destroying Vulkan descriptor set layout ", vk_hCameraDescLayout);
 		vkDestroyDescriptorSetLayout(vk_hDevice, vk_hCameraDescLayout, nullptr);
-		PRINT_DEBUG("Destroying camera uniform buffer ", vk_hCameraUniformBuffer, " and its memory");
-		cameraUniformBufferMemory.unmap();
-		vkDestroyBuffer(vk_hDevice, vk_hCameraUniformBuffer, nullptr);
-		cameraUniformBufferMemory.free();
+		PRINT_DEBUG("Destroying camera uniform buffer and its memory");
+		cameraUniformBuffer.get_memory().unmap();
+		cameraUniformBuffer.destroy();
 	}
 
 	void calculate_camera_matrices() {

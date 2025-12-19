@@ -4,16 +4,15 @@
 namespace RE {
 
 	ScreenPercentageSettings screenPercentageSettings;
-	VkImage vk_hRenderImages;
-	static VulkanMemory renderImageMemory;
-	VkImageView vk_ahRenderImageViews[RE_VK_FRAMES_IN_FLIGHT];
+	Vulkan_Image renderImages;
+	Vulkan_ImageView aRenderImageViews[RE_VK_FRAMES_IN_FLIGHT];
 	VkExtent2D vk_renderImageSize;
 	
 	static bool create_render_images(const std::vector<uint32_t> &rRenderQueuesFamilyIndices, const bool bResolvingRequired, const bool bBlittingRequired) {
 		if (!bResolvingRequired && !bBlittingRequired)
 			return true;
-		PRINT_DEBUG("Creating Vulkan image array as target for rendering");
-		if (create_vulkan_image(
+		PRINT_DEBUG("Creating render image array as target for rendering");
+		if (renderImages.create(
 				0,
 				VK_IMAGE_TYPE_2D,
 				vk_eSwapchainImageFormat,
@@ -31,15 +30,13 @@ namespace RE {
 				rRenderQueuesFamilyIndices.data(),
 				VK_IMAGE_LAYOUT_UNDEFINED,
 				RE_VK_GPU_RAM,
-				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-				&vk_hRenderImages,
-				&renderImageMemory)) {
+				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) {
 			uint32_t u32RenderImageCreateIndex = 0;
 			while (u32RenderImageCreateIndex < RE_VK_FRAMES_IN_FLIGHT) {
-				PRINT_DEBUG("Creating Vulkan image view at index ", u32RenderImageCreateIndex, " for render image array");
-				if (create_vulkan_image_view(
+				PRINT_DEBUG("Creating image view at index ", u32RenderImageCreateIndex, " for render image array");
+				if (aRenderImageViews[u32RenderImageCreateIndex].create(
 						0,
-						vk_hRenderImages,
+						renderImages.get(),
 						VK_IMAGE_VIEW_TYPE_2D,
 						vk_eSwapchainImageFormat,
 						VkComponentMapping {
@@ -54,38 +51,31 @@ namespace RE {
 							.levelCount = 1,
 							.baseArrayLayer = u32RenderImageCreateIndex,
 							.layerCount = 1
-						},
-						&vk_ahRenderImageViews[u32RenderImageCreateIndex])) {
+						})) {
 					u32RenderImageCreateIndex++;
 					continue;
 				} else
-					RE_FATAL_ERROR("Failed creating Vulkan image view for render image at index ", u32RenderImageCreateIndex);
+					RE_FATAL_ERROR("Failed creating image view for render image at index ", u32RenderImageCreateIndex);
 				break;
 			}
 			if (u32RenderImageCreateIndex == RE_VK_FRAMES_IN_FLIGHT)
 				return true;
 			for (size_t renderImageDestroyIndex = 0; renderImageDestroyIndex < u32RenderImageCreateIndex; renderImageDestroyIndex++) {
 				PRINT_DEBUG("Destroying Vulkan image view at index ", renderImageDestroyIndex, " due to the failure creating all image views pointing at the render image array");
-				vkDestroyImageView(vk_hDevice, vk_ahRenderImageViews[renderImageDestroyIndex], nullptr);
+				aRenderImageViews[renderImageDestroyIndex].destroy();
 			}
-			PRINT_DEBUG("Destroying Vulkan image ", vk_hRenderImages, "and its memory due to failure creating its image views");
-			vkDestroyImage(vk_hDevice, vk_hRenderImages, nullptr);
-			renderImageMemory.free();
+			PRINT_DEBUG("Destroying render image and its memory due to failure creating its image views");
+			renderImages.destroy();
 		} else
 			RE_FATAL_ERROR("Failed creating render image");
 		return false;
 	}
 
 	static void destroy_render_images() {
-		if (screenPercentageSettings.eMode == RE_SCREEN_PERCENTAGE_MODE_NORMAL && vk_eMsaaCount == VK_SAMPLE_COUNT_1_BIT)
-			return;
-		for (size_t renderImageDestroyIndex = 0; renderImageDestroyIndex < RE_VK_FRAMES_IN_FLIGHT; renderImageDestroyIndex++) {
-			PRINT_DEBUG("Destroying Vulkan image view at index ", renderImageDestroyIndex, " pointing at render image array");
-			vkDestroyImageView(vk_hDevice, vk_ahRenderImageViews[renderImageDestroyIndex], nullptr);
-		}
-		PRINT_DEBUG("Destroying Vulkan image ", vk_hRenderImages, " and its memory");
-		vkDestroyImage(vk_hDevice, vk_hRenderImages, nullptr);
-		renderImageMemory.free();
+		PRINT_DEBUG("Destroying render image and its image views");
+		for (Vulkan_ImageView &rRenderImageView : aRenderImageViews)
+			rRenderImageView.destroy();
+		renderImages.destroy();
 	}
 
 	static void get_queues_for_render_images(std::vector<uint32_t> &rRenderTaskQueueIndices) {
@@ -149,8 +139,7 @@ namespace RE {
 	void destroy_render_image_resources() {
 		PRINT_DEBUG("Destroying render image resources");
 		destroy_render_images();
-		if (screenPercentageSettings.eMode != RE_SCREEN_PERCENTAGE_MODE_NORMAL && vk_eMsaaCount != VK_SAMPLE_COUNT_1_BIT)
-			destroy_singlesampled_images();
+		destroy_singlesampled_images();
 		destroy_depth_stencil_images();
 	}
 
@@ -187,7 +176,7 @@ namespace RE {
 					vk_aImageLayoutTransferRegion[0].newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 					vk_aImageLayoutTransferRegion[0].srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 					vk_aImageLayoutTransferRegion[0].dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-					vk_aImageLayoutTransferRegion[0].image = vk_eMsaaCount != VK_SAMPLE_COUNT_1_BIT ? vk_hSingleSampledWorldRenderImages : vk_hRenderImages;
+					vk_aImageLayoutTransferRegion[0].image = vk_eMsaaCount != VK_SAMPLE_COUNT_1_BIT ? singleSampledWorldRenderImages.get() : renderImages.get();
 					vk_aImageLayoutTransferRegion[0].subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 					vk_aImageLayoutTransferRegion[0].subresourceRange.baseMipLevel = 0;
 					vk_aImageLayoutTransferRegion[0].subresourceRange.levelCount = 1;

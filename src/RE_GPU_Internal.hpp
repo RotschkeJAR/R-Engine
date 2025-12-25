@@ -36,7 +36,7 @@ namespace RE {
 	extern std::vector<VkMemoryType> vulkanMemoryTypes;
 	extern uint32_t u32VulkanMemoryAllocCount;
 	bool does_gpu_support_memory(VkPhysicalDevice vk_hPhysicalDevice, const VkPhysicalDeviceLimits &vk_rPhysicalDeviceLimits, std::queue<std::string> &rMissingFeatures);
-	int32_t rate_gpu_memory_capacity(VkPhysicalDevice vk_hPhysicalDevice, const VkPhysicalDeviceProperties &vk_rPhysicalDeviceProperties);
+	int32_t rate_gpu_memory_capacity(VkPhysicalDevice vk_hPhysicalDevice, const VkPhysicalDeviceProperties2 &vk_rPhysicalDeviceProperties, const VkPhysicalDeviceMaintenance3Properties &vk_rPhysicalDeviceMaxMemoryAllocationSize);
 	void fetch_gpu_memory_info();
 
 }

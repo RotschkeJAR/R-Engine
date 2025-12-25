@@ -4,6 +4,7 @@ namespace RE {
 
 #define RE_VK_MIN_MEMORY_ALLOCS 4096
 #define RE_VK_MIN_MEMORY_HEAP_BYTES 100000000
+#define RE_VK_MIN_DESIRED_MEMORY_BYTES 1000000
 	
 	std::vector<std::tuple<VkMemoryHeap, VkDeviceSize>> vulkanMemoryHeaps;
 	std::vector<VkMemoryType> vulkanMemoryTypes;
@@ -45,14 +46,18 @@ namespace RE {
 				&& vk_rPhysicalDeviceLimits.maxMemoryAllocationCount;
 	}
 
-	int32_t rate_gpu_memory_capacity(const VkPhysicalDevice vk_hPhysicalDevice, const VkPhysicalDeviceProperties &vk_rPhysicalDeviceProperties) {
+	int32_t rate_gpu_memory_capacity(const VkPhysicalDevice vk_hPhysicalDevice, const VkPhysicalDeviceProperties2 &vk_rPhysicalDeviceProperties, const VkPhysicalDeviceMaintenance3Properties &vk_rPhysicalDeviceMaxMemoryAllocationSize) {
 		PRINT_DEBUG("Rating memory capacity of physical Vulkan device ", vk_hPhysicalDevice);
 		int32_t i32Score;
-		if (vk_rPhysicalDeviceProperties.limits.maxMemoryAllocationCount >= RE_VK_MIN_MEMORY_ALLOCS)
-			i32Score = static_cast<int32_t>(std::round(static_cast<double>(vk_rPhysicalDeviceProperties.limits.maxMemoryAllocationCount - RE_VK_MIN_MEMORY_ALLOCS) / std::numeric_limits<uint32_t>::max() * 1000.0));
+		if (vk_rPhysicalDeviceProperties.properties.limits.maxMemoryAllocationCount >= RE_VK_MIN_MEMORY_ALLOCS)
+			i32Score = static_cast<int32_t>(std::round(static_cast<double>(vk_rPhysicalDeviceProperties.properties.limits.maxMemoryAllocationCount - RE_VK_MIN_MEMORY_ALLOCS) / std::numeric_limits<uint32_t>::max() * 1000.0));
 		else
 			i32Score = -2000;
-		PRINT_DEBUG("Physical device supports a maximum of ", vk_rPhysicalDeviceProperties.limits.maxMemoryAllocationCount, " memory allocations and has been rated with score of ", i32Score);
+		if (vk_rPhysicalDeviceMaxMemoryAllocationSize.maxMemoryAllocationSize >= RE_VK_MIN_DESIRED_MEMORY_BYTES)
+			i32Score += vk_rPhysicalDeviceMaxMemoryAllocationSize.maxMemoryAllocationSize - RE_VK_MIN_DESIRED_MEMORY_BYTES;
+		else
+			i32Score -= 2000;
+		PRINT_DEBUG("Physical device supports a maximum of ", vk_rPhysicalDeviceProperties.properties.limits.maxMemoryAllocationCount, " memory allocations and has been rated with score of ", i32Score);
 		VkPhysicalDeviceMemoryProperties vk_physicalDeviceMemoryInfo;
 		vkGetPhysicalDeviceMemoryProperties(vk_hPhysicalDevice, &vk_physicalDeviceMemoryInfo);
 		for (uint32_t u32HeapIndex = 0; u32HeapIndex < vk_physicalDeviceMemoryInfo.memoryHeapCount; u32HeapIndex++)
@@ -66,7 +71,7 @@ namespace RE {
 						&& (vk_physicalDeviceMemoryInfo.memoryHeaps[u32HeapIndex].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT);
 				const bool bHostMemory = (vk_physicalDeviceMemoryInfo.memoryTypes[u32TypeIndex].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) 
 						&& !(vk_physicalDeviceMemoryInfo.memoryHeaps[u32HeapIndex].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT);
-				if (vk_rPhysicalDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_CPU && bPhysicalMemory && bHostMemory) {
+				if (vk_rPhysicalDeviceProperties.properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_CPU && bPhysicalMemory && bHostMemory) {
 					a2bPhysicalMemorySupports[0] = true;
 					a2bPhysicalMemorySupports[1] = true;
 					break;
@@ -176,8 +181,8 @@ namespace RE {
 	}
 
 	bool is_transfer_necessary() {
-		return vk_physicalDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_CPU 
-				|| vk_physicalDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
+		return vk_physicalDeviceProperties.deviceType != VK_PHYSICAL_DEVICE_TYPE_CPU 
+				&& vk_physicalDeviceProperties.deviceType != VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
 	}
 
 	uint32_t get_remaining_vulkan_allocations() {

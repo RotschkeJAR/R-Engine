@@ -9,13 +9,13 @@
 namespace RE {
 
 	XDisplay *x11_pDisplay = nullptr;
-	XSizeHints *x11_pSizes = nullptr;
-	XColormap x11_colormap = 0;
+	static XSizeHints *x11_pSizes = nullptr;
+	static XColormap x11_colormap = 0;
 	XWindow x11_hWindow = 0;
-	XAtom x11_hClose = 0;
-	XAtom x11_hUTF8 = 0, x11_hWindowName = 0;
-	XInputMethod x11_hInputMethod = 0;
-	XInputContext x11_hInputContext = 0;
+	static XAtom x11_hClose = 0;
+	static XAtom x11_hUTF8 = 0, x11_hWindowName = 0;
+	static XInputMethod x11_hInputMethod = 0;
+	static XInputContext x11_hInputContext = 0;
 
 	bool x11_create_window() {
 		PRINT_DEBUG("Connecting to X11 server");
@@ -28,8 +28,8 @@ namespace RE {
 				const int32_t i32DefaultScreen = XDefaultScreen(x11_pDisplay);
 				const XWindow x11_hRootWindowOfDefaultScreen = XRootWindow(x11_pDisplay, i32DefaultScreen);
 				const Vector2i monitorSize = {
-					std::clamp(XDisplayWidth(x11_pDisplay, i32DefaultScreen), MIN_MONITOR_WIDTH_FOR_CALCULATION, MAX_MONITOR_WIDTH_FOR_CALCULATION),
-					std::clamp(XDisplayHeight(x11_pDisplay, i32DefaultScreen), MIN_MONITOR_HEIGHT_FOR_CALCULATION, MAX_MONITOR_HEIGHT_FOR_CALCULATION)
+					XDisplayWidth(x11_pDisplay, i32DefaultScreen),
+					XDisplayHeight(x11_pDisplay, i32DefaultScreen)
 				};
 
 				PRINT_DEBUG("Querying available visuals on X11");
@@ -157,6 +157,14 @@ namespace RE {
 		}
 		PRINT_DEBUG("Flushing X11 server ", x11_pDisplay, " to take effect on window's show-status");
 		XFlush(x11_pDisplay);
+	}
+
+	void x11_update_fullscreen() {
+		if (is_fullscreen()) {
+
+		} else {
+			
+		}
 	}
 
 	void x11_update_window_title() {

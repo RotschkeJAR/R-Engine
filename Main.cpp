@@ -168,15 +168,15 @@ class First : public Scene {
 		void update() {
 			if (trigger.is_pressed())
 				set_next_scene();
-			else if (is_pressed(RE_INPUT_KEY_ESCAPE, 0))
+			else if (is_pressed(RE_INPUT_KEY_ESCAPE))
 				trigger.update_input();
-			else if (is_pressed(RE_INPUT_KEY_Q, 0)) {
+			else if (is_pressed(RE_INPUT_KEY_Q)) {
 				if (!bCamActive)
 					playerCam.activate();
 				else
 					playerCam.deactivate();
 				bCamActive = !bCamActive;
-			} else if (is_pressed(RE_INPUT_KEY_SPACE, 0)) {
+			} else if (is_pressed(RE_INPUT_KEY_SPACE)) {
 				bMsaaEight = !bMsaaEight;
 				if (bMsaaEight) {
 					set_msaa_mode(RE_MSAA_MODE_8);
@@ -187,7 +187,8 @@ class First : public Scene {
 					const ScreenPercentageSettings normal;
 					set_screen_percentage_settings(normal);
 				}
-			}
+			} else if (is_pressed(RE_INPUT_KEY_F11))
+				set_fullscreen(!is_fullscreen());
 			//PRINT_LN(get_fps_rate());
 		}
 		void end() {}
@@ -201,6 +202,7 @@ int main_func() {
 		Second secondInStack;
 		second = &secondInStack;
 		set_next_scene(&first);
+		set_fullscreen(false);
 		execute();
 		if (clonus)
 			delete clonus;

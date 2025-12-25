@@ -14,13 +14,13 @@ namespace RE {
 	Vulkan_Buffer renderBuffer;
 
 	size_t gameObjectCountRenderBuffer;
-	std::atomic<uint32_t> gameObjectToRenderCount;
+	std::atomic<uint32_t> gameObjectsToRenderCount;
 
 	bool create_render_buffers() {
-		PRINT_DEBUG("Creating staging render buffer in Vulkan");
 		gameObjectCountRenderBuffer = std::clamp<size_t>(gameObjectBatchList.size(), 3, std::numeric_limits<size_t>::max()) * MAXIMUM_GAME_OBJECTS_PER_BATCH;
 		const VkDeviceSize vk_renderBufferByteSize = gameObjectCountRenderBuffer * sizeof(GameObjectInstanceData) + sizeof(VkDrawIndexedIndirectCommand);
 		if (is_transfer_necessary()) {
+			PRINT_DEBUG("Creating staging render buffer in Vulkan");
 			if (stagingRenderBuffer.create(
 					0,
 					vk_renderBufferByteSize,
@@ -49,7 +49,7 @@ namespace RE {
 							0)) {
 						Threadpool renderBufferInitializerThreads;
 						std::atomic<size_t> index;
-						for (uint32_t i = 0; i < renderBufferInitializerThreads.get_amount_of_threads(); i++)
+						for (uint32_t i = 0; i < renderBufferInitializerThreads.amount_of_threads(); i++)
 							renderBufferInitializerThreads.execute([&]() {
 								while (true) {
 									const size_t ownIndex = index.fetch_add(1);
@@ -95,7 +95,7 @@ namespace RE {
 					paRenderBufferInstanceData = reinterpret_cast<GameObjectInstanceData*>(vk_pRenderBufferDrawCommand + 1);
 					Threadpool renderBufferInitializerThreads;
 					std::atomic<size_t> index;
-					for (uint32_t i = 0; i < renderBufferInitializerThreads.get_amount_of_threads(); i++)
+					for (uint32_t i = 0; i < renderBufferInitializerThreads.amount_of_threads(); i++)
 						renderBufferInitializerThreads.execute([&]() {
 							while (true) {
 								const size_t ownIndex = index.fetch_add(1);
@@ -121,7 +121,10 @@ namespace RE {
 							bPrerecordingSuccessful = false;
 							break;
 						}
-					return bPrerecordingSuccessful;
+					if (bPrerecordingSuccessful)
+						return true;
+					renderBufferInitializerThreads.join();
+					renderBuffer.get_memory().unmap();
 				}
 				renderBuffer.destroy();
 			}
@@ -139,28 +142,28 @@ namespace RE {
 	}
 
 	bool record_cmd_transfer_buffer() {
-		gameObjectToRenderCount = 0;
+		gameObjectsToRenderCount = 0;
 		for (ListBatch_GameObject *const pBatch : gameObjectBatchList) {
 			for (uint16_t u16Index = 0; u16Index < pBatch->size(); u16Index++) {
 				const GameObject *const pGameObject = pBatch->at(u16Index);
 				if (pGameObject->u32SceneParentId && pGameObject->u32SceneParentId != pCurrentScene->u32Id)
 					continue;
-				paRenderBufferInstanceData[gameObjectToRenderCount].a16fModelMatrix[12] = pGameObject->transform.position[0];
-				paRenderBufferInstanceData[gameObjectToRenderCount].a16fModelMatrix[13] = pGameObject->transform.position[1];
-				paRenderBufferInstanceData[gameObjectToRenderCount].a16fModelMatrix[14] = pGameObject->transform.position[2];
-				paRenderBufferInstanceData[gameObjectToRenderCount].a16fModelMatrix[0] = pGameObject->transform.scale[0];
-				paRenderBufferInstanceData[gameObjectToRenderCount].a16fModelMatrix[5] = pGameObject->transform.scale[1];
-				paRenderBufferInstanceData[gameObjectToRenderCount].a16fModelMatrix[10] = pGameObject->transform.scale[2];
-				paRenderBufferInstanceData[gameObjectToRenderCount].a4fColor[0] = pGameObject->spriteRenderer.color[0];
-				paRenderBufferInstanceData[gameObjectToRenderCount].a4fColor[1] = pGameObject->spriteRenderer.color[1];
-				paRenderBufferInstanceData[gameObjectToRenderCount].a4fColor[2] = pGameObject->spriteRenderer.color[2];
-				paRenderBufferInstanceData[gameObjectToRenderCount].a4fColor[3] = pGameObject->spriteRenderer.color[3];
-				paRenderBufferInstanceData[gameObjectToRenderCount].u32TextureId = static_cast<uint32_t>(pGameObject->spriteRenderer.hSprite ? reinterpret_cast<const VulkanSprite*>(pGameObject->spriteRenderer.hSprite)->u16UniformIndex : 0x8000);
-				gameObjectToRenderCount++;
+				paRenderBufferInstanceData[gameObjectsToRenderCount].a16fModelMatrix[12] = pGameObject->transform.position[0];
+				paRenderBufferInstanceData[gameObjectsToRenderCount].a16fModelMatrix[13] = pGameObject->transform.position[1];
+				paRenderBufferInstanceData[gameObjectsToRenderCount].a16fModelMatrix[14] = pGameObject->transform.position[2];
+				paRenderBufferInstanceData[gameObjectsToRenderCount].a16fModelMatrix[0] = pGameObject->transform.scale[0];
+				paRenderBufferInstanceData[gameObjectsToRenderCount].a16fModelMatrix[5] = pGameObject->transform.scale[1];
+				paRenderBufferInstanceData[gameObjectsToRenderCount].a16fModelMatrix[10] = pGameObject->transform.scale[2];
+				paRenderBufferInstanceData[gameObjectsToRenderCount].a4fColor[0] = pGameObject->spriteRenderer.color[0];
+				paRenderBufferInstanceData[gameObjectsToRenderCount].a4fColor[1] = pGameObject->spriteRenderer.color[1];
+				paRenderBufferInstanceData[gameObjectsToRenderCount].a4fColor[2] = pGameObject->spriteRenderer.color[2];
+				paRenderBufferInstanceData[gameObjectsToRenderCount].a4fColor[3] = pGameObject->spriteRenderer.color[3];
+				paRenderBufferInstanceData[gameObjectsToRenderCount].u32TextureId = static_cast<uint32_t>(pGameObject->spriteRenderer.hSprite ? reinterpret_cast<const VulkanSprite*>(pGameObject->spriteRenderer.hSprite)->u16UniformIndex : 0x8000);
+				gameObjectsToRenderCount++;
 			}
 		}
 		vk_pRenderBufferDrawCommand->indexCount = 6;
-		vk_pRenderBufferDrawCommand->instanceCount = gameObjectToRenderCount;
+		vk_pRenderBufferDrawCommand->instanceCount = gameObjectsToRenderCount;
 		vk_pRenderBufferDrawCommand->firstIndex = 0;
 		vk_pRenderBufferDrawCommand->vertexOffset = 0;
 		vk_pRenderBufferDrawCommand->firstInstance = 0;
@@ -170,7 +173,7 @@ namespace RE {
 					.sType = VK_STRUCTURE_TYPE_BUFFER_COPY_2,
 					.srcOffset = 0,
 					.dstOffset = 0,
-					.size = sizeof(VkDrawIndexedIndirectCommand) + gameObjectToRenderCount * sizeof(GameObjectInstanceData),
+					.size = sizeof(VkDrawIndexedIndirectCommand) + gameObjectsToRenderCount * sizeof(GameObjectInstanceData),
 				};
 				const VkCopyBufferInfo2 vk_copyRenderBufferInfo = {
 					.sType = VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2,

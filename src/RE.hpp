@@ -35,6 +35,14 @@
 #include <concepts>
 #include <numbers>
 
+/**
+ *   Uncomment this, if you want to disable PRINT_DEBUG and PRINT_DEBUG_CLASS to
+ * filter redundant output and get better performance while the terminal is
+ * active. However keep in mind, that this will make searching for segmentation
+ * faults difficult.
+ */
+//#define RE_DISABLE_PRINT_DEBUGS
+
 namespace RE {
 
 #define STRIP_QUOTE_MACRO(...) __VA_ARGS__
@@ -51,23 +59,23 @@ namespace RE {
 	template <class TargetedType, class... T>
 	concept AreSame = (std::is_same_v<T, TargetedType> && ...);
 
-	template <class T, T value1, T value2>
-	concept LessThan = (value1 < value2);
+	template <class Type, Type value1, Type value2>
+	concept AreEqual = value1 == value2;
 
-	template <class T, T value1, T value2>
-	concept LessThanEqual = (value1 <= value2);
+	template <class Type, Type value1, Type value2>
+	concept AreNotEqual = value1 != value2;
 
-	template <class T, T value1, T value2>
-	concept GreaterThan = (value1 > value2);
+	template <class Type, Type value1, Type value2>
+	concept IsLess = (value1 < value2);
 
-	template <class T, T value1, T value2>
-	concept GreaterThanEqual = (value1 >= value2);
+	template <class Type, Type value1, Type value2>
+	concept IsLessOrEqual = value1 <= value2;
 
-	template <class T, T value1, T value2>
-	concept Equal = (value1 == value2);
+	template <class Type, Type value1, Type value2>
+	concept IsGreater = (value1 > value2);
 
-	template <class T, T value1, T value2>
-	concept NotEqual = (value1 != value2);
+	template <class Type, Type value1, Type value2>
+	concept IsGreaterOrEqual = value1 >= value2;
 
 	enum TerminalColor {
 		RE_TERMINAL_COLOR_BLACK = 0x0,
@@ -418,9 +426,8 @@ namespace RE {
 	template <class T> requires Arithmetics<T>
 	[[nodiscard]]
 	constexpr T nth_root(const T n, const T value) noexcept {
-		static_assert(n > static_cast<T>(0.0), "The 0th or negative root is forbidden for causing undefined behaviour");
 		if (n <= static_cast<T>(0.0)) {
-			FATAL_ERROR("The value of n shouldn't be zero or negative in an nth root");
+			FATAL_ERROR("The value of 'n' shouldn't be zero or negative in an nth root");
 			return static_cast<T>(0.0);
 		}
 		return std::pow(value, static_cast<T>(1.0) / n);
@@ -576,7 +583,7 @@ namespace RE {
 	}
 
 
-	template <class T, size_t dimensionCount> requires Arithmetics<T> && GreaterThan<size_t, dimensionCount, 0>
+	template <class T, size_t dimensionCount> requires Arithmetics<T> && IsGreater<size_t, dimensionCount, 0>
 	class Vector final {
 		public:
 			std::array<T, dimensionCount> coords;
@@ -585,7 +592,7 @@ namespace RE {
 				fill(static_cast<T>(0.0));
 			}
 			template <class P, size_t u32CopyDimensions>
-			explicit Vector(const Vector<P, u32CopyDimensions> &rCopyVector) requires Arithmetics<P> && LessThanEqual<size_t, u32CopyDimensions, dimensionCount> {
+			explicit Vector(const Vector<P, u32CopyDimensions> &rCopyVector) requires Arithmetics<P> && IsLessOrEqual<size_t, u32CopyDimensions, dimensionCount> {
 				PRINT_DEBUG_CLASS("Copying coordinates from vector ", &rCopyVector);
 				if constexpr (u32CopyDimensions <= dimensionCount) {
 					std::copy(rCopyVector.coords.begin(), rCopyVector.coords.end(), coords.begin());
@@ -594,7 +601,7 @@ namespace RE {
 					std::copy(rCopyVector.begin(), rCopyVector.coords.end() - (u32CopyDimensions - dimensionCount), coords.begin());
 			}
 			template <class... V>
-			Vector(const V... values) requires Arithmetics<V...> && LessThanEqual<size_t, sizeof...(V), dimensionCount> {
+			Vector(const V... values) requires Arithmetics<V...> && IsLessOrEqual<size_t, sizeof...(V), dimensionCount> {
 				PRINT_DEBUG_CLASS("Filling vector with values");
 				size_t dimensionIndex = 0;
 				([&]() {
@@ -712,7 +719,7 @@ namespace RE {
 	typedef Vector<uint32_t, 3> Vector3u;
 	typedef Vector<uint32_t, 4> Vector4u;
 
-	template <size_t numOfThreads = 10> requires GreaterThan<size_t, numOfThreads, 0>
+	template <size_t numOfThreads = 10> requires IsGreater<size_t, numOfThreads, 0>
 	class Threadpool final {
 		private:
 			std::array<std::jthread, numOfThreads> threads;
@@ -768,10 +775,10 @@ namespace RE {
 			}
 
 			size_t occupied_slots() {
-				return get_amount_of_threads() - free_slots();
+				return amount_of_threads() - free_slots();
 			}
 
-			consteval size_t get_amount_of_threads() {
+			constexpr size_t amount_of_threads() {
 				return numOfThreads;
 			}
 	};
@@ -1084,6 +1091,8 @@ namespace RE {
 	};
 
 	// Window
+	void set_fullscreen(bool bNewFullscreen);
+	bool is_fullscreen();
 	void set_window_title(const char *pacNewTitle);
 	
 	// Console
@@ -1117,16 +1126,16 @@ namespace RE {
 
 	// Input
 	[[nodiscard]]
-	bool is_down(Input eInput, uint32_t u32Scancode);
+	bool is_down(Input eInput, uint32_t u32Scancode = 0);
 	[[nodiscard]]
-	bool was_down(Input eInput, uint32_t u32Scancode);
+	bool was_down(Input eInput, uint32_t u32Scancode = 0);
 	[[nodiscard]]
-	bool is_pressed(Input eInput, uint32_t u32Scancode);
+	bool is_pressed(Input eInput, uint32_t u32Scancode = 0);
 	[[nodiscard]]
-	bool is_released(Input eInput, uint32_t u32Scancode);
+	bool is_released(Input eInput, uint32_t u32Scancode = 0);
 	[[nodiscard]]
-	bool is_held_down(Input eInput, uint32_t u32Scancode);
-	void reset_input_at(Input eInput, uint32_t u32Scancode);
+	bool is_held_down(Input eInput, uint32_t u32Scancode = 0);
+	void reset_input_at(Input eInput, uint32_t u32Scancode = 0);
 	void reset_all_input();
 	[[nodiscard]]
 	constexpr bool is_scroll_input(const Input eInput) {

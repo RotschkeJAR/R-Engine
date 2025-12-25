@@ -48,7 +48,8 @@ namespace RE {
 						break;
 					case RE_VK_SHARED_RAM:
 						PRINT_DEBUG_CLASS("Checking if memory type is shared between CPU and GPU");
-						if ((vk_rType.propertyFlags & (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) == 0)
+						constexpr VkMemoryPropertyFlags vk_eRequiredMemoryProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+						if ((vk_rType.propertyFlags & vk_eRequiredMemoryProperties) != vk_eRequiredMemoryProperties)
 							continue;
 						break;
 				}

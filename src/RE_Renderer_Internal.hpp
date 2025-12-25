@@ -32,7 +32,7 @@ namespace RE {
 
 	// Render pipeline
 	extern VkPipelineLayout vk_hGraphicsPipelineLayout;
-	extern VkPipeline vk_hGraphicsPipeline;
+	extern VkPipeline vk_hGraphicsPipeline2D, vk_hGraphicsPipeline3D;
 	bool create_render_pipelines();
 	bool recreate_render_pipelines();
 	void destroy_render_pipelines();
@@ -89,6 +89,9 @@ namespace RE {
 	void destroy_renderpass();
 	void record_cmd_begin_renderpass(VkCommandBuffer vk_hCommandBuffer);
 	void record_cmd_end_renderpass(VkCommandBuffer vk_hCommandBuffer);
+
+	// Órdering
+	void order_rendering(VkCommandBuffer vk_hCommandBuffer);
 
 }
 

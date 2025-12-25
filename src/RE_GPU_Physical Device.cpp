@@ -1,4 +1,5 @@
 #include "RE_GPU_Internal.hpp"
+#include "RE_ListBatch_GameObject.hpp"
 
 namespace RE {
 	
@@ -13,9 +14,15 @@ namespace RE {
 
 		// Fetch general information about the GPU
 		PRINT_DEBUG("Fetching information about physical Vulkan device to check its suitability");
+		VkPhysicalDeviceMaintenance3Properties vk_thisPhysicalDeviceProperties_Maintenance3;
+		vk_thisPhysicalDeviceProperties_Maintenance3.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_3_PROPERTIES;
+		vk_thisPhysicalDeviceProperties_Maintenance3.pNext = nullptr;
+		VkPhysicalDeviceMaintenance4Properties vk_thisPhysicalDeviceProperties_Maintenance4;
+		vk_thisPhysicalDeviceProperties_Maintenance4.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_PROPERTIES;
+		vk_thisPhysicalDeviceProperties_Maintenance4.pNext = &vk_thisPhysicalDeviceProperties_Maintenance3;
 		VkPhysicalDeviceProperties2 vk_thisPhysicalDeviceProperties;
 		vk_thisPhysicalDeviceProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-		vk_thisPhysicalDeviceProperties.pNext = nullptr;
+		vk_thisPhysicalDeviceProperties.pNext = &vk_thisPhysicalDeviceProperties_Maintenance4;
 		vkGetPhysicalDeviceProperties2(vk_hPhysicalDevice, &vk_thisPhysicalDeviceProperties);
 		PRINT_DEBUG("Judging physical Vulkan device ", vk_thisPhysicalDeviceProperties.properties.deviceName);
 
@@ -204,13 +211,21 @@ namespace RE {
 			PRINT_DEBUG("Selecting best physical Vulkan device");
 			int32_t i32BestDeviceScore = std::numeric_limits<int32_t>::min();
 			VkPhysicalDevice vk_hBestPhysicalDevice;
-			VkPhysicalDeviceProperties vk_thisPhysicalDeviceProperties;
+			VkPhysicalDeviceMaintenance3Properties vk_thisPhysicalDeviceProperties_Maintenance3;
+			vk_thisPhysicalDeviceProperties_Maintenance3.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_3_PROPERTIES;
+			vk_thisPhysicalDeviceProperties_Maintenance3.pNext = nullptr;
+			VkPhysicalDeviceMaintenance4Properties vk_thisPhysicalDeviceProperties_Maintenance4;
+			vk_thisPhysicalDeviceProperties_Maintenance4.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_PROPERTIES;
+			vk_thisPhysicalDeviceProperties_Maintenance4.pNext = &vk_thisPhysicalDeviceProperties_Maintenance3;
+			VkPhysicalDeviceProperties2 vk_thisPhysicalDeviceProperties;
+			vk_thisPhysicalDeviceProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+			vk_thisPhysicalDeviceProperties.pNext = &vk_thisPhysicalDeviceProperties_Maintenance4;
 			for (uint32_t u32PhysicalDeviceAvailableIndex = 0; u32PhysicalDeviceAvailableIndex < u32PhysicalDevicesAvailableCount; u32PhysicalDeviceAvailableIndex++) {
-				vkGetPhysicalDeviceProperties(vk_pahPhysicalDevicesAvailable[u32PhysicalDeviceAvailableIndex], &vk_thisPhysicalDeviceProperties);
+				vkGetPhysicalDeviceProperties2(vk_pahPhysicalDevicesAvailable[u32PhysicalDeviceAvailableIndex], &vk_thisPhysicalDeviceProperties);
 	
-				VkSampleCountFlags vk_eMsaaAvailable = vk_thisPhysicalDeviceProperties.limits.framebufferColorSampleCounts & vk_thisPhysicalDeviceProperties.limits.framebufferDepthSampleCounts & vk_thisPhysicalDeviceProperties.limits.framebufferStencilSampleCounts;
+				VkSampleCountFlags vk_eMsaaAvailable = vk_thisPhysicalDeviceProperties.properties.limits.framebufferColorSampleCounts & vk_thisPhysicalDeviceProperties.properties.limits.framebufferDepthSampleCounts & vk_thisPhysicalDeviceProperties.properties.limits.framebufferStencilSampleCounts;
 				int32_t i32CurrentDeviceScore = 0;
-				switch (vk_thisPhysicalDeviceProperties.deviceType) {
+				switch (vk_thisPhysicalDeviceProperties.properties.deviceType) {
 					case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
 						i32CurrentDeviceScore += 1500;
 						break;
@@ -220,17 +235,18 @@ namespace RE {
 						i32CurrentDeviceScore -= 3000;
 						break;
 				}
-				i32CurrentDeviceScore += rate_gpu_memory_capacity(vk_pahPhysicalDevicesAvailable[u32PhysicalDeviceAvailableIndex], vk_thisPhysicalDeviceProperties);
+				i32CurrentDeviceScore += vk_thisPhysicalDeviceProperties_Maintenance4.maxBufferSize / sizeof(GameObjectInstanceData) - MAXIMUM_GAME_OBJECTS_PER_BATCH;
+				i32CurrentDeviceScore += rate_gpu_memory_capacity(vk_pahPhysicalDevicesAvailable[u32PhysicalDeviceAvailableIndex], vk_thisPhysicalDeviceProperties, vk_thisPhysicalDeviceProperties_Maintenance3);
 				i32CurrentDeviceScore += rate_gpu_queues(vk_pahPhysicalDevicesAvailable[u32PhysicalDeviceAvailableIndex]);
 				i32CurrentDeviceScore += rate_gpu_depth_stencil_image_formats(vk_pahPhysicalDevicesAvailable[u32PhysicalDeviceAvailableIndex], vk_eMsaaAvailable);
-				i32CurrentDeviceScore += rate_gpu_texture_capacity(vk_thisPhysicalDeviceProperties.limits);
-				i32CurrentDeviceScore += std::popcount<VkSampleCountFlags>(vk_eMsaaAvailable & ~VK_SAMPLE_COUNT_1_BIT) * 700;
+				i32CurrentDeviceScore += rate_gpu_texture_capacity(vk_thisPhysicalDeviceProperties.properties.limits);
+				i32CurrentDeviceScore += std::popcount<VkSampleCountFlags>(vk_eMsaaAvailable & ~VK_SAMPLE_COUNT_1_BIT) * 100;
 				if ((vk_eMsaaAvailable & VK_SAMPLE_COUNT_1_BIT) == 0)
 					i32CurrentDeviceScore -= 1000;
 				if (i32CurrentDeviceScore > i32BestDeviceScore) {
 					i32BestDeviceScore = i32CurrentDeviceScore;
 					vk_hBestPhysicalDevice = vk_pahPhysicalDevicesAvailable[u32PhysicalDeviceAvailableIndex];
-					PRINT_DEBUG("New best physical Vulkan device ", vk_thisPhysicalDeviceProperties.deviceName, " selected, whose score is ", i32CurrentDeviceScore);
+					PRINT_DEBUG("New best physical Vulkan device ", vk_thisPhysicalDeviceProperties.properties.deviceName, " selected, whose score is ", i32CurrentDeviceScore);
 				}
 			}
 			select_physical_vulkan_device(vk_hBestPhysicalDevice);

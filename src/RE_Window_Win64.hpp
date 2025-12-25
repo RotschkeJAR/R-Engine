@@ -13,6 +13,7 @@ namespace RE {
 	bool win64_create_window();
 	void win64_destroy_window();
 	void win64_show_window();
+	void win64_update_fullscreen();
 	void win64_update_window_title();
 	void win64_window_proc();
 

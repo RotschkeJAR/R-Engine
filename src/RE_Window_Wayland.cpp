@@ -5,14 +5,14 @@
 namespace RE {
 
 	wl_display *wl_pDisplay = nullptr;
-	wl_registry *wl_pRegistry = nullptr;
-	wl_compositor *wl_pCompositor = nullptr;
-	wl_seat *wl_pSeat = nullptr;
-	xdg_wm_base *xdg_pWindowBase = nullptr;
-	wl_pointer *wl_pMouse = nullptr;
+	static wl_registry *wl_pRegistry = nullptr;
+	static wl_compositor *wl_pCompositor = nullptr;
+	static wl_seat *wl_pSeat = nullptr;
+	static xdg_wm_base *xdg_pWindowBase = nullptr;
+	static wl_pointer *wl_pMouse = nullptr;
 	wl_surface *wl_pSurface = nullptr;
-	xdg_surface *xdg_pSurface = nullptr;
-	xdg_toplevel *xdg_pToplevel = nullptr;
+	static xdg_surface *xdg_pSurface = nullptr;
+	static xdg_toplevel *xdg_pToplevel = nullptr;
 
 	static void commit_wayland_surface() {
 		PRINT_DEBUG("Commiting Wayland surface ", wl_pSurface, " and flushing to server ", wl_pDisplay);
@@ -249,6 +249,14 @@ namespace RE {
 	void wayland_show_window() {
 		PRINT_DEBUG("Showing/Hiding Wayland surface ", wl_pSurface);
 		commit_wayland_surface();
+	}
+
+	void wayland_update_fullscreen() {
+		if (is_fullscreen()) {
+
+		} else {
+			
+		}
 	}
 	
 	void wayland_update_window_title() {

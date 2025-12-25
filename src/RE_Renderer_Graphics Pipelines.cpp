@@ -8,11 +8,11 @@ namespace RE {
 
 	VkPipelineLayout vk_hGraphicsPipelineLayout;
 	static VkShaderModule vk_ahShaders[RE_VK_SHADER_COUNT];
-	VkPipeline vk_hGraphicsPipeline = VK_NULL_HANDLE;
+	VkPipeline vk_hGraphicsPipeline2D = VK_NULL_HANDLE, vk_hGraphicsPipeline3D = VK_NULL_HANDLE;
 
 	static bool create_render_pipeline_internal() {
 		PRINT_DEBUG("Copying old Vulkan graphics pipelines used for game object rendering");
-		const VkPipeline vk_hPreviousPipeline = vk_hGraphicsPipeline;
+		const VkPipeline vk_hPreviousPipeline2D = vk_hGraphicsPipeline2D, vk_hPreviousPipeline3D = vk_hGraphicsPipeline3D;
 		const VkPipelineShaderStageCreateInfo vk_aShaderStages[RE_VK_SHADER_COUNT] = {
 			{
 				.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
@@ -87,7 +87,12 @@ namespace RE {
 			.vertexAttributeDescriptionCount = sizeof(vk_aVertexAttributes) / sizeof(vk_aVertexAttributes[0]),
 			.pVertexAttributeDescriptions = vk_aVertexAttributes
 		};
-		constexpr VkPipelineInputAssemblyStateCreateInfo vk_inputAssembly = {
+		constexpr VkPipelineInputAssemblyStateCreateInfo vk_inputAssembly2D = {
+			.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+			.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP,
+			.primitiveRestartEnable = VK_TRUE
+		};
+		constexpr VkPipelineInputAssemblyStateCreateInfo vk_inputAssembly3D = {
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
 			.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 			.primitiveRestartEnable = VK_FALSE
@@ -97,12 +102,22 @@ namespace RE {
 			.viewportCount = 1,
 			.scissorCount = 1
 		};
-		constexpr VkPipelineRasterizationStateCreateInfo vk_rasterization = {
+		constexpr VkPipelineRasterizationStateCreateInfo vk_rasterization2D = {
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
 			.depthClampEnable = VK_FALSE,
 			.rasterizerDiscardEnable = VK_FALSE,
 			.polygonMode = VK_POLYGON_MODE_FILL,
 			.cullMode = VK_CULL_MODE_NONE,
+			.frontFace = VK_FRONT_FACE_CLOCKWISE,
+			.depthBiasEnable = VK_FALSE,
+			.lineWidth = 1.0f
+		};
+		constexpr VkPipelineRasterizationStateCreateInfo vk_rasterization3D = {
+			.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+			.depthClampEnable = VK_FALSE,
+			.rasterizerDiscardEnable = VK_FALSE,
+			.polygonMode = VK_POLYGON_MODE_FILL,
+			.cullMode = VK_CULL_MODE_BACK_BIT,
 			.frontFace = VK_FRONT_FACE_CLOCKWISE,
 			.depthBiasEnable = VK_FALSE,
 			.lineWidth = 1.0f
@@ -168,31 +183,57 @@ namespace RE {
 				vk_dynamicRenderingInfo.stencilAttachmentFormat = vk_dynamicRenderingInfo.depthAttachmentFormat;
 				break;
 		}
-		const VkGraphicsPipelineCreateInfo vk_pipelineCreateInfo = {
-			.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-			.pNext = &vk_dynamicRenderingInfo,
-			.flags = VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT | static_cast<VkPipelineCreateFlags>(vk_hPreviousPipeline ? VK_PIPELINE_CREATE_DERIVATIVE_BIT : 0),
-			.stageCount = RE_VK_SHADER_COUNT,
-			.pStages = vk_aShaderStages,
-			.pVertexInputState = &vk_vertexInput,
-			.pInputAssemblyState = &vk_inputAssembly,
-			.pTessellationState = nullptr,
-			.pViewportState = &vk_viewport,
-			.pRasterizationState = &vk_rasterization,
-			.pMultisampleState = &vk_multisampling,
-			.pDepthStencilState = &vk_depthStencils,
-			.pColorBlendState = &vk_colorBlend,
-			.pDynamicState = &vk_dynamicStates,
-			.layout = vk_hGraphicsPipelineLayout,
-			.renderPass = VK_NULL_HANDLE,
-			.subpass = 0,
-			.basePipelineHandle = vk_hPreviousPipeline,
-			.basePipelineIndex = -1
+		const VkGraphicsPipelineCreateInfo vk_a2PipelineCreateInfos[2] = {
+			{
+				.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+				.pNext = &vk_dynamicRenderingInfo,
+				.flags = VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT | static_cast<VkPipelineCreateFlags>(vk_hPreviousPipeline2D ? VK_PIPELINE_CREATE_DERIVATIVE_BIT : 0),
+				.stageCount = RE_VK_SHADER_COUNT,
+				.pStages = vk_aShaderStages,
+				.pVertexInputState = &vk_vertexInput,
+				.pInputAssemblyState = &vk_inputAssembly2D,
+				.pTessellationState = nullptr,
+				.pViewportState = &vk_viewport,
+				.pRasterizationState = &vk_rasterization2D,
+				.pMultisampleState = &vk_multisampling,
+				.pDepthStencilState = &vk_depthStencils,
+				.pColorBlendState = &vk_colorBlend,
+				.pDynamicState = &vk_dynamicStates,
+				.layout = vk_hGraphicsPipelineLayout,
+				.renderPass = VK_NULL_HANDLE,
+				.subpass = 0,
+				.basePipelineHandle = vk_hPreviousPipeline2D,
+				.basePipelineIndex = -1
+			}, {
+				.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+				.pNext = &vk_dynamicRenderingInfo,
+				.flags = VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT | static_cast<VkPipelineCreateFlags>(vk_hPreviousPipeline3D ? VK_PIPELINE_CREATE_DERIVATIVE_BIT : 0),
+				.stageCount = RE_VK_SHADER_COUNT,
+				.pStages = vk_aShaderStages,
+				.pVertexInputState = &vk_vertexInput,
+				.pInputAssemblyState = &vk_inputAssembly3D,
+				.pTessellationState = nullptr,
+				.pViewportState = &vk_viewport,
+				.pRasterizationState = &vk_rasterization3D,
+				.pMultisampleState = &vk_multisampling,
+				.pDepthStencilState = &vk_depthStencils,
+				.pColorBlendState = &vk_colorBlend,
+				.pDynamicState = &vk_dynamicStates,
+				.layout = vk_hGraphicsPipelineLayout,
+				.renderPass = VK_NULL_HANDLE,
+				.subpass = 0,
+				.basePipelineHandle = vk_hPreviousPipeline3D,
+				.basePipelineIndex = -1
+			}
 		};
 		PRINT_DEBUG("Creating Vulkan graphics pipeline for game object rendering");
-		if (vkCreateGraphicsPipelines(vk_hDevice, VK_NULL_HANDLE, 1, &vk_pipelineCreateInfo, nullptr, &vk_hGraphicsPipeline) == VK_SUCCESS) {
-			PRINT_DEBUG("Destroying old Vulkan graphics pipeline ", vk_hPreviousPipeline);
-			vkDestroyPipeline(vk_hDevice, vk_hPreviousPipeline, nullptr);
+		VkPipeline vk_a2hPipelines[sizeof(vk_a2PipelineCreateInfos) / sizeof(vk_a2PipelineCreateInfos[0])];
+		if (vkCreateGraphicsPipelines(vk_hDevice, VK_NULL_HANDLE, sizeof(vk_a2hPipelines) / sizeof(vk_a2hPipelines[0]), vk_a2PipelineCreateInfos, nullptr, vk_a2hPipelines) == VK_SUCCESS) {
+			vk_hGraphicsPipeline2D = vk_a2hPipelines[0];
+			vk_hGraphicsPipeline3D = vk_a2hPipelines[1];
+			PRINT_DEBUG("Destroying old Vulkan graphics pipelines ", vk_hPreviousPipeline2D, " and ", vk_hPreviousPipeline3D);
+			vkDestroyPipeline(vk_hDevice, vk_hPreviousPipeline2D, nullptr);
+			vkDestroyPipeline(vk_hDevice, vk_hPreviousPipeline3D, nullptr);
 			return true;
 		}
 		return false;
@@ -266,9 +307,11 @@ namespace RE {
 	}
 
 	void destroy_render_pipelines() {
-		PRINT_DEBUG("Destroying Vulkan pipeline ", vk_hGraphicsPipeline, " for rendering game objects");
-		vkDestroyPipeline(vk_hDevice, vk_hGraphicsPipeline, nullptr);
-		vk_hGraphicsPipeline = VK_NULL_HANDLE;
+		PRINT_DEBUG("Destroying Vulkan pipeline ", vk_hGraphicsPipeline2D, " and ", vk_hGraphicsPipeline3D, " for rendering");
+		vkDestroyPipeline(vk_hDevice, vk_hGraphicsPipeline2D, nullptr);
+		vkDestroyPipeline(vk_hDevice, vk_hGraphicsPipeline3D, nullptr);
+		vk_hGraphicsPipeline2D = VK_NULL_HANDLE;
+		vk_hGraphicsPipeline3D = VK_NULL_HANDLE;
 		for (const VkShaderModule &vk_rhShader : vk_ahShaders) {
 			PRINT_DEBUG("Destroying Vulkan shader ", vk_rhShader, " for rendering game objects");
 			vkDestroyShaderModule(vk_hDevice, vk_rhShader, nullptr);

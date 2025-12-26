@@ -5,10 +5,22 @@
 
 #ifdef RE_OS_LINUX
 
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
+#include <X11/Xatom.h>
+#include <X11/Xlocale.h>
+#include <X11/keysym.h>
+#include <X11/XKBlib.h>
+#include <X11/extensions/Xrandr.h>
+#include <X11/extensions/Xinerama.h>
+#define _NET_WM_STATE_REMOVE 0
+#define _NET_WM_STATE_ADD 1
+#define _NET_WM_STATE_TOGGLE 2
+
 namespace RE {
 	
-	extern XDisplay *x11_pDisplay;
-	extern XWindow x11_hWindow;
+	extern Display *x11_pDisplay;
+	extern Window x11_hWindow;
 
 	bool x11_create_window();
 	void x11_destroy_window();

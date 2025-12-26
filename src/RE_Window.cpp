@@ -29,6 +29,8 @@ namespace RE {
 				set_bits<uint8_t>(u8WindowFlagBits, false, WINDOW_WAYLAND_SHOULD_RENDER_FRAME_BIT);
 				bSuccess = wayland_create_window();
 				break;
+			default:
+				ABORT("Window compositor is unknown");
 		}
 #endif
 		set_bits<uint8_t>(u8WindowFlagBits, bSuccess, WINDOW_CREATED_BIT);
@@ -47,6 +49,8 @@ namespace RE {
 			case RE_LINUX_WINDOW_TYPE_WAYLAND:
 				wayland_destroy_window();
 				break;
+			default:
+				ABORT("Window compositor is unknown");
 		}
 #endif
 		set_bits<uint8_t>(u8WindowFlagBits, false, WINDOW_CREATED_BIT, WINDOW_VISIBLE_BIT, WINDOW_MINIMIZED_BIT, WINDOW_MAXIMIZED_BIT, WINDOW_CLOSE_FLAG_BIT);
@@ -72,6 +76,8 @@ namespace RE {
 			case RE_LINUX_WINDOW_TYPE_WAYLAND:
 				wayland_show_window();
 				break;
+			default:
+				ABORT("Window compositor is unknown");
 		}
 #endif
 	}
@@ -93,6 +99,8 @@ namespace RE {
 			case RE_LINUX_WINDOW_TYPE_WAYLAND:
 				wayland_update_fullscreen();
 				break;
+			default:
+				ABORT("Window compositor is unknown");
 		}
 #endif
 	}
@@ -114,6 +122,8 @@ namespace RE {
 			case RE_LINUX_WINDOW_TYPE_WAYLAND:
 				wayland_window_proc();
 				break;
+			default:
+				ABORT("Window compositor is unknown");
 		}
 #endif
 	}
@@ -151,17 +161,17 @@ namespace RE {
 			case RE_LINUX_WINDOW_TYPE_X11:
 				{
 					PRINT_DEBUG("Creating Vulkan surface linked to RE_LINUX_WINDOW_TYPE_X11");
-					const VkXlibSurfaceCreateInfoKHR vk_RE_LINUX_WINDOW_TYPE_X11SurfaceCreateInfo = {
+					const VkXlibSurfaceCreateInfoKHR vk_x11SurfaceCreateInfo = {
 						.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR,
-						.dpy = RE_LINUX_WINDOW_TYPE_X11_pDisplay,
-						.window = RE_LINUX_WINDOW_TYPE_X11_hWindow
+						.dpy = x11_pDisplay,
+						.window = x11_hWindow
 					};
-					return vkCreateXlibSurfaceKHR(vk_hInstance, &vk_RE_LINUX_WINDOW_TYPE_X11SurfaceCreateInfo, nullptr, &vk_rhSurface) == VK_SUCCESS;
+					return vkCreateXlibSurfaceKHR(vk_hInstance, &vk_x11SurfaceCreateInfo, nullptr, &vk_rhSurface) == VK_SUCCESS;
 				}
 			case RE_LINUX_WINDOW_TYPE_WAYLAND:
 				{
 					PRINT_DEBUG("Creating Vulkan surface linked to Wayland");
-					const VkRE_LINUX_WINDOW_TYPE_WAYLANDSurfaceCreateInfoKHR vk_waylandSurfaceCreateInfo = {
+					const VkWaylandSurfaceCreateInfoKHR vk_waylandSurfaceCreateInfo = {
 						.sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR,
 						.display = wl_pDisplay,
 						.surface = wl_pSurface
@@ -169,6 +179,7 @@ namespace RE {
 					return vkCreateWaylandSurfaceKHR(vk_hInstance, &vk_waylandSurfaceCreateInfo, nullptr, &vk_rhSurface) == VK_SUCCESS;
 				}
 			default:
+				ABORT("Window compositor is unknown");
 				return false;
 		}
 #endif
@@ -185,6 +196,7 @@ namespace RE {
 			case RE_LINUX_WINDOW_TYPE_WAYLAND:
 				return VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME;
 			default:
+				ABORT("Window compositor is unknown");
 				return nullptr;
 		}
 #endif
@@ -202,11 +214,13 @@ namespace RE {
 #elif defined RE_OS_LINUX
 		switch (eLinuxWindowType) {
 			case RE_LINUX_WINDOW_TYPE_X11:
-				RE_LINUX_WINDOW_TYPE_X11_update_window_title();
+				x11_update_window_title();
 				break;
 			case RE_LINUX_WINDOW_TYPE_WAYLAND:
 				wayland_update_window_title();
 				break;
+			default:
+				ABORT("Window compositor is unknown");
 		}
 #endif
 	}

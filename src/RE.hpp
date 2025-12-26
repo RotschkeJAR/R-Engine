@@ -41,7 +41,7 @@
  * active. However keep in mind, that this will make searching for segmentation
  * faults difficult.
  */
-//#define RE_DISABLE_PRINT_DEBUGS
+#define RE_DISABLE_PRINT_DEBUGS
 
 namespace RE {
 

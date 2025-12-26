@@ -1,18 +1,19 @@
 #include "RE_Window.hpp"
+#include "RE_Window_Wayland.hpp"
 
 #ifdef RE_OS_LINUX
 
 namespace RE {
 
-	wl_display *wl_pDisplay = nullptr;
-	static wl_registry *wl_pRegistry = nullptr;
-	static wl_compositor *wl_pCompositor = nullptr;
-	static wl_seat *wl_pSeat = nullptr;
-	static xdg_wm_base *xdg_pWindowBase = nullptr;
-	static wl_pointer *wl_pMouse = nullptr;
-	wl_surface *wl_pSurface = nullptr;
-	static xdg_surface *xdg_pSurface = nullptr;
-	static xdg_toplevel *xdg_pToplevel = nullptr;
+	wl_display *wl_pDisplay;
+	static wl_registry *wl_pRegistry;
+	static wl_compositor *wl_pCompositor;
+	static wl_seat *wl_pSeat;
+	static xdg_wm_base *xdg_pWindowBase;
+	static wl_pointer *wl_pMouse;
+	wl_surface *wl_pSurface;
+	static xdg_surface *xdg_pSurface;
+	static xdg_toplevel *xdg_pToplevel;
 
 	static void commit_wayland_surface() {
 		PRINT_DEBUG("Commiting Wayland surface ", wl_pSurface, " and flushing to server ", wl_pDisplay);
@@ -144,10 +145,10 @@ namespace RE {
 				if (wl_pSurface) {
 					/*PRINT_DEBUG("Adding callbacks for Wayland surface ", wl_pSurface);
 					const wl_surface_listener wl_surfaceListener = {
-						.enter = ,
-						.leave = ,
-						.preferred_buffer_scale = ,
-						.preferred_buffer_transform = 
+						.enter = nullptr,
+						.leave = nullptr,
+						.preferred_buffer_scale = nullptr,
+						.preferred_buffer_transform = nullptr
 					};
 					wl_surface_add_listener(wl_pSurface, &wl_surfaceListener, nullptr);*/
 					PRINT_DEBUG("Getting XDG surface of XDG WM-base ", xdg_pWindowBase);
@@ -183,12 +184,10 @@ namespace RE {
 							RE_FATAL_ERROR("Failed to get toplevel of the XDG window for Wayland");
 						PRINT_DEBUG("Destroying XDG surface ", xdg_pSurface, " due to failure creating or registering essentail resources");
 						xdg_surface_destroy(xdg_pSurface);
-						xdg_pSurface = nullptr;
 					} else
 						RE_FATAL_ERROR("Failed to create an XDG window for Wayland");
 					PRINT_DEBUG("Destroying Wayland surface ", wl_pSurface, " due to failure creating or registering essentail resources");
 					wl_surface_destroy(wl_pSurface);
-					wl_pSurface = nullptr;
 				} else
 					RE_FATAL_ERROR("Failed to create a Wayland surface");
 				PRINT_DEBUG("Destroying Wayland mouse ", wl_pMouse, " due to failure creating or registering essentail resources");
@@ -199,18 +198,12 @@ namespace RE {
 				wl_seat_destroy(wl_pSeat);
 				PRINT_DEBUG("Destroying XDG surface ", wl_pCompositor, " due to failure creating or registering essentail resources");
 				wl_compositor_destroy(wl_pCompositor);
-				wl_pMouse = nullptr;
-				xdg_pWindowBase = nullptr;
-				wl_pSeat = nullptr;
-				wl_pCompositor = nullptr;
 			} else
 				RE_FATAL_ERROR("Failed to get essential Wayland objects at startup");
 			PRINT_DEBUG("Destroying Wayland registry ", wl_pRegistry, " due to failure creating or registering essentail resources");
 			wl_registry_destroy(wl_pRegistry);
 			PRINT_DEBUG("Disconnecting Wayland display ", wl_pDisplay, " due to failure creating or registering essentail resources");
 			wl_display_disconnect(wl_pDisplay);
-			wl_pRegistry = nullptr;
-			wl_pDisplay = nullptr;
 		} else
 			RE_FATAL_ERROR("Failed connecting to Wayland server");
 		return false;
@@ -235,15 +228,6 @@ namespace RE {
 		wl_registry_destroy(wl_pRegistry);
 		PRINT_DEBUG("Disconnecting Wayland display ", wl_pDisplay);
 		wl_display_disconnect(wl_pDisplay);
-		xdg_pToplevel = nullptr;
-		xdg_pSurface = nullptr;
-		wl_pSurface = nullptr;
-		wl_pMouse = nullptr;
-		xdg_pWindowBase = nullptr;
-		wl_pSeat = nullptr;
-		wl_pCompositor = nullptr;
-		wl_pRegistry = nullptr;
-		wl_pDisplay = nullptr;
 	}
 	
 	void wayland_show_window() {

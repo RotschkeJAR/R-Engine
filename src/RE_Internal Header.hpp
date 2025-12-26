@@ -21,55 +21,9 @@
 #undef NOTE
 #include "RE_Console.hpp"
 
-#ifdef RE_OS_WINDOWS
-
-# define UNICODE
-# ifdef _MSC_VER
-#  define NOMINMAX
-# endif
-# define WIN32_LEAN_AND_MEAN /* speeds compilation up */
-# define WINVER _WIN32_WINNT
-# include <windows.h>
-# include <shellscalingapi.h>
-# include <windowsx.h>
-
-#elif defined RE_OS_LINUX
-
-# include <X11/Xlib.h>
-# include <X11/Xutil.h>
-# include <X11/Xatom.h>
-# include <X11/Xlocale.h>
-# include <X11/keysym.h>
-# include <X11/XKBlib.h>
-# include <wayland-client.h>
-# include <xdg-shell-client-protocol.h>
+#ifdef RE_OS_LINUX
 # include <dlfcn.h>
-typedef Display XDisplay;
-typedef Window XWindow;
-typedef Screen XScreen;
-typedef Atom XAtom;
-typedef XIM XInputMethod;
-typedef XIC XInputContext;
-typedef KeyCode XKeyCode;
-typedef KeySym XKeySym;
-typedef Status XStatus;
-typedef Colormap XColormap;
-# define XConfigureNotify ConfigureNotify
-# define XKeyPress KeyPress
-# define XKeyRelease KeyRelease
-# define XButtonPress ButtonPress
-# define XButtonRelease ButtonRelease
-# define XMotionNotify MotionNotify
-# define XClientMessage ClientMessage
-# define XMapNotify MapNotify
-# define XUnmapNotify UnmapNotify
-# define XResizeRequest ResizeRequest
-# define XNone None
-# define XNoSymbol NoSymbol
-# define XFalse False
-# define XSuccess Success
-
-#endif /* RE_OS_WINDOWS, RE_OS_LINUX */
+#endif /* RE_OS_LINUX */
 
 namespace RE {}
 

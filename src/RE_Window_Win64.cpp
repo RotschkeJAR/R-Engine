@@ -1,4 +1,5 @@
 #include "RE_Window.hpp"
+#include "RE_Window_Win64.hpp"
 #include "RE_Main.hpp"
 
 #ifdef RE_OS_WINDOWS
@@ -245,8 +246,8 @@ namespace RE {
 					RECT win_adjustableSize = {
 						.left = 0,
 						.top = 0,
-						.right = monitorWorkSize[0] / 4 * 3,
-						.bottom = monitorWorkSize[1] / 4 * 3
+						.right = monitorWorkSize[0] / 5 * 3,
+						.bottom = monitorWorkSize[1] / 5 * 3
 					};
 					AdjustWindowRect(&win_adjustableSize, RE_WIN64_WINDOW_STYLE_FLAGS, FALSE);
 					PRINT_DEBUG("Creating window on Windows centered on the primary monitor");

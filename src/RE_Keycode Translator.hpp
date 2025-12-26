@@ -2,6 +2,8 @@
 #define __RE_KEYCODE_TRANSLATOR_H__
 
 #include "RE_Internal Header.hpp"
+#include "RE_Window_Win64.hpp"
+#include "RE_Window_X11.hpp"
 
 namespace RE {
 	

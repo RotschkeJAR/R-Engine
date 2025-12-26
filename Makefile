@@ -7,7 +7,7 @@ SH           = shaders
 
 CC           = g++
 CFLAG        = -m64 -march=x86-64 -pedantic-errors -Wall -ffast-math
-LDFLAG       = -lRE -I$(SRC) -I/usr/ -L$(BIN) -lX11 -lwayland-client
+LDFLAG       = -lRE -I$(SRC) -I/usr/ -L$(BIN) -lX11 -lXrandr -lXinerama -lwayland-client
 
 SC           = glslc
 SFLAG        = --target-env=vulkan1.0 --target-spv=spv1.0 -O

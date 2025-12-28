@@ -388,8 +388,8 @@ namespace RE {
 			PRINT_DEBUG("Setting new style flags for window ", win_hWindow);
 			SetWindowLongPtr(win_hWindow, GWL_EXSTYLE, RE_WIN64_WINDOW_EXTENDED_STYLE_FLAGS);
 			SetWindowLongPtr(win_hWindow, GWL_STYLE, RE_WIN64_WINDOW_STYLE_FLAGS);
-			windowSize[0] = monitorSize[0] / 4 * 3;
-			windowSize[1] = monitorSize[1] / 4 * 3;
+			windowSize[0] = monitorSize[0] / 5 * 3;
+			windowSize[1] = monitorSize[1] / 5 * 3;
 			PRINT_DEBUG("Repositioning and resizing to ", windowSize);
 			if (SetWindowPos(
 					win_hWindow, 

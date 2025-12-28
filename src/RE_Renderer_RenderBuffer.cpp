@@ -7,13 +7,11 @@
 
 namespace RE {
 	
-	static VkBuffer vk_ahStagingRenderBuffers[RE_VK_FRAMES_IN_FLIGHT];
-	static VulkanMemory aStagingRenderBufferMemories[RE_VK_FRAMES_IN_FLIGHT];
+	static Vulkan_Buffer aStagingRenderBuffers[RE_VK_FRAMES_IN_FLIGHT];
 	VkDrawIndexedIndirectCommand *vk_apRenderBufferDrawCommands[RE_VK_FRAMES_IN_FLIGHT];
 	GameObjectInstanceData *apaRenderBufferInstanceData[RE_VK_FRAMES_IN_FLIGHT];
 
-	VkBuffer vk_ahRenderBuffers[RE_VK_FRAMES_IN_FLIGHT];
-	static VulkanMemory aRenderBufferMemories[RE_VK_FRAMES_IN_FLIGHT];
+	Vulkan_Buffer aRenderBuffers[RE_VK_FRAMES_IN_FLIGHT];
 
 	size_t gameObjectCountRenderBuffer;
 	std::atomic<uint32_t> gameObjectsToRenderCount;
@@ -25,35 +23,31 @@ namespace RE {
 		while (u8RenderBufferCreateIndex < RE_VK_FRAMES_IN_FLIGHT) {
 			if (is_transfer_necessary()) {
 				PRINT_DEBUG("Creating staging render buffer in Vulkan at index ", u8RenderBufferCreateIndex);
-				if (create_vulkan_buffer(
+				if (aStagingRenderBuffers[u8RenderBufferCreateIndex].create(
 						0,
 						vk_renderBufferByteSize,
 						VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 						1,
 						nullptr,
 						RE_VK_CPU_RAM,
-						0,
-						&vk_ahStagingRenderBuffers[u8RenderBufferCreateIndex],
-						&aStagingRenderBufferMemories[u8RenderBufferCreateIndex])) {
+						0)) {
 					PRINT_DEBUG("Mapping to staging render buffer's memory at index ", u8RenderBufferCreateIndex);
 					void *pStagingRenderBufferContent;
-					if (vkMapMemory(vk_hDevice, aStagingRenderBufferMemories[u8RenderBufferCreateIndex].get(), 0, vk_renderBufferByteSize, 0, &pStagingRenderBufferContent) == VK_SUCCESS) {
+					if (aStagingRenderBuffers[u8RenderBufferCreateIndex].get_memory().map(0, 0, vk_renderBufferByteSize, &pStagingRenderBufferContent)) {
 						vk_apRenderBufferDrawCommands[u8RenderBufferCreateIndex] = reinterpret_cast<VkDrawIndexedIndirectCommand*>(pStagingRenderBufferContent);
 						apaRenderBufferInstanceData[u8RenderBufferCreateIndex] = reinterpret_cast<GameObjectInstanceData*>(vk_apRenderBufferDrawCommands[u8RenderBufferCreateIndex] + 1);
 						const uint32_t a2u32QueuesForRenderBuffer[2] = {
 							queueFamilyIndices[renderTasks[0].logical_queue_index_for_function(RENDER_TASK_SUBINDEX_BUFFER_TRANSFER)],
 							queueFamilyIndices[renderTasks[0].logical_queue_index_for_function(RENDER_TASK_SUBINDEX_RENDERING)]
 						};
-						if (create_vulkan_buffer(
+						if (aRenderBuffers[u8RenderBufferCreateIndex].create(
 								0,
 								vk_renderBufferByteSize,
 								VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
 								a2u32QueuesForRenderBuffer[0] == a2u32QueuesForRenderBuffer[1] ? 1 : 2,
 								a2u32QueuesForRenderBuffer,
 								RE_VK_GPU_RAM,
-								0,
-								&vk_ahRenderBuffers[u8RenderBufferCreateIndex],
-								&aRenderBufferMemories[u8RenderBufferCreateIndex])) {
+								0)) {
 							Threadpool renderBufferInitializerThreads;
 							std::atomic<size_t> index;
 							for (uint32_t i = 0; i < renderBufferInitializerThreads.amount_of_threads(); i++)
@@ -83,23 +77,20 @@ namespace RE {
 							RE_FATAL_ERROR("Failed to create render buffer in Vulkan at index ", u8RenderBufferCreateIndex);
 					} else
 						RE_FATAL_ERROR("Failed mapping Vulkan memory of staging render buffer at index ", u8RenderBufferCreateIndex);
-					vkDestroyBuffer(vk_hDevice, vk_ahStagingRenderBuffers[u8RenderBufferCreateIndex], nullptr);
-					aStagingRenderBufferMemories[u8RenderBufferCreateIndex].free();
+					aStagingRenderBuffers[u8RenderBufferCreateIndex].destroy();
 				} else
 					RE_FATAL_ERROR("Failed to create staging render buffer in Vulkan at index ", u8RenderBufferCreateIndex);
 			} else {
-				if (create_vulkan_buffer(
+				if (aRenderBuffers[u8RenderBufferCreateIndex].create(
 						0,
 						vk_renderBufferByteSize,
 						VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
 						1,
 						nullptr,
 						RE_VK_SHARED_RAM,
-						0,
-						&vk_ahRenderBuffers[u8RenderBufferCreateIndex],
-						&aRenderBufferMemories[u8RenderBufferCreateIndex])) {
+						0)) {
 					void *pRenderBufferContent;
-					if (vkMapMemory(vk_hDevice, aRenderBufferMemories[u8RenderBufferCreateIndex].get(), 0, vk_renderBufferByteSize, 0, &pRenderBufferContent) == VK_SUCCESS) {
+					if (aRenderBuffers[u8RenderBufferCreateIndex].get_memory().map(0, 0, vk_renderBufferByteSize, &pRenderBufferContent)) {
 						vk_apRenderBufferDrawCommands[u8RenderBufferCreateIndex] = reinterpret_cast<VkDrawIndexedIndirectCommand*>(pRenderBufferContent);
 						apaRenderBufferInstanceData[u8RenderBufferCreateIndex] = reinterpret_cast<GameObjectInstanceData*>(vk_apRenderBufferDrawCommands[u8RenderBufferCreateIndex] + 1);
 						Threadpool renderBufferInitializerThreads;
@@ -136,8 +127,7 @@ namespace RE {
 							RE_FATAL_ERROR("Failed prerecording Vulkan command buffer for render task at index ", u8RenderBufferCreateIndex);
 					} else
 						RE_FATAL_ERROR("Failed to map render buffer's memory at index ", u8RenderBufferCreateIndex);
-					vkDestroyBuffer(vk_hDevice, vk_ahRenderBuffers[u8RenderBufferCreateIndex], nullptr);
-					aRenderBufferMemories[u8RenderBufferCreateIndex].free();
+					aRenderBuffers[u8RenderBufferCreateIndex].destroy();
 				} else
 					RE_FATAL_ERROR("Failed to create render buffer in Vulkan at index ", u8RenderBufferCreateIndex);
 			}
@@ -145,12 +135,9 @@ namespace RE {
 		}
 		if (u8RenderBufferCreateIndex < RE_VK_FRAMES_IN_FLIGHT) {
 			for (uint8_t u8RenderBufferDestroyIndex = 0; u8RenderBufferDestroyIndex < u8RenderBufferCreateIndex; u8RenderBufferDestroyIndex++) {
-				if (is_transfer_necessary()) {
-					vkDestroyBuffer(vk_hDevice, vk_ahStagingRenderBuffers[u8RenderBufferDestroyIndex], nullptr);
-					aStagingRenderBufferMemories[u8RenderBufferDestroyIndex].free();
-				}
-				vkDestroyBuffer(vk_hDevice, vk_ahRenderBuffers[u8RenderBufferDestroyIndex], nullptr);
-				aRenderBufferMemories[u8RenderBufferDestroyIndex].free();
+				if (is_transfer_necessary())
+					aStagingRenderBuffers[u8RenderBufferDestroyIndex].destroy();
+				aRenderBuffers[u8RenderBufferDestroyIndex].destroy();
 			}
 			return false;
 		}
@@ -159,12 +146,9 @@ namespace RE {
 
 	void destroy_render_buffers() {
 		for (uint8_t u8RenderBufferDestroyIndex = 0; u8RenderBufferDestroyIndex < RE_VK_FRAMES_IN_FLIGHT; u8RenderBufferDestroyIndex++) {
-			if (is_transfer_necessary()) {
-				vkDestroyBuffer(vk_hDevice, vk_ahStagingRenderBuffers[u8RenderBufferDestroyIndex], nullptr);
-				aStagingRenderBufferMemories[u8RenderBufferDestroyIndex].free();
-			}
-			vkDestroyBuffer(vk_hDevice, vk_ahRenderBuffers[u8RenderBufferDestroyIndex], nullptr);
-			aRenderBufferMemories[u8RenderBufferDestroyIndex].free();
+			if (is_transfer_necessary())
+				aStagingRenderBuffers[u8RenderBufferDestroyIndex].destroy();
+			aRenderBuffers[u8RenderBufferDestroyIndex].destroy();
 		}
 	}
 
@@ -196,21 +180,21 @@ namespace RE {
 		vk_apRenderBufferDrawCommands[u8CurrentFrameInFlightIndex]->firstInstance = 0;
 		if (is_transfer_necessary())
 			return renderTasks[u8CurrentFrameInFlightIndex].record(RENDER_TASK_SUBINDEX_BUFFER_TRANSFER, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, [&](const VkCommandBuffer vk_hCommandBuffer, const uint8_t u8PreviousLogicalQueue, const uint8_t u8CurrentLogicalQueue, const uint8_t u8NextLogicalQueue) {
-				const VkBufferCopy2 vk_copyRenderBufferRegion = {
-					.sType = VK_STRUCTURE_TYPE_BUFFER_COPY_2,
-					.srcOffset = 0,
-					.dstOffset = 0,
-					.size = sizeof(VkDrawIndexedIndirectCommand) + gameObjectsToRenderCount * sizeof(GameObjectInstanceData),
-				};
-				const VkCopyBufferInfo2 vk_copyRenderBufferInfo = {
-					.sType = VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2,
-					.srcBuffer = vk_ahStagingRenderBuffers[u8CurrentFrameInFlightIndex],
-					.dstBuffer = vk_ahRenderBuffers[u8CurrentFrameInFlightIndex],
-					.regionCount = 1,
-					.pRegions = &vk_copyRenderBufferRegion
-				};
-				vkCmdCopyBuffer2(vk_hCommandBuffer, &vk_copyRenderBufferInfo);
-			});
+						const VkBufferCopy2 vk_copyRenderBufferRegion = {
+							.sType = VK_STRUCTURE_TYPE_BUFFER_COPY_2,
+							.srcOffset = 0,
+							.dstOffset = 0,
+							.size = sizeof(VkDrawIndexedIndirectCommand) + gameObjectsToRenderCount * sizeof(GameObjectInstanceData),
+						};
+						const VkCopyBufferInfo2 vk_copyRenderBufferInfo = {
+							.sType = VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2,
+							.srcBuffer = aStagingRenderBuffers[u8CurrentFrameInFlightIndex].get(),
+							.dstBuffer = aRenderBuffers[u8CurrentFrameInFlightIndex].get(),
+							.regionCount = 1,
+							.pRegions = &vk_copyRenderBufferRegion
+						};
+						vkCmdCopyBuffer2(vk_hCommandBuffer, &vk_copyRenderBufferInfo);
+					});
 		else
 			return true;
 	}

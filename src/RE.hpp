@@ -41,7 +41,7 @@
  * active. However keep in mind, that this will make searching for segmentation
  * faults difficult.
  */
-#define RE_DISABLE_PRINT_DEBUGS
+//#define RE_DISABLE_PRINT_DEBUGS
 
 namespace RE {
 
@@ -586,36 +586,36 @@ namespace RE {
 	template <class T, size_t dimensionCount> requires Arithmetics<T> && IsGreater<size_t, dimensionCount, 0>
 	class Vector final {
 		public:
-			std::array<T, dimensionCount> coords;
+			T aCoords[dimensionCount];
 
 			Vector() {
 				fill(static_cast<T>(0.0));
 			}
-			template <class P, size_t u32CopyDimensions>
-			explicit Vector(const Vector<P, u32CopyDimensions> &rCopyVector) requires Arithmetics<P> && IsLessOrEqual<size_t, u32CopyDimensions, dimensionCount> {
+			template <class P, size_t copyDimensions>
+			explicit Vector(const Vector<P, copyDimensions> &rCopyVector) requires Arithmetics<P> && IsLessOrEqual<size_t, copyDimensions, dimensionCount> {
 				PRINT_DEBUG_CLASS("Copying coordinates from vector ", &rCopyVector);
-				if constexpr (u32CopyDimensions <= dimensionCount) {
-					std::copy(rCopyVector.coords.begin(), rCopyVector.coords.end(), coords.begin());
-					std::fill(coords.begin() + u32CopyDimensions, coords.end(), static_cast<T>(0.0));
+				if constexpr (copyDimensions <= dimensionCount) {
+					std::copy(std::begin(rCopyVector.aCoords), std::end(rCopyVector.aCoords), std::begin(aCoords));
+					std::fill(std::begin(aCoords) + copyDimensions, std::end(aCoords), static_cast<T>(0.0));
 				} else
-					std::copy(rCopyVector.begin(), rCopyVector.coords.end() - (u32CopyDimensions - dimensionCount), coords.begin());
+					std::copy(std::begin(rCopyVector), std::end(rCopyVector.aCoords) - (copyDimensions - dimensionCount), std::begin(aCoords));
 			}
 			template <class... V>
 			Vector(const V... values) requires Arithmetics<V...> && IsLessOrEqual<size_t, sizeof...(V), dimensionCount> {
 				PRINT_DEBUG_CLASS("Filling vector with values");
 				size_t dimensionIndex = 0;
 				([&]() {
-					coords[dimensionIndex] = static_cast<T>(values);
+					aCoords[dimensionIndex] = static_cast<T>(values);
 					dimensionIndex++;
 				} (), ...);
-				std::fill(coords.begin() + dimensionIndex, coords.end(), static_cast<T>(0.0));
+				std::fill(std::begin(aCoords) + dimensionIndex, std::end(aCoords), static_cast<T>(0.0));
 			}
 			~Vector() {}
 
 			[[nodiscard]]
 			T sum() const {
 				T sum = static_cast<T>(0.0);
-				for (const T coord : coords)
+				for (const T coord : aCoords)
 					sum += coord;
 				return sum;
 			}
@@ -623,7 +623,7 @@ namespace RE {
 			[[nodiscard]]
 			T area() const {
 				T result = static_cast<T>(1.0);
-				for (const T coord : coords)
+				for (const T coord : aCoords)
 					result *= coord;
 				return result;
 			}
@@ -635,22 +635,22 @@ namespace RE {
 
 			void fill(const T value) {
 				PRINT_DEBUG_CLASS("Filling vector with value ", value);
-				coords.fill(value);
+				std::fill(std::begin(aCoords), std::end(aCoords), value);
 			}
 
 			void copy_from(const Vector &rCopyVector) {
 				PRINT_DEBUG_CLASS("Copying coordinates from vector ", &rCopyVector);
 				if (rCopyVector.dimensions() <= dimensionCount) {
-					std::copy(rCopyVector.coords.begin(), rCopyVector.coords.end(), coords.begin());
-					std::fill(coords.begin() + rCopyVector.dimensions(), coords.end(), static_cast<T>(0.0));
+					std::copy(std::begin(rCopyVector.aCoords), std::end(rCopyVector.aCoords), std::begin(aCoords));
+					std::fill(std::begin(aCoords) + rCopyVector.dimensions(), std::end(aCoords), static_cast<T>(0.0));
 				} else
-					std::copy(rCopyVector.coords.begin(), rCopyVector.coords.end() - (rCopyVector.dimensions() - dimensionCount), coords.begin());
+					std::copy(std::begin(rCopyVector.aCoords), std::end(rCopyVector.aCoords) - (rCopyVector.dimensions() - dimensionCount), std::begin(aCoords));
 			}
 
 			void copy_from_array(const T *const paArray, const size_t arrayLength) {
 				PRINT_DEBUG_CLASS("Copying ", arrayLength, " elements from array ", paArray, " to this vector");
-				for (size_t i = 0; i < arrayLength; i++)
-					coords[i] = paArray[i];
+				for (size_t i = 0; i < arrayLength && i < dimensionCount; i++)
+					aCoords[i] = paArray[i];
 			}
 
 			[[nodiscard]]
@@ -658,7 +658,7 @@ namespace RE {
 				if (dimensionCount != rCompareVector.dimensions())
 					return false;
 				for (size_t dimensionIndex = 0; dimensionIndex < dimensionCount; dimensionIndex++)
-					if (coords[dimensionIndex] != rCompareVector[dimensionIndex])
+					if (aCoords[dimensionIndex] != rCompareVector[dimensionIndex])
 						return false;
 				return true;
 			}
@@ -671,14 +671,14 @@ namespace RE {
 			T& operator [](const size_t dimensionIndex) {
 				if (dimensionIndex >= dimensionCount)
 					FATAL_ERROR("Index ", dimensionIndex, " is out of bounds: [0, ", dimensionCount, ")");
-				return coords[dimensionIndex];
+				return aCoords[dimensionIndex];
 			}
 
 			[[nodiscard]]
 			T operator [](const size_t dimensionIndex) const {
 				if (dimensionIndex >= dimensionCount)
 					FATAL_ERROR("Index ", dimensionIndex, " is out of bounds: [0, ", dimensionCount, ")");
-				return coords[dimensionIndex];
+				return aCoords[dimensionIndex];
 			}
 
 			void operator =(const Vector &rCopyVector) {
@@ -700,7 +700,7 @@ namespace RE {
 				for (size_t i = 0; i < rVector.dimensions(); i++) {
 					if (i)
 						rStream << ", ";
-					rStream << rVector.coords[i];
+					rStream << rVector.aCoords[i];
 				}
 				rStream << ")";
 				return rStream;
@@ -788,7 +788,7 @@ namespace RE {
 			static constexpr uint8_t u8ColorChannelCount = 4;
 
 		private:
-			std::array<float, u8ColorChannelCount> a4fChannels;
+			float afChannels[u8ColorChannelCount];
 
 		public:
 			Color();

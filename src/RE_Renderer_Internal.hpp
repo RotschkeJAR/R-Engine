@@ -48,8 +48,8 @@ namespace RE {
 	void destroy_render_tasks();
 
 	// Render buffer
-	extern Vulkan_Buffer renderBuffer;
-	extern VkDrawIndexedIndirectCommand *vk_pRenderBufferDrawCommand;
+	extern VkBuffer vk_ahRenderBuffers[RE_VK_FRAMES_IN_FLIGHT];
+	extern VkDrawIndexedIndirectCommand *vk_apRenderBufferDrawCommands[RE_VK_FRAMES_IN_FLIGHT];
 	bool create_render_buffers();
 	void destroy_render_buffers();
 	bool record_cmd_transfer_buffer();

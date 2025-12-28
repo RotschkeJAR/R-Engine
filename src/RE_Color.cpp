@@ -5,35 +5,35 @@ namespace RE {
 #define MAX_CHANNEL_VALUE 1.0f
 #define CLAMP_CHANNEL_VALUE(CHANNEL_FLOAT) std::clamp(CHANNEL_FLOAT, 0.0f, MAX_CHANNEL_VALUE)
 	
-	Color::Color() : a4fChannels{MAX_CHANNEL_VALUE, MAX_CHANNEL_VALUE, MAX_CHANNEL_VALUE, MAX_CHANNEL_VALUE} {}
-	Color::Color(float fRed, float fGreen, float fBlue, float fAlpha) : a4fChannels{CLAMP_CHANNEL_VALUE(fRed), CLAMP_CHANNEL_VALUE(fGreen), CLAMP_CHANNEL_VALUE(fBlue), CLAMP_CHANNEL_VALUE(fAlpha)} {}
-	Color::Color(const Color &rCopyColor) : a4fChannels{rCopyColor.a4fChannels[0], rCopyColor.a4fChannels[1], rCopyColor.a4fChannels[2], rCopyColor.a4fChannels[3]} {}
+	Color::Color() : afChannels{MAX_CHANNEL_VALUE, MAX_CHANNEL_VALUE, MAX_CHANNEL_VALUE, MAX_CHANNEL_VALUE} {}
+	Color::Color(float fRed, float fGreen, float fBlue, float fAlpha) : afChannels{CLAMP_CHANNEL_VALUE(fRed), CLAMP_CHANNEL_VALUE(fGreen), CLAMP_CHANNEL_VALUE(fBlue), CLAMP_CHANNEL_VALUE(fAlpha)} {}
+	Color::Color(const Color &rCopyColor) : afChannels{rCopyColor.afChannels[0], rCopyColor.afChannels[1], rCopyColor.afChannels[2], rCopyColor.afChannels[3]} {}
 	Color::~Color() {}
 
 	float Color::get_channel(const uint8_t u8ChannelIndex) const {
 		if (u8ChannelIndex < u8ColorChannelCount)
-			return a4fChannels[u8ChannelIndex];
+			return afChannels[u8ChannelIndex];
 		else
-			RE_FATAL_ERROR("The channel index is not within the range [0, 3]: ", u8ChannelIndex);
+			RE_FATAL_ERROR("The channel index is not within the range [0; ", u8ColorChannelCount - 1, "]: ", u8ChannelIndex);
 		return 0.0f;
 	}
 
 	void Color::set_channel(const uint8_t u8ChannelIndex, const float fNormal) {
 		if (u8ChannelIndex < u8ColorChannelCount)
-			a4fChannels[u8ChannelIndex] = CLAMP_CHANNEL_VALUE(fNormal);
+			afChannels[u8ChannelIndex] = CLAMP_CHANNEL_VALUE(fNormal);
 		else
-			RE_FATAL_ERROR("The channel index is not within the range [0, 3]: ", u8ChannelIndex);
+			RE_FATAL_ERROR("The channel index is not within the range [0; ", u8ColorChannelCount - 1, "]: ", u8ChannelIndex);
 	}
 
 	void Color::copy_from(const Color &rCopyColor) {
 		for (uint8_t u8Channel = 0; u8Channel < u8ColorChannelCount; u8Channel++)
-			a4fChannels[u8Channel] = rCopyColor.a4fChannels[u8Channel];
+			afChannels[u8Channel] = rCopyColor.afChannels[u8Channel];
 	}
 	
 	[[nodiscard]]
 	bool Color::equals(const Color &rCompareColor) const {
 		for (uint8_t u8Channel = 0; u8Channel < u8ColorChannelCount; u8Channel++)
-			if (a4fChannels[u8Channel] != rCompareColor.a4fChannels[u8Channel])
+			if (afChannels[u8Channel] != rCompareColor.afChannels[u8Channel])
 				return false;
 		return true;
 	}
@@ -77,9 +77,9 @@ namespace RE {
 	[[nodiscard]]
 	float Color::operator [](const uint32_t u32ChannelIndex) const {
 		if (u32ChannelIndex < u8ColorChannelCount)
-			return a4fChannels[u32ChannelIndex];
+			return afChannels[u32ChannelIndex];
 		else {
-			RE_ERROR("The channel index range is [0, 3], but yours was ", u32ChannelIndex);
+			RE_ERROR("The channel index range is [0; ", u8ColorChannelCount - 1, "], but yours was ", u32ChannelIndex);
 			return 0.0f;
 		}
 	}

@@ -3,6 +3,71 @@
 #include "RE_List_GameObject.hpp"
 
 namespace RE {
+
+#define RE_VK_COMPUTE_PIPELINE_COUNT 2
+#define RE_VK_COMPUTE_PIPELINE_INDEX_PREPROCESSING 0
+#define RE_VK_COMPUTE_PIPELINE_INDEX_DEPTH_SORTING 1
+
+	static VkPipelineLayout vk_hComputePipelineLayout;
+	static VkShaderModule vk_aComputeShaders[RE_VK_COMPUTE_PIPELINE_COUNT];
+	static VkPipeline vk_ahComputePipelines[RE_VK_COMPUTE_PIPELINE_COUNT];
+	static Vulkan_Buffer aProcessedRenderBuffers[RE_VK_FRAMES_IN_FLIGHT], aSortableDepthBuffers[RE_VK_FRAMES_IN_FLIGHT];
+
+	bool create_ordering_pipelines() {
+		const VkPipelineLayoutCreateInfo vk_computePipelineLayoutCreateInfo = {
+			.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+			.flags = 0,
+			.setLayoutCount = 1,
+			.pSetLayouts = &vk_hComputePipelineDescLayout
+		};
+		if (vkCreatePipelineLayout(vk_hDevice, &vk_computePipelineLayoutCreateInfo, nullptr, &vk_hComputePipelineLayout) == VK_SUCCESS) {
+			if (create_vulkan_shader_from_file("", &vk_aComputeShaders[RE_VK_COMPUTE_PIPELINE_INDEX_PREPROCESSING])) {
+				if (create_vulkan_shader_from_file("", &vk_aComputeShaders[RE_VK_COMPUTE_PIPELINE_INDEX_DEPTH_SORTING])) {
+					const VkComputePipelineCreateInfo vk_aPipelineCreateInfos[RE_VK_COMPUTE_PIPELINE_COUNT] = {
+						{
+							.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
+							.stage = {
+								.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+								.stage = VK_SHADER_STAGE_COMPUTE_BIT,
+								.module = vk_aComputeShaders[RE_VK_COMPUTE_PIPELINE_INDEX_PREPROCESSING],
+								.pName = "main",
+								.pSpecializationInfo = nullptr
+							},
+							.layout = vk_hComputePipelineLayout,
+							.basePipelineHandle = VK_NULL_HANDLE,
+							.basePipelineIndex = -1
+						}, {
+							.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
+							.stage = {
+								.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+								.stage = VK_SHADER_STAGE_COMPUTE_BIT,
+								.module = vk_aComputeShaders[RE_VK_COMPUTE_PIPELINE_INDEX_DEPTH_SORTING],
+								.pName = "main",
+								.pSpecializationInfo = nullptr
+							},
+							.layout = vk_hComputePipelineLayout,
+							.basePipelineHandle = VK_NULL_HANDLE,
+							.basePipelineIndex = -1
+						}
+					};
+					if (vkCreateComputePipelines(vk_hDevice, VK_NULL_HANDLE, RE_VK_COMPUTE_PIPELINE_COUNT, vk_aPipelineCreateInfos, nullptr, vk_ahComputePipelines) == VK_SUCCESS)
+						return true;
+					vkDestroyShaderModule(vk_hDevice, vk_aComputeShaders[RE_VK_COMPUTE_PIPELINE_INDEX_DEPTH_SORTING], nullptr);
+				}
+				vkDestroyShaderModule(vk_hDevice, vk_aComputeShaders[RE_VK_COMPUTE_PIPELINE_INDEX_PREPROCESSING], nullptr);
+			}
+			vkDestroyPipelineLayout(vk_hDevice, vk_hComputePipelineLayout, nullptr);
+		}
+		return false;
+	}
+
+	void destroy_ordering_pipelines() {
+		vkDestroyPipeline(vk_hDevice, vk_ahComputePipelines[RE_VK_COMPUTE_PIPELINE_INDEX_DEPTH_SORTING], nullptr);
+		vkDestroyPipeline(vk_hDevice, vk_ahComputePipelines[RE_VK_COMPUTE_PIPELINE_INDEX_PREPROCESSING], nullptr);
+		vkDestroyShaderModule(vk_hDevice, vk_aComputeShaders[RE_VK_COMPUTE_PIPELINE_INDEX_DEPTH_SORTING], nullptr);
+		vkDestroyShaderModule(vk_hDevice, vk_aComputeShaders[RE_VK_COMPUTE_PIPELINE_INDEX_PREPROCESSING], nullptr);
+		vkDestroyPipelineLayout(vk_hDevice, vk_hComputePipelineLayout, nullptr);
+	}
 	
 	void order_rendering(const VkCommandBuffer vk_hCommandBuffer) {
 		const VkViewport vk_viewport = {

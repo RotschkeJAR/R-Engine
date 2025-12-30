@@ -133,15 +133,14 @@ namespace RE {
 			}
 			break;
 		}
-		if (u8RenderBufferCreateIndex < RE_VK_FRAMES_IN_FLIGHT) {
-			for (uint8_t u8RenderBufferDestroyIndex = 0; u8RenderBufferDestroyIndex < u8RenderBufferCreateIndex; u8RenderBufferDestroyIndex++) {
-				if (is_transfer_necessary())
-					aStagingRenderBuffers[u8RenderBufferDestroyIndex].destroy();
-				aRenderBuffers[u8RenderBufferDestroyIndex].destroy();
-			}
-			return false;
+		if (u8RenderBufferCreateIndex == RE_VK_FRAMES_IN_FLIGHT)
+			return true;
+		for (uint8_t u8RenderBufferDestroyIndex = 0; u8RenderBufferDestroyIndex < u8RenderBufferCreateIndex; u8RenderBufferDestroyIndex++) {
+			if (is_transfer_necessary())
+				aStagingRenderBuffers[u8RenderBufferDestroyIndex].destroy();
+			aRenderBuffers[u8RenderBufferDestroyIndex].destroy();
 		}
-		return true;
+		return false;
 	}
 
 	void destroy_render_buffers() {

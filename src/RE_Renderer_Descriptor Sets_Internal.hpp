@@ -10,6 +10,10 @@ namespace RE {
 	// Camera
 	bool create_camera_descriptor_sets();
 	void destroy_camera_descriptor_sets();
+
+	// Computing
+	bool create_computing_descriptor_sets();
+	void destroy_computing_descriptor_sets();
 	
 	// Textures
 	bool create_texture_descriptor_sets();

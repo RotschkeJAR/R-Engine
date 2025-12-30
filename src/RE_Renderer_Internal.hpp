@@ -84,13 +84,19 @@ namespace RE {
 	extern VkDescriptorSetLayout vk_hTextureDescLayout;
 	extern VkDescriptorSet vk_hTextureDescSet;
 
+	// Computing
+	extern VkDescriptorSetLayout vk_hComputePipelineDescLayout;
+	extern VkDescriptorSet vk_ahComputePipelineDescriptorSets[RE_VK_FRAMES_IN_FLIGHT];
+
 	// Render Pass
 	bool create_renderpass();
 	void destroy_renderpass();
 	void record_cmd_begin_renderpass(VkCommandBuffer vk_hCommandBuffer);
 	void record_cmd_end_renderpass(VkCommandBuffer vk_hCommandBuffer);
 
-	// Órdering
+	// Ordering
+	bool create_ordering_pipelines();
+	void destroy_ordering_pipelines();
 	void order_rendering(VkCommandBuffer vk_hCommandBuffer);
 
 }

@@ -9,7 +9,10 @@ namespace RE {
 		constexpr VkDescriptorPoolSize vk_aDescPoolSizes[] = {
 			{
 				.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-				.descriptorCount = RE_VK_FRAMES_IN_FLIGHT
+				.descriptorCount = 2 * RE_VK_FRAMES_IN_FLIGHT
+			}, {
+				.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+				.descriptorCount = 2 * RE_VK_FRAMES_IN_FLIGHT
 			}, {
 				.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 				.descriptorCount = RE_VK_MAX_SAMPLED_IMAGES
@@ -23,8 +26,11 @@ namespace RE {
 		};
 		if (vkCreateDescriptorPool(vk_hDevice, &vk_permanentDescPoolInfo, nullptr, &vk_hPermanentDescPool) == VK_SUCCESS) {
 			if (create_camera_descriptor_sets()) {
-				if (create_texture_descriptor_sets())
-					return true;
+				if (create_computing_descriptor_sets()) {
+					if (create_texture_descriptor_sets())
+						return true;
+					destroy_computing_descriptor_sets();
+				}
 				destroy_camera_descriptor_sets();
 			}
 			vkDestroyDescriptorPool(vk_hDevice, vk_hPermanentDescPool, nullptr);

@@ -12,12 +12,12 @@ namespace RE {
 		this->alloc(vk_size, u8MemoryTypeIndex);
 	}
 
-	VulkanMemory::VulkanMemory(VulkanMemory &&rrMemory) : vk_hMemory(rrMemory.vk_hMemory), vk_size(rrMemory.vk_size), u8MemoryTypeIndex(rrMemory.u8MemoryTypeIndex), bCoherent(rrMemory.bCoherent) {
+	VulkanMemory::VulkanMemory(VulkanMemory &&rrMemory) noexcept : vk_hMemory(rrMemory.vk_hMemory), vk_size(rrMemory.vk_size), u8MemoryTypeIndex(rrMemory.u8MemoryTypeIndex), bCoherent(rrMemory.bCoherent) {
 		PRINT_DEBUG_CLASS("Moving ownership of Vulkan memory to recently constructed");
 		rrMemory.vk_hMemory = VK_NULL_HANDLE;
 	}
 
-	VulkanMemory::~VulkanMemory() {
+	VulkanMemory::~VulkanMemory() noexcept {
 		if (!valid())
 			return;
 		this->free();
@@ -97,7 +97,7 @@ namespace RE {
 		return false;
 	}
 
-	void VulkanMemory::free() {
+	void VulkanMemory::free() noexcept {
 		PRINT_DEBUG_CLASS("Freeing Vulkan memory");
 		vkFreeMemory(vk_hDevice, vk_hMemory, nullptr);
 		vk_hMemory = VK_NULL_HANDLE;
@@ -114,23 +114,23 @@ namespace RE {
 		vkUnmapMemory(vk_hDevice, vk_hMemory);
 	}
 
-	bool VulkanMemory::valid() const noexcept {
+	bool VulkanMemory::valid() const {
 		return vk_hMemory != VK_NULL_HANDLE;
 	}
 
-	VkDeviceMemory VulkanMemory::get() const noexcept {
+	VkDeviceMemory VulkanMemory::get() const {
 		return vk_hMemory;
 	}
 
-	VkDeviceSize VulkanMemory::size() const noexcept {
+	VkDeviceSize VulkanMemory::size() const {
 		return vk_size;
 	}
 
-	uint8_t VulkanMemory::type_index() const noexcept {
+	uint8_t VulkanMemory::type_index() const {
 		return u8MemoryTypeIndex;
 	}
 
-	bool VulkanMemory::cpu_coherent() const noexcept {
+	bool VulkanMemory::cpu_coherent() const {
 		return bCoherent;
 	}
 

@@ -511,7 +511,7 @@ namespace RE {
 
 	template <class T> requires Arithmetics<T>
 	[[nodiscard]]
-	constexpr bool multiple_of(const T value, const T multiple) {
+	constexpr bool is_multiple_of(const T value, const T multiple) {
 		if constexpr (std::is_same_v<T, float>)
 			return std::fmodf(value, multiple) == 0.0f;
 		else if constexpr (std::is_same_v<T, double>)

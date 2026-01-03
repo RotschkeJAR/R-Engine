@@ -4,7 +4,7 @@ namespace RE {
 
 	VkDescriptorPool vk_hPermanentDescPool;
 
-	bool create_descriptor_sets() {
+	bool create_descriptor_sets(const UniformBufferInfo &rUniformBufferInfo) {
 		PRINT_DEBUG("Creating Vulkan descriptor set pool for permanent uniforms");
 		constexpr VkDescriptorPoolSize vk_aDescPoolSizes[] = {
 			{
@@ -25,11 +25,11 @@ namespace RE {
 			.pPoolSizes = vk_aDescPoolSizes
 		};
 		if (vkCreateDescriptorPool(vk_hDevice, &vk_permanentDescPoolInfo, nullptr, &vk_hPermanentDescPool) == VK_SUCCESS) {
-			if (create_camera_descriptor_sets()) {
-				if (create_computing_descriptor_sets()) {
+			if (create_camera_descriptor_sets(rUniformBufferInfo)) {
+				if (create_processing_descriptor_sets(rUniformBufferInfo)) {
 					if (create_texture_descriptor_sets())
 						return true;
-					destroy_computing_descriptor_sets();
+					destroy_processing_descriptor_sets();
 				}
 				destroy_camera_descriptor_sets();
 			}
@@ -42,6 +42,7 @@ namespace RE {
 	void destroy_descriptor_sets() {
 		PRINT_DEBUG("Destroying Vulkan descriptor sets");
 		destroy_texture_descriptor_sets();
+		destroy_processing_descriptor_sets();
 		destroy_camera_descriptor_sets();
 		vkDestroyDescriptorPool(vk_hDevice, vk_hPermanentDescPool, nullptr);
 	}

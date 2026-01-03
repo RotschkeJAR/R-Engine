@@ -105,29 +105,29 @@ namespace RE {
 
 		public:
 			VulkanMemory();
-			VulkanMemory(VkDeviceSize vk_size, VulkanMemoryType eType, VkMemoryPropertyFlags vk_eProperties, uint32_t u32DesiredMemoryTypes);
+			VulkanMemory(VkDeviceSize vk_size, VulkanMemoryType eType, VkMemoryPropertyFlags vk_eProperties, uint32_t b32DesiredMemoryTypes);
 			VulkanMemory(VkDeviceSize vk_size, uint8_t u8MemoryTypeIndex);
 			VulkanMemory(VulkanMemory &rMemory) = delete;
-			explicit VulkanMemory(VulkanMemory &&rrMemory);
-			~VulkanMemory();
+			explicit VulkanMemory(VulkanMemory &&rrMemory) noexcept;
+			~VulkanMemory() noexcept;
 			
-			bool alloc(VkDeviceSize vk_size, VulkanMemoryType eType, VkMemoryPropertyFlags vk_eProperties, uint32_t u32DesiredMemoryTypes);
+			bool alloc(VkDeviceSize vk_size, VulkanMemoryType eType, VkMemoryPropertyFlags vk_eProperties, uint32_t b32DesiredMemoryTypes);
 			bool alloc(VkDeviceSize vk_size, uint8_t u8MemoryTypeIndex);
-			void free();
+			void free() noexcept;
 			bool map(VkMemoryMapFlags vk_eFlags, VkDeviceSize vk_offset, VkDeviceSize vk_size, void **ppData) const;
 			void unmap();
 
-			bool valid() const noexcept;
-			VkDeviceMemory get() const noexcept;
-			VkDeviceSize size() const noexcept;
-			uint8_t type_index() const noexcept;
-			bool cpu_coherent() const noexcept;
+			bool valid() const;
+			VkDeviceMemory get() const;
+			VkDeviceSize size() const;
+			uint8_t type_index() const;
+			bool cpu_coherent() const;
 
 			void operator =(VulkanMemory &&rrMemory) noexcept;
-			constexpr bool operator ==(const VulkanMemory &rOtherMemory) const noexcept {
+			constexpr bool operator ==(const VulkanMemory &rOtherMemory) const {
 				return false;
 			}
-			constexpr bool operator !=(const VulkanMemory &rOtherMemory) const noexcept {
+			constexpr bool operator !=(const VulkanMemory &rOtherMemory) const {
 				return true;
 			}
 	};

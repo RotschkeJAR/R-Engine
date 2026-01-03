@@ -7,7 +7,7 @@ namespace RE {
 
 	bool create_render_tasks() {
 		PRINT_DEBUG("Initializing first render task");
-		constexpr VkQueueFlagBits vk_aeQueuesUsedForRendering[] = {VK_QUEUE_TRANSFER_BIT, VK_QUEUE_GRAPHICS_BIT, VK_QUEUE_TRANSFER_BIT};
+		constexpr VkQueueFlagBits vk_aeQueuesUsedForRendering[] = {VK_QUEUE_TRANSFER_BIT, VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT, VK_QUEUE_TRANSFER_BIT};
 		constexpr bool bIndividualResets = true, bTransient = false;
 		if (renderTasks[0].init(sizeof(vk_aeQueuesUsedForRendering) / sizeof(vk_aeQueuesUsedForRendering[0]), vk_aeQueuesUsedForRendering, bIndividualResets, true, bTransient)) {
 			size_t renderTaskCreateIndex = 1;

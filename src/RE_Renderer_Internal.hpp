@@ -39,13 +39,29 @@ namespace RE {
 
 	// Render task
 #define RENDER_TASK_SUBINDEX_BUFFER_TRANSFER 0
-#define RENDER_TASK_SUBINDEX_RENDERING 1
-#define RENDER_TASK_SUBINDEX_IMAGE_BLIT 2
+#define RENDER_TASK_SUBINDEX_PROCESSING 1
+#define RENDER_TASK_SUBINDEX_RENDERING 2
+#define RENDER_TASK_SUBINDEX_IMAGE_BLIT 3
 	extern std::array<VulkanTask, RE_VK_FRAMES_IN_FLIGHT> renderTasks;
 	extern std::array<VkFence, RE_VK_FRAMES_IN_FLIGHT> renderFences;
 	extern uint8_t u8CurrentFrameInFlightIndex;
 	bool create_render_tasks();
 	void destroy_render_tasks();
+
+	// Uniform buffer
+#define RE_VK_UNIFORM_BUFFER_COUNT_PER_FRAME 2
+#define RE_VK_CAMERA_UNIFORM_BUFFER_INDEX 0
+#define RE_VK_OBJECT_COUNT_UNIFORM_BUFFER_INDEX 1
+
+	struct UniformBufferInfo final {
+		void *pUniformBuffersContent;
+		VkDeviceSize vk_aCameraFirstBytes[RE_VK_FRAMES_IN_FLIGHT];
+		VkDeviceSize vk_aObjectCountFirstBytes[RE_VK_FRAMES_IN_FLIGHT];
+	};
+
+	extern VkBuffer vk_aahUniformBuffers[RE_VK_UNIFORM_BUFFER_COUNT_PER_FRAME][RE_VK_FRAMES_IN_FLIGHT];
+	bool create_uniform_buffers(UniformBufferInfo &rUniformBufferInfo);
+	void destroy_uniform_buffers();
 
 	// Render buffer
 	extern Vulkan_Buffer aRenderBuffers[RE_VK_FRAMES_IN_FLIGHT];
@@ -71,10 +87,16 @@ namespace RE {
 
 	// Descriptor Sets
 	extern VkDescriptorPool vk_hPermanentDescPool;
-	bool create_descriptor_sets();
+	bool create_descriptor_sets(const UniformBufferInfo &rUniformBufferInfo);
 	void destroy_descriptor_sets();
 
 	// Camera
+#define RE_VK_VIEW_MATRIX_SIZE (4 * 4)
+#define RE_VK_VIEW_MATRIX_OFFSET 0
+#define RE_VK_PROJECTION_MATRIX_SIZE (4 * 4)
+#define RE_VK_PROJECTION_MATRIX_OFFSET RE_VK_VIEW_MATRIX_SIZE
+#define RE_VK_CAMERA_UNIFORM_BUFFER_SIZE (RE_VK_VIEW_MATRIX_SIZE + RE_VK_PROJECTION_MATRIX_SIZE)
+#define RE_VK_CAMERA_UNIFORM_BUFFER_SIZE_BYTES (RE_VK_CAMERA_UNIFORM_BUFFER_SIZE * sizeof(float))
 	extern VkDescriptorSetLayout vk_hCameraDescLayout;
 	extern std::array<VkDescriptorSet, RE_VK_FRAMES_IN_FLIGHT> cameraDescSets;
 	extern VkRect2D vk_cameraProjectionOnscreen;
@@ -84,9 +106,11 @@ namespace RE {
 	extern VkDescriptorSetLayout vk_hTextureDescLayout;
 	extern VkDescriptorSet vk_hTextureDescSet;
 
-	// Computing
-	extern VkDescriptorSetLayout vk_hComputePipelineDescLayout;
-	extern VkDescriptorSet vk_ahComputePipelineDescriptorSets[RE_VK_FRAMES_IN_FLIGHT];
+	// Processing
+#define RE_VK_OBJECT_COUNT_UNIFORM_BUFFER_SIZE 1
+#define RE_VK_OBJECT_COUNT_UNIFORM_BUFFER_SIZE_BYTES (RE_VK_OBJECT_COUNT_UNIFORM_BUFFER_SIZE * sizeof(uint32_t))
+	extern VkDescriptorSetLayout vk_hProcessingDescLayout;
+	extern VkDescriptorSet vk_ahProcessingDescSets[RE_VK_FRAMES_IN_FLIGHT];
 
 	// Render Pass
 	bool create_renderpass();
@@ -95,8 +119,9 @@ namespace RE {
 	void record_cmd_end_renderpass(VkCommandBuffer vk_hCommandBuffer);
 
 	// Ordering
-	bool create_ordering_pipelines();
-	void destroy_ordering_pipelines();
+	extern Vulkan_Buffer aSortableDepthBuffers[RE_VK_FRAMES_IN_FLIGHT];
+	bool create_processing_pipelines();
+	void destroy_processing_pipelines();
 	void order_rendering(VkCommandBuffer vk_hCommandBuffer);
 
 }

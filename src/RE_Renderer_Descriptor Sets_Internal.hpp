@@ -8,12 +8,12 @@ namespace RE {
 	extern VkDescriptorPool vk_hPermanentDescPool;
 
 	// Camera
-	bool create_camera_descriptor_sets();
+	bool create_camera_descriptor_sets(const UniformBufferInfo &rUniformBufferInfo);
 	void destroy_camera_descriptor_sets();
 
-	// Computing
-	bool create_computing_descriptor_sets();
-	void destroy_computing_descriptor_sets();
+	// Processing
+	bool create_processing_descriptor_sets(const UniformBufferInfo &rUniformBufferInfo);
+	void destroy_processing_descriptor_sets();
 	
 	// Textures
 	bool create_texture_descriptor_sets();

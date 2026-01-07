@@ -474,6 +474,39 @@ namespace RE {
 		return u8LogicalPresentQueueIndex;
 	}
 
+	VulkanQueueCollection VulkanTask::queues_of_functions(const uint32_t *pau32FunctionIndices, uint32_t u32FunctionIndexCount) const {
+		if (u8CommandPoolCount == 1) [[likely]] {
+			const VulkanQueueCollection queueCollection = {
+				.queueFamilyIndices = std::make_unique<uint32_t[]>(1),
+				.logicalQueueIndices = std::make_unique<uint8_t[]>(1),
+				.vk_eSharingMode = VK_SHARING_MODE_EXCLUSIVE,
+				.u8QueueCount = 1
+			};
+			queueCollection.logicalQueueIndices[0] = queueIndexPerCommandPool[commandPoolIndexPerCommandBuffer[pau32FunctionIndices[0]]];
+			queueCollection.queueFamilyIndices[0] = queueFamilyIndices[queueCollection.logicalQueueIndices[0]];
+			return queueCollection;
+		}
+		std::vector<uint8_t> logicalQueueIndicesNeeded;
+		logicalQueueIndicesNeeded.reserve(std::min(u32FunctionIndexCount, static_cast<uint32_t>(u8CommandPoolCount)));
+		for (uint32_t u32FunctionIndex = 0; u32FunctionIndex < u32FunctionIndexCount; u32FunctionIndex++) {
+			const uint8_t u8LogicalQueueIndex = queueIndexPerCommandPool[commandPoolIndexPerCommandBuffer[pau32FunctionIndices[u32FunctionIndex]]];
+			if (std::find(logicalQueueIndicesNeeded.begin(), logicalQueueIndicesNeeded.end(), u8LogicalQueueIndex) == logicalQueueIndicesNeeded.end())
+				logicalQueueIndicesNeeded.push_back(u8LogicalQueueIndex);
+		}
+		const VulkanQueueCollection queueCollection = {
+			.queueFamilyIndices = std::make_unique<uint32_t[]>(logicalQueueIndicesNeeded.size()),
+			.logicalQueueIndices = std::make_unique<uint8_t[]>(logicalQueueIndicesNeeded.size()),
+			.vk_eSharingMode = logicalQueueIndicesNeeded.size() == 1 ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT,
+			.u8QueueCount = static_cast<uint8_t>(logicalQueueIndicesNeeded.size())
+		};
+		for (size_t queueNeededIndex = 0; queueNeededIndex < logicalQueueIndicesNeeded.size(); queueNeededIndex++) {
+			const uint8_t u8LogicalQueueIndex = logicalQueueIndicesNeeded[queueNeededIndex];
+			queueCollection.logicalQueueIndices[queueNeededIndex] = u8LogicalQueueIndex;
+			queueCollection.queueFamilyIndices[queueNeededIndex] = queueFamilyIndices[u8LogicalQueueIndex];
+		}
+		return queueCollection;
+	}
+
 	bool VulkanTask::valid() const {
 		return static_cast<bool>(commandBuffers);
 	}

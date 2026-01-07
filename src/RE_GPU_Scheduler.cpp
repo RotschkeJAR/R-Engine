@@ -306,7 +306,6 @@ namespace RE {
 		queueFamilyIndices.reset();
 	}
 
-	[[nodiscard]]
 	VkQueue get_present_queue(const uint8_t u8PreferredQueueIndex) {
 		if (presentationAvailablePerQueue[u8PreferredQueueIndex])
 			return vk_pahQueues[u8PreferredQueueIndex];

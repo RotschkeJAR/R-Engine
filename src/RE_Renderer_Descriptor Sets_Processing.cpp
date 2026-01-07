@@ -73,7 +73,7 @@ namespace RE {
 									vk_aaBufferDescs[u8FrameInFlightIndex * RE_VK_BINDING_COUNT][u32ProcessableBufferIndex].range = VK_WHOLE_SIZE;
 									switch (u32ProcessableBufferIndex) {
 										case RE_VK_RAW_RENDER_BUFFER_INDEX:
-											vk_aaBufferDescs[u8FrameInFlightIndex * RE_VK_BINDING_COUNT][RE_VK_RAW_RENDER_BUFFER_INDEX].buffer = aRenderBuffers[u8FrameInFlightIndex].get();
+											vk_aaBufferDescs[u8FrameInFlightIndex * RE_VK_BINDING_COUNT][RE_VK_RAW_RENDER_BUFFER_INDEX].buffer = aRawRenderBuffers[u8FrameInFlightIndex].get();
 											break;
 										case RE_VK_SORTABLE_DEPTH_BUFFER_INDEX:
 											vk_aaBufferDescs[u8FrameInFlightIndex * RE_VK_BINDING_COUNT][RE_VK_SORTABLE_DEPTH_BUFFER_INDEX].buffer = aSortableDepthBuffers[u8FrameInFlightIndex].get();

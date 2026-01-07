@@ -63,8 +63,11 @@ namespace RE {
 	bool create_uniform_buffers(UniformBufferInfo &rUniformBufferInfo);
 	void destroy_uniform_buffers();
 
-	// Render buffer
-	extern Vulkan_Buffer aRenderBuffers[RE_VK_FRAMES_IN_FLIGHT];
+	// Storage buffer
+	extern Vulkan_Buffer aSortableDepthBuffers[RE_VK_FRAMES_IN_FLIGHT], aRenderBuffers[RE_VK_FRAMES_IN_FLIGHT];
+
+	// Staging buffer
+	extern Vulkan_Buffer aRawRenderBuffers[RE_VK_FRAMES_IN_FLIGHT];
 	extern VkDrawIndexedIndirectCommand *vk_apRenderBufferDrawCommands[RE_VK_FRAMES_IN_FLIGHT];
 	bool create_render_buffers();
 	void destroy_render_buffers();

@@ -24,8 +24,14 @@ namespace RE {
 	extern std::vector<bool> presentationAvailablePerQueue;
 	extern uint8_t u8LogicalQueueCount;
 	void create_queue_create_infos(const float *pfPriority, std::vector<VkDeviceQueueCreateInfo> &vk_rpaLogicalQueueCreateInfos);
-	[[nodiscard]]
 	VkQueue get_present_queue(uint8_t u8PreferredQueueIndex);
+
+	struct VulkanQueueCollection final {
+		std::unique_ptr<uint32_t[]> queueFamilyIndices;
+		std::unique_ptr<uint8_t[]> logicalQueueIndices;
+		VkSharingMode vk_eSharingMode;
+		uint8_t u8QueueCount;
+	};
 	
 	struct VulkanTask_Queues final {
 		const uint8_t *pau8LogicalQueueIndices;
@@ -66,6 +72,7 @@ namespace RE {
 			uint32_t function_count() const;
 			uint8_t logical_queue_index_for_function(uint32_t u32FunctionIndex) const;
 			uint8_t logical_queue_index_for_presentation() const;
+			VulkanQueueCollection queues_of_functions(const uint32_t *pau32FunctionIndices, uint32_t u32FunctionIndexCount) const;
 			bool valid() const;
 	};
 

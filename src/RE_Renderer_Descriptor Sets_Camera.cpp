@@ -1,16 +1,13 @@
 #include "RE_Renderer_Descriptor Sets_Internal.hpp"
-#include "RE_Renderer_Internal.hpp"
 #include "RE_Main.hpp"
 
 namespace RE {
 
 	static Camera *pActiveCamera = nullptr;
-	static std::array<float*, RE_VK_FRAMES_IN_FLIGHT> cameraUniforms;
-	VkDescriptorSetLayout vk_hCameraDescLayout;
-	std::array<VkDescriptorSet, RE_VK_FRAMES_IN_FLIGHT> cameraDescSets;
+	VkDescriptorSet vk_ahCameraDescSets[RE_VK_FRAMES_IN_FLIGHT];
 	VkRect2D vk_cameraProjectionOnscreen;
 	
-	bool create_camera_descriptor_sets(const UniformBufferInfo &rUniformBufferInfo) {
+	bool create_camera_descriptor_sets() {
 		PRINT_DEBUG("Initializing camera matrices with default values");
 		std::jthread cameraUniformBufferInitThread([&]() {
 			for (uint8_t u8FrameInFlightIndex = 0; u8FrameInFlightIndex < RE_VK_FRAMES_IN_FLIGHT; u8FrameInFlightIndex++) {
@@ -20,88 +17,85 @@ namespace RE {
 						case 5:
 						case 10:
 						case 15:
-							cameraUniforms[u8FrameInFlightIndex][RE_VK_VIEW_MATRIX_OFFSET + u8MatrixElementIndex] = 1.0f;
-							cameraUniforms[u8FrameInFlightIndex][RE_VK_PROJECTION_MATRIX_OFFSET + u8MatrixElementIndex] = 1.0f;
+							apafCameraMatrices[u8FrameInFlightIndex][RE_VK_VIEW_MATRIX_OFFSET + u8MatrixElementIndex] = 1.0f;
+							apafCameraMatrices[u8FrameInFlightIndex][RE_VK_PROJECTION_MATRIX_OFFSET + u8MatrixElementIndex] = 1.0f;
 							break;
 						default:
-							cameraUniforms[u8FrameInFlightIndex][RE_VK_VIEW_MATRIX_OFFSET + u8MatrixElementIndex] = 0.0f;
-							cameraUniforms[u8FrameInFlightIndex][RE_VK_PROJECTION_MATRIX_OFFSET + u8MatrixElementIndex] = 0.0f;
+							apafCameraMatrices[u8FrameInFlightIndex][RE_VK_VIEW_MATRIX_OFFSET + u8MatrixElementIndex] = 0.0f;
+							apafCameraMatrices[u8FrameInFlightIndex][RE_VK_PROJECTION_MATRIX_OFFSET + u8MatrixElementIndex] = 0.0f;
 							break;
 					}
 			}
 		});
-		PRINT_DEBUG("Creating Vulkan descriptor set layout for camera");
-		const VkDescriptorSetLayoutBinding vk_camDescBinding = {
-			.binding = RE_VK_UNIFORM_BINDING_CAMERA,
-			.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-			.descriptorCount = 1,
-			.stageFlags = VK_SHADER_STAGE_VERTEX_BIT
+		PRINT_DEBUG("Allocating Vulkan descriptor sets for camera");
+		std::array<VkDescriptorSetLayout, RE_VK_FRAMES_IN_FLIGHT> camDescLayoutArray;
+		camDescLayoutArray.fill(vk_hCameraDescSetLayout);
+		const VkDescriptorSetAllocateInfo vk_camDescSetAllocInfo = {
+			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+			.descriptorPool = vk_hPermanentDescPool,
+			.descriptorSetCount = camDescLayoutArray.size(),
+			.pSetLayouts = camDescLayoutArray.data()
 		};
-		const VkDescriptorSetLayoutCreateInfo vk_camDescLayoutInfo = {
-			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-			.bindingCount = 1,
-			.pBindings = &vk_camDescBinding
-		};
-		if (vkCreateDescriptorSetLayout(vk_hDevice, &vk_camDescLayoutInfo, nullptr, &vk_hCameraDescLayout) == VK_SUCCESS) {
-			PRINT_DEBUG("Allocating Vulkan descriptor sets for camera");
-			std::array<VkDescriptorSetLayout, RE_VK_FRAMES_IN_FLIGHT> camDescLayoutArray;
-			camDescLayoutArray.fill(vk_hCameraDescLayout);
-			const VkDescriptorSetAllocateInfo vk_camDescSetAllocInfo = {
-				.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-				.descriptorPool = vk_hPermanentDescPool,
-				.descriptorSetCount = camDescLayoutArray.size(),
-				.pSetLayouts = camDescLayoutArray.data()
-			};
-			if (vkAllocateDescriptorSets(vk_hDevice, &vk_camDescSetAllocInfo, cameraDescSets.data()) == VK_SUCCESS) {
-				PRINT_DEBUG("Writing to Vulkan camera descriptor sets");
-				VkDescriptorBufferInfo vk_aDescBufferInfos[RE_VK_FRAMES_IN_FLIGHT];
-				VkWriteDescriptorSet vk_aWriteCamDescriptorSets[RE_VK_FRAMES_IN_FLIGHT];
-				for (uint8_t u8DescriptorSetIndex = 0; u8DescriptorSetIndex < RE_VK_FRAMES_IN_FLIGHT; u8DescriptorSetIndex++) {
-					vk_aDescBufferInfos[u8DescriptorSetIndex].buffer = vk_aahUniformBuffers[RE_VK_CAMERA_UNIFORM_BUFFER_INDEX][u8DescriptorSetIndex];
-					vk_aDescBufferInfos[u8DescriptorSetIndex].offset = 0;
-					vk_aDescBufferInfos[u8DescriptorSetIndex].range = VK_WHOLE_SIZE;
-					vk_aWriteCamDescriptorSets[u8DescriptorSetIndex].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-					vk_aWriteCamDescriptorSets[u8DescriptorSetIndex].pNext = nullptr;
-					vk_aWriteCamDescriptorSets[u8DescriptorSetIndex].dstSet = cameraDescSets[u8DescriptorSetIndex];
-					vk_aWriteCamDescriptorSets[u8DescriptorSetIndex].dstBinding = RE_VK_UNIFORM_BINDING_CAMERA;
-					vk_aWriteCamDescriptorSets[u8DescriptorSetIndex].dstArrayElement = 0;
-					vk_aWriteCamDescriptorSets[u8DescriptorSetIndex].descriptorCount = 1;
-					vk_aWriteCamDescriptorSets[u8DescriptorSetIndex].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-					vk_aWriteCamDescriptorSets[u8DescriptorSetIndex].pImageInfo = nullptr;
-					vk_aWriteCamDescriptorSets[u8DescriptorSetIndex].pBufferInfo = &vk_aDescBufferInfos[u8DescriptorSetIndex];
-					vk_aWriteCamDescriptorSets[u8DescriptorSetIndex].pTexelBufferView = nullptr;
-				}
-				vkUpdateDescriptorSets(vk_hDevice, RE_VK_FRAMES_IN_FLIGHT, vk_aWriteCamDescriptorSets, 0, nullptr);
-				for (uint8_t u8FrameInFlightIndex = 0; u8FrameInFlightIndex < RE_VK_FRAMES_IN_FLIGHT; u8FrameInFlightIndex++) {
-					cameraUniforms[u8FrameInFlightIndex] = reinterpret_cast<float*>(reinterpret_cast<uint8_t*>(rUniformBufferInfo.pUniformBuffersContent) + rUniformBufferInfo.vk_aCameraFirstBytes[u8FrameInFlightIndex]);
-					PRINT_LN(rUniformBufferInfo.vk_aCameraFirstBytes[u8FrameInFlightIndex]);
-				}
-				return true;
-			} else
-				RE_FATAL_ERROR("Failed allocating ", RE_VK_FRAMES_IN_FLIGHT, " Vulkan descriptor sets for reading camera's uniform buffer");
-			PRINT_DEBUG("Destroying Vulkan descriptor set layout ", vk_hCameraDescLayout, " due to failure allocating camera descriptor sets");
-			vkDestroyDescriptorSetLayout(vk_hDevice, vk_hCameraDescLayout, nullptr);
+		if (vkAllocateDescriptorSets(vk_hDevice, &vk_camDescSetAllocInfo, vk_ahCameraDescSets) == VK_SUCCESS) {
+			PRINT_DEBUG("Writing to Vulkan camera descriptor sets");
+			VkDescriptorBufferInfo vk_aDescBufferInfos[RE_VK_FRAMES_IN_FLIGHT];
+			VkWriteDescriptorSet vk_aWriteCamDescriptorSets[RE_VK_FRAMES_IN_FLIGHT];
+			for (uint8_t u8FrameInFlightIndex = 0; u8FrameInFlightIndex < RE_VK_FRAMES_IN_FLIGHT; u8FrameInFlightIndex++) {
+				vk_aDescBufferInfos[u8FrameInFlightIndex].buffer = vk_aahUniformBuffers[RE_VK_CAMERA_UNIFORM_BUFFER_INDEX][u8FrameInFlightIndex];
+				vk_aDescBufferInfos[u8FrameInFlightIndex].offset = 0;
+				vk_aDescBufferInfos[u8FrameInFlightIndex].range = VK_WHOLE_SIZE;
+				vk_aWriteCamDescriptorSets[u8FrameInFlightIndex].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				vk_aWriteCamDescriptorSets[u8FrameInFlightIndex].pNext = nullptr;
+				vk_aWriteCamDescriptorSets[u8FrameInFlightIndex].dstSet = vk_ahCameraDescSets[u8FrameInFlightIndex];
+				vk_aWriteCamDescriptorSets[u8FrameInFlightIndex].dstBinding = RE_VK_UNIFORM_BINDING_CAMERA;
+				vk_aWriteCamDescriptorSets[u8FrameInFlightIndex].dstArrayElement = 0;
+				vk_aWriteCamDescriptorSets[u8FrameInFlightIndex].descriptorCount = 1;
+				vk_aWriteCamDescriptorSets[u8FrameInFlightIndex].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+				vk_aWriteCamDescriptorSets[u8FrameInFlightIndex].pImageInfo = nullptr;
+				vk_aWriteCamDescriptorSets[u8FrameInFlightIndex].pBufferInfo = &vk_aDescBufferInfos[u8FrameInFlightIndex];
+				vk_aWriteCamDescriptorSets[u8FrameInFlightIndex].pTexelBufferView = nullptr;
+			}
+			vkUpdateDescriptorSets(vk_hDevice, RE_VK_FRAMES_IN_FLIGHT, vk_aWriteCamDescriptorSets, 0, nullptr);
+			return true;
 		} else
-			RE_FATAL_ERROR("Failed creating Vulkan descriptor set layout for camera uniforms");
+			RE_FATAL_ERROR("Failed allocating ", RE_VK_FRAMES_IN_FLIGHT, " Vulkan descriptor sets for reading camera's uniform buffer");
 		return false;
 	}
 
 	void destroy_camera_descriptor_sets() {
-		PRINT_DEBUG("Destroying Vulkan descriptor set layout ", vk_hCameraDescLayout);
-		vkDestroyDescriptorSetLayout(vk_hDevice, vk_hCameraDescLayout, nullptr);
 	}
 
 	void calculate_camera_matrices() {
 		if (pActiveCamera) {
 			PRINT_DEBUG("Updating camera before transferring its matrices");
 			pActiveCamera->update_before_render();
+			const VkMappedMemoryRange vk_memoryRange = {
+				.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,
+				.memory = uniformBuffersMemory.get(),
+				.offset = vk_aaUniformByteOffsets[RE_VK_CAMERA_UNIFORM_BUFFER_INDEX][u8CurrentFrameInFlightIndex],
+				.size = RE_VK_CAMERA_UNIFORM_BUFFER_SIZE_BYTES
+			};
+			if (!uniformBuffersMemory.cpu_coherent()) {
+				PRINT_DEBUG("Invalidating Vulkan memory used for camera uniforms");
+				if (vkInvalidateMappedMemoryRanges(vk_hDevice, 1, &vk_memoryRange) != VK_SUCCESS) {
+					RE_FATAL_ERROR("Failed invalidating non-coherent Vulkan memory used for camera uniforms");
+					return;
+				}
+			}
 			PRINT_DEBUG("Updating camera matrices");
-			cameraUniforms[u8CurrentFrameInFlightIndex][RE_VK_VIEW_MATRIX_OFFSET + 12] = -pActiveCamera->transform.position[0];
-			cameraUniforms[u8CurrentFrameInFlightIndex][RE_VK_VIEW_MATRIX_OFFSET + 13] = -pActiveCamera->transform.position[1];
-			cameraUniforms[u8CurrentFrameInFlightIndex][RE_VK_VIEW_MATRIX_OFFSET + 14] = -pActiveCamera->transform.position[2];
-			cameraUniforms[u8CurrentFrameInFlightIndex][RE_VK_PROJECTION_MATRIX_OFFSET + 0] = 1.0f / pActiveCamera->view[0];
-			cameraUniforms[u8CurrentFrameInFlightIndex][RE_VK_PROJECTION_MATRIX_OFFSET + 5] = -1.0f / pActiveCamera->view[1];
-			cameraUniforms[u8CurrentFrameInFlightIndex][RE_VK_PROJECTION_MATRIX_OFFSET + 10] = 1.0f / pActiveCamera->fViewDistance;
+			apafCameraMatrices[u8CurrentFrameInFlightIndex][RE_VK_VIEW_MATRIX_OFFSET + 12] = -pActiveCamera->transform.position[0];
+			apafCameraMatrices[u8CurrentFrameInFlightIndex][RE_VK_VIEW_MATRIX_OFFSET + 13] = -pActiveCamera->transform.position[1];
+			apafCameraMatrices[u8CurrentFrameInFlightIndex][RE_VK_VIEW_MATRIX_OFFSET + 14] = -pActiveCamera->transform.position[2];
+			apafCameraMatrices[u8CurrentFrameInFlightIndex][RE_VK_PROJECTION_MATRIX_OFFSET + 0] = 1.0f / pActiveCamera->view[0];
+			apafCameraMatrices[u8CurrentFrameInFlightIndex][RE_VK_PROJECTION_MATRIX_OFFSET + 5] = -1.0f / pActiveCamera->view[1];
+			apafCameraMatrices[u8CurrentFrameInFlightIndex][RE_VK_PROJECTION_MATRIX_OFFSET + 10] = 1.0f / pActiveCamera->fViewDistance;
+			if (!uniformBuffersMemory.cpu_coherent()) {
+				PRINT_DEBUG("Flushing Vulkan memory used for camera uniforms");
+				if (vkFlushMappedMemoryRanges(vk_hDevice, 1, &vk_memoryRange) != VK_SUCCESS) {
+					RE_FATAL_ERROR("Failed flushing non-coherent Vulkan memory used for camera uniforms");
+					return;
+				}
+			}
 			if (!pActiveCamera->bIgnoreAspectRatio) {
 				PRINT_DEBUG("Calculating projection on screen depending on camera's projection's aspect ratio");
 				const float fFactor = std::min(vk_renderImageSize.width / pActiveCamera->view[0], vk_renderImageSize.height / pActiveCamera->view[1]);
@@ -129,7 +123,7 @@ namespace RE {
 			for (uint8_t u8CameraUniformBufferIndex = 0; u8CameraUniformBufferIndex < RE_VK_FRAMES_IN_FLIGHT; u8CameraUniformBufferIndex++) {
 				if (u8CameraUniformBufferIndex == u8IndexToCopyFrom)
 					continue;
-				std::memcpy(cameraUniforms[u8CameraUniformBufferIndex], cameraUniforms[u8IndexToCopyFrom], RE_VK_CAMERA_UNIFORM_BUFFER_SIZE_BYTES);
+				std::memcpy(apafCameraMatrices[u8CameraUniformBufferIndex], apafCameraMatrices[u8IndexToCopyFrom], RE_VK_CAMERA_UNIFORM_BUFFER_SIZE_BYTES);
 			}
 		} else {
 			PRINT_DEBUG("Attaching new camera ", pCam);

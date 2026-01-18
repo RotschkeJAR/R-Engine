@@ -31,7 +31,6 @@ namespace RE {
 
 	// Render buffer
 	extern GameObjectInstanceData *paRenderBufferInstanceData;
-	extern std::atomic<uint32_t> gameObjectsToRenderCount;
 
 	// Render pipelines
 	bool does_gpu_support_vertex_buffers(VkPhysicalDevice vk_hPhysicalDevice, std::queue<std::string> &rMissingFeatures);

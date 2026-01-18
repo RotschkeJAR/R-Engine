@@ -6,6 +6,8 @@
 #include "RE_Texture.hpp"
 #include "RE_Vulkan_Wrappers.hpp"
 
+#include "RE_Renderer_Descriptor Sets.hpp"
+
 namespace RE {
 
 	extern Color backgroundClearColor;
@@ -48,30 +50,26 @@ namespace RE {
 	bool create_render_tasks();
 	void destroy_render_tasks();
 
-	// Uniform buffer
-#define RE_VK_UNIFORM_BUFFER_COUNT_PER_FRAME 2
-#define RE_VK_CAMERA_UNIFORM_BUFFER_INDEX 0
-#define RE_VK_OBJECT_COUNT_UNIFORM_BUFFER_INDEX 1
-
-	struct UniformBufferInfo final {
-		void *pUniformBuffersContent;
-		VkDeviceSize vk_aCameraFirstBytes[RE_VK_FRAMES_IN_FLIGHT];
-		VkDeviceSize vk_aObjectCountFirstBytes[RE_VK_FRAMES_IN_FLIGHT];
-	};
-
-	extern VkBuffer vk_aahUniformBuffers[RE_VK_UNIFORM_BUFFER_COUNT_PER_FRAME][RE_VK_FRAMES_IN_FLIGHT];
-	bool create_uniform_buffers(UniformBufferInfo &rUniformBufferInfo);
-	void destroy_uniform_buffers();
-
-	// Storage buffer
-	extern Vulkan_Buffer aSortableDepthBuffers[RE_VK_FRAMES_IN_FLIGHT], aRenderBuffers[RE_VK_FRAMES_IN_FLIGHT];
-
-	// Staging buffer
-	extern Vulkan_Buffer aRawRenderBuffers[RE_VK_FRAMES_IN_FLIGHT];
-	extern VkDrawIndexedIndirectCommand *vk_apRenderBufferDrawCommands[RE_VK_FRAMES_IN_FLIGHT];
-	bool create_render_buffers();
-	void destroy_render_buffers();
+	// Buffers
+	extern size_t gameObjectsToRenderCount;
+	bool create_renderer_buffers();
+	void destroy_renderer_buffers();
 	bool record_cmd_transfer_buffer();
+
+	// Uniforms
+#define RE_VK_UNIFORM_BUFFER_COUNT_PER_FRAME 1
+#define RE_VK_CAMERA_UNIFORM_BUFFER_INDEX 0
+	extern VkBuffer vk_aahUniformBuffers[RE_VK_UNIFORM_BUFFER_COUNT_PER_FRAME][RE_VK_FRAMES_IN_FLIGHT];
+	extern VulkanMemory uniformBuffersMemory;
+	extern VkDeviceSize vk_aaUniformByteOffsets[RE_VK_UNIFORM_BUFFER_COUNT_PER_FRAME][RE_VK_FRAMES_IN_FLIGHT];
+	extern float *apafCameraMatrices[RE_VK_FRAMES_IN_FLIGHT];
+
+	// Storage
+	extern Vulkan_Buffer aSortableDepthBuffers[RE_VK_FRAMES_IN_FLIGHT], aGameObjectBuffers[RE_VK_FRAMES_IN_FLIGHT];
+
+	// Staging
+	extern Vulkan_Buffer aRawGameObjectBuffers[RE_VK_FRAMES_IN_FLIGHT];
+	extern VkDrawIndexedIndirectCommand *vk_apGameObjectBufferDrawCommands[RE_VK_FRAMES_IN_FLIGHT];
 
 	// MSAA
 	extern Vulkan_Image singleSampledWorldRenderImages;
@@ -87,27 +85,6 @@ namespace RE {
 	bool create_depth_stencil_images(VulkanTask &rDepthStencilImageLayoutTransitionTask, VkFence vk_hDepthStencilImageLayoutTransitionFence);
 	void destroy_depth_stencil_images();
 	bool are_depth_stencil_images_separated(VkFormat vk_eFormat);
-
-	// Descriptor Sets
-	extern VkDescriptorPool vk_hPermanentDescPool;
-	bool create_descriptor_sets(const UniformBufferInfo &rUniformBufferInfo);
-	void destroy_descriptor_sets();
-
-	// Camera
-#define RE_VK_VIEW_MATRIX_SIZE (4 * 4)
-#define RE_VK_VIEW_MATRIX_OFFSET 0
-#define RE_VK_PROJECTION_MATRIX_SIZE (4 * 4)
-#define RE_VK_PROJECTION_MATRIX_OFFSET RE_VK_VIEW_MATRIX_SIZE
-#define RE_VK_CAMERA_UNIFORM_BUFFER_SIZE (RE_VK_VIEW_MATRIX_SIZE + RE_VK_PROJECTION_MATRIX_SIZE)
-#define RE_VK_CAMERA_UNIFORM_BUFFER_SIZE_BYTES (RE_VK_CAMERA_UNIFORM_BUFFER_SIZE * sizeof(float))
-	extern VkDescriptorSetLayout vk_hCameraDescLayout;
-	extern std::array<VkDescriptorSet, RE_VK_FRAMES_IN_FLIGHT> cameraDescSets;
-	extern VkRect2D vk_cameraProjectionOnscreen;
-	void calculate_camera_matrices();
-
-	// Texture
-	extern VkDescriptorSetLayout vk_hTextureDescLayout;
-	extern VkDescriptorSet vk_hTextureDescSet;
 
 	// Processing
 #define RE_VK_OBJECT_COUNT_UNIFORM_BUFFER_SIZE 1

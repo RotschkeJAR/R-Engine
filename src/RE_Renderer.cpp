@@ -28,32 +28,28 @@ namespace RE {
 			Vulkan_Fence rectBufferTransferFence(0);
 			Vulkan_Buffer stagingRectBuffer;
 			if (init_render_elements(stagingRectBuffer, &rectBufferTransferTask, rectBufferTransferFence)) {
-				UniformBufferInfo uniformBufferInfo;
-				if (create_uniform_buffers(uniformBufferInfo)) {
-					if (create_render_buffers()) {
-						if (create_descriptor_sets(uniformBufferInfo)) {
-							if (create_processing_pipelines()) {
-								if (create_renderpass()) {
-									if (create_swapchain()) {
-										if (setup_presentation()) {
-											if (create_render_pipelines()) {
-												rectBufferTransferFence.wait_for();
-												PRINT_DEBUG("Successfully initialized the renderer");
-												return true;
-											}
-											destroy_presentation();
+				if (create_renderer_buffers()) {
+					if (create_descriptor_sets()) {
+						if (create_processing_pipelines()) {
+							if (create_renderpass()) {
+								if (create_swapchain()) {
+									if (setup_presentation()) {
+										if (create_render_pipelines()) {
+											rectBufferTransferFence.wait_for();
+											PRINT_DEBUG("Successfully initialized the renderer");
+											return true;
 										}
-										destroy_swapchain();
+										destroy_presentation();
 									}
-									destroy_renderpass();
+									destroy_swapchain();
 								}
-								destroy_processing_pipelines();
+								destroy_renderpass();
 							}
-							destroy_descriptor_sets();
+							destroy_processing_pipelines();
 						}
-						destroy_render_buffers();
+						destroy_descriptor_sets();
 					}
-					destroy_uniform_buffers();
+					destroy_renderer_buffers();
 				}
 				PRINT_DEBUG("Waiting for pending transfer task to finish before destroying further due to failure creating essential resources");
 				rectBufferTransferFence.wait_for();
@@ -73,8 +69,7 @@ namespace RE {
 		destroy_renderpass();
 		destroy_descriptor_sets();
 		destroy_processing_pipelines();
-		destroy_render_buffers();
-		destroy_uniform_buffers();
+		destroy_renderer_buffers();
 		destroy_render_elements();
 		destroy_render_tasks();
 	}

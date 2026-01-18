@@ -72,6 +72,7 @@ namespace RE {
 			println(rsContent);
 	}
 
+	[[noreturn]]
 	void abort(const std::string &rsDetail) {
 		print_time();
 		print_colored("ABORTION", RE_TERMINAL_COLOR_BRIGHT_BLACK, false, false);

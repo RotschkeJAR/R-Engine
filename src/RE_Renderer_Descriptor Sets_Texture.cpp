@@ -1,8 +1,7 @@
-#include "RE_Renderer_Internal.hpp"
+#include "RE_Renderer_Descriptor Sets_Internal.hpp"
 
 namespace RE {
 
-	VkDescriptorSetLayout vk_hTextureDescLayout;
 	VkDescriptorSet vk_hTextureDescSet;
 	
 	bool does_gpu_support_textures(const VkPhysicalDevice vk_hPhysicalDevice, const VkPhysicalDeviceLimits &vk_rPhysicalDeviceLimits, std::queue<std::string> &rMissingFeatures, std::queue<std::string> &rDiscrepantFeatures) {
@@ -85,53 +84,39 @@ namespace RE {
 	}
 
 	int32_t rate_gpu_texture_capacity(const VkPhysicalDeviceLimits &vk_rPhysicalDeviceLimits) {
-		const int32_t i32Score = (static_cast<int32_t>(std::clamp<uint32_t>(std::min(vk_rPhysicalDeviceLimits.maxMemoryAllocationCount, std::min(vk_rPhysicalDeviceLimits.maxSamplerAllocationCount, std::min(vk_rPhysicalDeviceLimits.maxPerStageDescriptorSamplers, std::min(vk_rPhysicalDeviceLimits.maxPerStageDescriptorSampledImages, std::min(vk_rPhysicalDeviceLimits.maxDescriptorSetSamplers, vk_rPhysicalDeviceLimits.maxDescriptorSetSampledImages))))), 16, RE_VK_MAX_SAMPLED_IMAGES) - 16) * 1500 / RE_VK_MAX_SAMPLED_IMAGES - 499) + (static_cast<int32_t>(std::clamp<uint32_t>(vk_rPhysicalDeviceLimits.maxImageDimension2D, 0, 8192)) * 1500 / 8192 - 499);
+		const int32_t i32Score = (
+				static_cast<int32_t>(
+						std::clamp<uint32_t>(
+										std::min(vk_rPhysicalDeviceLimits.maxMemoryAllocationCount, 
+										std::min(vk_rPhysicalDeviceLimits.maxSamplerAllocationCount, 
+										std::min(vk_rPhysicalDeviceLimits.maxPerStageDescriptorSamplers, 
+										std::min(vk_rPhysicalDeviceLimits.maxPerStageDescriptorSampledImages, 
+										std::min(vk_rPhysicalDeviceLimits.maxDescriptorSetSamplers, vk_rPhysicalDeviceLimits.maxDescriptorSetSampledImages))))), 
+								16, 
+								RE_VK_MAX_SAMPLED_IMAGES
+						) - 16
+				) * 1500 / RE_VK_MAX_SAMPLED_IMAGES - 499)
+				 + (static_cast<int32_t>(std::clamp<uint32_t>(vk_rPhysicalDeviceLimits.maxImageDimension2D, 0, 8192)) * 1500 / 8192 - 499);
 		PRINT_DEBUG("Rated GPU's texture capacity with score ", i32Score);
 		return i32Score;
 	}
 
 	bool create_texture_descriptor_sets() {
-		PRINT_DEBUG("Creating Vulkan descriptor set layout for textures");
-		constexpr VkDescriptorBindingFlags vk_eBindingFlags = VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
-		const VkDescriptorSetLayoutBindingFlagsCreateInfo vk_bindingFlagsInfo = {
-			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO,
-			.bindingCount = 1,
-			.pBindingFlags = &vk_eBindingFlags
+		PRINT_DEBUG("Allocating Vulkan descriptor set for using textures");
+		const VkDescriptorSetAllocateInfo vk_textureDescSetAllocInfo = {
+			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+			.descriptorPool = vk_hPermanentDescPool,
+			.descriptorSetCount = 1,
+			.pSetLayouts = &vk_hTextureDescSetLayout
 		};
-		const VkDescriptorSetLayoutBinding vk_textureDescBinding = {
-			.binding = RE_VK_UNIFORM_BINDING_TEXTURE,
-			.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-			.descriptorCount = RE_VK_MAX_SAMPLED_IMAGES,
-			.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT
-		};
-		const VkDescriptorSetLayoutCreateInfo vk_textureDescLayoutInfo = {
-			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-			.pNext = &vk_bindingFlagsInfo,
-			.bindingCount = 1,
-			.pBindings = &vk_textureDescBinding
-		};
-		if (vkCreateDescriptorSetLayout(vk_hDevice, &vk_textureDescLayoutInfo, nullptr, &vk_hTextureDescLayout) == VK_SUCCESS) {
-			PRINT_DEBUG("Allocating Vulkan descriptor set for using textures");
-			const VkDescriptorSetAllocateInfo vk_textureDescSetAllocInfo = {
-				.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-				.descriptorPool = vk_hPermanentDescPool,
-				.descriptorSetCount = 1,
-				.pSetLayouts = &vk_hTextureDescLayout
-			};
-			if (vkAllocateDescriptorSets(vk_hDevice, &vk_textureDescSetAllocInfo, &vk_hTextureDescSet) == VK_SUCCESS)
-				return true;
-			else
-				RE_FATAL_ERROR("Failed allocating Vulkan descriptor set with layout ", vk_hTextureDescLayout, " in pool ", vk_hPermanentDescPool, " for textures");
-			PRINT_DEBUG("Destroying Vulkan descriptor set layout due to failure allocating the texture descriptor set");
-			vkDestroyDescriptorSetLayout(vk_hDevice, vk_hTextureDescLayout, nullptr);
-		} else
-			RE_FATAL_ERROR("Failed creating Vulkan descriptor set layout for textures");
+		if (vkAllocateDescriptorSets(vk_hDevice, &vk_textureDescSetAllocInfo, &vk_hTextureDescSet) == VK_SUCCESS)
+			return true;
+		else
+			RE_FATAL_ERROR("Failed allocating Vulkan descriptor set for textures");
 		return false;
 	}
 
 	void destroy_texture_descriptor_sets() {
-		PRINT_DEBUG("Destroying Vulkan descriptor set layout ", vk_hTextureDescLayout, " used for textures");
-		vkDestroyDescriptorSetLayout(vk_hDevice, vk_hTextureDescLayout, nullptr);
 	}
 
 }

@@ -134,7 +134,7 @@ namespace RE {
 				VkCommandPool vk_hCreatedCommandPool;
 				vk_cmdPoolCreateInfo.queueFamilyIndex = queueFamilyIndices[u8LogicalQueueIndex];
 				if (vkCreateCommandPool(vk_hDevice, &vk_cmdPoolCreateInfo, nullptr, &vk_hCreatedCommandPool) != VK_SUCCESS) {
-					RE_FATAL_ERROR("Failed creating Vulkan command pool connected to queue family ", vk_cmdPoolCreateInfo.queueFamilyIndex);
+					RE_ERROR("Failed creating Vulkan command pool connected to queue family ", vk_cmdPoolCreateInfo.queueFamilyIndex);
 					break;
 				}
 				uniqueLogicalQueueInfos.emplace_back(u8LogicalQueueIndex, 1, vk_hCreatedCommandPool);
@@ -161,7 +161,7 @@ namespace RE {
 				commandPools[u8CommandPoolIndex] = std::get<VkCommandPool>(uniqueLogicalQueueInfos[u8CommandPoolIndex]);
 				std::get<uint8_t>(commandBuffersPerPool[u8LogicalQueueIndex]) = u8CommandPoolIndex;
 				if (!alloc_vulkan_command_buffers(commandPools[u8CommandPoolIndex], VK_COMMAND_BUFFER_LEVEL_PRIMARY, u32CommandBuffersToAlloc, std::get<1>(commandBuffersPerPool[u8LogicalQueueIndex]).data())) {
-					RE_FATAL_ERROR("Failed to allocate ", u32CommandBuffersToAlloc, " in command pool ", commandPools[u8CommandPoolIndex], " for Vulkan task");
+					RE_ERROR("Failed to allocate ", u32CommandBuffersToAlloc, " in command pool ", commandPools[u8CommandPoolIndex], " for Vulkan task");
 					break;
 				}
 				u8CommandPoolIndex++;
@@ -295,7 +295,7 @@ namespace RE {
 				.queueFamilyIndex = queueFamilyIndices[queueIndexPerCommandPool[u8CommandPoolCreateIndex]]
 			};
 			if (vkCreateCommandPool(vk_hDevice, &vk_cmdPoolCreateInfo, nullptr, &commandPools[u8CommandPoolCreateIndex]) != VK_SUCCESS) {
-				RE_FATAL_ERROR("Failed allocating Vulkan command pool at index ", u8CommandPoolCreateIndex);
+				RE_ERROR("Failed allocating Vulkan command pool at index ", u8CommandPoolCreateIndex);
 				break;
 			}
 			PRINT_DEBUG_CLASS("Created Vulkan command pool ", commandPools[u8CommandPoolCreateIndex], " successfully at index ", u8CommandPoolCreateIndex);
@@ -310,7 +310,7 @@ namespace RE {
 					u32CommandBufferAllocCount++;
 				PRINT_DEBUG_CLASS("Allocating ", u32CommandBufferAllocCount, " Vulkan command buffer/-s at function index ", u32CommandBufferCreateIndex, " (and onward)");
 				if (!alloc_vulkan_command_buffers(commandPools[commandPoolIndexPerCommandBuffer[u32CommandBufferCreateIndex]], VK_COMMAND_BUFFER_LEVEL_PRIMARY, u32CommandBufferAllocCount, &commandBuffers[u32CommandBufferCreateIndex])) {
-					RE_FATAL_ERROR("Failed allocating ", u32CommandBufferAllocCount, " Vulkan command buffer at index ", u32CommandBufferCreateIndex);
+					RE_ERROR("Failed allocating ", u32CommandBufferAllocCount, " Vulkan command buffer at index ", u32CommandBufferCreateIndex);
 					break;
 				}
 				u32CommandBufferCreateIndex += u32CommandBufferAllocCount;
@@ -374,9 +374,9 @@ namespace RE {
 			if (vkEndCommandBuffer(commandBuffers[u32FunctionIndex]) == VK_SUCCESS)
 				return true;
 			else
-				RE_FATAL_ERROR("Failed to finish recording Vulkan command buffer ", commandBuffers[u32FunctionIndex], " at index ", u32FunctionIndex);
+				RE_ERROR("Failed to finish recording Vulkan command buffer ", commandBuffers[u32FunctionIndex], " at index ", u32FunctionIndex);
 		} else
-			RE_FATAL_ERROR("Failed beginning to record Vulkan command buffer ", commandBuffers[u32FunctionIndex], " at index ", u32FunctionIndex);
+			RE_ERROR("Failed beginning to record Vulkan command buffer ", commandBuffers[u32FunctionIndex], " at index ", u32FunctionIndex);
 		return false;
 	}
 
@@ -419,7 +419,7 @@ namespace RE {
 				vk_submissionInfo.pCommandBufferInfos = commandBufferSubmissionInfos.data();
 				vk_submissionInfo.pSignalSemaphoreInfos = &vk_a2InternalSemaphoreSubmissionInfo[u8CurrentSemaphoreInfoIndex];
 				if (vkQueueSubmit2(vk_hLogicalQueue, 1, &vk_submissionInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
-					RE_FATAL_ERROR("Failed to submit a subtask to the logical queue ", vk_hLogicalQueue, " at index ", u8LogicalQueueIndex);
+					RE_ERROR("Failed to submit a subtask to the logical queue ", vk_hLogicalQueue, " at index ", u8LogicalQueueIndex);
 					return false;
 				}
 				vk_a2InternalSemaphoreSubmissionInfo[(u8CurrentSemaphoreInfoIndex + 1) % u8SemaphoreInfoCount].value = vk_a2InternalSemaphoreSubmissionInfo[u8CurrentSemaphoreInfoIndex].value + 1;
@@ -447,7 +447,7 @@ namespace RE {
 		const uint8_t u8LogicalQueueIndex = queueIndexPerCommandPool[commandPoolIndexPerCommandBuffer[u32FunctionsCount - 1]];
 		const VkQueue vk_hLogicalQueue = vk_pahQueues[u8LogicalQueueIndex];
 		if (vkQueueSubmit2(vk_hLogicalQueue, 1, &vk_submissionInfo, vk_hFenceToSignal) != VK_SUCCESS) {
-			RE_FATAL_ERROR("Failed to submit last subtask to the logical queue ", vk_hLogicalQueue, " at index ", u8LogicalQueueIndex);
+			RE_ERROR("Failed to submit last subtask to the logical queue ", vk_hLogicalQueue, " at index ", u8LogicalQueueIndex);
 			return false;
 		}
 		return true;
@@ -476,33 +476,39 @@ namespace RE {
 
 	VulkanQueueCollection VulkanTask::queues_of_functions(const uint32_t *pau32FunctionIndices, uint32_t u32FunctionIndexCount) const {
 		if (u8CommandPoolCount == 1) [[likely]] {
-			const VulkanQueueCollection queueCollection = {
-				.queueFamilyIndices = std::make_unique<uint32_t[]>(1),
-				.logicalQueueIndices = std::make_unique<uint8_t[]>(1),
-				.vk_eSharingMode = VK_SHARING_MODE_EXCLUSIVE,
-				.u8QueueCount = 1
-			};
+			PRINT_DEBUG_CLASS("Returning queue information immediatly, because the task utilizes only a single queue");
+			VulkanQueueCollection queueCollection;
+			queueCollection.queueFamilyIndices = std::make_unique<uint32_t[]>(1);
+			queueCollection.logicalQueueIndices = std::make_unique<uint8_t[]>(1);
+			queueCollection.vk_eSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+			queueCollection.u8QueueCount = 1;
 			queueCollection.logicalQueueIndices[0] = queueIndexPerCommandPool[commandPoolIndexPerCommandBuffer[pau32FunctionIndices[0]]];
 			queueCollection.queueFamilyIndices[0] = queueFamilyIndices[queueCollection.logicalQueueIndices[0]];
 			return queueCollection;
 		}
+		PRINT_DEBUG_CLASS("Collecting queue information, that are used by functions listed in ", pau32FunctionIndices, "containing ", u32FunctionIndexCount, " indices");
 		std::vector<uint8_t> logicalQueueIndicesNeeded;
 		logicalQueueIndicesNeeded.reserve(std::min(u32FunctionIndexCount, static_cast<uint32_t>(u8CommandPoolCount)));
 		for (uint32_t u32FunctionIndex = 0; u32FunctionIndex < u32FunctionIndexCount; u32FunctionIndex++) {
+			PRINT_DEBUG_CLASS("Identifying queue used in at function index ", pau32FunctionIndices[u32FunctionIndex]);
 			const uint8_t u8LogicalQueueIndex = queueIndexPerCommandPool[commandPoolIndexPerCommandBuffer[pau32FunctionIndices[u32FunctionIndex]]];
-			if (std::find(logicalQueueIndicesNeeded.begin(), logicalQueueIndicesNeeded.end(), u8LogicalQueueIndex) == logicalQueueIndicesNeeded.end())
+			if (std::find(logicalQueueIndicesNeeded.begin(), logicalQueueIndicesNeeded.end(), u8LogicalQueueIndex) == logicalQueueIndicesNeeded.end()) {
+				PRINT_DEBUG_CLASS("Adding new logical queue index ", u8LogicalQueueIndex);
 				logicalQueueIndicesNeeded.push_back(u8LogicalQueueIndex);
+			}
 		}
-		const VulkanQueueCollection queueCollection = {
-			.queueFamilyIndices = std::make_unique<uint32_t[]>(logicalQueueIndicesNeeded.size()),
-			.logicalQueueIndices = std::make_unique<uint8_t[]>(logicalQueueIndicesNeeded.size()),
-			.vk_eSharingMode = logicalQueueIndicesNeeded.size() == 1 ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT,
-			.u8QueueCount = static_cast<uint8_t>(logicalQueueIndicesNeeded.size())
-		};
-		for (size_t queueNeededIndex = 0; queueNeededIndex < logicalQueueIndicesNeeded.size(); queueNeededIndex++) {
-			const uint8_t u8LogicalQueueIndex = logicalQueueIndicesNeeded[queueNeededIndex];
-			queueCollection.logicalQueueIndices[queueNeededIndex] = u8LogicalQueueIndex;
-			queueCollection.queueFamilyIndices[queueNeededIndex] = queueFamilyIndices[u8LogicalQueueIndex];
+		PRINT_DEBUG_CLASS("Returning queue information");
+		const uint8_t u8QueueCount = static_cast<uint8_t>(logicalQueueIndicesNeeded.size());
+		VulkanQueueCollection queueCollection;
+		queueCollection.queueFamilyIndices = std::make_unique<uint32_t[]>(u8QueueCount);
+		queueCollection.logicalQueueIndices = std::make_unique<uint8_t[]>(u8QueueCount);
+		queueCollection.vk_eSharingMode = u8QueueCount == 1 ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
+		queueCollection.u8QueueCount = u8QueueCount;
+		for (uint8_t u8QueueNeededIndex = 0; u8QueueNeededIndex < u8QueueCount; u8QueueNeededIndex++) {
+			PRINT_DEBUG_CLASS("Copying index of the needed logical queue at ", u8QueueNeededIndex);
+			const uint8_t u8LogicalQueueIndex = logicalQueueIndicesNeeded[u8QueueNeededIndex];
+			queueCollection.logicalQueueIndices[u8QueueNeededIndex] = u8LogicalQueueIndex;
+			queueCollection.queueFamilyIndices[u8QueueNeededIndex] = queueFamilyIndices[u8LogicalQueueIndex];
 		}
 		return queueCollection;
 	}

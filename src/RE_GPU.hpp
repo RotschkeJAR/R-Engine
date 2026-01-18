@@ -26,11 +26,20 @@ namespace RE {
 	void create_queue_create_infos(const float *pfPriority, std::vector<VkDeviceQueueCreateInfo> &vk_rpaLogicalQueueCreateInfos);
 	VkQueue get_present_queue(uint8_t u8PreferredQueueIndex);
 
-	struct VulkanQueueCollection final {
-		std::unique_ptr<uint32_t[]> queueFamilyIndices;
-		std::unique_ptr<uint8_t[]> logicalQueueIndices;
-		VkSharingMode vk_eSharingMode;
-		uint8_t u8QueueCount;
+	class VulkanQueueCollection final {
+		public:
+			std::unique_ptr<uint32_t[]> queueFamilyIndices;
+			std::unique_ptr<uint8_t[]> logicalQueueIndices;
+			VkSharingMode vk_eSharingMode;
+			uint8_t u8QueueCount;
+
+			VulkanQueueCollection() = default;
+
+			VulkanQueueCollection(VulkanQueueCollection&&) = default;
+			VulkanQueueCollection& operator =(VulkanQueueCollection&&) = default;
+
+			VulkanQueueCollection(VulkanQueueCollection&) = delete;
+			VulkanQueueCollection& operator =(VulkanQueueCollection&) = delete;
 	};
 	
 	struct VulkanTask_Queues final {

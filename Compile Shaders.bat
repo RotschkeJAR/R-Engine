@@ -17,4 +17,9 @@ for %%f in (%SRC%\*_fragment.glsl) do (
 	%SC% %SFLAG% -x glsl -fshader-stage=fragment -o "%%f.spv" "%%f"
 )
 
+for %%f in (%SRC%\*_compute.glsl) do (
+	echo %%f
+	%SC% %SFLAG% -x glsl -fshader-stage=compute -o "%%f.spv" "%%f"
+)
+
 pause

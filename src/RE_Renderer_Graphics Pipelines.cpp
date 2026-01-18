@@ -271,8 +271,8 @@ namespace RE {
 	bool create_render_pipelines() {
 		PRINT_DEBUG("Creating Vulkan pipeline layout");
 		const VkDescriptorSetLayout vk_ahWorldPipelineLayoutDescriptors[] = {
-			vk_hCameraDescLayout,
-			vk_hTextureDescLayout
+			vk_hCameraDescSetLayout,
+			vk_hTextureDescSetLayout
 		};
 		const VkPipelineLayoutCreateInfo vk_worldPipelineLayoutCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,

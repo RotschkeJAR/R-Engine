@@ -77,6 +77,11 @@ namespace RE {
 	template <class Type, Type value1, Type value2>
 	concept IsGreaterOrEqual = value1 >= value2;
 
+	template <class... T>
+	concept AreComparable = requires (T... values) {
+		{ (values == ...) };
+	};
+
 	enum TerminalColor {
 		RE_TERMINAL_COLOR_BLACK = 0x0,
 		RE_TERMINAL_COLOR_RED = 0x1,
@@ -310,6 +315,7 @@ namespace RE {
 #endif
 #define PRINT_DEBUG_CLASS(...) PRINT_DEBUG("{", this, "} ", __VA_ARGS__)
 	
+	[[noreturn]]
 	void abort(const std::string &rsDetail);
 	void fatal_error(const std::string &rsDetail);
 	void error(const std::string &rsDetail);
@@ -422,6 +428,12 @@ namespace RE {
 	std::wstring convert_chars_to_wide(const char *pacString);
 	[[nodiscard]]
 	std::string get_app_name();
+
+	template <class ValueType, class... T> requires AreSame<ValueType, T...>
+	[[nodiscard]]
+	constexpr bool is_either_equal_to(const ValueType value, const T... validValues) {
+		return ((value == validValues) || ...);
+	}
 
 	template <class T> requires Arithmetics<T>
 	[[nodiscard]]
@@ -581,7 +593,6 @@ namespace RE {
 	constexpr T tan_deg(const T degrees) noexcept {
 		return std::tan(degrees_to_radians<T>(degrees));
 	}
-
 
 	template <class T, size_t dimensionCount> requires Arithmetics<T> && IsGreater<size_t, dimensionCount, 0>
 	class Vector final {

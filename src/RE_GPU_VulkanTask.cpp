@@ -391,15 +391,16 @@ namespace RE {
 		vk_submissionInfo.waitSemaphoreInfoCount = u32SemaphoresToWaitForCount;
 		vk_submissionInfo.pWaitSemaphoreInfos = vk_paSemaphoresToWaitFor;
 		vk_submissionInfo.signalSemaphoreInfoCount = 1;
-		uint64_t u64TimelineSemaphoreValue;
-		if (u8CommandPoolCount > 1)
-			vkGetSemaphoreCounterValue(vk_hDevice, vk_hInternalSemaphore, &u64TimelineSemaphoreValue);
 		constexpr uint8_t u8SemaphoreInfoCount = 2;
 		VkSemaphoreSubmitInfo vk_a2InternalSemaphoreSubmissionInfo[u8SemaphoreInfoCount];
+		uint64_t u64TimelineSemaphoreValue;
+		if (u8CommandPoolCount > 1) {
+			vkGetSemaphoreCounterValue(vk_hDevice, vk_hInternalSemaphore, &u64TimelineSemaphoreValue);
+			vk_a2InternalSemaphoreSubmissionInfo[0].value = u64TimelineSemaphoreValue + 1;
+		}
 		vk_a2InternalSemaphoreSubmissionInfo[0].sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
 		vk_a2InternalSemaphoreSubmissionInfo[0].pNext = nullptr;
 		vk_a2InternalSemaphoreSubmissionInfo[0].semaphore = vk_hInternalSemaphore;
-		vk_a2InternalSemaphoreSubmissionInfo[0].value = u64TimelineSemaphoreValue + 1;
 		vk_a2InternalSemaphoreSubmissionInfo[0].deviceIndex = 0;
 		vk_a2InternalSemaphoreSubmissionInfo[1].sType = vk_a2InternalSemaphoreSubmissionInfo[0].sType;
 		vk_a2InternalSemaphoreSubmissionInfo[1].pNext = vk_a2InternalSemaphoreSubmissionInfo[0].pNext;

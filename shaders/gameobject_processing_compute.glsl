@@ -1,34 +1,55 @@
 #version 450 core
 
+struct RawGameObject {
+	vec4 position;
+	vec4 rotation;
+	vec4 scale;
+	vec4 color;
+	uint textureId;
+};
+
 struct GameObject {
-	vec3 position;
-	vec3 rotation;
-	vec3 scale;	
+	mat4 model;
+	vec4 color;
+	uint textureId;
 };
 
-struct RenderContent {
-	mat4 position;
-};
-
-struct DepthContent {
+struct Depth {
 	float depth;
 	uint objectIndex;
 };
 
-layout(std140, set = 0, binding = 0) readonly buffer RawGameObjectBuffer {
-	GameObject gameObjects[];
-};
 
-layout(std140, set = 1, binding = 0) buffer RenderBuffer {
-	RenderContent renderContent[];
-};
+layout(std430, set = 0, binding = 0) readonly buffer RawGameObjectBuffer {
+	RawGameObject data[];
+} rawGameObjects;
 
-layout(std140, set = 1, binding = 1) buffer DepthBuffer {
-	DepthContent depthContent[];
-};
+layout(std430, set = 1, binding = 0) buffer GameObjectBuffer {
+	GameObject data[];
+} gameObjects;
 
-layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
+layout(std430, set = 1, binding = 1) writeonly buffer DepthBuffer {
+	Depth data[];
+} depths;
+
+layout(set = 1, binding = 2) uniform CameraMatrices {
+	mat4 view;
+	mat4 projection;
+} cam;
+
+
+layout (local_size_x = 1000, local_size_y = 1, local_size_z = 1) in;
 
 void main() {
-	
+	const uint index = gl_GlobalInvocationID.x;
+	gameObjects.data[index].model = mat4(
+		rawGameObjects.data[index].scale[0],	0.0,									0.0,									0.0,
+		0.0,									rawGameObjects.data[index].scale[1],	0.0,									0.0,
+		0.0,									0.0,									rawGameObjects.data[index].scale[2],	0.0,
+		rawGameObjects.data[index].position[0],	rawGameObjects.data[index].position[1],	rawGameObjects.data[index].position[2],	1.0
+	);
+	gameObjects.data[index].color = rawGameObjects.data[index].color;
+	gameObjects.data[index].textureId = rawGameObjects.data[index].textureId;
+	depths.data[index].objectIndex = index;
+	depths.data[index].depth = vec4(cam.view * gameObjects.data[index].model * vec4(0.0, 0.0, 0.0, 1.0)).z;
 }

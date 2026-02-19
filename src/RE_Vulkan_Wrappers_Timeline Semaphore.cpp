@@ -3,7 +3,7 @@
 
 namespace RE {
 
-	bool create_vulkan_timeline_semaphore(const VkSemaphoreCreateFlags vk_eFlags, const uint64_t u64InitialValue, VkSemaphore *const vk_phSemaphore) {
+	bool create_vulkan_timeline_semaphore(const VkSemaphoreCreateFlags vk_mFlags, const uint64_t u64InitialValue, VkSemaphore *const vk_phSemaphore) {
 		PRINT_DEBUG("Creating a Vulkan timeline semaphore starting at value ", u64InitialValue);
 		const VkSemaphoreTypeCreateInfo vk_timelineSemaphoreCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO,
@@ -13,7 +13,7 @@ namespace RE {
 		const VkSemaphoreCreateInfo vk_semaphoreCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
 			.pNext = &vk_timelineSemaphoreCreateInfo,
-			.flags = vk_eFlags
+			.flags = vk_mFlags
 		};
 		if (vkCreateSemaphore(vk_hDevice, &vk_semaphoreCreateInfo, nullptr, vk_phSemaphore) == VK_SUCCESS)
 			return true;
@@ -23,9 +23,9 @@ namespace RE {
 
 	Vulkan_TimelineSemaphore::Vulkan_TimelineSemaphore() : vk_hTimelineSemaphore(VK_NULL_HANDLE) {}
 
-	Vulkan_TimelineSemaphore::Vulkan_TimelineSemaphore(const VkSemaphoreCreateFlags vk_eFlags, const uint64_t u64InitialValue) : Vulkan_TimelineSemaphore() {
+	Vulkan_TimelineSemaphore::Vulkan_TimelineSemaphore(const VkSemaphoreCreateFlags vk_mFlags, const uint64_t u64InitialValue) : Vulkan_TimelineSemaphore() {
 		PRINT_DEBUG_CLASS("Constructing Vulkan timeline semaphore wrapper");
-		create(vk_eFlags, u64InitialValue);
+		create(vk_mFlags, u64InitialValue);
 	}
 
 	Vulkan_TimelineSemaphore::Vulkan_TimelineSemaphore(Vulkan_TimelineSemaphore &&rrCopy) : vk_hTimelineSemaphore(rrCopy.vk_hTimelineSemaphore) {
@@ -35,22 +35,22 @@ namespace RE {
 
 	Vulkan_TimelineSemaphore::~Vulkan_TimelineSemaphore() {
 		PRINT_DEBUG_CLASS("Destructing Vulkan timeline semaphore wrapper");
-		if (valid())
-			destroy();
+		destroy();
 	}
 
-	bool Vulkan_TimelineSemaphore::create(const VkSemaphoreCreateFlags vk_eFlags, const uint64_t u64InitialValue) {
+	bool Vulkan_TimelineSemaphore::create(const VkSemaphoreCreateFlags vk_mFlags, const uint64_t u64InitialValue) {
 #ifndef RE_DISABLE_PRINT_DEBUGS
 		if (valid())
-			RE_ERROR("Creating another Vulkan timeline semaphore wrapper, when the old one hasn't been destroyed yet");
+			RE_ERROR("Creating another Vulkan timeline semaphore wrapper, when the old timeline semaphore ", vk_hTimelineSemaphore, " hasn't been destroyed yet");
 #endif
 		PRINT_DEBUG_CLASS("Creating Vulkan timeline semaphore wrapper");
-		return create_vulkan_timeline_semaphore(vk_eFlags, u64InitialValue, &vk_hTimelineSemaphore);
+		return create_vulkan_timeline_semaphore(vk_mFlags, u64InitialValue, &vk_hTimelineSemaphore);
 	}
 	
 	void Vulkan_TimelineSemaphore::destroy() {
 		PRINT_DEBUG_CLASS("Destroying Vulkan timeline semaphore wrapper");
 		vkDestroySemaphore(vk_hDevice, vk_hTimelineSemaphore, nullptr);
+		vk_hTimelineSemaphore = VK_NULL_HANDLE;
 	}
 
 	bool Vulkan_TimelineSemaphore::wait_for_reaching(const uint64_t u64Value) const {

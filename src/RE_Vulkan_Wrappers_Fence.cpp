@@ -3,11 +3,11 @@
 
 namespace RE {
 
-	bool create_vulkan_fence(const VkFenceCreateFlags vk_eFlags, VkFence *const vk_phFence) {
+	bool create_vulkan_fence(const VkFenceCreateFlags vk_mFlags, VkFence *const vk_phFence) {
 		PRINT_DEBUG("Creating a Vulkan fence");
 		const VkFenceCreateInfo vk_createInfo = {
 			.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
-			.flags = vk_eFlags
+			.flags = vk_mFlags
 		};
 		if (vkCreateFence(vk_hDevice, &vk_createInfo, nullptr, vk_phFence) == VK_SUCCESS)
 			return true;
@@ -17,9 +17,9 @@ namespace RE {
 
 	Vulkan_Fence::Vulkan_Fence() : vk_hFence(VK_NULL_HANDLE) {}
 
-	Vulkan_Fence::Vulkan_Fence(const VkFenceCreateFlags vk_eFlags) : Vulkan_Fence() {
+	Vulkan_Fence::Vulkan_Fence(const VkFenceCreateFlags vk_mFlags) : Vulkan_Fence() {
 		PRINT_DEBUG_CLASS("Constructing Vulkan fence wrapper");
-		create(vk_eFlags);
+		create(vk_mFlags);
 	}
 
 	Vulkan_Fence::Vulkan_Fence(Vulkan_Fence &&rrCopy) : vk_hFence(rrCopy.vk_hFence) {
@@ -29,17 +29,16 @@ namespace RE {
 	
 	Vulkan_Fence::~Vulkan_Fence() {
 		PRINT_DEBUG_CLASS("Destructing Vulkan fence wrapper");
-		if (valid())
-			destroy();
+		destroy();
 	}
 
-	bool Vulkan_Fence::create(const VkFenceCreateFlags vk_eFlags) {
+	bool Vulkan_Fence::create(const VkFenceCreateFlags vk_mFlags) {
 #ifndef RE_DISABLE_PRINT_DEBUGS
 		if (valid())
-			RE_ERROR("Creating another Vulkan fence wrapper, when the old one hasn't been destroyed yet");
+			RE_ERROR("Creating another Vulkan fence wrapper, when the old fence ", vk_hFence, " hasn't been destroyed yet");
 #endif
 		PRINT_DEBUG_CLASS("Creating Vulkan fence wrapper");
-		return create_vulkan_fence(vk_eFlags, &vk_hFence);
+		return create_vulkan_fence(vk_mFlags, &vk_hFence);
 	}
 
 	void Vulkan_Fence::destroy() {

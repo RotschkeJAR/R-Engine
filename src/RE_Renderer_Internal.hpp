@@ -7,6 +7,11 @@
 #include "RE_Vulkan_Wrappers.hpp"
 
 #include "RE_Renderer_Descriptor Sets.hpp"
+#include "RE_Renderer_Descriptor Set Pools.hpp"
+#include "RE_Renderer_Descriptor Set Layouts.hpp"
+#include "RE_Renderer_Pipelines.hpp"
+#include "RE_Renderer_Buffers.hpp"
+#include "RE_Renderer_Camera.hpp"
 
 namespace RE {
 
@@ -32,13 +37,6 @@ namespace RE {
 	void destroy_render_image_resources();
 	bool record_cmd_blitting_render_image();
 
-	// Render pipeline
-	extern VkPipelineLayout vk_hGraphicsPipelineLayout;
-	extern VkPipeline vk_hGraphicsPipeline2D, vk_hGraphicsPipeline3D;
-	bool create_render_pipelines();
-	bool recreate_render_pipelines();
-	void destroy_render_pipelines();
-
 	// Render task
 #define RENDER_TASK_SUBINDEX_BUFFER_TRANSFER 0
 #define RENDER_TASK_SUBINDEX_PROCESSING 1
@@ -49,27 +47,6 @@ namespace RE {
 	extern uint8_t u8CurrentFrameInFlightIndex;
 	bool create_render_tasks();
 	void destroy_render_tasks();
-
-	// Buffers
-	extern size_t gameObjectsToRenderCount;
-	bool create_renderer_buffers();
-	void destroy_renderer_buffers();
-	bool record_cmd_transfer_buffer();
-
-	// Uniforms
-#define RE_VK_UNIFORM_BUFFER_COUNT_PER_FRAME 1
-#define RE_VK_CAMERA_UNIFORM_BUFFER_INDEX 0
-	extern VkBuffer vk_aahUniformBuffers[RE_VK_UNIFORM_BUFFER_COUNT_PER_FRAME][RE_VK_FRAMES_IN_FLIGHT];
-	extern VulkanMemory uniformBuffersMemory;
-	extern VkDeviceSize vk_aaUniformByteOffsets[RE_VK_UNIFORM_BUFFER_COUNT_PER_FRAME][RE_VK_FRAMES_IN_FLIGHT];
-	extern float *apafCameraMatrices[RE_VK_FRAMES_IN_FLIGHT];
-
-	// Storage
-	extern Vulkan_Buffer aSortableDepthBuffers[RE_VK_FRAMES_IN_FLIGHT], aGameObjectBuffers[RE_VK_FRAMES_IN_FLIGHT];
-
-	// Staging
-	extern Vulkan_Buffer aRawGameObjectBuffers[RE_VK_FRAMES_IN_FLIGHT];
-	extern VkDrawIndexedIndirectCommand *vk_apGameObjectBufferDrawCommands[RE_VK_FRAMES_IN_FLIGHT];
 
 	// MSAA
 	extern Vulkan_Image singleSampledWorldRenderImages;
@@ -86,23 +63,11 @@ namespace RE {
 	void destroy_depth_stencil_images();
 	bool are_depth_stencil_images_separated(VkFormat vk_eFormat);
 
-	// Processing
-#define RE_VK_OBJECT_COUNT_UNIFORM_BUFFER_SIZE 1
-#define RE_VK_OBJECT_COUNT_UNIFORM_BUFFER_SIZE_BYTES (RE_VK_OBJECT_COUNT_UNIFORM_BUFFER_SIZE * sizeof(uint32_t))
-	extern VkDescriptorSetLayout vk_hProcessingDescLayout;
-	extern VkDescriptorSet vk_ahProcessingDescSets[RE_VK_FRAMES_IN_FLIGHT];
-
 	// Render Pass
 	bool create_renderpass();
 	void destroy_renderpass();
 	void record_cmd_begin_renderpass(VkCommandBuffer vk_hCommandBuffer);
 	void record_cmd_end_renderpass(VkCommandBuffer vk_hCommandBuffer);
-
-	// Ordering
-	extern Vulkan_Buffer aSortableDepthBuffers[RE_VK_FRAMES_IN_FLIGHT];
-	bool create_processing_pipelines();
-	void destroy_processing_pipelines();
-	void order_rendering(VkCommandBuffer vk_hCommandBuffer);
 
 }
 

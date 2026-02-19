@@ -3,7 +3,7 @@
 
 namespace RE {
 	
-	bool create_vulkan_image_view(const VkImageViewCreateFlags vk_eFlags, 
+	bool create_vulkan_image_view(const VkImageViewCreateFlags vk_mFlags, 
 			const VkImage vk_hImage, 
 			const VkImageViewType vk_eType, 
 			const VkFormat vk_eFormat, 
@@ -13,7 +13,7 @@ namespace RE {
 		PRINT_DEBUG("Creating a Vulkan image view");
 		const VkImageViewCreateInfo vk_createInfo = {
 			.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-			.flags = vk_eFlags,
+			.flags = vk_mFlags,
 			.image = vk_hImage,
 			.viewType = vk_eType,
 			.format = vk_eFormat,
@@ -28,14 +28,14 @@ namespace RE {
 
 	Vulkan_ImageView::Vulkan_ImageView() : vk_hImageView(VK_NULL_HANDLE) {}
 
-	Vulkan_ImageView::Vulkan_ImageView(const VkImageViewCreateFlags vk_eFlags, 
+	Vulkan_ImageView::Vulkan_ImageView(const VkImageViewCreateFlags vk_mFlags, 
 			const VkImage vk_hImage, 
 			const VkImageViewType vk_eType, 
 			const VkFormat vk_eFormat, 
 			const VkComponentMapping &vk_rComponentMapping, 
 			const VkImageSubresourceRange &vk_rSubresourceRange) : Vulkan_ImageView() {
 		PRINT_DEBUG_CLASS("Constructing Vulkan image view wrapper");
-		create(vk_eFlags, vk_hImage, vk_eType, vk_eFormat, vk_rComponentMapping, vk_rSubresourceRange);
+		create(vk_mFlags, vk_hImage, vk_eType, vk_eFormat, vk_rComponentMapping, vk_rSubresourceRange);
 	}
 
 	Vulkan_ImageView::Vulkan_ImageView(Vulkan_ImageView &&rrCopy) : vk_hImageView(rrCopy.vk_hImageView) {
@@ -45,11 +45,10 @@ namespace RE {
 
 	Vulkan_ImageView::~Vulkan_ImageView() {
 		PRINT_DEBUG_CLASS("Destructing Vulkan image view");
-		if (valid())
-			destroy();
+		destroy();
 	}
 
-	bool Vulkan_ImageView::create(const VkImageViewCreateFlags vk_eFlags, 
+	bool Vulkan_ImageView::create(const VkImageViewCreateFlags vk_mFlags, 
 			const VkImage vk_hImage, 
 			const VkImageViewType vk_eType, 
 			const VkFormat vk_eFormat, 
@@ -57,10 +56,10 @@ namespace RE {
 			const VkImageSubresourceRange &vk_rSubresourceRange) {
 #ifndef RE_DISABLE_PRINT_DEBUGS
 		if (valid())
-			RE_ERROR("Creating another Vulkan image view wrapper, when the old one hasn't been destroyed yet");
+			RE_ERROR("Creating another Vulkan image view wrapper, when the old image view ", vk_hImageView, " hasn't been destroyed yet");
 #endif
 		PRINT_DEBUG_CLASS("Creating Vulkan image view wrapper");
-		return create_vulkan_image_view(vk_eFlags, vk_hImage, vk_eType, vk_eFormat, vk_rComponentMapping, vk_rSubresourceRange, &vk_hImageView);
+		return create_vulkan_image_view(vk_mFlags, vk_hImage, vk_eType, vk_eFormat, vk_rComponentMapping, vk_rSubresourceRange, &vk_hImageView);
 	}
 	
 	void Vulkan_ImageView::destroy() {

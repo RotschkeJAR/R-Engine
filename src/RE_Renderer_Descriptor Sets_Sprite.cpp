@@ -6,7 +6,7 @@ namespace RE {
 	
 	bool does_gpu_support_textures(const VkPhysicalDevice vk_hPhysicalDevice, const VkPhysicalDeviceLimits &vk_rPhysicalDeviceLimits, std::queue<std::string> &rMissingFeatures, std::queue<std::string> &rDiscrepantFeatures) {
 		PRINT_DEBUG("Checking if physical Vulkan device ", vk_hPhysicalDevice, " supports textures");
-		constexpr VkFormatFeatureFlags vk_eRequiredTextureFormatFeatures = VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT | VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT | VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_BLIT_DST_BIT;
+		constexpr VkFormatFeatureFlags vk_mRequiredTextureFormatFeatures = VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT | VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT | VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_BLIT_DST_BIT;
 		VkFormatProperties2 vk_textureFormatFeatures;
 		vk_textureFormatFeatures.sType = VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2;
 		vk_textureFormatFeatures.pNext = nullptr;
@@ -34,7 +34,7 @@ namespace RE {
 				continue;
 			PRINT_DEBUG("Querying properties for Vulkan texture format ", std::hex, vk_eTextureFormat);
 			vkGetPhysicalDeviceFormatProperties2(vk_hPhysicalDevice, vk_eTextureFormat, &vk_textureFormatFeatures);
-			if ((vk_textureFormatFeatures.formatProperties.optimalTilingFeatures & vk_eRequiredTextureFormatFeatures) == vk_eRequiredTextureFormatFeatures) {
+			if ((vk_textureFormatFeatures.formatProperties.optimalTilingFeatures & vk_mRequiredTextureFormatFeatures) == vk_mRequiredTextureFormatFeatures) {
 				vk_imageFormat.format = vk_eTextureFormat;
 				PRINT_DEBUG("Querying properties of Vulkan images with the format");
 				switch (vkGetPhysicalDeviceImageFormatProperties2(vk_hPhysicalDevice, &vk_imageFormat, &vk_imageFormatProperties)) {
@@ -55,8 +55,7 @@ namespace RE {
 								a4bTextureFormatsSupported[3] = true;
 								break;
 							default:
-								RE_FATAL_ERROR("Unknown Vulkan format used to determine GPU's suitability for textures");
-								std::abort();
+								RE_ABORT("Unknown Vulkan format used to determine GPU's suitability for textures");
 						}
 						break;
 					case VK_ERROR_FORMAT_NOT_SUPPORTED:
@@ -69,7 +68,7 @@ namespace RE {
 		}
 
 		if (!a4bTextureFormatsSupported[0])
-			rMissingFeatures.emplace("The required format features for textures or texture creation with RGBA- and BGRA-channels aren't supported, which is mandatory for common GPUs");
+			rMissingFeatures.emplace("The required format features for textures or texture creation with RGBA- and BGRA-channels aren't supported, which is mandatory for common graphics");
 		if (!a4bTextureFormatsSupported[1])
 			rDiscrepantFeatures.emplace("The required format features for textures or texture creation with RGB- and BGR-channels aren't supported");
 		if (!a4bTextureFormatsSupported[2])
@@ -84,19 +83,17 @@ namespace RE {
 	}
 
 	int32_t rate_gpu_texture_capacity(const VkPhysicalDeviceLimits &vk_rPhysicalDeviceLimits) {
-		const int32_t i32Score = (
-				static_cast<int32_t>(
-						std::clamp<uint32_t>(
-										std::min(vk_rPhysicalDeviceLimits.maxMemoryAllocationCount, 
-										std::min(vk_rPhysicalDeviceLimits.maxSamplerAllocationCount, 
-										std::min(vk_rPhysicalDeviceLimits.maxPerStageDescriptorSamplers, 
-										std::min(vk_rPhysicalDeviceLimits.maxPerStageDescriptorSampledImages, 
-										std::min(vk_rPhysicalDeviceLimits.maxDescriptorSetSamplers, vk_rPhysicalDeviceLimits.maxDescriptorSetSampledImages))))), 
-								16, 
-								RE_VK_MAX_SAMPLED_IMAGES
-						) - 16
-				) * 1500 / RE_VK_MAX_SAMPLED_IMAGES - 499)
-				 + (static_cast<int32_t>(std::clamp<uint32_t>(vk_rPhysicalDeviceLimits.maxImageDimension2D, 0, 8192)) * 1500 / 8192 - 499);
+		int32_t i32Score = static_cast<int32_t>(
+				std::clamp<uint32_t>(
+						std::min(vk_rPhysicalDeviceLimits.maxMemoryAllocationCount, 
+						std::min(vk_rPhysicalDeviceLimits.maxSamplerAllocationCount, 
+						std::min(vk_rPhysicalDeviceLimits.maxPerStageDescriptorSamplers, 
+						std::min(vk_rPhysicalDeviceLimits.maxPerStageDescriptorSampledImages, 
+						std::min(vk_rPhysicalDeviceLimits.maxDescriptorSetSamplers, vk_rPhysicalDeviceLimits.maxDescriptorSetSampledImages))))), 
+					16, 
+					RE_VK_MAX_SAMPLED_IMAGES
+				) - 16) * 1500 / RE_VK_MAX_SAMPLED_IMAGES - 499;
+		i32Score += static_cast<int32_t>(std::clamp<uint32_t>(vk_rPhysicalDeviceLimits.maxImageDimension2D, 0, 8192)) * 1500 / 8192 - 499;
 		PRINT_DEBUG("Rated GPU's texture capacity with score ", i32Score);
 		return i32Score;
 	}
@@ -105,7 +102,7 @@ namespace RE {
 		PRINT_DEBUG("Allocating Vulkan descriptor set for using textures");
 		const VkDescriptorSetAllocateInfo vk_textureDescSetAllocInfo = {
 			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-			.descriptorPool = vk_hPermanentDescPool,
+			.descriptorPool = vk_hPersistentDescPool,
 			.descriptorSetCount = 1,
 			.pSetLayouts = &vk_hTextureDescSetLayout
 		};

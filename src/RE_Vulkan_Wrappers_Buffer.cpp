@@ -3,22 +3,22 @@
 
 namespace RE {
 
-	bool create_vulkan_buffer(const VkBufferCreateFlags vk_eFlags, 
+	bool create_vulkan_buffer(const VkBufferCreateFlags vk_mFlags, 
 			const VkDeviceSize vk_size, 
-			const VkBufferUsageFlags vk_eUsages, 
+			const VkBufferUsageFlags vk_mUsages, 
 			const uint32_t u32QueueFamilyCount, 
 			const uint32_t *const pau32QueueFamilies, 
 			const VulkanMemoryType eMemoryType, 
-			const VkMemoryPropertyFlags vk_eMemoryPropertyFlags, 
+			const VkMemoryPropertyFlags vk_mMemoryPropertyFlags, 
 			VkBuffer *const vk_phBuffer, 
 			VulkanMemory *const pMemory) {
 		PRINT_DEBUG("Creating a Vulkan buffer");
 		VkBufferCreateInfo vk_createInfo;
 		vk_createInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 		vk_createInfo.pNext = nullptr;
-		vk_createInfo.flags = vk_eFlags;
+		vk_createInfo.flags = vk_mFlags;
 		vk_createInfo.size = vk_size;
-		vk_createInfo.usage = vk_eUsages;
+		vk_createInfo.usage = vk_mUsages;
 		if (u32QueueFamilyCount == 1)
 			vk_createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		else {
@@ -30,7 +30,7 @@ namespace RE {
 			PRINT_DEBUG("Fetching memory requirements for Vulkan buffer and allocating memory for it");
 			VkMemoryRequirements vk_memoryRequirements;
 			vkGetBufferMemoryRequirements(vk_hDevice, *vk_phBuffer, &vk_memoryRequirements);
-			if (pMemory->alloc(vk_memoryRequirements.size, eMemoryType, vk_eMemoryPropertyFlags, vk_memoryRequirements.memoryTypeBits)) {
+			if (pMemory->alloc(vk_memoryRequirements.size, eMemoryType, vk_mMemoryPropertyFlags, vk_memoryRequirements.memoryTypeBits)) {
 				PRINT_DEBUG("Binding memory to Vulkan buffer");
 				if (vkBindBufferMemory(vk_hDevice, *vk_phBuffer, pMemory->get(), 0) == VK_SUCCESS)
 					return true;
@@ -49,21 +49,21 @@ namespace RE {
 
 	Vulkan_Buffer::Vulkan_Buffer() : vk_hBuffer(VK_NULL_HANDLE) {}
 	
-	Vulkan_Buffer::Vulkan_Buffer(const VkBufferCreateFlags vk_eFlags, 
+	Vulkan_Buffer::Vulkan_Buffer(const VkBufferCreateFlags vk_mFlags, 
 			const VkDeviceSize vk_size, 
-			const VkBufferUsageFlags vk_eUsages, 
+			const VkBufferUsageFlags vk_mUsages, 
 			const uint32_t u32QueueFamilyCount, 
 			const uint32_t *const pau32QueueFamilies, 
 			const VulkanMemoryType eMemoryType, 
-			const VkMemoryPropertyFlags vk_eMemoryPropertyFlags) : Vulkan_Buffer() {
+			const VkMemoryPropertyFlags vk_mMemoryPropertyFlags) : Vulkan_Buffer() {
 		PRINT_DEBUG_CLASS("Constructing Vulkan buffer wrapper");
-		create(vk_eFlags, 
+		create(vk_mFlags, 
 				vk_size, 
-				vk_eUsages, 
+				vk_mUsages, 
 				u32QueueFamilyCount, 
 				pau32QueueFamilies, 
 				eMemoryType, 
-				vk_eMemoryPropertyFlags);
+				vk_mMemoryPropertyFlags);
 	}
 
 	Vulkan_Buffer::Vulkan_Buffer(Vulkan_Buffer &&rrCopy) : vk_hBuffer(rrCopy.vk_hBuffer), memory(std::move(rrCopy.memory)) {
@@ -73,29 +73,28 @@ namespace RE {
 	
 	Vulkan_Buffer::~Vulkan_Buffer() {
 		PRINT_DEBUG_CLASS("Destructing Vulkan buffer wrapper");
-		if (valid())
-			destroy();
+		destroy();
 	}
 
-	bool Vulkan_Buffer::create(const VkBufferCreateFlags vk_eFlags, 
+	bool Vulkan_Buffer::create(const VkBufferCreateFlags vk_mFlags, 
 			const VkDeviceSize vk_size, 
-			const VkBufferUsageFlags vk_eUsages, 
+			const VkBufferUsageFlags vk_mUsages, 
 			const uint32_t u32QueueFamilyCount, 
 			const uint32_t *const pau32QueueFamilies, 
 			const VulkanMemoryType eMemoryType, 
-			const VkMemoryPropertyFlags vk_eMemoryPropertyFlags) {
+			const VkMemoryPropertyFlags vk_mMemoryPropertyFlags) {
 #ifndef RE_DISABLE_PRINT_DEBUGS
 		if (valid())
-			RE_ERROR("Creating another Vulkan buffer wrapper, when the old one hasn't been destroyed yet");
+			RE_ERROR("Creating another Vulkan buffer wrapper, when the old buffer ", vk_hBuffer, " hasn't been destroyed yet");
 #endif
 		PRINT_DEBUG_CLASS("Creating Vulkan buffer wrapper");
-		return create_vulkan_buffer(vk_eFlags, 
+		return create_vulkan_buffer(vk_mFlags, 
 				vk_size, 
-				vk_eUsages, 
+				vk_mUsages, 
 				u32QueueFamilyCount, 
 				pau32QueueFamilies, 
 				eMemoryType, 
-				vk_eMemoryPropertyFlags, 
+				vk_mMemoryPropertyFlags, 
 				&vk_hBuffer, 
 				&memory);
 	}

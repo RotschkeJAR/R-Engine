@@ -94,7 +94,7 @@ namespace RE {
 		if (bRunning) {
 			PRINT_DEBUG("Recreating render images and render pipeline to adjust to new MSAA mode");
 			WAIT_FOR_IDLE_VULKAN_DEVICE();
-			recreate_render_pipelines();
+			recreate_graphics_pipelines();
 			destroy_render_image_resources();
 			create_render_image_resources();
 		}

@@ -2,11 +2,11 @@
 
 namespace RE {
 	
-	bool create_vulkan_semaphore(VkSemaphoreCreateFlags vk_eFlags, VkSemaphore *vk_phSemaphore) {
+	bool create_vulkan_semaphore(const VkSemaphoreCreateFlags vk_mFlags, VkSemaphore *const vk_phSemaphore) {
 		PRINT_DEBUG("Creating a Vulkan semaphore");
 		const VkSemaphoreCreateInfo vk_createInfo = {
 			.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
-			.flags = vk_eFlags
+			.flags = vk_mFlags
 		};
 		if (vkCreateSemaphore(vk_hDevice, &vk_createInfo, nullptr, vk_phSemaphore) == VK_SUCCESS)
 			return true;
@@ -16,9 +16,9 @@ namespace RE {
 
 	Vulkan_Semaphore::Vulkan_Semaphore() : vk_hSemaphore(VK_NULL_HANDLE) {}
 
-	Vulkan_Semaphore::Vulkan_Semaphore(VkSemaphoreCreateFlags vk_eFlags) : Vulkan_Semaphore() {
+	Vulkan_Semaphore::Vulkan_Semaphore(const VkSemaphoreCreateFlags vk_mFlags) : Vulkan_Semaphore() {
 		PRINT_DEBUG_CLASS("Constructing Vulkan semaphore wrapper");
-		create(vk_eFlags);
+		create(vk_mFlags);
 	}
 
 	Vulkan_Semaphore::Vulkan_Semaphore(Vulkan_Semaphore &&rrCopy) : vk_hSemaphore(rrCopy.vk_hSemaphore) {
@@ -28,17 +28,16 @@ namespace RE {
 
 	Vulkan_Semaphore::~Vulkan_Semaphore() {
 		PRINT_DEBUG_CLASS("Deconstructing Vulkan semaphore wrapper");
-		if (valid())
-			destroy();
+		destroy();
 	}
 
-	bool Vulkan_Semaphore::create(VkSemaphoreCreateFlags vk_eFlags) {
+	bool Vulkan_Semaphore::create(const VkSemaphoreCreateFlags vk_mFlags) {
 #ifndef RE_DISABLE_PRINT_DEBUGS
 		if (valid())
-			RE_ERROR("Creating another Vulkan semaphore wrapper, when the old one hasn't been destroyed yet");
+			RE_ERROR("Creating another Vulkan semaphore wrapper, when the old semaphore ", vk_hSemaphore, " hasn't been destroyed yet");
 #endif
 		PRINT_DEBUG_CLASS("Creating Vulkan semaphore wrapper");
-		return create_vulkan_semaphore(vk_eFlags, &vk_hSemaphore);
+		return create_vulkan_semaphore(vk_mFlags, &vk_hSemaphore);
 	}
 	
 	void Vulkan_Semaphore::destroy() {

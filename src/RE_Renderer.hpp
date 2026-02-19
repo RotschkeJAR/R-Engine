@@ -6,8 +6,10 @@
 
 namespace RE {
 
-	struct GameObjectInstanceData final {
-		float a16fModelMatrix[16];
+	struct alignas(16) GameObjectInstanceData final {
+		float a4fPosition[4];
+		float a4fRotation[4];
+		float a4fScale[4];
 		float a4fColor[4];
 		uint32_t u32TextureId;
 	};
@@ -24,16 +26,12 @@ namespace RE {
 	bool swapchain_created_renderer();
 	void swapchain_destroyed_renderer();
 	bool wait_for_rendering_finished();
-	void attach_camera(Camera *pCamera);
 
 	// Render Images
 	void get_queues_for_swapchain_images(std::vector<uint32_t> &rRenderTaskQueueIndices);
 
 	// Render buffer
 	extern GameObjectInstanceData *paRenderBufferInstanceData;
-
-	// Render pipelines
-	bool does_gpu_support_vertex_buffers(VkPhysicalDevice vk_hPhysicalDevice, std::queue<std::string> &rMissingFeatures);
 
 	// Depth-stencil buffers
 	extern std::vector<VkFormat> availableDepthStencilFormats;

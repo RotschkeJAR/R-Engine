@@ -103,16 +103,18 @@ namespace RE {
 			RE_FATAL_ERROR("Failed to get the Vulkan version on this computer. It either failed loading the function or its version is 1.0. The least version required is ", VK_API_VERSION_MAJOR(RE_VK_API_VERSION), ".", VK_API_VERSION_MINOR(RE_VK_API_VERSION));
 			return false;
 		}
-		PRINT_DEBUG("Querying latest Vulkan version");
-		uint32_t u32VulkanVersion;
-		if (pfn_vkEnumerateInstanceVersion(&u32VulkanVersion) != VK_SUCCESS) {
-			RE_FATAL_ERROR("Failed to get the Vulkan version on this computer");
-			return false;
-		}
-		const uint32_t u32VulkanVersionMajor = VK_API_VERSION_MAJOR(u32VulkanVersion), u32VulkanVersionMinor = VK_API_VERSION_MINOR(u32VulkanVersion);
-		if (u32VulkanVersionMajor < 1 || (u32VulkanVersionMajor == 1 && u32VulkanVersionMinor < 3)) {
-			RE_FATAL_ERROR("The minimum required Vulkan version ", VK_API_VERSION_MAJOR(RE_VK_API_VERSION), ".", VK_API_VERSION_MINOR(RE_VK_API_VERSION), " is not supported on this computer. This computer has Vulkan ", u32VulkanVersionMajor, ".", u32VulkanVersionMinor, " installed");
-			return false;
+
+		{ // Checking version of Vulkan
+			PRINT_DEBUG("Querying latest Vulkan version");
+			uint32_t u32VulkanVersion;
+			if (pfn_vkEnumerateInstanceVersion(&u32VulkanVersion) != VK_SUCCESS) {
+				RE_FATAL_ERROR("Failed to get the Vulkan version on this computer");
+				return false;
+			}
+			if (IS_VULKAN_VERSION_SUPPORTED(u32VulkanVersion)) {
+				RE_FATAL_ERROR("The minimum required Vulkan version ", VK_API_VERSION_MAJOR(RE_VK_API_VERSION), ".", VK_API_VERSION_MINOR(RE_VK_API_VERSION), " is not supported on this computer. This computer has Vulkan ", VK_API_VERSION_MAJOR(u32VulkanVersion), ".", VK_API_VERSION_MINOR(u32VulkanVersion), " installed");
+				return false;
+			}
 		}
 
 		PRINT_DEBUG("Loading Vulkan functions \"vkCreateInstance\", \"vkEnumerateInstanceExtensionProperties\", \"vkEnumerateInstanceLayerProperties\"");
@@ -161,9 +163,9 @@ namespace RE {
 
 		PRINT_DEBUG("Querying supported Vulkan instance layers");
 		uint32_t u32AvailableLayersCount = 0;
-		vkEnumerateInstanceLayerProperties(&u32AvailableLayersCount, nullptr);
+		pfn_vkEnumerateInstanceLayerProperties(&u32AvailableLayersCount, nullptr);
 		std::vector<VkLayerProperties> availableLayers(u32AvailableLayersCount);
-		vkEnumerateInstanceLayerProperties(&u32AvailableLayersCount, availableLayers.data());
+		pfn_vkEnumerateInstanceLayerProperties(&u32AvailableLayersCount, availableLayers.data());
 		PRINT_DEBUG("Checking if all necessary Vulkan instance layers are supported");
 		constexpr uint32_t u32RequiredVulkanLayerCount = 1;
 		const std::array<const char*, u32RequiredVulkanLayerCount> apacRequiredLayers = {{VK_KHR_VALIDATION_LAYER_NAME}};
@@ -213,8 +215,7 @@ namespace RE {
 			.ppEnabledExtensionNames = apacRequiredExtensions.data()
 		};
 		PRINT_DEBUG("Creating Vulkan instance");
-		const VkResult vk_eInstanceCreationResult = pfn_vkCreateInstance(&vk_instanceCreateInfo, nullptr, &vk_hInstance);
-		switch (vk_eInstanceCreationResult) {
+		switch (pfn_vkCreateInstance(&vk_instanceCreateInfo, nullptr, &vk_hInstance)) {
 			case VK_SUCCESS:
 				return true;
 			case VK_ERROR_INCOMPATIBLE_DRIVER:
@@ -461,10 +462,10 @@ namespace RE {
 #endif /* RE_OS_WINDOWS, RE_OS_LINUX */
 	}
 
-	static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(const VkDebugUtilsMessageSeverityFlagBitsEXT vk_eSeverityFlagBits, const VkDebugUtilsMessageTypeFlagsEXT vk_eMsgTypeBits, const VkDebugUtilsMessengerCallbackDataEXT *const vk_pCallbackData, void *const vk_pUserData) {
+	static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(const VkDebugUtilsMessageSeverityFlagBitsEXT vk_mSeverityFlag, const VkDebugUtilsMessageTypeFlagsEXT vk_mMsgType, const VkDebugUtilsMessengerCallbackDataEXT *const vk_pCallbackData, void *const vk_pUserData) {
 		PRINT_DEBUG("Vulkan called debug message-callback");
 		TerminalColor eConsoleColor = RE_TERMINAL_COLOR_WHITE;
-		switch (vk_eSeverityFlagBits) {
+		switch (vk_mSeverityFlag) {
 			case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
 				eConsoleColor = RE_TERMINAL_COLOR_BRIGHT_RED;
 				u32VulkanErrorCount++;

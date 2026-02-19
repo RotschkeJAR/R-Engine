@@ -42,8 +42,7 @@ namespace RE {
 
 	Vulkan_BufferView::~Vulkan_BufferView() {
 		PRINT_DEBUG_CLASS("Destructing Vulkan buffer view wrapper");
-		if (valid())
-			destroy();
+		destroy();
 	}
 
 	bool Vulkan_BufferView::create(const VkBufferViewCreateFlags vk_eFlags, 
@@ -53,7 +52,7 @@ namespace RE {
 			const VkDeviceSize vk_range) {
 #ifndef RE_DISABLE_PRINT_DEBUGS
 		if (valid())
-			RE_ERROR("Creating another Vulkan buffer view wrapper, when the old one hasn't been destroyed yet");
+			RE_ERROR("Creating another Vulkan buffer view wrapper, when the old Vulkan buffer view ", vk_hBufferView, " hasn't been destroyed yet");
 #endif
 		PRINT_DEBUG_CLASS("Creating Vulkan buffer view wrapper");
 		return create_vulkan_buffer_view(vk_eFlags, vk_hBuffer, vk_eFormat, vk_offset, vk_range, &vk_hBufferView);

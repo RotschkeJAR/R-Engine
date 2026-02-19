@@ -2,37 +2,36 @@
 
 namespace RE {
 	
-	VulkanMemory::VulkanMemory() : vk_hMemory(VK_NULL_HANDLE) {}
+	VulkanMemory::VulkanMemory() : vk_hMemory(VK_NULL_HANDLE), vk_size(0) {}
 
-	VulkanMemory::VulkanMemory(const VkDeviceSize vk_size, const VulkanMemoryType eType, const VkMemoryPropertyFlags vk_eProperties, const uint32_t u32DesiredMemoryTypes) {
-		this->alloc(vk_size, eType, vk_eProperties, u32DesiredMemoryTypes);
+	VulkanMemory::VulkanMemory(const VkDeviceSize vk_size, const VulkanMemoryType eType, const VkMemoryPropertyFlags vk_mProperties, const uint32_t m32DesiredMemoryTypes) : vk_hMemory(VK_NULL_HANDLE), vk_size(0) {
+		this->alloc(vk_size, eType, vk_mProperties, m32DesiredMemoryTypes);
 	}
 
-	VulkanMemory::VulkanMemory(const VkDeviceSize vk_size, const uint8_t u8MemoryTypeIndex) {
+	VulkanMemory::VulkanMemory(const VkDeviceSize vk_size, const uint8_t u8MemoryTypeIndex) : vk_hMemory(VK_NULL_HANDLE), vk_size(0) {
 		this->alloc(vk_size, u8MemoryTypeIndex);
 	}
 
-	VulkanMemory::VulkanMemory(VulkanMemory &&rrMemory) noexcept : vk_hMemory(rrMemory.vk_hMemory), vk_size(rrMemory.vk_size), u8MemoryTypeIndex(rrMemory.u8MemoryTypeIndex), bCoherent(rrMemory.bCoherent) {
+	VulkanMemory::VulkanMemory(VulkanMemory &&rrMemory) : vk_hMemory(rrMemory.vk_hMemory), vk_size(rrMemory.vk_size), u8MemoryTypeIndex(rrMemory.u8MemoryTypeIndex), bCoherent(rrMemory.bCoherent) {
 		PRINT_DEBUG_CLASS("Moving ownership of Vulkan memory to recently constructed");
 		rrMemory.vk_hMemory = VK_NULL_HANDLE;
+		rrMemory.vk_size = 0;
 	}
 
-	VulkanMemory::~VulkanMemory() noexcept {
-		if (!valid())
-			return;
+	VulkanMemory::~VulkanMemory() {
 		this->free();
 	}
 
-	bool VulkanMemory::alloc(const VkDeviceSize vk_size, const VulkanMemoryType eType, VkMemoryPropertyFlags vk_eProperties, const uint32_t u32DesiredMemoryTypes) {
+	bool VulkanMemory::alloc(const VkDeviceSize vk_size, const VulkanMemoryType eType, VkMemoryPropertyFlags vk_mProperties, const uint32_t m32DesiredMemoryTypes) {
 		PRINT_DEBUG_CLASS("Filtering redundant Vulkan memory properties out");
-		if ((vk_eProperties & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) && !does_memory_type_exist(VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT))
-			vk_eProperties &= ~VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
-		vk_eProperties &= ~(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+		if ((vk_mProperties & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) && !does_memory_type_exist(VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT))
+			vk_mProperties &= ~VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
+		vk_mProperties &= ~(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 		std::optional<uint8_t> memoryTypeSelected;
 		for (uint8_t u8MemoryTypeIndex = 0; u8MemoryTypeIndex < vulkanMemoryTypes.size(); u8MemoryTypeIndex++) {
 			PRINT_DEBUG_CLASS("Checking if memory type at index ", u8MemoryTypeIndex, " supports required properties");
 			const VkMemoryType &vk_rType = vulkanMemoryTypes[u8MemoryTypeIndex];
-			if (!are_bits_true<uint32_t>(u32DesiredMemoryTypes, u8MemoryTypeIndex) || std::get<VkDeviceSize>(vulkanMemoryHeaps[vk_rType.heapIndex]) < vk_size)
+			if (!are_bits_true<uint32_t>(m32DesiredMemoryTypes, u8MemoryTypeIndex) || std::get<VkDeviceSize>(vulkanMemoryHeaps[vk_rType.heapIndex]) < vk_size)
 				continue;
 			if (vk_physicalDeviceProperties.deviceType != VK_PHYSICAL_DEVICE_TYPE_CPU) {
 				switch (eType) {
@@ -48,16 +47,16 @@ namespace RE {
 						break;
 					case RE_VK_SHARED_RAM:
 						PRINT_DEBUG_CLASS("Checking if memory type is shared between CPU and GPU");
-						constexpr VkMemoryPropertyFlags vk_eRequiredMemoryProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-						if ((vk_rType.propertyFlags & vk_eRequiredMemoryProperties) != vk_eRequiredMemoryProperties)
+						constexpr VkMemoryPropertyFlags vk_mRequiredMemoryProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+						if ((vk_rType.propertyFlags & vk_mRequiredMemoryProperties) != vk_mRequiredMemoryProperties)
 							continue;
 						break;
 				}
 			}
-			if (((vk_rType.propertyFlags ^ vk_eProperties) & vk_eProperties) == 0) {
+			if (((vk_rType.propertyFlags ^ vk_mProperties) & vk_mProperties) == 0) {
 				PRINT_DEBUG_CLASS("Memory type at index ", u8MemoryTypeIndex, " supports mandatory properties");
 				memoryTypeSelected = u8MemoryTypeIndex;
-				if (((vk_eProperties ^ vk_rType.propertyFlags) & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) == 0) {
+				if (((vk_mProperties ^ vk_rType.propertyFlags) & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) == 0) {
 					PRINT_DEBUG_CLASS("Memory type supports queried host coherence. Definite memory type found");
 					break;
 				}
@@ -71,7 +70,7 @@ namespace RE {
 
 	bool VulkanMemory::alloc(const VkDeviceSize vk_size, const uint8_t u8MemoryTypeIndex) {
 		if (valid())
-			RE_ERROR("New Vulkan memory has been allocated, even though the old one hasn't been freed yet");
+			RE_ERROR("New memory is being allocated, even though the old Vulkan memory ", vk_hMemory, " occupying ", vk_size, " bytes hasn't been freed yet");
 		PRINT_DEBUG_CLASS("Allocating Vulkan memory at type index ", u8MemoryTypeIndex);
 		this->vk_size = vk_size;
 		this->u8MemoryTypeIndex = u8MemoryTypeIndex;
@@ -89,7 +88,6 @@ namespace RE {
 			case VK_ERROR_OUT_OF_HOST_MEMORY:
 			case VK_ERROR_OUT_OF_DEVICE_MEMORY:
 				RE_ABORT("Ran out of Vulkan memory");
-				break;
 			default:
 				RE_FATAL_ERROR("Failed to allocate Vulkan memory (success code ", std::hex, vk_allocResult, ")");
 				break;
@@ -97,10 +95,11 @@ namespace RE {
 		return false;
 	}
 
-	void VulkanMemory::free() noexcept {
+	void VulkanMemory::free() {
 		PRINT_DEBUG_CLASS("Freeing Vulkan memory");
 		vkFreeMemory(vk_hDevice, vk_hMemory, nullptr);
 		vk_hMemory = VK_NULL_HANDLE;
+		vk_size = 0;
 		std::get<VkDeviceSize>(vulkanMemoryHeaps[vulkanMemoryTypes[u8MemoryTypeIndex].heapIndex]) += vk_size;
 	}
 
@@ -115,7 +114,7 @@ namespace RE {
 	}
 
 	bool VulkanMemory::valid() const {
-		return vk_hMemory != VK_NULL_HANDLE;
+		return vk_hMemory != VK_NULL_HANDLE && vk_size > 0;
 	}
 
 	VkDeviceMemory VulkanMemory::get() const {
@@ -134,13 +133,14 @@ namespace RE {
 		return bCoherent;
 	}
 
-	void VulkanMemory::operator =(VulkanMemory &&rrMemory) noexcept {
+	void VulkanMemory::operator =(VulkanMemory &&rrMemory) {
 		if (valid())
-			RE_ERROR("Memory has been moved into this instance, even though the old one hasn't been freed yet");
-		PRINT_DEBUG_CLASS("Moving ownership of Vulkan memory to this instance");
+			RE_ERROR("Memory has been moved into instance ", this, ", even though the Vulkan memory ", vk_hMemory, " occupying ", vk_size, " bytes hasn't been freed yet");
+		PRINT_DEBUG_CLASS("Moving ownership of Vulkan memory from ", std::addressof(rrMemory), " to this instance ", this);
 		vk_hMemory = rrMemory.vk_hMemory;
 		rrMemory.vk_hMemory = VK_NULL_HANDLE;
 		vk_size = rrMemory.vk_size;
+		rrMemory.vk_size = 0;
 		u8MemoryTypeIndex = rrMemory.u8MemoryTypeIndex;
 		bCoherent = rrMemory.bCoherent;
 	}

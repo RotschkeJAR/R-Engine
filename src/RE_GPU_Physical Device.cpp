@@ -6,10 +6,10 @@ namespace RE {
 	VkPhysicalDevice vk_hPhysicalDeviceSelected = VK_NULL_HANDLE;
 	VkPhysicalDeviceProperties vk_physicalDeviceProperties;
 	VkPhysicalDeviceFeatures vk_physicalDeviceFeatures;
-	std::unique_ptr<VkPhysicalDevice[]> vk_pahPhysicalDevicesAvailable;
+	VkPhysicalDevice *vk_pahPhysicalDevicesAvailable;
 	uint32_t u32PhysicalDevicesAvailableCount;
 
-	static bool is_vulkan_physical_device_suitable(const VkPhysicalDevice vk_hPhysicalDevice) {
+	static bool is_physical_vulkan_device_suitable(const VkPhysicalDevice vk_hPhysicalDevice) {
 		std::queue<std::string> missingFeatures, optionalFeaturesMissing, discrepantFeatures;
 
 		// Fetch general information about the GPU
@@ -124,21 +124,6 @@ namespace RE {
 				}
 			if (!bSwapchainExtists)
 				missingFeatures.emplace("The swapchain extension doesn't exist on this GPU");
-
-			// Check if memory is properly supported
-			does_gpu_support_memory(vk_hPhysicalDevice, vk_thisPhysicalDeviceProperties.properties.limits, missingFeatures);
-
-			// Check if required queues exist
-			does_gpu_have_necessary_queues(vk_hPhysicalDevice, missingFeatures);
-
-			// Check if vertex buffers are properly supported
-			does_gpu_support_vertex_buffers(vk_hPhysicalDevice, missingFeatures);
-
-			// Check if textures are supported
-			does_gpu_support_textures(vk_hPhysicalDevice, vk_thisPhysicalDeviceProperties.properties.limits, missingFeatures, discrepantFeatures);
-
-			// Check if depth & stencil buffers are supported
-			does_gpu_support_depth_stencil_images(vk_hPhysicalDevice, missingFeatures);
 		} else {
 			missingFeatures.push(append_to_string("The physical device should support at least Vulkan ", u32VulkanMajorVersion, ".", u32VulkanMinorVersion, "; it's latest version is ", u32PhysicalDeviceVulkanMajorVersion, ".", u32PhysicalDeviceVulkanMinorVersion, " (higher major versions aren't backwards compatible)"));
 		}
@@ -181,7 +166,7 @@ namespace RE {
 		vkEnumeratePhysicalDevices(vk_hInstance, &u32TotalPhysicalDeviceCount, vk_pahTotalPhysicalDevice.data());
 		std::queue<VkPhysicalDevice> suitablePhysicalDevices;
 		for (const VkPhysicalDevice vk_hPhysicalDevice : vk_pahTotalPhysicalDevice)
-			if (is_vulkan_physical_device_suitable(vk_hPhysicalDevice))
+			if (is_physical_vulkan_device_suitable(vk_hPhysicalDevice))
 				suitablePhysicalDevices.push(vk_hPhysicalDevice);
 		u32PhysicalDevicesAvailableCount = suitablePhysicalDevices.size();
 		if (!u32PhysicalDevicesAvailableCount) {
@@ -189,7 +174,7 @@ namespace RE {
 			return false;
 		}
 		PRINT_DEBUG("Saving all suitable, available physical Vulkan devices");
-		vk_pahPhysicalDevicesAvailable = std::make_unique<VkPhysicalDevice[]>(u32PhysicalDevicesAvailableCount);
+		vk_pahPhysicalDevicesAvailable = new VkPhysicalDevice[u32PhysicalDevicesAvailableCount];
 		uint32_t u32CurrentIndex = 0;
 		do {
 			vk_pahPhysicalDevicesAvailable[u32CurrentIndex] = suitablePhysicalDevices.front();
@@ -200,7 +185,7 @@ namespace RE {
 	}
 
 	void free_physical_vulkan_device_list() {
-		vk_pahPhysicalDevicesAvailable.reset();
+		delete[] vk_pahPhysicalDevicesAvailable;
 		vk_hPhysicalDeviceSelected = VK_NULL_HANDLE;
 	}
 

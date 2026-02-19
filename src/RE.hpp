@@ -437,7 +437,7 @@ namespace RE {
 
 	template <class T> requires Arithmetics<T>
 	[[nodiscard]]
-	constexpr T nth_root(const T n, const T value) noexcept {
+	constexpr T nth_root(const T n, const T value) {
 		if (n <= static_cast<T>(0.0)) {
 			FATAL_ERROR("The value of 'n' shouldn't be zero or negative in an nth root");
 			return static_cast<T>(0.0);
@@ -447,12 +447,12 @@ namespace RE {
 
 	template <class... T> requires Integrals<T...>
 	[[nodiscard]]
-	constexpr uint64_t gen_bitmask(const T... bits) noexcept {
+	constexpr uint64_t gen_bitmask(const T... bits) {
 		return (... | (1UL << static_cast<uint64_t>(bits)));
 	}
 
 	[[nodiscard]]
-	constexpr uint64_t gen_bitmask_in_range(const uint64_t u64Begin, const uint64_t u64End) noexcept {
+	constexpr uint64_t gen_bitmask_in_range(const uint64_t u64Begin, const uint64_t u64End) {
 		if (u64Begin > u64End) {
 			FATAL_ERROR("Start (", u64Begin, ") of the range is larger than end (", u64End, ")");
 			return 0;
@@ -464,16 +464,16 @@ namespace RE {
 		return u64Result;
 	}
 
-	template <class T, class... U> requires Arithmetics<T>
+	template <class T, class... U> requires Integrals<T, U...>
 	[[nodiscard]]
-	constexpr bool are_bits_true(const T value, const U... bits) noexcept {
+	constexpr bool are_bits_true(const T value, const U... bits) {
 		const T bitmask = static_cast<T>(gen_bitmask<U...>(bits...));
 		return (value & bitmask) == bitmask;
 	}
 
-	template <class T> requires Integrals<T>
+	template <class T> requires std::integral<T>
 	[[nodiscard]]
-	constexpr bool are_bits_true_in_range(const T value, const T begin, const T end) noexcept {
+	constexpr bool are_bits_true_in_range(const T value, const T begin, const T end) {
 		if (begin > end) {
 			FATAL_ERROR("Start (", begin, ") of the range is larger than end (", end, ")");
 			return false;
@@ -484,8 +484,8 @@ namespace RE {
 		return true;
 	}
 
-	template <class T, class... U> requires Integrals<T>
-	constexpr T set_bits(T& rValue, const bool bNewState, const U... bits) noexcept {
+	template <class T, class... U> requires Integrals<T, U...>
+	constexpr T set_bits(T& rValue, const bool bNewState, const U... bits) {
 		const T bitmask = gen_bitmask<U...>(bits...);
 		if (bNewState)
 			rValue |= bitmask;
@@ -494,8 +494,8 @@ namespace RE {
 		return rValue;
 	}
 
-	template <class T> requires Integrals<T>
-	constexpr T set_bits_in_range(T &rValue, const bool bNewState, const T begin, const T end) noexcept {
+	template <class T> requires std::integral<T>
+	constexpr T set_bits_in_range(T &rValue, const bool bNewState, const T begin, const T end) {
 		if (begin > end) {
 			FATAL_ERROR("Start (", begin, ") of the range is larger than end (", end, ")");
 			return rValue;
@@ -514,9 +514,9 @@ namespace RE {
 	
 	template <class T> requires Arithmetics<T>
 	[[nodiscard]]
-	constexpr T sign(const T value) noexcept {
+	constexpr T sign(const T value) {
 		if constexpr (std::is_unsigned_v<T>)
-			return static_cast<T>(0.0) > value;
+			return static_cast<T>(0.0) > value ? 1 : 0;
 		else
 			return (static_cast<T>(0.0) < value ? 1 : 0) - (value < static_cast<T>(0.0) ? 1 : 0);
 	}
@@ -524,6 +524,8 @@ namespace RE {
 	template <class T> requires Arithmetics<T>
 	[[nodiscard]]
 	constexpr bool is_multiple_of(const T value, const T multiple) {
+		if (multiple == static_cast<T>(0.0) && value == multiple)
+			return true;
 		if constexpr (std::is_same_v<T, float>)
 			return std::fmodf(value, multiple) == 0.0f;
 		else if constexpr (std::is_same_v<T, double>)
@@ -537,8 +539,8 @@ namespace RE {
 	template <class T> requires Arithmetics<T>
 	[[nodiscard]]
 	constexpr T next_multiple(const T value, const T multiple) {
-		if (value == static_cast<T>(0.0))
-			return multiple;
+		if (multiple == static_cast<T>(0.0))
+			return static_cast<T>(0.0);
 		if constexpr (std::is_same_v<T, float>)
 			return multiple - std::fmodf(value, multiple) + value;
 		else if constexpr (std::is_same_v<T, double>)
@@ -552,6 +554,8 @@ namespace RE {
 	template <class T> requires Arithmetics<T>
 	[[nodiscard]]
 	constexpr T previous_multiple(const T value, const T multiple) {
+		if (multiple == static_cast<T>(0.0))
+			return static_cast<T>(0.0);
 		if (value == static_cast<T>(0.0))
 			return -multiple;
 		if constexpr (std::is_same_v<T, float>)
@@ -566,31 +570,31 @@ namespace RE {
 
 	template <class T> requires std::floating_point<T>
 	[[nodiscard]]
-	constexpr T degrees_to_radians(const T degrees) noexcept {
+	constexpr T degrees_to_radians(const T degrees) {
 		return degrees * (std::numbers::pi / 180.0f);
 	}
 
 	template <class T> requires std::floating_point<T>
 	[[nodiscard]]
-	constexpr T radians_to_degrees(const T radians) noexcept {
+	constexpr T radians_to_degrees(const T radians) {
 		return radians * (180.0f / std::numbers::pi);
 	}
 
 	template <class T> requires std::floating_point<T>
 	[[nodiscard]]
-	constexpr T sin_deg(const T degrees) noexcept {
+	constexpr T sin_deg(const T degrees) {
 		return std::sin(degrees_to_radians<T>(degrees));
 	}
 
 	template <class T> requires std::floating_point<T>
 	[[nodiscard]]
-	constexpr T cos_deg(const T degrees) noexcept {
+	constexpr T cos_deg(const T degrees) {
 		return std::cos(degrees_to_radians<T>(degrees));
 	}
 
 	template <class T> requires std::floating_point<T>
 	[[nodiscard]]
-	constexpr T tan_deg(const T degrees) noexcept {
+	constexpr T tan_deg(const T degrees) {
 		return std::tan(degrees_to_radians<T>(degrees));
 	}
 
@@ -1195,6 +1199,10 @@ namespace RE {
 	uint32_t get_next_scene_id();
 	[[nodiscard]]
 	bool is_scene_next(uint32_t u32SceneId);
+
+	// Game Objects
+	[[nodiscard]]
+	size_t amount_of_game_objects();
 
 	// Render system
 	void enable_vsync(bool bEnableVsync);

@@ -151,8 +151,8 @@ class PlayerCamera : public Camera {
 class First : public Scene {
 	public:
 		Playy objy;
-		Imagy imagy;
 		Background background;
+		Imagy imagy;
 		PlayerCamera playerCam;
 		InputAction trigger;
 		bool bCamActive, bMsaaEight;
@@ -197,16 +197,14 @@ class First : public Scene {
 int main_func() {
 	set_signal_handlers();
 	set_fps_limit(60);
-	{
-		First first;
-		Second secondInStack;
-		second = &secondInStack;
-		set_next_scene(&first);
-		set_fullscreen(false);
-		execute();
-		if (clonus)
-			delete clonus;
-	}
+	First first;
+	Second secondInStack;
+	second = &secondInStack;
+	set_next_scene(&first);
+	set_fullscreen(false);
+	execute();
+	if (clonus)
+		delete clonus;
 	return 0;
 }
 

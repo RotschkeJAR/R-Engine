@@ -83,6 +83,13 @@ namespace RE {
 		}
 	}
 
+	size_t amount_of_game_objects() {
+		size_t totalCount = 0;
+		for (const ListBatch_GameObject *const pBatch : gameObjectBatchList)
+			totalCount += pBatch->size();
+		return totalCount;
+	}
+
 	void start_game_objects() {
 		for (ListBatch_GameObject *const pBatch : gameObjectBatchList) {
 			PRINT_DEBUG("Starting game objects in batch ", pBatch);

@@ -15,6 +15,8 @@ namespace RE {
 	extern VkPhysicalDevice vk_hPhysicalDeviceSelected;
 	extern VkPhysicalDeviceProperties vk_physicalDeviceProperties;
 	extern VkPhysicalDeviceFeatures vk_physicalDeviceFeatures;
+	extern VkPhysicalDevice *vk_pahPhysicalDevicesAvailable;
+	extern uint32_t u32PhysicalDevicesAvailableCount;
 
 	// Scheduler
 #define RE_VK_LOGICAL_QUEUE_IGNORED std::numeric_limits<uint8_t>::max()
@@ -106,7 +108,7 @@ namespace RE {
 		RE_VK_CPU_RAM,
 		RE_VK_SHARED_RAM
 	};
-	bool does_memory_type_exist(VkMemoryPropertyFlags vk_eProperties);
+	bool does_memory_type_exist(VkMemoryPropertyFlags vk_mProperties);
 	bool does_have_vulkan_memory_type(VulkanMemoryType eMemoryType);
 	bool does_vulkan_memory_type_reside_on_cpu(uint8_t u8MemoryTypeIndex);
 	bool does_vulkan_memory_type_reside_on_gpu(uint8_t u8MemoryTypeIndex);
@@ -121,15 +123,15 @@ namespace RE {
 
 		public:
 			VulkanMemory();
-			VulkanMemory(VkDeviceSize vk_size, VulkanMemoryType eType, VkMemoryPropertyFlags vk_eProperties, uint32_t b32DesiredMemoryTypes);
+			VulkanMemory(VkDeviceSize vk_size, VulkanMemoryType eType, VkMemoryPropertyFlags vk_mProperties, uint32_t m32DesiredMemoryTypes);
 			VulkanMemory(VkDeviceSize vk_size, uint8_t u8MemoryTypeIndex);
 			VulkanMemory(VulkanMemory &rMemory) = delete;
-			explicit VulkanMemory(VulkanMemory &&rrMemory) noexcept;
-			~VulkanMemory() noexcept;
+			explicit VulkanMemory(VulkanMemory &&rrMemory);
+			~VulkanMemory();
 			
-			bool alloc(VkDeviceSize vk_size, VulkanMemoryType eType, VkMemoryPropertyFlags vk_eProperties, uint32_t b32DesiredMemoryTypes);
+			bool alloc(VkDeviceSize vk_size, VulkanMemoryType eType, VkMemoryPropertyFlags vk_mProperties, uint32_t m32DesiredMemoryTypes);
 			bool alloc(VkDeviceSize vk_size, uint8_t u8MemoryTypeIndex);
-			void free() noexcept;
+			void free();
 			bool map(VkMemoryMapFlags vk_eFlags, VkDeviceSize vk_offset, VkDeviceSize vk_size, void **ppData) const;
 			void unmap();
 
@@ -139,7 +141,7 @@ namespace RE {
 			uint8_t type_index() const;
 			bool cpu_coherent() const;
 
-			void operator =(VulkanMemory &&rrMemory) noexcept;
+			void operator =(VulkanMemory &&rrMemory);
 			constexpr bool operator ==(const VulkanMemory &rOtherMemory) const {
 				return false;
 			}

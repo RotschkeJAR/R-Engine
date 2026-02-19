@@ -5,23 +5,14 @@
 
 namespace RE {
 
-	extern VkDescriptorPool vk_hPermanentDescPool;
-
-	// Layouts
-	bool create_descriptor_set_layouts();
-	void destroy_descriptor_set_layouts();
-
-	// Camera
-	bool create_camera_descriptor_sets();
-	void destroy_camera_descriptor_sets();
-
-	// Processing
-	bool create_processing_descriptor_sets();
-	void destroy_processing_descriptor_sets();
+	bool create_render_content_descriptor_sets();
+	void destroy_render_content_descriptor_sets();
 	
-	// Textures
 	bool create_texture_descriptor_sets();
 	void destroy_texture_descriptor_sets();
+
+	bool create_raw_game_object_buffer_descriptor_sets();
+	void destroy_raw_game_object_buffer_descriptor_sets();
 
 }
 

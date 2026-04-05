@@ -10,12 +10,11 @@ namespace RE {
 			PRINT_DEBUG("Creating processing buffer for depth at frame-in-flight index ", u8FrameInFlightCreateIndex);
 			if (aSortableDepthBuffers[u8FrameInFlightCreateIndex].create(
 					0, 
-					1000 * (sizeof(float) + sizeof(uint32_t)), 
-					VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, 
+					1000 * sizeof(DepthShaderData), 
+					VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, 
 					rQueues.u8QueueCount, 
 					rQueues.queueFamilyIndices.get(), 
-					RE_VK_GPU_RAM, 
-					0))
+					VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT))
 				u8FrameInFlightCreateIndex++;
 			else {
 				RE_FATAL_ERROR("Failed to create processing buffer for depth in Vulkan at frame-in-flight index ", u8FrameInFlightCreateIndex);

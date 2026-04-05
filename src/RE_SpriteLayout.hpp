@@ -1,7 +1,7 @@
 #ifndef __RE_SPRITE_LAYOUT_H__
 #define __RE_SPRITE_LAYOUT_H__
 
-#include "RE_Vulkan_Device.hpp"
+#include "RE_GPU.hpp"
 
 namespace RE {
 	

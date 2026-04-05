@@ -4,9 +4,9 @@
 namespace RE {
 	
 	ScreenPercentageSettings::ScreenPercentageSettings() : eMode(RE_SCREEN_PERCENTAGE_MODE_NORMAL) {}
-	ScreenPercentageSettings::ScreenPercentageSettings(const float fScale) : ScreenPercentageSettings(fScale, RE_TEXTURE_FILTER_LINEAR) {}
-	ScreenPercentageSettings::ScreenPercentageSettings(const float fScale, const TextureFilter eScalingFilter) : eMode(RE_SCREEN_PERCENTAGE_MODE_SCALED), fScale(fScale), eScalingFilter(eScalingFilter) {
-		if (fScale == 1.0f) {
+	ScreenPercentageSettings::ScreenPercentageSettings(const float f32Scale) : ScreenPercentageSettings(f32Scale, RE_TEXTURE_FILTER_LINEAR) {}
+	ScreenPercentageSettings::ScreenPercentageSettings(const float f32Scale, const TextureFilter eScalingFilter) : eMode(RE_SCREEN_PERCENTAGE_MODE_SCALED), f32Scale(f32Scale), eScalingFilter(eScalingFilter) {
+		if (f32Scale == 1.0f) {
 			RE_NOTE("Screen percentage equals 100%. The mode will be set to normal");
 			eMode = RE_SCREEN_PERCENTAGE_MODE_NORMAL;
 		}
@@ -19,10 +19,14 @@ namespace RE {
 			case RE_SCREEN_PERCENTAGE_MODE_NORMAL:
 				break;
 			case RE_SCREEN_PERCENTAGE_MODE_SCALED:
-				if (std::holds_alternative<float>(rSettings))
-					fScale = std::get<float>(rSettings);
-				else {
-					RE_WARNING("Screen percentage mode is set to 'scaled', but the setting-union doesn't hold the mode's corresponding value. Falling back to normal mode");
+				if (std::holds_alternative<float>(rSettings)) {
+					f32Scale = std::get<float>(rSettings);
+					if (f32Scale == 1.0f) {
+						RE_NOTE("Screen percentage equals 100%. The mode will be set to normal");
+						eMode = RE_SCREEN_PERCENTAGE_MODE_NORMAL;
+					}
+				} else {
+					RE_ERROR("Screen percentage mode is set to 'scaled', but the setting-union doesn't hold the mode's corresponding value. Falling back to normal mode");
 					eMode = RE_SCREEN_PERCENTAGE_MODE_NORMAL;
 				}
 				break;
@@ -30,14 +34,12 @@ namespace RE {
 				if (std::holds_alternative<Vector2u>(rSettings))
 					constSize = std::get<Vector2u>(rSettings);
 				else {
-					RE_WARNING("Screen percentage mode is set to 'const size', but the setting-union doesn't hold the mode's corresponding value. Falling back to normal mode");
+					RE_ERROR("Screen percentage mode is set to 'const size', but the setting-union doesn't hold the mode's corresponding value. Falling back to normal mode");
 					eMode = RE_SCREEN_PERCENTAGE_MODE_NORMAL;
 				}
 				break;
-			default:
-				RE_WARNING("Unknown screen percentage mode ", std::hex, eMode, ". Falling back to normal");
-				eMode = RE_SCREEN_PERCENTAGE_MODE_NORMAL;
-				break;
+			[[unlikely]] default:
+				RE_ABORT("Unknown screen percentage mode: ", std::hex, eMode);
 		}
 		this->eMode = eMode;
 	}
@@ -46,15 +48,13 @@ namespace RE {
 			case RE_SCREEN_PERCENTAGE_MODE_NORMAL:
 				break;
 			case RE_SCREEN_PERCENTAGE_MODE_SCALED:
-				fScale = rCopy.fScale;
+				f32Scale = rCopy.f32Scale;
 				break;
 			case RE_SCREEN_PERCENTAGE_MODE_CONST_SIZE:
 				constSize = rCopy.constSize;
 				break;
-			default:
-				RE_WARNING("The screen percentage mode ", std::hex, rCopy.eMode, " of the 'screen percentage setting'-struct is invalid and makes copying insufficient. Falling back to normal mode");
-				eMode = RE_SCREEN_PERCENTAGE_MODE_NORMAL;
-				return;
+			[[unlikely]] default:
+				RE_ABORT("The screen percentage mode ", std::hex, rCopy.eMode, " of the 'screen percentage setting'-struct is invalid");
 		}
 	}
 	ScreenPercentageSettings::~ScreenPercentageSettings() {}
@@ -64,14 +64,13 @@ namespace RE {
 			case RE_SCREEN_PERCENTAGE_MODE_NORMAL:
 				break;
 			case RE_SCREEN_PERCENTAGE_MODE_SCALED:
-				fScale = rCopy.fScale;
+				f32Scale = rCopy.f32Scale;
 				break;
 			case RE_SCREEN_PERCENTAGE_MODE_CONST_SIZE:
 				constSize = rCopy.constSize;
 				break;
-			default:
-				RE_WARNING("The screen percentage mode ", std::hex, rCopy.eMode, " is invalid, which makes further copying insufficient");
-				return;
+			[[unlikely]] default:
+				RE_ABORT("The screen percentage mode ", std::hex, rCopy.eMode, " is invalid");
 		}
 		eMode = rCopy.eMode;
 		eScalingFilter = rCopy.eScalingFilter;
@@ -85,12 +84,11 @@ namespace RE {
 			case RE_SCREEN_PERCENTAGE_MODE_NORMAL:
 				return true;
 			case RE_SCREEN_PERCENTAGE_MODE_SCALED:
-				return fScale == rCompare.fScale;
+				return f32Scale == rCompare.f32Scale;
 			case RE_SCREEN_PERCENTAGE_MODE_CONST_SIZE:
 				return constSize == rCompare.constSize;
-			default:
-				RE_WARNING("The 'screen percentage setting'-struct itself contains an invalid screen percentage mode ", std::hex, eMode, ", which makes further comparing insufficient");
-				return false;
+			[[unlikely]] default:
+				RE_ABORT("The 'screen percentage setting'-struct itself contains an invalid screen percentage mode: ", std::hex, eMode);
 		}
 	}
 	

@@ -37,15 +37,20 @@
 
 /**
  *   Uncomment this, if you want to disable PRINT_DEBUG and PRINT_DEBUG_CLASS to
- * filter redundant output and get better performance while the terminal is
- * active. However keep in mind, that this will make searching for segmentation
- * faults difficult.
+ * filter debug output and get better performance while the terminal is active.
  */
-//#define RE_DISABLE_PRINT_DEBUGS
+//#define RE_DISABLE_DEBUGGING
 
 namespace RE {
 
 #define STRIP_QUOTE_MACRO(...) __VA_ARGS__
+
+
+
+//================ Concepts
+
+	template <class... T>
+	concept Pointers = (std::is_pointer_v<T> && ...);
 
 	template <class... T>
 	concept Arithmetics = (std::is_arithmetic_v<T> && ...);
@@ -77,10 +82,17 @@ namespace RE {
 	template <class Type, Type value1, Type value2>
 	concept IsGreaterOrEqual = value1 >= value2;
 
+	template <class Type, Type value, Type minimum, Type maximum>
+	concept IsWithinRange = value >= minimum && value <= maximum;
+
 	template <class... T>
 	concept AreComparable = requires (T... values) {
 		{ (values == ...) };
 	};
+
+
+
+//================ Enumerations
 
 	enum TerminalColor {
 		RE_TERMINAL_COLOR_BLACK = 0x0,
@@ -273,7 +285,21 @@ namespace RE {
 		RE_MSAA_MODE_DISABLED = RE_MSAA_MODE_1
 	};
 
+	enum DepthPrecission {
+		RE_DEPTH_PRECISSION_LOW = 0,
+		RE_DEPTH_PRECISSION_MODERATE = 1,
+		RE_DEPTH_PRECISSION_HIGH = 2
+	};
+
+
+
+//================ Signals
+
 	void set_signal_handlers();
+
+
+
+//================ Console output
 
 	template <class... T>
 	void print(const T... content) {
@@ -305,7 +331,7 @@ namespace RE {
 #define PRINT(...) print(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE_MACRO(__VA_ARGS__))
 #define PRINT_LN(...) PRINT(STRIP_QUOTE_MACRO(__VA_ARGS__), '\n')
 
-#ifndef RE_DISABLE_PRINT_DEBUGS
+#ifndef RE_DISABLE_DEBUGING
 # define PRINT_DEBUG(...) [&](const char *const pacFile, const char *const pacFunc, const uint32_t u32Line) { \
 			time_t currentTime = std::time(0); \
 			println("[", std::put_time(std::gmtime(&currentTime), "%d.%b %Y, %H:%M:%S"), "] (", pacFile, ", at line ", u32Line, ", in function \"", pacFunc, "\"): ", STRIP_QUOTE_MACRO(__VA_ARGS__)); \
@@ -327,20 +353,51 @@ namespace RE {
 #define WARNING(...) warning(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), "\nIn ", __FILE__, ", function \"", __func__, "\", at line ", __LINE__))
 #define NOTE(...) note(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), "\nIn ", __FILE__, ", function \"", __func__, "\", at line ", __LINE__))
 
-#define DELETE_SAFELY(PTR_REF) [&]() { \
+
+
+//================ Memory
+
+#define DELETE_SAFELY(PTR_REF) do { \
 			if (!PTR_REF) \
 				break; \
 			PRINT_DEBUG("Safely deleting ", PTR_REF); \
 			delete (PTR_REF); \
 			(PTR_REF) = nullptr; \
-		} ()
-#define DELETE_ARRAY_SAFELY(PTR_REF) [&]() { \
+		} while (false)
+#define DELETE_ARRAY_SAFELY(PTR_REF) do { \
 			if (!PTR_REF) \
 				break; \
 			PRINT_DEBUG("Safely deleting array ", PTR_REF); \
 			delete[] (PTR_REF); \
 			(PTR_REF) = nullptr; \
-		} ()
+		} while (false)
+
+	class Freeer final {
+		public:
+			constexpr Freeer() = default;
+			void operator()(void *const pPointer) const;
+	};
+	typedef std::unique_ptr<void, Freeer> UniqueVoidPointer;
+
+	template <class T = void*> requires Pointers<T>
+	T not_null(const T pointer) {
+		if (!pointer)
+			RE::abort("Not null-check not passed");
+		return pointer;
+	}
+
+	// Safe alternative to 'std::malloc'
+	void* safe_malloc(size_t size);
+	// Safe alternative to 'std::align'
+	void* safe_align(size_t alignment, size_t size, void *&rpPtr, size_t &rSpace);
+	// Improved version of 'std::align'
+	void* align_2(size_t alignment, size_t size, void *&rpPtr, size_t &rSpace);
+	// Improved version of 'safe_align'
+	void* safe_align_2(size_t alignment, size_t size, void *&rpPointer, size_t &rSpace);
+
+
+
+//================ Strings
 
 	template <class T>
 	[[nodiscard]]
@@ -429,6 +486,10 @@ namespace RE {
 	[[nodiscard]]
 	std::string get_app_name();
 
+
+
+//================ Arithmetic/Logic Utilities
+
 	template <class ValueType, class... T> requires AreSame<ValueType, T...>
 	[[nodiscard]]
 	constexpr bool is_either_equal_to(const ValueType value, const T... validValues) {
@@ -438,9 +499,9 @@ namespace RE {
 	template <class T> requires Arithmetics<T>
 	[[nodiscard]]
 	constexpr T nth_root(const T n, const T value) {
-		if (n <= static_cast<T>(0.0)) {
+		if (n <= 0) {
 			FATAL_ERROR("The value of 'n' shouldn't be zero or negative in an nth root");
-			return static_cast<T>(0.0);
+			return static_cast<T>(0);
 		}
 		return std::pow(value, static_cast<T>(1.0) / n);
 	}
@@ -485,6 +546,12 @@ namespace RE {
 	}
 
 	template <class T, class... U> requires Integrals<T, U...>
+	[[nodiscard]]
+	constexpr bool are_bitmasks_true(const T mValue, const U... mBitmasks) {
+		return (((mValue & mBitmasks) == mBitmasks) && ...);
+	}
+
+	template <class T, class... U> requires Integrals<T, U...>
 	constexpr T set_bits(T& rValue, const bool bNewState, const U... bits) {
 		const T bitmask = gen_bitmask<U...>(bits...);
 		if (bNewState)
@@ -507,7 +574,7 @@ namespace RE {
 
 	template <class T> requires std::integral<T>
 	void for_each_bit(const T bitmask, const std::function<void (T bitIndex)> iterFunction) {
-		for (T bitIndex = 0; bitIndex < sizeof(T) * 8; bitIndex++)
+		for (T bitIndex = static_cast<T>(0); bitIndex < sizeof(T) * 8; bitIndex++)
 			if (are_bits_true<T>(bitmask, bitIndex))
 				std::invoke(iterFunction, bitIndex);
 	}
@@ -516,56 +583,76 @@ namespace RE {
 	[[nodiscard]]
 	constexpr T sign(const T value) {
 		if constexpr (std::is_unsigned_v<T>)
-			return static_cast<T>(0.0) > value ? 1 : 0;
+			return value ? 1 : 0;
 		else
-			return (static_cast<T>(0.0) < value ? 1 : 0) - (value < static_cast<T>(0.0) ? 1 : 0);
+			return (value > 0 ? 1 : 0) - (value < 0 ? 1 : 0);
 	}
 
 	template <class T> requires Arithmetics<T>
 	[[nodiscard]]
 	constexpr bool is_multiple_of(const T value, const T multiple) {
-		if (multiple == static_cast<T>(0.0) && value == multiple)
-			return true;
-		if constexpr (std::is_same_v<T, float>)
-			return std::fmodf(value, multiple) == 0.0f;
-		else if constexpr (std::is_same_v<T, double>)
-			return std::fmod(value, multiple) == 0.0;
-		else if constexpr (std::is_same_v<T, long double>)
-			return std::fmodl(value, multiple) == 0.0;
+		if (!multiple)
+			return !value;
+		if constexpr (std::is_same_v<float, T>)
+			return std::truncf(value / multiple) * multiple == value;
+		else if constexpr (std::is_same_v<float, T>)
+			return std::trunc(value / multiple) * multiple == value;
+		else if constexpr (std::is_same_v<float, T>)
+			return std::truncl(value / multiple) * multiple == value;
 		else
-			return (value % multiple) == 0;
+			return (value / multiple) * multiple == value;
 	}
 
+	// If value is a multiple, the returned number is the next after the value
 	template <class T> requires Arithmetics<T>
 	[[nodiscard]]
 	constexpr T next_multiple(const T value, const T multiple) {
-		if (multiple == static_cast<T>(0.0))
-			return static_cast<T>(0.0);
-		if constexpr (std::is_same_v<T, float>)
-			return multiple - std::fmodf(value, multiple) + value;
-		else if constexpr (std::is_same_v<T, double>)
-			return multiple - std::fmod(value, multiple) + value;
-		else if constexpr (std::is_same_v<T, long double>)
-			return multiple - std::fmodl(value, multiple) + value;
+		if (!multiple)
+			return static_cast<T>(0);
+		T currentFactor = value / multiple;
+		if constexpr (std::is_same_v<float, T>)
+			currentFactor = std::truncf(currentFactor);
+		else if constexpr (std::is_same_v<double, T>)
+			currentFactor = std::trunc(currentFactor);
+		else if constexpr (std::is_same_v<long double, T>)
+			currentFactor = std::truncl(currentFactor);
+		if (sign<T>(value) >= 0 && sign<T>(multiple))
+			return (currentFactor + 1) * multiple;
 		else
-			return multiple - (value % multiple) + value;
+			return currentFactor * multiple;
+	}
+
+	// If value is a multiple, the returned number is the previous before the value
+	template <class T> requires Arithmetics<T>
+	[[nodiscard]]
+	constexpr T previous_multiple(const T value, const T multiple) {
+		if (!multiple)
+			return static_cast<T>(0);
+		if (!value)
+			return -multiple;
+		T currentFactor = value / multiple;
+		if constexpr (std::is_same_v<float, T>)
+			currentFactor = std::truncf(currentFactor);
+		else if constexpr (std::is_same_v<double, T>)
+			currentFactor = std::trunc(currentFactor);
+		else if constexpr (std::is_same_v<long double, T>)
+			currentFactor = std::truncl(currentFactor);
+		if (sign<T>(value) == sign<T>(multiple))
+			return (currentFactor - 1) * multiple;
+		else
+			return currentFactor * multiple;
 	}
 
 	template <class T> requires Arithmetics<T>
 	[[nodiscard]]
-	constexpr T previous_multiple(const T value, const T multiple) {
-		if (multiple == static_cast<T>(0.0))
-			return static_cast<T>(0.0);
-		if (value == static_cast<T>(0.0))
-			return -multiple;
-		if constexpr (std::is_same_v<T, float>)
-			return value - std::fmodf(value, multiple);
-		else if constexpr (std::is_same_v<T, double>)
-			return value - std::fmod(value, multiple);
-		else if constexpr (std::is_same_v<T, long double>)
-			return value - std::fmodl(value, multiple);
-		else
-			return value - (value % multiple);
+	constexpr T next_multiple_inclusive(const T value, const T multiple) {
+		return is_multiple_of<T>(value, multiple) ? value : next_multiple<T>(value, multiple);
+	}
+
+	template <class T> requires Arithmetics<T>
+	[[nodiscard]]
+	constexpr T previous_multiple_inclusive(const T value, const T multiple) {
+		return is_multiple_of<T>(value, multiple) ? value : previous_multiple<T>(value, multiple);
 	}
 
 	template <class T> requires std::floating_point<T>
@@ -598,20 +685,26 @@ namespace RE {
 		return std::tan(degrees_to_radians<T>(degrees));
 	}
 
+
+
+//================ Containers
+
 	template <class T, size_t dimensionCount> requires Arithmetics<T> && IsGreater<size_t, dimensionCount, 0>
 	class Vector final {
 		public:
+			using type = T;
+			
 			T aCoords[dimensionCount];
 
 			Vector() {
-				fill(static_cast<T>(0.0));
+				fill(static_cast<T>(0));
 			}
 			template <class P, size_t copyDimensions>
 			explicit Vector(const Vector<P, copyDimensions> &rCopyVector) requires Arithmetics<P> && IsLessOrEqual<size_t, copyDimensions, dimensionCount> {
 				PRINT_DEBUG_CLASS("Copying coordinates from vector ", &rCopyVector);
 				if constexpr (copyDimensions <= dimensionCount) {
 					std::copy(std::begin(rCopyVector.aCoords), std::end(rCopyVector.aCoords), std::begin(aCoords));
-					std::fill(std::begin(aCoords) + copyDimensions, std::end(aCoords), static_cast<T>(0.0));
+					std::fill(std::begin(aCoords) + copyDimensions, std::end(aCoords), 0);
 				} else
 					std::copy(std::begin(rCopyVector), std::end(rCopyVector.aCoords) - (copyDimensions - dimensionCount), std::begin(aCoords));
 			}
@@ -623,13 +716,13 @@ namespace RE {
 					aCoords[dimensionIndex] = static_cast<T>(values);
 					dimensionIndex++;
 				} (), ...);
-				std::fill(std::begin(aCoords) + dimensionIndex, std::end(aCoords), static_cast<T>(0.0));
+				std::fill(std::begin(aCoords) + dimensionIndex, std::end(aCoords), static_cast<T>(0));
 			}
 			~Vector() {}
 
 			[[nodiscard]]
 			T sum() const {
-				T sum = static_cast<T>(0.0);
+				T sum = 0;
 				for (const T coord : aCoords)
 					sum += coord;
 				return sum;
@@ -637,7 +730,7 @@ namespace RE {
 
 			[[nodiscard]]
 			T area() const {
-				T result = static_cast<T>(1.0);
+				T result = 1;
 				for (const T coord : aCoords)
 					result *= coord;
 				return result;
@@ -646,6 +739,23 @@ namespace RE {
 			[[nodiscard]]
 			T length() const {
 				return nth_root<T>(static_cast<T>(dimensionCount), sum());
+			}
+
+			typedef bool (*compareFunc_t)(T valueToCompare);
+
+			[[nodiscard]]
+			bool all_of(const compareFunc_t compareFunction) const {
+				return std::all_of(std::begin(aCoords), std::end(aCoords), compareFunction);
+			}
+
+			[[nodiscard]]
+			bool any_of(const compareFunc_t compareFunction) const {
+				return std::any_of(std::begin(aCoords), std::end(aCoords), compareFunction);
+			}
+
+			[[nodiscard]]
+			bool none_of(const compareFunc_t compareFunction) const {
+				return std::none_of(std::begin(aCoords), std::end(aCoords), compareFunction);
 			}
 
 			void fill(const T value) {
@@ -657,7 +767,7 @@ namespace RE {
 				PRINT_DEBUG_CLASS("Copying coordinates from vector ", &rCopyVector);
 				if (rCopyVector.dimensions() <= dimensionCount) {
 					std::copy(std::begin(rCopyVector.aCoords), std::end(rCopyVector.aCoords), std::begin(aCoords));
-					std::fill(std::begin(aCoords) + rCopyVector.dimensions(), std::end(aCoords), static_cast<T>(0.0));
+					std::fill(std::begin(aCoords) + rCopyVector.dimensions(), std::end(aCoords), static_cast<T>(0));
 				} else
 					std::copy(std::begin(rCopyVector.aCoords), std::end(rCopyVector.aCoords) - (rCopyVector.dimensions() - dimensionCount), std::begin(aCoords));
 			}
@@ -740,13 +850,11 @@ namespace RE {
 			std::array<std::jthread, numOfThreads> threads;
 			std::array<uint64_t, numOfThreads> agePerThread;
 
-			size_t wait_for_oldest_thread() {
-				const size_t oldThreadIndex = std::min_element(agePerThread.begin(), agePerThread.end()) - agePerThread.begin();
-				std::jthread greatestAgeFindThread([&]() {
-					agePerThread[oldThreadIndex] = (*std::max_element(agePerThread.begin(), agePerThread.end())) + 1;
-				});
+			size_t join_oldest_thread_and_occupy() {
+				const size_t oldThreadIndex = *std::min_element(agePerThread.begin(), agePerThread.end());
 				if (threads[oldThreadIndex].joinable())
 					threads[oldThreadIndex].join();
+				agePerThread[oldThreadIndex] = (*std::max_element(agePerThread.begin(), agePerThread.end())) + 1;
 				return oldThreadIndex;
 			}
 
@@ -756,12 +864,12 @@ namespace RE {
 
 			template <class F, class... paramTypes>
 			void execute(F &&rrFunction, paramTypes... params) {
-				const size_t oldThreadIndex = wait_for_oldest_thread();
+				const size_t oldThreadIndex = join_oldest_thread_and_occupy();
 				threads[oldThreadIndex] = std::jthread(rrFunction, params...);
 			}
 
 			void move_thread(std::jthread &&rrThread) {
-				const size_t oldThreadIndex = wait_for_oldest_thread();
+				const size_t oldThreadIndex = join_oldest_thread_and_occupy();
 				threads[oldThreadIndex] = rrThread;
 			}
 
@@ -773,12 +881,10 @@ namespace RE {
 			}
 
 			void join() {
-				std::jthread ageResetThread([&]() {
-					agePerThread.fill(0);
-				});
 				for (std::jthread &rThread : threads)
 					if (rThread.joinable())
 						rThread.join();
+				agePerThread.fill(0);
 			}
 
 			size_t free_slots() {
@@ -796,62 +902,6 @@ namespace RE {
 			constexpr size_t amount_of_threads() {
 				return numOfThreads;
 			}
-	};
-
-	class Color final {
-		public:
-			static constexpr uint8_t u8ColorChannelCount = 4;
-
-		private:
-			float afChannels[u8ColorChannelCount];
-
-		public:
-			Color();
-			Color(float fRed, float fGreen, float fBlue, float fAlpha);
-			Color(const Color &rCopyColor);
-			~Color();
-			float get_channel(uint8_t u8ChannelIndex) const;
-			void set_channel(uint8_t u8ChannelIndex, float fNormal);
-			void copy_from(const Color &rCopyColor);
-			[[nodiscard]]
-			bool equals(const Color &rCompareColor) const;
-
-			void set_red(float fRed);
-			[[nodiscard]]
-			float get_red() const;
-			void set_green(float fGreen);
-			[[nodiscard]]
-			float get_green() const;
-			void set_blue(float fBlue);
-			[[nodiscard]]
-			float get_blue() const;
-			void set_alpha(float fAlpha);
-			[[nodiscard]]
-			float get_alpha() const;
-
-			[[nodiscard]]
-			float operator [](uint32_t u32ChannelIndex) const;
-			void operator =(const Color &rCopyColor);
-			[[nodiscard]]
-			bool operator ==(const Color &rCompareColor) const;
-			[[nodiscard]]
-			bool operator !=(const Color &rCompareColor) const;
-	};
-
-	typedef class Texture_T final {} *Texture;
-	typedef class SpriteLayout_T final {} *SpriteLayout;
-	typedef class Sprite_T final {} *Sprite;
-	typedef class Mesh_T final {} *Mesh;
-
-	class SpriteRenderer final {
-		public:
-			Color color;
-			Vector2f textureOffset, textureCoordinates;
-			Sprite hSprite;
-			Mesh hMesh;
-
-			SpriteRenderer();
-			~SpriteRenderer();
 	};
 
 	class RandomNumberGenerator final {
@@ -890,7 +940,7 @@ namespace RE {
 			[[nodiscard]]
 			bool random_bool();
 			[[nodiscard]]
-			bool random_bool(double dChance);
+			bool random_bool(double f64Chance);
 			[[nodiscard]]
 			double random_percentage();
 
@@ -913,7 +963,86 @@ namespace RE {
 					return random<T>();
 			}
 			[[nodiscard]]
-			bool operator ()(const double &rdChance);
+			bool operator ()(const double f64Chance);
+	};
+
+
+
+//================ Engine
+
+	class Color final {
+		public:
+			static constexpr uint8_t u8ColorChannelCount = 4;
+			static constexpr float f32MinColor = 0.0f,
+				f32MaxColor = 1.0f;
+
+			[[nodiscard]]
+			static constexpr float clamp(const float f32ChannelValue) {
+				return std::clamp(f32ChannelValue, f32MinColor, f32MaxColor);
+			}
+
+		private:
+			float afChannels[u8ColorChannelCount];
+
+		public:
+			Color();
+			Color(float f32Red, float f32Green, float f32Blue, float f32Alpha);
+			Color(const Color &rCopyColor);
+			~Color();
+			
+			[[nodiscard]]
+			float get_channel(uint8_t u8ChannelIndex) const;
+			template <uint32_t u32ChannelIndex> requires IsLess<uint32_t, u32ChannelIndex, u8ColorChannelCount>
+			[[nodiscard]]
+			float get_channel() const {
+				return afChannels[u32ChannelIndex];
+			}
+			void set_channel(uint8_t u8ChannelIndex, float f32Normal);
+			template <uint32_t u32ChannelIndex> requires IsLess<uint32_t, u32ChannelIndex, u8ColorChannelCount>
+			void set_channel(const float f32Normal) {
+				afChannels[u32ChannelIndex] = clamp(f32Normal);
+			}
+
+			void copy_from(const Color &rCopyColor);
+			[[nodiscard]]
+			bool equals(const Color &rCompareColor) const;
+
+			void set_red(float f32Red);
+			[[nodiscard]]
+			float get_red() const;
+			void set_green(float f32Green);
+			[[nodiscard]]
+			float get_green() const;
+			void set_blue(float f32Blue);
+			[[nodiscard]]
+			float get_blue() const;
+			void set_alpha(float f32Alpha);
+			[[nodiscard]]
+			float get_alpha() const;
+
+			[[nodiscard]]
+			float operator [](uint32_t u32ChannelIndex) const;
+			void operator =(const Color &rCopyColor);
+			[[nodiscard]]
+			bool operator ==(const Color &rCompareColor) const;
+			[[nodiscard]]
+			bool operator !=(const Color &rCompareColor) const;
+	};
+
+	typedef class Texture_T final {} *Texture;
+	typedef class SpriteLayout_T final {} *SpriteLayout;
+	typedef class Sprite_T final {} *Sprite;
+	typedef class Mesh_T final {} *Mesh;
+
+	class SpriteRenderer final {
+		public:
+			Color color;
+			Vector2f textureOffset, textureCoordinates;
+			Sprite hSprite;
+			Mesh hMesh;
+
+			SpriteRenderer();
+			~SpriteRenderer();
 	};
 
 	class Scene {
@@ -1050,14 +1179,14 @@ namespace RE {
 		public:
 			ScreenPercentageMode eMode;
 			union {
-				float fScale;
+				float f32Scale;
 				Vector2u constSize;
 			};
 			TextureFilter eScalingFilter;
 
 			ScreenPercentageSettings();
-			ScreenPercentageSettings(float fScale);
-			ScreenPercentageSettings(float fScale, TextureFilter eScalingFilter);
+			ScreenPercentageSettings(float f32Scale);
+			ScreenPercentageSettings(float f32Scale, TextureFilter eScalingFilter);
 			ScreenPercentageSettings(const Vector2u &rConstSize);
 			ScreenPercentageSettings(const Vector2u &rConstSize, TextureFilter eScalingFilter);
 			ScreenPercentageSettings(ScreenPercentageMode eMode, const std::variant<float, Vector2u> &rSettings);
@@ -1081,7 +1210,7 @@ namespace RE {
 			TextureFilter eMipmapFilter;
 			TextureRepetition eTextureRepetitionU;
 			TextureRepetition eTextureRepetitionV;
-			float fMaxAnisotropy; // must be equal or greater than 1, otherwise anisotropic filtering is disabled
+			float f32MaxAnisotropy; // must be equal or greater than 1, otherwise anisotropic filtering is disabled
 			BorderColor eBorderColor;
 
 			SpriteLayoutSettings();
@@ -1090,9 +1219,9 @@ namespace RE {
 			SpriteLayoutSettings(TextureFilter eMagFilter, TextureFilter eMinFilter, TextureFilter eMipmapFilter);
 			SpriteLayoutSettings(TextureRepetition eTextureRepetitionU);
 			SpriteLayoutSettings(TextureRepetition eTextureRepetitionU, TextureRepetition eTextureRepetitionV);
-			SpriteLayoutSettings(float fMaxAnisotropy);
+			SpriteLayoutSettings(float f32MaxAnisotropy);
 			SpriteLayoutSettings(BorderColor eBorderColor);
-			SpriteLayoutSettings(TextureFilter eMagFilter, TextureFilter eMinFilter, TextureFilter eMipmapFilter, TextureRepetition eTextureRepetitionU, TextureRepetition eTextureRepetitionV, float fMaxAnisotropy, BorderColor eBorderColor);
+			SpriteLayoutSettings(TextureFilter eMagFilter, TextureFilter eMinFilter, TextureFilter eMipmapFilter, TextureRepetition eTextureRepetitionU, TextureRepetition eTextureRepetitionV, float f32MaxAnisotropy, BorderColor eBorderColor);
 			SpriteLayoutSettings(const SpriteLayoutSettings &rCopy);
 			~SpriteLayoutSettings();
 			void copy_from(const SpriteLayoutSettings &rCopy);
@@ -1178,9 +1307,12 @@ namespace RE {
 	void set_fps_limit(uint32_t u32MaxFramesPerSecond);
 	[[nodiscard]]
 	uint32_t get_fps_limit();
-	void set_max_lag_time(float fSecondsOfLag);
+	void set_max_lag_time(float f32MaxSecondsOfLag);
 	[[nodiscard]]
 	float get_max_lag_time();
+	void set_max_exhaustion_time(float f32MaxSecondsOfExhaustion);
+	[[nodiscard]]
+	float get_max_exhaustion_time();
 	
 	// Manager
 	void set_next_scene(Scene *pNextSceneParam);
@@ -1242,7 +1374,7 @@ namespace RE {
 	SpriteLayout get_sprite_layout_from_sprite(Sprite hSprite);
 
 	// Renderer
-	void set_screen_percentage_settings(const ScreenPercentageSettings &rNewSettings);
+	void set_screen_percentage_settings(ScreenPercentageSettings newSettings);
 	[[nodiscard]]
 	ScreenPercentageSettings get_screen_percentage_settings();
 	void set_msaa_mode(MsaaMode eNewMsaaMode);
@@ -1254,12 +1386,12 @@ namespace RE {
 	[[nodiscard]]
 	MsaaMode get_highest_supported_msaa_mode();
 	void set_background_color(const Color &rColor);
-	void set_background_color(float fRed, float fGreen, float fBlue, float fAlpha);
+	void set_background_color(float f32Red, float f32Green, float f32Blue, float f32Alpha);
 	[[nodiscard]]
 	Color get_background_color();
 	[[nodiscard]]
 	bool is_sample_shading_enabled();
-	void set_sample_shading_rate(float fNewSampleShadingRate);
+	void set_sample_shading_rate(float f32NewSampleShadingRate);
 	[[nodiscard]]
 	float get_sample_shading_rate();
 

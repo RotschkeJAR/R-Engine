@@ -5,13 +5,14 @@
 
 namespace RE {
 
-	extern VkPipelineLayout vk_hGraphicsPipelineLayout;
-	extern VkPipelineLayout vk_hComputePipelineLayoutProcessing;
-	extern VkPipeline vk_hGraphicsPipeline2D;
-	extern VkPipeline vk_hGraphicsPipeline2DOpaqueOnly;
-	extern VkPipeline vk_hGraphicsPipeline3D;
-	extern VkPipeline vk_hGraphicsPipeline3DOpaqueOnly;
-	extern VkPipeline vk_hComputePipelinePreprocessing;
+	extern VkPipelineLayout vk_hGraphicsPipelineLayout, 
+		vk_hComputePipelineLayoutProcessing;
+	extern VkPipeline vk_hGraphicsPipeline2D, 
+		vk_hGraphicsPipeline2DOpaqueOnly, 
+		vk_hGraphicsPipeline3D, 
+		vk_hGraphicsPipeline3DOpaqueOnly, 
+		vk_hComputePipelinePreprocessing, 
+		vk_hComputePipelineDepthSorting;
 
 	enum RendererPipeline {
 		PIPELINE_GRAPHICS_2D,

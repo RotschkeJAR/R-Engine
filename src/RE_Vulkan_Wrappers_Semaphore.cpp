@@ -46,34 +46,32 @@ namespace RE {
 		vk_hSemaphore = VK_NULL_HANDLE;
 	}
 
-	[[nodiscard]]
-	VkSemaphore Vulkan_Semaphore::get() const noexcept {
+	VkSemaphore Vulkan_Semaphore::get() const {
 		return vk_hSemaphore;
 	}
 	
-	[[nodiscard]]
-	const VkSemaphore* Vulkan_Semaphore::get_ptr() const noexcept {
+	const VkSemaphore* Vulkan_Semaphore::get_ptr() const {
 		return &vk_hSemaphore;
 	}
 	
-	[[nodiscard]]
-	bool Vulkan_Semaphore::valid() const noexcept {
+	bool Vulkan_Semaphore::valid() const {
 		return vk_hSemaphore != VK_NULL_HANDLE;
 	}
 
-	[[nodiscard]]
 	Vulkan_Semaphore::operator VkSemaphore() const {
 		return get();
 	}
 	
-	[[nodiscard]]
 	Vulkan_Semaphore::operator const VkSemaphore*() const {
 		return get_ptr();
 	}
 	
-	[[nodiscard]]
 	Vulkan_Semaphore::operator bool() const {
 		return valid();
+	}
+
+	VkSemaphore Vulkan_Semaphore::operator()() const {
+		return get();
 	}
 
 }

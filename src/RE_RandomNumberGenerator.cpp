@@ -32,9 +32,9 @@ namespace RE {
 	}
 
 	[[nodiscard]]
-	bool RandomNumberGenerator::random_bool(const double dChance) {
-		PRINT_DEBUG_CLASS("Rolling random number and checking if it's equal or lower than ", dChance);
-		return random<double>(dChance) <= dChance;
+	bool RandomNumberGenerator::random_bool(const double f64Chance) {
+		PRINT_DEBUG_CLASS("Rolling random number and checking if it's equal or lower than ", f64Chance);
+		return random<double>(f64Chance) <= f64Chance;
 	}
 
 	[[nodiscard]]
@@ -44,8 +44,8 @@ namespace RE {
 	}
 
 	[[nodiscard]]
-	bool RandomNumberGenerator::operator ()(const double &rdChance) {
-		return random_bool(rdChance);
+	bool RandomNumberGenerator::operator()(const double f64Chance) {
+		return random_bool(f64Chance);
 	}
 
 }

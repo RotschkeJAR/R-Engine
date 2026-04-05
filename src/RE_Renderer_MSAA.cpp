@@ -1,85 +1,14 @@
 #include "RE_Renderer_Internal.hpp"
-#include "RE_Vulkan_Wrappers.hpp"
-#include "RE_GPU.hpp"
 #include "RE_Main.hpp"
 
 namespace RE {
 	
-	VkSampleCountFlags vk_eAllowedMsaaSamples;
 	VkSampleCountFlagBits vk_eMsaaCount = VK_SAMPLE_COUNT_1_BIT;
-	Vulkan_Image singleSampledWorldRenderImages;
-	Vulkan_ImageView aSingleSampledWorldRenderImageViews[RE_VK_FRAMES_IN_FLIGHT];
-
-	bool create_singlesampled_images(const std::vector<uint32_t> &rRenderQueuesFamilyIndices, const bool bResolvingRequired, const bool bBlittingRequired) {
-		if (!bResolvingRequired || !bBlittingRequired)
-			return true;
-		PRINT_DEBUG("Creating Vulkan image for rendering multisampled");
-		if (singleSampledWorldRenderImages.create(
-				0,
-				VK_IMAGE_TYPE_2D,
-				vk_eSwapchainImageFormat,
-				VkExtent3D {
-					.width = vk_renderImageSize.width,
-					.height = vk_renderImageSize.height,
-					.depth = 1
-				},
-				1,
-				RE_VK_FRAMES_IN_FLIGHT,
-				VK_SAMPLE_COUNT_1_BIT,
-				VK_IMAGE_TILING_OPTIMAL,
-				VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-				rRenderQueuesFamilyIndices.size(),
-				rRenderQueuesFamilyIndices.data(),
-				VK_IMAGE_LAYOUT_UNDEFINED,
-				RE_VK_GPU_RAM,
-				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) {
-			uint8_t u8FrameInFlightIndex = 0;
-			while (u8FrameInFlightIndex < RE_VK_FRAMES_IN_FLIGHT) {
-				if (aSingleSampledWorldRenderImageViews[u8FrameInFlightIndex].create(
-						0,
-						singleSampledWorldRenderImages.get(),
-						VK_IMAGE_VIEW_TYPE_2D,
-						vk_eSwapchainImageFormat,
-						VkComponentMapping {
-							.r = VK_COMPONENT_SWIZZLE_IDENTITY,
-							.g = VK_COMPONENT_SWIZZLE_IDENTITY,
-							.b = VK_COMPONENT_SWIZZLE_IDENTITY,
-							.a = VK_COMPONENT_SWIZZLE_IDENTITY
-						},
-						VkImageSubresourceRange {
-							.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-							.baseMipLevel = 0,
-							.levelCount = 1,
-							.baseArrayLayer = u8FrameInFlightIndex,
-							.layerCount = 1
-						})) {
-					u8FrameInFlightIndex++;
-					continue;
-				} else
-					RE_FATAL_ERROR("Failed creating Vulkan image view at index ", u8FrameInFlightIndex, " pointing at singlesampled image");
-				break;
-			}
-			if (u8FrameInFlightIndex == RE_VK_FRAMES_IN_FLIGHT)
-				return true;
-			for (uint8_t u8SingleSampledImageViewDestroyIndex = 0; u8SingleSampledImageViewDestroyIndex < u8FrameInFlightIndex; u8SingleSampledImageViewDestroyIndex++)
-				aSingleSampledWorldRenderImageViews[u8SingleSampledImageViewDestroyIndex].destroy();
-			singleSampledWorldRenderImages.destroy();
-		} else
-			RE_FATAL_ERROR("Failed to create singlesampled Vulkan image");
-		return false;
-	}
-
-	void destroy_singlesampled_images() {
-		PRINT_DEBUG("Destroying singlesampled render image and its memory and image views");
-		for (Vulkan_ImageView &rImageView : aSingleSampledWorldRenderImageViews)
-			rImageView.destroy();
-		singleSampledWorldRenderImages.destroy();
-	}
 
 	void set_msaa_mode(const MsaaMode eNewMsaaMode) {
 		MsaaMode eNextMsaaMode = eNewMsaaMode;
 		while (!is_msaa_mode_supported(eNextMsaaMode) && eNextMsaaMode != RE_MSAA_MODE_1) {
-			PRINT_DEBUG("MSAA-mode ", eNextMsaaMode, " not supported. Dropping it down by one");
+			PRINT_DEBUG("MSAA mode ", eNextMsaaMode, " not supported. Dropping it down by one");
 			eNextMsaaMode = static_cast<MsaaMode>(static_cast<uint8_t>(eNextMsaaMode) - 1);
 		}
 		const VkSampleCountFlagBits vk_eNewSampleCount = static_cast<VkSampleCountFlagBits>(VK_SAMPLE_COUNT_1_BIT << eNextMsaaMode);
@@ -93,10 +22,10 @@ namespace RE {
 		vk_eMsaaCount = vk_eNewSampleCount;
 		if (bRunning) {
 			PRINT_DEBUG("Recreating render images and render pipeline to adjust to new MSAA mode");
-			WAIT_FOR_IDLE_VULKAN_DEVICE();
+			vkDeviceWaitIdle(vk_hDevice);
 			recreate_graphics_pipelines();
-			destroy_render_image_resources();
-			create_render_image_resources();
+			destroy_images_renderer();
+			create_images_renderer();
 		}
 	}
 
@@ -104,7 +33,6 @@ namespace RE {
 	MsaaMode get_msaa_mode() {
 		switch (vk_eMsaaCount) {
 			case VK_SAMPLE_COUNT_1_BIT:
-			default:
 				return RE_MSAA_MODE_1;
 			case VK_SAMPLE_COUNT_2_BIT:
 				return RE_MSAA_MODE_2;
@@ -118,12 +46,14 @@ namespace RE {
 				return RE_MSAA_MODE_32;
 			case VK_SAMPLE_COUNT_64_BIT:
 				return RE_MSAA_MODE_64;
+			[[unlikely]] default:
+				RE_ABORT("Unknown MSAA mode is selected in the settings: ", std::hex, vk_eMsaaCount);
 		}
 	}
 
 	[[nodiscard]]
 	bool is_msaa_mode_supported(const MsaaMode eMsaaMode) {
-		return ((VK_SAMPLE_COUNT_1_BIT << eMsaaMode) & vk_eAllowedMsaaSamples) != 0;
+		return ((VK_SAMPLE_COUNT_1_BIT << eMsaaMode) & vk_mSupportedMsaaSamples) != 0;
 	}
 
 	void get_supported_msaa_modes(const uint8_t u8ListLength, MsaaMode *const paeSupportedMsaaModes, uint8_t *const pu8SupportedMsaaModeCount) {
@@ -131,7 +61,7 @@ namespace RE {
 			return;
 		uint8_t u8Index = 0;
 		for (uint8_t u8MsaaModeIndex = 0; u8MsaaModeIndex <= static_cast<uint8_t>(RE_MSAA_MODE_64); u8MsaaModeIndex++) {
-			PRINT_DEBUG("Checking availability of MSAA-mode ", u8MsaaModeIndex);
+			PRINT_DEBUG("Checking availability of MSAA mode ", u8MsaaModeIndex);
 			const MsaaMode eMsaaMode = static_cast<MsaaMode>(u8MsaaModeIndex);
 			if (is_msaa_mode_supported(eMsaaMode)) {
 				if (paeSupportedMsaaModes && u8Index < u8ListLength) {
@@ -142,18 +72,18 @@ namespace RE {
 			}
 		}
 		if (pu8SupportedMsaaModeCount) {
-			PRINT_DEBUG("Writing count of available MSAA-modes (", u8Index, ") to ", pu8SupportedMsaaModeCount);
+			PRINT_DEBUG("Writing count of available MSAA modes (", u8Index, ") to ", pu8SupportedMsaaModeCount);
 			*pu8SupportedMsaaModeCount = u8Index;
 		}
 	}
 
 	[[nodiscard]]
 	MsaaMode get_highest_supported_msaa_mode() {
-		for (uint8_t u8MsaaModeIndex = static_cast<uint8_t>(RE_MSAA_MODE_64); u8MsaaModeIndex > 0; u8MsaaModeIndex--) {
-			PRINT_DEBUG("Checking availability of MSAA-mode ", u8MsaaModeIndex);
-			const MsaaMode eMsaaMode = static_cast<MsaaMode>(u8MsaaModeIndex);
+		for (int8_t i8MsaaModeIndex = static_cast<int8_t>(RE_MSAA_MODE_64); i8MsaaModeIndex > 0; i8MsaaModeIndex--) {
+			PRINT_DEBUG("Checking availability of MSAA mode ", i8MsaaModeIndex);
+			const MsaaMode eMsaaMode = static_cast<MsaaMode>(i8MsaaModeIndex);
 			if (is_msaa_mode_supported(eMsaaMode)) {
-				PRINT_DEBUG("MSAA-mode ", u8MsaaModeIndex, " is the highest supported mode by the GPU");
+				PRINT_DEBUG("MSAA mode ", i8MsaaModeIndex, " is the highest supported mode by the GPU");
 				return eMsaaMode;
 			}
 		}

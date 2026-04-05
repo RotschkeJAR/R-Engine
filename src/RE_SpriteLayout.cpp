@@ -1,5 +1,4 @@
 #include "RE_SpriteLayout.hpp"
-#include "RE_GPU.hpp"
 #include "RE_Main.hpp"
 #include "RE_Sprite.hpp"
 #include "RE_Renderer.hpp"
@@ -14,8 +13,7 @@ namespace RE {
 			case RE_TEXTURE_FILTER_LINEAR:
 				return VK_FILTER_LINEAR;
 			default:
-				RE_FATAL_ERROR("Unknown texture filter ", std::hex, eFilter);
-				std::abort();
+				RE_ABORT("Unknown texture filter ", std::hex, eFilter);
 		}
 	}
 
@@ -27,8 +25,7 @@ namespace RE {
 			case RE_TEXTURE_FILTER_LINEAR:
 				return VK_SAMPLER_MIPMAP_MODE_LINEAR;
 			default:
-				RE_FATAL_ERROR("Unknown texture filter ", std::hex, eFilter, " for mipmaps");
-				std::abort();
+				RE_ABORT("Unknown texture filter ", std::hex, eFilter, " for mipmaps");
 		}
 	}
 
@@ -44,8 +41,7 @@ namespace RE {
 			case RE_TEXTURE_REPETITION_CLAMP_TO_BORDER:
 				return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
 			default:
-				RE_FATAL_ERROR("Unknown texture repetition ", std::hex, eRepitition);
-				std::abort();
+				RE_ABORT("Unknown texture repetition ", std::hex, eRepitition);
 		}
 	}
 
@@ -59,8 +55,7 @@ namespace RE {
 			case RE_BORDER_COLOR_WHITE:
 				return VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
 			default:
-				RE_FATAL_ERROR("Unknown border color ", std::hex, eColor);
-				std::abort();
+				RE_ABORT("Unknown border color ", std::hex, eColor);
 		}
 	}
 
@@ -83,13 +78,13 @@ namespace RE {
 			.borderColor = get_vulkan_border_color(rSettings.eBorderColor),
 			.unnormalizedCoordinates = VK_FALSE
 		};
-		if (rSettings.fMaxAnisotropy >= 1.0f) {
+		if (rSettings.f32MaxAnisotropy >= 1.0f) {
 			vk_spriteLayoutCreateInfo.anisotropyEnable = VK_TRUE;
-			if (get_maximum_allowed_anisotropy() >= 1.0f && get_maximum_allowed_anisotropy() < rSettings.fMaxAnisotropy) {
-				RE_NOTE("The GPU doesn't support any higher anisotropy than ", get_maximum_allowed_anisotropy(), ". Yours was set to ", rSettings.fMaxAnisotropy, " and has been clamped down to the limit");
+			if (get_maximum_allowed_anisotropy() >= 1.0f && get_maximum_allowed_anisotropy() < rSettings.f32MaxAnisotropy) {
+				RE_NOTE("The GPU doesn't support any higher anisotropy than ", get_maximum_allowed_anisotropy(), ". Yours was set to ", rSettings.f32MaxAnisotropy, " and has been clamped down to the limit");
 				vk_spriteLayoutCreateInfo.maxAnisotropy = get_maximum_allowed_anisotropy();
 			} else
-				vk_spriteLayoutCreateInfo.maxAnisotropy = rSettings.fMaxAnisotropy;
+				vk_spriteLayoutCreateInfo.maxAnisotropy = rSettings.f32MaxAnisotropy;
 		} else
 			vk_spriteLayoutCreateInfo.anisotropyEnable = VK_FALSE;
 		return vkCreateSampler(vk_hDevice, &vk_spriteLayoutCreateInfo, nullptr, &vk_rhSamplerOut) == VK_SUCCESS;
@@ -180,7 +175,7 @@ namespace RE {
 
 	[[nodiscard]]
 	float get_maximum_allowed_anisotropy() {
-		return vk_physicalDeviceProperties.limits.maxSamplerAnisotropy;
+		return f32MaxSamplerAnisotropy;
 	}
 
 }

@@ -8,15 +8,15 @@
 namespace RE {
 	
 	static Vulkan_Buffer aStagingRawGameObjectBuffers[RE_VK_FRAMES_IN_FLIGHT];
-	static GameObjectInstanceData *apaGameObjectBufferInstanceData[RE_VK_FRAMES_IN_FLIGHT];
+	static RawGameObjectShaderData *apaGameObjectBufferInstanceData[RE_VK_FRAMES_IN_FLIGHT];
 
 	Vulkan_Buffer aRawGameObjectBuffers[RE_VK_FRAMES_IN_FLIGHT];
 
 	bool create_raw_game_object_buffers() {
-		const VkDeviceSize vk_objectBufferByteSize = 1000 * sizeof(GameObjectInstanceData) + sizeof(VkDrawIndexedIndirectCommand);
+		constexpr VkDeviceSize vk_objectBufferByteSize = 1000 * sizeof(RawGameObjectShaderData);
 		uint8_t u8FrameInFlightCreateIndex = 0;
 		while (u8FrameInFlightCreateIndex < RE_VK_FRAMES_IN_FLIGHT) {
-			if (is_transfer_necessary()) {
+			if (is_staging_before_gpu_use_necessary()) {
 				PRINT_DEBUG("Creating staging game object buffer in Vulkan at index ", u8FrameInFlightCreateIndex);
 				if (aStagingRawGameObjectBuffers[u8FrameInFlightCreateIndex].create(
 						0,
@@ -24,13 +24,12 @@ namespace RE {
 						VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 						1,
 						nullptr,
-						RE_VK_CPU_RAM,
-						0)) {
+						VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) {
 					PRINT_DEBUG("Mapping to staging game object buffer's memory at index ", u8FrameInFlightCreateIndex);
 					void *pStagingRenderBufferContent;
 					if (aStagingRawGameObjectBuffers[u8FrameInFlightCreateIndex].get_memory().map(0, 0, vk_objectBufferByteSize, &pStagingRenderBufferContent)) {
 						PRINT_DEBUG("Querying queues the staging game object buffer will be used in");
-						apaGameObjectBufferInstanceData[u8FrameInFlightCreateIndex] = reinterpret_cast<GameObjectInstanceData*>(pStagingRenderBufferContent);
+						apaGameObjectBufferInstanceData[u8FrameInFlightCreateIndex] = reinterpret_cast<RawGameObjectShaderData*>(pStagingRenderBufferContent);
 						constexpr uint32_t au32ObjectBufferQueues[] = {
 							RENDER_TASK_SUBINDEX_BUFFER_TRANSFER, 
 							RENDER_TASK_SUBINDEX_PROCESSING
@@ -43,8 +42,7 @@ namespace RE {
 								VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 								queuesForObjectBuffer.u8QueueCount,
 								queuesForObjectBuffer.queueFamilyIndices.get(),
-								RE_VK_GPU_RAM,
-								0)) {
+								VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) {
 							u8FrameInFlightCreateIndex++;
 							continue;
 						} else
@@ -63,12 +61,11 @@ namespace RE {
 						VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 						1,
 						nullptr,
-						RE_VK_SHARED_RAM,
-						0)) {
+						VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) {
 					PRINT_DEBUG("Mapping memory of raw game object buffer at frame-in-flight index ", u8FrameInFlightCreateIndex, " to CPU");
 					void *pRenderBufferContent;
 					if (aRawGameObjectBuffers[u8FrameInFlightCreateIndex].get_memory().map(0, 0, vk_objectBufferByteSize, &pRenderBufferContent)) {
-						apaGameObjectBufferInstanceData[u8FrameInFlightCreateIndex] = reinterpret_cast<GameObjectInstanceData*>(pRenderBufferContent);
+						apaGameObjectBufferInstanceData[u8FrameInFlightCreateIndex] = reinterpret_cast<RawGameObjectShaderData*>(pRenderBufferContent);
 						PRINT_DEBUG("Prerecording command buffer of all render tasks");
 						if (renderTasks[u8FrameInFlightCreateIndex].record(
 								RENDER_TASK_SUBINDEX_BUFFER_TRANSFER, 
@@ -91,7 +88,7 @@ namespace RE {
 			return true;
 		for (uint8_t u8FrameInFlightDestroyIndex = 0; u8FrameInFlightDestroyIndex < u8FrameInFlightCreateIndex; u8FrameInFlightDestroyIndex++) {
 			PRINT_DEBUG("Destroying game object buffers at frame-in-flight index ", u8FrameInFlightDestroyIndex, " due to failure setting them up");
-			if (is_transfer_necessary())
+			if (is_staging_before_gpu_use_necessary())
 				aStagingRawGameObjectBuffers[u8FrameInFlightDestroyIndex].destroy();
 			aRawGameObjectBuffers[u8FrameInFlightDestroyIndex].destroy();
 		}
@@ -101,7 +98,7 @@ namespace RE {
 	void destroy_raw_game_object_buffers() {
 		for (uint8_t u8FrameInFlightDestroyIndex = 0; u8FrameInFlightDestroyIndex < RE_VK_FRAMES_IN_FLIGHT; u8FrameInFlightDestroyIndex++) {
 			PRINT_DEBUG("Destroying game object buffers at frame-in-flight index ", u8FrameInFlightDestroyIndex);
-			if (is_transfer_necessary())
+			if (is_staging_before_gpu_use_necessary())
 				aStagingRawGameObjectBuffers[u8FrameInFlightDestroyIndex].destroy();
 			aRawGameObjectBuffers[u8FrameInFlightDestroyIndex].destroy();
 		}
@@ -114,27 +111,27 @@ namespace RE {
 				const GameObject *const pGameObject = pBatch->at(u16Index);
 				if (pGameObject->u32SceneParentId && pGameObject->u32SceneParentId != pCurrentScene->u32Id)
 					continue;
-				apaGameObjectBufferInstanceData[u8CurrentFrameInFlightIndex][gameObjectsToRenderCount].a4fPosition[0] = pGameObject->transform.position[0];
-				apaGameObjectBufferInstanceData[u8CurrentFrameInFlightIndex][gameObjectsToRenderCount].a4fPosition[1] = pGameObject->transform.position[1];
-				apaGameObjectBufferInstanceData[u8CurrentFrameInFlightIndex][gameObjectsToRenderCount].a4fPosition[2] = pGameObject->transform.position[2];
-				apaGameObjectBufferInstanceData[u8CurrentFrameInFlightIndex][gameObjectsToRenderCount].a4fScale[0] = pGameObject->transform.scale[0];
-				apaGameObjectBufferInstanceData[u8CurrentFrameInFlightIndex][gameObjectsToRenderCount].a4fScale[1] = pGameObject->transform.scale[1];
-				apaGameObjectBufferInstanceData[u8CurrentFrameInFlightIndex][gameObjectsToRenderCount].a4fScale[2] = pGameObject->transform.scale[2];
-				apaGameObjectBufferInstanceData[u8CurrentFrameInFlightIndex][gameObjectsToRenderCount].a4fColor[0] = pGameObject->spriteRenderer.color[0];
-				apaGameObjectBufferInstanceData[u8CurrentFrameInFlightIndex][gameObjectsToRenderCount].a4fColor[1] = pGameObject->spriteRenderer.color[1];
-				apaGameObjectBufferInstanceData[u8CurrentFrameInFlightIndex][gameObjectsToRenderCount].a4fColor[2] = pGameObject->spriteRenderer.color[2];
-				apaGameObjectBufferInstanceData[u8CurrentFrameInFlightIndex][gameObjectsToRenderCount].a4fColor[3] = pGameObject->spriteRenderer.color[3];
-				apaGameObjectBufferInstanceData[u8CurrentFrameInFlightIndex][gameObjectsToRenderCount].u32TextureId = static_cast<uint32_t>(pGameObject->spriteRenderer.hSprite ? reinterpret_cast<const VulkanSprite*>(pGameObject->spriteRenderer.hSprite)->u16UniformIndex : 0x8000);
+				apaGameObjectBufferInstanceData[u8CurrentFrameInFlightIndex][gameObjectsToRenderCount].position[0] = pGameObject->transform.position[0];
+				apaGameObjectBufferInstanceData[u8CurrentFrameInFlightIndex][gameObjectsToRenderCount].position[1] = pGameObject->transform.position[1];
+				apaGameObjectBufferInstanceData[u8CurrentFrameInFlightIndex][gameObjectsToRenderCount].position[2] = pGameObject->transform.position[2];
+				apaGameObjectBufferInstanceData[u8CurrentFrameInFlightIndex][gameObjectsToRenderCount].scale[0] = pGameObject->transform.scale[0];
+				apaGameObjectBufferInstanceData[u8CurrentFrameInFlightIndex][gameObjectsToRenderCount].scale[1] = pGameObject->transform.scale[1];
+				apaGameObjectBufferInstanceData[u8CurrentFrameInFlightIndex][gameObjectsToRenderCount].scale[2] = pGameObject->transform.scale[2];
+				apaGameObjectBufferInstanceData[u8CurrentFrameInFlightIndex][gameObjectsToRenderCount].color[0] = pGameObject->spriteRenderer.color[0];
+				apaGameObjectBufferInstanceData[u8CurrentFrameInFlightIndex][gameObjectsToRenderCount].color[1] = pGameObject->spriteRenderer.color[1];
+				apaGameObjectBufferInstanceData[u8CurrentFrameInFlightIndex][gameObjectsToRenderCount].color[2] = pGameObject->spriteRenderer.color[2];
+				apaGameObjectBufferInstanceData[u8CurrentFrameInFlightIndex][gameObjectsToRenderCount].color[3] = pGameObject->spriteRenderer.color[3];
+				apaGameObjectBufferInstanceData[u8CurrentFrameInFlightIndex][gameObjectsToRenderCount].textureId = static_cast<uint32_t>(pGameObject->spriteRenderer.hSprite ? reinterpret_cast<const VulkanSprite*>(pGameObject->spriteRenderer.hSprite)->u16UniformIndex : 0x8000);
 				gameObjectsToRenderCount++;
 			}
 		}
-		if (is_transfer_necessary())
+		if (is_staging_before_gpu_use_necessary())
 			return renderTasks[u8CurrentFrameInFlightIndex].record(RENDER_TASK_SUBINDEX_BUFFER_TRANSFER, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, [&](const VkCommandBuffer vk_hCommandBuffer, const uint8_t u8PreviousLogicalQueue, const uint8_t u8CurrentLogicalQueue, const uint8_t u8NextLogicalQueue) {
 						const VkBufferCopy2 vk_copyRenderBufferRegion = {
 							.sType = VK_STRUCTURE_TYPE_BUFFER_COPY_2,
 							.srcOffset = 0,
 							.dstOffset = 0,
-							.size = gameObjectsToRenderCount * sizeof(GameObjectInstanceData),
+							.size = gameObjectsToRenderCount * sizeof(RawGameObjectShaderData),
 						};
 						const VkCopyBufferInfo2 vk_copyRenderBufferInfo = {
 							.sType = VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2,

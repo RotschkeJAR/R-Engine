@@ -7,15 +7,12 @@ namespace RE {
 
 	bool create_vulkan_shader_from_file(const char *pacDirectory, VkShaderModuleCreateFlags vk_eFlags, VkShaderModule *vk_phShaderModule);
 	
-	bool create_vulkan_buffer(VkBufferCreateFlags vk_eFlags, 
-			VkDeviceSize vk_size, 
-			VkBufferUsageFlags vk_eUsages, 
-			uint32_t u32QueueFamilyCount, 
-			const uint32_t *pau32QueueFamilies, 
-			VulkanMemoryType eMemoryType, 
-			VkMemoryPropertyFlags vk_eMemoryPropertyFlags, 
-			VkBuffer *vk_phBuffer, 
-			VulkanMemory *pMemory);
+	bool create_vulkan_buffer(VkBufferCreateFlags vk_eFlags,
+			VkDeviceSize vk_size,
+			VkBufferUsageFlags vk_eUsages,
+			uint32_t u32QueueFamilyCount,
+			const uint32_t *pau32QueueFamilies,
+			VkBuffer *vk_phBuffer);
 	class Vulkan_Buffer final {
 		private:
 			VkBuffer vk_hBuffer;
@@ -23,50 +20,41 @@ namespace RE {
 
 		public:
 			Vulkan_Buffer();
-			Vulkan_Buffer(VkBufferCreateFlags vk_eFlags, 
-					VkDeviceSize vk_size, 
-					VkBufferUsageFlags vk_eUsages, 
-					uint32_t u32QueueCount, 
-					const uint32_t *pau32Queues, 
-					VulkanMemoryType eMemoryType, 
+			Vulkan_Buffer(VkBufferCreateFlags vk_eFlags,
+					VkDeviceSize vk_size,
+					VkBufferUsageFlags vk_eUsages,
+					uint32_t u32QueueCount,
+					const uint32_t *pau32Queues,
 					VkMemoryPropertyFlags vk_eMemoryPropertyFlags);
 			Vulkan_Buffer(Vulkan_Buffer &rCopy) = delete;
 			Vulkan_Buffer(Vulkan_Buffer &&rrCopy);
 			~Vulkan_Buffer();
 
-			bool create(VkBufferCreateFlags vk_eFlags, 
-					VkDeviceSize vk_size, 
-					VkBufferUsageFlags vk_eUsages, 
-					uint32_t u32QueueCount, 
-					const uint32_t *pau32Queues, 
-					VulkanMemoryType eMemoryType, 
+			bool create(VkBufferCreateFlags vk_eFlags,
+					VkDeviceSize vk_size,
+					VkBufferUsageFlags vk_eUsages,
+					uint32_t u32QueueCount,
+					const uint32_t *pau32Queues,
 					VkMemoryPropertyFlags vk_eMemoryPropertyFlags);
 			void destroy();
 
-			[[nodiscard]]
-			VkBuffer get() const noexcept;
-			[[nodiscard]]
-			const VkBuffer* get_ptr() const noexcept;
-			[[nodiscard]]
-			VulkanMemory& get_memory() noexcept;
-			[[nodiscard]]
-			bool valid() const noexcept;
+			VkBuffer get() const;
+			const VkBuffer* get_ptr() const;
+			VulkanMemory& get_memory();
+			bool valid() const;
 
-			[[nodiscard]]
 			operator VkBuffer() const;
-			[[nodiscard]]
 			operator const VkBuffer*() const;
-			[[nodiscard]]
 			operator VulkanMemory&();
-			[[nodiscard]]
 			operator bool() const;
+			VkBuffer operator()() const;
 	};
 
-	bool create_vulkan_buffer_view(VkBufferViewCreateFlags vk_eFlags, 
-			VkBuffer vk_hBuffer, 
-			VkFormat vk_eFormat, 
-			VkDeviceSize vk_offset, 
-			VkDeviceSize vk_range, 
+	bool create_vulkan_buffer_view(VkBufferViewCreateFlags vk_eFlags,
+			VkBuffer vk_hBuffer,
+			VkFormat vk_eFormat,
+			VkDeviceSize vk_offset,
+			VkDeviceSize vk_range,
 			VkBufferView *vk_phBufferView);
 	class Vulkan_BufferView final {
 		private:
@@ -74,53 +62,45 @@ namespace RE {
 
 		public:
 			Vulkan_BufferView();
-			Vulkan_BufferView(VkBufferViewCreateFlags vk_eFlags, 
-					VkBuffer vk_hBuffer, 
-					VkFormat vk_eFormat, 
-					VkDeviceSize vk_offset, 
+			Vulkan_BufferView(VkBufferViewCreateFlags vk_eFlags,
+					VkBuffer vk_hBuffer,
+					VkFormat vk_eFormat,
+					VkDeviceSize vk_offset,
 					VkDeviceSize vk_range);
 			Vulkan_BufferView(Vulkan_BufferView &rCopy) = delete;
 			Vulkan_BufferView(Vulkan_BufferView &&rrCopy);
 			~Vulkan_BufferView();
 
-			bool create(VkBufferViewCreateFlags vk_eFlags, 
-					VkBuffer vk_hBuffer, 
-					VkFormat vk_eFormat, 
-					VkDeviceSize vk_offset, 
+			bool create(VkBufferViewCreateFlags vk_eFlags,
+					VkBuffer vk_hBuffer,
+					VkFormat vk_eFormat,
+					VkDeviceSize vk_offset,
 					VkDeviceSize vk_range);
 			void destroy();
 
-			[[nodiscard]]
-			VkBufferView get() const noexcept;
-			[[nodiscard]]
-			const VkBufferView* get_ptr() const noexcept;
-			[[nodiscard]]
-			bool valid() const noexcept;
+			VkBufferView get() const;
+			const VkBufferView* get_ptr() const;
+			bool valid() const;
 
-			[[nodiscard]]
 			operator VkBufferView() const;
-			[[nodiscard]]
 			operator const VkBufferView*() const;
-			[[nodiscard]]
 			operator bool() const;
+			VkBufferView operator()() const;
 	};
 
-	bool create_vulkan_image(VkImageCreateFlags vk_eFlags, 
-			VkImageType vk_eType, 
-			VkFormat vk_eFormat, 
-			const VkExtent3D &vk_rExtent, 
-			uint32_t u32MipmapCount, 
-			uint32_t u32LayerCount, 
-			VkSampleCountFlagBits vk_eSamples, 
-			VkImageTiling vk_eTiling, 
-			VkImageUsageFlags vk_eUsage, 
-			uint32_t u32QueueFamilyCount, 
-			const uint32_t *pau32QueueFamilies, 
-			VkImageLayout vk_eInitialLayout, 
-			VulkanMemoryType eMemoryType, 
-			VkMemoryPropertyFlags vk_eMemoryProperties, 
-			VkImage *vk_phImage, 
-			VulkanMemory *pMemory);
+	bool create_vulkan_image(VkImageCreateFlags vk_eFlags,
+			VkImageType vk_eType,
+			VkFormat vk_eFormat,
+			const VkExtent3D &vk_rExtent,
+			uint32_t u32MipmapCount,
+			uint32_t u32LayerCount,
+			VkSampleCountFlagBits vk_eSamples,
+			VkImageTiling vk_eTiling,
+			VkImageUsageFlags vk_eUsage,
+			uint32_t u32QueueFamilyCount,
+			const uint32_t *pau32QueueFamilies,
+			VkImageLayout vk_eInitialLayout,
+			VkImage *vk_phImage);
 	class Vulkan_Image final {
 		private:
 			VkImage vk_hImage;
@@ -128,65 +108,56 @@ namespace RE {
 
 		public:
 			Vulkan_Image();
-			Vulkan_Image(VkImageCreateFlags vk_eFlags, 
-					VkImageType vk_eType, 
-					VkFormat vk_eFormat, 
-					const VkExtent3D &vk_rExtent, 
-					uint32_t u32MipmapCount, 
-					uint32_t u32LayerCount, 
-					VkSampleCountFlagBits vk_eSamples, 
-					VkImageTiling vk_eTiling, 
-					VkImageUsageFlags vk_eUsage, 
-					uint32_t u32QueueFamilyCount, 
-					const uint32_t *pau32QueueFamilies, 
-					VkImageLayout vk_eInitialLayout, 
-					VulkanMemoryType eMemoryType, 
+			Vulkan_Image(VkImageCreateFlags vk_eFlags,
+					VkImageType vk_eType,
+					VkFormat vk_eFormat,
+					const VkExtent3D &vk_rExtent,
+					uint32_t u32MipmapCount,
+					uint32_t u32LayerCount,
+					VkSampleCountFlagBits vk_eSamples,
+					VkImageTiling vk_eTiling,
+					VkImageUsageFlags vk_eUsage,
+					uint32_t u32QueueFamilyCount,
+					const uint32_t *pau32QueueFamilies,
+					VkImageLayout vk_eInitialLayout,
 					VkMemoryPropertyFlags vk_eMemoryProperties);
 			Vulkan_Image(Vulkan_Image &rCopy) = delete;
 			Vulkan_Image(Vulkan_Image &&rrCopy);
 			~Vulkan_Image();
 
-			bool create(VkImageCreateFlags vk_eFlags, 
-					VkImageType vk_eType, 
-					VkFormat vk_eFormat, 
-					const VkExtent3D &vk_rExtent, 
-					uint32_t u32MipmapCount, 
-					uint32_t u32LayerCount, 
-					VkSampleCountFlagBits vk_eSamples, 
-					VkImageTiling vk_eTiling, 
-					VkImageUsageFlags vk_eUsage, 
-					uint32_t u32QueueFamilyCount, 
-					const uint32_t *pau32QueueFamilies, 
-					VkImageLayout vk_eInitialLayout, 
-					VulkanMemoryType eMemoryType, 
+			bool create(VkImageCreateFlags vk_eFlags,
+					VkImageType vk_eType,
+					VkFormat vk_eFormat,
+					const VkExtent3D &vk_rExtent,
+					uint32_t u32MipmapCount,
+					uint32_t u32LayerCount,
+					VkSampleCountFlagBits vk_eSamples,
+					VkImageTiling vk_eTiling,
+					VkImageUsageFlags vk_eUsage,
+					uint32_t u32QueueFamilyCount,
+					const uint32_t *pau32QueueFamilies,
+					VkImageLayout vk_eInitialLayout,
 					VkMemoryPropertyFlags vk_eMemoryProperties);
 			void destroy();
 
-			[[nodiscard]]
-			VkImage get() const noexcept;
-			[[nodiscard]]
-			const VkImage* get_ptr() const noexcept;
-			[[nodiscard]]
-			VulkanMemory& get_memory() noexcept;
-			[[nodiscard]]
-			bool valid() const noexcept;
+			VkImage get() const;
+			const VkImage* get_ptr() const;
+			VulkanMemory& get_memory();
+			bool valid() const;
 
-			[[nodiscard]]
 			operator VkImage() const;
-			[[nodiscard]]
 			operator const VkImage*() const;
-			[[nodiscard]]
 			operator VulkanMemory&();
-			[[nodiscard]]
 			operator bool() const;
+			VkImage operator()() const;
 	};
 
-	bool create_vulkan_image_view(VkImageViewCreateFlags vk_eFlags, 
-			VkImage vk_hImage, 
-			VkImageViewType vk_eType, 
-			VkFormat vk_eFormat, 
-			const VkComponentMapping &vk_rComponentMapping, 
-			const VkImageSubresourceRange &vk_rSubresourceRange, 
+	bool create_vulkan_image_view(VkImageViewCreateFlags vk_eFlags,
+			VkImage vk_hImage,
+			VkImageViewType vk_eType,
+			VkFormat vk_eFormat,
+			const VkComponentMapping &vk_rComponentMapping,
+			const VkImageSubresourceRange &vk_rSubresourceRange,
 			VkImageView *vk_phImageView);
 	class Vulkan_ImageView final {
 		private:
@@ -194,46 +165,41 @@ namespace RE {
 
 		public:
 			Vulkan_ImageView();
-			Vulkan_ImageView(VkImageViewCreateFlags vk_eFlags, 
-					VkImage vk_hImage, 
-					VkImageViewType vk_eType, 
-					VkFormat vk_eFormat, 
-					const VkComponentMapping &vk_rComponentMapping, 
+			Vulkan_ImageView(VkImageViewCreateFlags vk_eFlags,
+					VkImage vk_hImage,
+					VkImageViewType vk_eType,
+					VkFormat vk_eFormat,
+					const VkComponentMapping &vk_rComponentMapping,
 					const VkImageSubresourceRange &vk_rSubresourceRange);
 			Vulkan_ImageView(Vulkan_ImageView &rCopy) = delete;
 			Vulkan_ImageView(Vulkan_ImageView &&rrCopy);
 			~Vulkan_ImageView();
 
-			bool create(VkImageViewCreateFlags vk_eFlags, 
-					VkImage vk_hImage, 
-					VkImageViewType vk_eType, 
-					VkFormat vk_eFormat, 
-					const VkComponentMapping &vk_rComponentMapping, 
+			bool create(VkImageViewCreateFlags vk_eFlags,
+					VkImage vk_hImage,
+					VkImageViewType vk_eType,
+					VkFormat vk_eFormat,
+					const VkComponentMapping &vk_rComponentMapping,
 					const VkImageSubresourceRange &vk_rSubresourceRange);
 			void destroy();
 
-			[[nodiscard]]
-			VkImageView get() const noexcept;
-			[[nodiscard]]
-			const VkImageView* get_ptr() const noexcept;
-			[[nodiscard]]
-			bool valid() const noexcept;
+			VkImageView get() const;
+			const VkImageView* get_ptr() const;
+			bool valid() const;
 
-			[[nodiscard]]
 			operator VkImageView() const;
-			[[nodiscard]]
 			operator const VkImageView*() const;
-			[[nodiscard]]
 			operator bool() const;
+			VkImageView operator()() const;
 	};
 
-	bool create_vulkan_framebuffer(VkFramebufferCreateFlags vk_eFlags, 
-			VkRenderPass vk_hRenderPass, 
-			uint32_t u32AttachmentCount, 
-			const VkImageView *vk_pahAttachments, 
-			uint32_t u32Width, 
-			uint32_t u32Height, 
-			uint32_t u32Layers, 
+	bool create_vulkan_framebuffer(VkFramebufferCreateFlags vk_eFlags,
+			VkRenderPass vk_hRenderPass,
+			uint32_t u32AttachmentCount,
+			const VkImageView *vk_pahAttachments,
+			uint32_t u32Width,
+			uint32_t u32Height,
+			uint32_t u32Layers,
 			VkFramebuffer *vk_phFramebuffer);
 	class Vulkan_Framebuffer final {
 		private:
@@ -241,49 +207,42 @@ namespace RE {
 
 		public:
 			Vulkan_Framebuffer();
-			Vulkan_Framebuffer(VkFramebufferCreateFlags vk_eFlags, 
-					VkRenderPass vk_hRenderPass, 
-					uint32_t u32AttachmentCount, 
-					const VkImageView *vk_pahAttachments, 
-					uint32_t u32Width, 
-					uint32_t u32Height, 
+			Vulkan_Framebuffer(VkFramebufferCreateFlags vk_eFlags,
+					VkRenderPass vk_hRenderPass,
+					uint32_t u32AttachmentCount,
+					const VkImageView *vk_pahAttachments,
+					uint32_t u32Width,
+					uint32_t u32Height,
 					uint32_t u32Layers);
 			Vulkan_Framebuffer(Vulkan_Framebuffer &rCopy) = delete;
 			Vulkan_Framebuffer(Vulkan_Framebuffer &&rrCopy);
 			~Vulkan_Framebuffer();
 
-			bool create(VkFramebufferCreateFlags vk_eFlags, 
-					VkRenderPass vk_hRenderPass, 
-					uint32_t u32AttachmentCount, 
-					const VkImageView *vk_pahAttachments, 
-					uint32_t u32Width, 
-					uint32_t u32Height, 
+			bool create(VkFramebufferCreateFlags vk_eFlags,
+					VkRenderPass vk_hRenderPass,
+					uint32_t u32AttachmentCount,
+					const VkImageView *vk_pahAttachments,
+					uint32_t u32Width,
+					uint32_t u32Height,
 					uint32_t u32Layers);
 			void destroy();
 
-			[[nodiscard]]
-			VkFramebuffer get() const noexcept;
-			[[nodiscard]]
-			const VkFramebuffer* get_ptr() const noexcept;
-			[[nodiscard]]
-			bool valid() const noexcept;
+			VkFramebuffer get() const;
+			const VkFramebuffer* get_ptr() const;
+			bool valid() const;
 
-			[[nodiscard]]
 			operator VkFramebuffer() const;
-			[[nodiscard]]
 			operator const VkFramebuffer*() const;
-			[[nodiscard]]
 			operator bool() const;
+			VkFramebuffer operator()() const;
 	};
 
-	bool alloc_vulkan_command_buffers(
-			VkCommandPool vk_hCommandPool, 
-			VkCommandBufferLevel vk_eLevel, 
-			uint32_t u32Count, 
+	bool alloc_vulkan_command_buffers(VkCommandPool vk_hCommandPool,
+			VkCommandBufferLevel vk_eLevel,
+			uint32_t u32Count,
 			VkCommandBuffer *vk_pahCommandBuffers);
-	bool begin_recording_vulkan_command_buffer(
-			VkCommandBuffer vk_hCommandBuffer, 
-			VkCommandBufferUsageFlags vk_eUsage, 
+	bool begin_recording_vulkan_command_buffer(VkCommandBuffer vk_hCommandBuffer,
+			VkCommandBufferUsageFlags vk_eUsage,
 			const VkCommandBufferInheritanceInfo* vk_pInheritance);
 
 	bool create_vulkan_fence(VkFenceCreateFlags vk_eFlags, VkFence *vk_phFence);
@@ -303,19 +262,14 @@ namespace RE {
 			VkResult wait_for(uint64_t u64Timeout = std::numeric_limits<uint64_t>::max()) const;
 			void reset() const;
 
-			[[nodiscard]]
-			VkFence get() const noexcept;
-			[[nodiscard]]
-			const VkFence* get_ptr() const noexcept;
-			[[nodiscard]]
-			bool valid() const noexcept;
+			VkFence get() const;
+			const VkFence* get_ptr() const;
+			bool valid() const;
 
-			[[nodiscard]]
 			operator VkFence() const;
-			[[nodiscard]]
 			operator const VkFence*() const;
-			[[nodiscard]]
 			operator bool() const;
+			VkFence operator()() const;
 	};
 
 	bool create_vulkan_semaphore(VkSemaphoreCreateFlags vk_eFlags, VkSemaphore *vk_phSemaphore);
@@ -333,19 +287,14 @@ namespace RE {
 			bool create(VkSemaphoreCreateFlags vk_eFlags);
 			void destroy();
 
-			[[nodiscard]]
-			VkSemaphore get() const noexcept;
-			[[nodiscard]]
-			const VkSemaphore* get_ptr() const noexcept;
-			[[nodiscard]]
-			bool valid() const noexcept;
+			VkSemaphore get() const;
+			const VkSemaphore* get_ptr() const;
+			bool valid() const;
 
-			[[nodiscard]]
 			operator VkSemaphore() const;
-			[[nodiscard]]
 			operator const VkSemaphore*() const;
-			[[nodiscard]]
 			operator bool() const;
+			VkSemaphore operator()() const;
 	};
 
 	bool create_vulkan_timeline_semaphore(VkSemaphoreCreateFlags vk_eFlags, uint64_t u64InitialValue, VkSemaphore *vk_phSemaphore);
@@ -365,19 +314,14 @@ namespace RE {
 			bool wait_for_reaching(uint64_t u64Value) const;
 			void set_to(uint64_t u64Value) const;
 
-			[[nodiscard]]
-			VkSemaphore get() const noexcept;
-			[[nodiscard]]
-			const VkSemaphore* get_ptr() const noexcept;
-			[[nodiscard]]
-			bool valid() const noexcept;
+			VkSemaphore get() const;
+			const VkSemaphore* get_ptr() const;
+			bool valid() const;
 
-			[[nodiscard]]
 			operator VkSemaphore() const;
-			[[nodiscard]]
 			operator const VkSemaphore*() const;
-			[[nodiscard]]
 			operator bool() const;
+			VkSemaphore operator()() const;
 	};
 
 }

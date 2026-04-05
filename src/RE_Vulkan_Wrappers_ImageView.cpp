@@ -68,34 +68,32 @@ namespace RE {
 		vk_hImageView = VK_NULL_HANDLE;
 	}
 
-	[[nodiscard]]
-	VkImageView Vulkan_ImageView::get() const noexcept {
+	VkImageView Vulkan_ImageView::get() const {
 		return vk_hImageView;
 	}
 
-	[[nodiscard]]
-	const VkImageView* Vulkan_ImageView::get_ptr() const noexcept {
+	const VkImageView* Vulkan_ImageView::get_ptr() const {
 		return &vk_hImageView;
 	}
 	
-	[[nodiscard]]
-	bool Vulkan_ImageView::valid() const noexcept {
+	bool Vulkan_ImageView::valid() const {
 		return vk_hImageView != VK_NULL_HANDLE;
 	}
 
-	[[nodiscard]]
 	Vulkan_ImageView::operator VkImageView() const {
 		return get();
 	}
 
-	[[nodiscard]]
 	Vulkan_ImageView::operator const VkImageView*() const {
 		return get_ptr();
 	}
 	
-	[[nodiscard]]
 	Vulkan_ImageView::operator bool() const {
 		return valid();
+	}
+
+	VkImageView Vulkan_ImageView::operator()() const {
+		return get();
 	}
 
 }

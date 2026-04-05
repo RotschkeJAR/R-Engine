@@ -10,13 +10,7 @@ CFLAG        = -m64 -march=x86-64 -pedantic-errors -Wall -ffast-math
 LDFLAG       = -lRE -I$(SRC) -I/usr/ -L$(BIN) -lX11 -lXrandr -lXinerama -lwayland-client
 
 SC           = glslc
-SFLAG        = --target-env=vulkan1.0 --target-spv=spv1.0 -O
-
-# shader files
-VERT_GL      = $(SH)/vertex.glsl
-FRAG_GL      = $(SH)/fragment.glsl
-VERT_HL      = $(SH)/vertex.hlsl
-FRAG_HL      = $(SH)/fragment.hlsl
+SFLAG        = --target-env=vulkan1.3 --target-spv=spv1.6 -O
 
 RE           = $(BIN)/libRE.a
 OUT          = Game

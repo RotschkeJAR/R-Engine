@@ -71,7 +71,7 @@ namespace RE {
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
 			.rasterizationSamples = vk_eMsaaCount,
 			.sampleShadingEnable = is_sample_shading_enabled() ? VK_TRUE : VK_FALSE,
-			.minSampleShading = fSampleShadingRate,
+			.minSampleShading = f32SampleShadingRate,
 			.pSampleMask = nullptr,
 			.alphaToCoverageEnable = VK_FALSE,
 			.alphaToOneEnable = VK_FALSE
@@ -110,24 +110,15 @@ namespace RE {
 			.dynamicStateCount = sizeof(vk_aeDynamicStates) / sizeof(vk_aeDynamicStates[0]),
 			.pDynamicStates = vk_aeDynamicStates
 		};
-		VkPipelineRenderingCreateInfo vk_dynamicRenderingInfo = {
+		const VkPipelineRenderingCreateInfo vk_dynamicRenderingInfo = {
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
 			.pNext = nullptr,
 			.viewMask = 0,
 			.colorAttachmentCount = 1,
 			.pColorAttachmentFormats = &vk_eSwapchainImageFormat,
-			.depthAttachmentFormat = availableDepthStencilFormats[u8IndexToSelectedDepthStencilFormat]
+			.depthAttachmentFormat = vk_eSelectedDepthFormat,
+			.stencilAttachmentFormat = vk_eStelectedStencilFormat
 		};
-		switch (vk_dynamicRenderingInfo.depthAttachmentFormat) {
-			case VK_FORMAT_D16_UNORM:
-			case VK_FORMAT_X8_D24_UNORM_PACK32:
-			case VK_FORMAT_D32_SFLOAT:
-				vk_dynamicRenderingInfo.stencilAttachmentFormat = bStencilsEnabled ? VK_FORMAT_S8_UINT : VK_FORMAT_UNDEFINED;
-				break;
-			default:
-				vk_dynamicRenderingInfo.stencilAttachmentFormat = vk_dynamicRenderingInfo.depthAttachmentFormat;
-				break;
-		}
 		const VkGraphicsPipelineCreateInfo vk_createInfo = {
 			.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
 			.pNext = &vk_dynamicRenderingInfo,

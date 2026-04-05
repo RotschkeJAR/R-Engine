@@ -3,7 +3,7 @@
 
 #include "RE_Internal Header.hpp"
 #include "RE_Input.hpp"
-#include "RE_Vulkan_Device.hpp"
+#include "RE_GPU.hpp"
 
 namespace RE {
 
@@ -43,7 +43,7 @@ namespace RE {
 	bool should_window_close();
 	[[nodiscard]]
 	bool should_render();
-	bool create_vulkan_surface(VkSurfaceKHR &vk_rhSurface);
+	bool create_vulkan_surface();
 	[[nodiscard]]
 	const char* get_vulkan_required_surface_extension_name();
 

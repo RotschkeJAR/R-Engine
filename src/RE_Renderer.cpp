@@ -3,11 +3,13 @@
 #include "RE_RenderElement.hpp"
 #include "RE_Main.hpp"
 
+#include "RE_Renderer_Buffers.hpp"
+
 namespace RE {
 
 	Color backgroundClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
-	float fSampleShadingRate = 0.2f;
+	float f32SampleShadingRate = 0.2f;
 
 	uint8_t u8CurrentFrameInFlightIndex = 0;
 
@@ -30,22 +32,19 @@ namespace RE {
 			if (init_render_elements(stagingRectBuffer, &rectBufferTransferTask, rectBufferTransferFence)) {
 				if (create_renderer_buffers()) {
 					if (create_descriptor_sets()) {
-						if (create_renderpass()) {
-							if (create_swapchain()) {
-								if (setup_presentation()) {
-									if (create_graphics_pipelines()) {
-										if (create_compute_pipelines()) {
-											rectBufferTransferFence.wait_for();
-											PRINT_DEBUG("Successfully initialized the renderer");
-											return true;
-										}
-										destroy_graphics_pipelines();
+						if (create_swapchain()) {
+							if (setup_presentation()) {
+								if (create_graphics_pipelines()) {
+									if (create_compute_pipelines()) {
+										rectBufferTransferFence.wait_for();
+										PRINT_DEBUG("Successfully initialized the renderer");
+										return true;
 									}
-									destroy_presentation();
+									destroy_graphics_pipelines();
 								}
-								destroy_swapchain();
+								destroy_presentation();
 							}
-							destroy_renderpass();
+							destroy_swapchain();
 						}
 						destroy_descriptor_sets();
 					}
@@ -67,7 +66,6 @@ namespace RE {
 		destroy_swapchain();
 		destroy_compute_pipelines();
 		destroy_graphics_pipelines();
-		destroy_renderpass();
 		destroy_descriptor_sets();
 		destroy_renderer_buffers();
 		destroy_render_elements();
@@ -76,13 +74,18 @@ namespace RE {
 
 	void render() {
 		PRINT_DEBUG("Invoking render-procedure");
+		if (bSwapchainDirty)
+			if (!recreate_swapchain())
+				return;
 		if (acquire_next_swapchain_image()) {
 			PRINT_DEBUG("Waiting for pending frame-in-flight at index ", u8CurrentFrameInFlightIndex, " being finished rendering");
 			vkWaitForFences(vk_hDevice, 1, &renderFences[u8CurrentFrameInFlightIndex], VK_TRUE, std::numeric_limits<uint64_t>::max());
 			vkResetFences(vk_hDevice, 1, &renderFences[u8CurrentFrameInFlightIndex]);
 			calculate_camera_matrices();
 			record_cmd_transfer_buffer();
+			const size_t gameObjectCounter = amount_of_game_objects();
 			if (renderTasks[u8CurrentFrameInFlightIndex].record(RENDER_TASK_SUBINDEX_PROCESSING, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, [&](const VkCommandBuffer vk_hCommandBuffer, const uint8_t u8PreviousLogicalQueue, const uint8_t u8CurrentLogicalQueue, const uint8_t u8NextLogicalQueue) {
+					vkCmdFillBuffer(vk_hCommandBuffer, aSortableDepthBuffers[u8CurrentFrameInFlightIndex].get(), 0, VK_WHOLE_SIZE, 0);
 					PRINT_DEBUG("Binding compute pipeline ", vk_hComputePipelinePreprocessing);
 					vkCmdBindPipeline(vk_hCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, vk_hComputePipelinePreprocessing);
 					PRINT_DEBUG("Binding Vulkan descriptor sets for preprocessing");
@@ -92,10 +95,32 @@ namespace RE {
 					};
 					vkCmdBindDescriptorSets(vk_hCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, vk_hComputePipelineLayoutProcessing, 0, sizeof(vk_ahComputeDescSets) / sizeof(vk_ahComputeDescSets[0]), vk_ahComputeDescSets, 0, nullptr);
 					PRINT_DEBUG("Dispatching compute shaders");
-					vkCmdDispatch(vk_hCommandBuffer, 1, 1, 1);
+					vkCmdDispatch(vk_hCommandBuffer, gameObjectCounter, 1, 1);
+					const VkBufferMemoryBarrier2 vk_sortableDepthBufferInfo = {
+						.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
+						.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+						.srcAccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
+						.dstStageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT,
+						.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,
+						.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+						.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+						.buffer = aSortableDepthBuffers[u8CurrentFrameInFlightIndex].get(),
+						.offset = 0,
+						.size = VK_WHOLE_SIZE
+					};
+					const VkDependencyInfo vk_sortableDepthBufferDependency = {
+						.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+						.pNext = nullptr,
+						.dependencyFlags = 0,
+						.memoryBarrierCount = 0,
+						.bufferMemoryBarrierCount = 1,
+						.pBufferMemoryBarriers = &vk_sortableDepthBufferInfo,
+						.imageMemoryBarrierCount = 0
+					};
+					vkCmdPipelineBarrier2(vk_hCommandBuffer, &vk_sortableDepthBufferDependency);
 			})) {
 				if (renderTasks[u8CurrentFrameInFlightIndex].record(RENDER_TASK_SUBINDEX_RENDERING, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, [&](const VkCommandBuffer vk_hCommandBuffer, const uint8_t u8PreviousLogicalQueue, const uint8_t u8CurrentLogicalQueue, const uint8_t u8NextLogicalQueue) {
-					PRINT_DEBUG("Transferring image layout of renderable image to optimal layout for rendering");
+						PRINT_DEBUG("Transferring image layout of renderable image to optimal layout for rendering");
 						VkImageMemoryBarrier2 vk_a2RenderImageLayoutTransferRegions[2];
 						vk_a2RenderImageLayoutTransferRegions[0].sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
 						vk_a2RenderImageLayoutTransferRegions[0].pNext = nullptr;
@@ -117,9 +142,10 @@ namespace RE {
 							.imageMemoryBarrierCount = 1,
 							.pImageMemoryBarriers = vk_a2RenderImageLayoutTransferRegions
 						};
-						const bool bBlittingRequired = screenPercentageSettings.eMode != RE_SCREEN_PERCENTAGE_MODE_NORMAL, bResolvingRequired = vk_eMsaaCount != VK_SAMPLE_COUNT_1_BIT;
+						const bool bBlittingRequired = screenPercentageSettings.eMode != RE_SCREEN_PERCENTAGE_MODE_NORMAL,
+							bResolvingRequired = vk_eMsaaCount != VK_SAMPLE_COUNT_1_BIT;
 						if (bResolvingRequired || bBlittingRequired) {
-							vk_a2RenderImageLayoutTransferRegions[0].image = renderImages.get();
+							vk_a2RenderImageLayoutTransferRegions[0].image = vk_hRenderTargetImage;
 							vk_a2RenderImageLayoutTransferRegions[0].subresourceRange.baseArrayLayer = u8CurrentFrameInFlightIndex;
 							if (bResolvingRequired) {
 								vk_a2RenderImageLayoutTransferRegions[1].sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
@@ -132,7 +158,7 @@ namespace RE {
 								vk_a2RenderImageLayoutTransferRegions[1].newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 								vk_a2RenderImageLayoutTransferRegions[1].srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 								vk_a2RenderImageLayoutTransferRegions[1].dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-								vk_a2RenderImageLayoutTransferRegions[1].image = bBlittingRequired ? singleSampledWorldRenderImages.get() : vk_pahSwapchainImages[u32SwapchainImageIndex];
+								vk_a2RenderImageLayoutTransferRegions[1].image = bBlittingRequired ? vk_hSinglesampledImage : swapchainImages[u32SwapchainImageIndex];
 								vk_a2RenderImageLayoutTransferRegions[1].subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 								vk_a2RenderImageLayoutTransferRegions[1].subresourceRange.baseMipLevel = 0;
 								vk_a2RenderImageLayoutTransferRegions[1].subresourceRange.levelCount = 1;
@@ -141,11 +167,11 @@ namespace RE {
 								vk_renderImageLayoutTransferInfo.imageMemoryBarrierCount = 2;
 							}
 						} else {
-							vk_a2RenderImageLayoutTransferRegions[0].image = vk_pahSwapchainImages[u32SwapchainImageIndex];
+							vk_a2RenderImageLayoutTransferRegions[0].image = swapchainImages[u32SwapchainImageIndex];
 							vk_a2RenderImageLayoutTransferRegions[0].subresourceRange.baseArrayLayer = 0;
 						}
 						vkCmdPipelineBarrier2(vk_hCommandBuffer, &vk_renderImageLayoutTransferInfo);
-						record_cmd_begin_renderpass(vk_hCommandBuffer);
+						record_cmd_begin_dynamic_rendering(vk_hCommandBuffer);
 						PRINT_DEBUG("Binding graphics pipeline ", vk_hGraphicsPipeline3D);
 						vkCmdBindPipeline(vk_hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hGraphicsPipeline3D);
 						const VkViewport vk_viewport = {
@@ -179,7 +205,7 @@ namespace RE {
 						vkCmdBindIndexBuffer(vk_hCommandBuffer, vk_hRectBuffer, RE_VK_RECT_BUFFER_INDICES_OFFSET, VK_INDEX_TYPE_UINT16);
 						PRINT_DEBUG("Drawing indirectly");
 						vkCmdDrawIndexed(vk_hCommandBuffer, 6, 1000, 0, 0, 0);
-						record_cmd_end_renderpass(vk_hCommandBuffer);
+						record_cmd_end_dynamic_rendering(vk_hCommandBuffer);
 				})) {
 					record_cmd_blitting_render_image();
 					PRINT_DEBUG("Submitting render task");
@@ -211,12 +237,12 @@ namespace RE {
 
 	bool swapchain_created_renderer() {
 		PRINT_DEBUG("Creating swapchain-related Vulkan objects in Renderer");
-		return create_render_image_resources();
+		return create_images_renderer();
 	}
 
 	void swapchain_destroyed_renderer() {
 		PRINT_DEBUG("Destroying swapchain-related Vulkan objects in Renderer");
-		destroy_render_image_resources();
+		destroy_images_renderer();
 	}
 
 	void set_background_color(const Color &rColor) {
@@ -237,26 +263,26 @@ namespace RE {
 
 	[[nodiscard]]
 	bool is_sample_shading_enabled() {
-		return fSampleShadingRate > 0.0f && fSampleShadingRate <= 1.0f;
+		return f32SampleShadingRate > 0.0f && f32SampleShadingRate <= 1.0f;
 	}
 
-	void set_sample_shading_rate(const float fNewSampleShadingRate) {
-		if (fSampleShadingRate == fNewSampleShadingRate)
+	void set_sample_shading_rate(const float f32NewSampleShadingRate) {
+		if (f32SampleShadingRate == f32NewSampleShadingRate)
 			return;
-		if (fNewSampleShadingRate < 0.0f || fNewSampleShadingRate > 1.0f) {
-			RE_ERROR("Sample shading rate should be in range between 0.0 and 1.0, but was ", fNewSampleShadingRate, ". Request to change it has been discarded");
+		if (f32NewSampleShadingRate < 0.0f || f32NewSampleShadingRate > 1.0f) {
+			RE_ERROR("Sample shading rate should be in range between 0.0 and 1.0, but was ", f32NewSampleShadingRate, ". Request to change it has been discarded");
 			return;
 		} else {
-			PRINT_DEBUG("Setting sample shading rate to ", fNewSampleShadingRate);
-			fSampleShadingRate = fNewSampleShadingRate;
-			WAIT_FOR_IDLE_VULKAN_DEVICE();
+			PRINT_DEBUG("Setting sample shading rate to ", f32NewSampleShadingRate);
+			f32SampleShadingRate = f32NewSampleShadingRate;
+			vkDeviceWaitIdle(vk_hDevice);
 			recreate_graphics_pipelines();
 		}
 	}
 
 	[[nodiscard]]
 	float get_sample_shading_rate() {
-		return fSampleShadingRate;
+		return f32SampleShadingRate;
 	}
 
 }

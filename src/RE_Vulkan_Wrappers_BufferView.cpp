@@ -64,34 +64,32 @@ namespace RE {
 		vk_hBufferView = VK_NULL_HANDLE;
 	}
 
-	[[nodiscard]]
-	VkBufferView Vulkan_BufferView::get() const noexcept {
+	VkBufferView Vulkan_BufferView::get() const {
 		return vk_hBufferView;
 	}
 
-	[[nodiscard]]
-	const VkBufferView* Vulkan_BufferView::get_ptr() const noexcept {
+	const VkBufferView* Vulkan_BufferView::get_ptr() const {
 		return &vk_hBufferView;
 	}
 
-	[[nodiscard]]
-	bool Vulkan_BufferView::valid() const noexcept {
+	bool Vulkan_BufferView::valid() const {
 		return vk_hBufferView != VK_NULL_HANDLE;
 	}
 
-	[[nodiscard]]
 	Vulkan_BufferView::operator VkBufferView() const {
 		return get();
 	}
 
-	[[nodiscard]]
 	Vulkan_BufferView::operator const VkBufferView*() const {
 		return get_ptr();
 	}
 
-	[[nodiscard]]
 	Vulkan_BufferView::operator bool() const {
 		return valid();
+	}
+
+	VkBufferView Vulkan_BufferView::operator()() const {
+		return get();
 	}
 
 }

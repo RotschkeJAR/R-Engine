@@ -12,30 +12,38 @@
 #include "RE_Renderer_Pipelines.hpp"
 #include "RE_Renderer_Buffers.hpp"
 #include "RE_Renderer_Camera.hpp"
+#include "RE_Renderer_Images.hpp"
 
 namespace RE {
 
+	bool swapchain_created_renderer();
+	void swapchain_destroyed_renderer();
+
 	extern Color backgroundClearColor;
+
+	// Swapchain
+	extern VkSwapchainKHR vk_hSwapchain;
+	extern VkFormat vk_eSwapchainImageFormat;
+	extern VkExtent2D vk_swapchainResolution;
+	extern std::unique_ptr<VkImage[]> swapchainImages;
+	extern std::unique_ptr<VkImageView[]> swapchainImageViews;
+	extern uint32_t u32SwapchainImageCount;
+	extern bool bVsyncEnabled;
+	bool create_swapchain();
+	void destroy_swapchain();
+	bool recreate_swapchain();
 
 	// Presentation
 #define RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE 2
 #define RE_VK_SWAPCHAIN_SEMAPHORE_COUNT (u32SwapchainImageCount * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE)
 	extern VkQueue vk_hPresentQueue;
-	extern std::vector<VkSemaphore> swapchainSemaphores;
+	extern std::unique_ptr<VkSemaphore[]> swapchainSemaphores;
 	extern uint32_t u32CurrentSwapchainSemaphoreIndex, u32SwapchainImageIndex;
 	bool setup_presentation();
 	void destroy_presentation();
 	bool acquire_next_swapchain_image();
 	bool present_swapchain_image();
-
-	// Render image
-	extern ScreenPercentageSettings screenPercentageSettings;
-	extern Vulkan_Image renderImages;
-	extern Vulkan_ImageView aRenderImageViews[RE_VK_FRAMES_IN_FLIGHT];
-	extern VkExtent2D vk_renderImageSize;
-	bool create_render_image_resources();
-	void destroy_render_image_resources();
-	bool record_cmd_blitting_render_image();
+	bool recreate_swapchain();
 
 	// Render task
 #define RENDER_TASK_SUBINDEX_BUFFER_TRANSFER 0
@@ -48,26 +56,9 @@ namespace RE {
 	bool create_render_tasks();
 	void destroy_render_tasks();
 
-	// MSAA
-	extern Vulkan_Image singleSampledWorldRenderImages;
-	extern Vulkan_ImageView aSingleSampledWorldRenderImageViews[RE_VK_FRAMES_IN_FLIGHT];
-	bool create_singlesampled_images(const std::vector<uint32_t> &rRenderQueuesFamilyIndices, bool bResolvingRequired, bool bBlittingRequired);
-	void destroy_singlesampled_images();
-
-	// Depth-stencil images
-#define DEPTH_IMAGE_INDEX 0
-#define STENCIL_IMAGE_INDEX 1
-	extern Vulkan_Image a2DepthStencilImages[2];
-	extern Vulkan_ImageView a4DepthStencilImageViews[4];
-	bool create_depth_stencil_images(VulkanTask &rDepthStencilImageLayoutTransitionTask, VkFence vk_hDepthStencilImageLayoutTransitionFence);
-	void destroy_depth_stencil_images();
-	bool are_depth_stencil_images_separated(VkFormat vk_eFormat);
-
-	// Render Pass
-	bool create_renderpass();
-	void destroy_renderpass();
-	void record_cmd_begin_renderpass(VkCommandBuffer vk_hCommandBuffer);
-	void record_cmd_end_renderpass(VkCommandBuffer vk_hCommandBuffer);
+	// Dynamic rendering
+	void record_cmd_begin_dynamic_rendering(VkCommandBuffer vk_hCommandBuffer);
+	void record_cmd_end_dynamic_rendering(VkCommandBuffer vk_hCommandBuffer);
 
 }
 

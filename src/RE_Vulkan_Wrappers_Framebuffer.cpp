@@ -72,34 +72,32 @@ namespace RE {
 		vk_hFramebuffer = VK_NULL_HANDLE;
 	}
 
-	[[nodiscard]]
-	VkFramebuffer Vulkan_Framebuffer::get() const noexcept {
+	VkFramebuffer Vulkan_Framebuffer::get() const {
 		return vk_hFramebuffer;
 	}
 
-	[[nodiscard]]
-	const VkFramebuffer* Vulkan_Framebuffer::get_ptr() const noexcept {
+	const VkFramebuffer* Vulkan_Framebuffer::get_ptr() const {
 		return &vk_hFramebuffer;
 	}
 	
-	[[nodiscard]]
-	bool Vulkan_Framebuffer::valid() const noexcept {
+	bool Vulkan_Framebuffer::valid() const {
 		return vk_hFramebuffer != VK_NULL_HANDLE;
 	}
 
-	[[nodiscard]]
 	Vulkan_Framebuffer::operator VkFramebuffer() const {
 		return get();
 	}
 
-	[[nodiscard]]
 	Vulkan_Framebuffer::operator const VkFramebuffer*() const {
 		return get_ptr();
 	}
 	
-	[[nodiscard]]
 	Vulkan_Framebuffer::operator bool() const {
 		return valid();
+	}
+
+	VkFramebuffer Vulkan_Framebuffer::operator()() const {
+		return get();
 	}
 
 }

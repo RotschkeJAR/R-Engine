@@ -79,14 +79,21 @@ namespace RE {
 			vk_hRawGameObjectBufferDescSetLayout,
 			vk_hRenderContentDescSetLayout
 		};
+		const VkPushConstantRange vk_aPushConstants[] = {
+			{
+				.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+				.offset = 0,
+				.size = sizeof(uint32_t[2])
+			}
+		};
 		const VkPipelineLayoutCreateInfo vk_computePipelineLayoutCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
 			.pNext = nullptr,
 			.flags = 0,
 			.setLayoutCount = sizeof(vk_ahDescSetLayouts) / sizeof(vk_ahDescSetLayouts[0]),
 			.pSetLayouts = vk_ahDescSetLayouts,
-			.pushConstantRangeCount = 0,
-			.pPushConstantRanges = nullptr
+			.pushConstantRangeCount = sizeof(vk_aPushConstants) / sizeof(vk_aPushConstants[0]),
+			.pPushConstantRanges = vk_aPushConstants
 		};
 		if (vkCreatePipelineLayout(vk_hDevice, &vk_computePipelineLayoutCreateInfo, nullptr, &vk_hComputePipelineLayoutProcessing) == VK_SUCCESS) {
 			if (create_compute_pipeline_preprocessing()) {

@@ -1,22 +1,36 @@
 #ifndef __RE_GPU_H__
 #define __RE_GPU_H__
 
-#include "RE_Vulkan_Device.hpp"
+#include "RE_GPU_Vulkan Instance.hpp"
+#include "RE_GPU_Vulkan Device.hpp"
+#include "RE_GPU_Synchronization2.hpp"
+#include "RE_GPU_Constrains.hpp"
 
 namespace RE {
 
+	// Surface
+	extern VkPresentModeKHR vk_ePresentModeVsync, vk_ePresentModeNoVsync;
 	extern VkSurfaceKHR vk_hSurface;
-
-	extern std::unique_ptr<VkSurfaceFormatKHR[]> vk_paSurfaceFormatsAvailable;
-	extern uint32_t u32IndexToSelectedSurfaceFormat;
-	extern bool bSwapchainDirty;
+	extern VkSurfaceCapabilitiesKHR vk_surfaceCapabilities;
+	extern std::unique_ptr<VkSurfaceFormatKHR[]> surfaceFormatsAvailable;
+	extern uint32_t u32SurfaceFormatsAvailableCount, u32IndexToSelectedSurfaceFormat;
+	bool init_logical_gpu();
+	void destroy_logical_gpu();
 
 	// Physical Device
-	extern VkPhysicalDevice vk_hPhysicalDeviceSelected;
-	extern VkPhysicalDeviceProperties vk_physicalDeviceProperties;
-	extern VkPhysicalDeviceFeatures vk_physicalDeviceFeatures;
-	extern VkPhysicalDevice *vk_pahPhysicalDevicesAvailable;
-	extern uint32_t u32PhysicalDevicesAvailableCount;
+	struct PhysicalVulkanDeviceInfo final {
+		VkPhysicalDevice vk_hPhysicalDevice;
+		const char *pacName;
+		VkPhysicalDeviceType vk_eType;
+		int32_t i32Scoring;
+	};
+	extern std::unique_ptr<PhysicalVulkanDeviceInfo[]> physicalDevicesAvailable;
+	extern uint32_t u32PhysicalDevicesAvailableCount, u32IndexToSelectedPhysicalDevice;
+	void select_physical_vulkan_device(uint32_t u32PhysicalDeviceIndex);
+#define SELECTED_PHYSICAL_VULKAN_DEVICE physicalDevicesAvailable[u32IndexToSelectedPhysicalDevice].vk_hPhysicalDevice
+#define SELECTED_PHYSICAL_VULKAN_DEVICE_NAME physicalDevicesAvailable[u32IndexToSelectedPhysicalDevice].pacName
+#define SELECTED_PHYSICAL_VULKAN_DEVICE_TYPE physicalDevicesAvailable[u32IndexToSelectedPhysicalDevice].vk_eType
+#define SELECTED_PHYSICAL_VULKAN_DEVICE_SCORING physicalDevicesAvailable[u32IndexToSelectedPhysicalDevice].i32Scoring
 
 	// Scheduler
 #define RE_VK_LOGICAL_QUEUE_IGNORED std::numeric_limits<uint8_t>::max()
@@ -70,6 +84,7 @@ namespace RE {
 			VulkanTask(const VulkanTask_Queues &rQueues, bool bIndividualResets, bool bIncludePresentation, bool bTransient);
 			VulkanTask(const VulkanTask &rCopy, bool bIndividualResets, bool bTransient);
 			VulkanTask(VulkanTask &&rrTask);
+			VulkanTask(VulkanTask&) = delete;
 			~VulkanTask();
 			bool init(uint32_t u32FunctionsCount, const VkQueueFlagBits *vk_paeQueueTypePerFunctionRequiredInOrder, bool bIndividualResets, bool bIncludePresentation, bool bTransient);
 			bool init(uint32_t u32FunctionsCount, const uint8_t *pau8LogicalQueueIndexPerFunctionRequiredInOrder, bool bIndividualResets, bool bIncludePresentation, bool bTransient);
@@ -87,50 +102,35 @@ namespace RE {
 			bool valid() const;
 	};
 
-	// Swapchain
-	extern VkSwapchainKHR vk_hSwapchain;
-	extern VkFormat vk_eSwapchainImageFormat;
-	extern VkExtent2D vk_swapchainResolution;
-	extern std::unique_ptr<VkImage[]> vk_pahSwapchainImages;
-	extern std::unique_ptr<VkImageView[]> vk_pahSwapchainImageViews;
-	extern uint32_t u32SwapchainImageCount;
-	bool create_swapchain();
-	void destroy_swapchain();
-
-	bool init_render_system();
-	void destroy_render_system();
-	bool refresh_swapchain();
-	void mark_swapchain_dirty();
-
 	// Memory
-	enum VulkanMemoryType {
-		RE_VK_GPU_RAM,
-		RE_VK_CPU_RAM,
-		RE_VK_SHARED_RAM
+	struct SharedVulkanMemoryInfo final {
+		std::variant<VkImage, VkBuffer> storageObject;
+		VkMemoryPropertyFlags vk_mMemoryProperties;
+		uint64_t m64CollidableMask;
+		uint8_t u8OccupationIndex;
 	};
-	bool does_memory_type_exist(VkMemoryPropertyFlags vk_mProperties);
-	bool does_have_vulkan_memory_type(VulkanMemoryType eMemoryType);
-	bool does_vulkan_memory_type_reside_on_cpu(uint8_t u8MemoryTypeIndex);
-	bool does_vulkan_memory_type_reside_on_gpu(uint8_t u8MemoryTypeIndex);
-	bool is_transfer_necessary();
+	bool do_memory_properties_exist(VkMemoryPropertyFlags vk_mProperties, uint8_t *pu8Mismatches);
+	bool is_staging_before_gpu_use_necessary();
 	uint32_t get_remaining_vulkan_allocations();
 	class VulkanMemory final {
 		private:
 			VkDeviceMemory vk_hMemory;
 			VkDeviceSize vk_size;
-			uint8_t u8MemoryTypeIndex;
+			uint8_t u8MemoryType;
 			bool bCoherent;
 
 		public:
 			VulkanMemory();
-			VulkanMemory(VkDeviceSize vk_size, VulkanMemoryType eType, VkMemoryPropertyFlags vk_mProperties, uint32_t m32DesiredMemoryTypes);
+			VulkanMemory(VkDeviceSize vk_size, VkMemoryPropertyFlags vk_mProperties, uint32_t m32DesiredMemoryTypes);
 			VulkanMemory(VkDeviceSize vk_size, uint8_t u8MemoryTypeIndex);
 			VulkanMemory(VulkanMemory &rMemory) = delete;
 			explicit VulkanMemory(VulkanMemory &&rrMemory);
 			~VulkanMemory();
 			
-			bool alloc(VkDeviceSize vk_size, VulkanMemoryType eType, VkMemoryPropertyFlags vk_mProperties, uint32_t m32DesiredMemoryTypes);
-			bool alloc(VkDeviceSize vk_size, uint8_t u8MemoryTypeIndex);
+			VkResult alloc(VkDeviceSize vk_size, VkMemoryPropertyFlags vk_mProperties, uint32_t m32DesiredMemoryTypes);
+			VkResult alloc(VkDeviceSize vk_size, uint8_t u8MemoryTypeIndex);
+			VkResult alloc_for_buffer(VkBuffer vk_hBuffer, const VkMemoryPropertyFlags vk_mProperties);
+			VkResult alloc_for_image(VkImage vk_hImage, const VkMemoryPropertyFlags vk_mProperties);
 			void free();
 			bool map(VkMemoryMapFlags vk_eFlags, VkDeviceSize vk_offset, VkDeviceSize vk_size, void **ppData) const;
 			void unmap();
@@ -141,7 +141,10 @@ namespace RE {
 			uint8_t type_index() const;
 			bool cpu_coherent() const;
 
-			void operator =(VulkanMemory &&rrMemory);
+			VulkanMemory& operator =(VulkanMemory &&rrMemory);
+			VulkanMemory& operator =(VulkanMemory&) = delete;
+			operator bool() const;
+			VkDeviceMemory operator()() const;
 			constexpr bool operator ==(const VulkanMemory &rOtherMemory) const {
 				return false;
 			}

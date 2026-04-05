@@ -57,34 +57,32 @@ namespace RE {
 		vkResetFences(vk_hDevice, 1, &vk_hFence);
 	}
 
-	[[nodiscard]]
-	VkFence Vulkan_Fence::get() const noexcept {
+	VkFence Vulkan_Fence::get() const {
 		return vk_hFence;
 	}
 
-	[[nodiscard]]
-	const VkFence* Vulkan_Fence::get_ptr() const noexcept {
+	const VkFence* Vulkan_Fence::get_ptr() const {
 		return &vk_hFence;
 	}
 	
-	[[nodiscard]]
-	bool Vulkan_Fence::valid() const noexcept {
+	bool Vulkan_Fence::valid() const {
 		return vk_hFence != VK_NULL_HANDLE;
 	}
 
-	[[nodiscard]]
 	Vulkan_Fence::operator VkFence() const {
 		return get();
 	}
 
-	[[nodiscard]]
 	Vulkan_Fence::operator const VkFence*() const {
 		return get_ptr();
 	}
 
-	[[nodiscard]]
 	Vulkan_Fence::operator bool() const {
 		return valid();
+	}
+
+	VkFence Vulkan_Fence::operator()() const {
+		return get();
 	}
 
 }

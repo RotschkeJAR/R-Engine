@@ -1,82 +1,14 @@
-#include "RE_Renderer_Internal.hpp"
+#include "RE_Renderer_Images_Internal.hpp"
 #include "RE_Main.hpp"
+#include "RE_Window.hpp"
 
 namespace RE {
 
 	ScreenPercentageSettings screenPercentageSettings;
-	Vulkan_Image renderImages;
-	Vulkan_ImageView aRenderImageViews[RE_VK_FRAMES_IN_FLIGHT];
-	VkExtent2D vk_renderImageSize;
-	
-	static bool create_render_images(const std::vector<uint32_t> &rRenderQueuesFamilyIndices, const bool bResolvingRequired, const bool bBlittingRequired) {
-		if (!bResolvingRequired && !bBlittingRequired)
-			return true;
-		PRINT_DEBUG("Creating render image array as target for rendering");
-		if (renderImages.create(
-				0,
-				VK_IMAGE_TYPE_2D,
-				vk_eSwapchainImageFormat,
-				VkExtent3D {
-					.width = vk_renderImageSize.width,
-					.height = vk_renderImageSize.height,
-					.depth = 1
-				},
-				1,
-				RE_VK_FRAMES_IN_FLIGHT,
-				vk_eMsaaCount,
-				VK_IMAGE_TILING_OPTIMAL,
-				VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-				rRenderQueuesFamilyIndices.size(),
-				rRenderQueuesFamilyIndices.data(),
-				VK_IMAGE_LAYOUT_UNDEFINED,
-				RE_VK_GPU_RAM,
-				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) {
-			uint32_t u32RenderImageCreateIndex = 0;
-			while (u32RenderImageCreateIndex < RE_VK_FRAMES_IN_FLIGHT) {
-				PRINT_DEBUG("Creating image view at index ", u32RenderImageCreateIndex, " for render image array");
-				if (aRenderImageViews[u32RenderImageCreateIndex].create(
-						0,
-						renderImages.get(),
-						VK_IMAGE_VIEW_TYPE_2D,
-						vk_eSwapchainImageFormat,
-						VkComponentMapping {
-							.r = VK_COMPONENT_SWIZZLE_IDENTITY,
-							.g = VK_COMPONENT_SWIZZLE_IDENTITY,
-							.b = VK_COMPONENT_SWIZZLE_IDENTITY,
-							.a = VK_COMPONENT_SWIZZLE_IDENTITY
-						},
-						VkImageSubresourceRange {
-							.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-							.baseMipLevel = 0,
-							.levelCount = 1,
-							.baseArrayLayer = u32RenderImageCreateIndex,
-							.layerCount = 1
-						})) {
-					u32RenderImageCreateIndex++;
-					continue;
-				} else
-					RE_FATAL_ERROR("Failed creating image view for render image at index ", u32RenderImageCreateIndex);
-				break;
-			}
-			if (u32RenderImageCreateIndex == RE_VK_FRAMES_IN_FLIGHT)
-				return true;
-			for (size_t renderImageDestroyIndex = 0; renderImageDestroyIndex < u32RenderImageCreateIndex; renderImageDestroyIndex++) {
-				PRINT_DEBUG("Destroying Vulkan image view at index ", renderImageDestroyIndex, " due to the failure creating all image views pointing at the render image array");
-				aRenderImageViews[renderImageDestroyIndex].destroy();
-			}
-			PRINT_DEBUG("Destroying render image and its memory due to failure creating its image views");
-			renderImages.destroy();
-		} else
-			RE_FATAL_ERROR("Failed creating render image");
-		return false;
-	}
-
-	static void destroy_render_images() {
-		PRINT_DEBUG("Destroying render image and its image views");
-		for (Vulkan_ImageView &rRenderImageView : aRenderImageViews)
-			rRenderImageView.destroy();
-		renderImages.destroy();
-	}
+	Vector2u renderImageSize,
+		maxRenderImageSize;
+	VkFormat vk_eRenderTargetFormat;
+	static bool bDynamicScreenPercentage = false;
 
 	static void get_queues_for_render_images(std::vector<uint32_t> &rRenderTaskQueueIndices) {
 		constexpr uint32_t au32FunctionsToLookup[] = {
@@ -99,48 +31,68 @@ namespace RE {
 			rRenderTaskQueueIndices.push_back(u32PresentIndex);
 	}
 
-	bool create_render_image_resources() {
-		PRINT_DEBUG("Calculating size of image being rendered to");
+	bool create_images_renderer() {
+		PRINT_DEBUG("Calculating size of renderable images");
 		switch (screenPercentageSettings.eMode) {
 			case RE_SCREEN_PERCENTAGE_MODE_NORMAL:
-				vk_renderImageSize.width = vk_swapchainResolution.width;
-				vk_renderImageSize.height = vk_swapchainResolution.height;
+				renderImageSize[0] = vk_swapchainResolution.width;
+				renderImageSize[1] = vk_swapchainResolution.height;
 				break;
 			case RE_SCREEN_PERCENTAGE_MODE_SCALED:
-				vk_renderImageSize.width = static_cast<uint32_t>(std::round(vk_swapchainResolution.width * screenPercentageSettings.fScale));
-				vk_renderImageSize.height = static_cast<uint32_t>(std::round(vk_swapchainResolution.height * screenPercentageSettings.fScale));
+				renderImageSize[0] = static_cast<uint32_t>(std::round(vk_swapchainResolution.width * screenPercentageSettings.f32Scale));
+				renderImageSize[1] = static_cast<uint32_t>(std::round(vk_swapchainResolution.height * screenPercentageSettings.f32Scale));
 				break;
 			case RE_SCREEN_PERCENTAGE_MODE_CONST_SIZE:
-				vk_renderImageSize.width = screenPercentageSettings.constSize[0];
-				vk_renderImageSize.height = screenPercentageSettings.constSize[1];
+				if (screenPercentageSettings.constSize.any_of([](const decltype(screenPercentageSettings.constSize)::type size) {return size <= 0;}))
+					screenPercentageSettings.constSize = largestMonitorSize;
+				renderImageSize = screenPercentageSettings.constSize;
 				break;
+			[[unlikely]] default:
+				RE_ABORT("Unknown screen percentage mode selected ", std::hex, screenPercentageSettings.eMode, " in the settings");
 		}
-		const bool bBlittingRequired = screenPercentageSettings.eMode != RE_SCREEN_PERCENTAGE_MODE_NORMAL, bResolvingRequired = vk_eMsaaCount != VK_SAMPLE_COUNT_1_BIT;
-		VulkanTask depthImageLayoutTransitionTask;
-		Vulkan_Fence depthStencilImageLayoutTransitionFence(0);
-		if (create_depth_stencil_images(depthImageLayoutTransitionTask, depthStencilImageLayoutTransitionFence.get())) {
-			std::vector<uint32_t> renderTaskQueueIndices;
-			get_queues_for_render_images(renderTaskQueueIndices);
-			if (create_singlesampled_images(renderTaskQueueIndices, bResolvingRequired, bBlittingRequired)) {
-				if (create_render_images(renderTaskQueueIndices, bResolvingRequired, bBlittingRequired)) {
-					PRINT_DEBUG("Waiting for Vulkan fence signaling completion of image layout transfer of all depth images");
-					depthStencilImageLayoutTransitionFence.wait_for();
-					return true;
+		if (maxRenderImageSize.any_of([](const decltype(maxRenderImageSize)::type size) {return size <= 0;}))
+			maxRenderImageSize = largestMonitorSize;
+		if (bDynamicScreenPercentage && screenPercentageSettings.eMode != RE_SCREEN_PERCENTAGE_MODE_CONST_SIZE) {
+			renderImageSize[0] = std::clamp<uint32_t>(renderImageSize[0], 1, maxRenderImageSize[0]);
+			renderImageSize[1] = std::clamp<uint32_t>(renderImageSize[1], 1, maxRenderImageSize[1]);
+			return true;
+		}
+		const bool bBlittingRequired = renderImageSize[0] != vk_swapchainResolution.width || renderImageSize[1] != vk_swapchainResolution.height,
+			bResolvingRequired = vk_eMsaaCount != VK_SAMPLE_COUNT_1_BIT,
+			bSkipCreatingSinglesampledImage = !(bBlittingRequired && bResolvingRequired),
+			bSkipCreatingRenderTargetImage = bBlittingRequired || bResolvingRequired;
+		if (create_depth_stencil_image()) {
+			if (bSkipCreatingSinglesampledImage || create_singlesampled_image()) {
+				if (bSkipCreatingRenderTargetImage || create_render_target_image()) {
+					if (alloc_memory_for_images_renderer()) {
+						if (create_depth_stencil_image_views()) {
+							if (bSkipCreatingSinglesampledImage || create_singlesampled_image_views()) {
+								if (bSkipCreatingRenderTargetImage || create_render_target_image_views())
+									return true;
+								destroy_singlesampled_image_views();
+							}
+							destroy_depth_stencil_image_views();
+						}
+						free_memory_for_images_renderer();
+					}
+					destroy_render_target_image();
 				}
-				destroy_singlesampled_images();
+				destroy_singlesampled_image();
 			}
-			PRINT_DEBUG("Waiting for Vulkan fence signaling completion of image layout transfer of all depth images due to failure initializing all swapchain-related Vulkan objects");
-			depthStencilImageLayoutTransitionFence.wait_for();
-			destroy_depth_stencil_images();
+			destroy_depth_stencil_image();
 		}
 		return false;
 	}
 
-	void destroy_render_image_resources() {
+	void destroy_images_renderer() {
 		PRINT_DEBUG("Destroying render image resources");
-		destroy_render_images();
-		destroy_singlesampled_images();
-		destroy_depth_stencil_images();
+		destroy_render_target_image_views();
+		destroy_render_target_image();
+		destroy_singlesampled_image_views();
+		destroy_singlesampled_image();
+		destroy_depth_stencil_image_views();
+		destroy_depth_stencil_image();
+		free_memory_for_images_renderer();
 	}
 
 	bool record_cmd_blitting_render_image() {
@@ -150,7 +102,7 @@ namespace RE {
 				vk_aImageLayoutTransferRegion[1].pNext = nullptr;
 				vk_aImageLayoutTransferRegion[1].srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 				vk_aImageLayoutTransferRegion[1].dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-				vk_aImageLayoutTransferRegion[1].image = vk_pahSwapchainImages[u32SwapchainImageIndex];
+				vk_aImageLayoutTransferRegion[1].image = swapchainImages[u32SwapchainImageIndex];
 				vk_aImageLayoutTransferRegion[1].subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 				vk_aImageLayoutTransferRegion[1].subresourceRange.baseMipLevel = 0;
 				vk_aImageLayoutTransferRegion[1].subresourceRange.levelCount = 1;
@@ -176,7 +128,7 @@ namespace RE {
 					vk_aImageLayoutTransferRegion[0].newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 					vk_aImageLayoutTransferRegion[0].srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 					vk_aImageLayoutTransferRegion[0].dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-					vk_aImageLayoutTransferRegion[0].image = vk_eMsaaCount != VK_SAMPLE_COUNT_1_BIT ? singleSampledWorldRenderImages.get() : renderImages.get();
+					vk_aImageLayoutTransferRegion[0].image = vk_eMsaaCount != VK_SAMPLE_COUNT_1_BIT ? vk_hSinglesampledImage : vk_hRenderTargetImage;
 					vk_aImageLayoutTransferRegion[0].subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 					vk_aImageLayoutTransferRegion[0].subresourceRange.baseMipLevel = 0;
 					vk_aImageLayoutTransferRegion[0].subresourceRange.levelCount = 1;
@@ -203,8 +155,8 @@ namespace RE {
 						.srcOffsets = {
 							{}, 
 							{
-								.x = static_cast<int32_t>(vk_renderImageSize.width),
-								.y = static_cast<int32_t>(vk_renderImageSize.height),
+								.x = static_cast<int32_t>(renderImageSize[0]),
+								.y = static_cast<int32_t>(renderImageSize[1]),
 								.z = 1
 							}
 						},
@@ -227,7 +179,7 @@ namespace RE {
 						.sType = VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2,
 						.srcImage = vk_aImageLayoutTransferRegion[0].image,
 						.srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-						.dstImage = vk_pahSwapchainImages[u32SwapchainImageIndex],
+						.dstImage = swapchainImages[u32SwapchainImageIndex],
 						.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 						.regionCount = 1,
 						.pRegions = &vk_blitRegion
@@ -263,39 +215,96 @@ namespace RE {
 		return false;
 	}
 
-	void set_screen_percentage_settings(const ScreenPercentageSettings &rNewSettings) {
+	void set_screen_percentage_settings(ScreenPercentageSettings newSettings) {
 		bool bNormalInstead = false;
-		if (screenPercentageSettings.eMode == rNewSettings.eMode)
-			switch (rNewSettings.eMode) {
+		if (screenPercentageSettings.eMode == newSettings.eMode)
+			switch (newSettings.eMode) {
 				case RE_SCREEN_PERCENTAGE_MODE_NORMAL:
 					return;
 				case RE_SCREEN_PERCENTAGE_MODE_SCALED:
-					if (rNewSettings.fScale == 1.0f) {
+					if (newSettings.f32Scale == 1.0f) {
 						RE_WARNING("Screen percentage had to be changed to 100%, however this has the same effect like the normal mode. Therefore the normal mode will be enabled instead");
+						if (screenPercentageSettings.eMode == RE_SCREEN_PERCENTAGE_MODE_NORMAL)
+							return;
 						bNormalInstead = true;
-					} else if (screenPercentageSettings.fScale == rNewSettings.fScale && screenPercentageSettings.eScalingFilter == rNewSettings.eScalingFilter)
+					} else if (screenPercentageSettings.f32Scale == newSettings.f32Scale && screenPercentageSettings.eScalingFilter == newSettings.eScalingFilter)
 						return;
 					break;
 				case RE_SCREEN_PERCENTAGE_MODE_CONST_SIZE:
-					if (screenPercentageSettings.constSize == rNewSettings.constSize && screenPercentageSettings.eScalingFilter == rNewSettings.eScalingFilter)
+					if (newSettings.constSize.any_of(0)) {
+						RE_WARNING("The new constant size of the updated screen percentage settings has a member equal zero. The changes won't be applied");
+						return;
+					} else if (screenPercentageSettings.constSize == newSettings.constSize && screenPercentageSettings.eScalingFilter == newSettings.eScalingFilter)
 						return;
 					break;
+				[[unlikely]] default:
+					RE_ABORT("Unknown screen percentage mode, that was supposed to be updated to: ", std::hex, newSettings.eMode);
 			}
 		PRINT_DEBUG("Updating screen percentage settings");
-		screenPercentageSettings = rNewSettings;
+		screenPercentageSettings = newSettings;
 		if (bNormalInstead)
 			screenPercentageSettings.eMode = RE_SCREEN_PERCENTAGE_MODE_NORMAL;
 		if (!bSwapchainDirty && bRunning) {
-			PRINT_DEBUG("Immediatly applying new screen percentage settings");
-			WAIT_FOR_IDLE_VULKAN_DEVICE();
-			destroy_render_image_resources();
-			create_render_image_resources();
+			PRINT_DEBUG("Applying new screen percentage settings");
+			wait_for_rendering_finished();
+			destroy_images_renderer();
+			create_images_renderer();
 		}
 	}
 
 	[[nodiscard]]
 	ScreenPercentageSettings get_screen_percentage_settings() {
 		return screenPercentageSettings;
+	}
+
+	void enable_dynamic_screen_percentage(const bool bEnable) {
+		if (bDynamicScreenPercentage == bEnable)
+			return;
+		PRINT_DEBUG("Updating dynamic screen scaling settings (enabled: ", bEnable, ")");
+		bDynamicScreenPercentage = bEnable;
+		if (!bSwapchainDirty && bRunning) {
+			PRINT_DEBUG("Applying new dynamic screen scaling settings");
+			wait_for_rendering_finished();
+			destroy_images_renderer();
+			create_images_renderer();
+		}
+	}
+
+	[[nodiscard]]
+	bool is_dynamic_screen_percentage_enabled() {
+		return bDynamicScreenPercentage;
+	}
+
+	void set_maximum_size_for_dynamic_screen_percentage(Vector2u newSize) {
+		if (maxRenderImageSize == newSize)
+			return;
+		PRINT_DEBUG("Updating maximum size of dynamic screen percentage to ", newSize);
+		maxRenderImageSize = newSize;
+		if (!bSwapchainDirty && bRunning) {
+			PRINT_DEBUG("Applying new maximum size of the dynamic screen percentage");
+			wait_for_rendering_finished();
+			destroy_images_renderer();
+			create_images_renderer();
+		}
+	}
+
+	void set_maximum_size_for_dynamic_screen_percentage(const uint32_t u32MaxWidth, const uint32_t u32MaxHeight) {
+		set_maximum_size_for_dynamic_screen_percentage(Vector2u(u32MaxWidth, u32MaxHeight));
+	}
+
+	[[nodiscard]]
+	Vector2u get_maximum_size_for_dynamic_screen_scaling() {
+		return maxRenderImageSize;
+	}
+
+	[[nodiscard]]
+	uint32_t get_maximum_width_for_dynamic_screen_scaling() {
+		return maxRenderImageSize[0];
+	}
+
+	[[nodiscard]]
+	uint32_t get_maximum_height_for_dynamic_screen_scaling() {
+		return maxRenderImageSize[1];
 	}
 
 }

@@ -74,29 +74,28 @@ namespace RE {
 		vkSignalSemaphore(vk_hDevice, &vk_signalSemaphoreInfo);
 	}
 	
-	[[nodiscard]]
-	VkSemaphore Vulkan_TimelineSemaphore::get() const noexcept {
+	VkSemaphore Vulkan_TimelineSemaphore::get() const {
 		return vk_hTimelineSemaphore;
 	}
 	
-	[[nodiscard]]
-	const VkSemaphore* Vulkan_TimelineSemaphore::get_ptr() const noexcept {
+	const VkSemaphore* Vulkan_TimelineSemaphore::get_ptr() const {
 		return &vk_hTimelineSemaphore;
 	}
 	
-	[[nodiscard]]
-	bool Vulkan_TimelineSemaphore::valid() const noexcept {
+	bool Vulkan_TimelineSemaphore::valid() const {
 		return vk_hTimelineSemaphore != VK_NULL_HANDLE;
 	}
 
-	[[nodiscard]]
 	Vulkan_TimelineSemaphore::operator VkSemaphore() const {
 		return get();
 	}
 	
-	[[nodiscard]]
 	Vulkan_TimelineSemaphore::operator const VkSemaphore*() const {
 		return get_ptr();
+	}
+
+	VkSemaphore Vulkan_TimelineSemaphore::operator()() const {
+		return get();
 	}
 
 }

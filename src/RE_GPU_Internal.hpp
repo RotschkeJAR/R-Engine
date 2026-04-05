@@ -6,38 +6,45 @@
 
 namespace RE {
 
-	extern bool bVsyncEnabled;
+	// Vulkan instance
+	bool init_vulkan_instance();
+	void destroy_vulkan_instance();
 
 	// Surface
-	extern VkSurfaceKHR vk_hSurface;
-	extern VkSurfaceCapabilitiesKHR vk_surfaceCapabilities;
-	extern std::unique_ptr<VkSurfaceFormatKHR[]> vk_paSurfaceFormatsAvailable;
-	extern uint32_t u32SurfaceFormatsAvailableCount;
-	extern uint32_t u32IndexToSelectedSurfaceFormat;
+	void destroy_vulkan_surface();
+	void fetch_vulkan_surface_infos();
+	void select_best_vulkan_surface_format();
 
 	// Physical Device
 	bool alloc_physical_vulkan_device_list();
 	void free_physical_vulkan_device_list();
-	void select_best_physical_vulkan_device();
-	void select_physical_vulkan_device(VkPhysicalDevice vk_hPhysicalDevice);
+
+	// Physical Device Suitability
+	bool is_physical_vulkan_device_suitable(VkPhysicalDevice vk_hPhysicalDevice, int32_t *pi32Score);
+
+	// Vulkan Device
+	bool init_logical_vulkan_device();
+	void destroy_logical_vulkan_device();
+	PFN_vkVoidFunction load_vulkan_func_with_device(const char *pacFuncName);
+
+	// Synchronization2
+	bool load_synchronization_2_funcs();
+	void unload_synchronization_2_funcs();
 	
 	// Scheduler
-	void does_gpu_have_necessary_queues(VkPhysicalDevice vk_hPhysicalDevice, std::queue<std::string> &rMissingFeatures);
-	int32_t rate_gpu_queues(VkPhysicalDevice vk_hPhysicalDevice);
 	bool setup_logical_device_queues();
 	void destroy_logical_device_queues();
 
-	// Swapchain
-	extern VkPresentModeKHR vk_ePresentModeVsync, vk_ePresentModeNoVsync;
-	bool recreate_swapchain();
-
 	// Memory
-	extern std::vector<std::tuple<VkMemoryHeap, VkDeviceSize>> vulkanMemoryHeaps;
-	extern std::vector<VkMemoryType> vulkanMemoryTypes;
+	extern std::unique_ptr<std::tuple<VkMemoryHeap, VkDeviceSize>[]> vulkanMemoryHeaps;
+	extern std::unique_ptr<VkMemoryType[]> vulkanMemoryTypes;
 	extern uint32_t u32VulkanMemoryAllocCount;
-	bool does_gpu_support_memory(VkPhysicalDevice vk_hPhysicalDevice, const VkPhysicalDeviceLimits &vk_rPhysicalDeviceLimits, std::queue<std::string> &rMissingFeatures);
-	int32_t rate_gpu_memory_capacity(VkPhysicalDevice vk_hPhysicalDevice, const VkPhysicalDeviceProperties2 &vk_rPhysicalDeviceProperties, const VkPhysicalDeviceMaintenance3Properties &vk_rPhysicalDeviceMaxMemoryAllocationSize);
-	void fetch_gpu_memory_info();
+	extern uint8_t u8MemoryHeapCount, u8MemoryTypeCount;
+	void alloc_gpu_memory_info();
+	void free_gpu_memory_info();
+
+	// Constrains
+	void fetch_gpu_constrains();
 
 }
 

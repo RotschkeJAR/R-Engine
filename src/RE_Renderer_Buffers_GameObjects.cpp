@@ -10,12 +10,11 @@ namespace RE {
 			PRINT_DEBUG("Creating game object buffer at frame-in-flight index ", u8FrameInFlightCreateIndex);
 			if (aGameObjectBuffers[u8FrameInFlightCreateIndex].create(
 					0, 
-					1000 * (sizeof(float[16]) + sizeof(float[4]) + sizeof(uint32_t)), 
+					1000 * sizeof(GameObjectShaderData), 
 					VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 					rQueues.u8QueueCount, 
 					rQueues.queueFamilyIndices.get(), 
-					RE_VK_GPU_RAM, 
-					0))
+					VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT))
 				u8FrameInFlightCreateIndex++;
 			else {
 				RE_FATAL_ERROR("Failed to create game object buffer at frame-in-flight index ", u8FrameInFlightCreateIndex);

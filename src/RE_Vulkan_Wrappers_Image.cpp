@@ -15,10 +15,7 @@ namespace RE {
 			const uint32_t u32QueueFamilyCount, 
 			const uint32_t *const pau32QueueFamilies, 
 			const VkImageLayout vk_eInitialLayout, 
-			const VulkanMemoryType eMemoryType, 
-			const VkMemoryPropertyFlags vk_mMemoryProperties, 
-			VkImage *const vk_phImage, 
-			VulkanMemory *const pMemory) {
+			VkImage *const vk_phImage) {
 		PRINT_DEBUG("Creating a Vulkan image");
 		VkImageCreateInfo vk_createInfo;
 		vk_createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -40,24 +37,10 @@ namespace RE {
 			vk_createInfo.pQueueFamilyIndices = pau32QueueFamilies;
 		}
 		vk_createInfo.initialLayout = vk_eInitialLayout;
-		if (vkCreateImage(vk_hDevice, &vk_createInfo, nullptr, vk_phImage) == VK_SUCCESS) {
-			PRINT_DEBUG("Fetching memory requirements for Vulkan image and allocating memory for it");
-			VkMemoryRequirements vk_memoryRequirements;
-			vkGetImageMemoryRequirements(vk_hDevice, *vk_phImage, &vk_memoryRequirements);
-			if (pMemory->alloc(vk_memoryRequirements.size, eMemoryType, vk_mMemoryProperties, vk_memoryRequirements.memoryTypeBits)) {
-				PRINT_DEBUG("Binding memory and Vulkan image");
-				if (vkBindImageMemory(vk_hDevice, *vk_phImage, pMemory->get(), 0) == VK_SUCCESS)
-					return true;
-				else
-					RE_ERROR("Failed to bind memory to a Vulkan image");
-				PRINT_DEBUG("Freeing memory after failing to bind memory and Vulkan image");
-				pMemory->free();
-			}
-			PRINT_DEBUG("Destroying Vulkan image after failing to allocate memory for it");
-			vkDestroyImage(vk_hDevice, *vk_phImage, nullptr);
-			*vk_phImage = VK_NULL_HANDLE;
-		} else
-			RE_ERROR("Failed to create a Vulkan image");
+		if (vkCreateImage(vk_hDevice, &vk_createInfo, nullptr, vk_phImage) == VK_SUCCESS)
+			return true;
+		else
+			RE_ERROR("Failed to create Vulkan image");
 		return false;
 	}
 
@@ -75,7 +58,6 @@ namespace RE {
 			const uint32_t u32QueueFamilyCount, 
 			const uint32_t *const pau32QueueFamilies, 
 			const VkImageLayout vk_eInitialLayout, 
-			const VulkanMemoryType eMemoryType, 
 			const VkMemoryPropertyFlags vk_mMemoryProperties) : Vulkan_Image() {
 		PRINT_DEBUG_CLASS("Constructing Vulkan image wrapper");
 		create(vk_mFlags, 
@@ -90,7 +72,6 @@ namespace RE {
 				u32QueueFamilyCount, 
 				pau32QueueFamilies, 
 				vk_eInitialLayout, 
-				eMemoryType, 
 				vk_mMemoryProperties);
 	}
 
@@ -116,14 +97,13 @@ namespace RE {
 			const uint32_t u32QueueFamilyCount, 
 			const uint32_t *const pau32QueueFamilies, 
 			const VkImageLayout vk_eInitialLayout, 
-			const VulkanMemoryType eMemoryType, 
 			const VkMemoryPropertyFlags vk_mMemoryProperties) {
 #ifndef RE_DISABLE_PRINT_DEBUGS
 		if (valid())
 			RE_ERROR("Creating another Vulkan image wrapper, when the old image ", vk_hImage, " hasn't been destroyed yet");
 #endif
-		PRINT_DEBUG_CLASS("Creating Vulkan image wrapper");
-		return create_vulkan_image(vk_mFlags, 
+		PRINT_DEBUG_CLASS("Creating Vulkan image in wrapper class");
+		if (create_vulkan_image(vk_mFlags, 
 				vk_eType, 
 				vk_eFormat, 
 				vk_rExtent, 
@@ -135,10 +115,15 @@ namespace RE {
 				u32QueueFamilyCount, 
 				pau32QueueFamilies, 
 				vk_eInitialLayout, 
-				eMemoryType, 
-				vk_mMemoryProperties, 
-				&vk_hImage, 
-				&memory);
+				&vk_hImage)) {
+			PRINT_DEBUG_CLASS("Allocating memory for Vulkan image ", std::hex, vk_hImage, " in wrapper class");
+			if (memory.alloc_for_image(vk_hImage, vk_mMemoryProperties) == VK_SUCCESS)
+				return true;
+			else
+				RE_ERROR("Failed to allocate Vulkan memory for image ", std::hex, vk_hImage, " in wrapper class");
+		} else
+			RE_ERROR("Failed to create Vulkan image in wrapper class");
+		return false;
 	}
 
 	void Vulkan_Image::destroy() {
@@ -148,44 +133,40 @@ namespace RE {
 		memory.free();
 	}
 
-	[[nodiscard]]
-	VkImage Vulkan_Image::get() const noexcept {
+	VkImage Vulkan_Image::get() const {
 		return vk_hImage;
 	}
 
-	[[nodiscard]]
-	const VkImage* Vulkan_Image::get_ptr() const noexcept {
+	const VkImage* Vulkan_Image::get_ptr() const {
 		return &vk_hImage;
 	}
 
-	[[nodiscard]]
-	VulkanMemory& Vulkan_Image::get_memory() noexcept {
+	VulkanMemory& Vulkan_Image::get_memory() {
 		return memory;
 	}
 
-	[[nodiscard]]
-	bool Vulkan_Image::valid() const noexcept {
+	bool Vulkan_Image::valid() const {
 		return vk_hImage && memory.valid();
 	}
 
-	[[nodiscard]]
 	Vulkan_Image::operator VkImage() const {
 		return get();
 	}
 
-	[[nodiscard]]
 	Vulkan_Image::operator const VkImage*() const {
 		return get_ptr();
 	}
 
-	[[nodiscard]]
 	Vulkan_Image::operator VulkanMemory&() {
 		return get_memory();
 	}
 
-	[[nodiscard]]
 	Vulkan_Image::operator bool() const {
 		return valid();
+	}
+
+	VkImage Vulkan_Image::operator()() const {
+		return get();
 	}
 
 }

@@ -2,7 +2,6 @@
 #include "RE_Main.hpp"
 #include "RE_List_GameObject.hpp"
 #include "RE_List_Camera.hpp"
-#include "RE_Vulkan_Device.hpp"
 
 namespace RE {
 

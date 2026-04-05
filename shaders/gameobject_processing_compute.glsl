@@ -1,10 +1,10 @@
 #version 450 core
 
 struct RawGameObject {
-	vec4 position;
-	vec4 rotation;
-	vec4 scale;
-	vec4 color;
+	float position[3];
+	float rotation[3];
+	float scale[3];
+	float color[4];
 	uint textureId;
 };
 
@@ -48,8 +48,10 @@ void main() {
 		0.0,									0.0,									rawGameObjects.data[index].scale[2],	0.0,
 		rawGameObjects.data[index].position[0],	rawGameObjects.data[index].position[1],	rawGameObjects.data[index].position[2],	1.0
 	);
-	gameObjects.data[index].color = rawGameObjects.data[index].color;
+	for (uint colorChannel = 0; colorChannel < 3; colorChannel++)
+		gameObjects.data[index].color[colorChannel] = rawGameObjects.data[index].color[colorChannel];
 	gameObjects.data[index].textureId = rawGameObjects.data[index].textureId;
+	
 	depths.data[index].objectIndex = index;
-	depths.data[index].depth = vec4(cam.view * gameObjects.data[index].model * vec4(0.0, 0.0, 0.0, 1.0)).z;
+	depths.data[index].depth = vec4(cam.projection * cam.view * gameObjects.data[index].model * vec4(0.0, 0.0, 0.0, 1.0)).z;
 }

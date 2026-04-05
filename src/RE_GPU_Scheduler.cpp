@@ -18,69 +18,17 @@ namespace RE {
 #define QUEUE_INDEX_TRANSFER 1
 #define QUEUE_INDEX_GENERAL_COMPUTING 2
 
-	void does_gpu_have_necessary_queues(const VkPhysicalDevice vk_hPhysicalDevice, std::queue<std::string> &rMissingFeatures) {
-		PRINT_DEBUG("Querying information about available queues on physical Vulkan device");
-		uint32_t u32PhysicalDeviceQueueFamilyCount;
-		vkGetPhysicalDeviceQueueFamilyProperties2(vk_hPhysicalDevice, &u32PhysicalDeviceQueueFamilyCount, nullptr);
-		std::vector<VkQueueFamilyProperties2> vk_paPhysicalDeviceQueueFamilyProperties;
-		vk_paPhysicalDeviceQueueFamilyProperties.resize(u32PhysicalDeviceQueueFamilyCount);
-		for (VkQueueFamilyProperties2 &vk_rQueueFamilyPropertiesStructure : vk_paPhysicalDeviceQueueFamilyProperties) {
-			vk_rQueueFamilyPropertiesStructure.sType = VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2;
-			vk_rQueueFamilyPropertiesStructure.pNext = nullptr;
-		}
-		vkGetPhysicalDeviceQueueFamilyProperties2(vk_hPhysicalDevice, &u32PhysicalDeviceQueueFamilyCount, vk_paPhysicalDeviceQueueFamilyProperties.data());
-
-		PRINT_DEBUG("Checking if all essential queue types are supported by the physical Vulkan device");
-		VkQueueFlags vk_eAllExistingQueues = 0;
-		bool bPresentingSupported = false;
-		for (uint32_t u32QueueIndex = 0; u32QueueIndex < u32PhysicalDeviceQueueFamilyCount; u32QueueIndex++) {
-			vk_eAllExistingQueues |= vk_paPhysicalDeviceQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags;
-			VkBool32 vk_bPresentingSupported;
-			vkGetPhysicalDeviceSurfaceSupportKHR(vk_hPhysicalDevice, u32QueueIndex, vk_hSurface, &vk_bPresentingSupported);
-			bPresentingSupported = bPresentingSupported || vk_bPresentingSupported == VK_TRUE;
-		}
-
-		if ((vk_eAllExistingQueues & VK_QUEUE_GRAPHICS_BIT) == 0)
-			rMissingFeatures.emplace("No queue supports graphics rendering tasks");
-		if ((vk_eAllExistingQueues & VK_QUEUE_COMPUTE_BIT) == 0)
-			rMissingFeatures.emplace("No queue supports computing tasks");
-		if ((vk_eAllExistingQueues & VK_QUEUE_TRANSFER_BIT) == 0)
-			rMissingFeatures.emplace("No queue supports transfer tasks");
-		if (!bPresentingSupported)
-			rMissingFeatures.emplace("No queue supports presenting images");
-	}
-
-	int32_t rate_gpu_queues(const VkPhysicalDevice vk_hPhysicalDevice) {
-		PRINT_DEBUG("Fetching information about available queues on physical Vulkan device");
-		uint32_t u32PhysicalDeviceQueueFamilyCount;
-		vkGetPhysicalDeviceQueueFamilyProperties2(vk_hPhysicalDevice, &u32PhysicalDeviceQueueFamilyCount, nullptr);
-		std::vector<VkQueueFamilyProperties2> vk_paPhysicalDeviceQueueFamilyProperties;
-		vk_paPhysicalDeviceQueueFamilyProperties.resize(u32PhysicalDeviceQueueFamilyCount);
-		for (VkQueueFamilyProperties2 &vk_rQueueFamilyPropertiesStructure : vk_paPhysicalDeviceQueueFamilyProperties) {
-			vk_rQueueFamilyPropertiesStructure.sType = VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2;
-			vk_rQueueFamilyPropertiesStructure.pNext = nullptr;
-		}
-		vkGetPhysicalDeviceQueueFamilyProperties2(vk_hPhysicalDevice, &u32PhysicalDeviceQueueFamilyCount, vk_paPhysicalDeviceQueueFamilyProperties.data());
-		PRINT_DEBUG("Rating queues on physical Vulkan device");
-		int32_t i32Score = 0;
-		for (const VkQueueFamilyProperties2 vk_physicalDeviceQueueFamilyProperties : vk_paPhysicalDeviceQueueFamilyProperties)
-			for (const VkQueueFlags vk_eRecommendedQueueType : vk_aeRecommendedQueueTypes)
-				if ((vk_physicalDeviceQueueFamilyProperties.queueFamilyProperties.queueFlags & vk_eRecommendedQueueType) == vk_eRecommendedQueueType)
-					i32Score += 100 - std::popcount<VkQueueFlags>(vk_physicalDeviceQueueFamilyProperties.queueFamilyProperties.queueFlags & (~vk_eRecommendedQueueType)) * 2;
-		return i32Score;
-	}
-
-	void create_queue_create_infos(const float *pfPriority, std::vector<VkDeviceQueueCreateInfo> &vk_rpaLogicalQueueCreateInfos) {
+	void create_queue_create_infos(const float *pfPriority, std::vector<VkDeviceQueueCreateInfo> &rLogicalQueueCreateInfos) {
 		PRINT_DEBUG("Fetching information about available queues on physical Vulkan device");
 		uint32_t u32QueueFamilyCount;
-		vkGetPhysicalDeviceQueueFamilyProperties2(vk_hPhysicalDeviceSelected, &u32QueueFamilyCount, nullptr);
+		vkGetPhysicalDeviceQueueFamilyProperties2(SELECTED_PHYSICAL_VULKAN_DEVICE, &u32QueueFamilyCount, nullptr);
 		std::vector<VkQueueFamilyProperties2> vk_paQueueFamilyProperties;
 		vk_paQueueFamilyProperties.resize(u32QueueFamilyCount);
 		for (VkQueueFamilyProperties2 &vk_rQueueFamilyPropertiesStructure : vk_paQueueFamilyProperties) {
 			vk_rQueueFamilyPropertiesStructure.sType = VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2;
 			vk_rQueueFamilyPropertiesStructure.pNext = nullptr;
 		}
-		vkGetPhysicalDeviceQueueFamilyProperties2(vk_hPhysicalDeviceSelected, &u32QueueFamilyCount, vk_paQueueFamilyProperties.data());
+		vkGetPhysicalDeviceQueueFamilyProperties2(SELECTED_PHYSICAL_VULKAN_DEVICE, &u32QueueFamilyCount, vk_paQueueFamilyProperties.data());
 		bool abRecommendedQueueTypesExisting[u8RecommendedQueueTypesCount] = {};
 		abRecommendedQueueTypesExisting[QUEUE_INDEX_TRANSFER] = true;
 		std::vector<uint32_t> selectedQueues;
@@ -96,7 +44,7 @@ namespace RE {
 			if ((vk_paQueueFamilyProperties[i].queueFamilyProperties.queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0)
 				graphicsQueues.push_back(i);
 			VkBool32 vk_bPresentingSupported;
-			vkGetPhysicalDeviceSurfaceSupportKHR(vk_hPhysicalDeviceSelected, i, vk_hSurface, &vk_bPresentingSupported);
+			vkGetPhysicalDeviceSurfaceSupportKHR(SELECTED_PHYSICAL_VULKAN_DEVICE, i, vk_hSurface, &vk_bPresentingSupported);
 			if (vk_bPresentingSupported == VK_TRUE)
 				presentQueues.push_back(i);
 			if ((vk_paQueueFamilyProperties[i].queueFamilyProperties.queueFlags & VK_QUEUE_COMPUTE_BIT) != 0)
@@ -229,7 +177,7 @@ namespace RE {
 		bool bPresentQueueAmongstSelectedQueue = false;
 		for (const uint32_t u32SelectedQueueIndex : selectedQueues) {
 			VkBool32 vk_bPresentingSupported;
-			vkGetPhysicalDeviceSurfaceSupportKHR(vk_hPhysicalDeviceSelected, u32SelectedQueueIndex, vk_hSurface, &vk_bPresentingSupported);
+			vkGetPhysicalDeviceSurfaceSupportKHR(SELECTED_PHYSICAL_VULKAN_DEVICE, u32SelectedQueueIndex, vk_hSurface, &vk_bPresentingSupported);
 			if (vk_bPresentingSupported == VK_TRUE) {
 				bPresentQueueAmongstSelectedQueue = true;
 				break;
@@ -264,23 +212,23 @@ namespace RE {
 		vk_pahQueues = std::make_unique<VkQueue[]>(u8LogicalQueueCount);
 		vk_paeQueueTypes = std::make_unique<VkQueueFlags[]>(u8LogicalQueueCount);
 		queueFamilyIndices = std::make_unique<uint32_t[]>(u8LogicalQueueCount);
-		vk_rpaLogicalQueueCreateInfos.resize(u8LogicalQueueCount);
+		rLogicalQueueCreateInfos.resize(u8LogicalQueueCount);
 		presentationAvailablePerQueue.reserve(u8LogicalQueueCount);
 		uint8_t u8LogicalQueueCreateIndex = 0;
 		for (const uint32_t u32QueueIndex : selectedQueues) {
 			vk_paeQueueTypes[u8LogicalQueueCreateIndex] = vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags;
 			VkBool32 vk_bPresentingSupported;
-			vkGetPhysicalDeviceSurfaceSupportKHR(vk_hPhysicalDeviceSelected, u32QueueIndex, vk_hSurface, &vk_bPresentingSupported);
+			vkGetPhysicalDeviceSurfaceSupportKHR(SELECTED_PHYSICAL_VULKAN_DEVICE, u32QueueIndex, vk_hSurface, &vk_bPresentingSupported);
 			presentationAvailablePerQueue.push_back(vk_bPresentingSupported == VK_TRUE);
 
 			queueFamilyIndices[u8LogicalQueueCreateIndex] = u32QueueIndex;
 
-			vk_rpaLogicalQueueCreateInfos[u8LogicalQueueCreateIndex].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-			vk_rpaLogicalQueueCreateInfos[u8LogicalQueueCreateIndex].pNext = nullptr;
-			vk_rpaLogicalQueueCreateInfos[u8LogicalQueueCreateIndex].flags = 0;
-			vk_rpaLogicalQueueCreateInfos[u8LogicalQueueCreateIndex].queueFamilyIndex = u32QueueIndex;
-			vk_rpaLogicalQueueCreateInfos[u8LogicalQueueCreateIndex].queueCount = 1;
-			vk_rpaLogicalQueueCreateInfos[u8LogicalQueueCreateIndex].pQueuePriorities = pfPriority;
+			rLogicalQueueCreateInfos[u8LogicalQueueCreateIndex].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+			rLogicalQueueCreateInfos[u8LogicalQueueCreateIndex].pNext = nullptr;
+			rLogicalQueueCreateInfos[u8LogicalQueueCreateIndex].flags = 0;
+			rLogicalQueueCreateInfos[u8LogicalQueueCreateIndex].queueFamilyIndex = u32QueueIndex;
+			rLogicalQueueCreateInfos[u8LogicalQueueCreateIndex].queueCount = 1;
+			rLogicalQueueCreateInfos[u8LogicalQueueCreateIndex].pQueuePriorities = pfPriority;
 
 			u8LogicalQueueCreateIndex++;
 		}

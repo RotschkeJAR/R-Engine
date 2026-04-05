@@ -15,7 +15,7 @@ SFLAG        = --target-env=vulkan1.3 --target-spv=spv1.6 -O
 RE           = $(BIN)/libRE.a
 OUT          = Game
 
-.PHONY: all, update_git, fetch_git
+.PHONY: all, compile_shaders, update_git, fetch_git
 
 all:
 	@make --no-print-directory $(SH)/*.spv
@@ -93,14 +93,21 @@ $(LIB_BIN)/*: $(LIB)/* $(LIB_SPEC)/*
 	fi
 
 $(SH)/*.spv: $(SH)/*.glsl
+	@make --no-print-directory compile_shaders
+
+compile_shaders:
 	-@rm -f $(SH)/*.spv
 	@for vertexShader in $(SH)/*_vertex.glsl; do \
 		echo $${vertexShader}; \
-		$(SC) $(SFLAG) -x glsl -fshader-stage=vertex -o $${vertexShader}.spv $${vertexShader}; \
+		$(SC) $(SFLAG) -x glsl -fshader-stage=vertex -o "$${vertexShader}.spv" "$${vertexShader}"; \
 	done
 	@for fragmentShader in $(SH)/*_fragment.glsl; do \
 		echo $${fragmentShader}; \
-		$(SC) $(SFLAG) -x glsl -fshader-stage=fragment -o $${fragmentShader}.spv $${fragmentShader}; \
+		$(SC) $(SFLAG) -x glsl -fshader-stage=fragment -o "$${fragmentShader}.spv" "$${fragmentShader}"; \
+	done
+	@for computeShader in $(SH)/*_compute.glsl; do \
+		echo $${computeShader}; \
+		$(SC) $(SFLAG) -x glsl -fshader-stage=compute -o "$${computeShader}.spv" "$${computeShader}"; \
 	done
 
 update_git:

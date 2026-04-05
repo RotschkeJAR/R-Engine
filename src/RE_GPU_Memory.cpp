@@ -39,9 +39,10 @@ namespace RE {
 		sharedMemoryInfosProcessed.resize(u32SharedMemoryInfoCount - 1);
 		std::fill(sharedMemoryInfosProcessed.begin(), sharedMemoryInfosProcessed.end(), false);
 		for (uint32_t u32CurrentInfoIndex = 0; u32CurrentInfoIndex < u32SharedMemoryInfoCount; u32CurrentInfoIndex++) {
-			if (u32CurrentInfoIndex > 0 && sharedMemoryInfosProcessed[sharedMemoryInfosProcessed - 1] == true)
+			if (u32CurrentInfoIndex > 0 && sharedMemoryInfosProcessed[u32CurrentInfoIndex - 1] == true)
 				continue;
 		}
+		return false;
 	}
 
 	bool do_memory_properties_exist(const VkMemoryPropertyFlags vk_mProperties, uint8_t *const pu8Mismatches) {

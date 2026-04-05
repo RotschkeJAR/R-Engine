@@ -64,10 +64,6 @@ namespace RE {
 			if (vk_physicalDeviceProperties_1_3.maxBufferSize < vk_largestRequiredMemorySize)
 				incompatibilities.emplace("The maximum buffer size should be large enough to store 1000 game objects and/or 32-bit RGBA textures as big as twice the largest monitor's scale or more");
 			i32Score += static_cast<int32_t>(vk_physicalDeviceProperties_1_3.maxBufferSize / 500000000);
-			if ((vk_physicalDeviceProperties_1_2.supportedDepthResolveModes & VK_RESOLVE_MODE_MIN_BIT) == 0)
-				incompatibilities.emplace("The required resolve mode for depths is not supported");
-			if ((vk_physicalDeviceProperties_1_2.supportedStencilResolveModes & VK_RESOLVE_MODE_MAX_BIT) == 0)
-				incompatibilities.emplace("The required resolve mode for stencils is not supported");
 			if (vk_physicalDeviceProperties_1_2.maxTimelineSemaphoreValueDifference < 64)
 				incompatibilities.emplace("The maximum difference for timeline semaphore values should be at least 64 or more");
 			if (vk_physicalDeviceProperties_1_1.maxPerSetDescriptors < RE_VK_MAX_SAMPLED_IMAGES)

@@ -3,13 +3,20 @@
 namespace RE {
 
 	static VkResult alloc_vulkan_memory(const void *const pNext, const VkDeviceSize vk_size, const uint32_t u32MemoryTypeIndex, VkDeviceMemory *const vk_phMemory) {
+		if (u32VulkanMemoryAllocCount == u32MaxMemoryAllocs) {
+			RE_ERROR("Ran out of Vulkan memory allocations");
+			return VK_ERROR_TOO_MANY_OBJECTS;
+		}
 		const VkMemoryAllocateInfo vk_allocInfo = {
 			.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
 			.pNext = pNext,
 			.allocationSize = vk_size,
 			.memoryTypeIndex = u32MemoryTypeIndex
 		};
-		return vkAllocateMemory(vk_hDevice, &vk_allocInfo, nullptr, vk_phMemory);
+		const VkResult vk_eResult = vkAllocateMemory(vk_hDevice, &vk_allocInfo, nullptr, vk_phMemory);
+		if (vk_eResult == VK_SUCCESS)
+			u32VulkanMemoryAllocCount++;
+		return vk_eResult;
 	}
 
 	static bool find_matching_memory_type(const VkDeviceSize vk_leastSize, const VkMemoryPropertyFlags vk_mProperties, const uint32_t m32DesiredMemoryTypes, uint8_t &ru8MemoryType) {
@@ -83,7 +90,7 @@ namespace RE {
 		PRINT_DEBUG_CLASS("Allocating Vulkan memory supporting properties ", std::hex, vk_mProperties, " and from types ", m32DesiredMemoryTypes);
 		if (find_matching_memory_type(vk_size, vk_mProperties, m32DesiredMemoryTypes, u8MemoryType))
 			return this->alloc(vk_size, u8MemoryType);
-		return vk_mProperties & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT ? VK_ERROR_OUT_OF_DEVICE_MEMORY : VK_ERROR_OUT_OF_HOST_MEMORY;
+		return (vk_mProperties & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) ? VK_ERROR_OUT_OF_DEVICE_MEMORY : VK_ERROR_OUT_OF_HOST_MEMORY;
 	}
 
 	VkResult VulkanMemory::alloc(const VkDeviceSize vk_size, const uint8_t u8MemoryType) {
@@ -95,6 +102,8 @@ namespace RE {
 		const VkResult vk_eResult = alloc_vulkan_memory(nullptr, vk_size, static_cast<uint32_t>(u8MemoryType), &vk_hMemory);
 		if (vk_eResult == VK_SUCCESS)
 			this->vk_size = vk_size;
+		else
+			RE_ERROR("Failed to allocate Vulkan memory at type index ", u8MemoryType, " (Vulkan error code: ", std::hex, vk_eResult, ")");
 		return vk_eResult;
 	}
 
@@ -102,7 +111,7 @@ namespace RE {
 		if (valid())
 			RE_ERROR("New memory is being allocated, even though the old Vulkan memory ", vk_hMemory, " occupying ", vk_size, " bytes hasn't been freed yet");
 		PRINT_DEBUG_CLASS("Fetching requirements for memory for Vulkan buffer ", std::hex, vk_hBuffer);
-		VkResult vk_eLatestResult = vk_mProperties & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT ? VK_ERROR_OUT_OF_DEVICE_MEMORY : VK_ERROR_OUT_OF_HOST_MEMORY;
+		VkResult vk_eLatestResult = (vk_mProperties & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) ? VK_ERROR_OUT_OF_DEVICE_MEMORY : VK_ERROR_OUT_OF_HOST_MEMORY;
 		const VkBufferMemoryRequirementsInfo2 vk_bufferInfo = {
 			.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2,
 			.pNext = nullptr,
@@ -136,9 +145,9 @@ namespace RE {
 				if (vk_eLatestResult == VK_SUCCESS)
 					return VK_SUCCESS;
 				else
-					RE_ERROR("Failed to bind Vulkan memory ", vk_hMemory, " to buffer ", vk_hBuffer);
+					RE_ERROR("Failed to bind Vulkan memory ", vk_hMemory, " to buffer ", vk_hBuffer, " (Vulkan error code: ", std::hex, vk_eLatestResult, ")");
 			} else
-				RE_ERROR("Failed to allocate Vulkan memory for buffer ", vk_hBuffer);
+				RE_ERROR("Failed to allocate Vulkan memory for buffer ", vk_hBuffer, " (Vulkan error code: ", std::hex, vk_eLatestResult, ")");
 		} else
 			RE_ERROR("Failed to find matching Vulkan memory type for buffer ", vk_hBuffer);
 		return vk_eLatestResult;
@@ -148,7 +157,7 @@ namespace RE {
 		if (valid())
 			RE_ERROR("New memory is being allocated, even though the old Vulkan memory ", vk_hMemory, " occupying ", vk_size, " bytes hasn't been freed yet");
 		PRINT_DEBUG_CLASS("Fetching requirements for memory for Vulkan image ", std::hex, vk_hImage);
-		VkResult vk_eLatestResult = vk_mProperties & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT ? VK_ERROR_OUT_OF_DEVICE_MEMORY : VK_ERROR_OUT_OF_HOST_MEMORY;
+		VkResult vk_eLatestResult = (vk_mProperties & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) ? VK_ERROR_OUT_OF_DEVICE_MEMORY : VK_ERROR_OUT_OF_HOST_MEMORY;
 		const VkImageMemoryRequirementsInfo2 vk_imageInfo = {
 			.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2,
 			.pNext = nullptr,
@@ -182,9 +191,9 @@ namespace RE {
 				if (vk_eLatestResult == VK_SUCCESS)
 					return VK_SUCCESS;
 				else
-					RE_ERROR("Failed to bind Vulkan memory ", vk_hMemory, " to image ", vk_hImage);
+					RE_ERROR("Failed to bind Vulkan memory ", vk_hMemory, " to image ", vk_hImage, " (Vulkan error code: ", std::hex, vk_eLatestResult, ")");
 			} else
-				RE_ERROR("Failed to allocate Vulkan memory for image ", vk_hImage);
+				RE_ERROR("Failed to allocate Vulkan memory for image ", vk_hImage, " (Vulkan error code: ", std::hex, vk_eLatestResult, ")");
 		} else
 			RE_ERROR("Failed to find matching Vulkan memory type for image ", vk_hImage);
 		return vk_eLatestResult;

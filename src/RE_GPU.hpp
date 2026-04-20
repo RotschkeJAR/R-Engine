@@ -103,13 +103,17 @@ namespace RE {
 	};
 
 	// Memory
+	class VulkanMemory;
+	using VulkanStorageObject = std::variant<VkBuffer, VkImage>;
+	void fetch_vulkan_memory_requirements(VulkanStorageObject vulkanStorageObject, VkMemoryRequirements2 &vk_rMemoryRequirements);
+	bool bind_vulkan_memory(VulkanStorageObject vulkanStorageObject, VkDeviceMemory vk_hMemory, VkDeviceSize vk_memoryOffset = 0);
 	struct SharedVulkanMemoryInfo final {
-		std::variant<VkImage, VkBuffer> storageObject;
-		VkMemoryPropertyFlags vk_mMemoryProperties;
-		uint64_t m64CollidableMask;
-		uint8_t u8OccupationIndex;
+		VulkanStorageObject vulkanStorageObject;
+		uint32_t u32RegionIndex;
 	};
-	bool do_memory_properties_exist(VkMemoryPropertyFlags vk_mProperties, uint8_t *pu8Mismatches);
+	bool alloc_shared_vulkan_memory(const uint32_t u32SharedMemoryInfoCount, const SharedVulkanMemoryInfo *const paSharedMemoryInfos, const VkMemoryPropertyFlags vk_mMemoryProperties, size_t &rAllocatedMemoryCount, std::unique_ptr<VulkanMemory[]> &rAllocatedMemory, bool *pbVulkanStorageObjectsUnbound = nullptr);
+	std::optional<uint8_t> find_vulkan_memory_type(VkMemoryPropertyFlags vk_mProperties, uint32_t m32MemoryTypeBits, uint8_t *pu8Mismatches = nullptr);
+	bool do_memory_properties_exist(VkMemoryPropertyFlags vk_mProperties, uint8_t *pu8Mismatches = nullptr);
 	bool is_staging_before_gpu_use_necessary();
 	uint32_t get_remaining_vulkan_allocations();
 	class VulkanMemory final {

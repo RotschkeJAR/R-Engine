@@ -551,6 +551,20 @@ namespace RE {
 		return (((mValue & mBitmasks) == mBitmasks) && ...);
 	}
 
+	template <class T> requires std::integral<T>
+	void get_indices_for_true_bits(const T mValue, uint8_t &ru8IndexCount, std::unique_ptr<uint8_t[]> &rIndices) {
+		ru8IndexCount = static_cast<uint8_t>(std::popcount<T>(mValue));
+		rIndices = std::make_unique<uint8_t[]>(ru8IndexCount);
+		uint8_t u8NextIndexEntry = 0;
+		for (T bitIndex = 0; bitIndex < sizeof(T) * 8; bitIndex++)
+			if ((mValue & (1 << bitIndex)) != 0) {
+				rIndices[u8NextIndexEntry] = static_cast<uint8_t>(bitIndex);
+				u8NextIndexEntry++;
+				if (u8NextIndexEntry >= ru8IndexCount)
+					break;
+			}
+	}
+
 	template <class T, class... U> requires Integrals<T, U...>
 	constexpr T set_bits(T& rValue, const bool bNewState, const U... bits) {
 		const T bitmask = gen_bitmask<U...>(bits...);
@@ -574,7 +588,7 @@ namespace RE {
 
 	template <class T> requires std::integral<T>
 	void for_each_bit(const T bitmask, const std::function<void (T bitIndex)> iterFunction) {
-		for (T bitIndex = static_cast<T>(0); bitIndex < sizeof(T) * 8; bitIndex++)
+		for (T bitIndex = 0; bitIndex < sizeof(T) * 8; bitIndex++)
 			if (are_bits_true<T>(bitmask, bitIndex))
 				std::invoke(iterFunction, bitIndex);
 	}

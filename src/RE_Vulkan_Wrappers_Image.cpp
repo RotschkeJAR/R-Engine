@@ -101,6 +101,10 @@ namespace RE {
 #ifndef RE_DISABLE_PRINT_DEBUGS
 		if (valid())
 			RE_ERROR("Creating another Vulkan image wrapper, when the old image ", vk_hImage, " hasn't been destroyed yet");
+		if ((vk_mFlags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT)) {
+			RE_ERROR("A sparse-bound Vulkan image had to be created in a wrapper");
+			return false;
+		}
 #endif
 		PRINT_DEBUG_CLASS("Creating Vulkan image in wrapper class");
 		if (create_vulkan_image(vk_mFlags, 

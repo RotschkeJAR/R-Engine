@@ -14,56 +14,11 @@ namespace RE {
 			.memoryTypeIndex = u32MemoryTypeIndex
 		};
 		const VkResult vk_eResult = vkAllocateMemory(vk_hDevice, &vk_allocInfo, nullptr, vk_phMemory);
-		if (vk_eResult == VK_SUCCESS)
+		if (vk_eResult == VK_SUCCESS) {
+			occupiedSpacePerVulkanHeap[vulkanMemoryTypes[u8MemoryType].heapIndex] += vk_size;
 			u32VulkanMemoryAllocCount++;
+		}
 		return vk_eResult;
-	}
-
-	static bool find_matching_memory_type(const VkDeviceSize vk_leastSize, const VkMemoryPropertyFlags vk_mProperties, const uint32_t m32DesiredMemoryTypes, uint8_t &ru8MemoryType) {
-		PRINT_DEBUG("Searching for Vulkan memory types supporting mandatory properties ", std::hex, vk_mProperties, " and are present within any type of ", m32DesiredMemoryTypes);
-		std::optional<uint8_t> memoryTypeSelected;
-		int32_t i32MostMinimalMismatchScore = std::numeric_limits<int32_t>::max();
-		for (uint8_t u8MemoryTypeIndex = 0; u8MemoryTypeIndex < u8MemoryTypeCount; u8MemoryTypeIndex++) {
-			PRINT_DEBUG("Checking if memory type at index ", u8MemoryTypeIndex, " supports required properties");
-			const VkMemoryType &vk_rType = vulkanMemoryTypes[u8MemoryTypeIndex];
-			if (!are_bits_true<uint32_t>(m32DesiredMemoryTypes, u8MemoryTypeIndex) || std::get<VkDeviceSize>(vulkanMemoryHeaps[vk_rType.heapIndex]) < vk_leastSize)
-				continue;
-			if ((vk_rType.propertyFlags & vk_mProperties) == vk_mProperties) {
-				PRINT_DEBUG("Memory type at index ", u8MemoryTypeIndex, " supports mandatory properties");
-				const VkMemoryPropertyFlags vk_mMismatchingProperties = vk_rType.propertyFlags & (~vk_mProperties);
-				int32_t i32MismatchScore = 0;
-				if ((vk_mMismatchingProperties & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) != 0)
-					i32MismatchScore += 500;
-				if ((vk_mMismatchingProperties & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0)
-					i32MismatchScore += 500;
-				if ((vk_mMismatchingProperties & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) != 0)
-					i32MismatchScore += 1;
-				if ((vk_mMismatchingProperties & VK_MEMORY_PROPERTY_HOST_CACHED_BIT) != 0)
-					i32MismatchScore += 100;
-				if ((vk_mMismatchingProperties & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) != 0)
-					i32MismatchScore += 1;
-				if ((vk_mMismatchingProperties & VK_MEMORY_PROPERTY_PROTECTED_BIT) != 0)
-					i32MismatchScore += 1000;
-				if ((vk_mMismatchingProperties & VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD) != 0)
-					i32MismatchScore += 100;
-				if ((vk_mMismatchingProperties & VK_MEMORY_PROPERTY_DEVICE_UNCACHED_BIT_AMD) != 0)
-					i32MismatchScore += 100;
-				if ((vk_mMismatchingProperties & VK_MEMORY_PROPERTY_RDMA_CAPABLE_BIT_NV) != 0)
-					i32MismatchScore += 100;
-				if (i32MismatchScore < i32MostMinimalMismatchScore) {
-					PRINT_DEBUG("New minimum of mismatching properties found at memory type index ", u8MemoryTypeIndex, " with mismatch score ", i32MismatchScore);
-					memoryTypeSelected = u8MemoryTypeIndex;
-					i32MostMinimalMismatchScore = i32MismatchScore;
-				}
-			}
-		}
-		if (memoryTypeSelected.has_value()) {
-			PRINT_DEBUG("Memory type supporting mandatory properties found. Returning index");
-			ru8MemoryType = memoryTypeSelected.value();
-			return true;
-		}
-		RE_ERROR("Failed to find a fitting memory type for allocating Vulkan memory or it ran out of space");
-		return false;
 	}
 	
 	VulkanMemory::VulkanMemory() : vk_hMemory(VK_NULL_HANDLE), vk_size(0) {}
@@ -88,8 +43,12 @@ namespace RE {
 
 	VkResult VulkanMemory::alloc(const VkDeviceSize vk_size, const VkMemoryPropertyFlags vk_mProperties, const uint32_t m32DesiredMemoryTypes) {
 		PRINT_DEBUG_CLASS("Allocating Vulkan memory supporting properties ", std::hex, vk_mProperties, " and from types ", m32DesiredMemoryTypes);
-		if (find_matching_memory_type(vk_size, vk_mProperties, m32DesiredMemoryTypes, u8MemoryType))
+		const auto memoryTypeIndex = find_vulkan_memory_type(vk_mProperties, m32DesiredMemoryTypes);
+		if (memoryTypeIndex.has_value()) {
+			u8MemoryType = *memoryTypeIndex;
 			return this->alloc(vk_size, u8MemoryType);
+		} else
+			RE_ERROR("Failed to find Vulkan memory type matching properties ", std::hex, vk_mProperties, " and from bitmask ", m32DesiredMemoryTypes);
 		return (vk_mProperties & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) ? VK_ERROR_OUT_OF_DEVICE_MEMORY : VK_ERROR_OUT_OF_HOST_MEMORY;
 	}
 
@@ -123,7 +82,9 @@ namespace RE {
 		vkGetBufferMemoryRequirements2(vk_hDevice, &vk_bufferInfo, &vk_memoryRequirements);
 		PRINT_DEBUG_CLASS("Finding matching Vulkan memory type supporting properties ", std::hex, vk_mProperties);
 		vk_size = vk_memoryRequirements.memoryRequirements.size;
-		if (find_matching_memory_type(vk_size, vk_mProperties, vk_memoryRequirements.memoryRequirements.memoryTypeBits, u8MemoryType)) {
+		const auto memoryTypeIndex = find_vulkan_memory_type(vk_mProperties, vk_memoryRequirements.memoryRequirements.memoryTypeBits);
+		if (memoryTypeIndex.has_value()) {
+			u8MemoryType = *memoryTypeIndex;
 			PRINT_DEBUG_CLASS("Allocating Vulkan memory of type ", u8MemoryType);
 			const VkMemoryDedicatedAllocateInfo vk_dedicatedMemoryInfo = {
 				.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO,
@@ -169,7 +130,9 @@ namespace RE {
 		vkGetImageMemoryRequirements2(vk_hDevice, &vk_imageInfo, &vk_memoryRequirements);
 		PRINT_DEBUG_CLASS("Finding matching Vulkan memory type supporting properties ", std::hex, vk_mProperties);
 		vk_size = vk_memoryRequirements.memoryRequirements.size;
-		if (find_matching_memory_type(vk_size, vk_mProperties, vk_memoryRequirements.memoryRequirements.memoryTypeBits, u8MemoryType)) {
+		const auto memoryTypeIndex = find_vulkan_memory_type(vk_mProperties, vk_memoryRequirements.memoryRequirements.memoryTypeBits);
+		if (memoryTypeIndex.has_value()) {
+			u8MemoryType = *memoryTypeIndex;
 			PRINT_DEBUG_CLASS("Allocating Vulkan memory of type ", u8MemoryType);
 			const VkMemoryDedicatedAllocateInfo vk_dedicatedMemoryInfo = {
 				.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO,
@@ -200,9 +163,11 @@ namespace RE {
 	}
 
 	void VulkanMemory::free() {
+		if (!valid())
+			return;
 		PRINT_DEBUG_CLASS("Freeing Vulkan memory");
 		vkFreeMemory(vk_hDevice, vk_hMemory, nullptr);
-		std::get<VkDeviceSize>(vulkanMemoryHeaps[vulkanMemoryTypes[u8MemoryType].heapIndex]) += vk_size;
+		occupiedSpacePerVulkanHeap[vulkanMemoryTypes[u8MemoryType].heapIndex] -= vk_size;
 		vk_hMemory = VK_NULL_HANDLE;
 		vk_size = 0;
 	}

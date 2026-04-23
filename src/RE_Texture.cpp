@@ -288,13 +288,14 @@ namespace RE {
 		return reinterpret_cast<VulkanTexture*>(hTexture)->a2u32Size[1];
 	}
 
-	void get_extent(const Texture hTexture, uint32_t *const pa2u32Extent) {
+	void get_extent(const Texture hTexture, uint32_t &ra2u32Extent[2]) {
 		if (!hTexture) {
 			RE_ERROR("A null texture has been passed to get its extent");
 			return;
 		}
 		PRINT_DEBUG("Reading and writing extent of texture ", hTexture, " to array pointer ", pa2u32Extent);
-		std::memcpy(pa2u32Extent, &reinterpret_cast<const VulkanTexture*>(hTexture)->a2u32Size, sizeof(uint32_t) * 2);
+		for (uint8_t u8DimensionIndex = 0; u8DimensionIndex < 2; u8DimensionIndex++)
+			ra2u32Extent[u8DimensionIndex] = reinterpret_cast<const VulkanTexture*>(hTexture)->a2u32Size[u8DimensionIndex];
 	}
 
 }

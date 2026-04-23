@@ -66,6 +66,10 @@ namespace RE {
 #ifndef RE_DISABLE_PRINT_DEBUGS
 		if (valid())
 			RE_ERROR("Creating another Vulkan buffer wrapper, when the old buffer ", vk_hBuffer, " hasn't been destroyed yet");
+		if ((vk_mFlags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT)) {
+			RE_ERROR("A sparse-bound Vulkan buffer had to be created in a wrapper");
+			return false;
+		}
 #endif
 		PRINT_DEBUG_CLASS("Creating Vulkan buffer in wrapper class");
 		if (create_vulkan_buffer(vk_mFlags, 

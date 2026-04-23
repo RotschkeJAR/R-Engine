@@ -112,8 +112,8 @@ namespace RE {
 		uint32_t u32RegionIndex;
 	};
 	bool alloc_shared_vulkan_memory(const uint32_t u32SharedMemoryInfoCount, const SharedVulkanMemoryInfo *const paSharedMemoryInfos, const VkMemoryPropertyFlags vk_mMemoryProperties, size_t &rAllocatedMemoryCount, std::unique_ptr<VulkanMemory[]> &rAllocatedMemory, bool *pbVulkanStorageObjectsUnbound = nullptr);
-	std::optional<uint8_t> find_vulkan_memory_type(VkMemoryPropertyFlags vk_mProperties, uint32_t m32MemoryTypeBits, uint8_t *pu8Mismatches = nullptr);
-	bool do_memory_properties_exist(VkMemoryPropertyFlags vk_mProperties, uint8_t *pu8Mismatches = nullptr);
+	std::optional<uint8_t> find_vulkan_memory_type(VkMemoryPropertyFlags vk_mProperties, uint32_t m32MemoryTypeBits);
+	bool do_memory_properties_exist(VkMemoryPropertyFlags vk_mProperties);
 	bool is_staging_before_gpu_use_necessary();
 	uint32_t get_remaining_vulkan_allocations();
 	class VulkanMemory final {

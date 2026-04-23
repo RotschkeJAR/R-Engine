@@ -40,9 +40,9 @@ namespace RE {
 				};
 				vkGetBufferMemoryRequirements2(vk_hDevice, &vk_bufferInfo, &vk_aBufferMemoryRequirements[u8FrameInFlightIndex]);
 				vk_requiredSize = (is_multiple_of<VkDeviceSize>(vk_requiredSize, vk_aBufferMemoryRequirements[u8FrameInFlightIndex].memoryRequirements.alignment)
-						? vk_requiredSize
-						: next_multiple<VkDeviceSize>(vk_requiredSize, vk_aBufferMemoryRequirements[u8FrameInFlightIndex].memoryRequirements.alignment))
-					+ vk_aBufferMemoryRequirements[u8FrameInFlightIndex].memoryRequirements.size;
+							? vk_requiredSize
+							: next_multiple<VkDeviceSize>(vk_requiredSize, vk_aBufferMemoryRequirements[u8FrameInFlightIndex].memoryRequirements.alignment))
+						+ vk_aBufferMemoryRequirements[u8FrameInFlightIndex].memoryRequirements.size;
 				m32AvailableMemoryTypes &= vk_aBufferMemoryRequirements[u8FrameInFlightIndex].memoryRequirements.memoryTypeBits;
 				u8FrameInFlightIndex++;
 			} else {

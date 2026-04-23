@@ -17,6 +17,9 @@ namespace RE {
 	bool create_camera_buffers();
 	void destroy_camera_buffers();
 
+	bool alloc_memories_for_buffers_renderer();
+	void free_memories_for_buffers_renderer();
+
 }
 
 #endif /* __RE_RENDERER_BUFFERS_INTERNAL_H__ */

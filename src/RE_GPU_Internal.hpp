@@ -36,7 +36,8 @@ namespace RE {
 	void destroy_logical_device_queues();
 
 	// Memory
-	extern std::unique_ptr<std::tuple<VkMemoryHeap, VkDeviceSize>[]> vulkanMemoryHeaps;
+	extern std::unique_ptr<VkMemoryHeap[]> vulkanMemoryHeaps;
+	extern std::unique_ptr<VkDeviceSize[]> occupiedSpacePerVulkanHeap;
 	extern std::unique_ptr<VkMemoryType[]> vulkanMemoryTypes;
 	extern uint32_t u32VulkanMemoryAllocCount;
 	extern uint8_t u8MemoryHeapCount, u8MemoryTypeCount;

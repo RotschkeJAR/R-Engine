@@ -7,100 +7,68 @@
 
 namespace RE {
 	
-	static Vulkan_Buffer aStagingRawGameObjectBuffers[RE_VK_FRAMES_IN_FLIGHT];
+	static VkBuffer vk_ahStagingRawGameObjectBuffers[RE_VK_FRAMES_IN_FLIGHT];
 	static RawGameObjectShaderData *apaGameObjectBufferInstanceData[RE_VK_FRAMES_IN_FLIGHT];
 
-	Vulkan_Buffer aRawGameObjectBuffers[RE_VK_FRAMES_IN_FLIGHT];
+	VkBuffer vk_ahRawGameObjectBuffers[RE_VK_FRAMES_IN_FLIGHT];
 
 	bool create_raw_game_object_buffers() {
 		constexpr VkDeviceSize vk_objectBufferByteSize = 1000 * sizeof(RawGameObjectShaderData);
+		const bool bStagingNecessary = is_staging_before_gpu_use_necessary();
 		uint8_t u8FrameInFlightCreateIndex = 0;
 		while (u8FrameInFlightCreateIndex < RE_VK_FRAMES_IN_FLIGHT) {
-			if (is_staging_before_gpu_use_necessary()) {
+			if (bStagingNecessary) {
 				PRINT_DEBUG("Creating staging game object buffer in Vulkan at index ", u8FrameInFlightCreateIndex);
-				if (aStagingRawGameObjectBuffers[u8FrameInFlightCreateIndex].create(
-						0,
+				if (!create_vulkan_buffer(0,
 						vk_objectBufferByteSize,
 						VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 						1,
 						nullptr,
-						VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) {
-					PRINT_DEBUG("Mapping to staging game object buffer's memory at index ", u8FrameInFlightCreateIndex);
-					void *pStagingRenderBufferContent;
-					if (aStagingRawGameObjectBuffers[u8FrameInFlightCreateIndex].get_memory().map(0, 0, vk_objectBufferByteSize, &pStagingRenderBufferContent)) {
-						PRINT_DEBUG("Querying queues the staging game object buffer will be used in");
-						apaGameObjectBufferInstanceData[u8FrameInFlightCreateIndex] = reinterpret_cast<RawGameObjectShaderData*>(pStagingRenderBufferContent);
-						constexpr uint32_t au32ObjectBufferQueues[] = {
-							RENDER_TASK_SUBINDEX_BUFFER_TRANSFER, 
-							RENDER_TASK_SUBINDEX_PROCESSING
-						};
-						const VulkanQueueCollection queuesForObjectBuffer = renderTasks[0].queues_of_functions(au32ObjectBufferQueues, sizeof(au32ObjectBufferQueues) / sizeof(au32ObjectBufferQueues[0]));
-						PRINT_DEBUG("Creating raw game object buffer on GPU");
-						if (aRawGameObjectBuffers[u8FrameInFlightCreateIndex].create(
-								0,
-								vk_objectBufferByteSize,
-								VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-								queuesForObjectBuffer.u8QueueCount,
-								queuesForObjectBuffer.queueFamilyIndices.get(),
-								VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) {
-							u8FrameInFlightCreateIndex++;
-							continue;
-						} else
-							RE_FATAL_ERROR("Failed to create raw game object buffer in Vulkan at index ", u8FrameInFlightCreateIndex);
-					} else
-						RE_FATAL_ERROR("Failed mapping Vulkan memory of staging game object buffer at index ", u8FrameInFlightCreateIndex);
-					PRINT_DEBUG("Destroying staging game object buffer at frame-in-flight index ", u8FrameInFlightCreateIndex, " due to failure mapping to its memory");
-					aStagingRawGameObjectBuffers[u8FrameInFlightCreateIndex].destroy();
-				} else
+						&vk_ahStagingRawGameObjectBuffers[u8FrameInFlightCreateIndex])) {
 					RE_FATAL_ERROR("Failed to create staging game object buffer in Vulkan at index ", u8FrameInFlightCreateIndex);
-			} else {
-				PRINT_DEBUG("Creating raw game object buffer shared across CPU and GPU at frame-in-flight index ", u8FrameInFlightCreateIndex);
-				if (aRawGameObjectBuffers[u8FrameInFlightCreateIndex].create(
-						0,
-						vk_objectBufferByteSize,
-						VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-						1,
-						nullptr,
-						VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) {
-					PRINT_DEBUG("Mapping memory of raw game object buffer at frame-in-flight index ", u8FrameInFlightCreateIndex, " to CPU");
-					void *pRenderBufferContent;
-					if (aRawGameObjectBuffers[u8FrameInFlightCreateIndex].get_memory().map(0, 0, vk_objectBufferByteSize, &pRenderBufferContent)) {
-						apaGameObjectBufferInstanceData[u8FrameInFlightCreateIndex] = reinterpret_cast<RawGameObjectShaderData*>(pRenderBufferContent);
-						PRINT_DEBUG("Prerecording command buffer of all render tasks");
-						if (renderTasks[u8FrameInFlightCreateIndex].record(
-								RENDER_TASK_SUBINDEX_BUFFER_TRANSFER, 
-								0, 
-								[&](const VkCommandBuffer vk_hCommandBuffer, const uint8_t u8PreviousLogicalQueue, const uint8_t u8CurrentLogicalQueue, const uint8_t u8NextLogicalQueue) {})) {
-							u8FrameInFlightCreateIndex++;
-							continue;
-						} else
-							RE_FATAL_ERROR("Failed prerecording Vulkan command buffer for render task at frame-in-flight index ", u8FrameInFlightCreateIndex);
-					} else
-						RE_FATAL_ERROR("Failed to map raw game object buffer's memory at index ", u8FrameInFlightCreateIndex);
-					PRINT_DEBUG("Destroying raw game object buffer at frame-in-flight index ", u8FrameInFlightCreateIndex, " due to failure mapping to its memory");
-					aRawGameObjectBuffers[u8FrameInFlightCreateIndex].destroy();
-				} else
-					RE_FATAL_ERROR("Failed to create raw game object buffer in Vulkan at index ", u8FrameInFlightCreateIndex);
+					break;
+				}
+			}
+			constexpr uint32_t au32ObjectBufferQueues[] = {
+				RENDER_TASK_SUBINDEX_BUFFER_TRANSFER,
+				RENDER_TASK_SUBINDEX_PROCESSING
+			};
+			const VulkanQueueCollection queuesForObjectBuffer = renderTasks[0].queues_of_functions(au32ObjectBufferQueues, sizeof(au32ObjectBufferQueues) / sizeof(au32ObjectBufferQueues[0]));
+			PRINT_DEBUG("Creating raw game object buffer on GPU");
+			if (create_vulkan_buffer(0,
+					vk_objectBufferByteSize,
+					VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | (bStagingNecessary ? VK_BUFFER_USAGE_TRANSFER_DST_BIT : 0),
+					queuesForObjectBuffer.u8QueueCount,
+					queuesForObjectBuffer.queueFamilyIndices.get(),
+					&vk_ahRawGameObjectBuffers[u8FrameInFlightCreateIndex])) {
+				u8FrameInFlightCreateIndex++;
+				continue;
+			} else
+				RE_FATAL_ERROR("Failed to create raw game object buffer in Vulkan at index ", u8FrameInFlightCreateIndex);
+			if (bStagingNecessary) {
+				PRINT_DEBUG("Destroying staging game object buffer in Vulkan at index ", u8FrameInFlightCreateIndex, " due to failure creating GPU-local buffer");
+				vkDestroyBuffer(vk_hDevice, vk_ahStagingRawGameObjectBuffers[u8FrameInFlightCreateIndex], nullptr);
 			}
 			break;
 		}
 		if (u8FrameInFlightCreateIndex == RE_VK_FRAMES_IN_FLIGHT)
 			return true;
 		for (uint8_t u8FrameInFlightDestroyIndex = 0; u8FrameInFlightDestroyIndex < u8FrameInFlightCreateIndex; u8FrameInFlightDestroyIndex++) {
-			PRINT_DEBUG("Destroying game object buffers at frame-in-flight index ", u8FrameInFlightDestroyIndex, " due to failure setting them up");
-			if (is_staging_before_gpu_use_necessary())
-				aStagingRawGameObjectBuffers[u8FrameInFlightDestroyIndex].destroy();
-			aRawGameObjectBuffers[u8FrameInFlightDestroyIndex].destroy();
+			PRINT_DEBUG("Destroying game object buffers at frame-in-flight index ", u8FrameInFlightDestroyIndex, " due to failure creating all");
+			if (bStagingNecessary)
+				vkDestroyBuffer(vk_hDevice, vk_ahStagingRawGameObjectBuffers[u8FrameInFlightDestroyIndex], nullptr);
+			vkDestroyBuffer(vk_hDevice, vk_ahRawGameObjectBuffers[u8FrameInFlightDestroyIndex], nullptr);
 		}
 		return false;
 	}
 
 	void destroy_raw_game_object_buffers() {
+		const bool bStagingBufferPresent = is_staging_before_gpu_use_necessary();
 		for (uint8_t u8FrameInFlightDestroyIndex = 0; u8FrameInFlightDestroyIndex < RE_VK_FRAMES_IN_FLIGHT; u8FrameInFlightDestroyIndex++) {
-			PRINT_DEBUG("Destroying game object buffers at frame-in-flight index ", u8FrameInFlightDestroyIndex);
-			if (is_staging_before_gpu_use_necessary())
-				aStagingRawGameObjectBuffers[u8FrameInFlightDestroyIndex].destroy();
-			aRawGameObjectBuffers[u8FrameInFlightDestroyIndex].destroy();
+			PRINT_DEBUG("Destroying game object buffers in Vulkan at frame-in-flight index ", u8FrameInFlightDestroyIndex);
+			if (bStagingBufferPresent)
+				vkDestroyBuffer(vk_hDevice, vk_ahStagingRawGameObjectBuffers[u8FrameInFlightDestroyIndex], nullptr);
+			vkDestroyBuffer(vk_hDevice, vk_ahRawGameObjectBuffers[u8FrameInFlightDestroyIndex], nullptr);
 		}
 	}
 
@@ -135,8 +103,8 @@ namespace RE {
 						};
 						const VkCopyBufferInfo2 vk_copyRenderBufferInfo = {
 							.sType = VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2,
-							.srcBuffer = aStagingRawGameObjectBuffers[u8CurrentFrameInFlightIndex].get(),
-							.dstBuffer = aRawGameObjectBuffers[u8CurrentFrameInFlightIndex].get(),
+							.srcBuffer = vk_ahStagingRawGameObjectBuffers[u8CurrentFrameInFlightIndex].get(),
+							.dstBuffer = vk_ahRawGameObjectBuffers[u8CurrentFrameInFlightIndex].get(),
 							.regionCount = 1,
 							.pRegions = &vk_copyRenderBufferRegion
 						};

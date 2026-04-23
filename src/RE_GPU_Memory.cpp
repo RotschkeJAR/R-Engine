@@ -2,7 +2,8 @@
 
 namespace RE {
 
-	std::unique_ptr<std::tuple<VkMemoryHeap, VkDeviceSize>[]> vulkanMemoryHeaps;
+	std::unique_ptr<VkMemoryHeap[]> vulkanMemoryHeaps;
+	std::unique_ptr<VkDeviceSize[]> occupiedSpacePerVulkanHeap;
 	std::unique_ptr<VkMemoryType[]> vulkanMemoryTypes;
 	uint32_t u32VulkanMemoryAllocCount = 0;
 	uint8_t u8MemoryHeapCount, u8MemoryTypeCount;
@@ -14,15 +15,13 @@ namespace RE {
 		vk_physicalDeviceMemoryInfo.pNext = nullptr;
 		vkGetPhysicalDeviceMemoryProperties2(SELECTED_PHYSICAL_VULKAN_DEVICE, &vk_physicalDeviceMemoryInfo);
 		u8MemoryHeapCount = static_cast<uint8_t>(vk_physicalDeviceMemoryInfo.memoryProperties.memoryHeapCount);
-		vulkanMemoryHeaps = std::make_unique<std::tuple<VkMemoryHeap, VkDeviceSize>[]>(u8MemoryHeapCount);
+		vulkanMemoryHeaps = std::make_unique<VkMemoryHeap[]>(u8MemoryHeapCount);
+		occupiedSpacePerVulkanHeap = std::make_unique<VkDeviceSize[]>(u8MemoryHeapCount);
 		u8MemoryTypeCount = static_cast<uint8_t>(vk_physicalDeviceMemoryInfo.memoryProperties.memoryTypeCount);
 		vulkanMemoryTypes = std::make_unique<VkMemoryType[]>(u8MemoryTypeCount);
 		for (uint32_t u32HeapIndex = 0; u32HeapIndex < vk_physicalDeviceMemoryInfo.memoryProperties.memoryHeapCount; u32HeapIndex++) {
-			std::get<VkMemoryHeap>(vulkanMemoryHeaps[u32HeapIndex]) = vk_physicalDeviceMemoryInfo.memoryProperties.memoryHeaps[u32HeapIndex];
-			if (SELECTED_PHYSICAL_VULKAN_DEVICE_TYPE == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
-				std::get<VkDeviceSize>(vulkanMemoryHeaps[u32HeapIndex]) = vk_physicalDeviceMemoryInfo.memoryProperties.memoryHeaps[u32HeapIndex].size / 4 * 3;
-			else
-				std::get<VkDeviceSize>(vulkanMemoryHeaps[u32HeapIndex]) = vk_physicalDeviceMemoryInfo.memoryProperties.memoryHeaps[u32HeapIndex].size / 2;
+			vulkanMemoryHeaps[u32HeapIndex] = vk_physicalDeviceMemoryInfo.memoryProperties.memoryHeaps[u32HeapIndex];
+			occupiedSpacePerVulkanHeap[u32HeapIndex] = 0;
 		}
 		for (uint32_t u32TypeIndex = 0; u32TypeIndex < vk_physicalDeviceMemoryInfo.memoryProperties.memoryTypeCount; u32TypeIndex++)
 			vulkanMemoryTypes[u32TypeIndex] = vk_physicalDeviceMemoryInfo.memoryProperties.memoryTypes[u32TypeIndex];
@@ -45,7 +44,7 @@ namespace RE {
 						.pNext = nullptr,
 						.buffer = std::get<VkBuffer>(vulkanStorageObject)
 					};
-					PRINT_DEBUG("Fetching memory requirements of Vulkan image ", vk_bufferInfos.buffer);
+					PRINT_DEBUG("Fetching memory requirements of Vulkan buffer ", vk_bufferInfos.buffer);
 					vkGetBufferMemoryRequirements2(vk_hDevice, &vk_bufferInfos, std::addressof(vk_rMemoryRequirements));
 				}
 				break;
@@ -336,26 +335,44 @@ namespace RE {
 		return true;
 	}
 
-	std::optional<uint8_t> find_vulkan_memory_type(const VkMemoryPropertyFlags vk_mProperties, const uint32_t m32MemoryTypeBits, uint8_t *const pu8Mismatches) {
+	std::optional<uint8_t> find_vulkan_memory_type(const VkMemoryPropertyFlags vk_mProperties, const uint32_t m32MemoryTypeBits) {
 		std::optional<uint8_t> selectedMemoryTypeIndex;
-		uint8_t u8LowestMismatchCount = std::numeric_limits<uint8_t>::max();
+		uint16_t u16LowestMismatchScore = std::numeric_limits<uint16_t>::max();
 		for (uint8_t u8MemoryTypeIndex = 0; u8MemoryTypeIndex < u8MemoryTypeCount; u8MemoryTypeIndex++) {
-			if ((vulkanMemoryTypes[u8MemoryTypeIndex].propertyFlags & vk_mProperties) == vk_mProperties && (m32MemoryTypeBits & (1 << u8MemoryTypeIndex)) != 0) {
-				uint8_t u8Mismatches = std::popcount(vulkanMemoryTypes[u8MemoryTypeIndex].propertyFlags ^ vk_mProperties);
-				if (u8Mismatches < u8LowestMismatchCount) {
+			if ((vulkanMemoryTypes[u8MemoryTypeIndex].propertyFlags & vk_mProperties) == vk_mProperties
+					&& are_bits_true(m32MemoryTypeBits, u8MemoryTypeIndex)) {
+				const VkMemoryPropertyFlags vk_mMismatchingProperties = vulkanMemoryTypes[u8MemoryTypeIndex].propertyFlags & (~vk_mProperties);
+				uint16_t u16MismatchScore = 0;
+				if ((vk_mMismatchingProperties & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) != 0)
+					u16MismatchScore += 500;
+				if ((vk_mMismatchingProperties & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0)
+					u16MismatchScore += 500;
+				if ((vk_mMismatchingProperties & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) != 0)
+					u16MismatchScore += 1;
+				if ((vk_mMismatchingProperties & VK_MEMORY_PROPERTY_HOST_CACHED_BIT) != 0)
+					u16MismatchScore += 100;
+				if ((vk_mMismatchingProperties & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) != 0)
+					u16MismatchScore += 10;
+				if ((vk_mMismatchingProperties & VK_MEMORY_PROPERTY_PROTECTED_BIT) != 0)
+					continue;
+				if ((vk_mMismatchingProperties & VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD) != 0)
+					u16MismatchScore += 100;
+				if ((vk_mMismatchingProperties & VK_MEMORY_PROPERTY_DEVICE_UNCACHED_BIT_AMD) != 0)
+					u16MismatchScore += 100;
+				if ((vk_mMismatchingProperties & VK_MEMORY_PROPERTY_RDMA_CAPABLE_BIT_NV) != 0)
+					u16MismatchScore += 100;
+				if (u16LowestMismatchScore > u16MismatchScore) {
+					u16LowestMismatchScore = u16MismatchScore;
 					selectedMemoryTypeIndex = u8MemoryTypeIndex;
-					u8LowestMismatchCount = u8Mismatches;
 				}
 			}
 		}
-		if (pu8Mismatches && selectedMemoryTypeIndex.has_value())
-			*pu8Mismatches = u8LowestMismatchCount;
 		return selectedMemoryTypeIndex;
 	}
 
-	bool do_memory_properties_exist(const VkMemoryPropertyFlags vk_mProperties, uint8_t *const pu8Mismatches) {
-		PRINT_DEBUG("Checking if any memory type supports queried properties (", std::hex, vk_mProperties, ") and writes mismatch count to ", pu8Mismatches);
-		return find_vulkan_memory_type(vk_mProperties, 0xFFFFFFFF, pu8Mismatches).has_value();
+	bool do_memory_properties_exist(const VkMemoryPropertyFlags vk_mProperties) {
+		PRINT_DEBUG("Checking if any memory type supports queried properties (", std::hex, vk_mProperties, ")");
+		return find_vulkan_memory_type(vk_mProperties, 0xFFFFFFFF).has_value();
 	}
 
 	bool is_staging_before_gpu_use_necessary() {

@@ -1365,7 +1365,7 @@ namespace RE {
 	uint32_t get_width_of_texture(Texture hTexture);
 	[[nodiscard]]
 	uint32_t get_height_of_texture(Texture hTexture);
-	void get_extent_of_texture(Texture hTexture, uint32_t *pa2u32Extent);
+	void get_extent_of_texture(Texture hTexture, uint32_t &ra2u32Extent[2]);
 
 	// Sprite layout creation
 	[[nodiscard]]

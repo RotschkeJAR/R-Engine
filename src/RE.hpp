@@ -703,6 +703,48 @@ namespace RE {
 
 //================ Containers
 
+	class Bitset final {
+		private:
+			std::unique_ptr<uint8_t[]> bitArray;
+			size_t size;
+
+		public:
+			class BitReference final {
+				private:
+					uint8_t *pm8Bitmask,
+						u8BitIndex;
+
+					BitReference(uint8_t *pm8Bitmask, uint8_t u8BitIndex);
+
+				public:
+					BitReference() = delete;
+					~BitReference();
+
+					void flip();
+
+					operator bool() const;
+					void operator =(bool bNewValue);
+					bool operator ==(const BitReference &rOther) const;
+					bool operator !=(const BitReference &rOther) const;
+					friend void std::swap(BitReference &rBit1, BitReference &rBit2);
+					friend std::ostream operator <<(std::ostream &rStream, const BitReference &rBitReference);
+			};
+
+			Bitset();
+			Bitset(size_t size, bool bInitialState = false);
+			~Bitset();
+
+			void fill(bool bNewState);
+			void swap(Bitset &rOther);
+			void resize(size_t newSize, bool bInitialState = false);
+			void clear();
+			size_t size() const;
+			bool empty() const;
+			BitReference at(size_t index);
+
+			BitReference operator [](size_t index);
+	};
+
 	template <class T, size_t dimensionCount> requires Arithmetics<T> && IsGreater<size_t, dimensionCount, 0>
 	class Vector final {
 		public:
@@ -1414,6 +1456,13 @@ namespace RE {
 #ifdef RE_OS_WINDOWS
 	void win64_set_hinstance(HINSTANCE win_hNewInstance);
 #endif
+
+}
+
+namespace std {
+
+	void swap(BitReference &rBit1, BitReference &rBit2);
+	void swap(Bitset &rSet1, Bitset &rSet2);
 
 }
 

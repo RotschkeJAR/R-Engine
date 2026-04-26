@@ -13,6 +13,7 @@ namespace RE {
 	VkBuffer vk_ahRawGameObjectBuffers[RE_VK_FRAMES_IN_FLIGHT];
 
 	bool create_raw_game_object_buffers() {
+		PRINT_DEBUG("Querying queues for GPU-local raw game object buffer");
 		constexpr VkDeviceSize vk_objectBufferByteSize = 1000 * sizeof(RawGameObjectShaderData);
 		constexpr uint32_t au32ObjectBufferQueues[] = {
 			RENDER_TASK_SUBINDEX_BUFFER_TRANSFER,
@@ -102,8 +103,8 @@ namespace RE {
 						};
 						const VkCopyBufferInfo2 vk_copyRenderBufferInfo = {
 							.sType = VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2,
-							.srcBuffer = vk_ahStagingRawGameObjectBuffers[u8CurrentFrameInFlightIndex].get(),
-							.dstBuffer = vk_ahRawGameObjectBuffers[u8CurrentFrameInFlightIndex].get(),
+							.srcBuffer = vk_ahStagingRawGameObjectBuffers[u8CurrentFrameInFlightIndex],
+							.dstBuffer = vk_ahRawGameObjectBuffers[u8CurrentFrameInFlightIndex],
 							.regionCount = 1,
 							.pRegions = &vk_copyRenderBufferRegion
 						};

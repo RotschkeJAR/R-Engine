@@ -713,15 +713,17 @@ namespace RE {
 			Vector() {
 				fill(static_cast<T>(0));
 			}
+			
 			template <class P, size_t copyDimensions>
 			explicit Vector(const Vector<P, copyDimensions> &rCopyVector) requires Arithmetics<P> && IsLessOrEqual<size_t, copyDimensions, dimensionCount> {
-				PRINT_DEBUG_CLASS("Copying coordinates from vector ", &rCopyVector);
-				if constexpr (copyDimensions <= dimensionCount) {
-					std::copy(std::begin(rCopyVector.aCoords), std::end(rCopyVector.aCoords), std::begin(aCoords));
-					std::fill(std::begin(aCoords) + copyDimensions, std::end(aCoords), 0);
-				} else
-					std::copy(std::begin(rCopyVector), std::end(rCopyVector.aCoords) - (copyDimensions - dimensionCount), std::begin(aCoords));
+				copy_from(rCopyVector);
 			}
+			
+			template <class P, size_t copyDimensions>
+			explicit Vector(const Vector<T, dimensionCount> &&rrCopyVector) requires Arithmetics<P> && IsLessOrEqual<size_t, copyDimensions, dimensionCount> {
+				copy_from(rrCopyVector);
+			}
+
 			template <class... V>
 			Vector(const V... values) requires Arithmetics<V...> && IsLessOrEqual<size_t, sizeof...(V), dimensionCount> {
 				PRINT_DEBUG_CLASS("Filling vector with values");
@@ -924,7 +926,7 @@ namespace RE {
 
 		public:
 			RandomNumberGenerator();
-			RandomNumberGenerator(size_t seed);
+			explicit RandomNumberGenerator(size_t seed);
 			~RandomNumberGenerator();
 			void seed(size_t newSeed);
 			void seed_randomly();
@@ -1064,7 +1066,7 @@ namespace RE {
 			const uint32_t u32Id;
 
 			Scene() = delete;
-			Scene(uint32_t u32Id);
+			explicit Scene(uint32_t u32Id);
 			virtual ~Scene();
 
 			bool is_current_scene() const;
@@ -1081,7 +1083,7 @@ namespace RE {
 			Vector3f position, scale;
 
 			Transform();
-			Transform(const Vector3f &rPositionCopy);
+			explicit Transform(const Vector3f &rPositionCopy);
 			Transform(const Vector3f &rPositionCopy, const Vector3f &rScaleCopy);
 			Transform(const Transform &rCopyTransform);
 			~Transform();
@@ -1106,8 +1108,8 @@ namespace RE {
 			bool bIgnoreAspectRatio;
 
 			Camera();
-			Camera(const Transform &rTransform);
-			Camera(const Vector2f &rView);
+			explicit Camera(const Transform &rTransform);
+			explicit Camera(const Vector2f &rView);
 			Camera(const Vector2f &rView, float fViewDistance);
 			Camera(const Vector2f &rView, float fViewDistance, bool bIgnoreAspectRatio);
 			virtual ~Camera();
@@ -1150,8 +1152,8 @@ namespace RE {
 
 		public:
 			InputAction();
-			InputAction(Input eInput);
-			InputAction(uint32_t u32KeyScancode);
+			explicit InputAction(Input eInput);
+			explicit InputAction(uint32_t u32KeyScancode);
 			~InputAction();
 			[[nodiscard]]
 			bool is_scroll_wheel() const;
@@ -1199,9 +1201,9 @@ namespace RE {
 			TextureFilter eScalingFilter;
 
 			ScreenPercentageSettings();
-			ScreenPercentageSettings(float f32Scale);
+			explicit ScreenPercentageSettings(float f32Scale);
 			ScreenPercentageSettings(float f32Scale, TextureFilter eScalingFilter);
-			ScreenPercentageSettings(const Vector2u &rConstSize);
+			explicit ScreenPercentageSettings(const Vector2u &rConstSize);
 			ScreenPercentageSettings(const Vector2u &rConstSize, TextureFilter eScalingFilter);
 			ScreenPercentageSettings(ScreenPercentageMode eMode, const std::variant<float, Vector2u> &rSettings);
 			ScreenPercentageSettings(ScreenPercentageMode eMode, const std::variant<float, Vector2u> &rSettings, TextureFilter eScalingFilter);
@@ -1228,13 +1230,13 @@ namespace RE {
 			BorderColor eBorderColor;
 
 			SpriteLayoutSettings();
-			SpriteLayoutSettings(TextureFilter eMagFilter);
+			explicit SpriteLayoutSettings(TextureFilter eMagFilter);
 			SpriteLayoutSettings(TextureFilter eMagFilter, TextureFilter eMinFilter);
 			SpriteLayoutSettings(TextureFilter eMagFilter, TextureFilter eMinFilter, TextureFilter eMipmapFilter);
 			SpriteLayoutSettings(TextureRepetition eTextureRepetitionU);
 			SpriteLayoutSettings(TextureRepetition eTextureRepetitionU, TextureRepetition eTextureRepetitionV);
-			SpriteLayoutSettings(float f32MaxAnisotropy);
-			SpriteLayoutSettings(BorderColor eBorderColor);
+			explicit SpriteLayoutSettings(float f32MaxAnisotropy);
+			explicit SpriteLayoutSettings(BorderColor eBorderColor);
 			SpriteLayoutSettings(TextureFilter eMagFilter, TextureFilter eMinFilter, TextureFilter eMipmapFilter, TextureRepetition eTextureRepetitionU, TextureRepetition eTextureRepetitionV, float f32MaxAnisotropy, BorderColor eBorderColor);
 			SpriteLayoutSettings(const SpriteLayoutSettings &rCopy);
 			~SpriteLayoutSettings();

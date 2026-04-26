@@ -6,16 +6,14 @@ namespace RE {
 
 	bool create_game_object_buffers(const VulkanQueueCollection &rQueues) {
 		uint8_t u8FrameInFlightCreateIndex = 0;
-		while (u8FrameInFlightCreateIndex < RE_VK_FRAMES_IN_FLIGHT) {
+		for (; u8FrameInFlightCreateIndex < RE_VK_FRAMES_IN_FLIGHT; u8FrameInFlightCreateIndex++) {
 			PRINT_DEBUG("Creating game object buffer at frame-in-flight index ", u8FrameInFlightCreateIndex);
-			if (create_vulkan_buffer(0,
+			if (!create_vulkan_buffer(0,
 					1000 * sizeof(GameObjectShaderData),
 					VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 					rQueues.u8QueueCount,
 					rQueues.queueFamilyIndices.get(),
-					&vk_ahGameObjectBuffers[u8FrameInFlightCreateIndex]))
-				u8FrameInFlightCreateIndex++;
-			else {
+					&vk_ahGameObjectBuffers[u8FrameInFlightCreateIndex])) {
 				RE_FATAL_ERROR("Failed to create game object buffer at frame-in-flight index ", u8FrameInFlightCreateIndex);
 				break;
 			}

@@ -5,17 +5,19 @@
 
 namespace RE {
 
-	enum VulkanEnabledFeature {
-		ENABLED_FEATURE_SPARSE_BINDING_BIT = 0x1,
-		ENABLED_FEATURE_SPARSE_RESIDENCY_BUFFER_BIT = 0x2,
-		ENABLED_FEATURE_SPARSE_RESIDENCY_IMAGE_2D_BIT = 0x4,
-		ENABLED_FEATURE_SPARSE_ALIASING_BIT = 0x8,
-		ENABLED_FEATURE_SYNCHRONIZATION_2_BIT = 0x10,
-		ENABLED_FEATURE_SAMPLE_RATE_SHADING_BIT = 0x20,
-		ENABLED_FEATURE_ANISOTROPIC_FILTERING_BIT = 0x40,
-		ENABLED_FEATURE_DYNAMIC_RENDERING_BIT = 0x80
+	enum VulkanEnabledFeatureBits : uint64_t {
+		ENABLED_FEATURE_SPARSE_BINDING_BIT				= 0x1,
+		ENABLED_FEATURE_SPARSE_RESIDENCY_BUFFER_BIT		= 0x2,
+		ENABLED_FEATURE_SPARSE_RESIDENCY_IMAGE_2D_BIT	= 0x4,
+		ENABLED_FEATURE_SPARSE_ALIASING_BIT				= 0x8,
+		ENABLED_FEATURE_SYNCHRONIZATION_2_BIT			= 0x10,
+		ENABLED_FEATURE_SAMPLE_RATE_SHADING_BIT			= 0x20,
+		ENABLED_FEATURE_ANISOTROPIC_FILTERING_BIT		= 0x40,
+		ENABLED_FEATURE_DYNAMIC_RENDERING_BIT			= 0x80
 	};
+	typedef uint64_t VulkanEnabledFeatureFlags;
 	
+	extern VulkanEnabledFeatureFlags mEnabledFeatures;
 	extern VkDeviceSize vk_maxBufferSize;
 	extern VkDeviceSize vk_maxMemorySize;
 	extern VkDeviceSize vk_uniformBufferAlignment;
@@ -45,12 +47,11 @@ namespace RE {
 	extern uint32_t u32MaxIndirectCount;
 	extern float f32MaxSamplerAnisotropy;
 	extern uint32_t u32MappedMemoryAlignment;
-	extern uint8_t m8EnabledFeatures;
 
-	template <VulkanEnabledFeature... FeatureBits>
-	bool are_vulkan_features_enabled() {
-		const decltype(m8EnabledFeatures) mQueriedFeatureBits = (FeatureBits | ...);
-		return (m8EnabledFeatures & mQueriedFeatureBits) == mQueriedFeatureBits;
+	template <VulkanEnabledFeatureBits... FeatureBits>
+	inline bool are_vulkan_features_enabled() {
+		const VulkanEnabledFeatureFlags mQueriedFeatureBits = (FeatureBits | ...);
+		return (mEnabledFeatures & mQueriedFeatureBits) == mQueriedFeatureBits;
 	}
 
 }

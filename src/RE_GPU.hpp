@@ -51,7 +51,7 @@ namespace RE {
 
 			VulkanQueueCollection() = default;
 
-			VulkanQueueCollection(VulkanQueueCollection&&) = default;
+			explicit VulkanQueueCollection(VulkanQueueCollection&&) = default;
 			VulkanQueueCollection& operator =(VulkanQueueCollection&&) = default;
 
 			VulkanQueueCollection(VulkanQueueCollection&) = delete;
@@ -83,8 +83,8 @@ namespace RE {
 			VulkanTask(uint32_t u32FunctionsCount, const uint8_t *pau8LogicalQueueIndexPerFunctionRequiredInOrder, bool bIndividualResets, bool bIncludePresentation, bool bTransient);
 			VulkanTask(const VulkanTask_Queues &rQueues, bool bIndividualResets, bool bIncludePresentation, bool bTransient);
 			VulkanTask(const VulkanTask &rCopy, bool bIndividualResets, bool bTransient);
-			VulkanTask(VulkanTask &&rrTask);
 			VulkanTask(VulkanTask&) = delete;
+			explicit VulkanTask(VulkanTask &&rrTask);
 			~VulkanTask();
 			bool init(uint32_t u32FunctionsCount, const VkQueueFlagBits *vk_paeQueueTypePerFunctionRequiredInOrder, bool bIndividualResets, bool bIncludePresentation, bool bTransient);
 			bool init(uint32_t u32FunctionsCount, const uint8_t *pau8LogicalQueueIndexPerFunctionRequiredInOrder, bool bIndividualResets, bool bIncludePresentation, bool bTransient);
@@ -111,7 +111,11 @@ namespace RE {
 		VulkanStorageObject vulkanStorageObject;
 		uint32_t u32RegionIndex;
 	};
-	bool alloc_shared_vulkan_memory(const uint32_t u32SharedMemoryInfoCount, const SharedVulkanMemoryInfo *const paSharedMemoryInfos, const VkMemoryPropertyFlags vk_mMemoryProperties, size_t &rAllocatedMemoryCount, std::unique_ptr<VulkanMemory[]> &rAllocatedMemory, bool *pbVulkanStorageObjectsUnbound = nullptr);
+	struct VulkanMemoryAllocationInfo final {
+		size_t indexToMemory;
+		VkDeviceSize vk_memoryOffset;
+	};
+	VkResult alloc_shared_vulkan_memory(const uint32_t u32SharedMemoryInfoCount, const SharedVulkanMemoryInfo *paSharedMemoryInfos, const VkMemoryPropertyFlags vk_mMemoryProperties, size_t &rAllocatedMemoryCount, std::unique_ptr<VulkanMemory[]> &rAllocatedMemory, VulkanMemoryAllocationInfo *paAllocationResults = nullptr, bool *pbVulkanStorageObjectsUnbound = nullptr);
 	std::optional<uint8_t> find_vulkan_memory_type(VkMemoryPropertyFlags vk_mProperties, uint32_t m32MemoryTypeBits);
 	bool do_memory_properties_exist(VkMemoryPropertyFlags vk_mProperties);
 	bool is_staging_before_gpu_use_necessary();
@@ -121,7 +125,7 @@ namespace RE {
 			VkDeviceMemory vk_hMemory;
 			VkDeviceSize vk_size;
 			uint8_t u8MemoryType;
-			bool bCoherent;
+			bool bCoherent, bMapped;
 
 		public:
 			VulkanMemory();
@@ -138,12 +142,15 @@ namespace RE {
 			void free();
 			bool map(VkMemoryMapFlags vk_eFlags, VkDeviceSize vk_offset, VkDeviceSize vk_size, void **ppData) const;
 			void unmap();
+			bool flush_mapped_memory(VkDeviceSize vk_offset, VkDeviceSize vk_size);
+			bool invalidate_mapped_memory(VkDeviceSize vk_offset, VkDeviceSize vk_size);
 
 			bool valid() const;
 			VkDeviceMemory get() const;
 			VkDeviceSize size() const;
 			uint8_t type_index() const;
 			bool cpu_coherent() const;
+			bool mapped() const;
 
 			VulkanMemory& operator =(VulkanMemory &&rrMemory);
 			VulkanMemory& operator =(VulkanMemory&) = delete;

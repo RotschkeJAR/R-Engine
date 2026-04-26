@@ -5,15 +5,15 @@
 
 namespace RE {
 
-	extern Vulkan_Buffer aRawGameObjectBuffers[RE_VK_FRAMES_IN_FLIGHT];
+	extern VkBuffer vk_ahRawGameObjectBuffers[RE_VK_FRAMES_IN_FLIGHT];
 
 	extern VkBuffer vk_ahCameraBuffers[RE_VK_FRAMES_IN_FLIGHT];
-	extern VulkanMemory cameraBuffersMemory;
 	extern VkDeviceSize vk_aCameraBufferMemoryOffsets[RE_VK_FRAMES_IN_FLIGHT];
+	extern VulkanMemory (*apCameraBufferMemories)[RE_VK_FRAMES_IN_FLIGHT];
 
-	extern Vulkan_Buffer aSortableDepthBuffers[RE_VK_FRAMES_IN_FLIGHT];
+	extern VkBuffer vk_ahSortableDepthBuffers[RE_VK_FRAMES_IN_FLIGHT];
 
-	extern Vulkan_Buffer aGameObjectBuffers[RE_VK_FRAMES_IN_FLIGHT];
+	extern VkBuffer vk_ahGameObjectBuffers[RE_VK_FRAMES_IN_FLIGHT];
 
 	bool create_renderer_buffers();
 	void destroy_renderer_buffers();

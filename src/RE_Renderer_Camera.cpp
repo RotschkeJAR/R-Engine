@@ -35,18 +35,9 @@ namespace RE {
 		if (pActiveCamera) {
 			PRINT_DEBUG("Updating camera before transferring its matrices");
 			pActiveCamera->update_before_render();
-			const VkMappedMemoryRange vk_memoryRange = {
-				.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,
-				.memory = cameraBuffersMemory.get(),
-				.offset = vk_aCameraBufferMemoryOffsets[u8CurrentFrameInFlightIndex],
-				.size = sizeof(CameraShaderData)
-			};
-			if (!cameraBuffersMemory.cpu_coherent()) {
-				PRINT_DEBUG("Invalidating Vulkan memory used for camera uniforms");
-				if (vkInvalidateMappedMemoryRanges(vk_hDevice, 1, &vk_memoryRange) != VK_SUCCESS) {
-					RE_FATAL_ERROR("Failed invalidating non-coherent Vulkan memory used for camera uniforms");
-					return;
-				}
+			if (!apCameraBufferMemories[u8CurrentFrameInFlightIndex]->invalidate_mapped_memory(vk_aCameraBufferMemoryOffsets[u8CurrentFrameInFlightIndex], sizeof(CameraShaderData))) {
+				RE_FATAL_ERROR("Failed invalidating non-coherent Vulkan memory used for camera uniforms");
+				return;
 			}
 			PRINT_DEBUG("Updating camera matrices");
 			apCameraShaderData[u8CurrentFrameInFlightIndex]->viewMatrix[12] = -pActiveCamera->transform.position[0];
@@ -55,12 +46,9 @@ namespace RE {
 			apCameraShaderData[u8CurrentFrameInFlightIndex]->projectionMatrix[0] = 1.0f / pActiveCamera->view[0];
 			apCameraShaderData[u8CurrentFrameInFlightIndex]->projectionMatrix[5] = -1.0f / pActiveCamera->view[1];
 			apCameraShaderData[u8CurrentFrameInFlightIndex]->projectionMatrix[10] = 1.0f / pActiveCamera->fViewDistance;
-			if (!cameraBuffersMemory.cpu_coherent()) {
-				PRINT_DEBUG("Flushing Vulkan memory used for camera uniforms");
-				if (vkFlushMappedMemoryRanges(vk_hDevice, 1, &vk_memoryRange) != VK_SUCCESS) {
-					RE_FATAL_ERROR("Failed flushing non-coherent Vulkan memory used for camera uniforms");
-					return;
-				}
+			if (!apCameraBufferMemories[u8CurrentFrameInFlightIndex]->flush_mapped_memory(vk_aCameraBufferMemoryOffsets[u8CurrentFrameInFlightIndex], sizeof(CameraShaderData))) {
+				RE_FATAL_ERROR("Failed flushing non-coherent Vulkan memory used for camera uniforms");
+				return;
 			}
 			if (!pActiveCamera->bIgnoreAspectRatio) {
 				PRINT_DEBUG("Calculating projection on screen depending on camera's projection's aspect ratio");

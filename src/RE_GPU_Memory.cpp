@@ -108,7 +108,7 @@ namespace RE {
 		return false;
 	}
 
-	bool alloc_shared_vulkan_memory(const uint32_t u32SharedMemoryInfoCount, const SharedVulkanMemoryInfo *const paSharedMemoryInfos, const VkMemoryPropertyFlags vk_mMemoryProperties, size_t &rAllocatedMemoryCount, std::unique_ptr<VulkanMemory[]> &rAllocatedMemory, bool *const pbVulkanStorageObjectsUnbound) {
+	VkResult alloc_shared_vulkan_memory(const uint32_t u32SharedMemoryInfoCount, const SharedVulkanMemoryInfo *const paSharedMemoryInfos, const VkMemoryPropertyFlags vk_mMemoryProperties, size_t &rAllocatedMemoryCount, std::unique_ptr<VulkanMemory[]> &rAllocatedMemory, VulkanMemoryAllocationInfo *const paAllocationResults, bool *const pbVulkanStorageObjectsUnbound) {
 		if (pbVulkanStorageObjectsUnbound) {
 			PRINT_DEBUG("Writing current status of Vulkan storage objects to ", pbVulkanStorageObjectsUnbound);
 			*pbVulkanStorageObjectsUnbound = true;
@@ -137,10 +137,8 @@ namespace RE {
 				fetch_vulkan_memory_requirements(paSharedMemoryInfos[u32CurrentInfoIndex].vulkanStorageObject, vk_memoryRequirements2);
 				PRINT_DEBUG("Finding suitable memory type from ", std::hex, vk_rMemoryRequirements.memoryTypeBits, " for the said Vulkan storage object");
 				auto memoryType = find_vulkan_memory_type(vk_mMemoryProperties, vk_rMemoryRequirements.memoryTypeBits);
-				if (!memoryType.has_value()) {
-					RE_ERROR("Failed to find a suitable Vulkan memory type for Vulkan storage object at info index ", u32CurrentInfoIndex);
-					return false;
-				}
+				if (!memoryType.has_value())
+					RE_ABORT("Failed to find a suitable Vulkan memory type for Vulkan storage object at info index ", u32CurrentInfoIndex);
 				PRINT_DEBUG("Saving details at index ", u32CurrentInfoIndex);
 				detailsPerInfo[u32CurrentInfoIndex].vk_alignment = vk_rMemoryRequirements.alignment;
 				detailsPerInfo[u32CurrentInfoIndex].vk_size = vk_rMemoryRequirements.size;
@@ -183,16 +181,25 @@ namespace RE {
 			const uint64_t u64CurrentSeparationIndex = detailsPerInfo[u32CurrentInfoIndex].u64SeparationIndex;
 			offsetPerInfo.emplace_back(0, u32CurrentInfoIndex);
 			infosProcessed[u32CurrentInfoIndex] = true;
-			for (uint32_t u32SubcurrentInfoIndex = u32CurrentInfoIndex; u32SubcurrentInfoIndex < u32SharedMemoryInfoCount; u32SubcurrentInfoIndex++) {
-				if (vk_allocSize > vk_maxMemorySize)
-					break;
+			if (paAllocationResults) {
+				paAllocationResults[u32SubcurrentInfoIndex].indexToMemory = allocatedMemories.size();
+				paAllocationResults[u32SubcurrentInfoIndex].vk_memoryOffset = vk_offset;
+			}
+			for (uint32_t u32SubcurrentInfoIndex = u32CurrentInfoIndex + 1; u32SubcurrentInfoIndex < u32SharedMemoryInfoCount; u32SubcurrentInfoIndex++) {
 				if (infosProcessed[u32SubcurrentInfoIndex] == true || detailsPerInfo[u32SubcurrentInfoIndex].u64SeparationIndex != u64CurrentSeparationIndex)
 					continue;
 				PRINT_DEBUG("Calculating new allocation size for Vulkan storage object at index ", u32SubcurrentInfoIndex);
-				const VkDeviceSize vk_offset = next_multiple_inclusive<VkDeviceSize>(vk_allocSize, detailsPerInfo[u32SubcurrentInfoIndex].vk_alignment);
-				vk_allocSize = vk_offset + detailsPerInfo[u32SubcurrentInfoIndex].vk_size;
+				const VkDeviceSize vk_offset = next_multiple_inclusive<VkDeviceSize>(vk_allocSize, detailsPerInfo[u32SubcurrentInfoIndex].vk_alignment),
+					vk_nextAllocSize = vk_offset + detailsPerInfo[u32SubcurrentInfoIndex].vk_size;
+				if (vk_nextAllocSize > vk_maxMemorySize)
+					break;
+				vk_allocSize = vk_nextAllocSize;
 				offsetPerInfo.emplace_back(vk_offset, u32SubcurrentInfoIndex);
 				infosProcessed[u32SubcurrentInfoIndex] = true;
+				if (paAllocationResults) {
+					paAllocationResults[u32SubcurrentInfoIndex].indexToMemory = allocatedMemories.size();
+					paAllocationResults[u32SubcurrentInfoIndex].vk_memoryOffset = vk_offset;
+				}
 			}
 			VulkanMemory vulkanMemory;
 			if (offsetPerInfo.size() == 1)
@@ -202,14 +209,14 @@ namespace RE {
 				VkResult vk_eResult = vulkanMemory.alloc(vk_allocSize, detailsPerInfo[u32CurrentInfoIndex].u8MemoryTypeIndex);
 				if (vk_eResult == VK_ERROR_TOO_MANY_OBJECTS) {
 					RE_ERROR("Failed to allocate Vulkan memory due to exceeding maximum allocations");
-					return false;
+					return VK_ERROR_TOO_MANY_OBJECTS;
 				}
 				while (vk_eResult != VK_SUCCESS) {
 					switch (offsetPerInfo.size()) {
 						case 0:
 						case 1:
 							RE_ERROR("Failed to allocate Vulkan memory for one or more Vulkan storage objects");
-							return false;
+							return (vk_mMemoryProperties & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) ? VK_ERROR_OUT_OF_DEVICE_MEMORY : VK_ERROR_OUT_OF_HOST_MEMORY;
 						case 2:
 							PRINT_DEBUG("Removing one Vulkan storage object and using dedicated memory allocation");
 							infosProcessed[offsetPerInfo.back().u32IndexToInfo] = false;
@@ -229,6 +236,7 @@ namespace RE {
 				std::vector<VkBindImageMemoryInfo> bindImageInfos;
 				bindImageInfos.reserve(offsetPerInfo.size() / 5 + 5);
 				bindBufferInfos.reserve(bindImageInfos.capacity());
+				VkResult vk_eBindResult;
 				for (const OffsetPerInfo &rOffsetPerInfo : offsetPerInfo) {
 					PRINT_DEBUG("Emplacing next memory-bind information of offset ", std::addressof(rOffsetPerInfo));
 					const auto &rVulkanStorageObject = paSharedMemoryInfos[rOffsetPerInfo.u32IndexToInfo].vulkanStorageObject;
@@ -242,25 +250,27 @@ namespace RE {
 						[[unlikely]] default:
 							RE_ABORT("There's no Vulkan storage object to bind memory to or the index is invalid");
 					}
-					if (bindBufferInfos.size() == std::min<size_t>(std::numeric_limits<uint32_t>::max(), bindBufferInfos.max_size())
-							|| bindImageInfos.size() == std::min<size_t>(std::numeric_limits<uint32_t>::max(), bindImageInfos.max_size())) {
+					if (bindBufferInfos.size() == std::min<size_t>(std::numeric_limits<uint16_t>::max(), bindBufferInfos.max_size())
+							|| bindImageInfos.size() == std::min<size_t>(std::numeric_limits<uint16_t>::max(), bindImageInfos.max_size())) {
 						PRINT_DEBUG("Binding Vulkan storage objects to memories to free memory occupied by structures containing memory-bind data");
 						if (!bindBufferInfos.empty()) {
 							PRINT_DEBUG("Binding Vulkan buffers to memories");
-							if (vkBindBufferMemory2(vk_hDevice, static_cast<uint32_t>(bindBufferInfos.size()), bindBufferInfos.data()) != VK_SUCCESS) {
+							vk_eBindResult = vkBindBufferMemory2(vk_hDevice, static_cast<uint32_t>(bindBufferInfos.size()), bindBufferInfos.data());
+							if (vk_eBindResult != VK_SUCCESS) {
 								RE_ERROR("Failed binding Vulkan memory to ", bindBufferInfos.size(), " buffer/-s");
 								if (pbVulkanStorageObjectsUnbound && bindBufferInfos.size() > 1)
 									*pbVulkanStorageObjectsUnbound = false;
-								return false;
+								return vk_eBindResult;
 							}
 						}
 						if (!bindImageInfos.empty()) {
 							PRINT_DEBUG("Binding Vulkan images to memories");
-							if (vkBindImageMemory2(vk_hDevice, static_cast<uint32_t>(bindImageInfos.size()), bindImageInfos.data()) != VK_SUCCESS) {
+							vk_eBindResult = vkBindImageMemory2(vk_hDevice, static_cast<uint32_t>(bindImageInfos.size()), bindImageInfos.data());
+							if (vk_eBindResult != VK_SUCCESS) {
 								RE_ERROR("Failed binding Vulkan memory to ", bindBufferInfos.size(), " image/-s");
 								if (pbVulkanStorageObjectsUnbound && bindImageInfos.size() > 1)
 									*pbVulkanStorageObjectsUnbound = false;
-								return false;
+								return vk_eBindResult;
 							}
 						}
 						bindBufferInfos.clear();
@@ -269,20 +279,22 @@ namespace RE {
 				}
 				if (!bindBufferInfos.empty()) {
 					PRINT_DEBUG("Binding Vulkan buffers to memories");
-					if (vkBindBufferMemory2(vk_hDevice, static_cast<uint32_t>(bindBufferInfos.size()), bindBufferInfos.data()) != VK_SUCCESS) {
+					vk_eBindResult = vkBindBufferMemory2(vk_hDevice, static_cast<uint32_t>(bindBufferInfos.size()), bindBufferInfos.data());
+					if (vk_eBindResult != VK_SUCCESS) {
 						RE_ERROR("Failed binding Vulkan memory to ", bindBufferInfos.size(), " buffer/-s");
 						if (pbVulkanStorageObjectsUnbound && bindBufferInfos.size() > 1)
 							*pbVulkanStorageObjectsUnbound = false;
-						return false;
+						return vk_eBindResult;
 					}
 				}
 				if (!bindImageInfos.empty()) {
 					PRINT_DEBUG("Binding Vulkan images to memories");
-					if (vkBindImageMemory2(vk_hDevice, static_cast<uint32_t>(bindImageInfos.size()), bindImageInfos.data()) != VK_SUCCESS) {
+					vk_eBindResult = vkBindImageMemory2(vk_hDevice, static_cast<uint32_t>(bindImageInfos.size()), bindImageInfos.data());
+					if (vk_eBindResult != VK_SUCCESS) {
 						RE_ERROR("Failed binding Vulkan memory to ", bindBufferInfos.size(), " image/-s");
 						if (pbVulkanStorageObjectsUnbound && bindImageInfos.size() > 1)
 							*pbVulkanStorageObjectsUnbound = false;
-						return false;
+						return vk_eBindResult;
 					}
 				}
 			}
@@ -296,14 +308,16 @@ namespace RE {
 		DEDICATED_ALLOCATION:
 			PRINT_DEBUG("Allocating dedicated Vulkan memory for storage object");
 			const auto &rVulkanStorageObject = paSharedMemoryInfos[offsetPerInfo.front().u32IndexToInfo].vulkanStorageObject;
+			VkResult vk_eBindResult;
 			switch (rVulkanStorageObject.index()) {
 				case 0:
 					{
 						const VkBuffer vk_hBuffer = std::get<VkBuffer>(rVulkanStorageObject);
 						PRINT_DEBUG("Allocating dedicated Vulkan memory for buffer ", vk_hBuffer);
-						if (vulkanMemory.alloc_for_buffer(vk_hBuffer, vk_mMemoryProperties) != VK_SUCCESS) {
+						vk_eBindResult = vulkanMemory.alloc_for_buffer(vk_hBuffer, vk_mMemoryProperties);
+						if (vk_eBindResult != VK_SUCCESS) {
 							RE_ERROR("Failed allocating and binding Vulkan memory to buffer ", vk_hBuffer);
-							return false;
+							return vk_eBindResult;
 						}
 					}
 					break;
@@ -311,9 +325,10 @@ namespace RE {
 					{
 						const VkImage vk_hImage = std::get<VkImage>(rVulkanStorageObject);
 						PRINT_DEBUG("Allocating dedicated Vulkan memory for image ", vk_hImage);
-						if (vulkanMemory.alloc_for_image(vk_hImage, vk_mMemoryProperties) != VK_SUCCESS) {
+						vk_eBindResult = vulkanMemory.alloc_for_image(vk_hImage, vk_mMemoryProperties);
+						if (vk_eBindResult != VK_SUCCESS) {
 							RE_ERROR("Failed allocating and binding Vulkan memory to image ", vk_hImage);
-							return false;
+							return vk_eBindResult;
 						}
 					}
 					break;
@@ -332,7 +347,7 @@ namespace RE {
 			allocatedMemories.pop_front();
 			memoryIndex++;
 		}
-		return true;
+		return VK_SUCCESS;
 	}
 
 	std::optional<uint8_t> find_vulkan_memory_type(const VkMemoryPropertyFlags vk_mProperties, const uint32_t m32MemoryTypeBits) {

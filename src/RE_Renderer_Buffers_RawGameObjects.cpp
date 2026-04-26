@@ -14,9 +14,14 @@ namespace RE {
 
 	bool create_raw_game_object_buffers() {
 		constexpr VkDeviceSize vk_objectBufferByteSize = 1000 * sizeof(RawGameObjectShaderData);
+		constexpr uint32_t au32ObjectBufferQueues[] = {
+			RENDER_TASK_SUBINDEX_BUFFER_TRANSFER,
+			RENDER_TASK_SUBINDEX_PROCESSING
+		};
+		const VulkanQueueCollection queuesForObjectBuffer = renderTasks[0].queues_of_functions(au32ObjectBufferQueues, sizeof(au32ObjectBufferQueues) / sizeof(au32ObjectBufferQueues[0]));
 		const bool bStagingNecessary = is_staging_before_gpu_use_necessary();
 		uint8_t u8FrameInFlightCreateIndex = 0;
-		while (u8FrameInFlightCreateIndex < RE_VK_FRAMES_IN_FLIGHT) {
+		for (; u8FrameInFlightCreateIndex < RE_VK_FRAMES_IN_FLIGHT; u8FrameInFlightCreateIndex++) {
 			if (bStagingNecessary) {
 				PRINT_DEBUG("Creating staging game object buffer in Vulkan at index ", u8FrameInFlightCreateIndex);
 				if (!create_vulkan_buffer(0,
@@ -29,21 +34,15 @@ namespace RE {
 					break;
 				}
 			}
-			constexpr uint32_t au32ObjectBufferQueues[] = {
-				RENDER_TASK_SUBINDEX_BUFFER_TRANSFER,
-				RENDER_TASK_SUBINDEX_PROCESSING
-			};
-			const VulkanQueueCollection queuesForObjectBuffer = renderTasks[0].queues_of_functions(au32ObjectBufferQueues, sizeof(au32ObjectBufferQueues) / sizeof(au32ObjectBufferQueues[0]));
 			PRINT_DEBUG("Creating raw game object buffer on GPU");
 			if (create_vulkan_buffer(0,
 					vk_objectBufferByteSize,
 					VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | (bStagingNecessary ? VK_BUFFER_USAGE_TRANSFER_DST_BIT : 0),
 					queuesForObjectBuffer.u8QueueCount,
 					queuesForObjectBuffer.queueFamilyIndices.get(),
-					&vk_ahRawGameObjectBuffers[u8FrameInFlightCreateIndex])) {
-				u8FrameInFlightCreateIndex++;
+					&vk_ahRawGameObjectBuffers[u8FrameInFlightCreateIndex]))
 				continue;
-			} else
+			else
 				RE_FATAL_ERROR("Failed to create raw game object buffer in Vulkan at index ", u8FrameInFlightCreateIndex);
 			if (bStagingNecessary) {
 				PRINT_DEBUG("Destroying staging game object buffer in Vulkan at index ", u8FrameInFlightCreateIndex, " due to failure creating GPU-local buffer");

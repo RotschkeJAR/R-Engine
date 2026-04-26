@@ -13,10 +13,13 @@ namespace RE {
 		const VulkanQueueCollection queues = renderTasks[0].queues_of_functions(au32FunctionIndices, sizeof(au32FunctionIndices) / sizeof(au32FunctionIndices[0]));
 		if (create_game_object_buffers(queues)) {
 			if (create_sortable_depth_buffers(queues)) {
-				if (create_camera_buffers()) {
-					if (create_raw_game_object_buffers())
-						return true;
-					destroy_camera_buffers();
+				if (create_camera_buffers(queues)) {
+					if (create_raw_game_object_buffers()) {
+						if (alloc_memory_for_buffers_renderer())
+							return true;
+						destroy_camera_buffers();
+					}
+					destroy_raw_game_object_buffers();
 				}
 				destroy_sortable_depth_buffers();
 			}
@@ -26,10 +29,12 @@ namespace RE {
 	}
 
 	void destroy_renderer_buffers() {
+		PRINT_DEBUG("Destroying buffers and freeing memory used in the renderer");
 		destroy_raw_game_object_buffers();
 		destroy_camera_buffers();
 		destroy_sortable_depth_buffers();
 		destroy_game_object_buffers();
+		free_memory_for_buffers_renderer();
 	}
 
 }

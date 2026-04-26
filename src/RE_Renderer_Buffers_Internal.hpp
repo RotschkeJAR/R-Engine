@@ -14,11 +14,11 @@ namespace RE {
 	bool create_game_object_buffers(const VulkanQueueCollection &rQueues);
 	void destroy_game_object_buffers();
 	
-	bool create_camera_buffers();
+	bool create_camera_buffers(const VulkanQueueCollection &rQueues);
 	void destroy_camera_buffers();
 
-	bool alloc_memories_for_buffers_renderer();
-	void free_memories_for_buffers_renderer();
+	bool alloc_memory_for_buffers_renderer();
+	void free_memory_for_buffers_renderer();
 
 }
 

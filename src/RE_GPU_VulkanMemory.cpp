@@ -31,7 +31,7 @@ namespace RE {
 		this->alloc(vk_size, u8MemoryType);
 	}
 
-	VulkanMemory::VulkanMemory(VulkanMemory &&rrMemory) : vk_hMemory(rrMemory.vk_hMemory), vk_size(rrMemory.vk_size), u8MemoryType(rrMemory.u8MemoryType), bCoherent(rrMemory.bCoherent) {
+	VulkanMemory::VulkanMemory(VulkanMemory &&rrMemory) : vk_hMemory(rrMemory.vk_hMemory), vk_size(rrMemory.vk_size), u8MemoryType(rrMemory.u8MemoryType), bCoherent(rrMemory.bCoherent), bMapped(rrMemory.bMapped) {
 		PRINT_DEBUG_CLASS("Moving ownership of Vulkan memory to recently constructed");
 		rrMemory.vk_hMemory = VK_NULL_HANDLE;
 		rrMemory.vk_size = 0;
@@ -58,6 +58,7 @@ namespace RE {
 		PRINT_DEBUG_CLASS("Allocating Vulkan memory at type index ", u8MemoryType);
 		this->u8MemoryType = u8MemoryType;
 		bCoherent = (vulkanMemoryTypes[u8MemoryType].propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) != 0;
+		bMapped = false;
 		const VkResult vk_eResult = alloc_vulkan_memory(nullptr, vk_size, static_cast<uint32_t>(u8MemoryType), &vk_hMemory);
 		if (vk_eResult == VK_SUCCESS)
 			this->vk_size = vk_size;
@@ -85,6 +86,8 @@ namespace RE {
 		const auto memoryTypeIndex = find_vulkan_memory_type(vk_mProperties, vk_memoryRequirements.memoryRequirements.memoryTypeBits);
 		if (memoryTypeIndex.has_value()) {
 			u8MemoryType = *memoryTypeIndex;
+			bCoherent = (vulkanMemoryTypes[u8MemoryType].propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) != 0;
+			bMapped = false;
 			PRINT_DEBUG_CLASS("Allocating Vulkan memory of type ", u8MemoryType);
 			const VkMemoryDedicatedAllocateInfo vk_dedicatedMemoryInfo = {
 				.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO,
@@ -133,6 +136,8 @@ namespace RE {
 		const auto memoryTypeIndex = find_vulkan_memory_type(vk_mProperties, vk_memoryRequirements.memoryRequirements.memoryTypeBits);
 		if (memoryTypeIndex.has_value()) {
 			u8MemoryType = *memoryTypeIndex;
+			bCoherent = (vulkanMemoryTypes[u8MemoryType].propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) != 0;
+			bMapped = false;
 			PRINT_DEBUG_CLASS("Allocating Vulkan memory of type ", u8MemoryType);
 			const VkMemoryDedicatedAllocateInfo vk_dedicatedMemoryInfo = {
 				.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO,
@@ -165,6 +170,8 @@ namespace RE {
 	void VulkanMemory::free() {
 		if (!valid())
 			return;
+		if (bMapped)
+			this->unmap();
 		PRINT_DEBUG_CLASS("Freeing Vulkan memory");
 		vkFreeMemory(vk_hDevice, vk_hMemory, nullptr);
 		occupiedSpacePerVulkanHeap[vulkanMemoryTypes[u8MemoryType].heapIndex] -= vk_size;
@@ -174,12 +181,43 @@ namespace RE {
 
 	bool VulkanMemory::map(const VkMemoryMapFlags vk_eFlags, const VkDeviceSize vk_offset, const VkDeviceSize vk_size, void **const ppData) const {
 		PRINT_DEBUG_CLASS("Mapping Vulkan memory to CPU");
-		return vkMapMemory(vk_hDevice, vk_hMemory, vk_offset, vk_size, vk_eFlags, ppData) == VK_SUCCESS;
+		if (vkMapMemory(vk_hDevice, vk_hMemory, vk_offset, vk_size, vk_eFlags, ppData) == VK_SUCCESS) {
+			bMapped = true;
+			return true;
+		}
+		return false;
 	}
 	
 	void VulkanMemory::unmap() {
 		PRINT_DEBUG_CLASS("Unmapping Vulkan memory");
+		bMapped = false;
 		vkUnmapMemory(vk_hDevice, vk_hMemory);
+	}
+
+	bool VulkanMemory::flush_mapped_memory(VkDeviceSize vk_offset, VkDeviceSize vk_size) {
+		if (cpu_coherent())
+			return true;
+		const VkMappedMemoryRange vk_memoryRange = {
+			.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,
+			.pNext = nullptr,
+			.memory = vk_hMemory,
+			.offset = vk_offset,
+			.size = vk_size
+		};
+		return vkFlushMappedMemoryRanges(vk_hDevice, 1, &vk_memoryRange) == VK_SUCCESS;
+	}
+	
+	bool VulkanMemory::invalidate_mapped_memory(VkDeviceSize vk_offset, VkDeviceSize vk_size) {
+		if (cpu_coherent())
+			return true;
+		const VkMappedMemoryRange vk_memoryRange = {
+			.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,
+			.pNext = nullptr,
+			.memory = vk_hMemory,
+			.offset = vk_offset,
+			.size = vk_size
+		};
+		return vkInvalidateMappedMemoryRanges(vk_hDevice, 1, &vk_memoryRange) == VK_SUCCESS;
 	}
 
 	bool VulkanMemory::valid() const {
@@ -200,6 +238,10 @@ namespace RE {
 
 	bool VulkanMemory::cpu_coherent() const {
 		return bCoherent;
+	}
+
+	bool VulkanMemory::mapped() const {
+		return bMapped;
 	}
 
 	VulkanMemory& VulkanMemory::operator =(VulkanMemory &&rrMemory) {

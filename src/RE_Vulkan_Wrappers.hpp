@@ -27,7 +27,7 @@ namespace RE {
 					const uint32_t *pau32Queues,
 					VkMemoryPropertyFlags vk_eMemoryPropertyFlags);
 			Vulkan_Buffer(Vulkan_Buffer &rCopy) = delete;
-			Vulkan_Buffer(Vulkan_Buffer &&rrCopy);
+			explicit Vulkan_Buffer(Vulkan_Buffer &&rrCopy);
 			~Vulkan_Buffer();
 
 			bool create(VkBufferCreateFlags vk_eFlags,
@@ -68,7 +68,7 @@ namespace RE {
 					VkDeviceSize vk_offset,
 					VkDeviceSize vk_range);
 			Vulkan_BufferView(Vulkan_BufferView &rCopy) = delete;
-			Vulkan_BufferView(Vulkan_BufferView &&rrCopy);
+			explicit Vulkan_BufferView(Vulkan_BufferView &&rrCopy);
 			~Vulkan_BufferView();
 
 			bool create(VkBufferViewCreateFlags vk_eFlags,
@@ -122,7 +122,7 @@ namespace RE {
 					VkImageLayout vk_eInitialLayout,
 					VkMemoryPropertyFlags vk_eMemoryProperties);
 			Vulkan_Image(Vulkan_Image &rCopy) = delete;
-			Vulkan_Image(Vulkan_Image &&rrCopy);
+			explicit Vulkan_Image(Vulkan_Image &&rrCopy);
 			~Vulkan_Image();
 
 			bool create(VkImageCreateFlags vk_eFlags,
@@ -172,7 +172,7 @@ namespace RE {
 					const VkComponentMapping &vk_rComponentMapping,
 					const VkImageSubresourceRange &vk_rSubresourceRange);
 			Vulkan_ImageView(Vulkan_ImageView &rCopy) = delete;
-			Vulkan_ImageView(Vulkan_ImageView &&rrCopy);
+			explicit Vulkan_ImageView(Vulkan_ImageView &&rrCopy);
 			~Vulkan_ImageView();
 
 			bool create(VkImageViewCreateFlags vk_eFlags,
@@ -215,7 +215,7 @@ namespace RE {
 					uint32_t u32Height,
 					uint32_t u32Layers);
 			Vulkan_Framebuffer(Vulkan_Framebuffer &rCopy) = delete;
-			Vulkan_Framebuffer(Vulkan_Framebuffer &&rrCopy);
+			explicit Vulkan_Framebuffer(Vulkan_Framebuffer &&rrCopy);
 			~Vulkan_Framebuffer();
 
 			bool create(VkFramebufferCreateFlags vk_eFlags,
@@ -252,9 +252,9 @@ namespace RE {
 
 		public:
 			Vulkan_Fence();
-			Vulkan_Fence(VkFenceCreateFlags vk_eCreateFlags);
+			explicit Vulkan_Fence(VkFenceCreateFlags vk_eCreateFlags);
 			Vulkan_Fence(Vulkan_Fence &rCopy) = delete;
-			Vulkan_Fence(Vulkan_Fence &&rrCopy);
+			explicit Vulkan_Fence(Vulkan_Fence &&rrCopy);
 			~Vulkan_Fence();
 
 			bool create(VkFenceCreateFlags vk_eFlags);
@@ -279,9 +279,9 @@ namespace RE {
 
 		public:
 			Vulkan_Semaphore();
-			Vulkan_Semaphore(VkSemaphoreCreateFlags vk_eFlags);
+			explicit Vulkan_Semaphore(VkSemaphoreCreateFlags vk_eFlags);
 			Vulkan_Semaphore(Vulkan_Semaphore &rCopy) = delete;
-			Vulkan_Semaphore(Vulkan_Semaphore &&rrCopy);
+			explicit Vulkan_Semaphore(Vulkan_Semaphore &&rrCopy);
 			~Vulkan_Semaphore();
 
 			bool create(VkSemaphoreCreateFlags vk_eFlags);
@@ -304,9 +304,9 @@ namespace RE {
 
 		public:
 			Vulkan_TimelineSemaphore();
-			Vulkan_TimelineSemaphore(VkSemaphoreCreateFlags vk_eFlags, uint64_t u64InitialValue = 0);
+			explicit Vulkan_TimelineSemaphore(VkSemaphoreCreateFlags vk_eFlags, uint64_t u64InitialValue = 0);
 			Vulkan_TimelineSemaphore(Vulkan_TimelineSemaphore &rCopy) = delete;
-			Vulkan_TimelineSemaphore(Vulkan_TimelineSemaphore &&rrCopy);
+			explicit Vulkan_TimelineSemaphore(Vulkan_TimelineSemaphore &&rrCopy);
 			~Vulkan_TimelineSemaphore();
 
 			bool create(VkSemaphoreCreateFlags vk_eFlags, uint64_t u64InitialValue = 0);

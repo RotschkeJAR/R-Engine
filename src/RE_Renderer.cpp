@@ -85,7 +85,7 @@ namespace RE {
 			record_cmd_transfer_buffer();
 			const size_t gameObjectCounter = amount_of_game_objects();
 			if (renderTasks[u8CurrentFrameInFlightIndex].record(RENDER_TASK_SUBINDEX_PROCESSING, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, [&](const VkCommandBuffer vk_hCommandBuffer, const uint8_t u8PreviousLogicalQueue, const uint8_t u8CurrentLogicalQueue, const uint8_t u8NextLogicalQueue) {
-					vkCmdFillBuffer(vk_hCommandBuffer, aSortableDepthBuffers[u8CurrentFrameInFlightIndex].get(), 0, VK_WHOLE_SIZE, 0);
+					vkCmdFillBuffer(vk_hCommandBuffer, vk_ahSortableDepthBuffers[u8CurrentFrameInFlightIndex], 0, VK_WHOLE_SIZE, 0);
 					PRINT_DEBUG("Binding compute pipeline ", vk_hComputePipelinePreprocessing);
 					vkCmdBindPipeline(vk_hCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, vk_hComputePipelinePreprocessing);
 					PRINT_DEBUG("Binding Vulkan descriptor sets for preprocessing");
@@ -104,7 +104,7 @@ namespace RE {
 						.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,
 						.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 						.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-						.buffer = aSortableDepthBuffers[u8CurrentFrameInFlightIndex].get(),
+						.buffer = vk_ahSortableDepthBuffers[u8CurrentFrameInFlightIndex],
 						.offset = 0,
 						.size = VK_WHOLE_SIZE
 					};

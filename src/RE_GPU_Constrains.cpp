@@ -2,6 +2,7 @@
 
 namespace RE {
 
+	VulkanEnabledFeatureFlags mEnabledFeatures;
 	VkDeviceSize vk_maxBufferSize;
 	VkDeviceSize vk_maxMemorySize;
 	VkDeviceSize vk_uniformBufferAlignment;
@@ -31,7 +32,6 @@ namespace RE {
 	uint32_t u32MaxIndirectCount;
 	float f32MaxSamplerAnisotropy;
 	uint32_t u32MappedMemoryAlignment;
-	uint8_t m8EnabledFeatures;
 	
 	void fetch_gpu_constrains() {
 		{ // Hard-/Software Limits
@@ -134,23 +134,24 @@ namespace RE {
 			const VkPhysicalDeviceFeatures &vk_physicalDeviceFeatures = vk_physicalDeviceFeatures_1_0.features;
 			vkGetPhysicalDeviceFeatures2(SELECTED_PHYSICAL_VULKAN_DEVICE, &vk_physicalDeviceFeatures_1_0);
 
-			m8EnabledFeatures = 0;
-			if (vk_physicalDeviceFeatures.sparseBinding)
-				m8EnabledFeatures |= ENABLED_FEATURE_SPARSE_BINDING_BIT;
-			if (vk_physicalDeviceFeatures.sparseResidencyBuffer)
-				m8EnabledFeatures |= ENABLED_FEATURE_SPARSE_RESIDENCY_BUFFER_BIT;
-			if (vk_physicalDeviceFeatures.sparseResidencyImage2D)
-				m8EnabledFeatures |= ENABLED_FEATURE_SPARSE_RESIDENCY_IMAGE_2D_BIT;
-			if (vk_physicalDeviceFeatures.sparseResidencyAliased)
-				m8EnabledFeatures |= ENABLED_FEATURE_SPARSE_ALIASING_BIT;
+			mEnabledFeatures = 0;
+			if (vk_physicalDeviceFeatures.sparseBinding) {
+				mEnabledFeatures |= ENABLED_FEATURE_SPARSE_BINDING_BIT;
+				if (vk_physicalDeviceFeatures.sparseResidencyBuffer)
+					mEnabledFeatures |= ENABLED_FEATURE_SPARSE_RESIDENCY_BUFFER_BIT;
+				if (vk_physicalDeviceFeatures.sparseResidencyImage2D)
+					mEnabledFeatures |= ENABLED_FEATURE_SPARSE_RESIDENCY_IMAGE_2D_BIT;
+				if (vk_physicalDeviceFeatures.sparseResidencyAliased)
+					mEnabledFeatures |= ENABLED_FEATURE_SPARSE_ALIASING_BIT;
+			}
 			if (vk_physicalDeviceFeatures_1_3.synchronization2)
-				m8EnabledFeatures |= ENABLED_FEATURE_SYNCHRONIZATION_2_BIT;
+				mEnabledFeatures |= ENABLED_FEATURE_SYNCHRONIZATION_2_BIT;
 			if (vk_physicalDeviceFeatures.sampleRateShading)
-				m8EnabledFeatures |= ENABLED_FEATURE_SAMPLE_RATE_SHADING_BIT;
+				mEnabledFeatures |= ENABLED_FEATURE_SAMPLE_RATE_SHADING_BIT;
 			if (vk_physicalDeviceFeatures.samplerAnisotropy)
-				m8EnabledFeatures |= ENABLED_FEATURE_ANISOTROPIC_FILTERING_BIT;
+				mEnabledFeatures |= ENABLED_FEATURE_ANISOTROPIC_FILTERING_BIT;
 			if (vk_physicalDeviceFeatures_1_3.dynamicRendering)
-				m8EnabledFeatures |= ENABLED_FEATURE_DYNAMIC_RENDERING_BIT;
+				mEnabledFeatures |= ENABLED_FEATURE_DYNAMIC_RENDERING_BIT;
 		}
 	}
 

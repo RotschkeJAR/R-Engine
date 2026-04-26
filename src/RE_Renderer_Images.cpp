@@ -64,7 +64,7 @@ namespace RE {
 		if (create_depth_stencil_image()) {
 			if (bSkipCreatingSinglesampledImage || create_singlesampled_image()) {
 				if (bSkipCreatingRenderTargetImage || create_render_target_image()) {
-					if (alloc_memory_for_images_renderer()) {
+					if (alloc_memory_for_images_renderer() == VK_SUCCESS) {
 						if (create_depth_stencil_image_views()) {
 							if (bSkipCreatingSinglesampledImage || create_singlesampled_image_views()) {
 								if (bSkipCreatingRenderTargetImage || create_render_target_image_views())

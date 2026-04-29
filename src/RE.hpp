@@ -303,12 +303,10 @@ namespace RE {
 
 	template <class... T>
 	void print(const T... content) {
-		const std::ios_base::fmtflags ePreviousSettings = std::cout.setf(std::ios_base::showbase | std::ios_base::boolalpha);
+		const auto previousSettings = std::cout.setf(std::ios_base::showbase | std::ios_base::boolalpha);
 		([&]() {
-			if constexpr (std::is_same_v<T, int8_t>)
+			if constexpr (std::is_same_v<T, int8_t> || std::is_same_v<T, uint8_t>)
 				std::cout << static_cast<int16_t>(content);
-			else if constexpr (std::is_same_v<T, uint8_t>)
-				std::cout << static_cast<uint16_t>(content);
 			else if constexpr (std::is_same_v<T, std::wstring> || std::is_same_v<T, const wchar_t*> || std::is_same_v<T, wchar_t>)
 				std::wcout << content;
 			else if constexpr (std::is_same_v<T, char8_t>)
@@ -320,7 +318,7 @@ namespace RE {
 			else
 				std::cout << content;
 		} (), ...);
-		std::cout.flags(ePreviousSettings);
+		std::cout.flags(previousSettings);
 	}
 	template <class... T>
 	void println(const T... content) {

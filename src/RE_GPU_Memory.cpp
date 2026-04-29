@@ -308,16 +308,16 @@ namespace RE {
 		DEDICATED_ALLOCATION:
 			PRINT_DEBUG("Allocating dedicated Vulkan memory for storage object");
 			const auto &rVulkanStorageObject = paSharedMemoryInfos[offsetPerInfo.front().u32IndexToInfo].vulkanStorageObject;
-			VkResult vk_eBindResult;
+			VkResult vk_eResult;
 			switch (rVulkanStorageObject.index()) {
 				case 0:
 					{
 						const VkBuffer vk_hBuffer = std::get<VkBuffer>(rVulkanStorageObject);
 						PRINT_DEBUG("Allocating dedicated Vulkan memory for buffer ", vk_hBuffer);
-						vk_eBindResult = vulkanMemory.alloc_for_buffer(vk_hBuffer, vk_mMemoryProperties);
-						if (vk_eBindResult != VK_SUCCESS) {
+						vk_eResult = vulkanMemory.alloc_for_buffer(vk_hBuffer, vk_mMemoryProperties);
+						if (vk_eResult != VK_SUCCESS) {
 							RE_ERROR("Failed allocating and binding Vulkan memory to buffer ", vk_hBuffer);
-							return vk_eBindResult;
+							return vk_eResult;
 						}
 					}
 					break;
@@ -325,10 +325,10 @@ namespace RE {
 					{
 						const VkImage vk_hImage = std::get<VkImage>(rVulkanStorageObject);
 						PRINT_DEBUG("Allocating dedicated Vulkan memory for image ", vk_hImage);
-						vk_eBindResult = vulkanMemory.alloc_for_image(vk_hImage, vk_mMemoryProperties);
-						if (vk_eBindResult != VK_SUCCESS) {
+						vk_eResult = vulkanMemory.alloc_for_image(vk_hImage, vk_mMemoryProperties);
+						if (vk_eResult != VK_SUCCESS) {
 							RE_ERROR("Failed allocating and binding Vulkan memory to image ", vk_hImage);
-							return vk_eBindResult;
+							return vk_eResult;
 						}
 					}
 					break;

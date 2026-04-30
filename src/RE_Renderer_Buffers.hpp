@@ -5,11 +5,12 @@
 
 namespace RE {
 
+	extern RawGameObjectShaderData *apaGameObjectBufferInstanceData[RE_VK_FRAMES_IN_FLIGHT];
 	extern VkBuffer vk_ahRawGameObjectBuffers[RE_VK_FRAMES_IN_FLIGHT];
 
 	extern VkBuffer vk_ahCameraBuffers[RE_VK_FRAMES_IN_FLIGHT];
 	extern VkDeviceSize vk_aCameraBufferMemoryOffsets[RE_VK_FRAMES_IN_FLIGHT];
-	extern VulkanMemory (*apCameraBufferMemories)[RE_VK_FRAMES_IN_FLIGHT];
+	extern VulkanMemory *apCameraBufferMemories[RE_VK_FRAMES_IN_FLIGHT];
 
 	extern VkBuffer vk_ahSortableDepthBuffers[RE_VK_FRAMES_IN_FLIGHT];
 

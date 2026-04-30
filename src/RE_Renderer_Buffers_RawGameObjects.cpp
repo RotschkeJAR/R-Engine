@@ -8,7 +8,7 @@
 namespace RE {
 	
 	static VkBuffer vk_ahStagingRawGameObjectBuffers[RE_VK_FRAMES_IN_FLIGHT];
-	static RawGameObjectShaderData *apaGameObjectBufferInstanceData[RE_VK_FRAMES_IN_FLIGHT];
+	RawGameObjectShaderData *apaGameObjectBufferInstanceData[RE_VK_FRAMES_IN_FLIGHT];
 
 	VkBuffer vk_ahRawGameObjectBuffers[RE_VK_FRAMES_IN_FLIGHT];
 

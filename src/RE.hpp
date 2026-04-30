@@ -704,7 +704,7 @@ namespace RE {
 	class Bitset final {
 		private:
 			std::unique_ptr<uint8_t[]> bitArray;
-			size_t size;
+			size_t bitSize;
 
 		public:
 			class BitReference final {
@@ -712,10 +712,9 @@ namespace RE {
 					uint8_t *pm8Bitmask,
 						u8BitIndex;
 
-					BitReference(uint8_t *pm8Bitmask, uint8_t u8BitIndex);
-
 				public:
 					BitReference() = delete;
+					BitReference(uint8_t *pm8Bitmask, uint8_t u8BitIndex);
 					~BitReference();
 
 					void flip();
@@ -724,12 +723,11 @@ namespace RE {
 					void operator =(bool bNewValue);
 					bool operator ==(const BitReference &rOther) const;
 					bool operator !=(const BitReference &rOther) const;
-					friend void std::swap(BitReference &rBit1, BitReference &rBit2);
-					friend std::ostream operator <<(std::ostream &rStream, const BitReference &rBitReference);
+					friend std::ostream& operator <<(std::ostream &rStream, const BitReference &rBitReference);
 			};
 
 			Bitset();
-			Bitset(size_t size, bool bInitialState = false);
+			Bitset(size_t bitSize, bool bInitialState = false);
 			~Bitset();
 
 			void fill(bool bNewState);
@@ -1407,7 +1405,7 @@ namespace RE {
 	uint32_t get_width_of_texture(Texture hTexture);
 	[[nodiscard]]
 	uint32_t get_height_of_texture(Texture hTexture);
-	void get_extent_of_texture(Texture hTexture, uint32_t &ra2u32Extent[2]);
+	void get_extent_of_texture(Texture hTexture, uint32_t (&ra2u32Extent)[2]);
 
 	// Sprite layout creation
 	[[nodiscard]]
@@ -1454,13 +1452,6 @@ namespace RE {
 #ifdef RE_OS_WINDOWS
 	void win64_set_hinstance(HINSTANCE win_hNewInstance);
 #endif
-
-}
-
-namespace std {
-
-	void swap(BitReference &rBit1, BitReference &rBit2);
-	void swap(Bitset &rSet1, Bitset &rSet2);
 
 }
 

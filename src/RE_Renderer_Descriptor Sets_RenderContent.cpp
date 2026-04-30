@@ -35,11 +35,11 @@ namespace RE {
 					switch (u32BindingIndex) {
 						case RE_VK_DESC_SET_RENDER_CONTENT_GAME_OBJECTS_BINDING_INDEX:
 							vk_aWriteSets[u32WriteSetIndex].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-							vk_aaBufferDescs[u32BindingIndex][u8FrameInFlightIndex].buffer = aGameObjectBuffers[u8FrameInFlightIndex].get();
+							vk_aaBufferDescs[u32BindingIndex][u8FrameInFlightIndex].buffer = vk_ahGameObjectBuffers[u8FrameInFlightIndex];
 							break;
 						case RE_VK_DESC_SET_RENDER_CONTENT_DEPTHS_BINDING_INDEX:
 							vk_aWriteSets[u32WriteSetIndex].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-							vk_aaBufferDescs[u32BindingIndex][u8FrameInFlightIndex].buffer = aSortableDepthBuffers[u8FrameInFlightIndex].get();
+							vk_aaBufferDescs[u32BindingIndex][u8FrameInFlightIndex].buffer = vk_ahSortableDepthBuffers[u8FrameInFlightIndex];
 							break;
 						case RE_VK_DESC_SET_RENDER_CONTENT_CAMERA_MATRICES_BINDING_INDEX:
 							vk_aWriteSets[u32WriteSetIndex].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;

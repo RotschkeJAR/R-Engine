@@ -17,7 +17,7 @@ namespace RE {
 			VkDescriptorBufferInfo vk_aBufferInfos[RE_VK_FRAMES_IN_FLIGHT];
 			VkWriteDescriptorSet vk_aWriteSets[RE_VK_FRAMES_IN_FLIGHT];
 			for (uint8_t u8FrameInFlightIndex = 0; u8FrameInFlightIndex < RE_VK_FRAMES_IN_FLIGHT; u8FrameInFlightIndex++) {
-				vk_aBufferInfos[u8FrameInFlightIndex].buffer = aRawGameObjectBuffers[u8FrameInFlightIndex].get();
+				vk_aBufferInfos[u8FrameInFlightIndex].buffer = vk_ahRawGameObjectBuffers[u8FrameInFlightIndex];
 				vk_aBufferInfos[u8FrameInFlightIndex].offset = 0;
 				vk_aBufferInfos[u8FrameInFlightIndex].range = VK_WHOLE_SIZE;
 				vk_aWriteSets[u8FrameInFlightIndex].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;

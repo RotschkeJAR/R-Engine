@@ -51,7 +51,7 @@ namespace RE {
 
 			VulkanQueueCollection() = default;
 
-			explicit VulkanQueueCollection(VulkanQueueCollection&&) = default;
+			VulkanQueueCollection(VulkanQueueCollection&&) = default;
 			VulkanQueueCollection& operator =(VulkanQueueCollection&&) = default;
 
 			VulkanQueueCollection(VulkanQueueCollection&) = delete;
@@ -140,7 +140,7 @@ namespace RE {
 			VkResult alloc_for_buffer(VkBuffer vk_hBuffer, const VkMemoryPropertyFlags vk_mProperties);
 			VkResult alloc_for_image(VkImage vk_hImage, const VkMemoryPropertyFlags vk_mProperties);
 			void free();
-			bool map(VkMemoryMapFlags vk_eFlags, VkDeviceSize vk_offset, VkDeviceSize vk_size, void **ppData) const;
+			bool map(VkMemoryMapFlags vk_eFlags, VkDeviceSize vk_offset, VkDeviceSize vk_size, void **ppData);
 			void unmap();
 			bool flush_mapped_memory(VkDeviceSize vk_offset, VkDeviceSize vk_size);
 			bool invalidate_mapped_memory(VkDeviceSize vk_offset, VkDeviceSize vk_size);

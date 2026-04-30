@@ -4,7 +4,7 @@ namespace RE {
 	
 	VkBuffer vk_ahCameraBuffers[RE_VK_FRAMES_IN_FLIGHT];
 	VkDeviceSize vk_aCameraBufferMemoryOffsets[RE_VK_FRAMES_IN_FLIGHT];
-	VulkanMemory (*apCameraBufferMemories)[RE_VK_FRAMES_IN_FLIGHT];
+	VulkanMemory *apCameraBufferMemories[RE_VK_FRAMES_IN_FLIGHT];
 
 	bool create_camera_buffers(const VulkanQueueCollection &rQueues) {
 		uint8_t u8FrameInFlightCreateIndex = 0;
@@ -16,7 +16,7 @@ namespace RE {
 					static_cast<uint32_t>(rQueues.u8QueueCount),
 					rQueues.queueFamilyIndices.get(),
 					&vk_ahCameraBuffers[u8FrameInFlightCreateIndex])) {
-				RE_FATAL_ERROR("Failed to create a Vulkan buffer at frame-in-flight index ", u8FrameInFlightIndex, " for data of the camera");
+				RE_FATAL_ERROR("Failed to create a Vulkan buffer at frame-in-flight index ", u8FrameInFlightCreateIndex, " for data of the camera");
 				break;
 			}
 		}

@@ -15,7 +15,7 @@ namespace RE {
 		};
 		const VkResult vk_eResult = vkAllocateMemory(vk_hDevice, &vk_allocInfo, nullptr, vk_phMemory);
 		if (vk_eResult == VK_SUCCESS) {
-			occupiedSpacePerVulkanHeap[vulkanMemoryTypes[u8MemoryType].heapIndex] += vk_size;
+			occupiedSpacePerVulkanHeap[vulkanMemoryTypes[u32MemoryTypeIndex].heapIndex] += vk_size;
 			u32VulkanMemoryAllocCount++;
 		}
 		return vk_eResult;
@@ -179,7 +179,7 @@ namespace RE {
 		vk_size = 0;
 	}
 
-	bool VulkanMemory::map(const VkMemoryMapFlags vk_eFlags, const VkDeviceSize vk_offset, const VkDeviceSize vk_size, void **const ppData) const {
+	bool VulkanMemory::map(const VkMemoryMapFlags vk_eFlags, const VkDeviceSize vk_offset, const VkDeviceSize vk_size, void **const ppData) {
 		PRINT_DEBUG_CLASS("Mapping Vulkan memory to CPU");
 		if (vkMapMemory(vk_hDevice, vk_hMemory, vk_offset, vk_size, vk_eFlags, ppData) == VK_SUCCESS) {
 			bMapped = true;

@@ -182,8 +182,8 @@ namespace RE {
 			offsetPerInfo.emplace_back(0, u32CurrentInfoIndex);
 			infosProcessed[u32CurrentInfoIndex] = true;
 			if (paAllocationResults) {
-				paAllocationResults[u32SubcurrentInfoIndex].indexToMemory = allocatedMemories.size();
-				paAllocationResults[u32SubcurrentInfoIndex].vk_memoryOffset = vk_offset;
+				paAllocationResults[u32CurrentInfoIndex].indexToMemory = allocatedMemories.size();
+				paAllocationResults[u32CurrentInfoIndex].vk_memoryOffset = 0;
 			}
 			for (uint32_t u32SubcurrentInfoIndex = u32CurrentInfoIndex + 1; u32SubcurrentInfoIndex < u32SharedMemoryInfoCount; u32SubcurrentInfoIndex++) {
 				if (infosProcessed[u32SubcurrentInfoIndex] == true || detailsPerInfo[u32SubcurrentInfoIndex].u64SeparationIndex != u64CurrentSeparationIndex)
@@ -242,9 +242,11 @@ namespace RE {
 					const auto &rVulkanStorageObject = paSharedMemoryInfos[rOffsetPerInfo.u32IndexToInfo].vulkanStorageObject;
 					switch (rVulkanStorageObject.index()) {
 						case 0:
+							PRINT_DEBUG("Memory-bind information contains Vulkan buffer ", std::get<VkBuffer>(rVulkanStorageObject), " and byte offset ", rOffsetPerInfo.vk_offset);
 							bindBufferInfos.emplace_back(VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO, nullptr, std::get<VkBuffer>(rVulkanStorageObject), vulkanMemory.get(), rOffsetPerInfo.vk_offset);
 							break;
 						case 1:
+							PRINT_DEBUG("Memory-bind information contains Vulkan image ", std::get<VkImage>(rVulkanStorageObject), " and byte offset ", rOffsetPerInfo.vk_offset);
 							bindImageInfos.emplace_back(VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO, nullptr, std::get<VkImage>(rVulkanStorageObject), vulkanMemory.get(), rOffsetPerInfo.vk_offset);
 							break;
 						[[unlikely]] default:

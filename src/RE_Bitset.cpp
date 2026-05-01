@@ -49,10 +49,19 @@ namespace RE {
 		std::swap(bitSize, rOther.bitSize);
 	}
 
-	void Bitset::resize(const size_t newSize, bool bInitialState) {
-		bitArray = std::make_unique<uint8_t[]>(newSize / 8 + 1);
-		bitSize = newSize;
-		fill(bInitialState);
+	void Bitset::resize(const size_t newBitSize, const bool bInitialState) {
+		std::unique_ptr<uint8_t[]> newBitArray = std::make_unique<uint8_t[]>(newBitSize / 8 + 1);
+		std::copy(bitArray.get(), bitArray.get() + std::min(bitSize, newBitSize) / 8 + 1, newBitArray.get());
+		if (newBitSize > bitSize) {
+			std::fill(newBitArray.get() + bitSize / 8 + 1, newBitArray.get() + newBitSize / 8 + 1, bInitialState ? 0xFF: 0);
+			for (size_t i = bitSize % 8; i < 8; i++)
+				if (bInitialState)
+					newBitArray[bitSize / 8] |= 1 << i;
+				else
+					newBitArray[bitSize / 8] &= ~(1 << i);
+		}
+		bitSize = newBitSize;
+		bitArray = std::move(newBitArray);
 	}
 
 	void Bitset::clear() {

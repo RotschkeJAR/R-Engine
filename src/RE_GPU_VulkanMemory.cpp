@@ -21,13 +21,13 @@ namespace RE {
 		return vk_eResult;
 	}
 	
-	VulkanMemory::VulkanMemory() : vk_hMemory(VK_NULL_HANDLE), vk_size(0) {}
+	VulkanMemory::VulkanMemory() : vk_hMemory(VK_NULL_HANDLE), vk_size(0), bMapped(false) {}
 
-	VulkanMemory::VulkanMemory(const VkDeviceSize vk_size, VkMemoryPropertyFlags vk_mProperties, const uint32_t m32DesiredMemoryTypes) : vk_hMemory(VK_NULL_HANDLE), vk_size(0) {
+	VulkanMemory::VulkanMemory(const VkDeviceSize vk_size, VkMemoryPropertyFlags vk_mProperties, const uint32_t m32DesiredMemoryTypes) : VulkanMemory() {
 		this->alloc(vk_size, vk_mProperties, m32DesiredMemoryTypes);
 	}
 
-	VulkanMemory::VulkanMemory(const VkDeviceSize vk_size, const uint8_t u8MemoryType) : vk_hMemory(VK_NULL_HANDLE), vk_size(0) {
+	VulkanMemory::VulkanMemory(const VkDeviceSize vk_size, const uint8_t u8MemoryType) : VulkanMemory() {
 		this->alloc(vk_size, u8MemoryType);
 	}
 
@@ -38,16 +38,19 @@ namespace RE {
 	}
 
 	VulkanMemory::~VulkanMemory() {
+		if (!valid())
+			return;
+		if (bMapped)
+			this->unmap();
 		this->free();
 	}
 
 	VkResult VulkanMemory::alloc(const VkDeviceSize vk_size, const VkMemoryPropertyFlags vk_mProperties, const uint32_t m32DesiredMemoryTypes) {
 		PRINT_DEBUG_CLASS("Allocating Vulkan memory supporting properties ", std::hex, vk_mProperties, " and from types ", m32DesiredMemoryTypes);
 		const auto memoryTypeIndex = find_vulkan_memory_type(vk_mProperties, m32DesiredMemoryTypes);
-		if (memoryTypeIndex.has_value()) {
-			u8MemoryType = *memoryTypeIndex;
-			return this->alloc(vk_size, u8MemoryType);
-		} else
+		if (memoryTypeIndex.has_value())
+			return this->alloc(vk_size, *memoryTypeIndex);
+		else
 			RE_ERROR("Failed to find Vulkan memory type matching properties ", std::hex, vk_mProperties, " and from bitmask ", m32DesiredMemoryTypes);
 		return (vk_mProperties & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) ? VK_ERROR_OUT_OF_DEVICE_MEMORY : VK_ERROR_OUT_OF_HOST_MEMORY;
 	}
@@ -110,6 +113,7 @@ namespace RE {
 					return VK_SUCCESS;
 				else
 					RE_ERROR("Failed to bind Vulkan memory ", vk_hMemory, " to buffer ", vk_hBuffer, " (Vulkan error code: ", std::hex, vk_eLatestResult, ")");
+				this->free();
 			} else
 				RE_ERROR("Failed to allocate Vulkan memory for buffer ", vk_hBuffer, " (Vulkan error code: ", std::hex, vk_eLatestResult, ")");
 		} else
@@ -160,6 +164,7 @@ namespace RE {
 					return VK_SUCCESS;
 				else
 					RE_ERROR("Failed to bind Vulkan memory ", vk_hMemory, " to image ", vk_hImage, " (Vulkan error code: ", std::hex, vk_eLatestResult, ")");
+				this->free();
 			} else
 				RE_ERROR("Failed to allocate Vulkan memory for image ", vk_hImage, " (Vulkan error code: ", std::hex, vk_eLatestResult, ")");
 		} else
@@ -168,10 +173,6 @@ namespace RE {
 	}
 
 	void VulkanMemory::free() {
-		if (!valid())
-			return;
-		if (bMapped)
-			this->unmap();
 		PRINT_DEBUG_CLASS("Freeing Vulkan memory");
 		vkFreeMemory(vk_hDevice, vk_hMemory, nullptr);
 		occupiedSpacePerVulkanHeap[vulkanMemoryTypes[u8MemoryType].heapIndex] -= vk_size;
@@ -221,7 +222,7 @@ namespace RE {
 	}
 
 	bool VulkanMemory::valid() const {
-		return vk_hMemory != VK_NULL_HANDLE && vk_size > 0;
+		return vk_hMemory != VK_NULL_HANDLE;
 	}
 
 	VkDeviceMemory VulkanMemory::get() const {

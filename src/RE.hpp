@@ -28,12 +28,13 @@
 #include <ctime>
 #include <iomanip>
 #include <optional>
-#include <atomic>
 #include <chrono>
 #include <functional>
+#include <mutex>
 #include <thread>
 #include <concepts>
 #include <numbers>
+#include <bit>
 
 /**
  *   Uncomment this, if you want to disable PRINT_DEBUG and PRINT_DEBUG_CLASS to
@@ -732,7 +733,7 @@ namespace RE {
 
 			void fill(bool bNewState);
 			void swap(Bitset &rOther);
-			void resize(size_t newSize, bool bInitialState = false);
+			void resize(size_t newBitSize, bool bInitialState = false);
 			void clear();
 			size_t size() const;
 			bool empty() const;
@@ -879,7 +880,16 @@ namespace RE {
 				for (size_t i = 0; i < rVector.dimensions(); i++) {
 					if (i)
 						rStream << ", ";
-					rStream << rVector.aCoords[i];
+					if constexpr (std::is_same_v<T, int8_t> || std::is_same_v<T, uint8_t>)
+						rStream << static_cast<int16_t>(rVector.aCoords[i]);
+					else if constexpr (std::is_same_v<T, char8_t>)
+						rStream << reinterpret_cast<char>(rVector.aCoords[i]);
+					else if constexpr (std::is_same_v<T, char8_t*> || std::is_same_v<T, const char8_t*>)
+						rStream << reinterpret_cast<const char*>(rVector.aCoords[i]);
+					else if constexpr (std::is_same_v<T, std::u8string>)
+						rStream << reinterpret_cast<const char*>(rVector.aCoords[i].c_str());
+					else
+						rStream << rVector.aCoords[i];
 				}
 				rStream << ")";
 				return rStream;
@@ -901,10 +911,12 @@ namespace RE {
 	template <size_t numOfThreads = 10> requires IsGreater<size_t, numOfThreads, 0>
 	class Threadpool final {
 		private:
+			std::mutex hMutex;
 			std::array<std::jthread, numOfThreads> threads;
 			std::array<uint64_t, numOfThreads> agePerThread;
 
 			size_t join_oldest_thread_and_occupy() {
+				std::lock_guard<std::mutex> lockGuardMute(hMutex);
 				const size_t oldThreadIndex = *std::min_element(agePerThread.begin(), agePerThread.end());
 				if (threads[oldThreadIndex].joinable())
 					threads[oldThreadIndex].join();
@@ -913,10 +925,16 @@ namespace RE {
 			}
 
 		public:
-			Threadpool() {}
+			Threadpool() {
+				agePerThread.fill(0);
+			}
+			Threadpool(Threadpool &rCopy) = delete;
+			Threadpool(Threadpool &&rrCopy) : threads(std::move(rrCopy.threads)), agePerThread(std::move(rrCopy.agePerThread)) {
+				rrCopy.agePerThread.fill(0);
+			}
 			~Threadpool() {}
 
-			template <class F, class... paramTypes>
+			template <class F, class... paramTypes> requires std::invocable<F, paramTypes...>
 			void execute(F &&rrFunction, paramTypes... params) {
 				const size_t oldThreadIndex = join_oldest_thread_and_occupy();
 				threads[oldThreadIndex] = std::jthread(rrFunction, params...);
@@ -950,10 +968,10 @@ namespace RE {
 			}
 
 			size_t occupied_slots() {
-				return amount_of_threads() - free_slots();
+				return numOfThreads - free_slots();
 			}
 
-			constexpr size_t amount_of_threads() {
+			consteval size_t amount_of_threads() {
 				return numOfThreads;
 			}
 	};
@@ -965,26 +983,28 @@ namespace RE {
 		public:
 			RandomNumberGenerator();
 			explicit RandomNumberGenerator(size_t seed);
+			RandomNumberGenerator(const RandomNumberGenerator &rCopy);
+			RandomNumberGenerator(RandomNumberGenerator &&rrCopy) = delete;
 			~RandomNumberGenerator();
+
 			void seed(size_t newSeed);
-			void seed_randomly();
+			size_t seed_randomly();
 
 			template <class T>
 			[[nodiscard]]
-			T random(const T &rMin, const T &rMax) requires Arithmetics<T> {
-				static_assert(std::is_arithmetic_v<T>, "This function accepts arithmetic datatypes only");
+			T random(const T min, const T max) requires Arithmetics<T> {
 				if constexpr (std::is_integral_v<T>) {
-					std::uniform_int_distribution<T> range(rMin, rMax - 1);
+					std::uniform_int_distribution<T> range(min, max - 1);
 					return range(rng);
 				} else if constexpr (std::is_floating_point_v<T>) {
-					std::uniform_real_distribution<T> range(rMin, rMax);
+					std::uniform_real_distribution<T> range(min, max);
 					return range(rng);
 				}
 			}
 			template <class T>
 			[[nodiscard]]
-			T random(const T &rMax) requires Arithmetics<T> {
-				return random<T>(static_cast<T>(0.0), rMax);
+			T random(const T max) requires Arithmetics<T> {
+				return random<T>(static_cast<T>(0.0), max);
 			}
 			template <class T>
 			[[nodiscard]]
@@ -992,32 +1012,29 @@ namespace RE {
 				return random<T>(std::numeric_limits<T>::min(), std::numeric_limits<T>::max());
 			}
 			[[nodiscard]]
-			bool random_bool();
+			double random_normal();
 			[[nodiscard]]
-			bool random_bool(double f64Chance);
-			[[nodiscard]]
-			double random_percentage();
+			bool random_bool(double f64Chance = 0.5);
+
 
 			template <class T>
 			[[nodiscard]]
-			T operator ()(const T rMin, const T rMax) requires Arithmetics<T> {
-				return random<T>(rMin, rMax);
+			T operator ()(const T min, const T max) requires Arithmetics<T> {
+				return random<T>(min, max);
 			}
 			template <class T>
 			[[nodiscard]]
-			T operator ()(const T &rMax) requires Arithmetics<T> {
-				return random<T>(rMax);
+			T operator ()(const T max) requires Arithmetics<T> {
+				return random<T>(max);
 			}
 			template <class T>
 			[[nodiscard]]
-			T operator ()() requires Arithmetics<T> {
+			T operator ()() requires Arithmetics<T> || std::same_as<T, bool> {
 				if constexpr (std::is_same_v<T, bool>)
 					return random_bool();
 				else
 					return random<T>();
 			}
-			[[nodiscard]]
-			bool operator ()(const double f64Chance);
 	};
 
 

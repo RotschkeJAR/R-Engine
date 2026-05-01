@@ -4,10 +4,10 @@ LIB_SPEC     = $(LIB)/Linux
 BIN          = bin
 LIB_BIN      = $(BIN)/lib
 SH           = shaders
+TEST         = test
 
 CC           = g++
 CFLAG        = -m64 -march=x86-64 -pedantic-errors -Wall -ffast-math
-LDFLAG       = -lRE -I$(SRC) -I/usr/ -L$(BIN) -lX11 -lXrandr -lXinerama -lwayland-client
 
 SC           = glslc
 SFLAG        = --target-env=vulkan1.3 --target-spv=spv1.6 -O
@@ -21,11 +21,25 @@ all:
 	@make --no-print-directory $(SH)/*.spv
 	@make --no-print-directory $(OUT)
 
-$(OUT): $(RE) *.cpp
-	@for file in *.cpp; do \
+$(OUT): $(RE) $(TEST)/*.cpp
+	@errorCaused=false; \
+	for file in $(TEST)/*.cpp; do \
 		echo $${file}; \
-		$(CC) $(CFLAG) -std=c++20 -x c++ -o "$(OUT)" "$${file}" $(LDFLAG); \
-	done
+		$(CC) $(CFLAG) -std=c++20 -x c++ -c "$${file}" -I "$(SRC)" -I "/usr/" || errorCaused=true; \
+	done; \
+	if $$errorCaused; then \
+		echo "GAME - ERROR: Failed compiling"; \
+		rm -f *.o && rm -f $(TEST)/*.gch; \
+		exit 1; \
+	fi
+	-@rm -f $(TEST)/*.gch
+	@if ! $(CC) $(CFLAG) *.o -o "$(OUT)" -L $(BIN) -l RE -l X11 -l Xrandr -l Xinerama -l wayland-client; then \
+		echo "GAME - ERROR: Failed linking"; \
+		rm -f *.o; \
+		exit 1; \
+	fi
+	-@rm -f *.o
+	-@echo "GAME - SUCCESS"
 
 $(RE): $(SRC)/* $(LIB_BIN)/*
 	-@rm -f *.o $(BIN)/*.o
@@ -35,23 +49,26 @@ $(RE): $(SRC)/* $(LIB_BIN)/*
 	@errorCaused=false; \
 	for file in $(SRC)/*.cpp; do \
 		echo $${file}; \
-		if ! $(CC) $(CFLAG) -std=c++20 -x c++ -c "$${file}" -I$(LIB) -I$(LIB_SPEC) -I"$(HOME)/Vulkan SDK/x86_64/include"; then \
+		if ! $(CC) $(CFLAG) -std=c++20 -x c++ -c "$${file}" -I $(LIB) -I $(LIB_SPEC) -I "$(HOME)/Vulkan SDK/x86_64/include"; then \
 			errorCaused=true; \
 		fi; \
 	done; \
-	if ! $$errorCaused; then \
-		mv *.o $(BIN); \
-		if [ "$(wildcard $(SRC)/*.gch)" != "" ]; then \
-			mv $(SRC)/*.gch $(BIN); \
-		fi; \
-		rm -f $(RE); \
-		ar rs "$(RE)" $(BIN)/*.o $(LIB_BIN)/*.o || (rm -f $(RE); exit 1); \
-		echo "ENGINE - SUCCESS"; \
-	else \
-		rm -f *.o; \
-		rm $(SRC)/*.gch; \
+	if $$errorCaused; then \
 		echo "ENGINE - ERROR: Failed compiling"; \
+		rm -f *.o && rm -f $(SRC)/*.gch; \
+		exit 1; \
 	fi
+	@mv *.o $(BIN)
+	@if [ "$(wildcard $(SRC)/*.gch)" != "" ]; then \
+		mv $(SRC)/*.gch $(BIN); \
+	fi
+	-@rm -f $(RE)
+	if ! ar rs "$(RE)" $(BIN)/*.o $(LIB_BIN)/*.o; then \
+		echo "ENGINE - ERROR: Failed creating static library"
+		rm -f $(RE); \
+		exit 1; \
+	fi
+	-@echo "ENGINE - SUCCESS"
 
 $(LIB_BIN)/*: $(LIB)/* $(LIB_SPEC)/*
 	@errorCaused=false; \
@@ -83,14 +100,14 @@ $(LIB_BIN)/*: $(LIB)/* $(LIB_SPEC)/*
 			fi; \
 		done; \
 	fi; \
-	if ! $$errorCaused; then \
-		rm -f *.o $(LIB_BIN)/*.o; \
-		mv *.o $(LIB_BIN); \
-		echo "LIBRARIES - SUCCESS"
-	else \
+	if $$errorCaused; then \
+		echo "LIBRARIES - ERROR: Failed compiling libraries"; \
 		rm -f *.o; \
-		echo "LIBRARIES - ERROR: Failed compiling libraries"
+		exit 1; \
 	fi
+	-@rm -f *.o $(LIB_BIN)/*.o
+	@mv *.o $(LIB_BIN)
+	-@echo "LIBRARIES - SUCCESS"
 
 $(SH)/*.spv: $(SH)/*.glsl
 	@make --no-print-directory compile_shaders
@@ -116,5 +133,6 @@ update_git:
 	@git push -f
 
 fetch_git:
+	-@rm -f $(SRC)/* && rm -f $(SH)/*
 	@git fetch --all
 	@git reset --hard origin/main

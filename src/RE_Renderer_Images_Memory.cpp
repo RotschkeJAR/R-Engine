@@ -24,6 +24,7 @@ namespace RE {
 	}
 
 	void free_memory_for_images_renderer() {
+		PRINT_DEBUG("Freeing all Vulkan memories occupied by render images");
 		imageMemories.reset();
 	}
 

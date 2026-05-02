@@ -18,6 +18,7 @@ OUT          = Game
 .PHONY: all, compile_shaders, update_git, fetch_git
 
 all:
+	@make --no-print-directory $(LIB_BIN)/*
 	@make --no-print-directory $(SH)/*.spv
 	@make --no-print-directory $(OUT)
 
@@ -63,8 +64,8 @@ $(RE): $(SRC)/* $(LIB_BIN)/*
 		mv $(SRC)/*.gch $(BIN); \
 	fi
 	-@rm -f $(RE)
-	if ! ar rs "$(RE)" $(BIN)/*.o $(LIB_BIN)/*.o; then \
-		echo "ENGINE - ERROR: Failed creating static library"
+	@if ! ar rs "$(RE)" $(BIN)/*.o $(LIB_BIN)/*.o; then \
+		echo "ENGINE - ERROR: Failed creating static library"; \
 		rm -f $(RE); \
 		exit 1; \
 	fi

@@ -11,7 +11,7 @@ namespace RE {
 				optionals,
 				warnings;
 		int32_t i32Score = 0;
-		const uint32_t u32LargestMonitorsScale = *std::max_element(std::begin(largestMonitorSize.aCoords), std::end(largestMonitorSize.aCoords));
+		const uint32_t u32LargestMonitorsScale = largestMonitorSize.max();
 		uint32_t u32QueueFamilyCount;
 		VkSampleCountFlags vk_mMsaaSampleCountsAvailable = VK_SAMPLE_COUNT_1_BIT 
 				| VK_SAMPLE_COUNT_2_BIT

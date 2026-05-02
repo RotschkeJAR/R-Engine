@@ -6,6 +6,7 @@ namespace RE {
 	InputAction::InputAction() : u32KeyScancode(0), eInput(RE_INPUT_UNKNOWN) {}
 	InputAction::InputAction(const Input eInput) : u32KeyScancode(0), eInput(eInput) {}
 	InputAction::InputAction(const uint32_t u32KeyScancode) : u32KeyScancode(u32KeyScancode), eInput(RE_INPUT_UNKNOWN) {}
+	InputAction::InputAction(const InputAction &rCopy) : u32KeyScancode(rCopy.u32KeyScancode), eInput(rCopy.eInput) {}
 	InputAction::~InputAction() {
 		PRINT_DEBUG_CLASS("Destructing input action");
 		if (is_updating()) {

@@ -12,11 +12,11 @@ namespace RE {
 				Color::clamp(f32Green),
 				Color::clamp(f32Blue),
 				Color::clamp(f32Alpha)} {}
-	Color::Color(const Color &rCopyColor) : afChannels{
-				rCopyColor.afChannels[0],
-				rCopyColor.afChannels[1],
-				rCopyColor.afChannels[2],
-				rCopyColor.afChannels[3]} {}
+	Color::Color(const Color &rCopy) : afChannels{
+				rCopy.afChannels[0],
+				rCopy.afChannels[1],
+				rCopy.afChannels[2],
+				rCopy.afChannels[3]} {}
 	Color::~Color() {}
 
 	float Color::get_channel(const uint8_t u8ChannelIndex) const {
@@ -33,15 +33,15 @@ namespace RE {
 			RE_FATAL_ERROR("The channel index is not within the range [0; ", u8ColorChannelCount - 1, "]: ", u8ChannelIndex);
 	}
 
-	void Color::copy_from(const Color &rCopyColor) {
+	void Color::copy_from(const Color &rCopy) {
 		for (uint8_t u8Channel = 0; u8Channel < u8ColorChannelCount; u8Channel++)
-			afChannels[u8Channel] = rCopyColor.afChannels[u8Channel];
+			afChannels[u8Channel] = rCopy.afChannels[u8Channel];
 	}
 	
 	[[nodiscard]]
-	bool Color::equals(const Color &rCompareColor) const {
+	bool Color::equals(const Color &rOther) const {
 		for (uint8_t u8Channel = 0; u8Channel < u8ColorChannelCount; u8Channel++)
-			if (afChannels[u8Channel] != rCompareColor.afChannels[u8Channel])
+			if (afChannels[u8Channel] != rOther.afChannels[u8Channel])
 				return false;
 		return true;
 	}
@@ -90,18 +90,18 @@ namespace RE {
 		return 0.0f;
 	}
 
-	void Color::operator =(const Color &rCopyColor) {
-		copy_from(rCopyColor);
+	void Color::operator =(const Color &rCopy) {
+		copy_from(rCopy);
 	}
 	
 	[[nodiscard]]
-	bool Color::operator ==(const Color &rCompareColor) const {
-		return equals(rCompareColor);
+	bool Color::operator ==(const Color &rOther) const {
+		return equals(rOther);
 	}
 	
 	[[nodiscard]]
-	bool Color::operator !=(const Color &rCompareColor) const {
-		return equals(rCompareColor);
+	bool Color::operator !=(const Color &rOther) const {
+		return equals(rOther);
 	}
 
 }

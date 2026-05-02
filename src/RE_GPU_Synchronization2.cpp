@@ -235,33 +235,32 @@ namespace RE {
 			requiredMemoryBlockSize = next_multiple_inclusive<size_t>(requiredMemoryBlockSize, alignof(VkCommandBuffer));
 			requiredMemoryBlockSize += sizeof(VkCommandBuffer) * vk_paSubmits[u32SubmitInfoIndex].commandBufferInfoCount;
 		}
-		UniqueVoidPointer memoryBlock(safe_malloc(requiredMemoryBlockSize));
-		void *pMemoryBlockContent = memoryBlock.get();
+		void *pMemoryBlock = safe_malloc(requiredMemoryBlockSize);
 		size_t remainingMemoryBlockSpace = requiredMemoryBlockSize;
 		VkSubmitInfo *const vk_paNormalSubmits = static_cast<VkSubmitInfo*>(
 				not_null(
-					align_2(alignof(VkSubmitInfo), sizeof(VkSubmitInfo) * u32SubmitCount, pMemoryBlockContent, remainingMemoryBlockSpace)));
+					align_2(alignof(VkSubmitInfo), sizeof(VkSubmitInfo) * u32SubmitCount, pMemoryBlock, remainingMemoryBlockSpace)));
 		VkTimelineSemaphoreSubmitInfo *const vk_paTimelineSemaphoreInfos = static_cast<VkTimelineSemaphoreSubmitInfo*>(
 				not_null(
-					align_2(alignof(VkTimelineSemaphoreSubmitInfo), sizeof(VkTimelineSemaphoreSubmitInfo) * u32SubmitCount, pMemoryBlockContent, remainingMemoryBlockSpace)));
+					align_2(alignof(VkTimelineSemaphoreSubmitInfo), sizeof(VkTimelineSemaphoreSubmitInfo) * u32SubmitCount, pMemoryBlock, remainingMemoryBlockSpace)));
 		for (uint32_t u32SubmitInfoIndex = 0; u32SubmitInfoIndex < u32SubmitCount; u32SubmitInfoIndex++) {
 			const uint32_t u32CommandBufferCount = vk_paSubmits[u32SubmitInfoIndex].commandBufferInfoCount,
 				u32WaitSemaphoreCount = vk_paSubmits[u32SubmitInfoIndex].waitSemaphoreInfoCount,
 				u32SignalSemaphoreCount = vk_paSubmits[u32SubmitInfoIndex].signalSemaphoreInfoCount;
 			VkCommandBuffer *const vk_pahCommandBuffers = static_cast<VkCommandBuffer*>(
 					not_null(
-						align_2(alignof(VkCommandBuffer), sizeof(VkCommandBuffer) * u32CommandBufferCount, pMemoryBlockContent, remainingMemoryBlockSpace)));
+						align_2(alignof(VkCommandBuffer), sizeof(VkCommandBuffer) * u32CommandBufferCount, pMemoryBlock, remainingMemoryBlockSpace)));
 			for (uint32_t u32CommandBufferIndex = 0; u32CommandBufferIndex < u32CommandBufferCount; u32CommandBufferIndex++)
 				vk_pahCommandBuffers[u32CommandBufferIndex] = vk_paSubmits[u32SubmitInfoIndex].pCommandBufferInfos[u32CommandBufferIndex].commandBuffer;
 			VkSemaphore *const vk_pahWaitSemaphores = static_cast<VkSemaphore*>(
 					not_null(
-						align_2(alignof(VkSemaphore), sizeof(VkSemaphore) * u32WaitSemaphoreCount, pMemoryBlockContent, remainingMemoryBlockSpace)));
+						align_2(alignof(VkSemaphore), sizeof(VkSemaphore) * u32WaitSemaphoreCount, pMemoryBlock, remainingMemoryBlockSpace)));
 			uint64_t *const pau64WaitValues = static_cast<uint64_t*>(
 					not_null(
-						align_2(alignof(uint64_t), sizeof(uint64_t) * u32WaitSemaphoreCount, pMemoryBlockContent, remainingMemoryBlockSpace)));
+						align_2(alignof(uint64_t), sizeof(uint64_t) * u32WaitSemaphoreCount, pMemoryBlock, remainingMemoryBlockSpace)));
 			VkPipelineStageFlags *const vk_pamPipelineStages = static_cast<VkPipelineStageFlags*>(
 					not_null(
-						align_2(alignof(VkPipelineStageFlags*), sizeof(VkPipelineStageFlags) * u32WaitSemaphoreCount, pMemoryBlockContent, remainingMemoryBlockSpace)));
+						align_2(alignof(VkPipelineStageFlags*), sizeof(VkPipelineStageFlags) * u32WaitSemaphoreCount, pMemoryBlock, remainingMemoryBlockSpace)));
 			for (uint32_t u32WaitSemaphoreIndex = 0; u32WaitSemaphoreIndex < u32WaitSemaphoreCount; u32WaitSemaphoreIndex++) {
 				vk_pahWaitSemaphores[u32WaitSemaphoreIndex] = vk_paSubmits[u32SubmitInfoIndex].pWaitSemaphoreInfos[u32WaitSemaphoreIndex].semaphore;
 				pau64WaitValues[u32WaitSemaphoreIndex] = vk_paSubmits[u32SubmitInfoIndex].pWaitSemaphoreInfos[u32WaitSemaphoreIndex].value;
@@ -269,10 +268,10 @@ namespace RE {
 			}
 			VkSemaphore *const vk_pahSignalSemaphores = static_cast<VkSemaphore*>(
 					not_null(
-						align_2(alignof(VkSemaphore), sizeof(VkSemaphore) * u32WaitSemaphoreCount, pMemoryBlockContent, remainingMemoryBlockSpace)));
+						align_2(alignof(VkSemaphore), sizeof(VkSemaphore) * u32WaitSemaphoreCount, pMemoryBlock, remainingMemoryBlockSpace)));
 			uint64_t *const pau64SignalValues = static_cast<uint64_t*>(
 					not_null(
-						align_2(alignof(uint64_t), sizeof(uint64_t) * u32WaitSemaphoreCount, pMemoryBlockContent, remainingMemoryBlockSpace)));
+						align_2(alignof(uint64_t), sizeof(uint64_t) * u32WaitSemaphoreCount, pMemoryBlock, remainingMemoryBlockSpace)));
 			for (uint32_t u32SignalSemaphoreIndex = 0; u32SignalSemaphoreIndex < u32SignalSemaphoreCount; u32SignalSemaphoreIndex++) {
 				vk_pahSignalSemaphores[u32SignalSemaphoreIndex] = vk_paSubmits[u32SubmitInfoIndex].pSignalSemaphoreInfos[u32SignalSemaphoreIndex].semaphore;
 				pau64SignalValues[u32SignalSemaphoreIndex] = vk_paSubmits[u32SubmitInfoIndex].pSignalSemaphoreInfos[u32SignalSemaphoreIndex].value;
@@ -293,6 +292,7 @@ namespace RE {
 			vk_paNormalSubmits[u32SubmitInfoIndex].signalSemaphoreCount = u32SignalSemaphoreCount;
 			vk_paNormalSubmits[u32SubmitInfoIndex].pSignalSemaphores = vk_pahSignalSemaphores;
 		}
+		std::free(pMemoryBlock);
 		return vkQueueSubmit(vk_hQueue, u32SubmitCount, vk_paNormalSubmits, vk_hFence);
 	}
 

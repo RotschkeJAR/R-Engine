@@ -3,6 +3,7 @@
 namespace RE {
 	
 	Bitset::BitReference::BitReference(uint8_t *const pm8Bitmask, const uint8_t u8BitIndex) : pm8Bitmask(pm8Bitmask), u8BitIndex(u8BitIndex) {}
+	Bitset::BitReference::BitReference(const BitReference &rCopy) : pm8Bitmask(rCopy.pm8Bitmask), u8BitIndex(rCopy.u8BitIndex) {}
 	Bitset::BitReference::~BitReference() {}
 
 	void Bitset::BitReference::flip() {
@@ -37,6 +38,9 @@ namespace RE {
 	Bitset::Bitset() : bitSize(0) {}
 	Bitset::Bitset(const size_t bitSize, const bool bInitialState) : bitArray(std::make_unique<uint8_t[]>(bitSize / 8 + 1)), bitSize(bitSize) {
 		fill(bInitialState);
+	}
+	Bitset::Bitset(Bitset &rrCopy) : bitArray(std::move(rrCopy.bitArray)), bitSize(rrCopy.bitSize) {
+		rrCopy.bitSize = 0;
 	}
 	Bitset::~Bitset() {}
 
@@ -85,6 +89,17 @@ namespace RE {
 
 	Bitset::BitReference Bitset::operator [](const size_t index) {
 		return Bitset::BitReference(&bitArray[index / 8], index % 8);
+	}
+
+	std::ostream& operator <<(std::ostream &rStream, const Bitset &rBitset) {
+		rStream << '{';
+		for (size_t i = 0; i < rBitset.bitSize; i++) {
+			if (i != 0)
+				rStream << ", ";
+			rStream << ((rBitset.bitArray[i / 8] & (1 << (i % 8))) != 0 ? "true" : "false");
+		}
+		rStream << '}';
+		return rStream;
 	}
 
 }

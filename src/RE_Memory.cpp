@@ -2,10 +2,6 @@
 
 namespace RE {
 
-	void Freeer::operator()(void *const pPointer) const {
-		std::free(pPointer);
-	}
-
 	void* safe_malloc(const size_t size) {
 		void *const pMemory = std::malloc(size);
 		if (!pMemory)
@@ -21,7 +17,7 @@ namespace RE {
 		if (!is_multiple_of<size_t>(alignment, 2))
 			RE_ABORT("The alignment is not a multiple of 2");
 		if (!std::align(alignment, size, rpPointer, rSpace)) {
-			RE_ERROR("");
+			RE_ERROR("Failed to align the pointer, because the remaining space is too small");
 			return nullptr;
 		}
 		return rpPointer;
@@ -29,10 +25,6 @@ namespace RE {
 
 	void* align_2(const size_t alignment, const size_t size, void *&rpPointer, size_t &rSpace) {
 		void *const pPointerToAlignedMemory = std::align(alignment, size, rpPointer, rSpace);
-		if (!pPointerToAlignedMemory) {
-			RE_ERROR("");
-			return nullptr;
-		}
 		rpPointer = static_cast<uint8_t*>(rpPointer) + size;
 		rSpace -= size;
 		return pPointerToAlignedMemory;
@@ -40,10 +32,8 @@ namespace RE {
 
 	void* safe_align_2(const size_t alignment, const size_t size, void *&rpPointer, size_t &rSpace) {
 		void *const pPointerToAlignedMemory = safe_align(alignment, size, rpPointer, rSpace);
-		if (!pPointerToAlignedMemory) {
-			RE_ERROR("");
+		if (!pPointerToAlignedMemory)
 			return nullptr;
-		}
 		rpPointer = static_cast<uint8_t*>(rpPointer) + size;
 		rSpace -= size;
 		return pPointerToAlignedMemory;

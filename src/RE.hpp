@@ -51,40 +51,19 @@ namespace RE {
 //================ Concepts
 
 	template <class... T>
-	concept Pointers = (std::is_pointer_v<T> && ...);
+	concept ArePointers = (std::is_pointer_v<T> && ...);
 
 	template <class... T>
-	concept Arithmetics = (std::is_arithmetic_v<T> && ...);
+	concept AreArithmetics = (std::is_arithmetic_v<T> && ...);
 
 	template <class... T>
-	concept Integrals = (std::is_integral_v<T> && ...);
+	concept AreIntegrals = (std::is_integral_v<T> && ...);
 
 	template <class... T>
-	concept FloatingPointNumbers = (std::is_floating_point_v<T> && ...);
+	concept AreFloatingPointNumbers = (std::is_floating_point_v<T> && ...);
 
 	template <class TargetedType, class... T>
 	concept AreSame = (std::is_same_v<T, TargetedType> && ...);
-
-	template <class Type, Type value1, Type value2>
-	concept AreEqual = value1 == value2;
-
-	template <class Type, Type value1, Type value2>
-	concept AreNotEqual = value1 != value2;
-
-	template <class Type, Type value1, Type value2>
-	concept IsLess = (value1 < value2);
-
-	template <class Type, Type value1, Type value2>
-	concept IsLessOrEqual = value1 <= value2;
-
-	template <class Type, Type value1, Type value2>
-	concept IsGreater = (value1 > value2);
-
-	template <class Type, Type value1, Type value2>
-	concept IsGreaterOrEqual = value1 >= value2;
-
-	template <class Type, Type value, Type minimum, Type maximum>
-	concept IsWithinRange = value >= minimum && value <= maximum;
 
 	template <class... T>
 	concept AreComparable = requires (T... values) {
@@ -371,17 +350,10 @@ namespace RE {
 			(PTR_REF) = nullptr; \
 		} while (false)
 
-	class Freeer final {
-		public:
-			constexpr Freeer() = default;
-			void operator()(void *const pPointer) const;
-	};
-	typedef std::unique_ptr<void, Freeer> UniqueVoidPointer;
-
-	template <class T = void*> requires Pointers<T>
+	template <class T = void*> requires (std::is_pointer_v<T>)
 	T not_null(const T pointer) {
 		if (!pointer)
-			RE::abort("Not null-check not passed");
+			RE::abort("Didn't pass the 'not null'-check");
 		return pointer;
 	}
 
@@ -489,13 +461,7 @@ namespace RE {
 
 //================ Arithmetic/Logic Utilities
 
-	template <class ValueType, class... T> requires AreSame<ValueType, T...>
-	[[nodiscard]]
-	constexpr bool is_either_equal_to(const ValueType value, const T... validValues) {
-		return ((value == validValues) || ...);
-	}
-
-	template <class T> requires Arithmetics<T>
+	template <class T> requires std::is_arithmetic_v<T>
 	[[nodiscard]]
 	constexpr T nth_root(const T n, const T value) {
 		if (n <= 0) {
@@ -505,7 +471,7 @@ namespace RE {
 		return std::pow(value, static_cast<T>(1.0) / n);
 	}
 
-	template <class... T> requires Integrals<T...>
+	template <class... T> requires AreIntegrals<T...>
 	[[nodiscard]]
 	constexpr uint64_t gen_bitmask(const T... bits) {
 		return (... | (1UL << static_cast<uint64_t>(bits)));
@@ -524,7 +490,7 @@ namespace RE {
 		return u64Result;
 	}
 
-	template <class T, class... U> requires Integrals<T, U...>
+	template <class T, class... U> requires AreIntegrals<T, U...>
 	[[nodiscard]]
 	constexpr bool are_bits_true(const T value, const U... bits) {
 		const T bitmask = static_cast<T>(gen_bitmask<U...>(bits...));
@@ -544,7 +510,7 @@ namespace RE {
 		return true;
 	}
 
-	template <class T, class... U> requires Integrals<T, U...>
+	template <class T, class... U> requires AreIntegrals<T, U...>
 	[[nodiscard]]
 	constexpr bool are_bitmasks_true(const T mValue, const U... mBitmasks) {
 		return (((mValue & mBitmasks) == mBitmasks) && ...);
@@ -564,7 +530,7 @@ namespace RE {
 			}
 	}
 
-	template <class T, class... U> requires Integrals<T, U...>
+	template <class T, class... U> requires AreIntegrals<T, U...>
 	constexpr T set_bits(T& rValue, const bool bNewState, const U... bits) {
 		const T bitmask = gen_bitmask<U...>(bits...);
 		if (bNewState)
@@ -592,7 +558,7 @@ namespace RE {
 				std::invoke(iterFunction, bitIndex);
 	}
 	
-	template <class T> requires Arithmetics<T>
+	template <class T> requires std::is_arithmetic_v<T>
 	[[nodiscard]]
 	constexpr T sign(const T value) {
 		if constexpr (std::is_unsigned_v<T>)
@@ -601,7 +567,7 @@ namespace RE {
 			return (value > 0 ? 1 : 0) - (value < 0 ? 1 : 0);
 	}
 
-	template <class T> requires Arithmetics<T>
+	template <class T> requires std::is_arithmetic_v<T>
 	[[nodiscard]]
 	constexpr bool is_multiple_of(const T value, const T multiple) {
 		if (!multiple)
@@ -617,7 +583,7 @@ namespace RE {
 	}
 
 	// If value is a multiple, the returned number is the next after the value
-	template <class T> requires Arithmetics<T>
+	template <class T> requires std::is_arithmetic_v<T>
 	[[nodiscard]]
 	constexpr T next_multiple(const T value, const T multiple) {
 		if (!multiple)
@@ -636,7 +602,7 @@ namespace RE {
 	}
 
 	// If value is a multiple, the returned number is the previous before the value
-	template <class T> requires Arithmetics<T>
+	template <class T> requires std::is_arithmetic_v<T>
 	[[nodiscard]]
 	constexpr T previous_multiple(const T value, const T multiple) {
 		if (!multiple)
@@ -656,13 +622,13 @@ namespace RE {
 			return currentFactor * multiple;
 	}
 
-	template <class T> requires Arithmetics<T>
+	template <class T> requires std::is_arithmetic_v<T>
 	[[nodiscard]]
 	constexpr T next_multiple_inclusive(const T value, const T multiple) {
 		return is_multiple_of<T>(value, multiple) ? value : next_multiple<T>(value, multiple);
 	}
 
-	template <class T> requires Arithmetics<T>
+	template <class T> requires std::is_arithmetic_v<T>
 	[[nodiscard]]
 	constexpr T previous_multiple_inclusive(const T value, const T multiple) {
 		return is_multiple_of<T>(value, multiple) ? value : previous_multiple<T>(value, multiple);
@@ -716,6 +682,8 @@ namespace RE {
 				public:
 					BitReference() = delete;
 					BitReference(uint8_t *pm8Bitmask, uint8_t u8BitIndex);
+					BitReference(const BitReference &rCopy);
+					BitReference(const BitReference &&rrCopy) = delete;
 					~BitReference();
 
 					void flip();
@@ -729,6 +697,8 @@ namespace RE {
 
 			Bitset();
 			Bitset(size_t bitSize, bool bInitialState = false);
+			Bitset(const Bitset &rCopy) = delete;
+			Bitset(Bitset &rrCopy);
 			~Bitset();
 
 			void fill(bool bNewState);
@@ -740,31 +710,32 @@ namespace RE {
 			BitReference at(size_t index);
 
 			BitReference operator [](size_t index);
+
+			friend std::ostream& operator <<(std::ostream &rStream, const Bitset &Bitset);
 	};
 
-	template <class T, size_t dimensionCount> requires Arithmetics<T> && IsGreater<size_t, dimensionCount, 0>
+	template <class T, size_t dimensionCount> requires std::is_arithmetic_v<T> && (dimensionCount > 0)
 	class Vector final {
-		public:
-			using type = T;
-			
+		private:
 			T aCoords[dimensionCount];
 
-			Vector() {
-				fill(static_cast<T>(0));
+		public:
+			using type = T;
+
+			explicit Vector(const T initialValue = 0) {
+				fill(initialValue);
 			}
 			
-			template <class P, size_t copyDimensions>
-			explicit Vector(const Vector<P, copyDimensions> &rCopyVector) requires Arithmetics<P> && IsLessOrEqual<size_t, copyDimensions, dimensionCount> {
-				copy_from(rCopyVector);
+			Vector(const Vector<T, dimensionCount> &rCopy) {
+				copy_from(rCopy);
 			}
 			
-			template <class P, size_t copyDimensions>
-			explicit Vector(const Vector<T, dimensionCount> &&rrCopyVector) requires Arithmetics<P> && IsLessOrEqual<size_t, copyDimensions, dimensionCount> {
-				copy_from(rrCopyVector);
+			Vector(const Vector<T, dimensionCount> &&rrCopy) {
+				copy_from(rrCopy);
 			}
 
-			template <class... V>
-			Vector(const V... values) requires Arithmetics<V...> && IsLessOrEqual<size_t, sizeof...(V), dimensionCount> {
+			template <class... U>
+			explicit Vector(const U... values) requires AreArithmetics<U...> && (sizeof...(U) <= dimensionCount) {
 				PRINT_DEBUG_CLASS("Filling vector with values");
 				size_t dimensionIndex = 0;
 				([&]() {
@@ -773,6 +744,7 @@ namespace RE {
 				} (), ...);
 				std::fill(std::begin(aCoords) + dimensionIndex, std::end(aCoords), static_cast<T>(0));
 			}
+
 			~Vector() {}
 
 			[[nodiscard]]
@@ -796,6 +768,37 @@ namespace RE {
 				return nth_root<T>(static_cast<T>(dimensionCount), sum());
 			}
 
+			[[nodiscard]]
+			Vector<T, dimensionCount> add(const Vector<T, dimensionCount> &rOther) const {
+				Vector<T, dimensionCount> result;
+				for (size_t i = 0; i < dimensionCount; i++)
+					result.aCoords[i] = aCoords[i] + rOther.aCoords[i];
+				return result;
+			}
+
+			[[nodiscard]]
+			Vector<T, dimensionCount> subtract(const Vector<T, dimensionCount> &rOther) const {
+				Vector<T, dimensionCount> result;
+				for (size_t i = 0; i < dimensionCount; i++)
+					result.aCoords[i] = aCoords[i] - rOther.aCoords[i];
+				return result;
+			}
+
+			[[nodiscard]]
+			T dot_product(const Vector<T, dimensionCount> &rOther) const {
+				T result = 0;
+				for (size_t i = 0; i < dimensionCount; i++)
+					result += aCoords[i] * rOther.aCoords[i];
+				return result;
+			}
+
+			[[nodiscard]]
+			Vector<T, dimensionCount> cross_product(const Vector<T, dimensionCount> &rOther) const requires (dimensionCount == 3) {
+				return Vector<T, dimensionCount>(aCoords[1] * rOther.aCoords[2] - aCoords[2] * rOther.aCoords[1],
+												aCoords[2] * rOther.aCoords[0] - aCoords[0] * rOther.aCoords[2],
+												aCoords[0] * rOther.aCoords[1] - aCoords[1] * rOther.aCoords[0]);
+			}
+
 			typedef bool (*compareFunc_t)(T valueToCompare);
 
 			[[nodiscard]]
@@ -813,18 +816,29 @@ namespace RE {
 				return std::none_of(std::begin(aCoords), std::end(aCoords), compareFunction);
 			}
 
+			[[nodiscard]]
+			T max() const {
+				return *std::max_element(std::begin(aCoords), std::end(aCoords));
+			}
+
+			[[nodiscard]]
+			T min() const {
+				return *std::min_element(std::begin(aCoords), std::end(aCoords));
+			}
+
+			[[nodiscard]]
+			T average() const {
+				return sum() / static_cast<T>(dimensionCount);
+			}
+
 			void fill(const T value) {
 				PRINT_DEBUG_CLASS("Filling vector with value ", value);
 				std::fill(std::begin(aCoords), std::end(aCoords), value);
 			}
 
-			void copy_from(const Vector &rCopyVector) {
-				PRINT_DEBUG_CLASS("Copying coordinates from vector ", &rCopyVector);
-				if (rCopyVector.dimensions() <= dimensionCount) {
-					std::copy(std::begin(rCopyVector.aCoords), std::end(rCopyVector.aCoords), std::begin(aCoords));
-					std::fill(std::begin(aCoords) + rCopyVector.dimensions(), std::end(aCoords), static_cast<T>(0));
-				} else
-					std::copy(std::begin(rCopyVector.aCoords), std::end(rCopyVector.aCoords) - (rCopyVector.dimensions() - dimensionCount), std::begin(aCoords));
+			void copy_from(const Vector<T, dimensionCount> &rCopy) {
+				PRINT_DEBUG_CLASS("Copying coordinates from vector ", &rCopy);
+				std::copy(std::begin(rCopy.aCoords), std::end(rCopy.aCoords), std::begin(aCoords));
 			}
 
 			void copy_from_array(const T *const paArray, const size_t arrayLength) {
@@ -834,64 +848,77 @@ namespace RE {
 			}
 
 			[[nodiscard]]
-			bool equals(const Vector &rCompareVector) const {
-				if (dimensionCount != rCompareVector.dimensions())
-					return false;
+			bool equals(const Vector<T, dimensionCount> &rOther) const {
 				for (size_t dimensionIndex = 0; dimensionIndex < dimensionCount; dimensionIndex++)
-					if (aCoords[dimensionIndex] != rCompareVector[dimensionIndex])
+					if (aCoords[dimensionIndex] != rOther[dimensionIndex])
 						return false;
 				return true;
 			}
 
 			[[nodiscard]]
-			constexpr size_t dimensions() const {
+			T& at(const size_t dimensionIndex) {
+				if (dimensionIndex >= dimensionCount)
+					FATAL_ERROR("Index ", dimensionIndex, " is out of bounds: [0, ", dimensionCount, ")");
+				return aCoords[dimensionIndex];
+			}
+
+			[[nodiscard]]
+			T at(const size_t dimensionIndex) const {
+				if (dimensionIndex >= dimensionCount)
+					FATAL_ERROR("Index ", dimensionIndex, " is out of bounds: [0, ", dimensionCount, ")");
+				return aCoords[dimensionIndex];
+			}
+
+			[[nodiscard]]
+			consteval size_t dimensions() const {
 				return dimensionCount;
 			}
 
+			[[nodiscard]]
+			Vector<T, dimensionCount> operator +(const Vector<T, dimensionCount> &rOther) const {
+				return add(rOther);
+			}
+
+			[[nodiscard]]
+			Vector<T, dimensionCount> operator -(const Vector<T, dimensionCount> &rOther) const {
+				return subtract(rOther);
+			}
+
+			[[nodiscard]]
 			T& operator [](const size_t dimensionIndex) {
-				if (dimensionIndex >= dimensionCount)
-					FATAL_ERROR("Index ", dimensionIndex, " is out of bounds: [0, ", dimensionCount, ")");
 				return aCoords[dimensionIndex];
 			}
 
 			[[nodiscard]]
 			T operator [](const size_t dimensionIndex) const {
-				if (dimensionIndex >= dimensionCount)
-					FATAL_ERROR("Index ", dimensionIndex, " is out of bounds: [0, ", dimensionCount, ")");
 				return aCoords[dimensionIndex];
 			}
 
-			void operator =(const Vector &rCopyVector) {
-				copy_from(rCopyVector);
+			void operator =(const Vector<T, dimensionCount> &rCopy) {
+				copy_from(rCopy);
 			}
 
 			[[nodiscard]]
-			bool operator ==(const Vector &rCompareVector) const {
-				return equals(rCompareVector);
+			bool operator ==(const Vector<T, dimensionCount> &rOther) const {
+				return equals(rOther);
 			}
 
 			[[nodiscard]]
-			bool operator !=(const Vector &rCompareVector) const {
-				return !equals(rCompareVector);
+			bool operator !=(const Vector<T, dimensionCount> &rOther) const {
+				return !equals(rOther);
 			}
 
-			friend std::ostream& operator <<(std::ostream &rStream, const Vector &rVector) {
-				rStream << "(";
-				for (size_t i = 0; i < rVector.dimensions(); i++) {
+			friend std::ostream& operator <<(std::ostream &rStream, const Vector<T, dimensionCount> &rVector) {
+				rStream << '(';
+				for (size_t i = 0; i < dimensionCount; i++) {
 					if (i)
 						rStream << ", ";
 					if constexpr (std::is_same_v<T, int8_t> || std::is_same_v<T, uint8_t>)
 						rStream << static_cast<int16_t>(rVector.aCoords[i]);
-					else if constexpr (std::is_same_v<T, char8_t>)
-						rStream << reinterpret_cast<char>(rVector.aCoords[i]);
-					else if constexpr (std::is_same_v<T, char8_t*> || std::is_same_v<T, const char8_t*>)
-						rStream << reinterpret_cast<const char*>(rVector.aCoords[i]);
-					else if constexpr (std::is_same_v<T, std::u8string>)
-						rStream << reinterpret_cast<const char*>(rVector.aCoords[i].c_str());
 					else
 						rStream << rVector.aCoords[i];
 				}
-				rStream << ")";
+				rStream << ')';
 				return rStream;
 			}
 	};
@@ -908,7 +935,7 @@ namespace RE {
 	typedef Vector<uint32_t, 3> Vector3u;
 	typedef Vector<uint32_t, 4> Vector4u;
 
-	template <size_t numOfThreads = 10> requires IsGreater<size_t, numOfThreads, 0>
+	template <size_t numOfThreads = 10> requires (numOfThreads > 0)
 	class Threadpool final {
 		private:
 			std::mutex hMutex;
@@ -992,23 +1019,26 @@ namespace RE {
 
 			template <class T>
 			[[nodiscard]]
-			T random(const T min, const T max) requires Arithmetics<T> {
+			T random(const T min, const T max) requires std::is_arithmetic_v<T> {
 				if constexpr (std::is_integral_v<T>) {
 					std::uniform_int_distribution<T> range(min, max - 1);
 					return range(rng);
 				} else if constexpr (std::is_floating_point_v<T>) {
 					std::uniform_real_distribution<T> range(min, max);
 					return range(rng);
+				} else {
+					T uninitialized;
+					return uninitialized;
 				}
 			}
 			template <class T>
 			[[nodiscard]]
-			T random(const T max) requires Arithmetics<T> {
+			T random(const T max) requires std::is_arithmetic_v<T> {
 				return random<T>(static_cast<T>(0.0), max);
 			}
 			template <class T>
 			[[nodiscard]]
-			T random() requires Arithmetics<T> {
+			T random() requires std::is_arithmetic_v<T> {
 				return random<T>(std::numeric_limits<T>::min(), std::numeric_limits<T>::max());
 			}
 			[[nodiscard]]
@@ -1016,20 +1046,19 @@ namespace RE {
 			[[nodiscard]]
 			bool random_bool(double f64Chance = 0.5);
 
-
 			template <class T>
 			[[nodiscard]]
-			T operator ()(const T min, const T max) requires Arithmetics<T> {
+			T operator ()(const T min, const T max) requires std::is_arithmetic_v<T> {
 				return random<T>(min, max);
 			}
 			template <class T>
 			[[nodiscard]]
-			T operator ()(const T max) requires Arithmetics<T> {
+			T operator ()(const T max) requires std::is_arithmetic_v<T> {
 				return random<T>(max);
 			}
 			template <class T>
 			[[nodiscard]]
-			T operator ()() requires Arithmetics<T> || std::same_as<T, bool> {
+			T operator ()() requires std::is_arithmetic_v<T> || std::same_as<T, bool> {
 				if constexpr (std::is_same_v<T, bool>)
 					return random_bool();
 				else
@@ -1058,25 +1087,26 @@ namespace RE {
 		public:
 			Color();
 			Color(float f32Red, float f32Green, float f32Blue, float f32Alpha);
-			Color(const Color &rCopyColor);
+			Color(const Color &rCopy);
+			Color(const Color &&rrCopy) = delete;
 			~Color();
 			
 			[[nodiscard]]
 			float get_channel(uint8_t u8ChannelIndex) const;
-			template <uint32_t u32ChannelIndex> requires IsLess<uint32_t, u32ChannelIndex, u8ColorChannelCount>
+			template <uint8_t u8ChannelIndex> requires (u8ChannelIndex < u8ColorChannelCount)
 			[[nodiscard]]
 			float get_channel() const {
-				return afChannels[u32ChannelIndex];
+				return afChannels[u8ChannelIndex];
 			}
 			void set_channel(uint8_t u8ChannelIndex, float f32Normal);
-			template <uint32_t u32ChannelIndex> requires IsLess<uint32_t, u32ChannelIndex, u8ColorChannelCount>
+			template <uint8_t u8ChannelIndex> requires (u8ChannelIndex < u8ColorChannelCount)
 			void set_channel(const float f32Normal) {
-				afChannels[u32ChannelIndex] = clamp(f32Normal);
+				afChannels[u8ChannelIndex] = this->clamp(f32Normal);
 			}
 
-			void copy_from(const Color &rCopyColor);
+			void copy_from(const Color &rCopy);
 			[[nodiscard]]
-			bool equals(const Color &rCompareColor) const;
+			bool equals(const Color &rOther) const;
 
 			void set_red(float f32Red);
 			[[nodiscard]]
@@ -1093,11 +1123,11 @@ namespace RE {
 
 			[[nodiscard]]
 			float operator [](uint32_t u32ChannelIndex) const;
-			void operator =(const Color &rCopyColor);
+			void operator =(const Color &rCopy);
 			[[nodiscard]]
-			bool operator ==(const Color &rCompareColor) const;
+			bool operator ==(const Color &rOther) const;
 			[[nodiscard]]
-			bool operator !=(const Color &rCompareColor) const;
+			bool operator !=(const Color &rOther) const;
 	};
 
 	typedef class Texture_T final {} *Texture;
@@ -1122,6 +1152,8 @@ namespace RE {
 
 			Scene() = delete;
 			explicit Scene(uint32_t u32Id);
+			Scene(const Scene &rCopy) = delete;
+			Scene(const Scene &&rrCopy) = delete;
 			virtual ~Scene();
 
 			bool is_current_scene() const;
@@ -1138,20 +1170,21 @@ namespace RE {
 			Vector3f position, scale;
 
 			Transform();
-			explicit Transform(const Vector3f &rPositionCopy);
-			Transform(const Vector3f &rPositionCopy, const Vector3f &rScaleCopy);
-			Transform(const Transform &rCopyTransform);
+			explicit Transform(const Vector3f &rPosition);
+			Transform(const Vector3f &rPosition, const Vector3f &rScale);
+			Transform(const Transform &rCopy);
+			Transform(const Transform &&rrCopy) = delete;
 			~Transform();
 			void reset_position();
-			void copy_from(const Transform &rCopyTransform);
+			void copy_from(const Transform &rCopy);
 			[[nodiscard]]
-			bool equals(const Transform &rCompareTransform) const;
+			bool equals(const Transform &rOther) const;
 
-			void operator =(const Transform &rCopyTransform);
+			void operator =(const Transform &rCopy);
 			[[nodiscard]]
-			bool operator ==(const Transform &rCompareTransform) const;
+			bool operator ==(const Transform &rOther) const;
 			[[nodiscard]]
-			bool operator !=(const Transform &rCompareTransform) const;
+			bool operator !=(const Transform &rOther) const;
 	};
 
 	class Camera {
@@ -1159,27 +1192,30 @@ namespace RE {
 			Transform transform;
 
 			Vector2f view;
-			float fViewDistance;
+			float f32ViewDistance;
 			bool bIgnoreAspectRatio;
 
 			Camera();
 			explicit Camera(const Transform &rTransform);
 			explicit Camera(const Vector2f &rView);
-			Camera(const Vector2f &rView, float fViewDistance);
-			Camera(const Vector2f &rView, float fViewDistance, bool bIgnoreAspectRatio);
+			Camera(const Vector2f &rView, float f32ViewDistance);
+			Camera(const Vector2f &rView, float f32ViewDistance, bool bIgnoreAspectRatio);
+			Camera(const Camera &rCopy);
+			Camera(const Camera &&rrCopy) = delete;
 			virtual ~Camera();
 			virtual void update_before_render();
 			void activate();
 			void deactivate() const;
 			void mark_deletable();
+			void copy_from(const Camera &rOther);
 			[[nodiscard]]
-			bool equals(const Camera &rCompareCamera) const;
+			bool equals(const Camera &rOther) const;
 
-			void operator =(const Camera &rCopyCamera);
+			void operator =(const Camera &rCopy);
 			[[nodiscard]]
-			bool operator ==(const Camera &rCompareCamera) const;
+			bool operator ==(const Camera &rOther) const;
 			[[nodiscard]]
-			bool operator !=(const Camera &rCompareCamera) const;
+			bool operator !=(const Camera &rOther) const;
 	};
 
 	class GameObject {
@@ -1209,6 +1245,8 @@ namespace RE {
 			InputAction();
 			explicit InputAction(Input eInput);
 			explicit InputAction(uint32_t u32KeyScancode);
+			InputAction(const InputAction &rCopy);
+			InputAction(const InputAction &&rrCopy) = delete;
 			~InputAction();
 			[[nodiscard]]
 			bool is_scroll_wheel() const;
@@ -1263,6 +1301,7 @@ namespace RE {
 			ScreenPercentageSettings(ScreenPercentageMode eMode, const std::variant<float, Vector2u> &rSettings);
 			ScreenPercentageSettings(ScreenPercentageMode eMode, const std::variant<float, Vector2u> &rSettings, TextureFilter eScalingFilter);
 			ScreenPercentageSettings(const ScreenPercentageSettings &rCopy);
+			ScreenPercentageSettings(const ScreenPercentageSettings &&rrCopy) = delete;
 			~ScreenPercentageSettings();
 			void copy_from(const ScreenPercentageSettings &rCopy);
 			[[nodiscard]]
@@ -1294,6 +1333,7 @@ namespace RE {
 			explicit SpriteLayoutSettings(BorderColor eBorderColor);
 			SpriteLayoutSettings(TextureFilter eMagFilter, TextureFilter eMinFilter, TextureFilter eMipmapFilter, TextureRepetition eTextureRepetitionU, TextureRepetition eTextureRepetitionV, float f32MaxAnisotropy, BorderColor eBorderColor);
 			SpriteLayoutSettings(const SpriteLayoutSettings &rCopy);
+			SpriteLayoutSettings(const SpriteLayoutSettings &&rrCopy) = delete;
 			~SpriteLayoutSettings();
 			void copy_from(const SpriteLayoutSettings &rCopy);
 			[[nodiscard]]

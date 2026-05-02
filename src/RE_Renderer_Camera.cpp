@@ -45,7 +45,7 @@ namespace RE {
 			apCameraShaderData[u8CurrentFrameInFlightIndex]->viewMatrix[14] = -pActiveCamera->transform.position[2];
 			apCameraShaderData[u8CurrentFrameInFlightIndex]->projectionMatrix[0] = 1.0f / pActiveCamera->view[0];
 			apCameraShaderData[u8CurrentFrameInFlightIndex]->projectionMatrix[5] = -1.0f / pActiveCamera->view[1];
-			apCameraShaderData[u8CurrentFrameInFlightIndex]->projectionMatrix[10] = 1.0f / pActiveCamera->fViewDistance;
+			apCameraShaderData[u8CurrentFrameInFlightIndex]->projectionMatrix[10] = 1.0f / pActiveCamera->f32ViewDistance;
 			if (!apCameraBufferMemories[u8CurrentFrameInFlightIndex]->flush_mapped_memory(vk_aCameraBufferMemoryOffsets[u8CurrentFrameInFlightIndex], sizeof(CameraShaderData))) {
 				RE_FATAL_ERROR("Failed flushing non-coherent Vulkan memory used for camera uniforms");
 				return;

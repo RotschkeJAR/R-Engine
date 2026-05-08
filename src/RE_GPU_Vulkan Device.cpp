@@ -41,7 +41,7 @@ namespace RE {
 	PFN_vkCreateBuffer vkCreateBuffer = nullptr;
 	PFN_vkDestroyBuffer vkDestroyBuffer = nullptr;
 	PFN_vkCreateBufferView vkCreateBufferView = nullptr;
-	PFN_vkDestroyBufferView vkDestroyBufferView = nullptr;	
+	PFN_vkDestroyBufferView vkDestroyBufferView = nullptr;
 	PFN_vkCreateImage vkCreateImage = nullptr;
 	PFN_vkDestroyImage vkDestroyImage = nullptr;
 	PFN_vkGetImageSubresourceLayout vkGetImageSubresourceLayout = nullptr;
@@ -1139,13 +1139,16 @@ namespace RE {
 			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES,
 			.pNext = nullptr,
 			.synchronization2 = are_vulkan_features_enabled<ENABLED_FEATURE_SYNCHRONIZATION_2_BIT>(),
-			.dynamicRendering = are_vulkan_features_enabled<ENABLED_FEATURE_DYNAMIC_RENDERING_BIT>()
+			.dynamicRendering = VK_TRUE
 		};
 		VkPhysicalDeviceVulkan12Features vk_enabledFeatures_1_2 = {
 			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
 			.pNext = &vk_enabledFeatures_1_3,
-			.descriptorBindingUpdateUnusedWhilePending = VK_TRUE,
+			.shaderSampledImageArrayNonUniformIndexing = VK_TRUE,
+			.descriptorBindingSampledImageUpdateAfterBind = are_vulkan_features_enabled<ENABLED_FEATURE_UPDATE_DESCRIPTOR_SAMPLED_IMAGE_AFTER_BIND_BIT>(),
+			.descriptorBindingUpdateUnusedWhilePending = are_vulkan_features_enabled<ENABLED_FEATURE_UPDATE_UNUSED_DESCRIPTORS_WHILE_PENDING_BIT>(),
 			.descriptorBindingPartiallyBound = VK_TRUE,
+			.runtimeDescriptorArray = VK_TRUE,
 			.timelineSemaphore = VK_TRUE
 		};
 		const VkPhysicalDeviceVulkan11Features vk_enabledFeatures_1_1 = {
@@ -1175,18 +1178,18 @@ namespace RE {
 		}
 
 		PRINT_DEBUG("Loading logical Vulkan device-level functions with device ", vk_hDevice);
-		if (!load_vulkan_1_0_device() 
-				|| !load_vulkan_1_1_device() 
-				|| !load_vulkan_1_2_device() 
-				|| !load_vulkan_1_3_device() 
-				/* || !load_vulkan_1_4_device() */ 
+		if (!load_vulkan_1_0_device()
+				|| !load_vulkan_1_1_device()
+				|| !load_vulkan_1_2_device()
+				|| !load_vulkan_1_3_device()
+				/* || !load_vulkan_1_4_device() */
 				|| !load_extension_funcs_with_device()) {
 			destroy_logical_vulkan_device();
 			return false;
 		}
 		return true;
 	}
-	
+
 	void destroy_logical_vulkan_device() {
 		PRINT_DEBUG("Destroying logical Vulkan device ", vk_hDevice);
 		vkDestroyDevice(vk_hDevice, nullptr);

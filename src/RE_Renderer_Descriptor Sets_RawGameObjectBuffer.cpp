@@ -5,8 +5,9 @@ namespace RE {
 	VkDescriptorSet vk_ahRawGameObjectBufferDescSets[RE_VK_FRAMES_IN_FLIGHT];
 
 	bool create_raw_game_object_buffer_descriptor_sets() {
+		PRINT_DEBUG("Allocating Vulkan descriptor sets for the raw game object buffers");
 		VkDescriptorSetLayout vk_ahSetLayouts[RE_VK_FRAMES_IN_FLIGHT];
-		std::fill(std::begin(vk_ahSetLayouts), std::end(vk_ahSetLayouts), vk_hRawGameObjectBufferDescSetLayout);
+		std::fill(std::begin(vk_ahSetLayouts), std::end(vk_ahSetLayouts), vk_hRawGameObjectsDescSetLayout);
 		const VkDescriptorSetAllocateInfo vk_descSetAllocInfo = {
 			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
 			.descriptorPool = vk_hPersistentDescPool,
@@ -14,6 +15,7 @@ namespace RE {
 			.pSetLayouts = vk_ahSetLayouts
 		};
 		if (vkAllocateDescriptorSets(vk_hDevice, &vk_descSetAllocInfo, vk_ahRawGameObjectBufferDescSets) == VK_SUCCESS) {
+			PRINT_DEBUG("Writing to allocated Vulkan descriptor sets for the raw game object buffers");
 			VkDescriptorBufferInfo vk_aBufferInfos[RE_VK_FRAMES_IN_FLIGHT];
 			VkWriteDescriptorSet vk_aWriteSets[RE_VK_FRAMES_IN_FLIGHT];
 			for (uint8_t u8FrameInFlightIndex = 0; u8FrameInFlightIndex < RE_VK_FRAMES_IN_FLIGHT; u8FrameInFlightIndex++) {
@@ -33,7 +35,8 @@ namespace RE {
 			}
 			vkUpdateDescriptorSets(vk_hDevice, RE_VK_FRAMES_IN_FLIGHT, vk_aWriteSets, 0, nullptr);
 			return true;
-		}
+		} else
+			RE_FATAL_ERROR("Failed allocating Vulkan descriptor sets for the raw game object buffers");
 		return false;
 	}
 

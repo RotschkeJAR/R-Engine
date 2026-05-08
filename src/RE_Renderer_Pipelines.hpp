@@ -5,8 +5,6 @@
 
 namespace RE {
 
-	extern VkPipelineLayout vk_hGraphicsPipelineLayout, 
-		vk_hComputePipelineLayoutProcessing;
 	extern VkPipeline vk_hGraphicsPipeline2D, 
 		vk_hGraphicsPipeline2DOpaqueOnly, 
 		vk_hGraphicsPipeline3D, 
@@ -14,19 +12,10 @@ namespace RE {
 		vk_hComputePipelinePreprocessing, 
 		vk_hComputePipelineDepthSorting;
 
-	enum RendererPipeline {
-		PIPELINE_GRAPHICS_2D,
-		PIPELINE_GRAPHICS_2D_OPAQUE_ONLY,
-		PIPELINE_GRAPHICS_3D,
-		PIPELINE_GRAPHICS_3D_OPAQUE_ONLY
-	};
+	bool create_renderer_pipelines();
+	void destroy_renderer_pipelines();
 
-	bool create_graphics_pipelines();
-	void destroy_graphics_pipelines();
 	bool recreate_graphics_pipelines();
-
-	bool create_compute_pipelines();
-	void destroy_compute_pipelines();
 
 }
 

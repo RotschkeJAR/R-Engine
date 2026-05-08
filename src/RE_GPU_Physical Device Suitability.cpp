@@ -4,7 +4,7 @@
 #include "RE_Window.hpp"
 
 namespace RE {
-	
+
 	bool is_physical_vulkan_device_suitable(const VkPhysicalDevice vk_hPhysicalDevice, int32_t *const pi32Score) {
 		PRINT_DEBUG("Checking capabilities of physical Vulkan device ", vk_hPhysicalDevice, " for being suitable");
 		std::queue<std::string> incompatibilities,
@@ -13,7 +13,7 @@ namespace RE {
 		int32_t i32Score = 0;
 		const uint32_t u32LargestMonitorsScale = largestMonitorSize.max();
 		uint32_t u32QueueFamilyCount;
-		VkSampleCountFlags vk_mMsaaSampleCountsAvailable = VK_SAMPLE_COUNT_1_BIT 
+		VkSampleCountFlags vk_mMsaaSampleCountsAvailable = VK_SAMPLE_COUNT_1_BIT
 				| VK_SAMPLE_COUNT_2_BIT
 				| VK_SAMPLE_COUNT_4_BIT
 				| VK_SAMPLE_COUNT_8_BIT
@@ -49,13 +49,13 @@ namespace RE {
 			const uint32_t u32MajorVulkan = VK_API_VERSION_MAJOR(vk_physicalDeviceProperties.apiVersion),
 				u32MinorVulkan = VK_API_VERSION_MINOR(vk_physicalDeviceProperties.apiVersion),
 				u32PatchVulkan = VK_API_VERSION_PATCH(vk_physicalDeviceProperties.apiVersion);
-			if (u32MajorVulkan != VK_API_VERSION_MAJOR(RE_VK_API_VERSION) 
-					|| u32MinorVulkan < VK_API_VERSION_MINOR(RE_VK_API_VERSION) 
+			if (u32MajorVulkan != VK_API_VERSION_MAJOR(RE_VK_API_VERSION)
+					|| u32MinorVulkan < VK_API_VERSION_MINOR(RE_VK_API_VERSION)
 					|| (u32MinorVulkan == VK_API_VERSION_MINOR(RE_VK_API_VERSION) && u32PatchVulkan < VK_API_VERSION_PATCH(RE_VK_API_VERSION))) {
 				println_colored(
-						append_to_string("The physical device ", vk_physicalDeviceProperties.deviceName, " has Vulkan ", u32MajorVulkan, ".", u32MinorVulkan, ".", u32PatchVulkan, " installed, but the engine uses ", VK_API_VERSION_MAJOR(RE_VK_API_VERSION), ".", VK_API_VERSION_MINOR(RE_VK_API_VERSION), ".", VK_API_VERSION_PATCH(RE_VK_API_VERSION), ". Different major versions of Vulkan aren't compatible with each other, minor versions are backwards compatible with previous.").c_str(), 
-						RE_TERMINAL_COLOR_RED, 
-						false, 
+						append_to_string("The physical device ", vk_physicalDeviceProperties.deviceName, " has Vulkan ", u32MajorVulkan, ".", u32MinorVulkan, ".", u32PatchVulkan, " installed, but the engine uses ", VK_API_VERSION_MAJOR(RE_VK_API_VERSION), ".", VK_API_VERSION_MINOR(RE_VK_API_VERSION), ".", VK_API_VERSION_PATCH(RE_VK_API_VERSION), ". Different major versions of Vulkan aren't compatible with each other, minor versions are backwards compatible with previous.").c_str(),
+						RE_TERMINAL_COLOR_RED,
+						false,
 						false);
 				if (pi32Score)
 					*pi32Score = std::numeric_limits<int32_t>::min();
@@ -66,8 +66,9 @@ namespace RE {
 			i32Score += static_cast<int32_t>(vk_physicalDeviceProperties_1_3.maxBufferSize / 500000000);
 			if (vk_physicalDeviceProperties_1_2.maxTimelineSemaphoreValueDifference < 64)
 				incompatibilities.emplace("The maximum difference for timeline semaphore values should be at least 64 or more");
-			if (vk_physicalDeviceProperties_1_1.maxPerSetDescriptors < RE_VK_MAX_SAMPLED_IMAGES)
+			if (vk_physicalDeviceProperties_1_1.maxPerSetDescriptors < std::max(3,  + get_max_texture_count()))
 				warnings.emplace("The maximum amount of descriptors within a set is lower than the required minimum. Support has to be queried later");
+			i32Score += vk_physicalDeviceProperties_1_1.maxPerSetDescriptors >= (0x7FFF * 2) ? 100 : 0;
 			if (vk_physicalDeviceProperties_1_1.maxMemoryAllocationSize < vk_largestRequiredMemorySize)
 				warnings.emplace("The maximum memory allocation size should be large enough to store 1000 game objects and/or 32-bit RGBA textures as big as twice the largest monitor's scale or more");
 			i32Score += static_cast<int32_t>(vk_physicalDeviceProperties_1_1.maxMemoryAllocationSize / 500000000);
@@ -81,9 +82,12 @@ namespace RE {
 				default:
 					i32Score += -1000;
 			}
-			if (vk_physicalDeviceLimits.maxImageDimension2D < u32LargestMonitorsScale)
-				incompatibilities.emplace("The GPU should support image sizes equal or larger than twice of the largest monitor's scale");
-			i32Score += static_cast<int32_t>(vk_physicalDeviceLimits.maxImageDimension2D / u32LargestMonitorsScale);
+			{
+				const uint32_t u32MinImageExtent = std::max(u32LargestMonitorsScale, get_max_texture_extent());
+				if (vk_physicalDeviceLimits.maxImageDimension2D < u32MinImageExtent)
+					incompatibilities.emplace(append_to_string("The GPU should support image sizes equal or larger than the largest monitor's or maximum texture size: ", u32MinImageExtent));
+				i32Score += static_cast<int32_t>(vk_physicalDeviceLimits.maxImageDimension2D / u32MinImageExtent);
+			}
 			if (vk_physicalDeviceLimits.maxImageArrayLayers < RE_VK_FRAMES_IN_FLIGHT)
 				incompatibilities.push(append_to_string("The maximum of image layers has to be enough to store as many frames are rendered in flight: ", RE_VK_FRAMES_IN_FLIGHT, " or more"));
 			if (vk_physicalDeviceLimits.maxUniformBufferRange < vk_cameraUniformBufferSize)
@@ -104,8 +108,8 @@ namespace RE {
 				incompatibilities.emplace("There should be at least 1 or more uniform buffer available per pipeline stage within a descriptor set");
 			if (vk_physicalDeviceLimits.maxPerStageDescriptorStorageBuffers < 2)
 				incompatibilities.emplace("There should be at least 2 or more storage buffers available per pipeline stage within a descriptor set");
-			if (vk_physicalDeviceLimits.maxPerStageDescriptorSampledImages < RE_VK_MAX_SAMPLED_IMAGES)
-				incompatibilities.push(append_to_string("There should be at least ", RE_VK_MAX_SAMPLED_IMAGES, " or more sampled images available per pipeline stage within a descriptor set"));
+			if (vk_physicalDeviceLimits.maxPerStageDescriptorSampledImages < get_max_texture_count())
+				incompatibilities.push(append_to_string("There should be at least ", get_max_texture_count(), " or more sampled images available per pipeline stage within a descriptor set"));
 			if (vk_physicalDeviceLimits.maxPerStageResources < /*descriptors*/ 3 + /*framebuffer attachments*/ 3)
 				incompatibilities.emplace("There should be at least 6 or more resources be accessible per pipeline stage");
 			if (vk_physicalDeviceLimits.maxDescriptorSetSamplers < RE_VK_MAX_SAMPLED_IMAGES)
@@ -114,8 +118,8 @@ namespace RE {
 				incompatibilities.emplace("There should be at least 1 or more uniform buffer accessible in an entire pipeline");
 			if (vk_physicalDeviceLimits.maxDescriptorSetStorageBuffers < 3)
 				incompatibilities.emplace("There should be at least 3 or more storage buffers accessible in an entire pipeline");
-			if (vk_physicalDeviceLimits.maxDescriptorSetSampledImages < RE_VK_MAX_SAMPLED_IMAGES)
-				incompatibilities.push(append_to_string("There should be at least ", RE_VK_MAX_SAMPLED_IMAGES, " sampled images available in an entire pipeline"));
+			if (vk_physicalDeviceLimits.maxDescriptorSetSampledImages < get_max_texture_count())
+				incompatibilities.push(append_to_string("There should be at least ", get_max_texture_count(), " sampled images available in an entire pipeline"));
 			if (vk_physicalDeviceLimits.maxVertexInputAttributes < 2)
 				incompatibilities.emplace("The maximum count of vertex input attributes of a pipeline should be at least 2 or more");
 			if (vk_physicalDeviceLimits.maxVertexInputBindings < 1)
@@ -158,8 +162,8 @@ namespace RE {
 				incompatibilities.emplace("The maximum framebuffer width should be equal or bigger than twice of the largest monitor's scale");
 			if (vk_physicalDeviceLimits.maxFramebufferHeight < u32LargestMonitorsScale)
 				incompatibilities.emplace("The maximum framebuffer height should be equal or bigger than twice of the largest monitor's scale");
-			vk_mMsaaSampleCountsAvailable &= vk_physicalDeviceLimits.framebufferColorSampleCounts 
-					& vk_physicalDeviceLimits.framebufferDepthSampleCounts 
+			vk_mMsaaSampleCountsAvailable &= vk_physicalDeviceLimits.framebufferColorSampleCounts
+					& vk_physicalDeviceLimits.framebufferDepthSampleCounts
 					& vk_physicalDeviceLimits.framebufferStencilSampleCounts;
 			if (vk_physicalDeviceLimits.maxColorAttachments < 1)
 				incompatibilities.emplace("The maximum count of color attachments within a subpass in a render pass should be equal or more than 1");
@@ -183,10 +187,16 @@ namespace RE {
 				warnings.emplace("The advanced synchronization-feature is not supported");
 			if (vk_physicalDeviceFeatures_1_3.dynamicRendering != VK_TRUE)
 				incompatibilities.emplace("The dynamic rendering-feature (relinquishment of static render passes) is not supported");
+			if (vk_physicalDeviceFeatures_1_2.shaderSampledImageArrayNonUniformIndexing != VK_TRUE)
+			    incompatibilities.emplace("Non-uniform indexing within the shaders is not supported");
+			if (vk_physicalDeviceFeatures_1_2.descriptorBindingSampledImageUpdateAfterBind != VK_TRUE)
+			    optionals.emplace("Updating samplers, sampled images and combinations aren't supported");
 			if (vk_physicalDeviceFeatures_1_2.descriptorBindingUpdateUnusedWhilePending != VK_TRUE)
-				incompatibilities.emplace("The GPU doesn't support unused descriptor bindings being updated while pending");
+				optionals.emplace("The GPU doesn't support unused descriptor bindings being updated while pending");
 			if (vk_physicalDeviceFeatures_1_2.descriptorBindingPartiallyBound != VK_TRUE)
 				incompatibilities.emplace("The GPU doesn't support partially bound descriptor bindings");
+			if (vk_physicalDeviceFeatures_1_2.runtimeDescriptorArray != VK_TRUE)
+			    incompatibilities.emplace("Descriptor arrays, which size is defined at runtime, aren't supported");
 			if (vk_physicalDeviceFeatures_1_2.timelineSemaphore != VK_TRUE)
 				incompatibilities.emplace("Timeline semaphores aren't supported");
 			if (vk_physicalDeviceFeatures.sampleRateShading != VK_TRUE)

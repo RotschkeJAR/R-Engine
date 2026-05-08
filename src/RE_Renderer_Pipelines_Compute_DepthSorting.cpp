@@ -1,4 +1,4 @@
-#include "RE_Renderer_Pipelines_Internal.hpp"
+#include "RE_Renderer_Pipelines_Compute_Internal.hpp"
 #include "RE_Vulkan_Wrappers.hpp"
 
 namespace RE {
@@ -6,8 +6,10 @@ namespace RE {
 	VkPipeline vk_hComputePipelineDepthSorting;
 
 	bool create_compute_pipeline_depth_sorting() {
+		PRINT_DEBUG("Creating temporary Vulkan shader module for depth sorting");
 		VkShaderModule vk_hShader;
-		if (create_vulkan_shader_from_file("shaders/gameobject_depth sorting_compute.glsl.spv", 0, &vk_hShader)) {
+		if (create_vulkan_shader_from_file("shaders/compute_depth sorting.glsl.spv", 0, &vk_hShader)) {
+			PRINT_DEBUG("Creating Vulkan compute pipeline for depth sorting");
 			const VkComputePipelineCreateInfo vk_createInfo = {
 				.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
 				.pNext = nullptr,
@@ -27,15 +29,17 @@ namespace RE {
 			};
 			const bool bSuccess = vkCreateComputePipelines(vk_hDevice, VK_NULL_HANDLE, 1, &vk_createInfo, nullptr, &vk_hComputePipelineDepthSorting) == VK_SUCCESS;
 			if (!bSuccess)
-				RE_FATAL_ERROR("Failed to create the compute pipeline for depth sorting");
+				RE_FATAL_ERROR("Failed to create Vulkan compute pipeline for depth sorting");
+			PRINT_DEBUG("Destroying temporary Vulkan shader module for depth sorting");
 			vkDestroyShaderModule(vk_hDevice, vk_hShader, nullptr);
 			return bSuccess;
 		} else
-			RE_FATAL_ERROR("Failed loading shader for the compute pipeline for depth sorting");
+			RE_FATAL_ERROR("Failed creating Vulkan shader module for creating the compute pipeline for depth sorting");
 		return false;
 	}
 
 	void destroy_compute_pipeline_depth_sorting() {
+		PRINT_DEBUG("Destroying Vulkan compute pipeline for depth sorting");
 		vkDestroyPipeline(vk_hDevice, vk_hComputePipelineDepthSorting, nullptr);
 	}
 

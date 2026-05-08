@@ -3,7 +3,7 @@
 #include "RE_List_GameObject.hpp"
 
 namespace RE {
-	
+
 	bool create_renderer_buffers() {
 		PRINT_DEBUG("Creating buffers for the renderer");
 		constexpr uint32_t au32FunctionIndices[] = {

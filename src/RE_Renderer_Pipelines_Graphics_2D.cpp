@@ -1,4 +1,4 @@
-#include "RE_Renderer_Pipelines_Internal.hpp"
+#include "RE_Renderer_Pipelines_Graphics_Internal.hpp"
 #include "RE_Vulkan_Wrappers.hpp"
 
 namespace RE {

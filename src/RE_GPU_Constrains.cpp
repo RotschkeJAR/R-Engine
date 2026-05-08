@@ -32,7 +32,7 @@ namespace RE {
 	uint32_t u32MaxIndirectCount;
 	float f32MaxSamplerAnisotropy;
 	uint32_t u32MappedMemoryAlignment;
-	
+
 	void fetch_gpu_constrains() {
 		{ // Hard-/Software Limits
 			VkPhysicalDeviceVulkan13Properties vk_physicalDeviceProperties_1_3;
@@ -150,8 +150,10 @@ namespace RE {
 				mEnabledFeatures |= ENABLED_FEATURE_SAMPLE_RATE_SHADING_BIT;
 			if (vk_physicalDeviceFeatures.samplerAnisotropy)
 				mEnabledFeatures |= ENABLED_FEATURE_ANISOTROPIC_FILTERING_BIT;
-			if (vk_physicalDeviceFeatures_1_3.dynamicRendering)
-				mEnabledFeatures |= ENABLED_FEATURE_DYNAMIC_RENDERING_BIT;
+			if (vk_physicalDeviceFeatures_1_2.descriptorBindingSampledImageUpdateAfterBind)
+			    mEnabledFeatures |= ENABLED_FEATURE_UPDATE_DESCRIPTOR_SAMPLED_IMAGE_AFTER_BIND_BIT;
+			if (vk_physicalDeviceFeatures_1_2.descriptorBindingUpdateUnusedWhilePending)
+			    mEnabledFeatures |= ENABLED_FEATURE_UPDATE_UNUSED_DESCRIPTORS_WHILE_PENDING_BIT;
 		}
 	}
 

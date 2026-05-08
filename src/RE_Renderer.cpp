@@ -19,12 +19,12 @@ namespace RE {
 				if (create_descriptor_sets()) {
 					if (create_swapchain()) {
 						if (setup_presentation()) {
-							if (create_graphics_pipelines()) {
-								if (create_compute_pipelines()) {
+							if (create_renderer_pipelines()) {
+								if (init_renderer_textures()) {
 									PRINT_DEBUG("Successfully initialized the renderer");
 									return true;
 								}
-								destroy_graphics_pipelines();
+								destroy_renderer_pipelines();
 							}
 							destroy_presentation();
 						}
@@ -42,10 +42,10 @@ namespace RE {
 
 	void destroy_renderer() {
 		PRINT_DEBUG("Destroying renderer");
+		destroy_renderer_textures();
+		destroy_renderer_pipelines();
 		destroy_presentation();
 		destroy_swapchain();
-		destroy_compute_pipelines();
-		destroy_graphics_pipelines();
 		destroy_descriptor_sets();
 		destroy_renderer_buffers();
 		destroy_render_tasks();

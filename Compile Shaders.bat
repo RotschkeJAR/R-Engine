@@ -7,17 +7,17 @@ set SFLAG=--target-env=vulkan1.3 --target-spv=spv1.3 -O
 
 del /f %SRC%\*.spv
 
-for %%f in (%SRC%\*_vertex.glsl) do (
+for %%f in (%SRC%\graphics_*vertex.glsl) do (
 	echo %%f
 	%SC% %SFLAG% -x glsl -fshader-stage=vertex -o "%%f.spv" "%%f"
 )
 
-for %%f in (%SRC%\*_fragment.glsl) do (
+for %%f in (%SRC%\graphics_*fragment.glsl) do (
 	echo %%f
 	%SC% %SFLAG% -x glsl -fshader-stage=fragment -o "%%f.spv" "%%f"
 )
 
-for %%f in (%SRC%\*_compute.glsl) do (
+for %%f in (%SRC%\compute_*.glsl) do (
 	echo %%f
 	%SC% %SFLAG% -x glsl -fshader-stage=compute -o "%%f.spv" "%%f"
 )

@@ -1,41 +1,44 @@
 #include "RE_Renderer_Descriptor Set Layouts.hpp"
 
 namespace RE {
-	
-	VkDescriptorSetLayout vk_ahDescriptorSetLayouts[RE_VK_DESC_SET_LAYOUT_COUNT];
+
+	VkDescriptorSetLayout vk_hRenderContentDescSetLayout,
+		vk_hRawGameObjectsDescSetLayout,
+		vk_hCameraDescSetLayout,
+		vk_hSpriteDescSetLayout;
 
 	bool create_descriptor_set_layouts() {
-		constexpr VkDescriptorSetLayoutBinding vk_aVertexCompute2StorageBuffer1UniformBufferLayoutBindings[] = {
+		PRINT_DEBUG("Creating Vulkan descriptor set layout for render content");
+	    VkDescriptorSetLayoutSupport vk_setLayoutSupported;
+		vk_setLayoutSupported.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_SUPPORT;
+		vk_setLayoutSupported.pNext = nullptr;
+		const VkBool32 &vk_rbLayoutSupported = vk_setLayoutSupported.supported;
+		constexpr VkDescriptorSetLayoutBinding vk_aRenderContentLayoutBindings[RE_VK_RENDER_CONTENT_DESC_SET_BINDING_COUNT] = {
 			{
-				.binding = 0,
+				.binding = RE_VK_RENDER_CONTENT_DESC_SET_GAME_OBJECTS_BINDING_INDEX,
 				.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
 				.descriptorCount = 1,
 				.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
 				.pImmutableSamplers = nullptr
 			}, {
-				.binding = 1,
+				.binding = RE_VK_RENDER_CONTENT_DESC_SET_SORTABLE_DEPTH_BINDING_INDEX,
 				.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-				.descriptorCount = 1,
-				.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
-				.pImmutableSamplers = nullptr
-			}, {
-				.binding = 2,
-				.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 				.descriptorCount = 1,
 				.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
 				.pImmutableSamplers = nullptr
 			}
 		};
-		static_assert(sizeof(vk_aVertexCompute2StorageBuffer1UniformBufferLayoutBindings) / sizeof(vk_aVertexCompute2StorageBuffer1UniformBufferLayoutBindings[0]) == RE_VK_DESC_SET_LAYOUT_VERTEX_COMPUTE_2_STORAGE_BUFFER_1_UNIFORM_BUFFER_BINDING_COUNT);
-		const VkDescriptorSetLayoutCreateInfo vk_vertexCompute2StorageBufferLayoutCreateInfo = {
+		const VkDescriptorSetLayoutCreateInfo vk_RenderContentLayoutCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
 			.pNext = nullptr,
 			.flags = 0,
-			.bindingCount = RE_VK_DESC_SET_LAYOUT_VERTEX_COMPUTE_2_STORAGE_BUFFER_1_UNIFORM_BUFFER_BINDING_COUNT,
-			.pBindings = vk_aVertexCompute2StorageBuffer1UniformBufferLayoutBindings
+			.bindingCount = RE_VK_RENDER_CONTENT_DESC_SET_BINDING_COUNT,
+			.pBindings = vk_aRenderContentLayoutBindings
 		};
-		if (vkCreateDescriptorSetLayout(vk_hDevice, &vk_vertexCompute2StorageBufferLayoutCreateInfo, nullptr, &vk_ahDescriptorSetLayouts[RE_VK_DESC_SET_LAYOUT_VERTEX_COMPUTE_2_STORAGE_BUFFER_1_UNIFORM_BUFFER_INDEX]) == VK_SUCCESS) {
-			constexpr VkDescriptorSetLayoutBinding vk_aComputeStorageBufferLayoutBindings[] = {
+		vkGetDescriptorSetLayoutSupport(vk_hDevice, &vk_RenderContentLayoutCreateInfo, &vk_setLayoutSupported);
+		if (vk_rbLayoutSupported && vkCreateDescriptorSetLayout(vk_hDevice, &vk_RenderContentLayoutCreateInfo, nullptr, &vk_hRenderContentDescSetLayout) == VK_SUCCESS) {
+			PRINT_DEBUG("Creating Vulkan descriptor set layout for raw game object buffer");
+			constexpr VkDescriptorSetLayoutBinding vk_aRawGameObjectLayoutBindings[] = {
 				{
 					.binding = 0,
 					.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
@@ -44,16 +47,17 @@ namespace RE {
 					.pImmutableSamplers = nullptr
 				}
 			};
-			static_assert(sizeof(vk_aComputeStorageBufferLayoutBindings) / sizeof(vk_aComputeStorageBufferLayoutBindings[0]) == RE_VK_DESC_SET_LAYOUT_COMPUTE_STORAGE_BUFFER_BINDING_COUNT);
-			const VkDescriptorSetLayoutCreateInfo vk_computeStorageBufferLayoutCreateInfo = {
+			const VkDescriptorSetLayoutCreateInfo vk_rawGameObjectLayoutCreateInfo = {
 				.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
 				.pNext = nullptr,
 				.flags = 0,
-				.bindingCount = RE_VK_DESC_SET_LAYOUT_COMPUTE_STORAGE_BUFFER_BINDING_COUNT,
-				.pBindings = vk_aComputeStorageBufferLayoutBindings
+				.bindingCount = 1,
+				.pBindings = vk_aRawGameObjectLayoutBindings
 			};
-			if (vkCreateDescriptorSetLayout(vk_hDevice, &vk_computeStorageBufferLayoutCreateInfo, nullptr, &vk_ahDescriptorSetLayouts[RE_VK_DESC_SET_LAYOUT_COMPUTE_STORAGE_BUFFER_INDEX]) == VK_SUCCESS) {
-				constexpr VkDescriptorSetLayoutBinding vk_aVertexComputeUniformBufferLayoutBindings[] = {
+			vkGetDescriptorSetLayoutSupport(vk_hDevice, &vk_rawGameObjectLayoutCreateInfo, &vk_setLayoutSupported);
+			if (vk_rbLayoutSupported && vkCreateDescriptorSetLayout(vk_hDevice, &vk_rawGameObjectLayoutCreateInfo, nullptr, &vk_hRawGameObjectsDescSetLayout) == VK_SUCCESS) {
+				PRINT_DEBUG("Creating Vulkan descriptor set layout for camera");
+				constexpr VkDescriptorSetLayoutBinding vk_aCameraLayoutBindings[] = {
 					{
 						.binding = 0,
 						.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -62,62 +66,82 @@ namespace RE {
 						.pImmutableSamplers = nullptr
 					}
 				};
-				static_assert(sizeof(vk_aVertexComputeUniformBufferLayoutBindings) / sizeof(vk_aVertexComputeUniformBufferLayoutBindings[0]) == RE_VK_DESC_SET_LAYOUT_VERTEX_COMPUTE_UNIFORM_BUFFER_BINDING_COUNT);
-				const VkDescriptorSetLayoutCreateInfo vk_vertexComputeUniformBufferLayoutCreateInfo = {
+				const VkDescriptorSetLayoutCreateInfo vk_cameraLayoutCreateInfo = {
 					.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
 					.pNext = nullptr,
 					.flags = 0,
-					.bindingCount = RE_VK_DESC_SET_LAYOUT_VERTEX_COMPUTE_UNIFORM_BUFFER_BINDING_COUNT,
-					.pBindings = vk_aVertexComputeUniformBufferLayoutBindings
+					.bindingCount = 1,
+					.pBindings = vk_aCameraLayoutBindings
 				};
-				if (vkCreateDescriptorSetLayout(vk_hDevice, &vk_vertexComputeUniformBufferLayoutCreateInfo, nullptr, &vk_ahDescriptorSetLayouts[RE_VK_DESC_SET_LAYOUT_VERTEX_COMPUTE_UNIFORM_BUFFER_INDEX]) == VK_SUCCESS) {
-					constexpr VkDescriptorBindingFlags vk_amFragmentSampledImagesLayoutBindingFlags[] = {
-						VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT
+				vkGetDescriptorSetLayoutSupport(vk_hDevice, &vk_cameraLayoutCreateInfo, &vk_setLayoutSupported);
+				if (vk_rbLayoutSupported && vkCreateDescriptorSetLayout(vk_hDevice, &vk_cameraLayoutCreateInfo, nullptr, &vk_hCameraDescSetLayout) == VK_SUCCESS) {
+					PRINT_DEBUG("Creating Vulkan descriptor set layout for textures and sprite layouts");
+					VkDescriptorBindingFlags vk_amSpriteLayoutBindingFlags[RE_VK_SPRITE_DESC_SET_BINDING_COUNT] = {
+						VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT,
+						VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT
 					};
-					static_assert(sizeof(vk_amFragmentSampledImagesLayoutBindingFlags) / sizeof(vk_amFragmentSampledImagesLayoutBindingFlags[0]) == RE_VK_DESC_SET_LAYOUT_FRAGMENT_SAMPLED_IMAGES_BINDING_COUNT);
-					const VkDescriptorSetLayoutBindingFlagsCreateInfo vk_fragmentSampledImagesLayoutBindingCreateInfo = {
+					for (uint32_t u32BindingIndex = 0; u32BindingIndex < RE_VK_SPRITE_DESC_SET_BINDING_COUNT; u32BindingIndex++) {
+						if (are_vulkan_features_enabled<ENABLED_FEATURE_UPDATE_UNUSED_DESCRIPTORS_WHILE_PENDING_BIT>())
+							vk_amSpriteLayoutBindingFlags[u32BindingIndex] |= VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT;
+						if (are_vulkan_features_enabled<ENABLED_FEATURE_UPDATE_DESCRIPTOR_SAMPLED_IMAGE_AFTER_BIND_BIT>())
+							vk_amSpriteLayoutBindingFlags[u32BindingIndex] |= VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
+					}
+					const VkDescriptorSetLayoutBindingFlagsCreateInfo vk_spriteLayoutBindingCreateInfo = {
 						.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO,
 						.pNext = nullptr,
-						.bindingCount = RE_VK_DESC_SET_LAYOUT_FRAGMENT_SAMPLED_IMAGES_BINDING_COUNT,
-						.pBindingFlags = vk_amFragmentSampledImagesLayoutBindingFlags
+						.bindingCount = 2,
+						.pBindingFlags = vk_amSpriteLayoutBindingFlags
 					};
-					constexpr VkDescriptorSetLayoutBinding vk_aFragmentSampledImagesLayoutBindings[] = {
+					const VkDescriptorSetLayoutBinding vk_aSpriteLayoutBindings[RE_VK_SPRITE_DESC_SET_BINDING_COUNT] = {
 						{
-							.binding = 0,
-							.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-							.descriptorCount = RE_VK_MAX_SAMPLED_IMAGES,
+							.binding = RE_VK_SPRITE_DESC_SET_SPRITE_LAYOUT_BINDING_INDEX,
+							.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
+							.descriptorCount = get_max_sprite_layout_count(),
+							.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+							.pImmutableSamplers = nullptr
+						}, {
+							.binding = RE_VK_SPRITE_DESC_SET_TEXTURE_BINDING_INDEX,
+							.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+							.descriptorCount = get_max_texture_count(),
 							.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
 							.pImmutableSamplers = nullptr
 						}
 					};
-					static_assert(sizeof(vk_aFragmentSampledImagesLayoutBindings) / sizeof(vk_aFragmentSampledImagesLayoutBindings[0]) == RE_VK_DESC_SET_LAYOUT_FRAGMENT_SAMPLED_IMAGES_BINDING_COUNT);
-					const VkDescriptorSetLayoutCreateInfo vk_fragmentSampledImagesLayoutCreateInfo = {
+					VkDescriptorSetLayoutCreateInfo vk_spriteLayoutCreateInfo = {
 						.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-						.pNext = &vk_fragmentSampledImagesLayoutBindingCreateInfo,
+						.pNext = &vk_spriteLayoutBindingCreateInfo,
 						.flags = 0,
-						.bindingCount = RE_VK_DESC_SET_LAYOUT_FRAGMENT_SAMPLED_IMAGES_BINDING_COUNT,
-						.pBindings = vk_aFragmentSampledImagesLayoutBindings
+						.bindingCount = RE_VK_SPRITE_DESC_SET_BINDING_COUNT,
+						.pBindings = vk_aSpriteLayoutBindings
 					};
-					if (vkCreateDescriptorSetLayout(vk_hDevice, &vk_fragmentSampledImagesLayoutCreateInfo, nullptr, &vk_ahDescriptorSetLayouts[RE_VK_DESC_SET_LAYOUT_FRAGMENT_SAMPLED_IMAGES_INDEX]) == VK_SUCCESS)
+					if (are_vulkan_features_enabled<ENABLED_FEATURE_UPDATE_DESCRIPTOR_SAMPLED_IMAGE_AFTER_BIND_BIT>())
+						vk_spriteLayoutCreateInfo.flags |= VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
+					vkGetDescriptorSetLayoutSupport(vk_hDevice, &vk_spriteLayoutCreateInfo, &vk_setLayoutSupported);
+					if (vk_rbLayoutSupported && vkCreateDescriptorSetLayout(vk_hDevice, &vk_spriteLayoutCreateInfo, nullptr, &vk_hSpriteDescSetLayout) == VK_SUCCESS)
 						return true;
 					else
-						RE_FATAL_ERROR("Failed to create Vulkan descriptor set layout containing ", RE_VK_MAX_SAMPLED_IMAGES, " combined image sampler/-s used in fragment-shaders");
-					vkDestroyDescriptorSetLayout(vk_hDevice, vk_ahDescriptorSetLayouts[RE_VK_DESC_SET_LAYOUT_VERTEX_COMPUTE_UNIFORM_BUFFER_INDEX], nullptr);
+						RE_FATAL_ERROR("Failed to create Vulkan descriptor set layout for textures and sprite layouts");
+					PRINT_DEBUG("Destroying Vulkan descriptor set layout for camera due to failure creating all layouts");
+					vkDestroyDescriptorSetLayout(vk_hDevice, vk_hCameraDescSetLayout, nullptr);
 				} else
-					RE_FATAL_ERROR("Failed to create Vulkan descriptor set layout containing 1 uniform buffer used in compute- and vertex-shaders");
-				vkDestroyDescriptorSetLayout(vk_hDevice, vk_ahDescriptorSetLayouts[RE_VK_DESC_SET_LAYOUT_COMPUTE_STORAGE_BUFFER_INDEX], nullptr);
+					RE_FATAL_ERROR("Failed to create Vulkan descriptor set layout for camera");
+				PRINT_DEBUG("Destroying Vulkan descriptor set layout for raw game object buffer due to failure creating all layouts");
+				vkDestroyDescriptorSetLayout(vk_hDevice, vk_hRawGameObjectsDescSetLayout, nullptr);
 			} else
-				RE_FATAL_ERROR("Failed to create Vulkan descriptor set layout containing 1 storage buffer used in compute-shaders");
-			vkDestroyDescriptorSetLayout(vk_hDevice, vk_ahDescriptorSetLayouts[RE_VK_DESC_SET_LAYOUT_VERTEX_COMPUTE_2_STORAGE_BUFFER_1_UNIFORM_BUFFER_INDEX], nullptr);
+				RE_FATAL_ERROR("Failed to create Vulkan descriptor set layout for raw game object buffer");
+			PRINT_DEBUG("Destroying Vulkan descriptor set layout for render content due to failure creating all layouts");
+			vkDestroyDescriptorSetLayout(vk_hDevice, vk_hRenderContentDescSetLayout, nullptr);
 		} else
-			RE_FATAL_ERROR("Failed to create Vulkan descriptor set layout containing 2 storage buffer and 1 uniform buffer used in compute- and vertex-shader");
+			RE_FATAL_ERROR("Failed to create Vulkan descriptor set layout for render content");
 		return false;
 	}
 
 	void destroy_descriptor_set_layouts() {
 		PRINT_DEBUG("Destroying all Vulkan descriptor set layouts");
-		for (const VkDescriptorSetLayout vk_hDescriptorSetLayout : vk_ahDescriptorSetLayouts)
-			vkDestroyDescriptorSetLayout(vk_hDevice, vk_hDescriptorSetLayout, nullptr);
+		vkDestroyDescriptorSetLayout(vk_hDevice, vk_hSpriteDescSetLayout, nullptr);
+		vkDestroyDescriptorSetLayout(vk_hDevice, vk_hCameraDescSetLayout, nullptr);
+		vkDestroyDescriptorSetLayout(vk_hDevice, vk_hRawGameObjectsDescSetLayout, nullptr);
+		vkDestroyDescriptorSetLayout(vk_hDevice, vk_hRenderContentDescSetLayout, nullptr);
 	}
 
 }

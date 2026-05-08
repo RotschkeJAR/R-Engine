@@ -2,7 +2,6 @@
 #include "RE_Vulkan_Wrappers.hpp"
 #include "RE_ListBatch_GameObject.hpp"
 #include "RE_List_GameObject.hpp"
-#include "RE_Sprite.hpp"
 #include "RE_Manager.hpp"
 
 namespace RE {
@@ -89,7 +88,7 @@ namespace RE {
 				apaGameObjectBufferInstanceData[u8CurrentFrameInFlightIndex][gameObjectsToRenderCount].color[1] = pGameObject->spriteRenderer.color[1];
 				apaGameObjectBufferInstanceData[u8CurrentFrameInFlightIndex][gameObjectsToRenderCount].color[2] = pGameObject->spriteRenderer.color[2];
 				apaGameObjectBufferInstanceData[u8CurrentFrameInFlightIndex][gameObjectsToRenderCount].color[3] = pGameObject->spriteRenderer.color[3];
-				apaGameObjectBufferInstanceData[u8CurrentFrameInFlightIndex][gameObjectsToRenderCount].textureId = static_cast<uint32_t>(pGameObject->spriteRenderer.hSprite ? reinterpret_cast<const VulkanSprite*>(pGameObject->spriteRenderer.hSprite)->u16UniformIndex : 0x8000);
+				apaGameObjectBufferInstanceData[u8CurrentFrameInFlightIndex][gameObjectsToRenderCount].textureId = 0;
 				gameObjectsToRenderCount++;
 			}
 		}

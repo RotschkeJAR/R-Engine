@@ -5,7 +5,8 @@
 
 namespace RE {
 	
-	extern VkDescriptorPool vk_hPersistentDescPool;
+	extern VkDescriptorPool vk_hPersistentDescPool,
+		vk_hTextureDescPool;
 
 	bool create_descriptor_set_pools();
 	void destroy_descriptor_set_pools();

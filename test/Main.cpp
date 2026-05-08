@@ -91,10 +91,10 @@ class Imagy : public GameObject {
 		}
 		~Imagy() {}
 		void start(Scene *pStartingScene) {
-			const Texture hTexture = alloc_texture_loading_from_file("Image.png");
+			/*const Texture hTexture = alloc_texture_loading_from_file("Image.png");
 			const SpriteLayoutSettings spriteLayoutSettings;
 			const SpriteLayout hSpriteLayout = create_sprite_layout(spriteLayoutSettings);
-			spriteRenderer.hSprite = create_sprite(hTexture, hSpriteLayout);
+			spriteRenderer.hSprite = create_sprite(hTexture, hSpriteLayout);*/
 		}
 		void update(Scene *pCurrentScene) {
 			transform.position[0] = pPlayy->transform.position[0];
@@ -105,11 +105,11 @@ class Imagy : public GameObject {
 			spriteRenderer.textureOffset[1] = pPlayy->transform.position[1];
 		}
 		void end(Scene *pEndingScene) {
-			const Texture hTexture = get_texture_from_sprite(spriteRenderer.hSprite);
+			/*const Texture hTexture = get_texture_from_sprite(spriteRenderer.hSprite);
 			const SpriteLayout hSpriteLayout = get_sprite_layout_from_sprite(spriteRenderer.hSprite);
 			destroy_sprite(spriteRenderer.hSprite);
 			destroy_sprite_layout(hSpriteLayout);
-			free_texture(hTexture);
+			free_texture(hTexture);*/
 		}
 };
 

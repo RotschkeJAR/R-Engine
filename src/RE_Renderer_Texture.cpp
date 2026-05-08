@@ -1,10 +1,5 @@
-#include "RE_Texture.hpp"
-#include "RE_Vulkan_Wrappers.hpp"
-#include "RE_List_GameObject.hpp"
-#include "RE_Renderer.hpp"
-#include "RE_Sprite.hpp"
-
-#include "RE_Renderer_Internal.hpp"
+#include "RE_Renderer_Texture.hpp"
+#include "RE_Main.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_WINDOWS_UTF8
@@ -13,47 +8,162 @@
 
 namespace RE {
 
+	typedef uint8_t VulkanTextureFormatsSupportedFlags;
+	enum VulkanTextureFormatsSupportedFlagBit : VulkanTextureFormatsSupportedFlags {
+		TEXTURE_FORMAT_SUPPORTED_R_BIT = 0x1,
+		TEXTURE_FORMAT_SUPPORTED_RG_BIT = 0x2,
+		TEXTURE_FORMAT_SUPPORTED_RGB_BIT = 0x4
+	};
+
+	static std::jthread nextTextureIndexSearchThread;
+	static std::unique_ptr<VulkanTexture[]> vulkanTextures;
+	static uint32_t u32MaxTextureExtent = 1920;
+	static uint16_t u16MaxTextureCount = 1024,
+		u16CurrentTextureCount = 0,
+		u16NextTextureIndex = 0;
+	static VulkanTextureFormatsSupportedFlags eTextureFormatsSupported;
+
+	template <VulkanTextureFormatsSupportedFlagBit... eTextureFormatBits>
+	inline bool are_texture_formats_supported() {
+		constexpr VulkanTextureFormatsSupportedFlags eTextureFormats = (eTextureFormatBits | ...);
+		return (eTextureFormatsSupported & eTextureFormats) == eTextureFormats;
+	}
+
+	bool init_renderer_textures() {
+		if (u16MaxTextureCount)
+			vulkanTextures = std::make_unique<VulkanTexture[]>(u16MaxTextureCount);
+		eTextureFormatsSupported = 0;
+		return true;
+	}
+
+	void destroy_renderer_textures() {
+		vulkanTextures.reset();
+		u16CurrentTextureCount = 0;
+		if (nextTextureIndexSearchThread.joinable())
+			nextTextureIndexSearchThread.join();
+		u16NextTextureIndex = 0;
+	}
+
+	uint16_t get_index_of_texture(const VulkanTexture *const pTexture) {
+		return static_cast<uint16_t>(pTexture - vulkanTextures.get());
+	}
+
+	static void search_next_texture_index(uint16_t u16Expiry) {
+		while (true) {
+			u16NextTextureIndex = (u16NextTextureIndex + 1) % u16MaxTextureCount;
+			if (!vulkanTextures[u16NextTextureIndex].imageMemory.valid())
+				break;
+			else if (!u16Expiry)
+				RE_ABORT("Search for the next free slot for texture allocation has expired");
+			u16Expiry--;
+		}
+	}
+
 	[[nodiscard]]
 	Texture alloc_texture_from_binary_data(const uint8_t *const pau8TextureBinaries, const uint32_t u32Width, const uint32_t u32Height, const uint32_t u32Channels) {
-		if (!pau8TextureBinaries || !u32Width || !u32Height || !u32Channels) {
+		if (u16CurrentTextureCount == u16MaxTextureCount)
+			RE_ABORT("Textures overallocated. Maximum was ", u16MaxTextureCount);
+		else if (!pau8TextureBinaries || !u32Width || !u32Height || !u32Channels) {
 			RE_ERROR("Textures cannot be allocated, when its binaries are null or width, height or number of channels are zero");
 			return nullptr;
-		} else if (!vk_hDevice) {
+		} else if (!bRunning) {
 			RE_ERROR("Textures cannot be created, when the engine is not running");
 			return nullptr;
+		} else if (u32Width > u32MaxTextureExtent || u32Height > u32MaxTextureExtent) {
+			RE_FATAL_ERROR("The extent of the texture (", u32Width, ", ", u32Height, ") goes beyond the limit (", u32MaxTextureExtent, ")");
+			return nullptr;
 		}
-		PRINT_DEBUG("Allocating new texture");
-		VulkanTexture *const pVulkanTexture = new VulkanTexture;
+		if (nextTextureIndexSearchThread.joinable()) {
+			PRINT_DEBUG("Waiting for search for the next free texture slot to finish");
+			nextTextureIndexSearchThread.join();
+		}
+		PRINT_DEBUG("Allocating new texture from heap");
+		VulkanTexture *const pVulkanTexture = std::addressof(vulkanTextures[u16NextTextureIndex]);
+		uint32_t u32ActualChannels;
 		switch (u32Channels) {
 			case 1:
-				pVulkanTexture->vk_eFormat = VK_FORMAT_R8_SRGB;
-				break;
+				if (are_texture_formats_supported<TEXTURE_FORMAT_SUPPORTED_R_BIT>()) {
+					pVulkanTexture->vk_eFormat = VK_FORMAT_R8_SRGB;
+					u32ActualChannels = 1;
+					break;
+				}
+				[[fallthrough]];
 			case 2:
-				pVulkanTexture->vk_eFormat = VK_FORMAT_R8G8_SRGB;
-				break;
+				if (are_texture_formats_supported<TEXTURE_FORMAT_SUPPORTED_RG_BIT>()) {
+					pVulkanTexture->vk_eFormat = VK_FORMAT_R8G8_SRGB;
+					u32ActualChannels = 2;
+					break;
+				}
+				[[fallthrough]];
 			case 3:
-				pVulkanTexture->vk_eFormat = VK_FORMAT_R8G8B8_SRGB;
-				break;
+				if (are_texture_formats_supported<TEXTURE_FORMAT_SUPPORTED_RGB_BIT>()) {
+					pVulkanTexture->vk_eFormat = VK_FORMAT_R8G8B8_SRGB;
+					u32ActualChannels = 3;
+					break;
+				}
+				[[fallthrough]];
 			case 4:
 				pVulkanTexture->vk_eFormat = VK_FORMAT_R8G8B8A8_SRGB;
+				u32ActualChannels = 4;
 				break;
 			[[unlikely]] default:
 				RE_ERROR("The texture contains supposedly ", u32Channels, " channels, which is unknown to the engine. Therefore the texture won't be allocated");
-				delete pVulkanTexture;
 				return nullptr;
 		}
 		PRINT_DEBUG("Creating temporary staging Vulkan buffer for transferring texture binaries");
-		const VkDeviceSize vk_imageBufferSize = sizeof(uint8_t) * u32Width * u32Height * u32Channels;
+		const VkDeviceSize vk_imageBufferSize = sizeof(uint8_t) * u32Width * u32Height * u32ActualChannels;
 		Vulkan_Buffer stagingImageBuffer(0, vk_imageBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 1, nullptr, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 		if (stagingImageBuffer.valid()) {
 			uint8_t *pau8StagingBufferContent;
-			if (stagingImageBuffer.get_memory().map(0, 0, vk_imageBufferSize, reinterpret_cast<void**>(&pau8StagingBufferContent))) {
+			if (stagingImageBuffer.get_memory().map(0, 0, VK_WHOLE_SIZE, reinterpret_cast<void**>(&pau8StagingBufferContent))) {
 				std::jthread textureCopyThread([&]() {
-					std::memcpy(pau8StagingBufferContent, pau8TextureBinaries, vk_imageBufferSize);
-				});
+							if (u32Channels == u32ActualChannels)
+								std::memcpy(pau8StagingBufferContent, pau8TextureBinaries, vk_imageBufferSize);
+							else {
+								uint8_t a4u8ChannelValue[4];
+								for (uint64_t u64PixelIndex = 0; u64PixelIndex < u32Width * u32Height; u64PixelIndex++) {
+									switch (u32Channels) {
+										case 1:
+											a4u8ChannelValue[0] = pau8TextureBinaries[u64PixelIndex * u32Channels + 0];
+											a4u8ChannelValue[1] = pau8TextureBinaries[u64PixelIndex * u32Channels + 0];
+											a4u8ChannelValue[2] = pau8TextureBinaries[u64PixelIndex * u32Channels + 0];
+											a4u8ChannelValue[3] = 1.0f;
+											break;
+										case 2:
+											a4u8ChannelValue[0] = pau8TextureBinaries[u64PixelIndex * u32Channels + 0];
+											a4u8ChannelValue[1] = pau8TextureBinaries[u64PixelIndex * u32Channels + 0];
+											a4u8ChannelValue[2] = pau8TextureBinaries[u64PixelIndex * u32Channels + 0];
+											a4u8ChannelValue[3] = pau8TextureBinaries[u64PixelIndex * u32Channels + 1];
+											break;
+										case 3:
+											a4u8ChannelValue[0] = pau8TextureBinaries[u64PixelIndex * u32Channels + 0];
+											a4u8ChannelValue[1] = pau8TextureBinaries[u64PixelIndex * u32Channels + 1];
+											a4u8ChannelValue[2] = pau8TextureBinaries[u64PixelIndex * u32Channels + 2];
+											a4u8ChannelValue[3] = 1.0f;
+											break;
+									}
+									switch (u32ActualChannels) {
+										case 2:
+											pau8StagingBufferContent[u64PixelIndex * u32ActualChannels + 0] = a4u8ChannelValue[0];
+											pau8StagingBufferContent[u64PixelIndex * u32ActualChannels + 1] = a4u8ChannelValue[3];
+											break;
+										case 3:
+											pau8StagingBufferContent[u64PixelIndex * u32ActualChannels + 0] = a4u8ChannelValue[0];
+											pau8StagingBufferContent[u64PixelIndex * u32ActualChannels + 1] = a4u8ChannelValue[1];
+											pau8StagingBufferContent[u64PixelIndex * u32ActualChannels + 2] = a4u8ChannelValue[2];
+											break;
+										case 4:
+											pau8StagingBufferContent[u64PixelIndex * u32ActualChannels + 0] = a4u8ChannelValue[0];
+											pau8StagingBufferContent[u64PixelIndex * u32ActualChannels + 1] = a4u8ChannelValue[1];
+											pau8StagingBufferContent[u64PixelIndex * u32ActualChannels + 2] = a4u8ChannelValue[2];
+											pau8StagingBufferContent[u64PixelIndex * u32ActualChannels + 3] = a4u8ChannelValue[3];
+											break;
+									}
+								}
+							}
+						});
 				PRINT_DEBUG("Creating Vulkan image for storing texture on GPU");
-				if (create_vulkan_image(
-						0,
+				if (create_vulkan_image(0,
 						VK_IMAGE_TYPE_2D,
 						pVulkanTexture->vk_eFormat,
 						VkExtent3D{u32Width, u32Height, 1},
@@ -193,17 +303,40 @@ namespace RE {
 						textureCopyThread.join();
 						constexpr VkPipelineStageFlags2 vk_eWaitStage = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
 						transferTask.submit(0, nullptr, &vk_eWaitStage, 0, nullptr, transferFence.get());
-						if (create_vulkan_image_view(
-								0,
+						VkComponentMapping vk_channelMapping;
+						switch (pVulkanTexture->vk_eFormat) {
+							case VK_FORMAT_R8_SRGB:
+								vk_channelMapping.r = VK_COMPONENT_SWIZZLE_R;
+								vk_channelMapping.g = VK_COMPONENT_SWIZZLE_R;
+								vk_channelMapping.b = VK_COMPONENT_SWIZZLE_R;
+								vk_channelMapping.a = VK_COMPONENT_SWIZZLE_ONE;
+								break;
+							case VK_FORMAT_R8G8_SRGB:
+								vk_channelMapping.r = VK_COMPONENT_SWIZZLE_R;
+								vk_channelMapping.g = VK_COMPONENT_SWIZZLE_R;
+								vk_channelMapping.b = VK_COMPONENT_SWIZZLE_R;
+								vk_channelMapping.a = VK_COMPONENT_SWIZZLE_G;
+								break;
+							case VK_FORMAT_R8G8B8_SRGB:
+								vk_channelMapping.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+								vk_channelMapping.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+								vk_channelMapping.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+								vk_channelMapping.a = VK_COMPONENT_SWIZZLE_ONE;
+								break;
+							case VK_FORMAT_R8G8B8A8_SRGB:
+								vk_channelMapping.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+								vk_channelMapping.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+								vk_channelMapping.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+								vk_channelMapping.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+								break;
+							[[unlikely]] default:
+								RE_ABORT("Unknown format selected for the texture: ", std::hex, pVulkanTexture->vk_eFormat, " (likely due to corruption)");
+						}
+						if (create_vulkan_image_view(0,
 								pVulkanTexture->vk_hImage,
 								VK_IMAGE_VIEW_TYPE_2D,
 								pVulkanTexture->vk_eFormat,
-								VkComponentMapping {
-									.r = VK_COMPONENT_SWIZZLE_IDENTITY,
-									.g = VK_COMPONENT_SWIZZLE_IDENTITY,
-									.b = VK_COMPONENT_SWIZZLE_IDENTITY,
-									.a = VK_COMPONENT_SWIZZLE_IDENTITY
-								},
+								vk_channelMapping,
 								VkImageSubresourceRange {
 									.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 									.baseMipLevel = 0,
@@ -214,7 +347,28 @@ namespace RE {
 								&pVulkanTexture->vk_hImageView)) {
 							pVulkanTexture->a2u32Size[0] = u32Width;
 							pVulkanTexture->a2u32Size[1] = u32Height;
+							u16CurrentTextureCount++;
+							if (u16CurrentTextureCount < u16MaxTextureCount)
+								nextTextureIndexSearchThread = std::jthread(search_next_texture_index, u16MaxTextureCount);
+							VkDescriptorImageInfo vk_imageInfo;
+							vk_imageInfo.imageView = pVulkanTexture->vk_hImageView;
+							vk_imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+							const VkWriteDescriptorSet vk_updateInfo = {
+								.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+								.pNext = nullptr,
+								.dstSet = vk_hTextureDescSet,
+								.dstBinding = RE_VK_SPRITE_DESC_SET_TEXTURE_BINDING_INDEX,
+								.dstArrayElement = get_index_of_texture(pVulkanTexture),
+								.descriptorCount = 1,
+								.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+								.pImageInfo = &vk_imageInfo,
+								.pBufferInfo = nullptr,
+								.pTexelBufferView = nullptr
+							};
 							transferFence.wait_for();
+							if (!are_vulkan_features_enabled<ENABLED_FEATURE_UPDATE_UNUSED_DESCRIPTORS_WHILE_PENDING_BIT>())
+								wait_for_rendering_finished();
+							vkUpdateDescriptorSets(vk_hDevice, 1, &vk_updateInfo, 0, nullptr);
 							return reinterpret_cast<Texture>(pVulkanTexture);
 						} else
 							RE_FATAL_ERROR("Failed to create Vulkan image view for image ", pVulkanTexture->vk_hImage);
@@ -231,10 +385,9 @@ namespace RE {
 				RE_FATAL_ERROR("Failed to map temporary Vulkan buffer for transferring the texture");
 		} else
 			RE_FATAL_ERROR("Failed to create temporary Vulkan buffer to transfer texture to GPU");
-		delete pVulkanTexture;
 		return nullptr;
 	}
-	
+
 	Texture alloc_texture_loading_from_file(const char *const pacPathToTextureFile) {
 		PRINT_DEBUG("Loading image from \"", pacPathToTextureFile, "\"");
 		uint32_t u32Width, u32Height, u32Channels;
@@ -246,26 +399,17 @@ namespace RE {
 	}
 
 	void free_texture(const Texture hTexture) {
-		if (!hTexture) {
+		if (!hTexture)
 			RE_ERROR("A null texture had to be freed. The engine will ignore this request");
-			return;
-		}
-		VulkanTexture *const pVulkanTexture = reinterpret_cast<VulkanTexture*>(hTexture);
-		if (vk_hDevice) {
+		else if (bRunning) {
 			PRINT_DEBUG("Freeing texture ", hTexture);
+			VulkanTexture *const pVulkanTexture = reinterpret_cast<VulkanTexture*>(hTexture);
 			vkDestroyImageView(vk_hDevice, pVulkanTexture->vk_hImageView, nullptr);
 			vkDestroyImage(vk_hDevice, pVulkanTexture->vk_hImage, nullptr);
 			pVulkanTexture->imageMemory.free();
-		} else {
+			u16CurrentTextureCount--;
+		} else
 			RE_ERROR("Textures aren't valid anymore, when the engine doesn't run, so they cannot be destroyed either");
-			RE_WARNING("The engine will attempt to free some memory used for texture ", hTexture);
-		}
-		delete pVulkanTexture;
-#ifndef RE_DISABLE_PRINT_DEBUGS
-		for (VulkanSprite *const pSprite : vulkanSprites)
-			if (pSprite->pTexture == pVulkanTexture)
-				RE_WARNING("There might be a dangling pointer in sprite ", reinterpret_cast<Sprite>(pSprite), " after texture ", hTexture, " (", pVulkanTexture->a2u32Size[0], "x", pVulkanTexture->a2u32Size[1], ") has been freed! Destroy the sprite or assign it a valid texture to avoid undefined behaviour or severe crashes");
-#endif
 	}
 
 	[[nodiscard]]
@@ -296,6 +440,37 @@ namespace RE {
 		PRINT_DEBUG("Reading and writing extent of texture ", hTexture, " to array pointer ", std::addressof(ra2u32Extent));
 		for (uint8_t u8DimensionIndex = 0; u8DimensionIndex < 2; u8DimensionIndex++)
 			ra2u32Extent[u8DimensionIndex] = reinterpret_cast<const VulkanTexture*>(hTexture)->a2u32Size[u8DimensionIndex];
+	}
+
+	void set_max_texture_count(const uint16_t u16NewMaxTextureCount) {
+	    if (!bRunning)
+			RE_ERROR("The maximum texture count cannot be changed while the engine is running");
+	    else
+			u16MaxTextureCount = u16NewMaxTextureCount;
+	}
+
+	[[nodiscard]]
+	uint16_t get_max_texture_count() {
+	    return u16MaxTextureCount;
+	}
+
+	[[nodiscard]]
+	uint16_t get_current_texture_count() {
+	    return u16CurrentTextureCount;
+	}
+
+	[[nodiscard]]
+	uint16_t get_remaining_texture_allocs() {
+	    return u16MaxTextureCount - u16CurrentTextureCount;
+	}
+
+	[[nodiscard]]
+	uint32_t get_max_texture_extent() {
+		return u32MaxTextureExtent;
+	}
+
+	void set_max_texture_extent(const uint32_t u32NewMaxTextureExtent) {
+		u32MaxTextureExtent = u32NewMaxTextureExtent;
 	}
 
 }

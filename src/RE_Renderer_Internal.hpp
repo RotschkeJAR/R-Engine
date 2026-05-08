@@ -3,7 +3,6 @@
 
 #include "RE_Renderer.hpp"
 #include "RE_GPU.hpp"
-#include "RE_Texture.hpp"
 #include "RE_Vulkan_Wrappers.hpp"
 
 #include "RE_Renderer_Descriptor Sets.hpp"
@@ -13,6 +12,8 @@
 #include "RE_Renderer_Buffers.hpp"
 #include "RE_Renderer_Camera.hpp"
 #include "RE_Renderer_Images.hpp"
+#include "RE_Renderer_Texture.hpp"
+#include "RE_Renderer_SpriteLayout.hpp"
 
 namespace RE {
 

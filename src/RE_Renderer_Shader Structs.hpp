@@ -3,12 +3,12 @@
 
 namespace RE {
 
-	struct alignas(16) CameraShaderData final {
+	struct CameraShaderData final {
 		float projectionMatrix[16];
 		float viewMatrix[16];
 	};
 
-	struct alignas(16) RawGameObjectShaderData final {
+	struct RawGameObjectShaderData final {
 		float position[3];
 		float rotation[3];
 		float scale[3];
@@ -16,13 +16,13 @@ namespace RE {
 		uint32_t textureId;
 	};
 	
-	struct alignas(16) GameObjectShaderData final {
+	struct GameObjectShaderData final {
 		float modelMatrix[16];
 		float color[4];
 		uint32_t textureId;
 	};
 	
-	struct alignas(16) DepthShaderData final {
+	struct DepthShaderData final {
 		float depth;
 		uint32_t objectIndex;
 	};

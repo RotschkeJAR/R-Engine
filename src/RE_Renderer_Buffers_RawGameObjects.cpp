@@ -71,46 +71,4 @@ namespace RE {
 		}
 	}
 
-	bool record_cmd_transfer_buffer() {
-		size_t gameObjectsToRenderCount = 0;
-		for (ListBatch_GameObject *const pBatch : gameObjectBatchList) {
-			for (uint16_t u16Index = 0; u16Index < pBatch->size(); u16Index++) {
-				const GameObject *const pGameObject = pBatch->at(u16Index);
-				if (pGameObject->u32SceneParentId && pGameObject->u32SceneParentId != pCurrentScene->u32Id)
-					continue;
-				apaGameObjectBufferInstanceData[u8CurrentFrameInFlightIndex][gameObjectsToRenderCount].position[0] = pGameObject->transform.position[0];
-				apaGameObjectBufferInstanceData[u8CurrentFrameInFlightIndex][gameObjectsToRenderCount].position[1] = pGameObject->transform.position[1];
-				apaGameObjectBufferInstanceData[u8CurrentFrameInFlightIndex][gameObjectsToRenderCount].position[2] = pGameObject->transform.position[2];
-				apaGameObjectBufferInstanceData[u8CurrentFrameInFlightIndex][gameObjectsToRenderCount].scale[0] = pGameObject->transform.scale[0];
-				apaGameObjectBufferInstanceData[u8CurrentFrameInFlightIndex][gameObjectsToRenderCount].scale[1] = pGameObject->transform.scale[1];
-				apaGameObjectBufferInstanceData[u8CurrentFrameInFlightIndex][gameObjectsToRenderCount].scale[2] = pGameObject->transform.scale[2];
-				apaGameObjectBufferInstanceData[u8CurrentFrameInFlightIndex][gameObjectsToRenderCount].color[0] = pGameObject->spriteRenderer.color[0];
-				apaGameObjectBufferInstanceData[u8CurrentFrameInFlightIndex][gameObjectsToRenderCount].color[1] = pGameObject->spriteRenderer.color[1];
-				apaGameObjectBufferInstanceData[u8CurrentFrameInFlightIndex][gameObjectsToRenderCount].color[2] = pGameObject->spriteRenderer.color[2];
-				apaGameObjectBufferInstanceData[u8CurrentFrameInFlightIndex][gameObjectsToRenderCount].color[3] = pGameObject->spriteRenderer.color[3];
-				apaGameObjectBufferInstanceData[u8CurrentFrameInFlightIndex][gameObjectsToRenderCount].textureId = 0;
-				gameObjectsToRenderCount++;
-			}
-		}
-		if (is_staging_before_gpu_use_necessary())
-			return renderTasks[u8CurrentFrameInFlightIndex].record(RENDER_TASK_SUBINDEX_BUFFER_TRANSFER, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, [&](const VkCommandBuffer vk_hCommandBuffer, const uint8_t u8PreviousLogicalQueue, const uint8_t u8CurrentLogicalQueue, const uint8_t u8NextLogicalQueue) {
-						const VkBufferCopy2 vk_copyRenderBufferRegion = {
-							.sType = VK_STRUCTURE_TYPE_BUFFER_COPY_2,
-							.srcOffset = 0,
-							.dstOffset = 0,
-							.size = gameObjectsToRenderCount * sizeof(RawGameObjectShaderData),
-						};
-						const VkCopyBufferInfo2 vk_copyRenderBufferInfo = {
-							.sType = VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2,
-							.srcBuffer = vk_ahStagingRawGameObjectBuffers[u8CurrentFrameInFlightIndex],
-							.dstBuffer = vk_ahRawGameObjectBuffers[u8CurrentFrameInFlightIndex],
-							.regionCount = 1,
-							.pRegions = &vk_copyRenderBufferRegion
-						};
-						vkCmdCopyBuffer2(vk_hCommandBuffer, &vk_copyRenderBufferInfo);
-					});
-		else
-			return true;
-	}
-
 }

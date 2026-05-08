@@ -11,7 +11,6 @@ namespace RE {
 	
 	bool create_images_renderer();
 	void destroy_images_renderer();
-	bool record_cmd_blitting_render_image();
 
 	// Render target
 	extern VkImage vk_hRenderTargetImage;

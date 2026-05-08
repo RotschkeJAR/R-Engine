@@ -79,6 +79,7 @@ namespace RE {
 		}
 		PRINT_DEBUG("Allocating new texture from heap");
 		VulkanTexture *const pVulkanTexture = std::addressof(vulkanTextures[u16NextTextureIndex]);
+		pVulkanTexture->u32Count = 1;
 		uint32_t u32ActualChannels;
 		switch (u32Channels) {
 			case 1:
@@ -334,7 +335,7 @@ namespace RE {
 						}
 						if (create_vulkan_image_view(0,
 								pVulkanTexture->vk_hImage,
-								VK_IMAGE_VIEW_TYPE_2D,
+								VK_IMAGE_VIEW_TYPE_2D_ARRAY,
 								pVulkanTexture->vk_eFormat,
 								vk_channelMapping,
 								VkImageSubresourceRange {

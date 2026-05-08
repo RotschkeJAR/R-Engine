@@ -19,8 +19,6 @@ namespace RE {
 	bool create_renderer_buffers();
 	void destroy_renderer_buffers();
 
-	bool record_cmd_transfer_buffer();
-
 }
 
 #endif /* __RE_RENDERER_BUFFERS_H__ */

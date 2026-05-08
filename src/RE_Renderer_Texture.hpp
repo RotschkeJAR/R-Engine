@@ -10,7 +10,8 @@ namespace RE {
 		VkImage vk_hImage;
 		VkImageView vk_hImageView;
 		VkFormat vk_eFormat;
-		uint32_t a2u32Size[2];
+		uint32_t a2u32Size[2],
+			u32Count;
 	};
 
 	bool init_renderer_textures();

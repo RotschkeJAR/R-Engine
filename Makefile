@@ -115,15 +115,15 @@ $(SH)/*.spv: $(SH)/*.glsl
 
 compile_shaders:
 	-@rm -f $(SH)/*.spv
-	@for vertexShader in $(SH)/*_vertex.glsl; do \
+	@for vertexShader in $(SH)/graphics_*vertex.glsl; do \
 		echo $${vertexShader}; \
 		$(SC) $(SFLAG) -x glsl -fshader-stage=vertex -o "$${vertexShader}.spv" "$${vertexShader}"; \
 	done
-	@for fragmentShader in $(SH)/*_fragment.glsl; do \
+	@for fragmentShader in $(SH)/graphics_*fragment.glsl; do \
 		echo $${fragmentShader}; \
 		$(SC) $(SFLAG) -x glsl -fshader-stage=fragment -o "$${fragmentShader}.spv" "$${fragmentShader}"; \
 	done
-	@for computeShader in $(SH)/*_compute.glsl; do \
+	@for computeShader in $(SH)/compute_*.glsl; do \
 		echo $${computeShader}; \
 		$(SC) $(SFLAG) -x glsl -fshader-stage=compute -o "$${computeShader}.spv" "$${computeShader}"; \
 	done

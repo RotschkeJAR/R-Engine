@@ -66,7 +66,7 @@ namespace RE {
 			i32Score += static_cast<int32_t>(vk_physicalDeviceProperties_1_3.maxBufferSize / 500000000);
 			if (vk_physicalDeviceProperties_1_2.maxTimelineSemaphoreValueDifference < 64)
 				incompatibilities.emplace("The maximum difference for timeline semaphore values should be at least 64 or more");
-			if (vk_physicalDeviceProperties_1_1.maxPerSetDescriptors < std::max(3,  + get_max_texture_count()))
+			if (vk_physicalDeviceProperties_1_1.maxPerSetDescriptors < std::max<uint32_t>(2, static_cast<uint32_t>(get_max_sprite_layout_count()) + get_max_texture_count()))
 				warnings.emplace("The maximum amount of descriptors within a set is lower than the required minimum. Support has to be queried later");
 			i32Score += vk_physicalDeviceProperties_1_1.maxPerSetDescriptors >= (0x7FFF * 2) ? 100 : 0;
 			if (vk_physicalDeviceProperties_1_1.maxMemoryAllocationSize < vk_largestRequiredMemorySize)

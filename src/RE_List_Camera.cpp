@@ -1,11 +1,11 @@
 #include "RE_List_Camera.hpp"
-#include "RE_ListBatch_Camera.hpp"
 #include "RE_Main.hpp"
 
 namespace RE {
 	
-	std::deque<ListBatch_Camera*> cameraBatchList;
-	std::deque<Camera*> newCameras, deletableCameras;
+	std::list<Camera*> newCameras,
+		deletableCameras,
+		cameras;
 	bool bDeletingMarkedCameras = false;
 
 	void add_new_cameras() {

@@ -1140,6 +1140,8 @@ namespace RE {
 			Mesh hMesh;
 
 			SpriteRenderer();
+			SpriteRenderer(const SpriteRenderer &rCopy);
+			SpriteRenderer(const SpriteRenderer &&rrCopy) = delete;
 			~SpriteRenderer();
 	};
 
@@ -1216,6 +1218,10 @@ namespace RE {
 	};
 
 	class GameObject {
+		private:
+			uint32_t u32ListIndex;
+			bool bNew;
+
 		public:
 			Transform transform;
 			SpriteRenderer spriteRenderer;
@@ -1226,7 +1232,7 @@ namespace RE {
 			GameObject(uint32_t u32OwnId, uint32_t u32SceneParentId);
 			virtual ~GameObject();
 
-			void mark_deletable();
+			virtual void marked_deletable();
 
 			virtual void start(Scene *pStartingScene);
 			virtual void update(Scene *pCurrentScene);
@@ -1411,7 +1417,10 @@ namespace RE {
 	[[nodiscard]]	bool is_scene_next(uint32_t u32SceneId);
 
 	// Game Objects
-	[[nodiscard]]	size_t amount_of_game_objects();
+					void mark_game_object_deletable(GameObject *pGameObject);
+	[[nodiscard]]	uint32_t get_max_game_object_count();
+					void set_max_game_object_count(uint32_t u32NewMaxGameObjectCount);
+	[[nodiscard]]	uint32_t get_current_game_object_count();
 
 	// Render system
 					void enable_vsync(bool bEnableVsync);

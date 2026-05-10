@@ -4,8 +4,12 @@
 #include "RE_Internal Header.hpp"
 
 namespace RE {
+
+#define CAMERA_BATCH_SIZE 16
 	
-	extern std::deque<Camera*> newCameras, deletableCameras;
+	extern std::list<Camera*[CAMERA_BATCH_SIZE]> newCameras,
+		deletableCameras,
+		cameras;
 
 	void add_new_cameras();
 	void delete_marked_cameras();

@@ -5,10 +5,13 @@
 
 namespace RE {
 
-	Scene *pCurrentScene = nullptr, *pNextScene = nullptr;
+	Scene *pCurrentScene = nullptr,
+		*pNextScene = nullptr;
+	CallingPhase eCallingPhase = CALLING_PHASE_NONE;
 
 	static void update_proc() {
 		PRINT_DEBUG("Invoking update-procedure");
+		eCallingPhase = CALLING_PHASE_SCENE_UPDATE;
 		pCurrentScene->update();
 		update_game_objects();
 		update_cameras();
@@ -16,30 +19,25 @@ namespace RE {
 
 	static void end_proc() {
 		PRINT_DEBUG("Invoking end-procedure");
+		eCallingPhase = CALLING_PHASE_SCENE_END;
 		pCurrentScene->end();
 		end_game_objects();
 		end_cameras();
 	}
 
-	static void delete_proc() {
+	static void delete_and_add_proc() {
 		PRINT_DEBUG("Invoking delete-procedure");
-		while (!deletableGameObjects.empty() || !deletableCameras.empty()) {
-			delete_marked_game_objects();
-			delete_marked_cameras();
+		while (u32NewGameObjectCount
+				|| u32DeletableGameObjectCount
+				|| u32NewCameraCount
+				|| u32DeletableCameraCount) {
+			delete_and_add_game_objects();
+			delete_and_add_cameras();
 		}
 	}
 
-	static void add_proc() {
-		PRINT_DEBUG("Invoking add-procedure");
-		while (!newGameObjects.empty() || !newCameras.empty()) {
-			add_new_game_objects();
-			add_new_cameras();
-		}
-	}
-
-	[[nodiscard]]
-	bool is_object_active(const GameObject *const pGameObject) {
-		return !pGameObject->u32SceneParentId || pGameObject->u32SceneParentId == pCurrentScene->u32Id;
+	bool is_object_active(const GameObject &rGameObject) {
+		return !rGameObject.u32SceneParentId || rGameObject.u32SceneParentId == pCurrentScene->u32Id;
 	}
 
 	void game_logic_update() {
@@ -48,47 +46,34 @@ namespace RE {
 			PRINT_DEBUG("Ending current scene ", pCurrentScene);
 			if (pCurrentScene)
 				end_proc();
-			delete_proc();
+			eCallingPhase = CALLING_PHASE_NONE;
+			delete_and_add_proc();
 
 			PRINT_DEBUG("Switching to and starting new scene ", pNextScene);
 			pCurrentScene = pNextScene;
+			eCallingPhase = CALLING_PHASE_SCENE_START;
 			pCurrentScene->start();
 			start_game_objects();
 			start_cameras();
-
-			// Start newly added objects
-			bool bNewObjectsAdded;
-			do {
-				for (GameObject *const pObj : newGameObjects)
-					if (is_object_active(pObj)) {
-						PRINT_DEBUG("Starting and later adding new game object ", pObj);
-						pObj->start(pCurrentScene);
-					}
-				bNewObjectsAdded = !newGameObjects.empty();
-				add_proc();
-			} while (bNewObjectsAdded);
 			PRINT_DEBUG("Finished switching to new scene");
 		} else if (!pCurrentScene) {
 			RE_ERROR("There is no active scene at the moment");
 			return;
 		}
 		update_proc();
-		delete_proc();
-		add_proc();
+		delete_and_add_proc();
 	}
 
 	void last_game_logic_update() {
 		PRINT_DEBUG("Ending scene");
 		if (pCurrentScene)
 			end_proc();
-		while (!deletableGameObjects.empty())
-			delete_proc();
+		delete_and_add_proc();
 		pCurrentScene = nullptr;
 		pNextScene = nullptr;
 		PRINT_DEBUG("Finished ending scene");
 	}
 
-	[[nodiscard]]
 	bool are_scenes_present() {
 		return pCurrentScene || (!pCurrentScene && pNextScene);
 	}

@@ -73,40 +73,36 @@ $(RE): $(SRC)/* $(LIB_BIN)/*
 
 $(LIB_BIN)/*: $(LIB)/* $(LIB_SPEC)/*
 	@errorCaused=false; \
-	if [ "$(wildcard $(LIB)/*.c)" != "" ]; then \
-		for file in $(LIB)/*.c; do \
-			if ! $(CC) $(CFLAG) -std=c2x -x c -c "$${file}" || (rm -f *.o; exit 1); then \
-				errorCaused=true; \
-			fi; \
-		done; \
-	fi; \
-	if [ "$(wildcard $(LIB)/*.cpp)" != "" ]; then \
-		for file in $(LIB)/*.cpp; do \
-			if ! $(CC) $(CFLAG) -std=c++20 -x c++ -c "$${file}" || (rm -f *.o; exit 1); then \
-				errorCaused=true; \
-			fi; \
-		done; \
-	fi; \
-	if [ "$(wildcard $(LIB_SPEC)/*.c)" != "" ]; then \
-		for file in $(LIB_SPEC)/*.c; do \
-			if ! $(CC) $(CFLAG) -std=c2x -x c -c "$${file}" || (rm -f *.o; exit 1); then \
-				errorCaused=true; \
-			fi; \
-		done; \
-	fi; \
-	if [ "$(wildcard $(LIB_SPEC)/*.cpp)" != "" ]; then \
-		for file in $(LIB_SPEC)/*.cpp; do \
-			if ! $(CC) $(CFLAG) -std=c++20 -x c++ -c "$${file}" || (rm -f *.o; exit 1); then \
-				errorCaused=true; \
-			fi; \
-		done; \
-	fi; \
+	for file in $(LIB)/*.c; do \
+		echo $${file}; \
+		if ! $(CC) $(CFLAG) -std=c2x -x c -c "$${file}"; then \
+			errorCaused=true; \
+		fi; \
+	done; \
+	for file in $(LIB)/*.cpp; do \
+		echo $${file}; \
+		if ! $(CC) $(CFLAG) -std=c++20 -x c++ -c "$${file}"; then \
+			errorCaused=true; \
+		fi; \
+	done; \
+	for file in $(LIB_SPEC)/*.c; do \
+		echo $${file}; \
+		if ! $(CC) $(CFLAG) -std=c2x -x c -c "$${file}"; then \
+			errorCaused=true; \
+		fi; \
+	done; \
+	for file in $(LIB_SPEC)/*.cpp; do \
+		echo $${file}; \
+		if ! $(CC) $(CFLAG) -std=c++20 -x c++ -c "$${file}"; then \
+			errorCaused=true; \
+		fi; \
+	done; \
 	if $$errorCaused; then \
 		echo "LIBRARIES - ERROR: Failed compiling libraries"; \
 		rm -f *.o; \
 		exit 1; \
 	fi
-	-@rm -f *.o $(LIB_BIN)/*.o
+	-@rm -f $(LIB_BIN)/*.o
 	@mv *.o $(LIB_BIN)
 	-@echo "LIBRARIES - SUCCESS"
 
@@ -115,18 +111,31 @@ $(SH)/*.spv: $(SH)/*.glsl
 
 compile_shaders:
 	-@rm -f $(SH)/*.spv
-	@for vertexShader in $(SH)/graphics_*vertex.glsl; do \
+	@errorCaused=false; \
+	for vertexShader in $(SH)/graphics_*vertex.glsl; do \
 		echo $${vertexShader}; \
-		$(SC) $(SFLAG) -x glsl -fshader-stage=vertex -o "$${vertexShader}.spv" "$${vertexShader}"; \
-	done
-	@for fragmentShader in $(SH)/graphics_*fragment.glsl; do \
+		if ! $(SC) $(SFLAG) -x glsl -fshader-stage=vertex -o "$${vertexShader}.spv" "$${vertexShader}"; then \
+			errorCaused=true; \
+		fi; \
+	done; \
+	for fragmentShader in $(SH)/graphics_*fragment.glsl; do \
 		echo $${fragmentShader}; \
-		$(SC) $(SFLAG) -x glsl -fshader-stage=fragment -o "$${fragmentShader}.spv" "$${fragmentShader}"; \
-	done
-	@for computeShader in $(SH)/compute_*.glsl; do \
+		if ! $(SC) $(SFLAG) -x glsl -fshader-stage=fragment -o "$${fragmentShader}.spv" "$${fragmentShader}"; then \
+			errorCaused=true; \
+		fi; \
+	done; \
+	for computeShader in $(SH)/compute_*.glsl; do \
 		echo $${computeShader}; \
-		$(SC) $(SFLAG) -x glsl -fshader-stage=compute -o "$${computeShader}.spv" "$${computeShader}"; \
-	done
+		if ! $(SC) $(SFLAG) -x glsl -fshader-stage=compute -o "$${computeShader}.spv" "$${computeShader}"; then \
+			errorCaused=true; \
+		fi; \
+	done; \
+	if $$errorCaused; then \
+		echo "SAHADERS - ERROR: Failed compiling shaders"; \
+		rm -f $(SH)/*.spv; \
+		exit 1; \
+	fi
+	-@echo "SHADERS - SUCCESS"
 
 update_git:
 	@git add .

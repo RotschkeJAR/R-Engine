@@ -1,97 +1,103 @@
 #include "RE_List_Camera.hpp"
+#include "RE_Manager.hpp"
 #include "RE_Main.hpp"
 
 namespace RE {
 	
-	std::list<Camera*> newCameras,
+	std::list<Camera*[CAMERA_BATCH_SIZE]> newCameras,
 		deletableCameras,
 		cameras;
-	bool bDeletingMarkedCameras = false;
+	uint32_t u32MaxCameraCount = CAMERA_BATCH_SIZE,
+		u32CurrentCameraCount = 0,
+		u32DeletableCameraCount = 0,
+		u32NewCameraCount = 0;
+	bool bDeletingAddingCameras = false;
 
-	void add_new_cameras() {
-		if (newCameras.empty())
-			return;
-		for (Camera *const pCam : newCameras) {
-			PRINT_DEBUG("Adding queued new camera ", pCam);
-			add_camera(pCam);
-		}
-		PRINT_DEBUG("Clearing queue of new cameras");
-		newCameras.clear();
-	}
-
-	void delete_marked_cameras() {
-		if (deletableCameras.empty())
-			return;
-		bDeletingMarkedCameras = true;
-		for (Camera *const pCam : deletableCameras) {
-			PRINT_DEBUG("Deleting queued camera ", pCam);
-			delete pCam;
-		}
-		PRINT_DEBUG("Clearing queue of deletable cameras");
-		deletableCameras.clear();
-		bDeletingMarkedCameras = false;
-	}
-
-	void add_camera(Camera *const pCamera) {
-		PRINT_DEBUG("Adding camera ", pCamera, " to a batch");
-		for (ListBatch_Camera *const pBatch : cameraBatchList) {
-			PRINT_DEBUG("Checking camera batch ", pBatch, " for available space");
-			if (pBatch->has_space()) {
-				PRINT_DEBUG("Batch has space. Adding camera to it");
-				pBatch->add(pCamera);
-				break;
+	void delete_and_add_cameras() {
+		bDeletingAddingCameras = true;
+		while (u32DeletableCameraCount) {
+			Camera *const pDeletableCamera = deletableCameras.back()[u32DeletableCameraCount % CAMERA_BATCH_SIZE];
+			if (u32NewCameraCount) {
+				Camera *const pReplacement = newCameras.back()[(u32NewCameraCount - 1) % CAMERA_BATCH_SIZE];
+				*(cameras.begin() + pDeletableCamera->u32ListIndex / CAMERA_BATCH_SIZE)[pDeletableCamera->u32ListIndex % CAMERA_BATCH_SIZE] = pReplacement;
+				pReplacement->u32ListIndex = pDeletableCamera->u32ListIndex;
+				pReplacement->bNew = pDeletableCamera->bNew;
+				u32NewCameraCount--;
+				if ((u32NewCameraCount % CAMERA_BATCH_SIZE) == 0)
+					newCameras.pop_back();
 			}
+			delete pDeletableCamera;
+			u32DeletableCameraCount--;
+			if ((u32DeletableCameraCount % CAMERA_BATCH_SIZE) == 0)
+				deletableCameras.pop_back();
 		}
-		PRINT_DEBUG("Adding camera to a new batch");
-		ListBatch_Camera *const pNewBatch = new ListBatch_Camera;
-		pNewBatch->add(pCamera);
-		cameraBatchList.push_back(pNewBatch);
+		while (u32NewCameraCount) {
+			Camera *const pNewCamera = newCameras.back()[(u32NewCameraCount - 1) % CAMERA_BATCH_SIZE];
+			add_camera(*pNewCamera);
+			u32NewCameraCount--;
+			if ((u32NewCameraCount % CAMERA_BATCH_SIZE) == 0)
+				newCameras.pop_back();
+		}
+		bDeletingAddingCameras = false;
 	}
 
-	void remove_camera(const Camera *const pCamera) {
-		for (ListBatch_Camera *const pBatch : cameraBatchList) {
-			PRINT_DEBUG("Searching for camera ", pCamera, " in batch ", pBatch, " to delete it");
-			if (pBatch->remove(pCamera)) {
-				PRINT_DEBUG("Removed camera from batch");
-				if (pBatch->empty()) {
-					PRINT_DEBUG("Batch is empty and will be deleted");
-					cameraBatchList.erase(std::find(cameraBatchList.begin(), cameraBatchList.end(), pBatch));
-					delete pBatch;
-				}
-				return;
-			}
-		}
-		RE_ERROR("Camera ", pCamera, " had to be removed from a batch, but was nowhere found");
-	}
-
-	void mark_camera_deletable(Camera *const pCamera) {
-		if (!bRunning || bDeletingMarkedCameras) {
-			PRINT_DEBUG("Deleting camera ", pCamera, " immediatly");
-			delete pCamera;
-		} else {
-			PRINT_DEBUG("Searching for camera ", pCamera, " in new-queue");
-			std::deque<Camera*>::iterator it = std::find(newCameras.begin(), newCameras.end(), pCamera);
-			if (it != newCameras.end()) {
-				PRINT_DEBUG("Camera is new and is being deleted immediatly");
-				newCameras.erase(it);
-				delete pCamera;
-			} else {
-				PRINT_DEBUG("Enqueued camera in delete-queue");
-				deletableCameras.push_back(pCamera);
-			}
-		}
+	void add_camera(Camera &rCamera) {
+		if ((u32CurrentCameraCount % CAMERA_BATCH_SIZE) == 0) {
+			cameras.emplace_back();
+			cameras.back()[0] = std::addressof(rCamera);
+		} else
+			cameras.back()[u32CurrentCameraCount % CAMERA_BATCH_SIZE] = std::addressof(rCamera);
+		rCamera.u32ListIndex = u32CurrentCameraCount;
+		rCamera.bNew = false;
+		u32CurrentCameraCount++;
 	}
 
 	void start_cameras() {
 		PRINT_DEBUG("Starting cameras");
+		eCallingPhase = CALLING_PHASE_CAMERA_START;
 	}
 
 	void update_cameras() {
 		PRINT_DEBUG("Updating cameras");
+		eCallingPhase = CALLING_PHASE_CAMERA_UPDATE;
 	}
 
 	void end_cameras() {
 		PRINT_DEBUG("Ending cameras");
+		eCallingPhase = CALLING_PHASE_CAMERA_END;
+	}
+
+	void mark_camera_deletable(Camera *const pCamera) {
+		if (!bRunning || bDeletingAddingCameras) {
+			delete pCamera;
+		} else if (pCamera->bNew) {
+			*(newCameras.begin() + pCamera->u32ListIndex / CAMERA_BATCH_SIZE)[pCamera->u32ListIndex % CAMERA_BATCH_SIZE] = newCameras.back()[(u32NewCameraCount - 1) % CAMERA_BATCH_SIZE];
+			u32NewCameraCount--;
+		} else {
+			if ((u32DeletableCameraCount % CAMERA_BATCH_SIZE) == 0) {
+				deletableCameras.emplace_back();
+				deletableCameras.back()[0] = pCamera;
+			} else
+				deletableCameras.back()[u32DeletableCameraCount % CAMERA_BATCH_SIZE] = pCamera;
+			u32DeletableCameraCount++;
+		}
+	}
+
+	[[nodiscard]]
+	uint32_t get_max_camera_count() {
+		return u32MaxCameraCount;
+	}
+
+	void set_max_camera_count(const uint32_t u32NewMaxCameraCount) {
+		if (!bRunning)
+			u32MaxCameraCount = u32NewMaxCameraCount;
+		else
+			RE_ERROR("");
+	}
+
+	[[nodiscard]]
+	uint32_t get_current_camera_count() {
+		return u32CurrentCameraCount;
 	}
 
 }

@@ -1187,6 +1187,10 @@ namespace RE {
 	};
 
 	class Camera {
+		private:
+			uint32_t u32ListIndex;
+			bool bNew;
+
 		public:
 			Transform transform;
 
@@ -1215,6 +1219,10 @@ namespace RE {
 			bool operator ==(const Camera &rOther) const;
 			[[nodiscard]]
 			bool operator !=(const Camera &rOther) const;
+
+		friend void delete_and_add_cameras();
+		friend void add_camera(Camera &rCamera);
+		friend void mark_camera_deletable(Camera *pCamera);
 	};
 
 	class GameObject {
@@ -1237,6 +1245,10 @@ namespace RE {
 			virtual void start(Scene *pStartingScene);
 			virtual void update(Scene *pCurrentScene);
 			virtual void end(Scene *pEndingScene);
+
+		friend void delete_and_add_game_objects();
+		friend void add_game_object(GameObject &rGameObject);
+		friend void mark_game_object_deletable(GameObject *pGameObject);
 	};
 
 	class InputAction final {
@@ -1421,6 +1433,12 @@ namespace RE {
 	[[nodiscard]]	uint32_t get_max_game_object_count();
 					void set_max_game_object_count(uint32_t u32NewMaxGameObjectCount);
 	[[nodiscard]]	uint32_t get_current_game_object_count();
+
+	// Camera
+					void mark_camera_deletable(Camera *pCamera);
+	[[nodiscard]]	uint32_t get_max_camera_count();
+					void set_max_camera_count(uint32_t u32NewMaxCameraCount);
+	[[nodiscard]]	uint32_t get_current_camera_count();
 
 	// Render system
 					void enable_vsync(bool bEnableVsync);

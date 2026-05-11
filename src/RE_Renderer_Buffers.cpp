@@ -1,5 +1,4 @@
 #include "RE_Renderer_Buffers_Internal.hpp"
-#include "RE_ListBatch_GameObject.hpp"
 #include "RE_List_GameObject.hpp"
 
 namespace RE {

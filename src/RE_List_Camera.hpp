@@ -10,12 +10,14 @@ namespace RE {
 	extern std::list<Camera*[CAMERA_BATCH_SIZE]> newCameras,
 		deletableCameras,
 		cameras;
+	extern uint32_t u32MaxCameraCount,
+		u32CurrentCameraCount,
+		u32DeletableCameraCount,
+		u32NewCameraCount;
+	extern bool bDeletingAddingCameras;
 
-	void add_new_cameras();
-	void delete_marked_cameras();
-	void add_camera(Camera *pCamera);
-	void remove_camera(const Camera *pCamera);
-	void mark_camera_deletable(Camera *pCamera);
+	void delete_and_add_cameras();
+	void add_camera(Camera &rCamera);
 
 	void start_cameras();
 	void update_cameras();

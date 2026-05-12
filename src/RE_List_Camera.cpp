@@ -19,7 +19,9 @@ namespace RE {
 			Camera *const pDeletableCamera = deletableCameras.back()[u32DeletableCameraCount % CAMERA_BATCH_SIZE];
 			if (u32NewCameraCount) {
 				Camera *const pReplacement = newCameras.back()[(u32NewCameraCount - 1) % CAMERA_BATCH_SIZE];
-				*(cameras.begin() + pDeletableCamera->u32ListIndex / CAMERA_BATCH_SIZE)[pDeletableCamera->u32ListIndex % CAMERA_BATCH_SIZE] = pReplacement;
+				auto newCameraIter = cameras.begin();
+				std::advance(newCameraIter, pDeletableCamera->u32ListIndex / CAMERA_BATCH_SIZE);
+				(*newCameraIter)[pDeletableCamera->u32ListIndex % CAMERA_BATCH_SIZE] = pReplacement;
 				pReplacement->u32ListIndex = pDeletableCamera->u32ListIndex;
 				pReplacement->bNew = pDeletableCamera->bNew;
 				u32NewCameraCount--;
@@ -71,7 +73,9 @@ namespace RE {
 		if (!bRunning || bDeletingAddingCameras) {
 			delete pCamera;
 		} else if (pCamera->bNew) {
-			*(newCameras.begin() + pCamera->u32ListIndex / CAMERA_BATCH_SIZE)[pCamera->u32ListIndex % CAMERA_BATCH_SIZE] = newCameras.back()[(u32NewCameraCount - 1) % CAMERA_BATCH_SIZE];
+			auto newCameraIter = newCameras.begin();
+			std::advance(newCameraIter, pCamera->u32ListIndex / CAMERA_BATCH_SIZE);
+			(*newCameraIter)[pCamera->u32ListIndex % CAMERA_BATCH_SIZE] = newCameras.back()[(u32NewCameraCount - 1) % CAMERA_BATCH_SIZE];
 			u32NewCameraCount--;
 		} else {
 			if ((u32DeletableCameraCount % CAMERA_BATCH_SIZE) == 0) {

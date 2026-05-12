@@ -195,23 +195,18 @@ class First : public Scene {
 };
 
 int main_func() {
-	/*set_signal_handlers();
+	set_signal_handlers();
 	set_fps_limit(60);
-	First first;
-	Second secondInStack;
-	second = &secondInStack;
-	set_next_scene(&first);
-	set_fullscreen(false);
-	execute();
-	if (clonus)
-		delete clonus;*/
-	PRINT_LN("GameObject: ", sizeof(GameObject));
-	PRINT_LN("Transform: ", sizeof(Transform));
-	PRINT_LN("SpriteRenderer: ", sizeof(SpriteRenderer));
-	PRINT_LN("Vector3f: ", sizeof(Vector3f));
-	PRINT_LN("Vector2f: ", sizeof(Vector2f));
-	PRINT_LN("Scene: ", sizeof(Scene));
-	PRINT_LN("Color: ", sizeof(Color));
+	{
+		First first;
+		Second secondInStack;
+		second = &secondInStack;
+		set_next_scene(&first);
+		set_fullscreen(false);
+		execute();
+		if (clonus)
+			delete clonus;
+	}
 	return 0;
 }
 

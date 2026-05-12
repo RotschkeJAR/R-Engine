@@ -25,12 +25,16 @@ namespace RE {
 		RE_WARNING("Removing game object, when game objects aren't being added or deleted. Mark it as deletable to avoid potential bugs");
 		if (bNew) {
 			GameObject &rMovingObject = *newGameObjects.back()[u32NewGameObjectCount % GAME_OBJECT_BATCH_SIZE];
-			*(newGameObjects.begin() + u32ListIndex / GAME_OBJECT_BATCH_SIZE)[u32ListIndex % GAME_OBJECT_BATCH_SIZE] = std::addressof(rMovingObject);
+			auto newGameObjectIter = newGameObjects.begin();
+			std::advance(newGameObjectIter, u32ListIndex / GAME_OBJECT_BATCH_SIZE);
+			(*newGameObjectIter)[u32ListIndex % GAME_OBJECT_BATCH_SIZE] = std::addressof(rMovingObject);
 			rMovingObject.u32ListIndex = u32ListIndex;
 			u32NewGameObjectCount--;
 		} else {
 			GameObject &rMovingObject = *gameObjects.back()[u32CurrentGameObjectCount % GAME_OBJECT_BATCH_SIZE];
-			*(gameObjects.begin() + u32ListIndex / GAME_OBJECT_BATCH_SIZE)[u32ListIndex % GAME_OBJECT_BATCH_SIZE] = std::addressof(rMovingObject);
+			auto gameObjectIter = gameObjects.begin();
+			std::advance(gameObjectIter, u32ListIndex / GAME_OBJECT_BATCH_SIZE);
+			(*gameObjectIter)[u32ListIndex % GAME_OBJECT_BATCH_SIZE] = std::addressof(rMovingObject);
 			rMovingObject.u32ListIndex = u32ListIndex;
 			u32CurrentGameObjectCount--;
 		}

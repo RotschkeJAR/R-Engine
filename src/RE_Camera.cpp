@@ -35,12 +35,16 @@ namespace RE {
 		RE_WARNING("");
 		if (bNew) {
 			Camera &rCamera = *newCameras.back()[u32NewCameraCount % CAMERA_BATCH_SIZE];
-			*(newCameras.begin() + u32ListIndex / CAMERA_BATCH_SIZE)[u32ListIndex % CAMERA_BATCH_SIZE] = std::addressof(rCamera);
+			auto newCameraIter = newCameras.begin();
+			std::advance(newCameraIter, u32ListIndex / CAMERA_BATCH_SIZE);
+			(*newCameraIter)[u32ListIndex % CAMERA_BATCH_SIZE] = std::addressof(rCamera);
 			rCamera.u32ListIndex = u32ListIndex;
 			u32NewCameraCount--;
 		} else {
 			Camera &rCamera = *cameras.back()[u32CurrentCameraCount % CAMERA_BATCH_SIZE];
-			*(cameras.begin() + u32ListIndex / CAMERA_BATCH_SIZE)[u32ListIndex % CAMERA_BATCH_SIZE] = std::addressof(rCamera);
+			auto cameraIter = cameras.begin();
+			std::advance(cameraIter, u32ListIndex / CAMERA_BATCH_SIZE);
+			(*cameraIter)[u32ListIndex % CAMERA_BATCH_SIZE] = std::addressof(rCamera);
 			rCamera.u32ListIndex = u32ListIndex;
 			u32CurrentCameraCount--;
 		}

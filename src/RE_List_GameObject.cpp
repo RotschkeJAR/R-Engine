@@ -20,7 +20,9 @@ namespace RE {
 			GameObject *const pDeletableGameObject = deletableGameObjects.back()[(u32DeletableGameObjectCount - 1) % GAME_OBJECT_BATCH_SIZE];
 			if (u32NewGameObjectCount) {
 				GameObject *const pReplacementGameObject = newGameObjects.back()[(u32NewGameObjectCount - 1) % GAME_OBJECT_BATCH_SIZE];
-				*(gameObjects.begin() + pDeletableGameObject->u32ListIndex / GAME_OBJECT_BATCH_SIZE)[pDeletableGameObject->u32ListIndex % GAME_OBJECT_BATCH_SIZE] = pReplacementGameObject;
+				auto newGameObjectIter = gameObjects.begin();
+				std::advance(newGameObjectIter, pDeletableGameObject->u32ListIndex / GAME_OBJECT_BATCH_SIZE);
+				(*newGameObjectIter)[pDeletableGameObject->u32ListIndex % GAME_OBJECT_BATCH_SIZE] = pReplacementGameObject;
 				pReplacementGameObject->u32ListIndex = pDeletableGameObject->u32ListIndex;
 				pReplacementGameObject->bNew = false;
 				u32NewGameObjectCount--;
@@ -57,42 +59,42 @@ namespace RE {
 
 	void start_game_objects() {
 		eCallingPhase = CALLING_PHASE_GAME_OBJECT_START;
-		auto gameObjectIterator = gameObjects.begin();
+		auto gameObjectIter = gameObjects.begin();
 		uint32_t u32CurrentIndex = 0;
 		for (uint32_t u32CurrentGameObjectIndex = 0; u32CurrentGameObjectIndex < u32CurrentGameObjectCount; u32CurrentGameObjectIndex++) {
-			(*gameObjectIterator)[u32CurrentIndex]->start(pCurrentScene);
+			(*gameObjectIter)[u32CurrentIndex]->start(pCurrentScene);
 			u32CurrentIndex++;
 			if (u32CurrentIndex == GAME_OBJECT_BATCH_SIZE) {
 				u32CurrentIndex = 0;
-				gameObjectIterator++;
+				gameObjectIter++;
 			}
 		}
 	}
 
 	void update_game_objects() {
 		eCallingPhase = CALLING_PHASE_GAME_OBJECT_UPDATE;
-		auto gameObjectIterator = gameObjects.begin();
+		auto gameObjectIter = gameObjects.begin();
 		uint32_t u32CurrentIndex = 0;
 		for (uint32_t u32CurrentGameObjectIndex = 0; u32CurrentGameObjectIndex < u32CurrentGameObjectCount; u32CurrentGameObjectIndex++) {
-			(*gameObjectIterator)[u32CurrentIndex]->update(pCurrentScene);
+			(*gameObjectIter)[u32CurrentIndex]->update(pCurrentScene);
 			u32CurrentIndex++;
 			if (u32CurrentIndex == GAME_OBJECT_BATCH_SIZE) {
 				u32CurrentIndex = 0;
-				gameObjectIterator++;
+				gameObjectIter++;
 			}
 		}
 	}
 
 	void end_game_objects() {
 		eCallingPhase = CALLING_PHASE_GAME_OBJECT_END;
-		auto gameObjectIterator = gameObjects.begin();
+		auto gameObjectIter = gameObjects.begin();
 		uint32_t u32CurrentIndex = 0;
 		for (uint32_t u32CurrentGameObjectIndex = 0; u32CurrentGameObjectIndex < u32CurrentGameObjectCount; u32CurrentGameObjectIndex++) {
-			(*gameObjectIterator)[u32CurrentIndex]->end(pCurrentScene);
+			(*gameObjectIter)[u32CurrentIndex]->end(pCurrentScene);
 			u32CurrentIndex++;
 			if (u32CurrentIndex == GAME_OBJECT_BATCH_SIZE) {
 				u32CurrentIndex = 0;
-				gameObjectIterator++;
+				gameObjectIter++;
 			}
 		}
 	}
@@ -105,7 +107,9 @@ namespace RE {
 			delete pGameObject;
 		} else if (pGameObject->bNew) {
 			PRINT_DEBUG("Game object ", pGameObject, " is new and will be removed from the queue");
-			*(newGameObjects.begin() + pGameObject->u32ListIndex / GAME_OBJECT_BATCH_SIZE)[pGameObject->u32ListIndex % GAME_OBJECT_BATCH_SIZE] = newGameObjects.back()[u32NewGameObjectCount % GAME_OBJECT_BATCH_SIZE];
+			auto newGameObjectIter = newGameObjects.begin();
+			std::advance(newGameObjectIter, pGameObject->u32ListIndex / GAME_OBJECT_BATCH_SIZE);
+			(*newGameObjectIter)[pGameObject->u32ListIndex % GAME_OBJECT_BATCH_SIZE] = newGameObjects.back()[u32NewGameObjectCount % GAME_OBJECT_BATCH_SIZE];
 			u32NewGameObjectCount--;
 		} else {
 			PRINT_DEBUG("Enqueued game object ", pGameObject, " in delete-queue");

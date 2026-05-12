@@ -5,10 +5,11 @@
 
 namespace RE {
 	
-	GameObject::GameObject(const uint32_t u32OwnId, const uint32_t u32SceneParentId) : u32ListIndex(-1), bNew(true), u32OwnId(u32OwnId), u32SceneParentId(u32SceneParentId) {
+	GameObject::GameObject(const uint32_t u32OwnId, const uint32_t u32SceneParentId) : bNew(true), u32OwnId(u32OwnId), u32SceneParentId(u32SceneParentId) {
 		if (u32CurrentGameObjectCount == u32MaxGameObjectCount)
-			RE_ABORT("");
+			RE_ABORT("Game object pool exhausted due to overallocation");
 		if (bRunning && !bDeletingAddingGameObjects) {
+			PRINT_DEBUG_CLASS("Enqueuing new game object");
 			if ((u32NewGameObjectCount % GAME_OBJECT_BATCH_SIZE) == 0) {
 				newGameObjects.emplace_back();
 				newGameObjects.back()[0] = this;
@@ -16,22 +17,24 @@ namespace RE {
 				newGameObjects.back()[u32NewGameObjectCount % GAME_OBJECT_BATCH_SIZE] = this;
 			u32ListIndex = u32NewGameObjectCount;
 			u32NewGameObjectCount++;
-		} else
+		} else {
+			PRINT_DEBUG_CLASS("Directly adding new game object");
 			add_game_object(*this);
+		}
 	}
 	GameObject::~GameObject() {
-		if (bDeletingAddingGameObjects)
-			return;
-		RE_WARNING("Removing game object, when game objects aren't being added or deleted. Mark it as deletable to avoid potential bugs");
+		PRINT_DEBUG_CLASS("Destructing game object");
 		if (bNew) {
-			GameObject &rMovingObject = *newGameObjects.back()[u32NewGameObjectCount % GAME_OBJECT_BATCH_SIZE];
+			PRINT_DEBUG_CLASS("Removing game object from queue of new game objects");
+			GameObject &rMovingObject = *newGameObjects.back()[(u32NewGameObjectCount - 1) % GAME_OBJECT_BATCH_SIZE];
 			auto newGameObjectIter = newGameObjects.begin();
 			std::advance(newGameObjectIter, u32ListIndex / GAME_OBJECT_BATCH_SIZE);
 			(*newGameObjectIter)[u32ListIndex % GAME_OBJECT_BATCH_SIZE] = std::addressof(rMovingObject);
 			rMovingObject.u32ListIndex = u32ListIndex;
 			u32NewGameObjectCount--;
 		} else {
-			GameObject &rMovingObject = *gameObjects.back()[u32CurrentGameObjectCount % GAME_OBJECT_BATCH_SIZE];
+			PRINT_DEBUG_CLASS("Removing game object from game object list");
+			GameObject &rMovingObject = *gameObjects.back()[(u32CurrentGameObjectCount - 1) % GAME_OBJECT_BATCH_SIZE];
 			auto gameObjectIter = gameObjects.begin();
 			std::advance(gameObjectIter, u32ListIndex / GAME_OBJECT_BATCH_SIZE);
 			(*gameObjectIter)[u32ListIndex % GAME_OBJECT_BATCH_SIZE] = std::addressof(rMovingObject);

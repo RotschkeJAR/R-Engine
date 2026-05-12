@@ -1220,6 +1220,7 @@ namespace RE {
 			[[nodiscard]]
 			bool operator !=(const Camera &rOther) const;
 
+		friend void add_new_camera_to_list(Camera *pCamera);
 		friend void delete_and_add_cameras();
 		friend void add_camera(Camera &rCamera);
 		friend void mark_camera_deletable(Camera *pCamera);
@@ -1428,7 +1429,7 @@ namespace RE {
 	[[nodiscard]]	uint32_t get_next_scene_id();
 	[[nodiscard]]	bool is_scene_next(uint32_t u32SceneId);
 
-	// Game Objects
+	// Game Object
 					void mark_game_object_deletable(GameObject *pGameObject);
 	[[nodiscard]]	uint32_t get_max_game_object_count();
 					void set_max_game_object_count(uint32_t u32NewMaxGameObjectCount);
@@ -1439,18 +1440,19 @@ namespace RE {
 	[[nodiscard]]	uint32_t get_max_camera_count();
 					void set_max_camera_count(uint32_t u32NewMaxCameraCount);
 	[[nodiscard]]	uint32_t get_current_camera_count();
+	[[nodiscard]]	Camera* get_active_camera();
+					void deactivate_cameras();
 
 	// Render system
 					void enable_vsync(bool bEnableVsync);
 	[[nodiscard]]	bool is_vsync_enabled();
 
-	// Texture loading
+	// Texture
 	[[nodiscard]]	Texture alloc_texture_from_binary_data(const uint8_t *pau8TextureBinaries, uint32_t u32Width, uint32_t u32Height, uint32_t u32Channels);
 	[[nodiscard]]	Texture alloc_texture_loading_from_file(const char *pacPathToTextureFile);
 					void free_texture(Texture hTexture);
 	[[nodiscard]]	uint32_t get_width_of_texture(Texture hTexture);
 	[[nodiscard]]	uint32_t get_height_of_texture(Texture hTexture);
-					void get_extent_of_texture(Texture hTexture, uint32_t (&ra2u32Extent)[2]);
 					void set_max_texture_count(uint16_t u16NewMaxTextureCount);
 	[[nodiscard]]	uint16_t get_max_texture_count();
 	[[nodiscard]]	uint16_t get_current_texture_count();
@@ -1458,7 +1460,7 @@ namespace RE {
 	[[nodiscard]]	uint32_t get_max_texture_extent();
 					void set_max_texture_extent(uint32_t u32NewMaxTextureExtent);
 
-	// Sprite layout creation
+	// Sprite layout
 	[[nodiscard]]	SpriteLayout create_sprite_layout(const SpriteLayoutSettings &rSettings);
 					bool change_sprite_layout_settings(SpriteLayout hSpriteLayout, const SpriteLayoutSettings &rNewSettings);
 					void destroy_sprite_layout(SpriteLayout hSpriteLayout);

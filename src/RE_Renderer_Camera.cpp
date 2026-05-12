@@ -67,9 +67,7 @@ namespace RE {
 	}
 
 	void attach_camera(Camera *const pCam) {
-		if (pActiveCamera == pCam)
-			return;
-		else if (!pCam) {
+		if (!pCam) {
 			PRINT_DEBUG("Dettaching camera and copying recent camera matrices");
 			pActiveCamera = nullptr;
 			if (!bRunning)
@@ -84,6 +82,16 @@ namespace RE {
 			PRINT_DEBUG("Attaching new camera ", pCam);
 			pActiveCamera = pCam;
 		}
+	}
+
+	[[nodiscard]]
+	Camera* get_active_camera() {
+		return pActiveCamera;
+	}
+
+	void deactivate_cameras() {
+		PRINT_DEBUG("Deactivating cameras");
+		attach_camera(nullptr);
 	}
 
 }

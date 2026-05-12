@@ -98,12 +98,12 @@ namespace RE {
 				incompatibilities.emplace("There should be at least 128 or more bytes of space available for push constants");
 			if (vk_physicalDeviceLimits.maxMemoryAllocationCount < 64)
 				incompatibilities.emplace("There should be at least 64 or more memory allocations available");
-			if (vk_physicalDeviceLimits.maxSamplerAllocationCount < 100)
-				incompatibilities.emplace("There should be at least 100 or more sampler allocations available");
+			if (vk_physicalDeviceLimits.maxSamplerAllocationCount < get_max_sprite_layout_count())
+				incompatibilities.emplace(append_to_string("There should be at least ", get_max_sprite_layout_count(), " or more sampler allocations available"));
 			if (vk_physicalDeviceLimits.maxBoundDescriptorSets < 2)
 				incompatibilities.emplace("There should be at least 2 or more descriptor sets being bound at once");
-			if (vk_physicalDeviceLimits.maxPerStageDescriptorSamplers < RE_VK_MAX_SAMPLED_IMAGES)
-				incompatibilities.push(append_to_string("There should be at least ", RE_VK_MAX_SAMPLED_IMAGES, " or more samplers available per pipeline stage within a descriptor set"));
+			if (vk_physicalDeviceLimits.maxPerStageDescriptorSamplers < get_max_sprite_layout_count())
+				incompatibilities.push(append_to_string("There should be at least ", get_max_sprite_layout_count(), " or more samplers available per pipeline stage within a descriptor set"));
 			if (vk_physicalDeviceLimits.maxPerStageDescriptorUniformBuffers < 1)
 				incompatibilities.emplace("There should be at least 1 or more uniform buffer available per pipeline stage within a descriptor set");
 			if (vk_physicalDeviceLimits.maxPerStageDescriptorStorageBuffers < 2)
@@ -112,8 +112,8 @@ namespace RE {
 				incompatibilities.push(append_to_string("There should be at least ", get_max_texture_count(), " or more sampled images available per pipeline stage within a descriptor set"));
 			if (vk_physicalDeviceLimits.maxPerStageResources < /*descriptors*/ 3 + /*framebuffer attachments*/ 3)
 				incompatibilities.emplace("There should be at least 6 or more resources be accessible per pipeline stage");
-			if (vk_physicalDeviceLimits.maxDescriptorSetSamplers < RE_VK_MAX_SAMPLED_IMAGES)
-				incompatibilities.push(append_to_string("There should be at least ", RE_VK_MAX_SAMPLED_IMAGES, " or more samplers available in an entire pipeline"));
+			if (vk_physicalDeviceLimits.maxDescriptorSetSamplers < get_max_sprite_layout_count())
+				incompatibilities.push(append_to_string("There should be at least ", get_max_sprite_layout_count(), " or more samplers available in an entire pipeline"));
 			if (vk_physicalDeviceLimits.maxDescriptorSetUniformBuffers < 1)
 				incompatibilities.emplace("There should be at least 1 or more uniform buffer accessible in an entire pipeline");
 			if (vk_physicalDeviceLimits.maxDescriptorSetStorageBuffers < 3)

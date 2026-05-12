@@ -39,7 +39,6 @@ namespace RE {
 #define RE_VK_UNIFORM_BINDING_TEXTURE 0
 
 	// Textures
-#define RE_VK_MAX_SAMPLED_IMAGES 0x7FFF
 	extern VkDescriptorSet vk_hTextureDescSet;
 
 	// MSAA

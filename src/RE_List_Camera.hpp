@@ -7,7 +7,7 @@ namespace RE {
 
 #define CAMERA_BATCH_SIZE 16
 	
-	extern std::list<Camera*[CAMERA_BATCH_SIZE]> newCameras,
+	extern std::list<std::array<Camera*, CAMERA_BATCH_SIZE>> newCameras,
 		deletableCameras,
 		cameras;
 	extern uint32_t u32MaxCameraCount,

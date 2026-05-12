@@ -7,7 +7,7 @@ namespace RE {
 
 #define GAME_OBJECT_BATCH_SIZE 1024
 
-	extern std::list<GameObject*[GAME_OBJECT_BATCH_SIZE]> newGameObjects,
+	extern std::list<std::array<GameObject*, GAME_OBJECT_BATCH_SIZE>> newGameObjects,
 		deletableGameObjects,
 		gameObjects;
 	extern uint32_t u32MaxGameObjectCount,

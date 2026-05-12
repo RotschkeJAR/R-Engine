@@ -4,7 +4,7 @@
 
 namespace RE {
 	
-	std::list<GameObject*[GAME_OBJECT_BATCH_SIZE]> newGameObjects,
+	std::list<std::array<GameObject*, GAME_OBJECT_BATCH_SIZE>> newGameObjects,
 		deletableGameObjects,
 		gameObjects;
 	uint32_t u32MaxGameObjectCount = GAME_OBJECT_BATCH_SIZE,
@@ -14,15 +14,16 @@ namespace RE {
 	bool bDeletingAddingGameObjects = false;
 
 	void delete_and_add_game_objects() {
-		PRINT_DEBUG("Running the game object addition procedure");
+		PRINT_DEBUG("Running the game object deletion and addition procedure");
 		bDeletingAddingGameObjects = true;
 		while (u32DeletableGameObjectCount) {
 			GameObject *const pDeletableGameObject = deletableGameObjects.back()[(u32DeletableGameObjectCount - 1) % GAME_OBJECT_BATCH_SIZE];
 			if (u32NewGameObjectCount) {
 				GameObject *const pReplacementGameObject = newGameObjects.back()[(u32NewGameObjectCount - 1) % GAME_OBJECT_BATCH_SIZE];
-				auto newGameObjectIter = gameObjects.begin();
-				std::advance(newGameObjectIter, pDeletableGameObject->u32ListIndex / GAME_OBJECT_BATCH_SIZE);
-				(*newGameObjectIter)[pDeletableGameObject->u32ListIndex % GAME_OBJECT_BATCH_SIZE] = pReplacementGameObject;
+				PRINT_DEBUG("Replacing deletable game object with new, enqueued game object ", pReplacementGameObject);
+				auto gameObjectIter = gameObjects.begin();
+				std::advance(gameObjectIter, pDeletableGameObject->u32ListIndex / GAME_OBJECT_BATCH_SIZE);
+				(*gameObjectIter)[pDeletableGameObject->u32ListIndex % GAME_OBJECT_BATCH_SIZE] = pReplacementGameObject;
 				pReplacementGameObject->u32ListIndex = pDeletableGameObject->u32ListIndex;
 				pReplacementGameObject->bNew = false;
 				u32NewGameObjectCount--;
@@ -37,7 +38,7 @@ namespace RE {
 		}
 		while (u32NewGameObjectCount) {
 			GameObject *const pObject = newGameObjects.back()[(u32NewGameObjectCount - 1) % GAME_OBJECT_BATCH_SIZE];
-			PRINT_DEBUG("Adding new enqueued game object ", pObject);
+			PRINT_DEBUG("Adding enqueued game object ", pObject, " to list");
 			add_game_object(*pObject);
 			u32NewGameObjectCount--;
 			if ((u32NewGameObjectCount % GAME_OBJECT_BATCH_SIZE) == 0)
@@ -47,6 +48,7 @@ namespace RE {
 	}
 
 	void add_game_object(GameObject &rGameObject) {
+		PRINT_DEBUG("Adding game object ", std::addressof(rGameObject), " to list");
 		if ((u32CurrentGameObjectCount % GAME_OBJECT_BATCH_SIZE) == 0) {
 			gameObjects.emplace_back();
 			gameObjects.back()[0] = std::addressof(rGameObject);
@@ -58,6 +60,7 @@ namespace RE {
 	}
 
 	void start_game_objects() {
+		PRINT_DEBUG("Starting game objects");
 		eCallingPhase = CALLING_PHASE_GAME_OBJECT_START;
 		auto gameObjectIter = gameObjects.begin();
 		uint32_t u32CurrentIndex = 0;
@@ -72,6 +75,7 @@ namespace RE {
 	}
 
 	void update_game_objects() {
+		PRINT_DEBUG("Updating game objects");
 		eCallingPhase = CALLING_PHASE_GAME_OBJECT_UPDATE;
 		auto gameObjectIter = gameObjects.begin();
 		uint32_t u32CurrentIndex = 0;
@@ -86,6 +90,7 @@ namespace RE {
 	}
 
 	void end_game_objects() {
+		PRINT_DEBUG("Ending game objects");
 		eCallingPhase = CALLING_PHASE_GAME_OBJECT_END;
 		auto gameObjectIter = gameObjects.begin();
 		uint32_t u32CurrentIndex = 0;
@@ -100,10 +105,10 @@ namespace RE {
 	}
 
 	void mark_game_object_deletable(GameObject *const pGameObject) {
-		PRINT_DEBUG("Informing game object ", pGameObject, " to be marked as deletable");
+		PRINT_DEBUG("Marking game object ", pGameObject, " deletable");
 		pGameObject->marked_deletable();
 		if (!bRunning || bDeletingAddingGameObjects) {
-			PRINT_DEBUG("Deleting game object ", pGameObject, " as the engine is not running and there's nothing to wait for");
+			PRINT_DEBUG("Deleting game object ", pGameObject);
 			delete pGameObject;
 		} else if (pGameObject->bNew) {
 			PRINT_DEBUG("Game object ", pGameObject, " is new and will be removed from the queue");
@@ -112,7 +117,7 @@ namespace RE {
 			(*newGameObjectIter)[pGameObject->u32ListIndex % GAME_OBJECT_BATCH_SIZE] = newGameObjects.back()[u32NewGameObjectCount % GAME_OBJECT_BATCH_SIZE];
 			u32NewGameObjectCount--;
 		} else {
-			PRINT_DEBUG("Enqueued game object ", pGameObject, " in delete-queue");
+			PRINT_DEBUG("Enqueued game object ", pGameObject, " for deletion");
 			if ((u32DeletableGameObjectCount % GAME_OBJECT_BATCH_SIZE) == 0) {
 				deletableGameObjects.emplace_back();
 				deletableGameObjects.back()[0] = pGameObject;
@@ -128,9 +133,10 @@ namespace RE {
 	}
 
 	void set_max_game_object_count(const uint32_t u32NewMaxGameObjectCount) {
-		if (!bRunning)
+		if (!bRunning) {
+			PRINT_DEBUG("Setting maximum count of game objects to ", u32NewMaxGameObjectCount);
 			u32MaxGameObjectCount = u32NewMaxGameObjectCount;
-		else
+		} else
 			RE_ERROR("The maximum count of game objects cannot be changed, while the engine is running");
 	}
 

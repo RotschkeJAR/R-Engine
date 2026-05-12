@@ -4,7 +4,7 @@
 
 namespace RE {
 	
-	std::list<Camera*[CAMERA_BATCH_SIZE]> newCameras,
+	std::list<std::array<Camera*, CAMERA_BATCH_SIZE>> newCameras,
 		deletableCameras,
 		cameras;
 	uint32_t u32MaxCameraCount = CAMERA_BATCH_SIZE,
@@ -14,11 +14,13 @@ namespace RE {
 	bool bDeletingAddingCameras = false;
 
 	void delete_and_add_cameras() {
+		PRINT_DEBUG("Running the camera deletion and addition procedure");
 		bDeletingAddingCameras = true;
 		while (u32DeletableCameraCount) {
 			Camera *const pDeletableCamera = deletableCameras.back()[u32DeletableCameraCount % CAMERA_BATCH_SIZE];
 			if (u32NewCameraCount) {
 				Camera *const pReplacement = newCameras.back()[(u32NewCameraCount - 1) % CAMERA_BATCH_SIZE];
+				PRINT_DEBUG("Replacing deletable camera with new, enqueued camera ", pReplacement);
 				auto newCameraIter = cameras.begin();
 				std::advance(newCameraIter, pDeletableCamera->u32ListIndex / CAMERA_BATCH_SIZE);
 				(*newCameraIter)[pDeletableCamera->u32ListIndex % CAMERA_BATCH_SIZE] = pReplacement;
@@ -28,6 +30,7 @@ namespace RE {
 				if ((u32NewCameraCount % CAMERA_BATCH_SIZE) == 0)
 					newCameras.pop_back();
 			}
+			PRINT_DEBUG("Deleting camera ", pDeletableCamera);
 			delete pDeletableCamera;
 			u32DeletableCameraCount--;
 			if ((u32DeletableCameraCount % CAMERA_BATCH_SIZE) == 0)
@@ -35,6 +38,7 @@ namespace RE {
 		}
 		while (u32NewCameraCount) {
 			Camera *const pNewCamera = newCameras.back()[(u32NewCameraCount - 1) % CAMERA_BATCH_SIZE];
+			PRINT_DEBUG("Adding enqueued camera ", pNewCamera, " to list");
 			add_camera(*pNewCamera);
 			u32NewCameraCount--;
 			if ((u32NewCameraCount % CAMERA_BATCH_SIZE) == 0)
@@ -44,6 +48,7 @@ namespace RE {
 	}
 
 	void add_camera(Camera &rCamera) {
+		PRINT_DEBUG("Adding camera ", std::addressof(rCamera), " to list");
 		if ((u32CurrentCameraCount % CAMERA_BATCH_SIZE) == 0) {
 			cameras.emplace_back();
 			cameras.back()[0] = std::addressof(rCamera);
@@ -70,14 +75,18 @@ namespace RE {
 	}
 
 	void mark_camera_deletable(Camera *const pCamera) {
+		PRINT_DEBUG("Marking camera ", pCamera, " deletable");
 		if (!bRunning || bDeletingAddingCameras) {
+			PRINT_DEBUG("Deleting camera ", pCamera);
 			delete pCamera;
 		} else if (pCamera->bNew) {
+			PRINT_DEBUG("Camera ", pCamera, " is new and will be removed from the queue");
 			auto newCameraIter = newCameras.begin();
 			std::advance(newCameraIter, pCamera->u32ListIndex / CAMERA_BATCH_SIZE);
 			(*newCameraIter)[pCamera->u32ListIndex % CAMERA_BATCH_SIZE] = newCameras.back()[(u32NewCameraCount - 1) % CAMERA_BATCH_SIZE];
 			u32NewCameraCount--;
 		} else {
+			PRINT_DEBUG("Enqueued camera ", pCamera, " for deletion");
 			if ((u32DeletableCameraCount % CAMERA_BATCH_SIZE) == 0) {
 				deletableCameras.emplace_back();
 				deletableCameras.back()[0] = pCamera;
@@ -93,10 +102,11 @@ namespace RE {
 	}
 
 	void set_max_camera_count(const uint32_t u32NewMaxCameraCount) {
-		if (!bRunning)
+		if (!bRunning) {
+			PRINT_DEBUG("Setting maximum count of cameras to ", u32NewMaxCameraCount);
 			u32MaxCameraCount = u32NewMaxCameraCount;
-		else
-			RE_ERROR("");
+		} else
+			RE_ERROR("The maximum count of cameras cannot be changed, while the engine is running");
 	}
 
 	[[nodiscard]]

@@ -34,10 +34,6 @@ namespace RE {
 	// Depth-stencil buffers
 	void find_suitable_depth_stencil_formats();
 
-	// Descriptor sets
-#define RE_VK_UNIFORM_BINDING_CAMERA 0
-#define RE_VK_UNIFORM_BINDING_TEXTURE 0
-
 	// Textures
 	extern VkDescriptorSet vk_hTextureDescSet;
 

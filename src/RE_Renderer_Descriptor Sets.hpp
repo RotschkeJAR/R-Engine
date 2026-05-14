@@ -8,6 +8,7 @@ namespace RE {
 	extern VkDescriptorSet vk_hTextureDescSet, 
 		vk_ahRenderContentDescSets[RE_VK_FRAMES_IN_FLIGHT], 
 		vk_ahRawGameObjectBufferDescSets[RE_VK_FRAMES_IN_FLIGHT];
+	extern std::unique_ptr<VkDescriptorSet[]> cameraDescSets;
 	
 	bool create_descriptor_sets();
 	void destroy_descriptor_sets();

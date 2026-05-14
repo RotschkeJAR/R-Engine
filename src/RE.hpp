@@ -1188,7 +1188,7 @@ namespace RE {
 
 	class Camera {
 		private:
-			uint32_t u32ListIndex;
+			uint8_t u8ListIndex;
 			bool bNew;
 
 		public:
@@ -1437,9 +1437,9 @@ namespace RE {
 
 	// Camera
 					void mark_camera_deletable(Camera *pCamera);
-	[[nodiscard]]	uint32_t get_max_camera_count();
-					void set_max_camera_count(uint32_t u32NewMaxCameraCount);
-	[[nodiscard]]	uint32_t get_current_camera_count();
+	[[nodiscard]]	uint8_t get_max_camera_count();
+					void set_max_camera_count(uint8_t u8NewMaxCameraCount);
+	[[nodiscard]]	uint8_t get_current_camera_count();
 	[[nodiscard]]	Camera* get_active_camera();
 					void deactivate_cameras();
 

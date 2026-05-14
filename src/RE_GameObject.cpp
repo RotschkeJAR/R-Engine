@@ -8,7 +8,7 @@ namespace RE {
 	GameObject::GameObject(const uint32_t u32OwnId, const uint32_t u32SceneParentId) : bNew(true), u32OwnId(u32OwnId), u32SceneParentId(u32SceneParentId) {
 		if (u32CurrentGameObjectCount == u32MaxGameObjectCount)
 			RE_ABORT("Game object pool exhausted due to overallocation");
-		if (bRunning && !bDeletingAddingGameObjects) {
+		if (is_calling_object_active<CALLING_OBJECT_GAME_OBJECT>()) {
 			PRINT_DEBUG_CLASS("Enqueuing new game object");
 			if ((u32NewGameObjectCount % GAME_OBJECT_BATCH_SIZE) == 0) {
 				newGameObjects.emplace_back();
@@ -24,6 +24,8 @@ namespace RE {
 	}
 	GameObject::~GameObject() {
 		PRINT_DEBUG_CLASS("Destructing game object");
+		if (is_calling_object_active<CALLING_OBJECT_GAME_OBJECT>())
+			RE_WARNING("Game object ", this, " is being removed from the list while the engine is iterating over it. Mark it deletable to avoid potential bugs");
 		if (bNew) {
 			PRINT_DEBUG_CLASS("Removing game object from queue of new game objects");
 			GameObject &rMovingObject = *newGameObjects.back()[(u32NewGameObjectCount - 1) % GAME_OBJECT_BATCH_SIZE];

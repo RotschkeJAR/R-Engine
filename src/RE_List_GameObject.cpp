@@ -11,11 +11,9 @@ namespace RE {
 		u32CurrentGameObjectCount = 0,
 		u32DeletableGameObjectCount = 0,
 		u32NewGameObjectCount = 0;
-	bool bDeletingAddingGameObjects = false;
 
 	void delete_and_add_game_objects() {
 		PRINT_DEBUG("Running the game object deletion and addition procedure");
-		bDeletingAddingGameObjects = true;
 		while (u32DeletableGameObjectCount) {
 			GameObject *const pDeletableGameObject = deletableGameObjects.back()[(u32DeletableGameObjectCount - 1) % GAME_OBJECT_BATCH_SIZE];
 			if (u32NewGameObjectCount) {
@@ -44,7 +42,6 @@ namespace RE {
 			if ((u32NewGameObjectCount % GAME_OBJECT_BATCH_SIZE) == 0)
 				newGameObjects.pop_back();
 		}
-		bDeletingAddingGameObjects = false;
 	}
 
 	void add_game_object(GameObject &rGameObject) {
@@ -61,7 +58,7 @@ namespace RE {
 
 	void start_game_objects() {
 		PRINT_DEBUG("Starting game objects");
-		eCallingPhase = CALLING_PHASE_GAME_OBJECT_START;
+		set_calling_active<CALLING_PHASE_START, CALLING_OBJECT_GAME_OBJECT>();
 		auto gameObjectIter = gameObjects.begin();
 		uint32_t u32CurrentIndex = 0;
 		for (uint32_t u32CurrentGameObjectIndex = 0; u32CurrentGameObjectIndex < u32CurrentGameObjectCount; u32CurrentGameObjectIndex++) {
@@ -76,7 +73,7 @@ namespace RE {
 
 	void update_game_objects() {
 		PRINT_DEBUG("Updating game objects");
-		eCallingPhase = CALLING_PHASE_GAME_OBJECT_UPDATE;
+		set_calling_active<CALLING_PHASE_UPDATE, CALLING_OBJECT_GAME_OBJECT>();
 		auto gameObjectIter = gameObjects.begin();
 		uint32_t u32CurrentIndex = 0;
 		for (uint32_t u32CurrentGameObjectIndex = 0; u32CurrentGameObjectIndex < u32CurrentGameObjectCount; u32CurrentGameObjectIndex++) {
@@ -91,7 +88,7 @@ namespace RE {
 
 	void end_game_objects() {
 		PRINT_DEBUG("Ending game objects");
-		eCallingPhase = CALLING_PHASE_GAME_OBJECT_END;
+		set_calling_active<CALLING_PHASE_END, CALLING_OBJECT_GAME_OBJECT>();
 		auto gameObjectIter = gameObjects.begin();
 		uint32_t u32CurrentIndex = 0;
 		for (uint32_t u32CurrentGameObjectIndex = 0; u32CurrentGameObjectIndex < u32CurrentGameObjectCount; u32CurrentGameObjectIndex++) {
@@ -107,7 +104,7 @@ namespace RE {
 	void mark_game_object_deletable(GameObject *const pGameObject) {
 		PRINT_DEBUG("Marking game object ", pGameObject, " deletable");
 		pGameObject->marked_deletable();
-		if (!bRunning || bDeletingAddingGameObjects) {
+		if (!bRunning || is_calling_phase_active<CALLING_PHASE_DELETING>()) {
 			PRINT_DEBUG("Deleting game object ", pGameObject);
 			delete pGameObject;
 		} else if (pGameObject->bNew) {
@@ -134,6 +131,10 @@ namespace RE {
 
 	void set_max_game_object_count(const uint32_t u32NewMaxGameObjectCount) {
 		if (!bRunning) {
+			if (!u32NewMaxGameObjectCount) {
+				RE_ERROR("Maximum count of game objects is not allowed to be zero");
+				return;
+			}
 			PRINT_DEBUG("Setting maximum count of game objects to ", u32NewMaxGameObjectCount);
 			u32MaxGameObjectCount = u32NewMaxGameObjectCount;
 		} else

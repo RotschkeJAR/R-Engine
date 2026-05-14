@@ -34,6 +34,7 @@ namespace RE {
 	uint32_t u32MappedMemoryAlignment;
 
 	void fetch_gpu_constrains() {
+		PRINT_DEBUG("Fetching data about constraints of the selected Vulkan GPU");
 		{ // Hard-/Software Limits
 			VkPhysicalDeviceVulkan13Properties vk_physicalDeviceProperties_1_3;
 			vk_physicalDeviceProperties_1_3.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_PROPERTIES;
@@ -81,6 +82,7 @@ namespace RE {
 				vk_depthStencilImageFormatProperties.sType = VK_STRUCTURE_TYPE_IMAGE_FORMAT_PROPERTIES_2;
 				vk_depthStencilImageFormatProperties.pNext = nullptr;
 				for (const VkFormat vk_eDepthStencilFormat : vk_aeDepthStencilFormats) {
+					vk_depthStencilImageFormat.format = vk_eDepthStencilFormat;
 					switch (vkGetPhysicalDeviceImageFormatProperties2(SELECTED_PHYSICAL_VULKAN_DEVICE, &vk_depthStencilImageFormat, &vk_depthStencilImageFormatProperties)) {
 						case VK_SUCCESS:
 							vk_mSupportedMsaaSamples &= vk_depthStencilImageFormatProperties.imageFormatProperties.sampleCounts;

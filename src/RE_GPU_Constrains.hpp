@@ -49,9 +49,9 @@ namespace RE {
 	extern float f32MaxSamplerAnisotropy;
 	extern uint32_t u32MappedMemoryAlignment;
 
-	template <VulkanEnabledFeatureBits... FeatureBits>
+	template <VulkanEnabledFeatureBits... featureBits>
 	inline bool are_vulkan_features_enabled() {
-		constexpr VulkanEnabledFeatureFlags mQueriedFeatureBits = (FeatureBits | ...);
+		constexpr VulkanEnabledFeatureFlags mQueriedFeatureBits = (featureBits | ...);
 		return (mEnabledFeatures & mQueriedFeatureBits) == mQueriedFeatureBits;
 	}
 

@@ -9,7 +9,7 @@ namespace RE {
 			RE_WARNING("The scene's ID shouldn't be zero. It will be discarded if activated");
 	}
 	Scene::~Scene() {
-		PRINT_DEBUG("Destructing scene ", this, " with ID ", u32Id);
+		PRINT_DEBUG_CLASS("Destructing scene with ID ", u32Id);
 		if (pCurrentScene == this) {
 			RE_ERROR("The scene, which is currently in use, has been deleted");
 			pCurrentScene = nullptr;

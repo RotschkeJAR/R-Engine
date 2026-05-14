@@ -8,10 +8,10 @@ namespace RE {
 	bool create_descriptor_set_pools() {
 		if (are_vulkan_features_enabled<ENABLED_FEATURE_UPDATE_DESCRIPTOR_SAMPLED_IMAGE_AFTER_BIND_BIT>()) {
 			PRINT_DEBUG("Creating persistent Vulkan descriptor pool");
-			constexpr VkDescriptorPoolSize vk_aPersistentPoolSizes[] = {
+			const VkDescriptorPoolSize vk_aPersistentPoolSizes[] = {
 				{
 					.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-					.descriptorCount = 2
+					.descriptorCount = static_cast<uint32_t>(get_max_camera_count() * RE_VK_FRAMES_IN_FLIGHT)
 				}, {
 					.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
 					.descriptorCount = 6
@@ -55,7 +55,7 @@ namespace RE {
 			const VkDescriptorPoolSize vk_aPersistentPoolSizes[] = {
 				{
 					.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-					.descriptorCount = 2
+					.descriptorCount = static_cast<uint32_t>(get_max_camera_count() * RE_VK_FRAMES_IN_FLIGHT)
 				}, {
 					.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
 					.descriptorCount = 6

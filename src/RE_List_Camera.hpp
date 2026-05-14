@@ -4,17 +4,14 @@
 #include "RE_Internal Header.hpp"
 
 namespace RE {
-
-#define CAMERA_BATCH_SIZE 16
 	
-	extern std::list<std::array<Camera*, CAMERA_BATCH_SIZE>> newCameras,
+	extern std::unique_ptr<Camera*[]> newCameras,
 		deletableCameras,
 		cameras;
-	extern uint32_t u32MaxCameraCount,
-		u32CurrentCameraCount,
-		u32DeletableCameraCount,
-		u32NewCameraCount;
-	extern bool bDeletingAddingCameras;
+	extern uint8_t u8MaxCameraCount,
+		u8CurrentCameraCount,
+		u8DeletableCameraCount,
+		u8NewCameraCount;
 
 	void delete_and_add_cameras();
 	void add_camera(Camera &rCamera);

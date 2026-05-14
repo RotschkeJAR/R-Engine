@@ -3,41 +3,40 @@
 namespace RE {
 
 	static std::unique_ptr<VulkanMemory[]> localBufferMemories;
-
-	inline uint32_t buffer_info_index(const uint16_t u16BufferTypeIndex, const uint8_t u8FrameInFlightIndex) {
-		return u16BufferTypeIndex * RE_VK_FRAMES_IN_FLIGHT + u8FrameInFlightIndex;
-	}
 	
 	bool alloc_memory_for_buffers_renderer() {
 		PRINT_DEBUG("Filling buffer information for allocating shared memory");
-		constexpr uint16_t u16BufferTypeCount = 4,
-			u16CameraIndex = 0,
-			u16RawGameObjectIndex = 1,
-			u16GameObjectIndex = 2,
-			u16SortableDepthIndex = 3;
-		constexpr uint32_t u32BufferCount = u16BufferTypeCount * RE_VK_FRAMES_IN_FLIGHT;
-		SharedVulkanMemoryInfo localBufferInfos[u32BufferCount];
-		VulkanMemoryAllocationInfo bufferAllocs[u32BufferCount];
-		for (uint16_t u16BufferTypeIndex = 0; u16BufferTypeIndex < u16BufferTypeCount; u16BufferTypeIndex++) {
+		constexpr uint8_t u8BufferTypeCount = 4,
+			u8CameraIndex = 0,
+			u8RawGameObjectIndex = 1,
+			u8GameObjectIndex = 2,
+			u8SortableDepthIndex = 3;
+		constexpr uint16_t u16BufferCount = 7;
+		SharedVulkanMemoryInfo localBufferInfos[u16BufferCount];
+		VulkanMemoryAllocationInfo bufferAllocs[u16BufferCount];
+		uint16_t u16InfoIndex = 0;
+		for (uint8_t u8BufferTypeIndex = 0; u8BufferTypeIndex < u8BufferTypeCount; u8BufferTypeIndex++) {
 			for (uint8_t u8FrameInFlightIndex = 0; u8FrameInFlightIndex < RE_VK_FRAMES_IN_FLIGHT; u8FrameInFlightIndex++) {
-				const uint32_t u32BufferInfoIndex = buffer_info_index(u16BufferTypeIndex, u8FrameInFlightIndex);
-				switch (u16BufferTypeIndex) {
-					case u16CameraIndex:
-						localBufferInfos[u32BufferInfoIndex].vulkanStorageObject = vk_ahCameraBuffers[u8FrameInFlightIndex];
+				switch (u8BufferTypeIndex) {
+					case u8CameraIndex:
+						if (u8FrameInFlightIndex)
+							continue;
+						localBufferInfos[u16InfoIndex].vulkanStorageObject = vk_hCameraBuffer;
 						break;
-					case u16RawGameObjectIndex:
-						localBufferInfos[u32BufferInfoIndex].vulkanStorageObject = vk_ahRawGameObjectBuffers[u8FrameInFlightIndex];
+					case u8RawGameObjectIndex:
+						localBufferInfos[u16InfoIndex].vulkanStorageObject = vk_ahRawGameObjectBuffers[u8FrameInFlightIndex];
 						break;
-					case u16GameObjectIndex:
-						localBufferInfos[u32BufferInfoIndex].vulkanStorageObject = vk_ahGameObjectBuffers[u8FrameInFlightIndex];
+					case u8GameObjectIndex:
+						localBufferInfos[u16InfoIndex].vulkanStorageObject = vk_ahGameObjectBuffers[u8FrameInFlightIndex];
 						break;
-					case u16SortableDepthIndex:
-						localBufferInfos[u32BufferInfoIndex].vulkanStorageObject = vk_ahSortableDepthBuffers[u8FrameInFlightIndex];
+					case u8SortableDepthIndex:
+						localBufferInfos[u16InfoIndex].vulkanStorageObject = vk_ahSortableDepthBuffers[u8FrameInFlightIndex];
 						break;
 					[[unlikely]] default:
-					 	RE_ABORT("Unknown buffer type index for allocating memory: ", u16BufferTypeIndex);
+					 	RE_ABORT("Unknown buffer type index for allocating memory: ", u8BufferTypeIndex);
 				}
-				localBufferInfos[u32BufferInfoIndex].u32RegionIndex = 0;
+				localBufferInfos[u16InfoIndex].u32RegionIndex = 0;
+				u16InfoIndex++;
 			}
 		}
 		PRINT_DEBUG("Allocating local Vulkan memory for buffers used by renderer");
@@ -48,6 +47,7 @@ namespace RE {
 				numberOfAllocatedMemories,
 				localBufferMemories,
 				bufferAllocs) == VK_SUCCESS) {
+			PRINT_LN(numberOfAllocatedMemories);
 			std::unique_ptr<void*[]> bufferMemoryPointers = std::make_unique<void*[]>(numberOfAllocatedMemories);
 			size_t memoryIndex = 0;
 			for (; memoryIndex < numberOfAllocatedMemories; memoryIndex++)
@@ -56,29 +56,38 @@ namespace RE {
 					break;
 				}
 			if (memoryIndex == numberOfAllocatedMemories) {
-				for (uint16_t u16BufferTypeIndex = 0; u16BufferTypeIndex < u16BufferTypeCount; u16BufferTypeIndex++)
+				uint16_t u16InfoIndex = 0;
+				for (uint8_t u8BufferTypeIndex = 0; u8BufferTypeIndex < u8BufferTypeCount; u8BufferTypeIndex++)
 					for (uint8_t u8FrameInFlightIndex = 0; u8FrameInFlightIndex < RE_VK_FRAMES_IN_FLIGHT; u8FrameInFlightIndex++) {
-						const size_t indexToMemory = bufferAllocs[u16BufferTypeIndex].indexToMemory;
-						const uint32_t u32BufferInfoIndex = buffer_info_index(u16BufferTypeIndex, u8FrameInFlightIndex);
-						switch (u16BufferTypeIndex) {
-							case u16CameraIndex:
-								apCameraShaderData[u8FrameInFlightIndex] = reinterpret_cast<CameraShaderData*>(reinterpret_cast<uint8_t*>(bufferMemoryPointers[indexToMemory]) + bufferAllocs[u32BufferInfoIndex].vk_memoryOffset);
-								apCameraBufferMemories[u8FrameInFlightIndex] = std::addressof(localBufferMemories[indexToMemory]);
+						const size_t indexToMemory = bufferAllocs[u8BufferTypeIndex].indexToMemory;
+						switch (u8BufferTypeIndex) {
+							case u8CameraIndex:
+								if (u8FrameInFlightIndex)
+									continue;
+								{
+									pCameraBufferMemory = std::addressof(localBufferMemories[indexToMemory]);
+									camerasShaderData[0] = reinterpret_cast<CameraShaderData*>(reinterpret_cast<uint8_t*>(bufferMemoryPointers[indexToMemory]) + bufferAllocs[u16InfoIndex].vk_memoryOffset);
+									uint8_t *const pFirstByte = reinterpret_cast<uint8_t*>(camerasShaderData[0]);
+									for (uint16_t u16CameraDataIndex = 1; u16CameraDataIndex < get_max_camera_count() * RE_VK_FRAMES_IN_FLIGHT; u16CameraDataIndex++)
+										camerasShaderData[u16CameraDataIndex] = reinterpret_cast<CameraShaderData*>(pFirstByte + next_multiple_inclusive<VkDeviceSize>(sizeof(CameraShaderData), vk_uniformBufferAlignment) * u16CameraDataIndex);
+								}
 								break;
-							case u16RawGameObjectIndex:
-								apaGameObjectBufferInstanceData[u8FrameInFlightIndex] = reinterpret_cast<RawGameObjectShaderData*>(reinterpret_cast<uint8_t*>(bufferMemoryPointers[indexToMemory]) + bufferAllocs[u32BufferInfoIndex].vk_memoryOffset);
+							case u8RawGameObjectIndex:
+								apaGameObjectBufferInstanceData[u8FrameInFlightIndex] = reinterpret_cast<RawGameObjectShaderData*>(reinterpret_cast<uint8_t*>(bufferMemoryPointers[indexToMemory]) + bufferAllocs[u16InfoIndex].vk_memoryOffset);
 								break;
-							case u16GameObjectIndex:
-							case u16SortableDepthIndex:
+							case u8GameObjectIndex:
+							case u8SortableDepthIndex:
 								break;
 							[[unlikely]] default:
-								RE_ABORT("Unknown buffer type index for allocating memory: ", u16BufferTypeIndex);
+								RE_ABORT("Unknown buffer type index for allocating memory: ", u8BufferTypeIndex);
 						}
+						u16InfoIndex++;
 					}
 				return true;
 			}
 			localBufferMemories.reset();
-		}
+		} else
+			RE_FATAL_ERROR("Failed to allocate memory for Vulkan buffers residing on the CPU");
 		return false;
 	}
 

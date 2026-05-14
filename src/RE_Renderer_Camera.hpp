@@ -6,7 +6,6 @@
 namespace RE {
 
 	extern VkRect2D vk_cameraProjectionOnscreen;
-	extern CameraShaderData *apCameraShaderData[RE_VK_FRAMES_IN_FLIGHT];
 
 	void init_camera_matrices();
 	void calculate_camera_matrices();

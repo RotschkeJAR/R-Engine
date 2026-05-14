@@ -14,7 +14,6 @@ namespace RE {
 		u32CurrentGameObjectCount,
 		u32DeletableGameObjectCount,
 		u32NewGameObjectCount;
-	extern bool bDeletingAddingGameObjects;
 
 	void delete_and_add_game_objects();
 	void add_game_object(GameObject &rGameObject);

@@ -7,11 +7,10 @@ namespace RE {
 
 	Scene *pCurrentScene = nullptr,
 		*pNextScene = nullptr;
-	CallingPhase eCallingPhase = CALLING_PHASE_NONE;
 
 	static void update_proc() {
 		PRINT_DEBUG("Invoking update-procedure");
-		eCallingPhase = CALLING_PHASE_SCENE_UPDATE;
+		set_calling_active<CALLING_PHASE_UPDATE, CALLING_OBJECT_SCENE>();
 		pCurrentScene->update();
 		update_game_objects();
 		update_cameras();
@@ -19,7 +18,7 @@ namespace RE {
 
 	static void end_proc() {
 		PRINT_DEBUG("Invoking end-procedure");
-		eCallingPhase = CALLING_PHASE_SCENE_END;
+		set_calling_active<CALLING_PHASE_END, CALLING_OBJECT_SCENE>();
 		pCurrentScene->end();
 		end_game_objects();
 		end_cameras();
@@ -27,10 +26,11 @@ namespace RE {
 
 	static void delete_and_add_proc() {
 		PRINT_DEBUG("Invoking delete-procedure");
+		set_calling_active<CALLING_PHASE_DELETING, CALLING_OBJECT_NONE>();
 		while (u32NewGameObjectCount
 				|| u32DeletableGameObjectCount
-				|| u32NewCameraCount
-				|| u32DeletableCameraCount) {
+				|| u8NewCameraCount
+				|| u8DeletableCameraCount) {
 			delete_and_add_game_objects();
 			delete_and_add_cameras();
 		}
@@ -46,18 +46,17 @@ namespace RE {
 			PRINT_DEBUG("Ending current scene ", pCurrentScene);
 			if (pCurrentScene)
 				end_proc();
-			eCallingPhase = CALLING_PHASE_NONE;
 			delete_and_add_proc();
 
 			PRINT_DEBUG("Switching to and starting new scene ", pNextScene);
 			pCurrentScene = pNextScene;
-			eCallingPhase = CALLING_PHASE_SCENE_START;
+			set_calling_active<CALLING_PHASE_START, CALLING_OBJECT_SCENE>();
 			pCurrentScene->start();
 			start_game_objects();
 			start_cameras();
 			PRINT_DEBUG("Finished switching to new scene");
 		} else if (!pCurrentScene) {
-			RE_ERROR("There is no active scene at the moment");
+			RE_FATAL_ERROR("There is no active scene at the moment");
 			return;
 		}
 		update_proc();

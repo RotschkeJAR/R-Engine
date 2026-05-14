@@ -71,9 +71,9 @@ class Playy : public GameObject {
 				misses++;
 			transform.position[0] += (right.is_down() - left.is_down()) * 0.62f * get_deltaseconds();
 			transform.position[1] += (up.is_down() - down.is_down()) * 0.62f * get_deltaseconds();
-			spriteRenderer.color.set_red(std::fmodf(std::abs(transform.position[0]), 1.0f));
-			spriteRenderer.color.set_green(std::fmodf(std::abs(transform.position[1]), 1.0f));
-			spriteRenderer.color.set_blue(std::fmodf(std::abs(transform.position[2]), 1.0f));
+			spriteRenderer.color.set_red(std::fmod(std::abs(transform.position[0]), 1.0f));
+			spriteRenderer.color.set_green(std::fmod(std::abs(transform.position[1]), 1.0f));
+			spriteRenderer.color.set_blue(std::fmod(std::abs(transform.position[2]), 1.0f));
 		}
 		void end(Scene* pEndingScene) {
 			PRINT_LN(append_to_string(hits, ", ", misses).c_str());
@@ -197,16 +197,14 @@ class First : public Scene {
 int main_func() {
 	set_signal_handlers();
 	set_fps_limit(60);
-	{
-		First first;
-		Second secondInStack;
-		second = &secondInStack;
-		set_next_scene(&first);
-		set_fullscreen(false);
-		execute();
-		if (clonus)
-			delete clonus;
-	}
+	First first;
+	Second secondInStack;
+	second = &secondInStack;
+	set_next_scene(&first);
+	set_fullscreen(false);
+	execute();
+	if (clonus)
+		delete clonus;
 	return 0;
 }
 

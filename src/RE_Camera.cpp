@@ -2,21 +2,18 @@
 #include "RE_Renderer_Camera.hpp"
 #include "RE_List_Camera.hpp"
 #include "RE_Main.hpp"
+#include "RE_Manager.hpp"
 
 namespace RE {
 
-	static void add_new_camera_to_list(Camera *const pCamera) {
-		if (u32CurrentCameraCount == u32MaxCameraCount)
+	void add_new_camera_to_list(Camera *const pCamera) {
+		if (u8CurrentCameraCount == u8MaxCameraCount)
 			RE_ABORT("Camera pool exhausted due to overallocation");
-		if (bRunning || !bDeletingAddingCameras) {
+		if (is_calling_object_active<CALLING_OBJECT_CAMERA>()) {
 			PRINT_DEBUG("Enqueuing new camera ", pCamera);
-			if ((u32NewCameraCount % CAMERA_BATCH_SIZE) == 0) {
-				newCameras.emplace_back();
-				newCameras.back()[0] = pCamera;
-			} else
-				newCameras.back()[u32NewCameraCount % CAMERA_BATCH_SIZE] = pCamera;
-			pCamera->u32ListIndex = u32NewCameraCount;
-			u32NewCameraCount++;
+			newCameras[u8NewCameraCount] = pCamera;
+			pCamera->u8ListIndex = u8NewCameraCount;
+			u8NewCameraCount++;
 		} else {
 			PRINT_DEBUG("Directly adding new camera ", pCamera);
 			add_camera(*pCamera);
@@ -38,22 +35,20 @@ namespace RE {
 	Camera::~Camera() {
 		PRINT_DEBUG_CLASS("Destructing camera");
 		deactivate();
+		if (is_calling_object_active<CALLING_OBJECT_CAMERA>())
+			RE_WARNING("Camera ", this, " is being removed from the list while the engine is iterating over it. Mark it deletable to avoid potential bugs");
 		if (bNew) {
 			PRINT_DEBUG_CLASS("Removing camera from queue of new cameras");
-			Camera &rCamera = *newCameras.back()[(u32NewCameraCount - 1) % CAMERA_BATCH_SIZE];
-			auto newCameraIter = newCameras.begin();
-			std::advance(newCameraIter, u32ListIndex / CAMERA_BATCH_SIZE);
-			(*newCameraIter)[u32ListIndex % CAMERA_BATCH_SIZE] = std::addressof(rCamera);
-			rCamera.u32ListIndex = u32ListIndex;
-			u32NewCameraCount--;
+			Camera &rReplacement = *newCameras[u8NewCameraCount - 1];
+			newCameras[u8ListIndex] = std::addressof(rReplacement);
+			rReplacement.u8ListIndex = u8ListIndex;
+			u8NewCameraCount--;
 		} else {
 			PRINT_DEBUG_CLASS("Removing camera from camera list");
-			Camera &rCamera = *cameras.back()[(u32CurrentCameraCount - 1) % CAMERA_BATCH_SIZE];
-			auto cameraIter = cameras.begin();
-			std::advance(cameraIter, u32ListIndex / CAMERA_BATCH_SIZE);
-			(*cameraIter)[u32ListIndex % CAMERA_BATCH_SIZE] = std::addressof(rCamera);
-			rCamera.u32ListIndex = u32ListIndex;
-			u32CurrentCameraCount--;
+			Camera &rReplacement = *cameras[u8CurrentCameraCount - 1];
+			cameras[u8ListIndex] = std::addressof(rReplacement);
+			rReplacement.u8ListIndex = u8ListIndex;
+			u8CurrentCameraCount--;
 		}
 	}
 

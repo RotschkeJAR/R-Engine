@@ -5,6 +5,7 @@
 #include "RE_GPU.hpp"
 #include "RE_Vulkan_Wrappers.hpp"
 
+#include "RE_Renderer_Shader Structs.hpp"
 #include "RE_Renderer_Descriptor Sets.hpp"
 #include "RE_Renderer_Descriptor Set Pools.hpp"
 #include "RE_Renderer_Descriptor Set Layouts.hpp"
@@ -29,6 +30,7 @@ namespace RE {
 	extern std::unique_ptr<VkImage[]> swapchainImages;
 	extern std::unique_ptr<VkImageView[]> swapchainImageViews;
 	extern uint32_t u32SwapchainImageCount;
+	extern bool bSwapchainDirty;
 	extern bool bVsyncEnabled;
 	bool create_swapchain();
 	void destroy_swapchain();

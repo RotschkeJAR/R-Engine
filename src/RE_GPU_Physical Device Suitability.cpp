@@ -140,18 +140,16 @@ namespace RE {
 				incompatibilities.emplace("The maximum count Y of dispatchable work groups should be at least 1 or more");
 			if (vk_physicalDeviceLimits.maxComputeWorkGroupCount[2] < 1)
 				incompatibilities.emplace("The maximum count Z of dispatchable work groups should be at least 1 or more");
-			if (vk_physicalDeviceLimits.maxComputeWorkGroupInvocations < 1000)
-				incompatibilities.emplace("The maximum count of work group invocations should be at least 1000 or more");
-			if (vk_physicalDeviceLimits.maxComputeWorkGroupSize[0] < 1000)
-				incompatibilities.emplace("The maximum group size X should be at least 1000 or more");
+			if (vk_physicalDeviceLimits.maxComputeWorkGroupInvocations < 256)
+				incompatibilities.emplace("The maximum count of work group invocations should be at least 256 or more");
+			if (vk_physicalDeviceLimits.maxComputeWorkGroupSize[0] < 256)
+				incompatibilities.emplace("The maximum group size X should be at least 256 or more");
 			if (vk_physicalDeviceLimits.maxComputeWorkGroupSize[1] < 1)
 				incompatibilities.emplace("The maximum group size Y should be at least 1 or more");
 			if (vk_physicalDeviceLimits.maxComputeWorkGroupSize[2] < 1)
 				incompatibilities.emplace("The maximum group size Z should be at least 1 or more");
 			if (vk_physicalDeviceLimits.maxDrawIndexedIndexValue < 4)
 				incompatibilities.emplace("The maximum index within a draw call should be at least 4 or more");
-			if (vk_physicalDeviceLimits.maxDrawIndirectCount < 1000)
-				incompatibilities.emplace("The maximum indirect draw count should be at least 1000 or more");
 			if (vk_physicalDeviceLimits.maxViewports < 1)
 				incompatibilities.emplace("There should be at least 1 or more viewports assignable to a pipeline");
 			if (vk_physicalDeviceLimits.maxViewportDimensions[0] < u32LargestMonitorsScale)

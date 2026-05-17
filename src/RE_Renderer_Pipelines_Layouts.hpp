@@ -6,7 +6,8 @@
 namespace RE {
 	
 	extern VkPipelineLayout vk_hGraphicsPipelineLayout,
-		vk_hComputePipelineLayoutProcessing;
+		vk_hSortDepthPipelineLayout,
+		vk_hProcessingPipelineLayout;
 
 	bool create_pipeline_layouts();
 	void destroy_pipeline_layouts();

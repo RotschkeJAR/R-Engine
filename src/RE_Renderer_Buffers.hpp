@@ -5,8 +5,11 @@
 
 namespace RE {
 
-	extern RawGameObjectShaderData *apaGameObjectBufferInstanceData[RE_VK_FRAMES_IN_FLIGHT];
-	extern VkBuffer vk_ahRawGameObjectBuffers[RE_VK_FRAMES_IN_FLIGHT];
+	extern VkBuffer vk_hStagingGameObjectsBuffer;
+	extern VulkanMemory *pStagingGameObjectsBufferMemory;
+	extern GameObjectShaderData *paStagingGameObjectsBufferData;
+
+	extern VkBuffer vk_ahGameObjectsBuffers[RE_VK_FRAMES_IN_FLIGHT];
 
 	extern VkBuffer vk_hCameraBuffer;
 	extern VulkanMemory *pCameraBufferMemory;
@@ -14,7 +17,7 @@ namespace RE {
 
 	extern VkBuffer vk_ahSortableDepthBuffers[RE_VK_FRAMES_IN_FLIGHT];
 
-	extern VkBuffer vk_ahGameObjectBuffers[RE_VK_FRAMES_IN_FLIGHT];
+	extern VkBuffer vk_ahGameObjectsModelMatrixBuffers[RE_VK_FRAMES_IN_FLIGHT];
 
 	bool create_renderer_buffers();
 	void destroy_renderer_buffers();

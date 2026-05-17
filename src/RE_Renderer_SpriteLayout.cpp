@@ -129,7 +129,7 @@ namespace RE {
 		const VkWriteDescriptorSet vk_updateInfo = {
 			.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 			.pNext = nullptr,
-			.dstSet = vk_hTextureDescSet,
+			.dstSet = vk_hSpriteDescSet,
 			.dstBinding = RE_VK_SPRITE_DESC_SET_SPRITE_LAYOUT_BINDING_INDEX,
 			.dstArrayElement = get_index_of_sprite_layout(pVulkanSpriteLayout),
 			.descriptorCount = 1,

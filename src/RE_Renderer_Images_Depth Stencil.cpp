@@ -423,14 +423,14 @@ namespace RE {
 		if (bRunning) {
 			PRINT_DEBUG("Destroying depth and stencil Vulkan images");
 			wait_for_rendering_finished();
-			destroy_images_renderer();
+			destroy_renderer_images();
 		}
 		PRINT_DEBUG("Updating depth and stencil settings");
 		eDepthPrecission = eNewDepthPrecission;
 		bStencilsEnabled = bNewStencilsEnabled;
 		if (bRunning) {
 			PRINT_DEBUG("Recreating depth and stencil Vulkan images");
-			create_images_renderer();
+			create_renderer_images();
 		}
 	}
 

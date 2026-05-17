@@ -1131,13 +1131,11 @@ namespace RE {
 
 	typedef class Texture_T final {} *Texture;
 	typedef class SpriteLayout_T final {} *SpriteLayout;
-	typedef class Mesh_T final {} *Mesh;
 
 	class SpriteRenderer final {
 		public:
 			Color color;
 			Vector2f textureOffset, textureCoordinates;
-			Mesh hMesh;
 
 			SpriteRenderer();
 			SpriteRenderer(const SpriteRenderer &rCopy);
@@ -1362,127 +1360,183 @@ namespace RE {
 	};
 
 	// Window
-					void set_fullscreen(bool bNewFullscreen);
-	[[nodiscard]]	bool is_fullscreen();
-					void set_window_title(const char *pacNewTitle);
+	void set_fullscreen(bool bNewFullscreen);
+	[[nodiscard]]
+	bool is_fullscreen();
+	void set_window_title(const char *pacNewTitle);
 
 	// Console
-					void enable_colorful_printing(bool bEnable);
-	[[nodiscard]]	bool is_colorful_printing_enabled();
-					void treat_warnings_as_errors(bool bEnable);
-	[[nodiscard]]	bool are_warnings_always_treated_as_errors();
-					void make_errors_always_fatal(bool bEnable);
-	[[nodiscard]]	bool are_errors_always_fatal();
+	void enable_colorful_printing(bool bEnable);
+	[[nodiscard]]
+	bool is_colorful_printing_enabled();
+	void treat_warnings_as_errors(bool bEnable);
+	[[nodiscard]]
+	bool are_warnings_always_treated_as_errors();
+	void make_errors_always_fatal(bool bEnable);
+	[[nodiscard]]
+	bool are_errors_always_fatal();
 
 	// Cursor input
-	[[nodiscard]]	int32_t get_cursor_position_x();
-	[[nodiscard]]	int32_t get_cursor_position_y();
-	[[nodiscard]]	float get_cursor_normal_position_x();
-	[[nodiscard]]	float get_cursor_normal_position_y();
-					void reset_mouse_input();
+	[[nodiscard]]
+	int32_t get_cursor_position_x();
+	[[nodiscard]]
+	int32_t get_cursor_position_y();
+	[[nodiscard]]
+	float get_cursor_normal_position_x();
+	[[nodiscard]]
+	float get_cursor_normal_position_y();
+	void reset_mouse_input();
 
 	// Keyboard input
-	[[nodiscard]]	Input map_scancode_to_input(uint32_t u32Scancode);
-	[[nodiscard]]	uint32_t map_input_to_scancode(Input eInput);
-					void reset_keyboard_input();
+	[[nodiscard]]
+	Input map_scancode_to_input(uint32_t u32Scancode);
+	[[nodiscard]]
+	uint32_t map_input_to_scancode(Input eInput);
+	void reset_keyboard_input();
 
 	// Input
-	[[nodiscard]]	bool is_down(Input eInput, uint32_t u32Scancode = 0);
-	[[nodiscard]]	bool was_down(Input eInput, uint32_t u32Scancode = 0);
-	[[nodiscard]]	bool is_pressed(Input eInput, uint32_t u32Scancode = 0);
-	[[nodiscard]]	bool is_released(Input eInput, uint32_t u32Scancode = 0);
-	[[nodiscard]]	bool is_held_down(Input eInput, uint32_t u32Scancode = 0);
-					void reset_input_at(Input eInput, uint32_t u32Scancode = 0);
-					void reset_all_input();
-	[[nodiscard]]	constexpr bool is_scroll_input(const Input eInput) {
-						return eInput == RE_INPUT_SCROLL_UP || eInput == RE_INPUT_SCROLL_DOWN;
-					}
-	[[nodiscard]]	constexpr bool is_button_input(const Input eInput) {
-						return eInput >= RE_INPUT_BUTTON_LEFT && eInput <= RE_INPUT_BUTTON_MIDDLE;
-					}
-	[[nodiscard]]	constexpr bool is_mouse_input(const Input eInput) {
-						return is_scroll_input(eInput) || is_button_input(eInput);
-					}
-	[[nodiscard]]	constexpr bool is_key_input(const Input eInput) {
-						return eInput >= RE_INPUT_KEY_SPACE && eInput < RE_INPUT_MAX_ENUM;
-					}
+	[[nodiscard]]
+	bool is_down(Input eInput, uint32_t u32Scancode = 0);
+	[[nodiscard]]
+	bool was_down(Input eInput, uint32_t u32Scancode = 0);
+	[[nodiscard]]
+	bool is_pressed(Input eInput, uint32_t u32Scancode = 0);
+	[[nodiscard]]
+	bool is_released(Input eInput, uint32_t u32Scancode = 0);
+	[[nodiscard]]
+	bool is_held_down(Input eInput, uint32_t u32Scancode = 0);
+	void reset_input_at(Input eInput, uint32_t u32Scancode = 0);
+	void reset_all_input();
+	[[nodiscard]]
+	constexpr bool is_scroll_input(const Input eInput) {
+		return eInput == RE_INPUT_SCROLL_UP || eInput == RE_INPUT_SCROLL_DOWN;
+	}
+	[[nodiscard]]
+	constexpr bool is_button_input(const Input eInput) {
+		return eInput >= RE_INPUT_BUTTON_LEFT && eInput <= RE_INPUT_BUTTON_MIDDLE;
+	}
+	[[nodiscard]]
+	constexpr bool is_mouse_input(const Input eInput) {
+		return is_scroll_input(eInput) || is_button_input(eInput);
+	}
+	[[nodiscard]]
+	constexpr bool is_key_input(const Input eInput) {
+		return eInput >= RE_INPUT_KEY_SPACE && eInput < RE_INPUT_MAX_ENUM;
+	}
 
 	// Program execution
-					bool execute();
-	[[nodiscard]]	float get_deltaseconds();
-	[[nodiscard]]	float get_fps_rate();
-					void set_fps_limit(uint32_t u32MaxFramesPerSecond);
-	[[nodiscard]]	uint32_t get_fps_limit();
-					void set_max_lag_time(float f32MaxSecondsOfLag);
-	[[nodiscard]]	float get_max_lag_time();
-					void set_max_exhaustion_time(float f32MaxSecondsOfExhaustion);
-	[[nodiscard]]	float get_max_exhaustion_time();
+	bool execute();
+	[[nodiscard]]
+	float get_deltaseconds();
+	[[nodiscard]]
+	float get_fps_rate();
+	void set_fps_limit(uint32_t u32MaxFramesPerSecond);
+	[[nodiscard]]
+	uint32_t get_fps_limit();
+	void set_max_lag_time(float f32MaxSecondsOfLag);
+	[[nodiscard]]
+	float get_max_lag_time();
+	void set_max_exhaustion_time(float f32MaxSecondsOfExhaustion);
+	[[nodiscard]]
+	float get_max_exhaustion_time();
 
 	// Manager
-					void set_next_scene(Scene *pNextSceneParam);
-	[[nodiscard]]	bool is_next_scene_set();
-	[[nodiscard]]	Scene* get_current_scene();
-	[[nodiscard]]	uint32_t get_current_scene_id();
-	[[nodiscard]]	bool is_scene_current(uint32_t u32SceneId);
+	void set_next_scene(Scene *pNextSceneParam);
+	[[nodiscard]]
+	bool is_next_scene_set();
+	[[nodiscard]]
+	Scene* get_current_scene();
+	[[nodiscard]]
+	uint32_t get_current_scene_id();
+	[[nodiscard]]
+	bool is_scene_current(uint32_t u32SceneId);
 
-	[[nodiscard]]	Scene* get_next_scene();
-	[[nodiscard]]	uint32_t get_next_scene_id();
-	[[nodiscard]]	bool is_scene_next(uint32_t u32SceneId);
+	[[nodiscard]]
+	Scene* get_next_scene();
+	[[nodiscard]]
+	uint32_t get_next_scene_id();
+	[[nodiscard]]
+	bool is_scene_next(uint32_t u32SceneId);
 
 	// Game Object
-					void mark_game_object_deletable(GameObject *pGameObject);
-	[[nodiscard]]	uint32_t get_max_game_object_count();
-					void set_max_game_object_count(uint32_t u32NewMaxGameObjectCount);
-	[[nodiscard]]	uint32_t get_current_game_object_count();
+	void mark_game_object_deletable(GameObject *pGameObject);
+	[[nodiscard]]
+	uint32_t get_max_game_object_count();
+	void set_max_game_object_count(uint32_t u32NewMaxGameObjectCount);
+	[[nodiscard]]
+	uint32_t get_current_game_object_count();
 
 	// Camera
-					void mark_camera_deletable(Camera *pCamera);
-	[[nodiscard]]	uint8_t get_max_camera_count();
-					void set_max_camera_count(uint8_t u8NewMaxCameraCount);
-	[[nodiscard]]	uint8_t get_current_camera_count();
-	[[nodiscard]]	Camera* get_active_camera();
-					void deactivate_cameras();
+	void mark_camera_deletable(Camera *pCamera);
+	[[nodiscard]]
+	uint8_t get_max_camera_count();
+	void set_max_camera_count(uint8_t u8NewMaxCameraCount);
+	[[nodiscard]]
+	uint8_t get_current_camera_count();
+	[[nodiscard]]
+	Camera* get_active_camera();
+	void deactivate_cameras();
 
 	// Render system
-					void enable_vsync(bool bEnableVsync);
-	[[nodiscard]]	bool is_vsync_enabled();
+	void enable_vsync(bool bEnableVsync);
+	[[nodiscard]]
+	bool is_vsync_enabled();
 
 	// Texture
-	[[nodiscard]]	Texture alloc_texture_from_binary_data(const uint8_t *pau8TextureBinaries, uint32_t u32Width, uint32_t u32Height, uint32_t u32Channels);
-	[[nodiscard]]	Texture alloc_texture_loading_from_file(const char *pacPathToTextureFile);
-					void free_texture(Texture hTexture);
-	[[nodiscard]]	uint32_t get_width_of_texture(Texture hTexture);
-	[[nodiscard]]	uint32_t get_height_of_texture(Texture hTexture);
-					void set_max_texture_count(uint16_t u16NewMaxTextureCount);
-	[[nodiscard]]	uint16_t get_max_texture_count();
-	[[nodiscard]]	uint16_t get_current_texture_count();
-	[[nodiscard]]	uint16_t get_remaining_texture_allocs();
-	[[nodiscard]]	uint32_t get_max_texture_extent();
-					void set_max_texture_extent(uint32_t u32NewMaxTextureExtent);
+	[[nodiscard]]
+	Texture alloc_texture_from_binary_data(const uint8_t *pau8TextureBinaries, uint32_t u32Width, uint32_t u32Height, uint32_t u32Channels);
+	[[nodiscard]]
+	Texture alloc_texture_loading_from_file(const char *pacPathToTextureFile);
+	void free_texture(Texture hTexture);
+	[[nodiscard]]
+	uint32_t get_width_of_texture(Texture hTexture);
+	[[nodiscard]]
+	uint32_t get_height_of_texture(Texture hTexture);
+	void set_max_texture_count(uint16_t u16NewMaxTextureCount);
+	[[nodiscard]]
+	uint16_t get_max_texture_count();
+	[[nodiscard]]
+	uint16_t get_current_texture_count();
+	[[nodiscard]]
+	uint16_t get_remaining_texture_allocs();
+	[[nodiscard]]
+	uint32_t get_max_texture_extent();
+	void set_max_texture_extent(uint32_t u32NewMaxTextureExtent);
 
 	// Sprite layout
-	[[nodiscard]]	SpriteLayout create_sprite_layout(const SpriteLayoutSettings &rSettings);
-					bool change_sprite_layout_settings(SpriteLayout hSpriteLayout, const SpriteLayoutSettings &rNewSettings);
-					void destroy_sprite_layout(SpriteLayout hSpriteLayout);
-	[[nodiscard]]	float get_maximum_allowed_anisotropy();
-	[[nodiscard]]	uint16_t get_max_sprite_layout_count();
-					void set_max_sprite_layout_count(uint16_t u16NewMaxSpriteLayoutCount);
-	[[nodiscard]]	uint16_t get_remaining_sprite_layout_allocs();
+	[[nodiscard]]
+	SpriteLayout create_sprite_layout(const SpriteLayoutSettings &rSettings);
+	bool change_sprite_layout_settings(SpriteLayout hSpriteLayout, const SpriteLayoutSettings &rNewSettings);
+	void destroy_sprite_layout(SpriteLayout hSpriteLayout);
+	[[nodiscard]]
+	float get_maximum_allowed_anisotropy();
+	[[nodiscard]]
+	uint16_t get_max_sprite_layout_count();
+	void set_max_sprite_layout_count(uint16_t u16NewMaxSpriteLayoutCount);
+	[[nodiscard]]
+	uint16_t get_remaining_sprite_layout_allocs();
 
 	// Renderer
-					void set_screen_percentage_settings(ScreenPercentageSettings newSettings);
-	[[nodiscard]]	ScreenPercentageSettings get_screen_percentage_settings();
-					void set_msaa_mode(MsaaMode eNewMsaaMode);
-	[[nodiscard]]	MsaaMode get_msaa_mode();
-	[[nodiscard]]	bool is_msaa_mode_supported(MsaaMode eMsaaMode);
-					void get_supported_msaa_modes(uint8_t u8ListLength, MsaaMode *paeSupportedMsaaModes, uint8_t *pu8SupportedMsaaModeCount);
-	[[nodiscard]]	MsaaMode get_highest_supported_msaa_mode();
-					void set_background_color(const Color &rColor);
-					void set_background_color(float f32Red, float f32Green, float f32Blue, float f32Alpha);
-	[[nodiscard]]	Color get_background_color();
-	[[nodiscard]]	bool is_sample_shading_enabled();
-					void set_sample_shading_rate(float f32NewSampleShadingRate);
-	[[nodiscard]]	float get_sample_shading_rate();
+	void set_screen_percentage_settings(ScreenPercentageSettings newSettings);
+	[[nodiscard]]
+	ScreenPercentageSettings get_screen_percentage_settings();
+	void set_msaa_mode(MsaaMode eNewMsaaMode);
+	[[nodiscard]]
+	MsaaMode get_msaa_mode();
+	[[nodiscard]]
+	bool is_msaa_mode_supported(MsaaMode eMsaaMode);
+	void get_supported_msaa_modes(uint8_t u8ListLength, MsaaMode *paeSupportedMsaaModes, uint8_t *pu8SupportedMsaaModeCount);
+	[[nodiscard]]
+	MsaaMode get_highest_supported_msaa_mode();
+	void set_background_color(const Color &rColor);
+	void set_background_color(float f32Red, float f32Green, float f32Blue, float f32Alpha);
+	[[nodiscard]]
+	Color get_background_color();
+	[[nodiscard]]
+	bool is_sample_shading_enabled();
+	void set_sample_shading_rate(float f32NewSampleShadingRate);
+	[[nodiscard]]
+	float get_sample_shading_rate();
 
 #ifdef RE_OS_WINDOWS
 	void win64_set_hinstance(HINSTANCE win_hNewInstance);

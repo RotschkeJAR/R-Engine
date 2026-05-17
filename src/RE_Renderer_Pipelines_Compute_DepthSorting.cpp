@@ -23,7 +23,7 @@ namespace RE {
 					.pName = "main",
 					.pSpecializationInfo = nullptr
 				},
-				.layout = vk_hComputePipelineLayoutProcessing,
+				.layout = vk_hSortDepthPipelineLayout,
 				.basePipelineHandle = VK_NULL_HANDLE,
 				.basePipelineIndex = -1
 			};

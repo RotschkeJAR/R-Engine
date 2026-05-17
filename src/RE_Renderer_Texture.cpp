@@ -357,7 +357,7 @@ namespace RE {
 							const VkWriteDescriptorSet vk_updateInfo = {
 								.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 								.pNext = nullptr,
-								.dstSet = vk_hTextureDescSet,
+								.dstSet = vk_hSpriteDescSet,
 								.dstBinding = RE_VK_SPRITE_DESC_SET_TEXTURE_BINDING_INDEX,
 								.dstArrayElement = get_index_of_texture(pVulkanTexture),
 								.descriptorCount = 1,

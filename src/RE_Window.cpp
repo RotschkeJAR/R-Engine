@@ -61,7 +61,7 @@ namespace RE {
 		PRINT_DEBUG("Updating window dimensions after resize");
 		windowSize[0] = u32NewWidth;
 		windowSize[1] = u32NewHeight;
-		bSwapchainDirty = true;
+		mark_swapchain_dirty();
 	}
 
 	void show_window(const bool bShowWindow) {

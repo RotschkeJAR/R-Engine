@@ -2,43 +2,43 @@
 
 namespace RE {
 
-	VkDescriptorSetLayout vk_hRenderContentDescSetLayout,
-		vk_hRawGameObjectsDescSetLayout,
+	VkDescriptorSetLayout vk_hGameObjectsDescSetLayout,
+		vk_hSortableDepthDescSetLayout,
 		vk_hCameraDescSetLayout,
 		vk_hSpriteDescSetLayout;
 
 	bool create_descriptor_set_layouts() {
-		PRINT_DEBUG("Creating Vulkan descriptor set layout for render content");
+		PRINT_DEBUG("Creating Vulkan descriptor set layout for game objects");
 	    VkDescriptorSetLayoutSupport vk_setLayoutSupported;
 		vk_setLayoutSupported.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_SUPPORT;
 		vk_setLayoutSupported.pNext = nullptr;
 		const VkBool32 &vk_rbLayoutSupported = vk_setLayoutSupported.supported;
-		constexpr VkDescriptorSetLayoutBinding vk_aRenderContentLayoutBindings[RE_VK_RENDER_CONTENT_DESC_SET_BINDING_COUNT] = {
+		constexpr VkDescriptorSetLayoutBinding vk_aGameObjectsLayoutBindings[RE_VK_GAME_OBJECTS_DESC_SET_BINDING_COUNT] = {
 			{
-				.binding = RE_VK_RENDER_CONTENT_DESC_SET_GAME_OBJECTS_BINDING_INDEX,
+				.binding = RE_VK_GAME_OBJECTS_DESC_SET_INSTANCE_BINDING_INDEX,
 				.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
 				.descriptorCount = 1,
 				.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
 				.pImmutableSamplers = nullptr
 			}, {
-				.binding = RE_VK_RENDER_CONTENT_DESC_SET_SORTABLE_DEPTH_BINDING_INDEX,
+				.binding = RE_VK_GAME_OBJECTS_DESC_SET_MODEL_MATRIX_BINDING_INDEX,
 				.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
 				.descriptorCount = 1,
 				.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
 				.pImmutableSamplers = nullptr
 			}
 		};
-		const VkDescriptorSetLayoutCreateInfo vk_RenderContentLayoutCreateInfo = {
+		const VkDescriptorSetLayoutCreateInfo vk_gameObjectsLayoutCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
 			.pNext = nullptr,
 			.flags = 0,
-			.bindingCount = RE_VK_RENDER_CONTENT_DESC_SET_BINDING_COUNT,
-			.pBindings = vk_aRenderContentLayoutBindings
+			.bindingCount = RE_VK_GAME_OBJECTS_DESC_SET_BINDING_COUNT,
+			.pBindings = vk_aGameObjectsLayoutBindings
 		};
-		vkGetDescriptorSetLayoutSupport(vk_hDevice, &vk_RenderContentLayoutCreateInfo, &vk_setLayoutSupported);
-		if (vk_rbLayoutSupported && vkCreateDescriptorSetLayout(vk_hDevice, &vk_RenderContentLayoutCreateInfo, nullptr, &vk_hRenderContentDescSetLayout) == VK_SUCCESS) {
-			PRINT_DEBUG("Creating Vulkan descriptor set layout for raw game object buffer");
-			constexpr VkDescriptorSetLayoutBinding vk_aRawGameObjectLayoutBindings[] = {
+		vkGetDescriptorSetLayoutSupport(vk_hDevice, &vk_gameObjectsLayoutCreateInfo, &vk_setLayoutSupported);
+		if (vk_rbLayoutSupported && vkCreateDescriptorSetLayout(vk_hDevice, &vk_gameObjectsLayoutCreateInfo, nullptr, &vk_hGameObjectsDescSetLayout) == VK_SUCCESS) {
+			PRINT_DEBUG("Creating Vulkan descriptor set layout for sortable depth");
+			constexpr VkDescriptorSetLayoutBinding vk_aSortableDepthLayoutBindings[RE_VK_GAME_OBJECTS_DESC_SET_BINDING_COUNT] = {
 				{
 					.binding = 0,
 					.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
@@ -47,15 +47,15 @@ namespace RE {
 					.pImmutableSamplers = nullptr
 				}
 			};
-			const VkDescriptorSetLayoutCreateInfo vk_rawGameObjectLayoutCreateInfo = {
+			const VkDescriptorSetLayoutCreateInfo vk_sortableDepthLayoutCreateInfo = {
 				.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
 				.pNext = nullptr,
 				.flags = 0,
 				.bindingCount = 1,
-				.pBindings = vk_aRawGameObjectLayoutBindings
+				.pBindings = vk_aSortableDepthLayoutBindings
 			};
-			vkGetDescriptorSetLayoutSupport(vk_hDevice, &vk_rawGameObjectLayoutCreateInfo, &vk_setLayoutSupported);
-			if (vk_rbLayoutSupported && vkCreateDescriptorSetLayout(vk_hDevice, &vk_rawGameObjectLayoutCreateInfo, nullptr, &vk_hRawGameObjectsDescSetLayout) == VK_SUCCESS) {
+			vkGetDescriptorSetLayoutSupport(vk_hDevice, &vk_sortableDepthLayoutCreateInfo, &vk_setLayoutSupported);
+			if (vk_rbLayoutSupported && vkCreateDescriptorSetLayout(vk_hDevice, &vk_sortableDepthLayoutCreateInfo, nullptr, &vk_hSortableDepthDescSetLayout) == VK_SUCCESS) {
 				PRINT_DEBUG("Creating Vulkan descriptor set layout for camera");
 				constexpr VkDescriptorSetLayoutBinding vk_aCameraLayoutBindings[] = {
 					{
@@ -125,14 +125,14 @@ namespace RE {
 					vkDestroyDescriptorSetLayout(vk_hDevice, vk_hCameraDescSetLayout, nullptr);
 				} else
 					RE_FATAL_ERROR("Failed to create Vulkan descriptor set layout for camera");
-				PRINT_DEBUG("Destroying Vulkan descriptor set layout for raw game object buffer due to failure creating all layouts");
-				vkDestroyDescriptorSetLayout(vk_hDevice, vk_hRawGameObjectsDescSetLayout, nullptr);
+				PRINT_DEBUG("Destroying Vulkan descriptor set layout for sortable depth due to failure creating all layouts");
+				vkDestroyDescriptorSetLayout(vk_hDevice, vk_hSortableDepthDescSetLayout, nullptr);
 			} else
-				RE_FATAL_ERROR("Failed to create Vulkan descriptor set layout for raw game object buffer");
-			PRINT_DEBUG("Destroying Vulkan descriptor set layout for render content due to failure creating all layouts");
-			vkDestroyDescriptorSetLayout(vk_hDevice, vk_hRenderContentDescSetLayout, nullptr);
+				RE_FATAL_ERROR("Failed to create Vulkan descriptor set layout for sortable depth");
+			PRINT_DEBUG("Destroying Vulkan descriptor set layout for game objects due to failure creating all layouts");
+			vkDestroyDescriptorSetLayout(vk_hDevice, vk_hGameObjectsDescSetLayout, nullptr);
 		} else
-			RE_FATAL_ERROR("Failed to create Vulkan descriptor set layout for render content");
+			RE_FATAL_ERROR("Failed to create Vulkan descriptor set layout for game objects");
 		return false;
 	}
 
@@ -140,8 +140,8 @@ namespace RE {
 		PRINT_DEBUG("Destroying all Vulkan descriptor set layouts");
 		vkDestroyDescriptorSetLayout(vk_hDevice, vk_hSpriteDescSetLayout, nullptr);
 		vkDestroyDescriptorSetLayout(vk_hDevice, vk_hCameraDescSetLayout, nullptr);
-		vkDestroyDescriptorSetLayout(vk_hDevice, vk_hRawGameObjectsDescSetLayout, nullptr);
-		vkDestroyDescriptorSetLayout(vk_hDevice, vk_hRenderContentDescSetLayout, nullptr);
+		vkDestroyDescriptorSetLayout(vk_hDevice, vk_hSortableDepthDescSetLayout, nullptr);
+		vkDestroyDescriptorSetLayout(vk_hDevice, vk_hGameObjectsDescSetLayout, nullptr);
 	}
 
 }

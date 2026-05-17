@@ -64,12 +64,12 @@ namespace RE {
 
 	bool swapchain_created_renderer() {
 		PRINT_DEBUG("Creating swapchain-related Vulkan objects in Renderer");
-		return create_images_renderer();
+		return create_renderer_images();
 	}
 
 	void swapchain_destroyed_renderer() {
 		PRINT_DEBUG("Destroying swapchain-related Vulkan objects in Renderer");
-		destroy_images_renderer();
+		destroy_renderer_images();
 	}
 
 	void set_background_color(const Color &rColor) {
@@ -90,7 +90,7 @@ namespace RE {
 
 	[[nodiscard]]
 	bool is_sample_shading_enabled() {
-		return f32SampleShadingRate > 0.0f && f32SampleShadingRate <= 1.0f;
+		return f32SampleShadingRate != 0.0f;
 	}
 
 	void set_sample_shading_rate(const float f32NewSampleShadingRate) {
@@ -102,7 +102,7 @@ namespace RE {
 		} else {
 			PRINT_DEBUG("Setting sample shading rate to ", f32NewSampleShadingRate);
 			f32SampleShadingRate = f32NewSampleShadingRate;
-			vkDeviceWaitIdle(vk_hDevice);
+			wait_for_rendering_finished();
 			recreate_graphics_pipelines();
 		}
 	}

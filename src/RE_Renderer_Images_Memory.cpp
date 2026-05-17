@@ -4,7 +4,7 @@ namespace RE {
 	
 	static std::unique_ptr<VulkanMemory[]> imageMemories;
 
-	bool alloc_memory_for_images_renderer() {
+	bool alloc_memory_for_renderer_images() {
 		PRINT_DEBUG("Allocating shared Vulkan memory for render images");
 		std::vector<SharedVulkanMemoryInfo> imageInfos;
 		imageInfos.reserve(4);
@@ -23,7 +23,7 @@ namespace RE {
 		return false;
 	}
 
-	void free_memory_for_images_renderer() {
+	void free_memory_for_renderer_images() {
 		PRINT_DEBUG("Freeing all Vulkan memories occupied by render images");
 		imageMemories.reset();
 	}

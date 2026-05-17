@@ -8,7 +8,7 @@ namespace RE {
 		float viewMatrix[16];
 	};
 
-	struct RawGameObjectShaderData final {
+	struct GameObjectShaderData final {
 		float position[3];
 		float rotation[3];
 		float scale[3];
@@ -16,10 +16,8 @@ namespace RE {
 		uint32_t textureId;
 	};
 	
-	struct GameObjectShaderData final {
+	struct GameObjectModelMatrixShaderData final {
 		float modelMatrix[16];
-		float color[4];
-		uint32_t textureId;
 	};
 	
 	struct DepthShaderData final {

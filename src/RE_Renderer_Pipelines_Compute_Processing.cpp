@@ -3,13 +3,13 @@
 
 namespace RE {
 
-	VkPipeline vk_hComputePipelinePreprocessing;
+	VkPipeline vk_hComputePipelineProcessing;
 
 	bool create_compute_pipeline_preprocessing() {
-		PRINT_DEBUG("Creating temporary Vulkan shader module for preprocessing");
+		PRINT_DEBUG("Creating temporary Vulkan shader module for processing game objects");
 		VkShaderModule vk_hShader;
 		if (create_vulkan_shader_from_file("shaders/compute_processing.glsl.spv", 0, &vk_hShader)) {
-			PRINT_DEBUG("Creating Vulkan compute pipeline for preprocessing");
+			PRINT_DEBUG("Creating Vulkan compute pipeline for processing game objects");
 			const VkComputePipelineCreateInfo vk_createInfo = {
 				.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
 				.pNext = nullptr,
@@ -23,24 +23,24 @@ namespace RE {
 					.pName = "main",
 					.pSpecializationInfo = nullptr
 				},
-				.layout = vk_hComputePipelineLayoutProcessing,
+				.layout = vk_hProcessingPipelineLayout,
 				.basePipelineHandle = VK_NULL_HANDLE,
 				.basePipelineIndex = -1
 			};
-			const bool bSuccess = vkCreateComputePipelines(vk_hDevice, VK_NULL_HANDLE, 1, &vk_createInfo, nullptr, &vk_hComputePipelinePreprocessing) == VK_SUCCESS;
+			const bool bSuccess = vkCreateComputePipelines(vk_hDevice, VK_NULL_HANDLE, 1, &vk_createInfo, nullptr, &vk_hComputePipelineProcessing) == VK_SUCCESS;
 			if (!bSuccess)
-				RE_FATAL_ERROR("Failed to create Vulkan compute pipeline for preprocessing");
-			PRINT_DEBUG("Destroying temporary Vulkan shader module for preprocessing");
+				RE_FATAL_ERROR("Failed to create Vulkan compute pipeline for processing game objects");
+			PRINT_DEBUG("Destroying temporary Vulkan shader module for processing game objects");
 			vkDestroyShaderModule(vk_hDevice, vk_hShader, nullptr);
 			return bSuccess;
 		} else
-			RE_FATAL_ERROR("Failed creating Vulkan shader module for creating the compute pipeline for preprocessing");
+			RE_FATAL_ERROR("Failed creating Vulkan shader module for creating the compute pipeline for processing game objects");
 		return false;
 	}
 
 	void destroy_compute_pipeline_preprocessing() {
-		PRINT_DEBUG("Destroying Vulkan compute pipeline for preprocessing");
-		vkDestroyPipeline(vk_hDevice, vk_hComputePipelinePreprocessing, nullptr);
+		PRINT_DEBUG("Destroying Vulkan compute pipeline for processing game objects");
+		vkDestroyPipeline(vk_hDevice, vk_hComputePipelineProcessing, nullptr);
 	}
 
 }

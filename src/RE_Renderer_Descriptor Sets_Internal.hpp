@@ -5,14 +5,17 @@
 
 namespace RE {
 
-	bool create_render_content_descriptor_sets();
-	void destroy_render_content_descriptor_sets();
+	bool create_game_objects_descriptor_sets();
+	void destroy_game_objects_descriptor_sets();
 	
-	bool create_texture_descriptor_sets();
-	void destroy_texture_descriptor_sets();
+	bool create_sprite_descriptor_sets();
+	void destroy_sprite_descriptor_sets();
 
-	bool create_raw_game_object_buffer_descriptor_sets();
-	void destroy_raw_game_object_buffer_descriptor_sets();
+	bool create_camera_descriptor_sets();
+	void destroy_camera_descriptor_sets();
+
+	bool create_sortable_depth_desc_sets();
+	void destroy_sortable_depth_desc_sets();
 
 }
 

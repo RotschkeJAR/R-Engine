@@ -24,8 +24,8 @@ namespace RE {
 			PRINT_DEBUG("Recreating render images and render pipeline to adjust to new MSAA mode");
 			vkDeviceWaitIdle(vk_hDevice);
 			recreate_graphics_pipelines();
-			destroy_images_renderer();
-			create_images_renderer();
+			destroy_renderer_images();
+			create_renderer_images();
 		}
 	}
 

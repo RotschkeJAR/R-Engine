@@ -37,8 +37,8 @@ namespace RE {
 	void destroy_depth_stencil_image_views();
 
 	// Memory
-	bool alloc_memory_for_images_renderer();
-	void free_memory_for_images_renderer();
+	bool alloc_memory_for_renderer_images();
+	void free_memory_for_renderer_images();
 
 }
 

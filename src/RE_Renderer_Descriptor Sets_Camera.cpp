@@ -16,7 +16,7 @@ namespace RE {
 			.descriptorSetCount = u16DescSetCount,
 			.pSetLayouts = descSetLayouts.get()
 		};
-		if (vkAllocateDescriptorSets(vk_hDevice, &vk_descSetAllocInfo, vk_ahRenderContentDescSets) == VK_SUCCESS) {
+		if (vkAllocateDescriptorSets(vk_hDevice, &vk_descSetAllocInfo, cameraDescSets.get()) == VK_SUCCESS) {
 			PRINT_DEBUG("Writing to all descriptor sets for camera");
 			std::unique_ptr<VkDescriptorBufferInfo[]> bufferDescs = std::make_unique<VkDescriptorBufferInfo[]>(u16DescSetCount);
 			std::unique_ptr<VkWriteDescriptorSet[]> writeSets = std::make_unique<VkWriteDescriptorSet[]>(u16DescSetCount);

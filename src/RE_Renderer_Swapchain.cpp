@@ -13,7 +13,6 @@ namespace RE {
 	bool bSwapchainDirty = false;
 	
 	bool create_swapchain() {
-		// Create actual sweapchain
 		const VkSwapchainKHR vk_hOldSwapchain = vk_hSwapchain;
 		if (vk_hOldSwapchain != VK_NULL_HANDLE) {
 			PRINT_DEBUG("Cleaning up ressources used for outdated swapchain");
@@ -38,8 +37,7 @@ namespace RE {
 		const VkSwapchainCreateInfoKHR vk_swapchainCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
 			.surface = vk_hSurface,
-			.minImageCount = std::clamp<uint32_t>(
-					vk_surfaceCapabilities.minImageCount + 1,
+			.minImageCount = std::clamp<uint32_t>(vk_surfaceCapabilities.minImageCount + 1,
 					vk_surfaceCapabilities.minImageCount,
 					vk_surfaceCapabilities.maxImageCount > 0 ? vk_surfaceCapabilities.maxImageCount : std::numeric_limits<uint32_t>::max()
 			),
@@ -63,8 +61,6 @@ namespace RE {
 				PRINT_DEBUG("Destroying old swapchain");
 				vkDestroySwapchainKHR(vk_hDevice, vk_hOldSwapchain, nullptr);
 			}
-
-			// Create swapchain image views
 			PRINT_DEBUG("Getting handles to swapchain images");
 			vkGetSwapchainImagesKHR(vk_hDevice, vk_hSwapchain, &u32SwapchainImageCount, nullptr);
 			swapchainImages = std::make_unique<VkImage[]>(u32SwapchainImageCount);

@@ -10,7 +10,7 @@ namespace RE {
 	VkFormat vk_eRenderTargetFormat;
 	static bool bDynamicScreenPercentage = false;
 
-	static void get_queues_for_render_images(std::vector<uint32_t> &rRenderTaskQueueIndices) {
+	void get_queues_for_swapchain_images(std::vector<uint32_t> &rRenderTaskQueueIndices) {
 		constexpr uint32_t au32FunctionsToLookup[] = {
 			RENDER_TASK_SUBINDEX_RENDERING,
 			RENDER_TASK_SUBINDEX_IMAGE_BLIT
@@ -22,16 +22,12 @@ namespace RE {
 			if (std::find(rRenderTaskQueueIndices.begin(), rRenderTaskQueueIndices.end(), u32QueueFamilyIndex) == rRenderTaskQueueIndices.end())
 				rRenderTaskQueueIndices.push_back(u32QueueFamilyIndex);
 		}
-	}
-
-	void get_queues_for_swapchain_images(std::vector<uint32_t> &rRenderTaskQueueIndices) {
-		get_queues_for_render_images(rRenderTaskQueueIndices);
 		const uint32_t u32PresentIndex = renderTasks[0].logical_queue_index_for_presentation();
 		if (std::find(rRenderTaskQueueIndices.begin(), rRenderTaskQueueIndices.end(), u32PresentIndex) == rRenderTaskQueueIndices.end())
 			rRenderTaskQueueIndices.push_back(u32PresentIndex);
 	}
 
-	bool create_images_renderer() {
+	bool create_renderer_images() {
 		PRINT_DEBUG("Calculating size of renderable images");
 		switch (screenPercentageSettings.eMode) {
 			case RE_SCREEN_PERCENTAGE_MODE_NORMAL:
@@ -64,7 +60,7 @@ namespace RE {
 		if (create_depth_stencil_image()) {
 			if (bSkipCreatingSinglesampledImage || create_singlesampled_image()) {
 				if (bSkipCreatingRenderTargetImage || create_render_target_image()) {
-					if (alloc_memory_for_images_renderer() == VK_SUCCESS) {
+					if (alloc_memory_for_renderer_images() == VK_SUCCESS) {
 						if (create_depth_stencil_image_views()) {
 							if (bSkipCreatingSinglesampledImage || create_singlesampled_image_views()) {
 								if (bSkipCreatingRenderTargetImage || create_render_target_image_views())
@@ -73,7 +69,7 @@ namespace RE {
 							}
 							destroy_depth_stencil_image_views();
 						}
-						free_memory_for_images_renderer();
+						free_memory_for_renderer_images();
 					}
 					destroy_render_target_image();
 				}
@@ -84,7 +80,7 @@ namespace RE {
 		return false;
 	}
 
-	void destroy_images_renderer() {
+	void destroy_renderer_images() {
 		PRINT_DEBUG("Destroying render image resources");
 		destroy_render_target_image_views();
 		destroy_render_target_image();
@@ -92,7 +88,7 @@ namespace RE {
 		destroy_singlesampled_image();
 		destroy_depth_stencil_image_views();
 		destroy_depth_stencil_image();
-		free_memory_for_images_renderer();
+		free_memory_for_renderer_images();
 	}
 
 	void set_screen_percentage_settings(ScreenPercentageSettings newSettings) {
@@ -127,8 +123,8 @@ namespace RE {
 		if (!bSwapchainDirty && bRunning) {
 			PRINT_DEBUG("Applying new screen percentage settings");
 			wait_for_rendering_finished();
-			destroy_images_renderer();
-			create_images_renderer();
+			destroy_renderer_images();
+			create_renderer_images();
 		}
 	}
 
@@ -145,8 +141,8 @@ namespace RE {
 		if (!bSwapchainDirty && bRunning) {
 			PRINT_DEBUG("Applying new dynamic screen scaling settings");
 			wait_for_rendering_finished();
-			destroy_images_renderer();
-			create_images_renderer();
+			destroy_renderer_images();
+			create_renderer_images();
 		}
 	}
 
@@ -163,8 +159,8 @@ namespace RE {
 		if (!bSwapchainDirty && bRunning) {
 			PRINT_DEBUG("Applying new maximum size of the dynamic screen percentage");
 			wait_for_rendering_finished();
-			destroy_images_renderer();
-			create_images_renderer();
+			destroy_renderer_images();
+			create_renderer_images();
 		}
 	}
 

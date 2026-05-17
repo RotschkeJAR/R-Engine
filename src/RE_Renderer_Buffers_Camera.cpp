@@ -16,8 +16,8 @@ namespace RE {
 				&vk_hCameraBuffer)) {
 			camerasShaderData = std::make_unique<CameraShaderData*[]>(get_max_camera_count() * RE_VK_FRAMES_IN_FLIGHT);
 			return true;
-		}
-		RE_FATAL_ERROR("Failed to create a Vulkan buffer for data of the camera");
+		} else
+			RE_FATAL_ERROR("Failed to create a Vulkan buffer for data of the camera");
 		return false;
 	}
 

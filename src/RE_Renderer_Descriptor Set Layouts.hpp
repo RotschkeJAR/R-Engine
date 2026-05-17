@@ -5,16 +5,16 @@
 
 namespace RE {
 
-#define RE_VK_RENDER_CONTENT_DESC_SET_BINDING_COUNT 2
-#define RE_VK_RENDER_CONTENT_DESC_SET_GAME_OBJECTS_BINDING_INDEX 0
-#define RE_VK_RENDER_CONTENT_DESC_SET_SORTABLE_DEPTH_BINDING_INDEX 1
+#define RE_VK_GAME_OBJECTS_DESC_SET_BINDING_COUNT 2
+#define RE_VK_GAME_OBJECTS_DESC_SET_INSTANCE_BINDING_INDEX 0
+#define RE_VK_GAME_OBJECTS_DESC_SET_MODEL_MATRIX_BINDING_INDEX 1
 
 #define RE_VK_SPRITE_DESC_SET_BINDING_COUNT 2
 #define RE_VK_SPRITE_DESC_SET_SPRITE_LAYOUT_BINDING_INDEX 0
 #define RE_VK_SPRITE_DESC_SET_TEXTURE_BINDING_INDEX 1
 
-	extern VkDescriptorSetLayout vk_hRenderContentDescSetLayout,
-		vk_hRawGameObjectsDescSetLayout,
+	extern VkDescriptorSetLayout vk_hGameObjectsDescSetLayout,
+		vk_hSortableDepthDescSetLayout,
 		vk_hCameraDescSetLayout,
 		vk_hSpriteDescSetLayout;
 

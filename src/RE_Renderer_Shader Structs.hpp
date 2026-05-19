@@ -3,6 +3,11 @@
 
 namespace RE {
 
+	struct VertexData final {
+		float a4f32Coords[4],
+			a2f32TexCoords[2];
+	};
+
 	struct CameraShaderData final {
 		float projectionMatrix[16];
 		float viewMatrix[16];

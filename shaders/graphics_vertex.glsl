@@ -1,6 +1,6 @@
 #version 450 core
 
-layout (location = 0) in vec3 I_vertex_position;
+layout (location = 0) in vec4 I_vertex_position;
 layout (location = 1) in vec2 I_vertex_textureCoords;
 
 layout (location = 0) out vec4 O_color;
@@ -33,9 +33,10 @@ layout(set = 1, binding = 0) uniform CameraMatrices {
 	mat4 projection;
 } cam;
 
+
 void main() {
 	const uint index = depths.data[gl_InstanceIndex].objectIndex;
-	gl_Position = cam.projection * cam.view * gameObjects.data[index].model * vec4(I_vertex_position, 1.0);
+	gl_Position = cam.projection * cam.view * gameObjects.data[index].model * I_vertex_position;
 	O_color = gameObjects.data[index].color;
 	O_textureCoords = I_vertex_textureCoords;
 	O_textureId = gameObjects.data[index].textureId;

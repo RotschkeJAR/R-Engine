@@ -275,7 +275,7 @@ namespace RE {
 	}
 
 	bool VulkanTask::init(const VulkanTask &rCopy, const bool bIndividualResets, const bool bTransient) {
-		PRINT_DEBUG_CLASS("Copying initialized data to Vulkan task ", this, " from ", &rCopy);
+		PRINT_DEBUG_CLASS("Copying initialized data from ", &rCopy);
 		u32FunctionsCount = rCopy.u32FunctionsCount;
 		u8CommandPoolCount = rCopy.u8CommandPoolCount;
 		u8LogicalPresentQueueIndex = rCopy.u8LogicalPresentQueueIndex;
@@ -381,7 +381,7 @@ namespace RE {
 	}
 
 	bool VulkanTask::submit(const uint32_t u32SemaphoresToWaitForCount, const VkSemaphoreSubmitInfo *const vk_paSemaphoresToWaitFor, const VkPipelineStageFlags2 *const vk_paeInternSemaphoreWaits, const uint32_t u32SemaphoresToSignal, const VkSemaphoreSubmitInfo *const vk_paSemaphoresToSignal, const VkFence vk_hFenceToSignal) const {
-		PRINT_DEBUG_CLASS("Submitting command buffers of Vulkan task ", this);
+		PRINT_DEBUG_CLASS("Submitting command buffers");
 		std::vector<VkCommandBufferSubmitInfo> commandBufferSubmissionInfos;
 		commandBufferSubmissionInfos.reserve(u32FunctionsCount / u8CommandPoolCount);
 		VkSubmitInfo2 vk_submissionInfo;
@@ -395,6 +395,7 @@ namespace RE {
 		VkSemaphoreSubmitInfo vk_a2InternalSemaphoreSubmissionInfo[u8SemaphoreInfoCount];
 		uint64_t u64TimelineSemaphoreValue;
 		if (u8CommandPoolCount > 1) {
+			PRINT_DEBUG_CLASS("Fetching currently held value of the internal timeline semaphore");
 			vkGetSemaphoreCounterValue(vk_hDevice, vk_hInternalSemaphore, &u64TimelineSemaphoreValue);
 			vk_a2InternalSemaphoreSubmissionInfo[0].value = u64TimelineSemaphoreValue + 1;
 		}

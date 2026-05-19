@@ -35,6 +35,7 @@ namespace RE {
 
 	void fetch_gpu_constrains() {
 		PRINT_DEBUG("Fetching data about constraints of the selected Vulkan GPU");
+		mEnabledFeatures = 0;
 		{ // Hard-/Software Limits
 			VkPhysicalDeviceVulkan13Properties vk_physicalDeviceProperties_1_3;
 			vk_physicalDeviceProperties_1_3.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_PROPERTIES;
@@ -119,7 +120,18 @@ namespace RE {
 			f32MaxSamplerAnisotropy = vk_physicalDeviceLimits.maxSamplerAnisotropy;
 			u32MappedMemoryAlignment = vk_physicalDeviceLimits.minMemoryMapAlignment;
 		}
-
+		{ // Extensions
+			uint32_t u32ExtensionCount;
+			vkEnumerateDeviceExtensionProperties(SELECTED_PHYSICAL_VULKAN_DEVICE, nullptr, &u32ExtensionCount, nullptr);
+			std::unique_ptr<VkExtensionProperties[]> extensions = std::make_unique<VkExtensionProperties[]>(u32ExtensionCount);
+			vkEnumerateDeviceExtensionProperties(SELECTED_PHYSICAL_VULKAN_DEVICE, nullptr, &u32ExtensionCount, extensions.get());
+			for (uint32_t u32ExtensionIndex = 0; u32ExtensionIndex < u32ExtensionCount; u32ExtensionIndex++)
+				if (are_string_contents_equal(extensions[u32ExtensionIndex].extensionName, VK_KHR_INDEX_TYPE_UINT8_EXTENSION_NAME)
+						|| are_string_contents_equal(extensions[u32ExtensionIndex].extensionName, VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME)) {
+					mEnabledFeatures |= ENABLED_FEATURE_INDEX_UINT_8_BIT;
+					break;
+				}
+		}
 		{ // Features
 			VkPhysicalDeviceVulkan13Features vk_physicalDeviceFeatures_1_3;
 			vk_physicalDeviceFeatures_1_3.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
@@ -135,8 +147,6 @@ namespace RE {
 			vk_physicalDeviceFeatures_1_0.pNext = &vk_physicalDeviceFeatures_1_1;
 			const VkPhysicalDeviceFeatures &vk_physicalDeviceFeatures = vk_physicalDeviceFeatures_1_0.features;
 			vkGetPhysicalDeviceFeatures2(SELECTED_PHYSICAL_VULKAN_DEVICE, &vk_physicalDeviceFeatures_1_0);
-
-			mEnabledFeatures = 0;
 			if (vk_physicalDeviceFeatures.sparseBinding) {
 				mEnabledFeatures |= ENABLED_FEATURE_SPARSE_BINDING_BIT;
 				if (vk_physicalDeviceFeatures.sparseResidencyBuffer)

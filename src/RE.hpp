@@ -1131,6 +1131,7 @@ namespace RE {
 
 	typedef class Texture_T final {} *Texture;
 	typedef class SpriteLayout_T final {} *SpriteLayout;
+	typedef class Mesh_t final {} *Mesh;
 
 	class SpriteRenderer final {
 		public:
@@ -1515,6 +1516,12 @@ namespace RE {
 	void set_max_sprite_layout_count(uint16_t u16NewMaxSpriteLayoutCount);
 	[[nodiscard]]
 	uint16_t get_remaining_sprite_layout_allocs();
+
+	// Mesh
+	[[nodiscard]]
+	Mesh get_mesh_square_2D();
+	[[nodiscard]]
+	Mesh get_mesh_square_3D();
 
 	// Renderer
 	void set_screen_percentage_settings(ScreenPercentageSettings newSettings);

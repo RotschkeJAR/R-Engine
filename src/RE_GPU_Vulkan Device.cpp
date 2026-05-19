@@ -1124,10 +1124,26 @@ namespace RE {
 	}
 
 	bool init_logical_vulkan_device() {
-		constexpr uint32_t u32LogicalDeviceExtensionCount = 1;
-		const std::array<const char*, u32LogicalDeviceExtensionCount> a2cLogicalDeviceExtensions = {
+		std::vector<const char*> logicalDeviceExtensions = {
 			VK_KHR_SWAPCHAIN_EXTENSION_NAME
 		};
+		if (are_vulkan_features_enabled<ENABLED_FEATURE_INDEX_UINT_8_BIT>()) {
+			uint32_t u32ExtensionCount;
+			vkEnumerateDeviceExtensionProperties(SELECTED_PHYSICAL_VULKAN_DEVICE, nullptr, &u32ExtensionCount, nullptr);
+			std::unique_ptr<VkExtensionProperties[]> extensions = std::make_unique<VkExtensionProperties[]>(u32ExtensionCount);
+			vkEnumerateDeviceExtensionProperties(SELECTED_PHYSICAL_VULKAN_DEVICE, nullptr, &u32ExtensionCount, extensions.get());
+			bool bAvailableEXT = false;
+			for (uint32_t u32ExtensionIndex = 0; u32ExtensionIndex < u32ExtensionCount; u32ExtensionIndex++) {
+				if (are_string_contents_equal(extensions[u32ExtensionIndex].extensionName, VK_KHR_INDEX_TYPE_UINT8_EXTENSION_NAME)) {
+					logicalDeviceExtensions.emplace_back(VK_KHR_INDEX_TYPE_UINT8_EXTENSION_NAME);
+					bAvailableEXT = false;
+					break;
+				} else if (are_string_contents_equal(extensions[u32ExtensionIndex].extensionName, VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME))
+					bAvailableEXT = true;
+			}
+			if (bAvailableEXT)
+				logicalDeviceExtensions.emplace_back(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME);
+		}
 
 		PRINT_DEBUG("Creating create Vulkan queue-information structs");
 		constexpr float fQueuePriority = 1.0f;
@@ -1135,9 +1151,14 @@ namespace RE {
 		create_queue_create_infos(&fQueuePriority, vk_paDeviceQueueCreateInfos);
 
 		PRINT_DEBUG("Creating logical Vulkan device");
+		VkPhysicalDeviceIndexTypeUint8Features vk_indexTypeUint8Feature = {
+			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INDEX_TYPE_UINT8_FEATURES,
+			.pNext = nullptr,
+			.indexTypeUint8 = VK_TRUE
+		};
 		VkPhysicalDeviceVulkan13Features vk_enabledFeatures_1_3 = {
 			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES,
-			.pNext = nullptr,
+			.pNext = are_vulkan_features_enabled<ENABLED_FEATURE_INDEX_UINT_8_BIT>() ? &vk_indexTypeUint8Feature : nullptr,
 			.synchronization2 = are_vulkan_features_enabled<ENABLED_FEATURE_SYNCHRONIZATION_2_BIT>(),
 			.dynamicRendering = VK_TRUE
 		};
@@ -1168,8 +1189,8 @@ namespace RE {
 			.pNext = &vk_enabledFeatures_1_1,
 			.queueCreateInfoCount = static_cast<uint32_t>(vk_paDeviceQueueCreateInfos.size()),
 			.pQueueCreateInfos = vk_paDeviceQueueCreateInfos.data(),
-			.enabledExtensionCount = u32LogicalDeviceExtensionCount,
-			.ppEnabledExtensionNames = static_cast<const char *const *>(a2cLogicalDeviceExtensions.data()),
+			.enabledExtensionCount = static_cast<uint32_t>(logicalDeviceExtensions.size()),
+			.ppEnabledExtensionNames = logicalDeviceExtensions.data(),
 			.pEnabledFeatures = &vk_physicalDeviceFeaturesEnabled
 		};
 		if (vkCreateDevice(SELECTED_PHYSICAL_VULKAN_DEVICE, &vk_deviceCreateInfo, nullptr, &vk_hDevice) != VK_SUCCESS) {

@@ -15,6 +15,7 @@
 #include "RE_Renderer_Images.hpp"
 #include "RE_Renderer_Texture.hpp"
 #include "RE_Renderer_SpriteLayout.hpp"
+#include "RE_Renderer_Mesh.hpp"
 
 namespace RE {
 

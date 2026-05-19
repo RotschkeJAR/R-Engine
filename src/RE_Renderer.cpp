@@ -16,21 +16,27 @@ namespace RE {
 		PRINT_DEBUG("Initializing renderer");
 		if (create_render_tasks()) {
 			if (create_renderer_buffers()) {
-				if (create_descriptor_sets()) {
-					if (create_swapchain()) {
-						if (setup_presentation()) {
+				if (create_swapchain()) {
+					if (setup_presentation()) {
+						if (create_descriptor_sets()) {
 							if (create_renderer_pipelines()) {
 								if (init_renderer_textures()) {
-									PRINT_DEBUG("Successfully initialized the renderer");
-									return true;
+									if (init_renderer_sprite_layouts()) {
+										if (init_renderer_meshes()) {
+											PRINT_DEBUG("Renderer successfully initialized");
+											return true;
+										}
+										destroy_renderer_sprite_layout();
+									}
+									destroy_renderer_textures();
 								}
 								destroy_renderer_pipelines();
 							}
-							destroy_presentation();
+							destroy_descriptor_sets();
 						}
-						destroy_swapchain();
+						destroy_presentation();
 					}
-					destroy_descriptor_sets();
+					destroy_swapchain();
 				}
 				destroy_renderer_buffers();
 			}
@@ -42,11 +48,13 @@ namespace RE {
 
 	void destroy_renderer() {
 		PRINT_DEBUG("Destroying renderer");
+		destroy_renderer_meshes();
+		destroy_renderer_sprite_layout();
 		destroy_renderer_textures();
 		destroy_renderer_pipelines();
+		destroy_descriptor_sets();
 		destroy_presentation();
 		destroy_swapchain();
-		destroy_descriptor_sets();
 		destroy_renderer_buffers();
 		destroy_render_tasks();
 	}

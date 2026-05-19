@@ -166,10 +166,32 @@ namespace RE {
 			if (vk_physicalDeviceLimits.maxColorAttachments < 1)
 				incompatibilities.emplace("The maximum count of color attachments within a subpass in a render pass should be equal or more than 1");
 		}
+		bool bSwapchainExtensionAvailable = false,
+			bIndexTypeUint8Available = false;
+		{ // Extensions
+			uint32_t u32ExtensionCount;
+			vkEnumerateDeviceExtensionProperties(vk_hPhysicalDevice, nullptr, &u32ExtensionCount, nullptr);
+			std::unique_ptr<VkExtensionProperties[]> extensions = std::make_unique<VkExtensionProperties[]>(u32ExtensionCount);
+			vkEnumerateDeviceExtensionProperties(vk_hPhysicalDevice, nullptr, &u32ExtensionCount, extensions.get());
+			for (uint32_t u32ExtensionIndex = 0; u32ExtensionIndex < u32ExtensionCount; u32ExtensionIndex++) {
+				if (are_string_contents_equal(extensions[u32ExtensionIndex].extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME))
+					bSwapchainExtensionAvailable = true;
+				else if (are_string_contents_equal(extensions[u32ExtensionIndex].extensionName, VK_KHR_INDEX_TYPE_UINT8_EXTENSION_NAME)
+						|| are_string_contents_equal(extensions[u32ExtensionIndex].extensionName, VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME))
+					bIndexTypeUint8Available = true;
+			}
+			if (!bSwapchainExtensionAvailable)
+				incompatibilities.emplace("The Swapchain-extension for displaying images is not supported");
+		}
 		{ // Features
+			VkPhysicalDeviceIndexTypeUint8Features vk_indexTypeUint8Feature = {
+				.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INDEX_TYPE_UINT8_FEATURES,
+				.pNext = nullptr,
+				.indexTypeUint8 = VK_FALSE
+			};
 			VkPhysicalDeviceVulkan13Features vk_physicalDeviceFeatures_1_3;
 			vk_physicalDeviceFeatures_1_3.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
-			vk_physicalDeviceFeatures_1_3.pNext = nullptr;
+			vk_physicalDeviceFeatures_1_3.pNext = bIndexTypeUint8Available ? &vk_indexTypeUint8Feature : nullptr;
 			VkPhysicalDeviceVulkan12Features vk_physicalDeviceFeatures_1_2;
 			vk_physicalDeviceFeatures_1_2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
 			vk_physicalDeviceFeatures_1_2.pNext = &vk_physicalDeviceFeatures_1_3;
@@ -181,6 +203,8 @@ namespace RE {
 			vk_physicalDeviceFeatures_1_0.pNext = &vk_physicalDeviceFeatures_1_1;
 			const VkPhysicalDeviceFeatures &vk_physicalDeviceFeatures = vk_physicalDeviceFeatures_1_0.features;
 			vkGetPhysicalDeviceFeatures2(vk_hPhysicalDevice, &vk_physicalDeviceFeatures_1_0);
+			if (!bIndexTypeUint8Available || vk_indexTypeUint8Feature.indexTypeUint8 != VK_TRUE)
+				optionals.emplace("8-bit unsigned indices aren't supported");
 			if (vk_physicalDeviceFeatures_1_3.synchronization2 != VK_TRUE)
 				warnings.emplace("The advanced synchronization-feature is not supported");
 			if (vk_physicalDeviceFeatures_1_3.dynamicRendering != VK_TRUE)
@@ -273,21 +297,6 @@ namespace RE {
 				i32Score += 50;
 			if ((m8CoherencePresence & (m8CpuCoherenceAbsent | m8CpuCoherencePresent)) == (m8CpuCoherenceAbsent | m8CpuCoherencePresent)) // CPU
 				i32Score += 50;
-		}
-		{ // Extensions
-			uint32_t u32ExtensionCount;
-			vkEnumerateDeviceExtensionProperties(vk_hPhysicalDevice, nullptr, &u32ExtensionCount, nullptr);
-			std::unique_ptr<VkExtensionProperties[]> extensions = std::make_unique<VkExtensionProperties[]>(u32ExtensionCount);
-			vkEnumerateDeviceExtensionProperties(vk_hPhysicalDevice, nullptr, &u32ExtensionCount, extensions.get());
-			bool bSwapchainExtensionAvailable = false;
-			for (uint32_t u32ExtensionIndex = 0; u32ExtensionIndex < u32ExtensionCount; u32ExtensionIndex++) {
-				if (are_string_contents_equal(extensions[u32ExtensionIndex].extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME)) {
-					bSwapchainExtensionAvailable = true;
-					break;
-				}
-			}
-			if (!bSwapchainExtensionAvailable)
-				incompatibilities.emplace("The Swapchain-extension for displaying images is not supported");
 		}
 		{ // Vertex formats
 			constexpr VkFormat vk_aeVertexFormats[] = {

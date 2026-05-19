@@ -24,7 +24,7 @@ namespace RE {
 		constexpr VkVertexInputBindingDescription vk_aVertexBindings[] = {
 			{
 				.binding = 0,
-				.stride = sizeof(float) * 5,
+				.stride = sizeof(VertexData),
 				.inputRate = VK_VERTEX_INPUT_RATE_VERTEX
 			}
 		};
@@ -32,13 +32,13 @@ namespace RE {
 			{
 				.location = 0,
 				.binding = 0,
-				.format = VK_FORMAT_R32G32B32_SFLOAT,
-				.offset = 0
+				.format = VK_FORMAT_R32G32B32A32_SFLOAT,
+				.offset = offsetof(VertexData, a4f32Coords)
 			}, {
 				.location = 1,
 				.binding = 0,
 				.format = VK_FORMAT_R32G32_SFLOAT,
-				.offset = sizeof(float) * 3
+				.offset = offsetof(VertexData, a2f32TexCoords)
 			}
 		};
 		const VkPipelineVertexInputStateCreateInfo vk_vertexInput = {

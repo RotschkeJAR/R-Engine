@@ -11,7 +11,7 @@ namespace RE {
 			RENDER_TASK_SUBINDEX_RENDERING,
 			RENDER_TASK_SUBINDEX_IMAGE_BLIT
 		};
-		const VulkanQueueCollection occupiedQueuesInfo = renderTasks[0].queues_of_functions(au32QueueIndices, sizeof(au32QueueIndices) / sizeof(au32QueueIndices[0]));
+		const VulkanQueueCollection occupiedQueuesInfo = aRenderTasks[0].queues_of_functions(au32QueueIndices, sizeof(au32QueueIndices) / sizeof(au32QueueIndices[0]));
 		PRINT_DEBUG("Creating Vulkan image used as singlesampled render target");
 		if (create_vulkan_image(0,
 				VK_IMAGE_TYPE_2D,

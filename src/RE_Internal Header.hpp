@@ -13,7 +13,6 @@
 #include <list>
 #include <memory>
 #include <queue>
-#include <functional>
 
 #include "RE.hpp"
 #undef ERROR

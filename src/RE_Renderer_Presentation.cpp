@@ -26,7 +26,7 @@ namespace RE {
 			break;
 		}
 		if (u16SemaphoreCreateIndex == RE_VK_SWAPCHAIN_SEMAPHORE_COUNT) {
-			vk_hPresentQueue = vk_pahQueues[renderTasks[0].logical_queue_index_for_presentation()];
+			vk_hPresentQueue = vk_pahQueues[aRenderTasks[0].logical_queue_index_for_presentation()];
 			return true;
 		}
 		for (uint16_t u16SemaphoreDestroyIndex = 0; u16SemaphoreDestroyIndex < u16SemaphoreCreateIndex; u16SemaphoreDestroyIndex++)
@@ -43,15 +43,8 @@ namespace RE {
 	}
 
 	bool acquire_next_swapchain_image() {
-		PRINT_DEBUG("Acquiring next Vulkan swapchain image");
-		const VkAcquireNextImageInfoKHR vk_acquireInfo = {
-			.sType = VK_STRUCTURE_TYPE_ACQUIRE_NEXT_IMAGE_INFO_KHR,
-			.swapchain = vk_hSwapchain,
-			.timeout = std::numeric_limits<uint64_t>::max(),
-			.semaphore = swapchainSemaphores[u32CurrentSwapchainSemaphoreIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE],
-			.deviceMask = 1
-		};
-		const VkResult vk_eAcquireResult = vkAcquireNextImage2KHR(vk_hDevice, &vk_acquireInfo, &u32SwapchainImageIndex);
+		PRINT_DEBUG("Acquiring index to the next Vulkan swapchain image");
+		const VkResult vk_eAcquireResult = vkAcquireNextImageKHR(vk_hDevice, vk_hSwapchain, std::numeric_limits<uint64_t>::max(), swapchainSemaphores[u32CurrentSwapchainSemaphoreIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE], VK_NULL_HANDLE, &u32SwapchainImageIndex);
 		switch (vk_eAcquireResult) {
 			case VK_SUCCESS:
 				return true;

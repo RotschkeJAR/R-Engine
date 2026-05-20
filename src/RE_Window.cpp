@@ -31,7 +31,7 @@ namespace RE {
 				bSuccess = wayland_create_window();
 				break;
 			default:
-				ABORT("Window compositor is unknown");
+				RE_ABORT("Window compositor is unknown");
 		}
 #endif
 		set_bits<uint8_t>(u8WindowFlagBits, bSuccess, WINDOW_CREATED_BIT);
@@ -51,7 +51,7 @@ namespace RE {
 				wayland_destroy_window();
 				break;
 			default:
-				ABORT("Window compositor is unknown");
+				RE_ABORT("Window compositor is unknown");
 		}
 #endif
 		set_bits<uint8_t>(u8WindowFlagBits, false, WINDOW_CREATED_BIT, WINDOW_VISIBLE_BIT, WINDOW_MINIMIZED_BIT, WINDOW_MAXIMIZED_BIT, WINDOW_CLOSE_FLAG_BIT);
@@ -144,8 +144,8 @@ namespace RE {
 
 	[[nodiscard]]
 	bool should_render() {
-		return !are_bits_true<uint8_t>(u8WindowFlagBits, WINDOW_MINIMIZED_BIT) &&
-				are_bits_true<uint8_t>(u8WindowFlagBits, WINDOW_VISIBLE_BIT, WINDOW_WAYLAND_SHOULD_RENDER_FRAME_BIT);
+		return !are_bits_true<uint8_t>(u8WindowFlagBits, WINDOW_MINIMIZED_BIT)
+				&& are_bits_true<uint8_t>(u8WindowFlagBits, WINDOW_VISIBLE_BIT, WINDOW_WAYLAND_SHOULD_RENDER_FRAME_BIT);
 	}
 
 	bool create_vulkan_surface() {
@@ -181,7 +181,6 @@ namespace RE {
 				}
 			default:
 				RE_ABORT("Window compositor is unknown");
-				return false;
 		}
 #endif
 	}
@@ -198,7 +197,6 @@ namespace RE {
 				return VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME;
 			default:
 				RE_ABORT("Window compositor is unknown");
-				return nullptr;
 		}
 #endif
 	}

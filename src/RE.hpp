@@ -746,6 +746,14 @@ namespace RE {
 
 			~Vector() {}
 
+			void for_each(std::function<void(T&, size_t)> callableFunction) {
+				for (size_t dimensionIndex = 0; dimensionIndex < dimensionCount; dimensionIndex++)
+					std::invoke(
+							callableFunction,
+							aCoords[dimensionIndex],
+							dimensionIndex);
+			}
+
 			[[nodiscard]]
 			T sum() const {
 				T sum = 0;

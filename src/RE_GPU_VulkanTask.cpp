@@ -361,15 +361,18 @@ namespace RE {
 		commandBuffers.reset();
 	}
 
-	bool VulkanTask::record(const uint32_t u32FunctionIndex, const VkCommandBufferUsageFlags vk_eUsageFlags, std::function<void (VkCommandBuffer vk_hCommandBuffer, uint8_t u8PreviousLogicalQueue, uint8_t u8CurrentLogicalQueue, uint8_t u8NextLogicalQueue)> pRecorderFunction) const {
+	bool VulkanTask::record(const uint32_t u32FunctionIndex, const VkCommandBufferUsageFlags vk_eUsageFlags, std::function<void (VkCommandBuffer vk_hCommandBuffer, uint8_t u8PreviousLogicalQueue, uint8_t u8CurrentLogicalQueue, uint8_t u8NextLogicalQueue)> recorderFunction) const {
 		PRINT_DEBUG_CLASS("Beginning to record Vulkan command buffer of function at index ", u32FunctionIndex);
 		if (begin_recording_vulkan_command_buffer(commandBuffers[u32FunctionIndex], vk_eUsageFlags, nullptr)) {
-			PRINT_DEBUG_CLASS("Calling record function");
-			std::invoke(pRecorderFunction, 
-				commandBuffers[u32FunctionIndex], 
-				u32FunctionIndex > 0 ? queueIndexPerCommandPool[commandPoolIndexPerCommandBuffer[u32FunctionIndex - 1]] : RE_VK_LOGICAL_QUEUE_IGNORED, 
-				queueIndexPerCommandPool[commandPoolIndexPerCommandBuffer[u32FunctionIndex]], 
-				u32FunctionIndex < (u32FunctionsCount - 1) ? queueIndexPerCommandPool[commandPoolIndexPerCommandBuffer[u32FunctionIndex + 1]] : u8LogicalPresentQueueIndex);
+			if (static_cast<bool>(recorderFunction)) {
+				PRINT_DEBUG_CLASS("Calling record function");
+				std::invoke(
+						recorderFunction,
+						commandBuffers[u32FunctionIndex], 
+						u32FunctionIndex > 0 ? queueIndexPerCommandPool[commandPoolIndexPerCommandBuffer[u32FunctionIndex - 1]] : RE_VK_LOGICAL_QUEUE_IGNORED, 
+						queueIndexPerCommandPool[commandPoolIndexPerCommandBuffer[u32FunctionIndex]], 
+						u32FunctionIndex < (u32FunctionsCount - 1) ? queueIndexPerCommandPool[commandPoolIndexPerCommandBuffer[u32FunctionIndex + 1]] : u8LogicalPresentQueueIndex);
+			}
 			PRINT_DEBUG_CLASS("Finishing to record Vulkan command buffer of function at index ", u32FunctionIndex);
 			if (vkEndCommandBuffer(commandBuffers[u32FunctionIndex]) == VK_SUCCESS)
 				return true;

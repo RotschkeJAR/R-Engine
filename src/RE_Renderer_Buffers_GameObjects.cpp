@@ -11,7 +11,7 @@ namespace RE {
 			RENDER_TASK_SUBINDEX_BUFFER_TRANSFER,
 			RENDER_TASK_SUBINDEX_PROCESSING
 		};
-		const VulkanQueueCollection queuesForObjectBuffer = renderTasks[0].queues_of_functions(au32ObjectBufferQueues, sizeof(au32ObjectBufferQueues) / sizeof(au32ObjectBufferQueues[0]));
+		const VulkanQueueCollection queuesForObjectBuffer = aRenderTasks[0].queues_of_functions(au32ObjectBufferQueues, sizeof(au32ObjectBufferQueues) / sizeof(au32ObjectBufferQueues[0]));
 		uint8_t u8FrameInFlightCreateIndex = 0;
 		for (; u8FrameInFlightCreateIndex < RE_VK_FRAMES_IN_FLIGHT; u8FrameInFlightCreateIndex++) {
 			PRINT_DEBUG("Creating game object buffer in Vulkan");

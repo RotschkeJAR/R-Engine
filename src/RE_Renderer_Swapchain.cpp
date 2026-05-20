@@ -95,6 +95,7 @@ namespace RE {
 				break;
 			}
 			if (u32SwapchainImageCreateIndex == u32SwapchainImageCount) {
+				bSwapchainDirty = false;
 				swapchain_created_renderer();
 				return true;
 			}

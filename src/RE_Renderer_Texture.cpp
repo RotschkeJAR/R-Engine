@@ -179,7 +179,7 @@ namespace RE {
 						&pVulkanTexture->vk_hImage)) {
 					if (pVulkanTexture->imageMemory.alloc_for_image(pVulkanTexture->vk_hImage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) == VK_SUCCESS) {
 						PRINT_DEBUG("Assigning commands and recording Vulkan task for transferring texture to GPU");
-						const uint8_t a2u8LogicalQueueIndices[2] = {RE_VK_LOGICAL_QUEUE_IGNORED, renderTasks[0].logical_queue_index_for_function(RENDER_TASK_SUBINDEX_RENDERING)};
+						const uint8_t a2u8LogicalQueueIndices[2] = {RE_VK_LOGICAL_QUEUE_IGNORED, aRenderTasks[0].logical_queue_index_for_function(RENDER_TASK_SUBINDEX_RENDERING)};
 						constexpr VkQueueFlagBits vk_a2eQueueTypes[2] = {VK_QUEUE_TRANSFER_BIT, VK_QUEUE_GRAPHICS_BIT};
 						constexpr uint32_t a2u32SeparationIds[2] = {0, 1};
 						const VulkanTask_Queues occupiedTransferQueues = {

@@ -18,11 +18,11 @@ namespace RE {
 		constexpr uint32_t u32FunctionsToLookupCount = sizeof(au32FunctionsToLookup) / sizeof(au32FunctionsToLookup[0]);
 		rRenderTaskQueueIndices.reserve(u32FunctionsToLookupCount);
 		for (uint32_t u32FunctionToLookupIndex = 0; u32FunctionToLookupIndex < u32FunctionsToLookupCount; u32FunctionToLookupIndex++) {
-			const uint32_t u32QueueFamilyIndex = queueFamilyIndices[renderTasks[0].logical_queue_index_for_function(au32FunctionsToLookup[u32FunctionToLookupIndex])];
+			const uint32_t u32QueueFamilyIndex = queueFamilyIndices[aRenderTasks[0].logical_queue_index_for_function(au32FunctionsToLookup[u32FunctionToLookupIndex])];
 			if (std::find(rRenderTaskQueueIndices.begin(), rRenderTaskQueueIndices.end(), u32QueueFamilyIndex) == rRenderTaskQueueIndices.end())
 				rRenderTaskQueueIndices.push_back(u32QueueFamilyIndex);
 		}
-		const uint32_t u32PresentIndex = renderTasks[0].logical_queue_index_for_presentation();
+		const uint32_t u32PresentIndex = aRenderTasks[0].logical_queue_index_for_presentation();
 		if (std::find(rRenderTaskQueueIndices.begin(), rRenderTaskQueueIndices.end(), u32PresentIndex) == rRenderTaskQueueIndices.end())
 			rRenderTaskQueueIndices.push_back(u32PresentIndex);
 	}

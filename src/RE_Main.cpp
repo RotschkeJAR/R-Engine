@@ -4,6 +4,8 @@
 #include "RE_GPU.hpp"
 #include "RE_Manager.hpp"
 
+#include <stdlib.h>
+
 namespace RE {
 
 #define LOWEST_SMOOTH_FPS 15
@@ -24,7 +26,7 @@ namespace RE {
 # warning The targeted OS is unknown, so the engine will terminate immediatly upon execution
 		RE_ERROR("The OS is unknown. The engine can't initialize");
 		return false;
-#else
+#endif
 		if (bErrorOccured) {
 			RE_ERROR("A fatal error occured before and further attempts to run the engine will be dropped");
 			return false;
@@ -33,13 +35,19 @@ namespace RE {
 			return false;
 		}
 		PRINT_DEBUG("Starting the engine");
+#ifdef RE_OS_LINUX
+		/*if (getenv("WAYLAND_DISPLAY"))
+			eLinuxWindowType = RE_LINUX_WINDOW_TYPE_WAYLAND;
+		else
+			eLinuxWindowType = RE_LINUX_WINDOW_TYPE_X11;*/
+#endif
 		if (create_window()) {
 			if (init_logical_gpu()) {
 				if (init_renderer()) {
 					PRINT_DEBUG("Starting game loop");
 					std::chrono::high_resolution_clock::time_point currentFrameTime = std::chrono::high_resolution_clock::now(),
-						lastFrameTime,
-						lastExecutionTimepoint;
+						lastFrameTime = currentFrameTime,
+						lastExecutionTimepoint = currentFrameTime;
 					show_window(true);
 					bRunning = true;
 
@@ -56,13 +64,13 @@ namespace RE {
 							currentFrameTime = std::chrono::high_resolution_clock::now();
 
 						PRINT_DEBUG("Calculating deltatime for next frame");
-						lastFrameTime = currentFrameTime;
 						f32Deltaseconds = std::chrono::duration_cast<std::chrono::duration<float>>(currentFrameTime - lastFrameTime).count();
+						lastFrameTime = currentFrameTime;
 						if (f32Deltaseconds <= f32MaxDeltatime) {
 							if (f32Deltaseconds < f32MinDeltatime) {
 								const float fTimeToWait = f32MinDeltatime - f32Deltaseconds;
 								PRINT_DEBUG("Main thread sleeps for ", fTimeToWait, " seconds for FPS limit");
-								std::this_thread::sleep_for(std::chrono::duration<float>(f32MinDeltatime - f32Deltaseconds));
+								std::this_thread::sleep_for(std::chrono::duration<float>(fTimeToWait));
 							}
 						} else {
 							if (std::chrono::duration_cast<std::chrono::duration<float>>(currentFrameTime - lastExecutionTimepoint).count() >= f32MaxExhaustionTime) {
@@ -89,7 +97,6 @@ namespace RE {
 		print_error_count();
 		PRINT_DEBUG("Finished execution");
 		return !bErrorOccured;
-#endif
 	}
 
 	[[nodiscard]]

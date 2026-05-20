@@ -1,5 +1,6 @@
 #include "RE_Window.hpp"
 #include "RE_Window_Wayland.hpp"
+#include "RE_Renderer.hpp"
 
 #ifdef RE_OS_LINUX
 
@@ -14,12 +15,6 @@ namespace RE {
 	wl_surface *wl_pSurface;
 	static xdg_surface *xdg_pSurface;
 	static xdg_toplevel *xdg_pToplevel;
-
-	static void commit_wayland_surface() {
-		PRINT_DEBUG("Commiting Wayland surface ", wl_pSurface, " and flushing to server ", wl_pDisplay);
-		wl_surface_commit(wl_pSurface);
-		wl_display_flush(wl_pDisplay);
-	}
 
 	static void callback_xdg_wm_base_ping(void *const pData, xdg_wm_base *const xdg_pBase, const uint32_t u32Serial) {
 		PRINT_DEBUG("Received PING-message for XDG base ", xdg_pBase, ". Responding with PONG");
@@ -87,11 +82,14 @@ namespace RE {
 			.done = callback_wayland_surface_frame_ready
 		};
 		wl_callback_add_listener(wl_pFrameReadyCallback, &wl_frameReadyCallback, nullptr);
-		commit_wayland_surface();
+		wl_surface_commit(wl_pSurface);
 	}
 
 	static void callback_xdg_toplevel_configure(void *const pData, xdg_toplevel *const xdg_pToplevelParam, const int32_t i32Width, const int32_t i32Height, wl_array *const wl_pArray) {
 		PRINT_DEBUG("XDG toplevel ", xdg_pToplevelParam, " has been configured. Its size is ", i32Width, "x", i32Height, " and received array ", wl_pArray);
+		windowSize[0] = static_cast<uint32_t>(i32Width);
+		windowSize[1] = static_cast<uint32_t>(i32Height);
+		mark_swapchain_dirty();
 	}
 	static void callback_xdg_toplevel_close(void *const pData, xdg_toplevel *const xdg_pToplevelParam) {
 		PRINT_DEBUG("XDG toplevel ", xdg_pToplevelParam, " has been requested to close");
@@ -154,31 +152,32 @@ namespace RE {
 					PRINT_DEBUG("Getting XDG surface of XDG WM-base ", xdg_pWindowBase);
 					xdg_pSurface = xdg_wm_base_get_xdg_surface(xdg_pWindowBase, wl_pSurface);
 					if (xdg_pSurface) {
+						PRINT_DEBUG("Adding callbacks for XDG surface ", xdg_pSurface);
+						const xdg_surface_listener xdg_surfaceListener = {
+							.configure = callback_wayland_surface_configure
+						};
+						xdg_surface_add_listener(xdg_pSurface, &xdg_surfaceListener, nullptr);
 						PRINT_DEBUG("Getting XDG toplevel of XDG surface ", xdg_pSurface);
 						xdg_pToplevel = xdg_surface_get_toplevel(xdg_pSurface);
 						if (xdg_pToplevel) {
-							/*PRINT_DEBUG("Adding callbacks for XDG surface ", xdg_pSurface);
-							const xdg_surface_listener xdg_surfaceListener = {
-								.configure = callback_wayland_surface_configure
-							};
-							xdg_surface_add_listener(xdg_pSurface, &xdg_surfaceListener, nullptr);*/
-							PRINT_DEBUG("Setting size of XDG surface ", wl_pSurface);
-							windowSize[0] = 400;
-							windowSize[1] = 300;
-							xdg_surface_set_window_geometry(xdg_pSurface, 0, 0, windowSize[0], windowSize[1]);
-							/*PRINT_DEBUG("Adding callbacks for XDG toplevel ", xdg_pToplevel);
+							PRINT_DEBUG("Adding callbacks for XDG toplevel ", xdg_pToplevel);
 							const xdg_toplevel_listener xdg_toplevelListener = {
 								.configure = callback_xdg_toplevel_configure,
-								.close = callback_xdg_toplevel_close,
+								/*.close = callback_xdg_toplevel_close,
 								.configure_bounds = callback_xdg_toplevel_configure_bounds,
-								.wm_capabilities = callback_xdg_toplevel_wm_capabilities
+								.wm_capabilities = callback_xdg_toplevel_wm_capabilities*/
 							};
-							xdg_toplevel_add_listener(xdg_pToplevel, &xdg_toplevelListener, nullptr);*/
+							xdg_toplevel_add_listener(xdg_pToplevel, &xdg_toplevelListener, nullptr);
+							/*PRINT_DEBUG("Setting size of XDG surface ", wl_pSurface);
+							windowSize[0] = 400;
+							windowSize[1] = 300;
+							xdg_surface_set_window_geometry(xdg_pSurface, 0, 0, windowSize[0], windowSize[1]);*/
 							PRINT_DEBUG("Setting title of XDG toplevel ", xdg_pToplevel);
 							xdg_toplevel_set_title(xdg_pToplevel, pacWindowTitle);
+							xdg_toplevel_set_app_id(xdg_pToplevel, pacWindowTitle);
 							PRINT_DEBUG("Setting minimum allowed size of XDG toplevel ", xdg_pToplevel);
 							xdg_toplevel_set_min_size(xdg_pToplevel, MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT);
-							register_next_ready_frame_callback();
+							register_next_ready_frame_callback(); // commits wl_surface
 							return true;
 						} else
 							RE_FATAL_ERROR("Failed to get toplevel of the XDG window for Wayland");
@@ -231,8 +230,6 @@ namespace RE {
 	}
 	
 	void wayland_show_window() {
-		PRINT_DEBUG("Showing/Hiding Wayland surface ", wl_pSurface);
-		commit_wayland_surface();
 	}
 
 	void wayland_update_fullscreen() {
@@ -246,25 +243,23 @@ namespace RE {
 	void wayland_update_window_title() {
 		PRINT_DEBUG("Updating title of XDG toplevel ", xdg_pToplevel);
 		xdg_toplevel_set_title(xdg_pToplevel, pacWindowTitle);
-		commit_wayland_surface();
+		xdg_toplevel_set_app_id(xdg_pToplevel, pacWindowTitle);
+		wl_surface_commit(wl_pSurface);
 	}
 
 	void wayland_window_proc() {
 		PRINT_DEBUG("Calling procedure for Wayland display ", wl_pDisplay);
 		int32_t i32Count = wl_display_dispatch_pending(wl_pDisplay);
-		while (i32Count) {
+		while (i32Count > 0) {
 			i32Count--;
 			PRINT_DEBUG("Wayland event received. Count of remaining events in queue: ", i32Count);
-		}
-		if (are_bits_true<uint8_t>(u8WindowFlagBits, WINDOW_WAYLAND_SHOULD_RENDER_FRAME_BIT)) {
-			PRINT_DEBUG("Marking whole window area being damaged/dirty and needing to render");
-			wl_surface_damage(wl_pSurface, 0, 0, windowSize[0], windowSize[1]);
 		}
 	}
 
 	void wayland_post_rendering_window_proc() {
 		PRINT_DEBUG("Commiting Wayland surface to show new frame after being rendered");
-		commit_wayland_surface();
+		wl_surface_damage(wl_pSurface, 0, 0, windowSize[0], windowSize[1]);
+		wl_surface_commit(wl_pSurface);
 		set_bits<uint8_t>(u8WindowFlagBits, false, WINDOW_WAYLAND_SHOULD_RENDER_FRAME_BIT);
 	}
 

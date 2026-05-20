@@ -23,6 +23,9 @@ namespace RE {
 								if (init_renderer_textures()) {
 									if (init_renderer_sprite_layouts()) {
 										if (init_renderer_meshes()) {
+											for (VulkanTask &rRenderTask : aRenderTasks)
+												for (uint8_t u8FunctionIndex = 0; u8FunctionIndex < 3; u8FunctionIndex++)
+													rRenderTask.record(u8FunctionIndex, 0, nullptr);
 											PRINT_DEBUG("Renderer successfully initialized");
 											return true;
 										}
@@ -64,10 +67,63 @@ namespace RE {
 		if (bSwapchainDirty)
 			if (!recreate_swapchain())
 				return;
-		if (acquire_next_swapchain_image()) {
-
-		} else
-			RE_FATAL_ERROR("Failed acquiring index of next swapchain image");
+		if (!acquire_next_swapchain_image())
+			return;
+		vkWaitForFences(vk_hDevice, 1, &vk_ahRenderFences[u8CurrentFrameInFlightIndex], VK_TRUE, std::numeric_limits<uint64_t>::max());
+		aRenderTasks[u8CurrentFrameInFlightIndex].record(RENDER_TASK_SUBINDEX_IMAGE_BLIT, 0, [](const VkCommandBuffer vk_hCommandBuffer, const uint8_t u8PreviousLogicalQueue, const uint8_t u8CurrentLogicalQueue, const uint8_t u8NextLogicalQueue) {
+					const VkImageMemoryBarrier vk_swapchainImageInfo = {
+						.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+						.pNext = nullptr,
+						.srcAccessMask = VK_ACCESS_NONE,
+						.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT,
+						.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+						.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+						.srcQueueFamilyIndex = queueFamilyIndices[u8CurrentLogicalQueue],
+						.dstQueueFamilyIndex = queueFamilyIndices[u8NextLogicalQueue],
+						.image = swapchainImages[u32SwapchainImageIndex],
+						.subresourceRange = {
+							.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+							.baseMipLevel = 0,
+							.levelCount = 1,
+							.baseArrayLayer = 0,
+							.layerCount = 1
+						}
+					};
+					vkCmdPipelineBarrier(vk_hCommandBuffer, VK_PIPELINE_STAGE_NONE, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &vk_swapchainImageInfo);
+				});
+		PRINT_DEBUG("Submitting rendering task at frame-in-flight index ", u8CurrentFrameInFlightIndex);
+		vkResetFences(vk_hDevice, 1, &vk_ahRenderFences[u8CurrentFrameInFlightIndex]);
+		constexpr VkPipelineStageFlags2 vk_aeInternalWaitStages[] = {
+			VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+			VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+			VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT
+		};
+		const VkSemaphoreSubmitInfo vk_waitSwapchainSemaphoreInfo = {
+			.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+			.pNext = nullptr,
+			.semaphore = swapchainSemaphores[u32CurrentSwapchainSemaphoreIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE],
+			.stageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+			.deviceIndex = 1
+		},
+		vk_signalSwapchainSemaphoreInfo = {
+			.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+			.pNext = nullptr,
+			.semaphore = swapchainSemaphores[u32CurrentSwapchainSemaphoreIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE + 1],
+			.stageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+			.deviceIndex = 1
+		};
+		if (!aRenderTasks[u8CurrentFrameInFlightIndex].submit(1,
+				&vk_waitSwapchainSemaphoreInfo,
+				vk_aeInternalWaitStages,
+				1,
+				&vk_signalSwapchainSemaphoreInfo,
+				vk_ahRenderFences[u8CurrentFrameInFlightIndex])) {
+			RE_FATAL_ERROR("Failed submitting a rendering task");
+			return;
+		}
+		present_swapchain_image();
+		u8CurrentFrameInFlightIndex = (u8CurrentFrameInFlightIndex + 1) % RE_VK_FRAMES_IN_FLIGHT;
+		u32CurrentSwapchainSemaphoreIndex = (u32CurrentSwapchainSemaphoreIndex + 1) % u32SwapchainImageCount;
 	}
 
 	bool swapchain_created_renderer() {

@@ -43,7 +43,7 @@ namespace RE {
 					if (bind_vulkan_memory(square3D.vk_hMeshBuffer, squareMeshesMemory.get(), next_multiple_inclusive<VkDeviceSize>(vk_aMemoryRequirements[0].size, vk_aMemoryRequirements[1].alignment))
 							&& bind_vulkan_memory(square2D.vk_hMeshBuffer, squareMeshesMemory.get())) {
 						PRINT_DEBUG("Initializing Vulkan task to fill mesh buffers with coordinates and indices");
-						const uint8_t au8LogicalQueueIndices[] = {u8LogicalQueueCount, renderTasks[0].logical_queue_index_for_function(RENDER_TASK_SUBINDEX_RENDERING)};
+						const uint8_t au8LogicalQueueIndices[] = {u8LogicalQueueCount, aRenderTasks[0].logical_queue_index_for_function(RENDER_TASK_SUBINDEX_RENDERING)};
 						const VkQueueFlagBits vk_aeQueueTypes[] = {VK_QUEUE_TRANSFER_BIT, VK_QUEUE_GRAPHICS_BIT};
 						const uint32_t au32SeparationIds[] = {0, 1};
 						const VulkanTask_Queues queueRequirements = {
@@ -107,7 +107,7 @@ namespace RE {
 											.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
 											.pNext = nullptr,
 											.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
-											.dstAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT,
+											.dstAccessMask = VK_ACCESS_NONE,
 											.srcQueueFamilyIndex = queueFamilyIndices[u8CurrentLogicalQueue],
 											.dstQueueFamilyIndex = queueFamilyIndices[u8NextLogicalQueue],
 											.buffer = square2D.vk_hMeshBuffer,
@@ -117,7 +117,7 @@ namespace RE {
 											.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
 											.pNext = nullptr,
 											.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
-											.dstAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT | VK_ACCESS_INDEX_READ_BIT,
+											.dstAccessMask = VK_ACCESS_NONE,
 											.srcQueueFamilyIndex = queueFamilyIndices[u8CurrentLogicalQueue],
 											.dstQueueFamilyIndex = queueFamilyIndices[u8NextLogicalQueue],
 											.buffer = square3D.vk_hMeshBuffer,
@@ -125,7 +125,7 @@ namespace RE {
 											.size = VK_WHOLE_SIZE
 										}
 									};
-									vkCmdPipelineBarrier(vk_hCommandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0, nullptr, sizeof(vk_aMeshBufferBarriers) / sizeof(vk_aMeshBufferBarriers[0]), vk_aMeshBufferBarriers, 0, nullptr);
+									vkCmdPipelineBarrier(vk_hCommandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, nullptr, sizeof(vk_aMeshBufferBarriers) / sizeof(vk_aMeshBufferBarriers[0]), vk_aMeshBufferBarriers, 0, nullptr);
 								})) {
 							PRINT_DEBUG("Recording 2nd scope of the Vulkan task for setting coordinates in mesh buffers");
 							if (transferTask.record(1,
@@ -136,7 +136,7 @@ namespace RE {
 											{
 												.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
 												.pNext = nullptr,
-												.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+												.srcAccessMask = VK_ACCESS_NONE,
 												.dstAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT,
 												.srcQueueFamilyIndex = queueFamilyIndices[u8PreviousLogicalQueue],
 												.dstQueueFamilyIndex = queueFamilyIndices[u8CurrentLogicalQueue],
@@ -146,7 +146,7 @@ namespace RE {
 											}, {
 												.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
 												.pNext = nullptr,
-												.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+												.srcAccessMask = VK_ACCESS_NONE,
 												.dstAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT | VK_ACCESS_INDEX_READ_BIT,
 												.srcQueueFamilyIndex = queueFamilyIndices[u8PreviousLogicalQueue],
 												.dstQueueFamilyIndex = queueFamilyIndices[u8CurrentLogicalQueue],
@@ -155,7 +155,7 @@ namespace RE {
 												.size = VK_WHOLE_SIZE
 											}
 										};
-										vkCmdPipelineBarrier(vk_hCommandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0, nullptr, sizeof(vk_aMeshBufferBarriers) / sizeof(vk_aMeshBufferBarriers[0]), vk_aMeshBufferBarriers, 0, nullptr);
+										vkCmdPipelineBarrier(vk_hCommandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0, nullptr, sizeof(vk_aMeshBufferBarriers) / sizeof(vk_aMeshBufferBarriers[0]), vk_aMeshBufferBarriers, 0, nullptr);
 									})) {
 								PRINT_DEBUG("Creating temporary fence in Vulkan and submitting Vulkan task setting coordinates in mesh buffers");
 								Vulkan_Fence fence(0);

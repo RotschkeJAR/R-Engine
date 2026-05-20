@@ -134,8 +134,10 @@ namespace RE {
 							.event_mask = StructureNotifyMask | ExposureMask | KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask,
 							.colormap = x11_colormap
 						};
-						windowSize[0] = monitorSize[0] / 5 * 3;
-						windowSize[1] = monitorSize[1] / 5 * 3;
+						for (size_t i = 0; i < windowSize.dimensions(); i++) {
+							static_assert(windowSize.dimensions() == monitorSize.dimensions());
+							windowSize[i] = monitorSize[i] / 5 * 3;
+						}
 						x11_hWindow = XCreateWindow(x11_pDisplay, x11_hRootWindowOfDefaultScreen, (monitorSize[0] - windowSize[0]) / 2, (monitorSize[1] - windowSize[1]) / 2, windowSize[0], windowSize[1], 0, x11_visualInfo.depth, InputOutput, x11_visualInfo.visual, CWColormap | CWEventMask, &winAttrib);
 						if (x11_hWindow) {
 							PRINT_DEBUG("Applying size limits to X11 window ", x11_hWindow);

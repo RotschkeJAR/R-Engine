@@ -54,8 +54,8 @@ namespace RE {
 #define RENDER_TASK_SUBINDEX_PROCESSING 1
 #define RENDER_TASK_SUBINDEX_RENDERING 2
 #define RENDER_TASK_SUBINDEX_IMAGE_BLIT 3
-	extern std::array<VulkanTask, RE_VK_FRAMES_IN_FLIGHT> renderTasks;
-	extern std::array<VkFence, RE_VK_FRAMES_IN_FLIGHT> renderFences;
+	extern VulkanTask aRenderTasks[RE_VK_FRAMES_IN_FLIGHT];
+	extern VkFence vk_ahRenderFences[RE_VK_FRAMES_IN_FLIGHT];
 	extern uint8_t u8CurrentFrameInFlightIndex;
 	bool create_render_tasks();
 	void destroy_render_tasks();

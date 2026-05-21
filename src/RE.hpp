@@ -357,13 +357,17 @@ namespace RE {
 	}
 
 	// Safe alternative to 'std::malloc'
-	[[nodiscard]]   void* safe_malloc(size_t size);
+	[[nodiscard]]
+	void* safe_malloc(size_t size);
 	// Safe alternative to 'std::align'
-	[[nodiscard]]   void* safe_align(size_t alignment, size_t size, void *&rpPtr, size_t &rSpace);
+	[[nodiscard]]
+	void* safe_align(size_t alignment, size_t size, void *&rpPtr, size_t &rSpace);
 	// Improved version of 'std::align'
-	[[nodiscard]]   void* align_2(size_t alignment, size_t size, void *&rpPtr, size_t &rSpace);
+	[[nodiscard]]
+	void* align_2(size_t alignment, size_t size, void *&rpPtr, size_t &rSpace);
 	// Improved version of 'safe_align'
-	[[nodiscard]]   void* safe_align_2(size_t alignment, size_t size, void *&rpPointer, size_t &rSpace);
+	[[nodiscard]]
+	void* safe_align_2(size_t alignment, size_t size, void *&rpPointer, size_t &rSpace);
 
 
 
@@ -1544,7 +1548,7 @@ namespace RE {
 	[[nodiscard]]
 	MsaaMode get_highest_supported_msaa_mode();
 	void set_background_color(const Color &rColor);
-	void set_background_color(float f32Red, float f32Green, float f32Blue, float f32Alpha);
+	void set_background_color(float f32Red, float f32Green, float f32Blue);
 	[[nodiscard]]
 	Color get_background_color();
 	[[nodiscard]]

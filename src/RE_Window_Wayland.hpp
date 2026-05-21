@@ -19,7 +19,6 @@ namespace RE {
 	void wayland_update_fullscreen();
 	void wayland_update_window_title();
 	void wayland_window_proc();
-	void wayland_post_rendering_window_proc();
 
 }
 

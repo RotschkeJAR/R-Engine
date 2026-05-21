@@ -1,4 +1,5 @@
 #include "RE_GPU_Internal.hpp"
+#include "RE_Window.hpp"
 
 namespace RE {
 	
@@ -31,6 +32,10 @@ namespace RE {
 
 		vk_ePresentModeVsync = VK_PRESENT_MODE_FIFO_KHR;
 		vk_ePresentModeNoVsync = VK_PRESENT_MODE_FIFO_KHR;
+#ifdef RE_OS_LINUX
+		if (eLinuxWindowType == RE_LINUX_WINDOW_TYPE_WAYLAND)
+			return;
+#endif
 		for (uint32_t u32SurfaceFormatIndex = 0; u32SurfaceFormatIndex < u32SurfaceFormatsAvailableCount; u32SurfaceFormatIndex++)
 			switch (allSupportedPresentModes[u32SurfaceFormatIndex]) {
 				case VK_PRESENT_MODE_IMMEDIATE_KHR:

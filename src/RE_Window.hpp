@@ -18,7 +18,6 @@ namespace RE {
 #define WINDOW_MAXIMIZED_BIT 3
 #define WINDOW_FULLSCREEN_BIT 4
 #define WINDOW_CLOSE_FLAG_BIT 5
-#define WINDOW_WAYLAND_SHOULD_RENDER_FRAME_BIT 6
 
 #ifdef RE_OS_LINUX
 	enum LinuxWindowType {
@@ -38,7 +37,6 @@ namespace RE {
 	void window_resize_event(const uint32_t u32NewWidth, const uint32_t u32NewHeight);
 	void show_window(const bool bShowWindow);
 	void window_proc();
-	void post_rendering_window_proc();
 	[[nodiscard]]
 	bool should_window_close();
 	[[nodiscard]]

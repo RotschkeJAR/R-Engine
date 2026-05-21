@@ -70,26 +70,47 @@ namespace RE {
 		if (!acquire_next_swapchain_image())
 			return;
 		vkWaitForFences(vk_hDevice, 1, &vk_ahRenderFences[u8CurrentFrameInFlightIndex], VK_TRUE, std::numeric_limits<uint64_t>::max());
-		aRenderTasks[u8CurrentFrameInFlightIndex].record(RENDER_TASK_SUBINDEX_IMAGE_BLIT, 0, [](const VkCommandBuffer vk_hCommandBuffer, const uint8_t u8PreviousLogicalQueue, const uint8_t u8CurrentLogicalQueue, const uint8_t u8NextLogicalQueue) {
-					const VkImageMemoryBarrier vk_swapchainImageInfo = {
+		aRenderTasks[u8CurrentFrameInFlightIndex].record(
+				RENDER_TASK_SUBINDEX_IMAGE_BLIT,
+				VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+				[](const VkCommandBuffer vk_hCommandBuffer, const uint8_t u8PreviousLogicalQueue, const uint8_t u8CurrentLogicalQueue, const uint8_t u8NextLogicalQueue) {
+					constexpr VkImageSubresourceRange vk_imageRange = {
+						.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+						.baseMipLevel = 0,
+						.levelCount = 1,
+						.baseArrayLayer = 0,
+						.layerCount = 1
+					};
+					const VkImageMemoryBarrier vk_swapchainImage1Info = {
 						.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
 						.pNext = nullptr,
 						.srcAccessMask = VK_ACCESS_NONE,
-						.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT,
+						.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
 						.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+						.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+						.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+						.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+						.image = swapchainImages[u32SwapchainImageIndex],
+						.subresourceRange = vk_imageRange
+					};
+					vkCmdPipelineBarrier(vk_hCommandBuffer, VK_PIPELINE_STAGE_NONE, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &vk_swapchainImage1Info);
+					const VkClearColorValue vk_clearImage = {
+						.float32 = {backgroundClearColor.get_red(), backgroundClearColor.get_green(), backgroundClearColor.get_blue(), 1.0f}
+					};
+					vkCmdClearColorImage(vk_hCommandBuffer, swapchainImages[u32SwapchainImageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &vk_clearImage, 1, &vk_imageRange);
+					const VkImageMemoryBarrier vk_swapchainImage2Info = {
+						.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+						.pNext = nullptr,
+						.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+						.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT,
+						.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 						.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
 						.srcQueueFamilyIndex = queueFamilyIndices[u8CurrentLogicalQueue],
 						.dstQueueFamilyIndex = queueFamilyIndices[u8NextLogicalQueue],
 						.image = swapchainImages[u32SwapchainImageIndex],
-						.subresourceRange = {
-							.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-							.baseMipLevel = 0,
-							.levelCount = 1,
-							.baseArrayLayer = 0,
-							.layerCount = 1
-						}
+						.subresourceRange = vk_imageRange
 					};
-					vkCmdPipelineBarrier(vk_hCommandBuffer, VK_PIPELINE_STAGE_NONE, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &vk_swapchainImageInfo);
+					vkCmdPipelineBarrier(vk_hCommandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &vk_swapchainImage2Info);
 				});
 		PRINT_DEBUG("Submitting rendering task at frame-in-flight index ", u8CurrentFrameInFlightIndex);
 		vkResetFences(vk_hDevice, 1, &vk_ahRenderFences[u8CurrentFrameInFlightIndex]);
@@ -140,11 +161,10 @@ namespace RE {
 		backgroundClearColor = rColor;
 	}
 
-	void set_background_color(const float fRed, const float fGreen, const float fBlue, const float fAlpha) {
+	void set_background_color(const float fRed, const float fGreen, const float fBlue) {
 		backgroundClearColor.set_red(fRed);
 		backgroundClearColor.set_green(fGreen);
 		backgroundClearColor.set_blue(fBlue);
-		backgroundClearColor.set_alpha(fAlpha);
 	}
 
 	[[nodiscard]]

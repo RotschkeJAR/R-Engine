@@ -198,10 +198,10 @@ namespace RE {
 		if (!win_hInstance) {
 			PRINT_DEBUG("Getting HINSTANCE for this application");
 			win_hInstance = GetModuleHandle(nullptr);
-		}
-		if (!win_hInstance) {
-			RE_FATAL_ERROR("Failed getting the HINSTANCE for window creation on Windows");
-			return false;
+			if (!win_hInstance) {
+				RE_FATAL_ERROR("Failed getting the HINSTANCE for window creation on Windows");
+				return false;
+			}
 		}
 		PRINT_DEBUG("Converting title name to wide character string");
 		const std::wstring wideTitleStr = convert_chars_to_wide(pacWindowTitle);

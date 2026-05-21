@@ -13,7 +13,7 @@ namespace RE {
 	
 	Vector2u windowSize(600, 400), largestMonitorSize(1920, 1080);
 	const char* pacWindowTitle = "Untitled game window";
-	uint8_t u8WindowFlagBits = 1 << WINDOW_WAYLAND_SHOULD_RENDER_FRAME_BIT;
+	uint8_t u8WindowFlagBits = 0;
 
 	bool create_window() {
 		PRINT_DEBUG("Creating window");
@@ -27,11 +27,10 @@ namespace RE {
 				bSuccess = x11_create_window();
 				break;
 			case RE_LINUX_WINDOW_TYPE_WAYLAND:
-				set_bits<uint8_t>(u8WindowFlagBits, false, WINDOW_WAYLAND_SHOULD_RENDER_FRAME_BIT);
 				bSuccess = wayland_create_window();
 				break;
 			default:
-				RE_ABORT("Window compositor is unknown");
+				RE_ABORT("Window compositor is unknown: ", std::hex, eLinuxWindowType);
 		}
 #endif
 		set_bits<uint8_t>(u8WindowFlagBits, bSuccess, WINDOW_CREATED_BIT);
@@ -51,7 +50,7 @@ namespace RE {
 				wayland_destroy_window();
 				break;
 			default:
-				RE_ABORT("Window compositor is unknown");
+				RE_ABORT("Window compositor is unknown: ", std::hex, eLinuxWindowType);
 		}
 #endif
 		set_bits<uint8_t>(u8WindowFlagBits, false, WINDOW_CREATED_BIT, WINDOW_VISIBLE_BIT, WINDOW_MINIMIZED_BIT, WINDOW_MAXIMIZED_BIT, WINDOW_CLOSE_FLAG_BIT);
@@ -78,7 +77,7 @@ namespace RE {
 				wayland_show_window();
 				break;
 			default:
-				RE_ABORT("Window compositor is unknown");
+				RE_ABORT("Window compositor is unknown: ", std::hex, eLinuxWindowType);
 		}
 #endif
 	}
@@ -101,7 +100,7 @@ namespace RE {
 				wayland_update_fullscreen();
 				break;
 			default:
-				RE_ABORT("Window compositor is unknown");
+				RE_ABORT("Window compositor is unknown: ", std::hex, eLinuxWindowType);
 		}
 #endif
 	}
@@ -124,16 +123,8 @@ namespace RE {
 				wayland_window_proc();
 				break;
 			default:
-				RE_ABORT("Window compositor is unknown");
+				RE_ABORT("Window compositor is unknown: ", std::hex, eLinuxWindowType);
 		}
-#endif
-	}
-
-	void post_rendering_window_proc() {
-		PRINT_DEBUG("General window procedure after rendering called");
-#ifdef RE_OS_LINUX
-		if (eLinuxWindowType == RE_LINUX_WINDOW_TYPE_WAYLAND)
-			wayland_post_rendering_window_proc();
 #endif
 	}
 
@@ -144,8 +135,7 @@ namespace RE {
 
 	[[nodiscard]]
 	bool should_render() {
-		return !are_bits_true<uint8_t>(u8WindowFlagBits, WINDOW_MINIMIZED_BIT)
-				&& are_bits_true<uint8_t>(u8WindowFlagBits, WINDOW_VISIBLE_BIT, WINDOW_WAYLAND_SHOULD_RENDER_FRAME_BIT);
+		return !are_bits_true<uint8_t>(u8WindowFlagBits, WINDOW_MINIMIZED_BIT) && are_bits_true<uint8_t>(u8WindowFlagBits, WINDOW_VISIBLE_BIT);
 	}
 
 	bool create_vulkan_surface() {
@@ -180,7 +170,7 @@ namespace RE {
 					return vkCreateWaylandSurfaceKHR(vk_hInstance, &vk_waylandSurfaceCreateInfo, nullptr, &vk_hSurface) == VK_SUCCESS;
 				}
 			default:
-				RE_ABORT("Window compositor is unknown");
+				RE_ABORT("Window compositor is unknown: ", std::hex, eLinuxWindowType);
 		}
 #endif
 	}
@@ -196,7 +186,7 @@ namespace RE {
 			case RE_LINUX_WINDOW_TYPE_WAYLAND:
 				return VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME;
 			default:
-				RE_ABORT("Window compositor is unknown");
+				RE_ABORT("Window compositor is unknown: ", std::hex, eLinuxWindowType);
 		}
 #endif
 	}
@@ -219,7 +209,7 @@ namespace RE {
 				wayland_update_window_title();
 				break;
 			default:
-				RE_ABORT("Window compositor is unknown");
+				RE_ABORT("Window compositor is unknown: ", std::hex, eLinuxWindowType);
 		}
 #endif
 	}

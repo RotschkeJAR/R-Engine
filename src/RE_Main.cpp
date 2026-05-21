@@ -36,66 +36,81 @@ namespace RE {
 		}
 		PRINT_DEBUG("Starting the engine");
 #ifdef RE_OS_LINUX
-		/*if (getenv("WAYLAND_DISPLAY"))
+		if (getenv("WAYLAND_DISPLAY")) {
+			PRINT_DEBUG("Creating a window in Wayland");
 			eLinuxWindowType = RE_LINUX_WINDOW_TYPE_WAYLAND;
-		else
-			eLinuxWindowType = RE_LINUX_WINDOW_TYPE_X11;*/
-#endif
-		if (create_window()) {
-			if (init_logical_gpu()) {
-				if (init_renderer()) {
-					PRINT_DEBUG("Starting game loop");
-					std::chrono::high_resolution_clock::time_point currentFrameTime = std::chrono::high_resolution_clock::now(),
-						lastFrameTime = currentFrameTime,
-						lastExecutionTimepoint = currentFrameTime;
-					show_window(true);
-					bRunning = true;
-
-					// Game loop
-					while (!should_window_close() && bRunning && are_scenes_present() && !bErrorOccured) {
-						window_proc();
-						if (f32Deltaseconds > 0.0f) {
-							game_logic_update();
-							if (should_render())
-								render();
-							lastExecutionTimepoint = std::chrono::high_resolution_clock::now();
-							currentFrameTime = lastExecutionTimepoint;
-						} else
-							currentFrameTime = std::chrono::high_resolution_clock::now();
-
-						PRINT_DEBUG("Calculating deltatime for next frame");
-						f32Deltaseconds = std::chrono::duration_cast<std::chrono::duration<float>>(currentFrameTime - lastFrameTime).count();
-						lastFrameTime = currentFrameTime;
-						if (f32Deltaseconds <= f32MaxDeltatime) {
-							if (f32Deltaseconds < f32MinDeltatime) {
-								const float fTimeToWait = f32MinDeltatime - f32Deltaseconds;
-								PRINT_DEBUG("Main thread sleeps for ", fTimeToWait, " seconds for FPS limit");
-								std::this_thread::sleep_for(std::chrono::duration<float>(fTimeToWait));
-							}
-						} else {
-							if (std::chrono::duration_cast<std::chrono::duration<float>>(currentFrameTime - lastExecutionTimepoint).count() >= f32MaxExhaustionTime) {
-								RE_ERROR("The main thread has been exhausted for more than ", f32MaxExhaustionTime, " seconds. Exiting normally");
-								break;
-							}
-							std::this_thread::sleep_for(std::chrono::duration<float>(f32MinDeltatime - (f32Deltaseconds - std::truncf(f32Deltaseconds / f32MinDeltatime) * f32MinDeltatime)));
-							f32Deltaseconds = 0.0f;
-						}
-					}
-
-					PRINT_DEBUG("Exiting game loop");
-					bRunning = false;
-					show_window(false);
-					vkDeviceWaitIdle(vk_hDevice);
-					last_game_logic_update();
-					f32Deltaseconds = 0.0f;
-					destroy_renderer();
+			if (!create_window()) {
+				RE_NOTE("Failed to create a window in Wayland. Using X11 instead");
+				eLinuxWindowType = RE_LINUX_WINDOW_TYPE_X11;
+				if (!create_window()) {
+					RE_FATAL_ERROR("Failed both attempts to create a window in X11 and Wayland");
+					return false;
 				}
-				destroy_logical_gpu();
 			}
-			destroy_window();
+		} else {
+			PRINT_DEBUG("Creating a window in X11");
+			eLinuxWindowType = RE_LINUX_WINDOW_TYPE_X11;
+			if (!create_window()) {
+				RE_FATAL_ERROR("Failed to create a window in X11");
+				return false;
+			}
 		}
+#elif defined RE_OS_WINDOWS
+		if (!create_window())
+			return false;
+#endif
+		if (init_logical_gpu()) {
+			if (init_renderer()) {
+				PRINT_DEBUG("Starting game loop");
+				std::chrono::high_resolution_clock::time_point currentFrameTime = std::chrono::high_resolution_clock::now(),
+					lastFrameTime = currentFrameTime,
+					lastExecutionTimepoint = currentFrameTime;
+				show_window(true);
+				bRunning = true;
+
+				// Game loop
+				while (!should_window_close() && bRunning && are_scenes_present() && !bErrorOccured) {
+					window_proc();
+					if (f32Deltaseconds > 0.0f) {
+						game_logic_update();
+						if (should_render())
+							render();
+						lastExecutionTimepoint = std::chrono::high_resolution_clock::now();
+						currentFrameTime = lastExecutionTimepoint;
+					} else
+						currentFrameTime = std::chrono::high_resolution_clock::now();
+
+					PRINT_DEBUG("Calculating deltatime for next frame");
+					f32Deltaseconds = std::chrono::duration_cast<std::chrono::duration<float>>(currentFrameTime - lastFrameTime).count();
+					lastFrameTime = currentFrameTime;
+					if (f32Deltaseconds <= f32MaxDeltatime) {
+						if (f32Deltaseconds < f32MinDeltatime) {
+							const float fTimeToWait = f32MinDeltatime - f32Deltaseconds;
+							PRINT_DEBUG("Main thread sleeps for ", fTimeToWait, " seconds for FPS limit");
+							std::this_thread::sleep_for(std::chrono::duration<float>(fTimeToWait));
+						}
+					} else {
+						if (std::chrono::duration_cast<std::chrono::duration<float>>(currentFrameTime - lastExecutionTimepoint).count() >= f32MaxExhaustionTime) {
+							RE_ERROR("The main thread has been exhausted for more than ", f32MaxExhaustionTime, " seconds. Exiting normally");
+							break;
+						}
+						std::this_thread::sleep_for(std::chrono::duration<float>(f32MinDeltatime - (f32Deltaseconds - std::truncf(f32Deltaseconds / f32MinDeltatime) * f32MinDeltatime)));
+						f32Deltaseconds = 0.0f;
+					}
+				}
+
+				PRINT_DEBUG("Exiting game loop");
+				bRunning = false;
+				show_window(false);
+				vkDeviceWaitIdle(vk_hDevice);
+				last_game_logic_update();
+				f32Deltaseconds = 0.0f;
+				destroy_renderer();
+			}
+			destroy_logical_gpu();
+		}
+		destroy_window();
 		print_error_count();
-		PRINT_DEBUG("Finished execution");
 		return !bErrorOccured;
 	}
 

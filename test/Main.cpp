@@ -187,8 +187,7 @@ class First : public Scene {
 					const ScreenPercentageSettings normal;
 					set_screen_percentage_settings(normal);
 				}
-			} else if (is_pressed(RE_INPUT_KEY_F11))
-				set_fullscreen(!is_fullscreen());
+			}
 			//PRINT_LN(get_fps_rate());
 		}
 		void end() {}
@@ -201,7 +200,6 @@ int main_func() {
 	Second secondInStack;
 	second = &secondInStack;
 	set_next_scene(&first);
-	set_fullscreen(false);
 	execute();
 	if (clonus)
 		delete clonus;

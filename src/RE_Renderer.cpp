@@ -6,7 +6,7 @@
 
 namespace RE {
 
-	Color backgroundClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	Color backgroundClearColor(0.2f, 0.2f, 0.2f, 1.0f);
 
 	float f32SampleShadingRate = 0.2f;
 

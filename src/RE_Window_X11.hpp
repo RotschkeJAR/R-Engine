@@ -25,7 +25,6 @@ namespace RE {
 	bool x11_create_window();
 	void x11_destroy_window();
 	void x11_show_window();
-	void x11_update_fullscreen();
 	void x11_update_window_title();
 	void x11_window_proc();
 

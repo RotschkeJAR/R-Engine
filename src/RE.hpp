@@ -40,7 +40,7 @@
  *   Uncomment this, if you want to disable PRINT_DEBUG and PRINT_DEBUG_CLASS to
  * filter debug output and get better performance while the terminal is active.
  */
-//#define RE_DISABLE_DEBUGGING
+#define RE_DISABLE_DEBUGGING
 
 namespace RE {
 
@@ -96,132 +96,133 @@ namespace RE {
 
 	enum Input {
 		RE_INPUT_UNKNOWN = -0x1,
-		RE_INPUT_SCROLL_UP = 0x0,
-		RE_INPUT_SCROLL_DOWN = 0x1,
-		RE_INPUT_BUTTON_LEFT = 0x2,
-		RE_INPUT_BUTTON_RIGHT = 0x3,
-		RE_INPUT_BUTTON_MIDDLE = 0x4,
-		RE_INPUT_KEY_SPACE = 0x5,
-		RE_INPUT_KEY_A = 0x6,
-		RE_INPUT_KEY_B = 0x7,
-		RE_INPUT_KEY_C = 0x8,
-		RE_INPUT_KEY_D = 0x9,
-		RE_INPUT_KEY_E = 0xA,
-		RE_INPUT_KEY_F = 0xB,
-		RE_INPUT_KEY_G = 0xC,
-		RE_INPUT_KEY_H = 0xD,
-		RE_INPUT_KEY_I = 0xE,
-		RE_INPUT_KEY_J = 0xF,
-		RE_INPUT_KEY_K = 0x10,
-		RE_INPUT_KEY_L = 0x11,
-		RE_INPUT_KEY_M = 0x12,
-		RE_INPUT_KEY_N = 0x13,
-		RE_INPUT_KEY_O = 0x14,
-		RE_INPUT_KEY_P = 0x15,
-		RE_INPUT_KEY_Q = 0x16,
-		RE_INPUT_KEY_R = 0x17,
-		RE_INPUT_KEY_S = 0x18,
-		RE_INPUT_KEY_T = 0x19,
-		RE_INPUT_KEY_U = 0x1A,
-		RE_INPUT_KEY_V = 0x1B,
-		RE_INPUT_KEY_W = 0x1C,
-		RE_INPUT_KEY_X = 0x1D,
-		RE_INPUT_KEY_Y = 0x1E,
-		RE_INPUT_KEY_Z = 0x1F,
-		RE_INPUT_KEY_TOP_0 = 0x20,
-		RE_INPUT_KEY_TOP_1 = 0x21,
-		RE_INPUT_KEY_TOP_2 = 0x22,
-		RE_INPUT_KEY_TOP_3 = 0x23,
-		RE_INPUT_KEY_TOP_4 = 0x24,
-		RE_INPUT_KEY_TOP_5 = 0x25,
-		RE_INPUT_KEY_TOP_6 = 0x26,
-		RE_INPUT_KEY_TOP_7 = 0x27,
-		RE_INPUT_KEY_TOP_8 = 0x28,
-		RE_INPUT_KEY_TOP_9 = 0x29,
-		RE_INPUT_KEY_SLASH = 0x2A, /* / */
-		RE_INPUT_KEY_BACKSLASH = 0x2B, /* \ */
-		RE_INPUT_KEY_COMMA = 0x2C, /* , */
-		RE_INPUT_KEY_PERIOD = 0x2D, /* . */
-		RE_INPUT_KEY_SEMICOLON = 0x2E, /* ; */
-		RE_INPUT_KEY_APOSTROPHE = 0x2F, /* ' */
-		RE_INPUT_KEY_ACCENT = 0x30, /* ` */
-		RE_INPUT_KEY_BRACKET_LEFT = 0x31, /* [ */
-		RE_INPUT_KEY_BRACKET_RIGHT = 0x32, /* ] */
-		RE_INPUT_KEY_EQUALS = 0x33, /* = */
-		RE_INPUT_KEY_MINUS = 0x34, /* - */
-		RE_INPUT_KEY_CTRL_RIGHT = 0x35,
-		RE_INPUT_KEY_CTRL_LEFT = 0x36,
-		RE_INPUT_KEY_ALT_RIGHT = 0x37, /* AltGr */
-		RE_INPUT_KEY_ALT_LEFT = 0x38,
-		RE_INPUT_KEY_SHIFT_RIGHT = 0x39,
-		RE_INPUT_KEY_SHIFT_LEFT = 0x3A,
-		RE_INPUT_KEY_MENU = 0x3B,
-		RE_INPUT_KEY_TAB = 0x3C,
-		RE_INPUT_KEY_ENTER = 0x3D,
-		RE_INPUT_KEY_ESCAPE = 0x3E,
-		RE_INPUT_KEY_BACKSPACE = 0x3F,
-		RE_INPUT_KEY_ARROW_LEFT = 0x40,
-		RE_INPUT_KEY_ARROW_RIGHT = 0x41,
-		RE_INPUT_KEY_ARROW_UP = 0x42,
-		RE_INPUT_KEY_ARROW_DOWN = 0x43,
-		RE_INPUT_KEY_DELETE = 0x44,
-		RE_INPUT_KEY_INSERT = 0x45,
-		RE_INPUT_KEY_HOME = 0x46,
-		RE_INPUT_KEY_END = 0x47,
-		RE_INPUT_KEY_PRINT_SCREEN = 0x48,
-		RE_INPUT_KEY_SCROLL_LOCK = 0x49,
-		RE_INPUT_KEY_PAUSE = 0x4A,
-		RE_INPUT_KEY_PAGE_UP = 0x4B,
-		RE_INPUT_KEY_PAGE_DOWN = 0x4C,
-		RE_INPUT_KEY_F1 = 0x4D,
-		RE_INPUT_KEY_F2 = 0x4E,
-		RE_INPUT_KEY_F3 = 0x4F,
-		RE_INPUT_KEY_F4 = 0x50,
-		RE_INPUT_KEY_F5 = 0x51,
-		RE_INPUT_KEY_F6 = 0x52,
-		RE_INPUT_KEY_F7 = 0x53,
-		RE_INPUT_KEY_F8 = 0x54,
-		RE_INPUT_KEY_F9 = 0x55,
-		RE_INPUT_KEY_F10 = 0x56,
-		RE_INPUT_KEY_F11 = 0x57,
-		RE_INPUT_KEY_F12 = 0x58,
-		RE_INPUT_KEY_F13 = 0x59,
-		RE_INPUT_KEY_F14 = 0x5A,
-		RE_INPUT_KEY_F15 = 0x5B,
-		RE_INPUT_KEY_F16 = 0x5C,
-		RE_INPUT_KEY_F17 = 0x5D,
-		RE_INPUT_KEY_F18 = 0x5E,
-		RE_INPUT_KEY_F19 = 0x5F,
-		RE_INPUT_KEY_F20 = 0x60,
-		RE_INPUT_KEY_F21 = 0x61,
-		RE_INPUT_KEY_F22 = 0x62,
-		RE_INPUT_KEY_F23 = 0x63,
-		RE_INPUT_KEY_F24 = 0x64,
-		RE_INPUT_KEY_F25 = 0x65,
-		RE_INPUT_KEY_CAPS_LOCK = 0x66,
-		RE_INPUT_KEY_NUMPAD_LOCK = 0x67,
-		RE_INPUT_KEY_NUMPAD_0 = 0x68,
-		RE_INPUT_KEY_NUMPAD_1 = 0x69,
-		RE_INPUT_KEY_NUMPAD_2 = 0x6A,
-		RE_INPUT_KEY_NUMPAD_3 = 0x6B,
-		RE_INPUT_KEY_NUMPAD_4 = 0x6C,
-		RE_INPUT_KEY_NUMPAD_5 = 0x6D,
-		RE_INPUT_KEY_NUMPAD_6 = 0x6E,
-		RE_INPUT_KEY_NUMPAD_7 = 0x6F,
-		RE_INPUT_KEY_NUMPAD_8 = 0x70,
-		RE_INPUT_KEY_NUMPAD_9 = 0x71,
-		RE_INPUT_KEY_NUMPAD_ADD = 0x72,
-		RE_INPUT_KEY_NUMPAD_SUBTRACT = 0x73,
-		RE_INPUT_KEY_NUMPAD_MULTIPLY = 0x74,
-		RE_INPUT_KEY_NUMPAD_DIVIDE = 0x75,
-		RE_INPUT_KEY_NUMPAD_ENTER = 0x76,
-		RE_INPUT_KEY_NUMPAD_PERIOD = 0x77,
+		RE_INPUT_NONE = 0,
+		RE_INPUT_SCROLL_UP = 0x1,
+		RE_INPUT_SCROLL_DOWN = 0x2,
+		RE_INPUT_BUTTON_LEFT = 0x3,
+		RE_INPUT_BUTTON_RIGHT = 0x4,
+		RE_INPUT_BUTTON_MIDDLE = 0x5,
+		RE_INPUT_KEY_SPACE = 0x6,
+		RE_INPUT_KEY_A = 0x7,
+		RE_INPUT_KEY_B = 0x8,
+		RE_INPUT_KEY_C = 0x9,
+		RE_INPUT_KEY_D = 0xA,
+		RE_INPUT_KEY_E = 0xB,
+		RE_INPUT_KEY_F = 0xC,
+		RE_INPUT_KEY_G = 0xD,
+		RE_INPUT_KEY_H = 0xE,
+		RE_INPUT_KEY_I = 0xF,
+		RE_INPUT_KEY_J = 0x10,
+		RE_INPUT_KEY_K = 0x11,
+		RE_INPUT_KEY_L = 0x12,
+		RE_INPUT_KEY_M = 0x13,
+		RE_INPUT_KEY_N = 0x14,
+		RE_INPUT_KEY_O = 0x15,
+		RE_INPUT_KEY_P = 0x16,
+		RE_INPUT_KEY_Q = 0x17,
+		RE_INPUT_KEY_R = 0x18,
+		RE_INPUT_KEY_S = 0x19,
+		RE_INPUT_KEY_T = 0x1A,
+		RE_INPUT_KEY_U = 0x1B,
+		RE_INPUT_KEY_V = 0x1C,
+		RE_INPUT_KEY_W = 0x1D,
+		RE_INPUT_KEY_X = 0x1E,
+		RE_INPUT_KEY_Y = 0x1F,
+		RE_INPUT_KEY_Z = 0x20,
+		RE_INPUT_KEY_TOP_0 = 0x21,
+		RE_INPUT_KEY_TOP_1 = 0x22,
+		RE_INPUT_KEY_TOP_2 = 0x23,
+		RE_INPUT_KEY_TOP_3 = 0x24,
+		RE_INPUT_KEY_TOP_4 = 0x25,
+		RE_INPUT_KEY_TOP_5 = 0x26,
+		RE_INPUT_KEY_TOP_6 = 0x27,
+		RE_INPUT_KEY_TOP_7 = 0x28,
+		RE_INPUT_KEY_TOP_8 = 0x29,
+		RE_INPUT_KEY_TOP_9 = 0x2A,
+		RE_INPUT_KEY_SLASH = 0x2B, /* / */
+		RE_INPUT_KEY_BACKSLASH = 0x2C, /* \ */
+		RE_INPUT_KEY_COMMA = 0x2D, /* , */
+		RE_INPUT_KEY_PERIOD = 0x2E, /* . */
+		RE_INPUT_KEY_SEMICOLON = 0x2F, /* ; */
+		RE_INPUT_KEY_APOSTROPHE = 0x30, /* ' */
+		RE_INPUT_KEY_ACCENT = 0x31, /* ` */
+		RE_INPUT_KEY_BRACKET_LEFT = 0x32, /* [ */
+		RE_INPUT_KEY_BRACKET_RIGHT = 0x33, /* ] */
+		RE_INPUT_KEY_EQUALS = 0x34, /* = */
+		RE_INPUT_KEY_MINUS = 0x35, /* - */
+		RE_INPUT_KEY_CTRL_RIGHT = 0x36,
+		RE_INPUT_KEY_CTRL_LEFT = 0x37,
+		RE_INPUT_KEY_ALT_RIGHT = 0x38, /* AltGr */
+		RE_INPUT_KEY_ALT_LEFT = 0x39,
+		RE_INPUT_KEY_SHIFT_RIGHT = 0x3A,
+		RE_INPUT_KEY_SHIFT_LEFT = 0x3B,
+		RE_INPUT_KEY_MENU = 0x3C,
+		RE_INPUT_KEY_TAB = 0x3D,
+		RE_INPUT_KEY_ENTER = 0x3E,
+		RE_INPUT_KEY_ESCAPE = 0x3F,
+		RE_INPUT_KEY_BACKSPACE = 0x40,
+		RE_INPUT_KEY_ARROW_LEFT = 0x41,
+		RE_INPUT_KEY_ARROW_RIGHT = 0x42,
+		RE_INPUT_KEY_ARROW_UP = 0x43,
+		RE_INPUT_KEY_ARROW_DOWN = 0x44,
+		RE_INPUT_KEY_DELETE = 0x45,
+		RE_INPUT_KEY_INSERT = 0x46,
+		RE_INPUT_KEY_HOME = 0x47,
+		RE_INPUT_KEY_END = 0x48,
+		RE_INPUT_KEY_PRINT_SCREEN = 0x49,
+		RE_INPUT_KEY_SCROLL_LOCK = 0x4A,
+		RE_INPUT_KEY_PAUSE = 0x4B,
+		RE_INPUT_KEY_PAGE_UP = 0x4C,
+		RE_INPUT_KEY_PAGE_DOWN = 0x4D,
+		RE_INPUT_KEY_F1 = 0x4E,
+		RE_INPUT_KEY_F2 = 0x4F,
+		RE_INPUT_KEY_F3 = 0x50,
+		RE_INPUT_KEY_F4 = 0x51,
+		RE_INPUT_KEY_F5 = 0x52,
+		RE_INPUT_KEY_F6 = 0x53,
+		RE_INPUT_KEY_F7 = 0x54,
+		RE_INPUT_KEY_F8 = 0x55,
+		RE_INPUT_KEY_F9 = 0x56,
+		RE_INPUT_KEY_F10 = 0x57,
+		RE_INPUT_KEY_F11 = 0x58,
+		RE_INPUT_KEY_F12 = 0x59,
+		RE_INPUT_KEY_F13 = 0x5A,
+		RE_INPUT_KEY_F14 = 0x5B,
+		RE_INPUT_KEY_F15 = 0x5C,
+		RE_INPUT_KEY_F16 = 0x5D,
+		RE_INPUT_KEY_F17 = 0x5E,
+		RE_INPUT_KEY_F18 = 0x5F,
+		RE_INPUT_KEY_F19 = 0x60,
+		RE_INPUT_KEY_F20 = 0x61,
+		RE_INPUT_KEY_F21 = 0x62,
+		RE_INPUT_KEY_F22 = 0x63,
+		RE_INPUT_KEY_F23 = 0x64,
+		RE_INPUT_KEY_F24 = 0x65,
+		RE_INPUT_KEY_F25 = 0x66,
+		RE_INPUT_KEY_CAPS_LOCK = 0x67,
+		RE_INPUT_KEY_NUMPAD_LOCK = 0x68,
+		RE_INPUT_KEY_NUMPAD_0 = 0x69,
+		RE_INPUT_KEY_NUMPAD_1 = 0x6A,
+		RE_INPUT_KEY_NUMPAD_2 = 0x6B,
+		RE_INPUT_KEY_NUMPAD_3 = 0x6C,
+		RE_INPUT_KEY_NUMPAD_4 = 0x6D,
+		RE_INPUT_KEY_NUMPAD_5 = 0x6E,
+		RE_INPUT_KEY_NUMPAD_6 = 0x6F,
+		RE_INPUT_KEY_NUMPAD_7 = 0x70,
+		RE_INPUT_KEY_NUMPAD_8 = 0x71,
+		RE_INPUT_KEY_NUMPAD_9 = 0x72,
+		RE_INPUT_KEY_NUMPAD_ADD = 0x73,
+		RE_INPUT_KEY_NUMPAD_SUBTRACT = 0x74,
+		RE_INPUT_KEY_NUMPAD_MULTIPLY = 0x75,
+		RE_INPUT_KEY_NUMPAD_DIVIDE = 0x76,
+		RE_INPUT_KEY_NUMPAD_ENTER = 0x77,
+		RE_INPUT_KEY_NUMPAD_PERIOD = 0x78,
 		/**
 		 * Represents a key, that does not exist on US-keyboards:
 		 * - UK, DE (next to left shift): less than, (shift) greater than, (right Alt = AltGr) vertical bar/pipe
 		 */
-		RE_INPUT_KEY_WORLD_1 = 0x78,
-		RE_INPUT_MAX_ENUM = 0x79
+		RE_INPUT_KEY_WORLD_1 = 0x79,
+		RE_INPUT_MAX_ENUM = 0x7A
 	};
 
 	enum TextureFilter {
@@ -309,7 +310,7 @@ namespace RE {
 #define PRINT(...) print(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE_MACRO(__VA_ARGS__))
 #define PRINT_LN(...) PRINT(STRIP_QUOTE_MACRO(__VA_ARGS__), '\n')
 
-#ifndef RE_DISABLE_DEBUGING
+#ifndef RE_DISABLE_DEBUGGING
 # define PRINT_DEBUG(...) [&](const char *const pacFile, const char *const pacFunc, const uint32_t u32Line) { \
 			time_t currentTime = std::time(0); \
 			println("[", std::put_time(std::gmtime(&currentTime), "%d.%b %Y, %H:%M:%S"), "] (", pacFile, ", at line ", u32Line, ", in function \"", pacFunc, "\"): ", STRIP_QUOTE_MACRO(__VA_ARGS__)); \
@@ -1373,9 +1374,8 @@ namespace RE {
 	};
 
 	// Window
-	void set_fullscreen(bool bNewFullscreen);
-	[[nodiscard]]
-	bool is_fullscreen();
+	void set_input_for_fullscreen_toggle(Input eNewInputFullscreenToggle);
+	Input get_input_for_fullscreen_toggle();
 	void set_window_title(const char *pacNewTitle);
 
 	// Console
@@ -1420,6 +1420,17 @@ namespace RE {
 	bool is_held_down(Input eInput, uint32_t u32Scancode = 0);
 	void reset_input_at(Input eInput, uint32_t u32Scancode = 0);
 	void reset_all_input();
+	[[nodiscard]]
+	constexpr bool is_valid_input(const Input eInput) {
+		switch (eInput) {
+			case RE_INPUT_UNKNOWN:
+			case RE_INPUT_NONE:
+			case RE_INPUT_MAX_ENUM:
+				return false;
+			default:
+				return true;
+		}
+	}
 	[[nodiscard]]
 	constexpr bool is_scroll_input(const Input eInput) {
 		return eInput == RE_INPUT_SCROLL_UP || eInput == RE_INPUT_SCROLL_DOWN;

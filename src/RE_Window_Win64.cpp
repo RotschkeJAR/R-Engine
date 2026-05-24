@@ -30,9 +30,9 @@ namespace RE {
 						PRINT_DEBUG("Obtaining extent of the window content area on Windows");
 						RECT win_contentRect;
 						GetClientRect(win_hWndParam, &win_contentRect);
-						set_bits<uint8_t>(u8WindowFlagBits, win_wParam == SIZE_MINIMIZED, WINDOW_MINIMIZED_BIT);
-						set_bits<uint8_t>(u8WindowFlagBits, win_wParam == SIZE_MAXIMIZED, WINDOW_MAXIMIZED_BIT);
-						if (are_bits_true<uint8_t>(u8WindowFlagBits, WINDOW_MAXIMIZED_BIT)) {
+						set_bits<decltype(u8WindowFlagBits)>(u8WindowFlagBits, win_wParam == SIZE_MINIMIZED, WINDOW_MINIMIZED_BIT);
+						set_bits<decltype(u8WindowFlagBits)>(u8WindowFlagBits, win_wParam == SIZE_MAXIMIZED, WINDOW_MAXIMIZED_BIT);
+						if (are_bits_true<decltype(u8WindowFlagBits)>(u8WindowFlagBits, WINDOW_MAXIMIZED_BIT)) {
 							PRINT_DEBUG("Posting custom window message to notify maximization");
 							PostMessageW(win_hWndParam, RE_WIN64_WM_MAXIMIZED, static_cast<WPARAM>(0), static_cast<LPARAM>(0));
 						}
@@ -44,7 +44,7 @@ namespace RE {
 					return 0;
 				case WM_CLOSE: /* close */
 					PRINT_DEBUG("Posting window quit-message with exit code 0");
-					set_bits<uint8_t>(u8WindowFlagBits, true, WINDOW_CLOSE_FLAG_BIT);
+					set_bits<decltype(u8WindowFlagBits)>(u8WindowFlagBits, true, WINDOW_CLOSE_FLAG_BIT);
 					PostQuitMessage(0);
 					return 0;
 				case WM_DESTROY: /* window destroyed */
@@ -95,12 +95,62 @@ namespace RE {
 							default:
 								break;
 						}
+						const Input eInput = key_from_virtual_win64_keycode(static_cast<int64_t>(win_virtualKeyCode));
+						if (eInput == eInputFullscreenToggle && (win_uMsg == WM_KEYDOWN || win_uMsg == WM_SYSKEYDOWN)) {
+							MONITORINFO win_monitorInfo;
+							win_monitorInfo.cbSize = sizeof(MONITORINFO);
+							const bool bFullscreen = !IS_FULLSCREEN();
+							SET_FULLSCREEN(bFullscreen);
+							if (bFullscreen) {
+								win_hMonitor = MonitorFromWindow(win_hWindow, MONITOR_DEFAULTTONEAREST);
+								if (GetMonitorInfoW(win_hMonitor, &win_monitorInfo) == FALSE) {
+									RE_FATAL_ERROR("Failed to retrieve monitor information to set window to windowed fullscreen");
+									return;
+								}
+								PRINT_DEBUG("Setting new style flags for the window");
+								SetWindowLongPtr(win_hWindow, GWL_EXSTYLE, RE_WIN64_WINDOWED_FULLSCREEN_EXTENDED_STYLE_FLAGS);
+								SetWindowLongPtr(win_hWindow, GWL_STYLE, RE_WIN64_WINDOWED_FULLSCREEN_STYLE_FLAGS);
+								windowSize[0] = static_cast<uint32_t>(std::abs(win_monitorInfo.rcMonitor.right - win_monitorInfo.rcMonitor.left));
+								windowSize[1] = static_cast<uint32_t>(std::abs(win_monitorInfo.rcMonitor.bottom - win_monitorInfo.rcMonitor.top));
+								PRINT_DEBUG("Repositioning window and resizing to fit on monitor");
+								if (SetWindowPos(
+										win_hWindow,
+										HWND_TOP,
+										win_monitorInfo.rcMonitor.left,
+										win_monitorInfo.rcMonitor.top,
+										windowSize[0],
+										windowSize[1],
+										SWP_FRAMECHANGED | SWP_SHOWWINDOW) == 0)
+									RE_FATAL_ERROR("Failed to set and reposition the window to windowed fullscreen");
+							} else {
+								PRINT_DEBUG("Retrieving information about monitor ", win_hMonitor);
+								if (GetMonitorInfoW(win_hMonitor, &win_monitorInfo) == FALSE) {
+									RE_FATAL_ERROR("Failed to retrieve monitor information to reset window from fullscreen");
+									return;
+								}
+								const Vector<LONG, windowSize.dimensions()> monitorSize(
+										std::abs(win_monitorInfo.rcWork.right - win_monitorInfo.rcWork.left), 
+										std::abs(win_monitorInfo.rcWork.bottom - win_monitorInfo.rcWork.top));
+								PRINT_DEBUG("Setting new style flags for window ", win_hWindow);
+								SetWindowLongPtr(win_hWindow, GWL_EXSTYLE, RE_WIN64_WINDOW_EXTENDED_STYLE_FLAGS);
+								SetWindowLongPtr(win_hWindow, GWL_STYLE, RE_WIN64_WINDOW_STYLE_FLAGS);
+								for (size_t i = 0; i < windowSize.dimensions(); i++)
+									windowSize[i] = monitorSize[i] / 5 * 3;
+								PRINT_DEBUG("Repositioning and resizing to ", windowSize);
+								if (SetWindowPos(
+										win_hWindow,
+										HWND_TOP,
+										win_monitorInfo.rcWork.left + (monitorSize[0] - windowSize[0]) / 2,
+										win_monitorInfo.rcWork.top + (monitorSize[1] - windowSize[1]) / 2,
+										windowSize[0],
+										windowSize[1],
+										SWP_FRAMECHANGED | SWP_SHOWWINDOW) == 0)
+									RE_FATAL_ERROR("Failed to reset and reposition the window from fullscreen");
+								win_hMonitor = nullptr;
+							}
+						}
 						PRINT_DEBUG("Firing general input event");
-						input_event(
-								key_from_virtual_keycode(static_cast<int64_t>(win_virtualKeyCode)), 
-								static_cast<uint32_t>(win_extScancode), 
-								(win_keyFlags & KF_UP) != KF_UP, 
-								bFallbackToInput);
+						input_event(eInput, static_cast<uint32_t>(win_extScancode), (win_keyFlags & KF_UP) != KF_UP, bFallbackToInput);
 					}
 					return 0;
 				case WM_CHAR:
@@ -174,7 +224,7 @@ namespace RE {
 						}
 						PRINT_DEBUG("Triggering Windows to resend window message querying minimum and maximum allowed extent of the window");
 						const Vector2i monitorSize(
-								std::abs(win_monitorInfo.rcWork.right - win_monitorInfo.rcWork.left), 
+								std::abs(win_monitorInfo.rcWork.right - win_monitorInfo.rcWork.left),
 								std::abs(win_monitorInfo.rcWork.bottom - win_monitorInfo.rcWork.top));
 						SetWindowPos(win_hWndParam, nullptr, 0, 0, monitorSize[0], monitorSize[1], SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOZORDER);
 					}
@@ -219,26 +269,26 @@ namespace RE {
 			win_primaryMonitorInfo.cbSize = sizeof(MONITORINFO);
 			const bool bMonitorInfoRetrieved = GetMonitorInfoW(win_hPrimaryMonitor, &win_primaryMonitorInfo) == TRUE;
 			if (bMonitorInfoRetrieved) {
-				if (is_fullscreen()) {
+				if (IS_FULLSCREEN()) {
 					PRINT_DEBUG("Creating fullscreen window on Windows on the primary monitor");
 					win_hMonitor = win_hPrimaryMonitor;
 					windowSize[0] = std::abs(win_primaryMonitorInfo.rcMonitor.right - win_primaryMonitorInfo.rcMonitor.left);
 					windowSize[1] = std::abs(win_primaryMonitorInfo.rcMonitor.bottom - win_primaryMonitorInfo.rcMonitor.top);
 					win_hWindow = CreateWindowExW(
-							RE_WIN64_WINDOWED_FULLSCREEN_EXTENDED_STYLE_FLAGS, 
-							RE_WIN64_WINDOW_CLASS_NAME, 
-							wideTitleStr.c_str(), 
-							RE_WIN64_WINDOWED_FULLSCREEN_STYLE_FLAGS, 
-							win_primaryMonitorInfo.rcMonitor.left, 
-							win_primaryMonitorInfo.rcMonitor.top, 
-							windowSize[0], 
-							windowSize[1], 
-							nullptr, 
-							nullptr, 
-							win_hInstance, 
+							RE_WIN64_WINDOWED_FULLSCREEN_EXTENDED_STYLE_FLAGS,
+							RE_WIN64_WINDOW_CLASS_NAME,
+							wideTitleStr.c_str(),
+							RE_WIN64_WINDOWED_FULLSCREEN_STYLE_FLAGS,
+							win_primaryMonitorInfo.rcMonitor.left,
+							win_primaryMonitorInfo.rcMonitor.top,
+							windowSize[0],
+							windowSize[1],
+							nullptr,
+							nullptr,
+							win_hInstance,
 							nullptr);
 				} else {
-					const Vector<LONG, 2> monitorWorkSize(
+					const Vector<LONG, windowSize.dimensions()> monitorWorkSize(
 						std::abs(win_primaryMonitorInfo.rcWork.right - win_primaryMonitorInfo.rcWork.left), 
 						std::abs(win_primaryMonitorInfo.rcWork.bottom - win_primaryMonitorInfo.rcWork.top)
 					);
@@ -254,17 +304,17 @@ namespace RE {
 					windowSize[0] = std::abs(win_adjustableSize.right - win_adjustableSize.left);
 					windowSize[1] = std::abs(win_adjustableSize.bottom - win_adjustableSize.top);
 					win_hWindow = CreateWindowExW(
-							RE_WIN64_WINDOW_EXTENDED_STYLE_FLAGS, 
-							RE_WIN64_WINDOW_CLASS_NAME, 
-							wideTitleStr.c_str(), 
-							RE_WIN64_WINDOW_STYLE_FLAGS, 
-							win_primaryMonitorInfo.rcWork.left + (monitorWorkSize[0] - windowSize[0]) / 2, 
-							win_primaryMonitorInfo.rcWork.top + (monitorWorkSize[1] - windowSize[1]) / 2, 
-							windowSize[0], 
-							windowSize[1], 
-							nullptr, 
-							nullptr, 
-							win_hInstance, 
+							RE_WIN64_WINDOW_EXTENDED_STYLE_FLAGS,
+							RE_WIN64_WINDOW_CLASS_NAME,
+							wideTitleStr.c_str(),
+							RE_WIN64_WINDOW_STYLE_FLAGS,
+							win_primaryMonitorInfo.rcWork.left + (monitorWorkSize[0] - windowSize[0]) / 2,
+							win_primaryMonitorInfo.rcWork.top + (monitorWorkSize[1] - windowSize[1]) / 2,
+							windowSize[0],
+							windowSize[1],
+							nullptr,
+							nullptr,
+							win_hInstance,
 							nullptr);
 				}
 				if (!win_hWindow) {
@@ -272,9 +322,9 @@ namespace RE {
 					goto WIN64_WINDOW_CREATION_FAILURE;
 				}
 			} else {
-				if (is_fullscreen()) {
+				if (IS_FULLSCREEN()) {
 					RE_WARNING("No info was retrieved about the monitor, therefore the window starts with default size and position");
-					set_bits<uint8_t>(u8WindowFlagBits, false, WINDOW_FULLSCREEN_BIT);
+					SET_FULLSCREEN(false);
 				}
 				PRINT_DEBUG("Creating window on Windows with default extent and position");
 				win_hWindow = CreateWindowExW(
@@ -342,65 +392,12 @@ namespace RE {
 	}
 
 	void win64_show_window() {
-		if (are_bits_true<uint8_t>(u8WindowFlagBits, WINDOW_VISIBLE_BIT)) {
+		if (are_bits_true<decltype(u8WindowFlagBits)>(u8WindowFlagBits, WINDOW_VISIBLE_BIT)) {
 			PRINT_DEBUG("Showing window on Windows");
 			ShowWindow(win_hWindow, SW_SHOWNORMAL);
 		} else {
 			PRINT_DEBUG("Hiding window on Windows");
 			ShowWindow(win_hWindow, SW_HIDE);
-		}
-	}
-
-	void win64_update_fullscreen() {
-		MONITORINFO win_monitorInfo;
-		win_monitorInfo.cbSize = sizeof(MONITORINFO);
-		if (is_fullscreen()) {
-			PRINT_DEBUG("Retrieving monitor information where window ", win_hWindow, " is displayed on the most");
-			win_hMonitor = MonitorFromWindow(win_hWindow, MONITOR_DEFAULTTONEAREST);
-			if (GetMonitorInfoW(win_hMonitor, &win_monitorInfo) == FALSE) {
-				RE_FATAL_ERROR("Failed to retrieve monitor information to set window to windowed fullscreen");
-				return;
-			}
-			PRINT_DEBUG("Setting new style flags for the window");
-			SetWindowLongPtr(win_hWindow, GWL_EXSTYLE, RE_WIN64_WINDOWED_FULLSCREEN_EXTENDED_STYLE_FLAGS);
-			SetWindowLongPtr(win_hWindow, GWL_STYLE, RE_WIN64_WINDOWED_FULLSCREEN_STYLE_FLAGS);
-			windowSize[0] = static_cast<uint32_t>(std::abs(win_monitorInfo.rcMonitor.right - win_monitorInfo.rcMonitor.left));
-			windowSize[1] = static_cast<uint32_t>(std::abs(win_monitorInfo.rcMonitor.bottom - win_monitorInfo.rcMonitor.top));
-			PRINT_DEBUG("Repositioning window to (", win_monitorInfo.rcMonitor.left, ", ", win_monitorInfo.rcMonitor.top, ") and resizing to ", windowSize, " to fit on monitor ", win_hMonitor);
-			if (SetWindowPos(
-					win_hWindow, 
-					HWND_TOP, 
-					win_monitorInfo.rcMonitor.left, 
-					win_monitorInfo.rcMonitor.top, 
-					windowSize[0], 
-					windowSize[1], 
-					SWP_FRAMECHANGED | SWP_SHOWWINDOW) == 0)
-				RE_FATAL_ERROR("Failed to set and reposition the window to windowed fullscreen");
-		} else {
-			PRINT_DEBUG("Retrieving information about monitor ", win_hMonitor);
-			if (GetMonitorInfoW(win_hMonitor, &win_monitorInfo) == FALSE) {
-				RE_FATAL_ERROR("Failed to retrieve monitor information to reset window from fullscreen");
-				return;
-			}
-			const Vector<LONG, 2> monitorSize(
-					std::abs(win_monitorInfo.rcWork.right - win_monitorInfo.rcWork.left), 
-					std::abs(win_monitorInfo.rcWork.bottom - win_monitorInfo.rcWork.top));
-			PRINT_DEBUG("Setting new style flags for window ", win_hWindow);
-			SetWindowLongPtr(win_hWindow, GWL_EXSTYLE, RE_WIN64_WINDOW_EXTENDED_STYLE_FLAGS);
-			SetWindowLongPtr(win_hWindow, GWL_STYLE, RE_WIN64_WINDOW_STYLE_FLAGS);
-			windowSize[0] = monitorSize[0] / 5 * 3;
-			windowSize[1] = monitorSize[1] / 5 * 3;
-			PRINT_DEBUG("Repositioning and resizing to ", windowSize);
-			if (SetWindowPos(
-					win_hWindow, 
-					HWND_TOP, 
-					win_monitorInfo.rcWork.left + (monitorSize[0] - windowSize[0]) / 2, 
-					win_monitorInfo.rcWork.top + (monitorSize[1] - windowSize[1]) / 2, 
-					windowSize[0], 
-					windowSize[1], 
-					SWP_FRAMECHANGED | SWP_SHOWWINDOW) == 0)
-				RE_FATAL_ERROR("Failed to reset and reposition the window from fullscreen");
-			win_hMonitor = nullptr;
 		}
 	}
 

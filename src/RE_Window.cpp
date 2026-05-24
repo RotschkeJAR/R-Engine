@@ -13,11 +13,11 @@ namespace RE {
 	
 	Vector2u windowSize(600, 400), largestMonitorSize(1920, 1080);
 	const char* pacWindowTitle = "Untitled game window";
-	uint8_t u8WindowFlagBits = 0;
+	Input eInputFullscreenToggle = RE_INPUT_KEY_F11;
+	uint8_t u8WindowFlagBits = 1 << WINDOW_FULLSCREEN_BIT;
 
 	bool create_window() {
 		PRINT_DEBUG("Creating window");
-		set_bits<uint8_t>(u8WindowFlagBits, false, WINDOW_CREATED_BIT, WINDOW_VISIBLE_BIT, WINDOW_MINIMIZED_BIT, WINDOW_MAXIMIZED_BIT, WINDOW_CLOSE_FLAG_BIT);
 		bool bSuccess;
 #ifdef RE_OS_WINDOWS
 		bSuccess = win64_create_window();
@@ -33,7 +33,7 @@ namespace RE {
 				RE_ABORT("Window compositor is unknown: ", std::hex, eLinuxWindowType);
 		}
 #endif
-		set_bits<uint8_t>(u8WindowFlagBits, bSuccess, WINDOW_CREATED_BIT);
+		set_bits<decltype(u8WindowFlagBits)>(u8WindowFlagBits, bSuccess, WINDOW_CREATED_BIT);
 		return bSuccess;
 	}
 
@@ -53,7 +53,7 @@ namespace RE {
 				RE_ABORT("Window compositor is unknown: ", std::hex, eLinuxWindowType);
 		}
 #endif
-		set_bits<uint8_t>(u8WindowFlagBits, false, WINDOW_CREATED_BIT, WINDOW_VISIBLE_BIT, WINDOW_MINIMIZED_BIT, WINDOW_MAXIMIZED_BIT, WINDOW_CLOSE_FLAG_BIT);
+		set_bits<decltype(u8WindowFlagBits)>(u8WindowFlagBits, false, WINDOW_CREATED_BIT, WINDOW_CLOSE_FLAG_BIT, WINDOW_MINIMIZED_BIT, WINDOW_MAXIMIZED_BIT, WINDOW_VISIBLE_BIT);
 	}
 
 	void window_resize_event(const uint32_t u32NewWidth, const uint32_t u32NewHeight) {
@@ -65,7 +65,7 @@ namespace RE {
 
 	void show_window(const bool bShowWindow) {
 		PRINT_DEBUG("Showing/Hiding window");
-		set_bits<uint8_t>(u8WindowFlagBits, bShowWindow, WINDOW_VISIBLE_BIT);
+		set_bits<decltype(u8WindowFlagBits)>(u8WindowFlagBits, bShowWindow, WINDOW_VISIBLE_BIT);
 #ifdef RE_OS_WINDOWS
 		win64_show_window();
 #elif defined RE_OS_LINUX
@@ -80,33 +80,6 @@ namespace RE {
 				RE_ABORT("Window compositor is unknown: ", std::hex, eLinuxWindowType);
 		}
 #endif
-	}
-
-	void set_fullscreen(const bool bNewFullscreen) {
-		if (is_fullscreen() == bNewFullscreen)
-			return;
-		PRINT_DEBUG("Setting fullscreen to ", bNewFullscreen);
-		set_bits<uint8_t>(u8WindowFlagBits, bNewFullscreen, WINDOW_FULLSCREEN_BIT);
-		if (!are_bits_true<uint8_t>(u8WindowFlagBits, WINDOW_CREATED_BIT))
-			return;
-#ifdef RE_OS_WINDOWS
-		win64_update_fullscreen();
-#elif defined RE_OS_LINUX
-		switch (eLinuxWindowType) {
-			case RE_LINUX_WINDOW_TYPE_X11:
-				x11_update_fullscreen();
-				break;
-			case RE_LINUX_WINDOW_TYPE_WAYLAND:
-				wayland_update_fullscreen();
-				break;
-			default:
-				RE_ABORT("Window compositor is unknown: ", std::hex, eLinuxWindowType);
-		}
-#endif
-	}
-
-	bool is_fullscreen() {
-		return are_bits_true<uint8_t>(u8WindowFlagBits, WINDOW_FULLSCREEN_BIT);
 	}
 
 	void window_proc() {
@@ -130,12 +103,12 @@ namespace RE {
 
 	[[nodiscard]]
 	bool should_window_close() {
-		return are_bits_true<uint8_t>(u8WindowFlagBits, WINDOW_CLOSE_FLAG_BIT);
+		return are_bits_true<decltype(u8WindowFlagBits)>(u8WindowFlagBits, WINDOW_CLOSE_FLAG_BIT);
 	}
 
 	[[nodiscard]]
 	bool should_render() {
-		return !are_bits_true<uint8_t>(u8WindowFlagBits, WINDOW_MINIMIZED_BIT) && are_bits_true<uint8_t>(u8WindowFlagBits, WINDOW_VISIBLE_BIT);
+		return !are_bits_true<decltype(u8WindowFlagBits)>(u8WindowFlagBits, WINDOW_MINIMIZED_BIT) && are_bits_true<decltype(u8WindowFlagBits)>(u8WindowFlagBits, WINDOW_VISIBLE_BIT);
 	}
 
 	bool create_vulkan_surface() {
@@ -191,12 +164,23 @@ namespace RE {
 #endif
 	}
 
+	void set_input_for_fullscreen_toggle(Input eNewInputFullscreenToggle) {
+		if (is_valid_input(eNewInputFullscreenToggle))
+			eInputFullscreenToggle = eNewInputFullscreenToggle;
+		else
+			RE_ERROR("Invalid input selected for fullscreen toggle: ", std::hex, eNewInputFullscreenToggle);
+	}
+
+	Input get_input_for_fullscreen_toggle() {
+		return eInputFullscreenToggle;
+	}
+
 	void set_window_title(const char *const pacNewTitle) {
 		if (are_string_contents_equal(pacWindowTitle, pacNewTitle))
 			return;
 		PRINT_DEBUG("Updating window title");
 		pacWindowTitle = pacNewTitle;
-		if (!are_bits_true<uint8_t>(u8WindowFlagBits, WINDOW_CREATED_BIT))
+		if (!are_bits_true<decltype(u8WindowFlagBits)>(u8WindowFlagBits, WINDOW_CREATED_BIT))
 			return;
 #ifdef RE_OS_WINDOWS
 		win64_update_window_title();

@@ -28,9 +28,14 @@ namespace RE {
 	extern LinuxWindowType eLinuxWindowType;
 #endif
 
-	extern Vector2u windowSize, largestMonitorSize;
+	extern Vector2u windowSize,
+		largestMonitorSize;
 	extern const char* pacWindowTitle;
+	extern Input eInputFullscreenToggle;
 	extern uint8_t u8WindowFlagBits;
+
+#define SET_FULLSCREEN(BOOLEAN_FULLSCREEN) set_bits<decltype(u8WindowFlagBits)>(u8WindowFlagBits, static_cast<bool>(BOOLEAN_FULLSCREEN), WINDOW_FULLSCREEN_BIT)
+#define IS_FULLSCREEN() are_bits_true<decltype(u8WindowFlagBits)>(u8WindowFlagBits, WINDOW_FULLSCREEN_BIT)
 
 	bool create_window();
 	void destroy_window();

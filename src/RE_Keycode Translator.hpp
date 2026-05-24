@@ -14,7 +14,7 @@ namespace RE {
 # define VK_9 0x39
 
 	[[nodiscard]]
-	constexpr int64_t virtual_keycode_from_key(const Input eKey) {
+	constexpr int64_t virtual_win64_keycode_from_key(const Input eKey) {
 		switch (eKey) {
 			case RE_INPUT_KEY_SPACE:
 				return VK_SPACE;
@@ -117,12 +117,16 @@ namespace RE {
 					if (u64KeyId >= static_cast<int64_t>(RE_INPUT_KEY_NUMPAD_0) && u64KeyId <= static_cast<int64_t>(RE_INPUT_KEY_NUMPAD_9))
 						return VK_NUMPAD0 + (u64KeyId - static_cast<int64_t>(RE_INPUT_KEY_NUMPAD_0));
 				}
+				[[fallthrough]];
+			case RE_INPUT_UNKNOWN:
+			case RE_INPUT_NONE:
+			case RE_INPUT_MAX_ENUM:
 				return 0L;
 		}
 	}
 
 	[[nodiscard]]
-	constexpr Input key_from_virtual_keycode(const int64_t i64VirtualKeyCode) {
+	constexpr Input key_from_virtual_win64_keycode(const int64_t i64VirtualKeyCode) {
 		switch (i64VirtualKeyCode) {
 			case VK_SPACE:
 				return RE_INPUT_KEY_SPACE;
@@ -235,7 +239,7 @@ namespace RE {
 #elif defined RE_OS_LINUX
 
 	[[nodiscard]]
-	constexpr int64_t virtual_keycode_from_key(const Input eKey) {
+	constexpr int64_t virtual_x11_keycode_from_key(const Input eKey) {
 		switch (eKey) {
 			case RE_INPUT_KEY_SPACE:
 				return XK_space;
@@ -339,12 +343,15 @@ namespace RE {
 					if (u64KeyId >= static_cast<int64_t>(RE_INPUT_KEY_NUMPAD_0) && u64KeyId <= static_cast<int64_t>(RE_INPUT_KEY_NUMPAD_9))
 						return XK_KP_0 + (u64KeyId - static_cast<int64_t>(RE_INPUT_KEY_NUMPAD_0));
 				}
+			case RE_INPUT_UNKNOWN:
+			case RE_INPUT_NONE:
+			case RE_INPUT_MAX_ENUM:
 				return 0L;
 		}
 	}
 
 	[[nodiscard]]
-	constexpr Input key_from_virtual_keycode(const int64_t i64VirtualKeyCode) {
+	constexpr Input key_from_virtual_x11_keycode(const int64_t i64VirtualKeyCode) {
 		switch (i64VirtualKeyCode) {
 			case XK_space:
 				return RE_INPUT_KEY_SPACE;

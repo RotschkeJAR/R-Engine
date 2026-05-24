@@ -19,13 +19,18 @@ namespace RE {
 		ASKING_STATE_RELEASED
 	};
 
-	std::array<uint32_t, MAXIMUM_PHYSICAL_KEYS> au32Scancodes = {};
-	std::array<uint8_t, SIZE_OF_INPUT_TO_KEY_BUFFER_INDEX_TABLE> au8InputToKeyBufferIndexTable = {};
-	std::array<uint8_t, KEY_BUFFER_SIZE> au8KeyBuffer = {}, au8PrevKeyBuffer = {}; // Keyboard
-	uint8_t u8NumberOfKeys = 0;
-	uint8_t u8MouseBuffer = 0, u8PrevMouseBuffer = 0; // Scrolling and mouse buttons
-	Vector2i cursorPosition, prevCursorPosition;
 	InputAction *pUpdateInputObject = nullptr;
+	static uint32_t au32Scancodes[MAXIMUM_PHYSICAL_KEYS] = {};
+	static uint8_t au8InputToKeyBufferIndexTable[SIZE_OF_INPUT_TO_KEY_BUFFER_INDEX_TABLE] = {};
+	// Keyboard
+	static uint8_t au8KeyBuffer[KEY_BUFFER_SIZE] = {},
+		au8PrevKeyBuffer[KEY_BUFFER_SIZE] = {};
+	static uint8_t u8NumberOfKeys = 0;
+	// Scrolling and mouse buttons
+	static uint8_t u8MouseBuffer = 0,
+		u8PrevMouseBuffer = 0;
+	static Vector2i cursorPosition,
+		prevCursorPosition;
 
 	[[nodiscard]]
 	static uint8_t mouse_input_to_uint8(const Input eInput) {
@@ -67,7 +72,7 @@ namespace RE {
 		return is_key_input(eSearchedInput) ? au8InputToKeyBufferIndexTable[key_input_to_uint8(eSearchedInput)] : FAILURE_KEY_BUFFER_INDEX;
 	}
 
-	template<AskingState eStateToCheck>
+	template <AskingState eStateToCheck>
 	[[nodiscard]]
 	static bool get_state_of_user_input(const Input eInput, const uint32_t u32Scancode) {
 		switch (eInput) {

@@ -216,41 +216,12 @@ namespace RE {
 		if (are_bits_true<uint8_t>(u8WindowFlagBits, WINDOW_VISIBLE_BIT)) {
 			PRINT_DEBUG("Showing X11 window ", x11_hWindow);
 			XMapWindow(x11_pDisplay, x11_hWindow);
-			if (is_fullscreen()) {
-				PRINT_DEBUG("Switching window immediatly to fullscreen");
-				XEvent x11_fullscreenEvent = {};
-				x11_fullscreenEvent.type = ClientMessage;
-				x11_fullscreenEvent.xclient.window = x11_hWindow;
-				x11_fullscreenEvent.xclient.message_type = x11_ahAtoms[RE_X11_ATOM_INDEX_STATE];
-				x11_fullscreenEvent.xclient.format = 32;
-				x11_fullscreenEvent.xclient.data.l[0] = _NET_WM_STATE_ADD;
-				x11_fullscreenEvent.xclient.data.l[1] = x11_ahAtoms[RE_X11_ATOM_INDEX_FULLSCREEN];
-				x11_fullscreenEvent.xclient.data.l[2] = 0;
-				x11_fullscreenEvent.xclient.data.l[3] = 1;
-				x11_fullscreenEvent.xclient.data.l[4] = 0;
-				XSendEvent(x11_pDisplay, XDefaultRootWindow(x11_pDisplay), False, SubstructureRedirectMask | SubstructureNotifyMask, &x11_fullscreenEvent);
-			}
 		} else {
 			PRINT_DEBUG("Hiding X11 window ", x11_hWindow);
 			XUnmapWindow(x11_pDisplay, x11_hWindow);
 		}
 		PRINT_DEBUG("Flushing X11 server ", x11_pDisplay, " to take effect on window's show-status");
 		XFlush(x11_pDisplay);
-	}
-
-	void x11_update_fullscreen() {
-		PRINT_DEBUG("Updating state atom of X11 window to new fullscreen mode");
-		XEvent x11_fullscreenEvent = {};
-		x11_fullscreenEvent.type = ClientMessage;
-		x11_fullscreenEvent.xclient.window = x11_hWindow;
-		x11_fullscreenEvent.xclient.message_type = x11_ahAtoms[RE_X11_ATOM_INDEX_STATE];
-		x11_fullscreenEvent.xclient.format = 32;
-		x11_fullscreenEvent.xclient.data.l[0] = is_fullscreen() ? _NET_WM_STATE_ADD : _NET_WM_STATE_REMOVE;
-		x11_fullscreenEvent.xclient.data.l[1] = x11_ahAtoms[RE_X11_ATOM_INDEX_FULLSCREEN];
-		x11_fullscreenEvent.xclient.data.l[2] = 0;
-		x11_fullscreenEvent.xclient.data.l[3] = 1;
-		x11_fullscreenEvent.xclient.data.l[4] = 0;
-		XSendEvent(x11_pDisplay, XDefaultRootWindow(x11_pDisplay), False, SubstructureRedirectMask | SubstructureNotifyMask, &x11_fullscreenEvent);
 	}
 
 	void x11_update_window_title() {
@@ -276,7 +247,7 @@ namespace RE {
 					break;
 				case ConfigureNotify: /* window resized */
 					{
-						PRINT_DEBUG("X11 window ", x11_hWindow, " has been resized ");
+						PRINT_DEBUG("X11 window ", x11_hWindow, " has been resized");
 						const XConfigureEvent &x11_rConfigureNotifyEvent = x11_event.xconfigure;
 						window_resize_event(static_cast<uint32_t>(x11_rConfigureNotifyEvent.width), static_cast<uint32_t>(x11_rConfigureNotifyEvent.height));
 					}
@@ -294,8 +265,34 @@ namespace RE {
 						const uint8_t u8CharLength = Xutf8LookupString(x11_hInputContext, &x11_rKeyEvent, a5cString, sizeof(a5cString) - 1, &x11_keySym, nullptr);
 						if (bKeyPressed && u8CharLength)
 							a5cString[u8CharLength] = '\0';
+						const Input eInput = key_from_virtual_x11_keycode(static_cast<int64_t>(x11_keySym));
+						if (eInput == eInputFullscreenToggle && x11_event.type == KeyPress) {
+							const bool bFullscreen = !IS_FULLSCREEN();
+							SET_FULLSCREEN(bFullscreen);
+							if (bFullscreen)
+								x11_pSizes->flags &= ~PMaxSize;
+							else {
+								x11_pSizes->flags |= PMaxSize;
+								x11_pSizes->max_width = largestMonitorSize[0] + MAX_WINDOW_WIDTH_RELATIVE_TO_MONITOR;
+								x11_pSizes->max_height = largestMonitorSize[1] + MAX_WINDOW_HEIGHT_RELATIVE_TO_MONITOR;
+							}
+							XSetWMNormalHints(x11_pDisplay, x11_hWindow, x11_pSizes);
+							XEvent x11_fullscreenEvent = {};
+							x11_fullscreenEvent.type = ClientMessage;
+							x11_fullscreenEvent.xclient.window = x11_hWindow;
+							x11_fullscreenEvent.xclient.send_event = True;
+							x11_fullscreenEvent.xclient.message_type = x11_ahAtoms[RE_X11_ATOM_INDEX_STATE];
+							x11_fullscreenEvent.xclient.format = 32;
+							x11_fullscreenEvent.xclient.data.l[0] = bFullscreen ? _NET_WM_STATE_ADD : _NET_WM_STATE_REMOVE;
+							x11_fullscreenEvent.xclient.data.l[1] = x11_ahAtoms[RE_X11_ATOM_INDEX_FULLSCREEN];
+							x11_fullscreenEvent.xclient.data.l[2] = 0;
+							x11_fullscreenEvent.xclient.data.l[3] = 1;
+							x11_fullscreenEvent.xclient.data.l[4] = 0;
+							XSendEvent(x11_pDisplay, XDefaultRootWindow(x11_pDisplay), False, SubstructureRedirectMask | SubstructureNotifyMask, &x11_fullscreenEvent);
+							XFlush(x11_pDisplay);
+						}
 						PRINT_DEBUG("Firing general input event");
-						input_event(key_from_virtual_keycode(static_cast<int64_t>(x11_keySym)), static_cast<uint32_t>(x11_scancode), bKeyPressed, false);
+						input_event(eInput, static_cast<uint32_t>(x11_scancode), bKeyPressed, true);
 					}
 					break;
 				case ButtonPress:
@@ -341,6 +338,24 @@ namespace RE {
 				case MapNotify: /* window showed or unminimized/restored */
 					PRINT_DEBUG("X11 window ", x11_hWindow, " has been showed or unminimized/restored");
 					set_bits<uint8_t>(u8WindowFlagBits, false, WINDOW_MINIMIZED_BIT);
+					if (IS_FULLSCREEN()) {
+						PRINT_DEBUG("Switching window immediatly to fullscreen");
+						x11_pSizes->flags &= ~PMaxSize;
+						XSetWMNormalHints(x11_pDisplay, x11_hWindow, x11_pSizes);
+						XEvent x11_fullscreenEvent = {};
+						x11_fullscreenEvent.type = ClientMessage;
+						x11_fullscreenEvent.xclient.send_event = True;
+						x11_fullscreenEvent.xclient.window = x11_hWindow;
+						x11_fullscreenEvent.xclient.message_type = x11_ahAtoms[RE_X11_ATOM_INDEX_STATE];
+						x11_fullscreenEvent.xclient.format = 32;
+						x11_fullscreenEvent.xclient.data.l[0] = _NET_WM_STATE_ADD;
+						x11_fullscreenEvent.xclient.data.l[1] = x11_ahAtoms[RE_X11_ATOM_INDEX_FULLSCREEN];
+						x11_fullscreenEvent.xclient.data.l[2] = 0;
+						x11_fullscreenEvent.xclient.data.l[3] = 1;
+						x11_fullscreenEvent.xclient.data.l[4] = 0;
+						XSendEvent(x11_pDisplay, XDefaultRootWindow(x11_pDisplay), False, SubstructureRedirectMask | SubstructureNotifyMask, &x11_fullscreenEvent);
+						XFlush(x11_pDisplay);
+					}
 					break;
 				case UnmapNotify: /* window hidden or minimized/iconified */
 					PRINT_DEBUG("X11 window ", x11_hWindow, " has been hidden or minimized/iconified");
@@ -351,6 +366,10 @@ namespace RE {
 					break;
 			}
 		}
+
+		XWindowAttributes x11_windowAttribs;
+		XGetWindowAttributes(x11_pDisplay, x11_hWindow, &x11_windowAttribs);
+		PRINT_LN(x11_windowAttribs.width, ", ", x11_windowAttribs.height);
 	}
 
 }

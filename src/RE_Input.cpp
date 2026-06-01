@@ -125,6 +125,7 @@ namespace RE {
 
 	void input_event(const Input eEnteredInput, const uint32_t u32EnteredScancode, const bool bPressed, const bool bFallbackToInput) {
 		PRINT_DEBUG("Input has been received with input ", std::hex, eEnteredInput, ", scancode ", u32EnteredScancode, ", pressed-state ", bPressed, " and fallback-to-input-state ", bFallbackToInput);
+		PRINT_LN(eEnteredInput, " (", std::hex, u32EnteredScancode, ")");
 		switch (eEnteredInput) {
 			case RE_INPUT_SCROLL_UP:
 			case RE_INPUT_SCROLL_DOWN:

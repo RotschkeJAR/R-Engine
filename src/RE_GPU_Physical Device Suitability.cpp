@@ -203,27 +203,29 @@ namespace RE {
 			vk_physicalDeviceFeatures_1_0.pNext = &vk_physicalDeviceFeatures_1_1;
 			const VkPhysicalDeviceFeatures &vk_physicalDeviceFeatures = vk_physicalDeviceFeatures_1_0.features;
 			vkGetPhysicalDeviceFeatures2(vk_hPhysicalDevice, &vk_physicalDeviceFeatures_1_0);
-			if (!bIndexTypeUint8Available || vk_indexTypeUint8Feature.indexTypeUint8 != VK_TRUE)
+			if (!bIndexTypeUint8Available || !vk_indexTypeUint8Feature.indexTypeUint8)
 				optionals.emplace("8-bit unsigned indices aren't supported");
-			if (vk_physicalDeviceFeatures_1_3.synchronization2 != VK_TRUE)
+			if (!vk_physicalDeviceFeatures_1_3.synchronization2)
 				warnings.emplace("The advanced synchronization-feature is not supported");
-			if (vk_physicalDeviceFeatures_1_3.dynamicRendering != VK_TRUE)
+			if (!vk_physicalDeviceFeatures_1_3.dynamicRendering)
 				incompatibilities.emplace("The dynamic rendering-feature (relinquishment of static render passes) is not supported");
-			if (vk_physicalDeviceFeatures_1_2.shaderSampledImageArrayNonUniformIndexing != VK_TRUE)
+			if (!vk_physicalDeviceFeatures_1_2.shaderSampledImageArrayNonUniformIndexing)
 			    incompatibilities.emplace("Non-uniform indexing within the shaders is not supported");
-			if (vk_physicalDeviceFeatures_1_2.descriptorBindingSampledImageUpdateAfterBind != VK_TRUE)
+			if (!vk_physicalDeviceFeatures_1_2.descriptorBindingSampledImageUpdateAfterBind)
 			    optionals.emplace("Updating samplers, sampled images and combinations aren't supported");
-			if (vk_physicalDeviceFeatures_1_2.descriptorBindingUpdateUnusedWhilePending != VK_TRUE)
+			if (!vk_physicalDeviceFeatures_1_2.descriptorBindingUpdateUnusedWhilePending)
 				optionals.emplace("The GPU doesn't support unused descriptor bindings being updated while pending");
-			if (vk_physicalDeviceFeatures_1_2.descriptorBindingPartiallyBound != VK_TRUE)
+			if (!vk_physicalDeviceFeatures_1_2.descriptorBindingPartiallyBound)
 				incompatibilities.emplace("The GPU doesn't support partially bound descriptor bindings");
-			if (vk_physicalDeviceFeatures_1_2.runtimeDescriptorArray != VK_TRUE)
+			if (!vk_physicalDeviceFeatures_1_2.runtimeDescriptorArray)
 			    incompatibilities.emplace("Descriptor arrays, which size is defined at runtime, aren't supported");
-			if (vk_physicalDeviceFeatures_1_2.timelineSemaphore != VK_TRUE)
+			if (!vk_physicalDeviceFeatures_1_2.timelineSemaphore)
 				incompatibilities.emplace("Timeline semaphores aren't supported");
-			if (vk_physicalDeviceFeatures.sampleRateShading != VK_TRUE)
+			if (!vk_physicalDeviceFeatures.sampleRateShading)
 				optionals.emplace("Sample shading (fragment shader executes per sample) is not supported");
-			if (vk_physicalDeviceFeatures.samplerAnisotropy != VK_TRUE)
+			if (!vk_physicalDeviceFeatures.multiViewport)
+				optionals.emplace("Multi Viewport is not supported");
+			if (!vk_physicalDeviceFeatures.samplerAnisotropy)
 				optionals.emplace("Anisotropic filtering for textures is not supported");
 		}
 		{ // Queues

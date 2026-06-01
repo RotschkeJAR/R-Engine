@@ -186,43 +186,30 @@ namespace RE {
 		RE_INPUT_KEY_F10 = 0x57,
 		RE_INPUT_KEY_F11 = 0x58,
 		RE_INPUT_KEY_F12 = 0x59,
-		RE_INPUT_KEY_F13 = 0x5A,
-		RE_INPUT_KEY_F14 = 0x5B,
-		RE_INPUT_KEY_F15 = 0x5C,
-		RE_INPUT_KEY_F16 = 0x5D,
-		RE_INPUT_KEY_F17 = 0x5E,
-		RE_INPUT_KEY_F18 = 0x5F,
-		RE_INPUT_KEY_F19 = 0x60,
-		RE_INPUT_KEY_F20 = 0x61,
-		RE_INPUT_KEY_F21 = 0x62,
-		RE_INPUT_KEY_F22 = 0x63,
-		RE_INPUT_KEY_F23 = 0x64,
-		RE_INPUT_KEY_F24 = 0x65,
-		RE_INPUT_KEY_F25 = 0x66,
-		RE_INPUT_KEY_CAPS_LOCK = 0x67,
-		RE_INPUT_KEY_NUMPAD_LOCK = 0x68,
-		RE_INPUT_KEY_NUMPAD_0 = 0x69,
-		RE_INPUT_KEY_NUMPAD_1 = 0x6A,
-		RE_INPUT_KEY_NUMPAD_2 = 0x6B,
-		RE_INPUT_KEY_NUMPAD_3 = 0x6C,
-		RE_INPUT_KEY_NUMPAD_4 = 0x6D,
-		RE_INPUT_KEY_NUMPAD_5 = 0x6E,
-		RE_INPUT_KEY_NUMPAD_6 = 0x6F,
-		RE_INPUT_KEY_NUMPAD_7 = 0x70,
-		RE_INPUT_KEY_NUMPAD_8 = 0x71,
-		RE_INPUT_KEY_NUMPAD_9 = 0x72,
-		RE_INPUT_KEY_NUMPAD_ADD = 0x73,
-		RE_INPUT_KEY_NUMPAD_SUBTRACT = 0x74,
-		RE_INPUT_KEY_NUMPAD_MULTIPLY = 0x75,
-		RE_INPUT_KEY_NUMPAD_DIVIDE = 0x76,
-		RE_INPUT_KEY_NUMPAD_ENTER = 0x77,
-		RE_INPUT_KEY_NUMPAD_PERIOD = 0x78,
+		RE_INPUT_KEY_CAPS_LOCK = 0x5A,
+		RE_INPUT_KEY_NUMPAD_LOCK = 0x5B,
+		RE_INPUT_KEY_NUMPAD_0 = 0x5C,
+		RE_INPUT_KEY_NUMPAD_1 = 0x5D,
+		RE_INPUT_KEY_NUMPAD_2 = 0x5E,
+		RE_INPUT_KEY_NUMPAD_3 = 0x5F,
+		RE_INPUT_KEY_NUMPAD_4 = 0x60,
+		RE_INPUT_KEY_NUMPAD_5 = 0x61,
+		RE_INPUT_KEY_NUMPAD_6 = 0x62,
+		RE_INPUT_KEY_NUMPAD_7 = 0x63,
+		RE_INPUT_KEY_NUMPAD_8 = 0x64,
+		RE_INPUT_KEY_NUMPAD_9 = 0x65,
+		RE_INPUT_KEY_NUMPAD_ADD = 0x66,
+		RE_INPUT_KEY_NUMPAD_SUBTRACT = 0x67,
+		RE_INPUT_KEY_NUMPAD_MULTIPLY = 0x68,
+		RE_INPUT_KEY_NUMPAD_DIVIDE = 0x69,
+		RE_INPUT_KEY_NUMPAD_ENTER = 0x6A,
+		RE_INPUT_KEY_NUMPAD_PERIOD = 0x6B,
 		/**
 		 * Represents a key, that does not exist on US-keyboards:
 		 * - UK, DE (next to left shift): less than, (shift) greater than, (right Alt = AltGr) vertical bar/pipe
 		 */
-		RE_INPUT_KEY_WORLD_1 = 0x79,
-		RE_INPUT_MAX_ENUM = 0x7A
+		RE_INPUT_KEY_WORLD_1 = 0x6C,
+		RE_INPUT_MAX_ENUM = 0x6D
 	};
 
 	enum TextureFilter {
@@ -267,9 +254,9 @@ namespace RE {
 	};
 
 	enum DepthPrecission {
-		RE_DEPTH_PRECISSION_LOW = 0,
-		RE_DEPTH_PRECISSION_MODERATE = 1,
-		RE_DEPTH_PRECISSION_HIGH = 2
+		RE_DEPTH_PRECISSION_LOW = 0, /* 16-bit */
+		RE_DEPTH_PRECISSION_MODERATE = 1, /* 24-bit */
+		RE_DEPTH_PRECISSION_HIGH = 2 /* 32-bit */
 	};
 
 
@@ -720,11 +707,10 @@ namespace RE {
 
 	template <class T, size_t dimensionCount> requires std::is_arithmetic_v<T> && (dimensionCount > 0)
 	class Vector final {
-		private:
-			T aCoords[dimensionCount];
-
 		public:
 			using type = T;
+			
+			T aCoords[dimensionCount];
 
 			explicit Vector(const T initialValue = 0) {
 				fill(initialValue);

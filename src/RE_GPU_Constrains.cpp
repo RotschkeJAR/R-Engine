@@ -166,6 +166,8 @@ namespace RE {
 			    mEnabledFeatures |= ENABLED_FEATURE_UPDATE_DESCRIPTOR_SAMPLED_IMAGE_AFTER_BIND_BIT;
 			if (vk_physicalDeviceFeatures_1_2.descriptorBindingUpdateUnusedWhilePending)
 			    mEnabledFeatures |= ENABLED_FEATURE_UPDATE_UNUSED_DESCRIPTORS_WHILE_PENDING_BIT;
+			if (vk_physicalDeviceFeatures.multiViewport)
+				mEnabledFeatures |= ENABLED_FEATURE_MULTI_VIEWPORT_BIT;
 		}
 	}
 

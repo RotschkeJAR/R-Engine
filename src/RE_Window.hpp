@@ -20,9 +20,18 @@ namespace RE {
 #define WINDOW_CLOSE_FLAG_BIT 5
 
 #ifdef RE_OS_LINUX
+#define WINDOW_WAYLAND_BORDER_TOTAL_SIZE 5
+#define WINDOW_WAYLAND_SHADOW_SIZE 4
+#define WINDOW_WAYLAND_EDGE_SIZE (WINDOW_WAYLAND_BORDER_TOTAL_SIZE - WINDOW_WAYLAND_SHADOW_SIZE)
+#define WINDOW_WAYLAND_BAR_SIZE 30
+#define WINDOW_WAYLAND_EXTRA_WIDTH (WINDOW_WAYLAND_BORDER_TOTAL_SIZE * 2)
+#define WINDOW_WAYLAND_EXTRA_HEIGHT (WINDOW_WAYLAND_BORDER_TOTAL_SIZE * 2 + WINDOW_WAYLAND_BAR_SIZE)
+#define WINDOW_WAYLAND_X_OFFSET WINDOW_WAYLAND_BORDER_TOTAL_SIZE
+#define WINDOW_WAYLAND_Y_OFFSET (WINDOW_WAYLAND_BORDER_TOTAL_SIZE + WINDOW_WAYLAND_BAR_SIZE)
+
 	enum LinuxWindowType {
-		RE_LINUX_WINDOW_TYPE_X11,
-		RE_LINUX_WINDOW_TYPE_WAYLAND
+		LINUX_WINDOW_TYPE_X11,
+		LINUX_WINDOW_TYPE_WAYLAND
 	};
 
 	extern LinuxWindowType eLinuxWindowType;
@@ -39,15 +48,14 @@ namespace RE {
 
 	bool create_window();
 	void destroy_window();
-	void window_resize_event(const uint32_t u32NewWidth, const uint32_t u32NewHeight);
-	void show_window(const bool bShowWindow);
+	void window_resize_event(uint32_t u32NewWidth, uint32_t u32NewHeight);
+	void show_window(bool bShowWindow);
 	void window_proc();
-	[[nodiscard]]
+	uint32_t get_window_actual_width();
+	uint32_t get_window_actual_height();
 	bool should_window_close();
-	[[nodiscard]]
 	bool should_render();
 	bool create_vulkan_surface();
-	[[nodiscard]]
 	const char* get_vulkan_required_surface_extension_name();
 
 }

@@ -5,11 +5,15 @@
 
 namespace RE {
 
-	extern VkPipeline vk_hGraphicsPipeline2D, 
-		vk_hGraphicsPipeline2DOpaqueOnly, 
-		vk_hGraphicsPipeline3D, 
-		vk_hGraphicsPipeline3DOpaqueOnly, 
-		vk_hComputePipelinePreprocessing, 
+	extern VkPipelineLayout vk_hGraphicsPipelineLayout,
+		vk_hSortDepthPipelineLayout,
+		vk_hProcessingPipelineLayout;
+
+	extern VkPipeline vk_hGraphicsPipeline2D,
+		vk_hGraphicsPipeline2DOpaqueOnly,
+		vk_hGraphicsPipeline3D,
+		vk_hGraphicsPipeline3DOpaqueOnly,
+		vk_hComputePipelinePreprocessing,
 		vk_hComputePipelineDepthSorting;
 
 	bool create_renderer_pipelines();

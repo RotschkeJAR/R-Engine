@@ -28,8 +28,8 @@ namespace RE {
 		if (vk_surfaceCapabilities.currentExtent.width != std::numeric_limits<uint32_t>::max() || vk_surfaceCapabilities.currentExtent.height != std::numeric_limits<uint32_t>::max() || !vk_surfaceCapabilities.currentExtent.width || !vk_surfaceCapabilities.currentExtent.height)
 			vk_swapchainResolution = vk_surfaceCapabilities.currentExtent;
 		else {
-			vk_swapchainResolution.width = std::clamp<uint32_t>(windowSize[0], vk_surfaceCapabilities.minImageExtent.width, vk_surfaceCapabilities.maxImageExtent.width);
-			vk_swapchainResolution.height = std::clamp<uint32_t>(windowSize[1], vk_surfaceCapabilities.minImageExtent.height, vk_surfaceCapabilities.maxImageExtent.height);
+			vk_swapchainResolution.width = std::clamp<uint32_t>(get_window_actual_width(), vk_surfaceCapabilities.minImageExtent.width, vk_surfaceCapabilities.maxImageExtent.width);
+			vk_swapchainResolution.height = std::clamp<uint32_t>(get_window_actual_height(), vk_surfaceCapabilities.minImageExtent.height, vk_surfaceCapabilities.maxImageExtent.height);
 		}
 		std::vector<uint32_t> queuesToShareAcross;
 		get_queues_for_swapchain_images(queuesToShareAcross);

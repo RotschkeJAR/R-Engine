@@ -1,14 +1,17 @@
 #include "RE_Renderer_Pipelines_Graphics_Internal.hpp"
 
 namespace RE {
+
+#define VERTEX_SHADER_PATH "shaders/vertex_general.glsl.spv"
+#define FRAGMENT_SHADER_PATH "shaders/fragment_general.glsl.spv"
 	
 	bool create_graphics_pipelines() {
 		PRINT_DEBUG("Creating temporary Vulkan shader module for vertices");
 		VkShaderModule vk_hVertexShader;
-		if (create_vulkan_shader_from_file("shaders/graphics_vertex.glsl.spv", 0, &vk_hVertexShader)) {
+		if (create_vulkan_shader_from_file(VERTEX_SHADER_PATH, 0, &vk_hVertexShader)) {
 			PRINT_DEBUG("Creating temporary Vulkan shader module for fragments");
 			VkShaderModule vk_hFragmentShader;
-			if (create_vulkan_shader_from_file("shaders/graphics_fragment.glsl.spv", 0, &vk_hFragmentShader)) {
+			if (create_vulkan_shader_from_file(FRAGMENT_SHADER_PATH, 0, &vk_hFragmentShader)) {
 				if (create_graphics_pipeline_2D(vk_hVertexShader, vk_hFragmentShader)) {
 					if (create_graphics_pipeline_2D_opaque_only(vk_hVertexShader, vk_hFragmentShader)) {
 						if (create_graphics_pipeline_3D(vk_hVertexShader, vk_hFragmentShader)) {
@@ -37,19 +40,19 @@ namespace RE {
 
 	void destroy_graphics_pipelines() {
 		PRINT_DEBUG("Destroying all Vulkan graphics pipelines");
-		destroy_graphics_pipeline_2D();
-		destroy_graphics_pipeline_2D_opaque_only();
-		destroy_graphics_pipeline_3D();
 		destroy_graphics_pipeline_3D_opaque_only();
+		destroy_graphics_pipeline_3D();
+		destroy_graphics_pipeline_2D_opaque_only();
+		destroy_graphics_pipeline_2D();
 	}
 
 	bool recreate_graphics_pipelines() {
 		PRINT_DEBUG("Creating temporary Vulkan shader module for vertices for recreating all graphics pipelines");
 		VkShaderModule vk_hVertexShader;
-		if (create_vulkan_shader_from_file("shaders/gameobject_vertex.glsl.spv", 0, &vk_hVertexShader)) {
+		if (create_vulkan_shader_from_file(VERTEX_SHADER_PATH, 0, &vk_hVertexShader)) {
 			PRINT_DEBUG("Creating temporary Vulkan shader module for fragments for recreating all graphics pipelines");
 			VkShaderModule vk_hFragmentShader;
-			if (create_vulkan_shader_from_file("shaders/gameobject_fragment.glsl.spv", 0, &vk_hFragmentShader)) {
+			if (create_vulkan_shader_from_file(FRAGMENT_SHADER_PATH, 0, &vk_hFragmentShader)) {
 				PRINT_DEBUG("Recreating all Vulkan graphics pipelines");
 				const bool bSuccess = create_graphics_pipeline_2D(vk_hVertexShader, vk_hFragmentShader)
 						&& create_graphics_pipeline_2D_opaque_only(vk_hVertexShader, vk_hFragmentShader)

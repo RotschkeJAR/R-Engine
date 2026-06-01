@@ -29,4 +29,64 @@ namespace RE {
 		return false;
 	}
 
+	Vulkan_Shader::Vulkan_Shader() : vk_hShaderModule(VK_NULL_HANDLE) {}
+
+	Vulkan_Shader::Vulkan_Shader(const char *const pacDirectory, const VkShaderModuleCreateFlags vk_eFlags) : vk_hShaderModule(VK_NULL_HANDLE) {
+		PRINT_DEBUG_CLASS("Constructing Vulkan shader module wrapper");
+		create(pacDirectory, vk_eFlags);
+	}
+
+	Vulkan_Shader::Vulkan_Shader(Vulkan_Shader &&rrCopy) : vk_hShaderModule(rrCopy.vk_hShaderModule) {
+		PRINT_DEBUG_CLASS("Constructing Vulkan shader module wrapper by moving ownership from another wrapper");
+		rrCopy.vk_hShaderModule = VK_NULL_HANDLE;
+	}
+
+	Vulkan_Shader::~Vulkan_Shader() {
+		PRINT_DEBUG_CLASS("Deconstructing Vulkan shader module wrapper");
+		destroy();
+	}
+
+	bool Vulkan_Shader::create(const char *const pacDirectory, const VkShaderModuleCreateFlags vk_eFlags) {
+#ifndef RE_DISABLE_PRINT_DEBUGS
+		if (valid())
+			RE_ERROR("Creating another Vulkan shader module wrapper, when the old shader module ", vk_hShaderModule, " hasn't been destroyed yet");
+#endif
+		PRINT_DEBUG_CLASS("Creating Vulkan shader module wrapper");
+		return create_vulkan_shader_from_file(pacDirectory, vk_eFlags, &vk_hShaderModule);
+	}
+
+	void Vulkan_Shader::destroy() {
+		PRINT_DEBUG_CLASS("Destroying Vulkan shader module wrapper");
+		vkDestroyShaderModule(vk_hDevice, vk_hShaderModule, nullptr);
+		vk_hShaderModule = VK_NULL_HANDLE;
+	}
+
+	VkShaderModule Vulkan_Shader::get() const {
+		return vk_hShaderModule;
+	}
+
+	const VkShaderModule* Vulkan_Shader::get_ptr() const {
+		return &vk_hShaderModule;
+	}
+
+	bool Vulkan_Shader::valid() const {
+		return vk_hShaderModule != VK_NULL_HANDLE;
+	}
+
+	Vulkan_Shader::operator VkShaderModule() const {
+		return get();
+	}
+
+	Vulkan_Shader::operator const VkShaderModule*() const {
+		return get_ptr();
+	}
+
+	Vulkan_Shader::operator bool() const {
+		return valid();
+	}
+
+	VkShaderModule Vulkan_Shader::operator()() const {
+		return static_cast<VkShaderModule>(*this);
+	}
+
 }

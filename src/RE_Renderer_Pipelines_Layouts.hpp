@@ -4,10 +4,6 @@
 #include "RE_Renderer_Pipelines_Internal.hpp"
 
 namespace RE {
-	
-	extern VkPipelineLayout vk_hGraphicsPipelineLayout,
-		vk_hSortDepthPipelineLayout,
-		vk_hProcessingPipelineLayout;
 
 	bool create_pipeline_layouts();
 	void destroy_pipeline_layouts();

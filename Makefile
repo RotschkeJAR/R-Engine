@@ -34,7 +34,7 @@ $(OUT): $(RE) $(TEST)/*.cpp
 		exit 1; \
 	fi
 	-@rm -f $(TEST)/*.gch
-	@if ! $(CC) $(CFLAG) *.o -o "$(OUT)" -L $(BIN) -l RE -l dl -l X11 -l Xrandr -l Xinerama -l wayland-client; then \
+	@if ! $(CC) $(CFLAG) *.o -o "$(OUT)" -L $(BIN) -l RE -l dl -l X11 -l Xrandr -l Xinerama -l wayland-client -l xkbcommon; then \
 		echo "GAME - ERROR: Failed linking"; \
 		rm -f *.o; \
 		exit 1; \
@@ -112,13 +112,13 @@ $(SH)/*.spv: $(SH)/*.glsl
 compile_shaders:
 	-@rm -f $(SH)/*.spv
 	@errorCaused=false; \
-	for vertexShader in $(SH)/graphics_*vertex.glsl; do \
+	for vertexShader in $(SH)/vertex_*.glsl; do \
 		echo $${vertexShader}; \
 		if ! $(SC) $(SFLAG) -x glsl -fshader-stage=vertex -o "$${vertexShader}.spv" "$${vertexShader}"; then \
 			errorCaused=true; \
 		fi; \
 	done; \
-	for fragmentShader in $(SH)/graphics_*fragment.glsl; do \
+	for fragmentShader in $(SH)/fragment_*.glsl; do \
 		echo $${fragmentShader}; \
 		if ! $(SC) $(SFLAG) -x glsl -fshader-stage=fragment -o "$${fragmentShader}.spv" "$${fragmentShader}"; then \
 			errorCaused=true; \
@@ -131,7 +131,7 @@ compile_shaders:
 		fi; \
 	done; \
 	if $$errorCaused; then \
-		echo "SAHADERS - ERROR: Failed compiling shaders"; \
+		echo "SHADERS - ERROR: Failed compiling shaders"; \
 		rm -f $(SH)/*.spv; \
 		exit 1; \
 	fi

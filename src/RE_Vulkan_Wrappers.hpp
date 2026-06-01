@@ -5,7 +5,32 @@
 
 namespace RE {
 
-	bool create_vulkan_shader_from_file(const char *pacDirectory, VkShaderModuleCreateFlags vk_eFlags, VkShaderModule *vk_phShaderModule);
+	bool create_vulkan_shader_from_file(const char *pacDirectory,
+			VkShaderModuleCreateFlags vk_eFlags,
+			VkShaderModule *vk_phShaderModule);
+	class Vulkan_Shader final {
+		private:
+			VkShaderModule vk_hShaderModule;
+
+		public:
+			Vulkan_Shader();
+			Vulkan_Shader(const char *pacDirectory, VkShaderModuleCreateFlags vk_eFlags = 0);
+			Vulkan_Shader(Vulkan_Shader &rCopy) = delete;
+			Vulkan_Shader(Vulkan_Shader &&rrCopy);
+			~Vulkan_Shader();
+
+			bool create(const char *pacDirectory, VkShaderModuleCreateFlags vk_eFlags = 0);
+			void destroy();
+
+			VkShaderModule get() const;
+			const VkShaderModule* get_ptr() const;
+			bool valid() const;
+
+			operator VkShaderModule() const;
+			operator const VkShaderModule*() const;
+			operator bool() const;
+			VkShaderModule operator()() const;
+	};
 	
 	bool create_vulkan_buffer(VkBufferCreateFlags vk_eFlags,
 			VkDeviceSize vk_size,

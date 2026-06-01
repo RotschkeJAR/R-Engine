@@ -5,6 +5,9 @@ namespace RE {
 	VkPipelineLayout vk_hGraphicsPipelineLayout,
 		vk_hSortDepthPipelineLayout,
 		vk_hProcessingPipelineLayout;
+#ifdef RE_OS_LINUX
+	VkPipelineLayout vk_hWindowFramePipelineLayout;
+#endif /* RE_OS_LINUX */
 
 	bool create_pipeline_layouts() {
 		PRINT_DEBUG("Creating Vulkan pipeline layout dedicated for graphics pipelines");
@@ -69,6 +72,9 @@ namespace RE {
 
 	void destroy_pipeline_layouts() {
 		PRINT_DEBUG("Destroying all Vulkan pipeline layouts");
+#ifdef RE_OS_LINUX
+		vkDestroyPipelineLayout(vk_hDevice, vk_hWindowFramePipelineLayout, nullptr);
+#endif /* RE_OS_LINUX */
 		vkDestroyPipelineLayout(vk_hDevice, vk_hProcessingPipelineLayout, nullptr);
 		vkDestroyPipelineLayout(vk_hDevice, vk_hSortDepthPipelineLayout, nullptr);
 		vkDestroyPipelineLayout(vk_hDevice, vk_hGraphicsPipelineLayout, nullptr);

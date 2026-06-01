@@ -7,6 +7,7 @@
 
 #include <wayland-client.h>
 #include <xdg-shell-client-protocol.h>
+#include <xkbcommon/xkbcommon.h>
 
 namespace RE {
 	

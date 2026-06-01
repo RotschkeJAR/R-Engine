@@ -369,7 +369,7 @@ namespace RE {
 			return false;
 #elif defined RE_OS_LINUX
 		switch (eLinuxWindowType) {
-			case RE_LINUX_WINDOW_TYPE_X11:
+			case LINUX_WINDOW_TYPE_X11:
 				PRINT_DEBUG("Loading X11-related Vulkan functions");
 				vkCreateXlibSurfaceKHR = reinterpret_cast<PFN_vkCreateXlibSurfaceKHR>(load_vulkan_func_with_instance("vkCreateXlibSurfaceKHR"));
 				if (!vkCreateXlibSurfaceKHR)
@@ -378,7 +378,7 @@ namespace RE {
 				if (!vkGetPhysicalDeviceXlibPresentationSupportKHR)
 					return false;
 				break;
-			case RE_LINUX_WINDOW_TYPE_WAYLAND:
+			case LINUX_WINDOW_TYPE_WAYLAND:
 				PRINT_DEBUG("Loading Wayland-related Vulkan functions");
 				vkCreateWaylandSurfaceKHR = reinterpret_cast<PFN_vkCreateWaylandSurfaceKHR>(load_vulkan_func_with_instance("vkCreateWaylandSurfaceKHR"));
 				if (!vkCreateWaylandSurfaceKHR)

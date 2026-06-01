@@ -6,6 +6,7 @@
 
 #include <dlfcn.h>
 #include <linux/input-event-codes.h>
+#include <sys/mman.h>
 
 namespace RE {
 
@@ -13,6 +14,8 @@ namespace RE {
 #define REQUIRED_VERSION_XDG_WM_BASE static_cast<uint32_t>(std::max(XDG_WM_BASE_PING_SINCE_VERSION, std::max(XDG_WM_BASE_DESTROY_SINCE_VERSION, std::max(XDG_WM_BASE_GET_XDG_SURFACE_SINCE_VERSION, XDG_WM_BASE_PONG_SINCE_VERSION))))
 #define REQUIRED_VERSION_WL_SEAT static_cast<uint32_t>(std::max(WL_SEAT_CAPABILITIES_SINCE_VERSION, std::max(WL_SEAT_GET_POINTER_SINCE_VERSION, WL_SEAT_GET_KEYBOARD_SINCE_VERSION)))
 #define REQUIRED_VERSION_WL_OUTPUT static_cast<uint32_t>(std::max(WL_OUTPUT_GEOMETRY_SINCE_VERSION, WL_OUTPUT_MODE_SINCE_VERSION))
+
+#define KEYCODE_TO_XKB_OFFSET 8
 
 	template <class WaylandObject>
 	struct GlobalWaylandObject final {
@@ -25,6 +28,17 @@ namespace RE {
 	typedef GlobalWaylandObject<wl_seat*> WlSeat;
 	typedef GlobalWaylandObject<wl_output*> WlOutput;
 
+	struct WaylandMonitorInfo final {
+		WlOutput wlOutput;
+		Vector2u size;
+	};
+
+	struct WaylandKeyboardInfo final {
+		wl_keyboard *wl_pKeyboard;
+		xkb_keymap *xkb_pKeymap;
+		xkb_state *xkb_pState;
+	};
+
 	wl_display *wl_pDisplay;
 	static wl_registry *wl_pRegistry;
 	static WlCompositor wlCompositor = {};
@@ -33,9 +47,17 @@ namespace RE {
 	wl_surface *wl_pSurface;
 	static xdg_surface *xdg_pSurface;
 	static xdg_toplevel *xdg_pToplevel;
-	static std::vector<WlOutput> waylandMonitors;
+	static std::vector<WaylandMonitorInfo> waylandMonitors;
+	static xkb_context *xkb_pContext;
 	static wl_pointer *wl_pPointer = nullptr;
-	static wl_keyboard *wl_pKeyboard = nullptr;
+	static WaylandKeyboardInfo waylandKeyboard = {};
+	static Vector2i actualCursorPosition,
+		actualWindowSize;
+
+	static bool is_cursor_within_content() {
+		return (actualCursorPosition[0] >= WINDOW_WAYLAND_X_OFFSET && actualCursorPosition[0] < static_cast<int32_t>(actualWindowSize[0]) - WINDOW_WAYLAND_BORDER_TOTAL_SIZE)
+				&& (actualCursorPosition[1] >= WINDOW_WAYLAND_Y_OFFSET && actualCursorPosition[1] < static_cast<int32_t>(actualWindowSize[1]) - WINDOW_WAYLAND_BORDER_TOTAL_SIZE - WINDOW_WAYLAND_BAR_SIZE);
+	}
 
 	static void destroy_wayland_pointer() {
 		PRINT_DEBUG("Destroying pointer ", wl_pPointer);
@@ -47,12 +69,12 @@ namespace RE {
 	}
 
 	static void destroy_wayland_keyboard() {
-		PRINT_DEBUG("Destroying keyboard ", wl_pKeyboard);
-		if (wl_keyboard_get_version(wl_pKeyboard) >= static_cast<uint32_t>(WL_KEYBOARD_RELEASE_SINCE_VERSION))
-			wl_keyboard_release(wl_pKeyboard);
+		PRINT_DEBUG("Destroying keyboard ", waylandKeyboard.wl_pKeyboard);
+		if (wl_keyboard_get_version(waylandKeyboard.wl_pKeyboard) >= static_cast<uint32_t>(WL_KEYBOARD_RELEASE_SINCE_VERSION))
+			wl_keyboard_release(waylandKeyboard.wl_pKeyboard);
 		else
-			wl_keyboard_destroy(wl_pKeyboard);
-		wl_pKeyboard = nullptr;
+			wl_keyboard_destroy(waylandKeyboard.wl_pKeyboard);
+		waylandKeyboard.wl_pKeyboard = nullptr;
 	}
 
 	static void wayland_registry_add_callback(void *const pData, wl_registry *const wl_pRegistry, const uint32_t u32Name, const char *const pacInterface, const uint32_t u32Version) {
@@ -99,14 +121,17 @@ namespace RE {
 			if (u32Version >= REQUIRED_VERSION_WL_OUTPUT) {
 				PRINT_DEBUG("Binding a monitor");
 				waylandMonitors.emplace_back(
-						reinterpret_cast<wl_output*>(
-							wl_registry_bind(
-								wl_pRegistry,
-								u32Name,
-								&wl_output_interface,
-								REQUIRED_VERSION_WL_OUTPUT)),
-						u32Name,
-						u32Version);
+						WlOutput {
+							reinterpret_cast<wl_output*>(
+								wl_registry_bind(
+									wl_pRegistry,
+									u32Name,
+									&wl_output_interface,
+									REQUIRED_VERSION_WL_OUTPUT)),
+							u32Name,
+							u32Version
+						},
+						Vector2u {});
 			} else
 				RE_ERROR("The version of output is too low (", u32Version, " < ", REQUIRED_VERSION_WL_OUTPUT, ")");
 		}
@@ -114,13 +139,13 @@ namespace RE {
 
 	static void wayland_registry_remove_callback(void *const pData, wl_registry *const wl_pRegistry, const uint32_t u32Name) {
 		for (auto it = waylandMonitors.begin(); it != waylandMonitors.end(); it++) {
-			if (it->u32Name != u32Name)
+			if (it->wlOutput.u32Name != u32Name)
 				continue;
-			PRINT_DEBUG("Removing the Wayland output object ", it->waylandObject);
-			if (it->u32Version >= static_cast<uint32_t>(WL_OUTPUT_RELEASE_SINCE_VERSION))
-				wl_output_release(it->waylandObject);
+			PRINT_DEBUG("Removing the Wayland output object ", it->wlOutput.waylandObject);
+			if (it->wlOutput.u32Version >= static_cast<uint32_t>(WL_OUTPUT_RELEASE_SINCE_VERSION))
+				wl_output_release(it->wlOutput.waylandObject);
 			else
-				wl_output_destroy(it->waylandObject);
+				wl_output_destroy(it->wlOutput.waylandObject);
 			waylandMonitors.erase(it);
 			return;
 		}
@@ -135,6 +160,27 @@ namespace RE {
 	static constexpr wl_registry_listener wl_registryListener = {
 		.global = wayland_registry_add_callback,
 		.global_remove = wayland_registry_remove_callback
+	};
+
+	static void wayland_output_geometry_callback(void *const pData, wl_output *const wl_pOutput, const int32_t i32X, const int32_t i32Y, const int32_t i32PhysicalWidth, const int32_t i32PhysicalHeight, const int32_t i32Subpixel, const char *const pacMake, const char *const pacModel, const int32_t i32Transform) {
+	}
+
+	static void wayland_output_mode_callback(void *const pData, wl_output *const wl_pOutput, const uint32_t u32Flags, const int32_t i32Width, const int32_t i32Height, const int32_t i32RefreshRate) {
+		largestMonitorSize[0] = std::max<uint32_t>(largestMonitorSize[0], i32Width);
+		largestMonitorSize[1] = std::max<uint32_t>(largestMonitorSize[1], i32Height);
+		const auto it = std::find_if(
+				waylandMonitors.begin(),
+				waylandMonitors.end(),
+				[&](const WaylandMonitorInfo &rMonitorInfo) {
+					return rMonitorInfo.wlOutput.waylandObject == wl_pOutput;
+				});
+		it->size[0] = static_cast<uint32_t>(i32Width);
+		it->size[1] = static_cast<uint32_t>(i32Height);
+	}
+
+	static constexpr wl_output_listener wl_outputListener = {
+		.geometry = wayland_output_geometry_callback,
+		.mode = wayland_output_mode_callback
 	};
 
 	static void xdg_wm_base_ping(void *const pData, xdg_wm_base *const xdg_pWmBase, const uint32_t u32Serial) {
@@ -156,13 +202,15 @@ namespace RE {
 
 	static void xdg_toplevel_configure_callback(void *const pData, xdg_toplevel *const xdg_pToplevel, int32_t i32Width, int32_t i32Height, wl_array *const wl_pStates) {
 		if (i32Width <= 0)
-			i32Width = 600;
+			i32Width = largestMonitorSize[0] / 5 * 3 + WINDOW_WAYLAND_EXTRA_WIDTH;
 		if (i32Height <= 0)
-			i32Height = 400;
-		window_resize_event(static_cast<uint32_t>(i32Width), static_cast<uint32_t>(i32Height));
+			i32Height = largestMonitorSize[1] / 5 * 3 + WINDOW_WAYLAND_EXTRA_HEIGHT;
+		actualWindowSize[0] = i32Width;
+		actualWindowSize[1] = i32Height;
+		window_resize_event(static_cast<uint32_t>(i32Width - WINDOW_WAYLAND_EXTRA_WIDTH), static_cast<uint32_t>(i32Height - WINDOW_WAYLAND_EXTRA_HEIGHT));
 		PRINT_DEBUG("Updating regions on Wayland surface ", wl_pSurface);
 		wl_region *const wl_pRegion = wl_compositor_create_region(wlCompositor.waylandObject);
-		wl_region_add(wl_pRegion, 0, 0, i32Width, i32Height);
+		wl_region_add(wl_pRegion, WINDOW_WAYLAND_SHADOW_SIZE, WINDOW_WAYLAND_SHADOW_SIZE, actualWindowSize[0] - WINDOW_WAYLAND_SHADOW_SIZE * 2, actualWindowSize[1] - WINDOW_WAYLAND_SHADOW_SIZE * 2);
 		wl_surface_set_opaque_region(wl_pSurface, wl_pRegion);
 		wl_region_destroy(wl_pRegion);
 	}
@@ -185,16 +233,77 @@ namespace RE {
 	}
 
 	static void wayland_pointer_motion_callback(void *const pData, wl_pointer *const wl_pPointer, const uint32_t u32Time, const wl_fixed_t wl_x, const wl_fixed_t wl_y) {
-		cursor_event(wl_fixed_to_int(wl_x), wl_fixed_to_int(wl_y));
+		actualCursorPosition[0] = wl_fixed_to_int(wl_x);
+		actualCursorPosition[1] = wl_fixed_to_int(wl_y);
+		if (is_cursor_within_content())
+			cursor_event(actualCursorPosition[0] - WINDOW_WAYLAND_X_OFFSET, actualCursorPosition[1] - WINDOW_WAYLAND_Y_OFFSET);
 	}
 
 	static void wayland_pointer_button_callback(void *const pData, wl_pointer *const wl_pPointer, const uint32_t u32Serial, const uint32_t u32Time, const uint32_t u32Button, const uint32_t u32State) {
-		if (u32State == WL_POINTER_BUTTON_STATE_PRESSED && u32Button == BTN_LEFT)
+		if (!is_cursor_within_content()) {
+			if (u32State != WL_POINTER_BUTTON_STATE_PRESSED || u32Button != BTN_LEFT)
+				return;
 			xdg_toplevel_move(xdg_pToplevel, wlSeat.waylandObject, u32Serial);
+		} else {
+			switch (u32Button) {
+				case BTN_LEFT:
+					input_event(RE_INPUT_BUTTON_LEFT, 0, u32State == WL_POINTER_BUTTON_STATE_PRESSED, true);
+					break;
+				case BTN_RIGHT:
+					input_event(RE_INPUT_BUTTON_RIGHT, 0, u32State == WL_POINTER_BUTTON_STATE_PRESSED, true);
+					break;
+				case BTN_MIDDLE:
+					input_event(RE_INPUT_BUTTON_MIDDLE, 0, u32State == WL_POINTER_BUTTON_STATE_PRESSED, true);
+					break;
+			}
+		}
 	}
 
+	static void wayland_pointer_scroll_callback(void *const pData, wl_pointer *const wl_pPointer, const uint32_t u32Time, const uint32_t u32Axis, const wl_fixed_t wl_value) {
+		if (u32Axis == WL_POINTER_AXIS_VERTICAL_SCROLL && is_cursor_within_content()) {
+			input_event(wl_fixed_to_double(wl_value) < 0 ? RE_INPUT_SCROLL_DOWN : RE_INPUT_SCROLL_UP, 0, true, true);
+		}
+	}
+
+	static constexpr wl_pointer_listener wl_pointerListener = {
+		.enter = wayland_pointer_enter_callback,
+		.leave = wayland_pointer_leave_callback,
+		.motion = wayland_pointer_motion_callback,
+		.button = wayland_pointer_button_callback,
+		.axis = wayland_pointer_scroll_callback,
+		.frame = nullptr,
+		.axis_source = nullptr,
+		.axis_stop = nullptr,
+		.axis_discrete = nullptr,
+		.axis_value120 = nullptr,
+		.axis_relative_direction = nullptr
+	};
+
 	static void wayland_keyboard_keymap_callback(void *const pData, wl_keyboard *const wl_pKeyboard, const uint32_t u32Format, const int32_t i32FileDescriptor, const uint32_t u32Size) {
-		PRINT_LN("Keyboard format: ", u32Format);
+		if (waylandKeyboard.wl_pKeyboard != wl_pKeyboard)
+			return;
+		switch (u32Format) {
+			case WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1:
+				{
+					char *const pacKeymapBuffer = static_cast<char*>(mmap(nullptr, u32Size, PROT_READ, MAP_SHARED, i32FileDescriptor, 0));
+					if (pacKeymapBuffer) {
+						if ((waylandKeyboard.xkb_pKeymap = xkb_keymap_new_from_buffer(xkb_pContext, pacKeymapBuffer, u32Size, XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_COMPILE_NO_FLAGS))) {
+							if ((waylandKeyboard.xkb_pState = xkb_state_new(waylandKeyboard.xkb_pKeymap))) {
+								munmap(pacKeymapBuffer, u32Size);
+								return;
+							} else
+								RE_ERROR("");
+						} else
+							RE_ERROR("");
+						munmap(pacKeymapBuffer, u32Size);
+					} else
+						RE_ERROR("");
+				}
+				break;
+			case WL_KEYBOARD_KEYMAP_FORMAT_NO_KEYMAP:
+			default:
+				break;
+		}
 	}
 
 	static void wayland_keyboard_enter_callback(void *const pData, wl_keyboard *const wl_pKeyboard, const uint32_t u32Serial, struct wl_surface *const wl_pSurface, struct wl_array *const wl_pKeys) {
@@ -204,7 +313,26 @@ namespace RE {
 	}
 
 	static void wayland_keyboard_key_callback(void *const pData, wl_keyboard *const wl_pKeyboard, const uint32_t u32Serial, const uint32_t u32Time, const uint32_t u32Key, const uint32_t u32State) {
-		input_event(RE_INPUT_UNKNOWN, u32Key, static_cast<bool>(u32State), true);
+		const xkb_keysym_t xkb_keySym = xkb_state_key_get_one_sym(waylandKeyboard.xkb_pState, u32Key + 8);
+		switch (xkb_keySym) {
+			case XKB_KEY_Super_L:
+			case XKB_KEY_Super_R:
+				return;
+			case XKB_KEY_F11:
+				const bool bFullscreen = !IS_FULLSCREEN();
+				if (bFullscreen) {
+					xdg_toplevel_set_max_size(xdg_pToplevel, std::numeric_limits<int32_t>::max(), std::numeric_limits<int32_t>::max());
+					xdg_toplevel_set_fullscreen(xdg_pToplevel, );
+				} else {
+					xdg_toplevel_unset_fullscreen(xdg_pToplevel);
+					xdg_toplevel_set_max_size(xdg_pToplevel, largestMonitorSize[0] + MAX_WINDOW_WIDTH_RELATIVE_TO_MONITOR, largestMonitorSize[1] + MAX_WINDOW_HEIGHT_RELATIVE_TO_MONITOR);
+				}
+				SET_FULLSCREEN(bFullscreen);
+				[[fallthrough]];
+			default:
+				input_event(key_from_virtual_xkb_keysym(xkb_keySym), u32Key, u32State == WL_KEYBOARD_KEY_STATE_PRESSED, false);
+				break;
+		}
 	}
 
 	static void wayland_keyboard_modifiers_callback(void *const pData, wl_keyboard *const wl_pKeyboard, const uint32_t u32Serial, const uint32_t u32ModsDepressed, const uint32_t u32ModsLatched, const uint32_t u32ModsLocked, const uint32_t u32Group) {
@@ -212,20 +340,6 @@ namespace RE {
 
 	static void wayland_keyboard_repeat_info_callback(void *const pData, wl_keyboard *const wl_pKeyboard, const int32_t i32Rate, const int32_t i32Delay) {
 	}
-
-	static constexpr wl_pointer_listener wl_pointerListener = {
-		.enter = wayland_pointer_enter_callback,
-		.leave = wayland_pointer_leave_callback,
-		.motion = wayland_pointer_motion_callback,
-		.button = wayland_pointer_button_callback,
-		.axis = nullptr,
-		.frame = nullptr,
-		.axis_source = nullptr,
-		.axis_stop = nullptr,
-		.axis_discrete = nullptr,
-		.axis_value120 = nullptr,
-		.axis_relative_direction = nullptr
-	};
 
 	static constexpr wl_keyboard_listener wl_keyboardListener = {
 		.keymap = wayland_keyboard_keymap_callback,
@@ -251,17 +365,17 @@ namespace RE {
 			wl_pPointer = nullptr;
 		}
 		if ((m32Capabilities & WL_SEAT_CAPABILITY_KEYBOARD)) {
-			wl_pKeyboard = wl_seat_get_keyboard(wl_pSeat);
-			PRINT_DEBUG("Adding listener to the keyboard ", wl_pKeyboard);
-			if (wl_keyboard_add_listener(wl_pKeyboard, &wl_keyboardListener, nullptr) != 0) {
-				RE_ERROR("Failed to add a listener to the Wayland keyboard ", wl_pKeyboard);
+			waylandKeyboard.wl_pKeyboard = wl_seat_get_keyboard(wl_pSeat);
+			PRINT_DEBUG("Adding listener to the keyboard ", waylandKeyboard.wl_pKeyboard);
+			if (wl_keyboard_add_listener(waylandKeyboard.wl_pKeyboard, &wl_keyboardListener, nullptr) != 0) {
+				RE_ERROR("Failed to add a listener to the Wayland keyboard ", waylandKeyboard.wl_pKeyboard);
 				goto WAYLAND_KEYBOARD_INIT_FAILURE;
 			}
 		} else {
 		WAYLAND_KEYBOARD_INIT_FAILURE:
-			if (wl_pKeyboard)
+			if (waylandKeyboard.wl_pKeyboard)
 				destroy_wayland_keyboard();
-			wl_pKeyboard = nullptr;
+			waylandKeyboard.wl_pKeyboard = nullptr;
 		}
 	}
 
@@ -278,15 +392,25 @@ namespace RE {
 				PRINT_DEBUG("Sending request to the Wayland server to call listeners");
 				wl_display_roundtrip(wl_pDisplay);
 				if (wlCompositor.waylandObject && xdgWmBase.waylandObject && wlSeat.waylandObject && !waylandMonitors.empty()) {
-					waylandMonitors.shrink_to_fit();
-					return true;
+					size_t monitorIndex = 0;
+					for (const WaylandMonitorInfo &rMonitorInfo : waylandMonitors) {
+						if (wl_output_add_listener(rMonitorInfo.wlOutput.waylandObject, &wl_outputListener, nullptr) != 0) {
+							RE_ERROR("Failed to add a listener to Wayland output ", rMonitorInfo.wlOutput.waylandObject);
+							break;
+						}
+						monitorIndex++;
+					}
+					if (monitorIndex == waylandMonitors.size()) {
+						waylandMonitors.shrink_to_fit();
+						return true;
+					}
 				} else
 					RE_ERROR("Failed to get essential Wayland global objects or to initialize them");
-				for (WlOutput wlOutput : waylandMonitors) {
-					if (wl_output_get_version(wlOutput.waylandObject) >= static_cast<uint32_t>(WL_OUTPUT_RELEASE_SINCE_VERSION))
-						wl_output_release(wlOutput.waylandObject);
+				for (const WaylandMonitorInfo &rMonitorInfo : waylandMonitors) {
+					if (wl_output_get_version(rMonitorInfo.wlOutput.waylandObject) >= static_cast<uint32_t>(WL_OUTPUT_RELEASE_SINCE_VERSION))
+						wl_output_release(rMonitorInfo.wlOutput.waylandObject);
 					else
-						wl_output_destroy(wlOutput.waylandObject);
+						wl_output_destroy(rMonitorInfo.wlOutput.waylandObject);
 				}
 				waylandMonitors.clear();
 				if (wlSeat.waylandObject) {
@@ -317,12 +441,12 @@ namespace RE {
 	}
 
 	static void destroy_wayland_global_objects() {
-		for (WlOutput wlOutput : waylandMonitors) {
-			PRINT_DEBUG("Destroying output ", wlOutput.waylandObject);
-			if (wl_output_get_version(wlOutput.waylandObject) >= static_cast<uint32_t>(WL_OUTPUT_RELEASE_SINCE_VERSION))
-				wl_output_release(wlOutput.waylandObject);
+		for (const WaylandMonitorInfo &rMonitorInfo : waylandMonitors) {
+			PRINT_DEBUG("Destroying output ", rMonitorInfo.wlOutput.waylandObject);
+			if (wl_output_get_version(rMonitorInfo.wlOutput.waylandObject) >= static_cast<uint32_t>(WL_OUTPUT_RELEASE_SINCE_VERSION))
+				wl_output_release(rMonitorInfo.wlOutput.waylandObject);
 			else
-				wl_output_destroy(wlOutput.waylandObject);
+				wl_output_destroy(rMonitorInfo.wlOutput.waylandObject);
 		}
 		waylandMonitors.clear();
 		if (wlSeat.waylandObject) {
@@ -358,9 +482,12 @@ namespace RE {
 						PRINT_DEBUG("Retrieving XDG toplevel from surface ", xdg_pSurface);
 						if ((xdg_pToplevel = xdg_surface_get_toplevel(xdg_pSurface))) {
 							PRINT_DEBUG("Adding listener to the XDG toplevel ", xdg_pToplevel);
-							if (xdg_toplevel_add_listener(xdg_pToplevel, &xdg_toplevelListener, nullptr) == 0)
+							if (xdg_toplevel_add_listener(xdg_pToplevel, &xdg_toplevelListener, nullptr) == 0) {
+								xdg_toplevel_set_min_size(xdg_pToplevel, MIN_WINDOW_WIDTH + WINDOW_WAYLAND_EXTRA_WIDTH, MIN_WINDOW_HEIGHT + WINDOW_WAYLAND_EXTRA_HEIGHT);
+								if (!IS_FULLSCREEN())
+									xdg_toplevel_set_max_size(xdg_pToplevel, largestMonitorSize[0] + MAX_WINDOW_WIDTH_RELATIVE_TO_MONITOR, largestMonitorSize[1] + MAX_WINDOW_HEIGHT_RELATIVE_TO_MONITOR);
 								return true;
-							else
+							} else
 								RE_ERROR("Failed to add a listener to the XDG toplevel ", xdg_pToplevel);
 							PRINT_DEBUG("Destroying XDG toplevel ", xdg_pToplevel, " due to failure creating the window");
 							xdg_toplevel_destroy(xdg_pToplevel);
@@ -389,21 +516,25 @@ namespace RE {
 	}
 
 	static bool init_wayland_input() {
-		PRINT_DEBUG("Adding listener to the seat ", wlSeat.waylandObject);
-		if (wl_seat_add_listener(wlSeat.waylandObject, &wl_seatListener, nullptr) == 0) {
-			PRINT_DEBUG("Received pointer ", wl_pPointer, " and keyboard ", wl_pKeyboard);
-			return true;
+		PRINT_DEBUG("Creating an XKB context");
+		if ((xkb_pContext = xkb_context_new(XKB_CONTEXT_NO_FLAGS))) {
+			PRINT_DEBUG("Adding listener to the Wayland seat ", wlSeat.waylandObject);
+			if (wl_seat_add_listener(wlSeat.waylandObject, &wl_seatListener, nullptr) == 0)
+				return true;
+			else
+				RE_ERROR("Failed to add a listener to the Wayland seat ", wlSeat.waylandObject);
 		} else
-			RE_ERROR("Failed to add a listener to the Wayland seat ", wlSeat.waylandObject);
+			RE_ERROR("Failed to create an XKB context");
 		return false;
 	}
 
 	static void destroy_wayland_input() {
 		PRINT_DEBUG("Destroying input-related resources");
-		if (wl_pKeyboard)
+		if (waylandKeyboard.wl_pKeyboard)
 			destroy_wayland_keyboard();
 		if (wl_pPointer)
 			destroy_wayland_pointer();
+		xkb_context_unref(xkb_pContext);
 	}
 
 	bool wayland_create_window() {
@@ -417,9 +548,6 @@ namespace RE {
 						xdg_toplevel_set_app_id(xdg_pToplevel, pacWindowTitle);
 						wl_surface_commit(wl_pSurface);
 						wl_display_flush(wl_pDisplay);
-						/*xdg_toplevel_set_min_size(xdg_pToplevel, MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT);
-						if (!IS_FULLSCREEN())
-							xdg_toplevel_set_max_size(xdg_pToplevel, largestMonitorSize[0] + MAX_WINDOW_WIDTH_RELATIVE_TO_MONITOR, largestMonitorSize[1] + MAX_WINDOW_HEIGHT_RELATIVE_TO_MONITOR);*/
 						return true;
 						destroy_wayland_input();
 					}

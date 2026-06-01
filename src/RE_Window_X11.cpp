@@ -292,7 +292,7 @@ namespace RE {
 							XFlush(x11_pDisplay);
 						}
 						PRINT_DEBUG("Firing general input event");
-						input_event(eInput, static_cast<uint32_t>(x11_scancode), bKeyPressed, true);
+						input_event(eInput, static_cast<uint32_t>(x11_scancode), bKeyPressed, false);
 					}
 					break;
 				case ButtonPress:

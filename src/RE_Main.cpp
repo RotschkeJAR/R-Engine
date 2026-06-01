@@ -38,10 +38,10 @@ namespace RE {
 #ifdef RE_OS_LINUX
 		if (getenv("WAYLAND_DISPLAY")) {
 			PRINT_DEBUG("Creating a window in Wayland");
-			eLinuxWindowType = RE_LINUX_WINDOW_TYPE_WAYLAND;
+			eLinuxWindowType = LINUX_WINDOW_TYPE_WAYLAND;
 			if (!create_window()) {
 				RE_NOTE("Failed to create a window in Wayland. Using X11 instead");
-				eLinuxWindowType = RE_LINUX_WINDOW_TYPE_X11;
+				eLinuxWindowType = LINUX_WINDOW_TYPE_X11;
 				if (!create_window()) {
 					RE_FATAL_ERROR("Failed both attempts to create a window in X11 and Wayland");
 					return false;
@@ -49,7 +49,7 @@ namespace RE {
 			}
 		} else {
 			PRINT_DEBUG("Creating a window in X11");
-			eLinuxWindowType = RE_LINUX_WINDOW_TYPE_X11;
+			eLinuxWindowType = LINUX_WINDOW_TYPE_X11;
 			if (!create_window()) {
 				RE_FATAL_ERROR("Failed to create a window in X11");
 				return false;

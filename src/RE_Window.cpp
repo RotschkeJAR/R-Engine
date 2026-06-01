@@ -8,7 +8,7 @@
 namespace RE {
 
 #ifdef RE_OS_LINUX
-	LinuxWindowType eLinuxWindowType = RE_LINUX_WINDOW_TYPE_X11;
+	LinuxWindowType eLinuxWindowType = LINUX_WINDOW_TYPE_X11;
 #endif
 	
 	Vector2u windowSize(600, 400), largestMonitorSize(1920, 1080);
@@ -23,10 +23,10 @@ namespace RE {
 		bSuccess = win64_create_window();
 #elif defined RE_OS_LINUX
 		switch (eLinuxWindowType) {
-			case RE_LINUX_WINDOW_TYPE_X11:
+			case LINUX_WINDOW_TYPE_X11:
 				bSuccess = x11_create_window();
 				break;
-			case RE_LINUX_WINDOW_TYPE_WAYLAND:
+			case LINUX_WINDOW_TYPE_WAYLAND:
 				bSuccess = wayland_create_window();
 				break;
 			default:
@@ -43,10 +43,10 @@ namespace RE {
 		win64_destroy_window();
 #elif defined RE_OS_LINUX
 		switch (eLinuxWindowType) {
-			case RE_LINUX_WINDOW_TYPE_X11:
+			case LINUX_WINDOW_TYPE_X11:
 				x11_destroy_window();
 				break;
-			case RE_LINUX_WINDOW_TYPE_WAYLAND:
+			case LINUX_WINDOW_TYPE_WAYLAND:
 				wayland_destroy_window();
 				break;
 			default:
@@ -70,10 +70,10 @@ namespace RE {
 		win64_show_window();
 #elif defined RE_OS_LINUX
 		switch (eLinuxWindowType) {
-			case RE_LINUX_WINDOW_TYPE_X11:
+			case LINUX_WINDOW_TYPE_X11:
 				x11_show_window();
 				break;
-			case RE_LINUX_WINDOW_TYPE_WAYLAND:
+			case LINUX_WINDOW_TYPE_WAYLAND:
 				wayland_show_window();
 				break;
 			default:
@@ -89,10 +89,10 @@ namespace RE {
 		win64_window_proc();
 #elif defined RE_OS_LINUX
 		switch (eLinuxWindowType) {
-			case RE_LINUX_WINDOW_TYPE_X11:
+			case LINUX_WINDOW_TYPE_X11:
 				x11_window_proc();
 				break;
-			case RE_LINUX_WINDOW_TYPE_WAYLAND:
+			case LINUX_WINDOW_TYPE_WAYLAND:
 				wayland_window_proc();
 				break;
 			default:
@@ -101,12 +101,26 @@ namespace RE {
 #endif
 	}
 
-	[[nodiscard]]
+	uint32_t get_window_actual_width() {
+#ifdef RE_OS_LINUX
+		return eLinuxWindowType == LINUX_WINDOW_TYPE_WAYLAND ? (windowSize[0] + WINDOW_WAYLAND_EXTRA_WIDTH) : windowSize[0];
+#else
+		return windowSize[0];
+#endif
+	}
+
+	uint32_t get_window_actual_height() {
+#ifdef RE_OS_LINUX
+		return eLinuxWindowType == LINUX_WINDOW_TYPE_WAYLAND ? (windowSize[1] + WINDOW_WAYLAND_EXTRA_HEIGHT) : windowSize[1];
+#else
+		return windowSize[1];
+#endif
+	}
+
 	bool should_window_close() {
 		return are_bits_true<decltype(u8WindowFlagBits)>(u8WindowFlagBits, WINDOW_CLOSE_FLAG_BIT);
 	}
 
-	[[nodiscard]]
 	bool should_render() {
 		return !are_bits_true<decltype(u8WindowFlagBits)>(u8WindowFlagBits, WINDOW_MINIMIZED_BIT) && are_bits_true<decltype(u8WindowFlagBits)>(u8WindowFlagBits, WINDOW_VISIBLE_BIT);
 	}
@@ -122,9 +136,9 @@ namespace RE {
 		return vkCreateWin32SurfaceKHR(vk_hInstance, &vk_win32SurfaceCreateInfo, nullptr, &vk_hSurface) == VK_SUCCESS;
 #elif defined RE_OS_LINUX
 		switch (eLinuxWindowType) {
-			case RE_LINUX_WINDOW_TYPE_X11:
+			case LINUX_WINDOW_TYPE_X11:
 				{
-					PRINT_DEBUG("Creating Vulkan surface linked to RE_LINUX_WINDOW_TYPE_X11");
+					PRINT_DEBUG("Creating Vulkan surface linked to LINUX_WINDOW_TYPE_X11");
 					const VkXlibSurfaceCreateInfoKHR vk_x11SurfaceCreateInfo = {
 						.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR,
 						.dpy = x11_pDisplay,
@@ -132,7 +146,7 @@ namespace RE {
 					};
 					return vkCreateXlibSurfaceKHR(vk_hInstance, &vk_x11SurfaceCreateInfo, nullptr, &vk_hSurface) == VK_SUCCESS;
 				}
-			case RE_LINUX_WINDOW_TYPE_WAYLAND:
+			case LINUX_WINDOW_TYPE_WAYLAND:
 				{
 					PRINT_DEBUG("Creating Vulkan surface linked to Wayland");
 					const VkWaylandSurfaceCreateInfoKHR vk_waylandSurfaceCreateInfo = {
@@ -148,15 +162,14 @@ namespace RE {
 #endif
 	}
 
-	[[nodiscard]]
 	const char* get_vulkan_required_surface_extension_name() {
 #ifdef RE_OS_WINDOWS
 		return VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
 #elif defined RE_OS_LINUX
 		switch (eLinuxWindowType) {
-			case RE_LINUX_WINDOW_TYPE_X11:
+			case LINUX_WINDOW_TYPE_X11:
 				return VK_KHR_XLIB_SURFACE_EXTENSION_NAME;
-			case RE_LINUX_WINDOW_TYPE_WAYLAND:
+			case LINUX_WINDOW_TYPE_WAYLAND:
 				return VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME;
 			default:
 				RE_ABORT("Window compositor is unknown: ", std::hex, eLinuxWindowType);
@@ -186,10 +199,10 @@ namespace RE {
 		win64_update_window_title();
 #elif defined RE_OS_LINUX
 		switch (eLinuxWindowType) {
-			case RE_LINUX_WINDOW_TYPE_X11:
+			case LINUX_WINDOW_TYPE_X11:
 				x11_update_window_title();
 				break;
-			case RE_LINUX_WINDOW_TYPE_WAYLAND:
+			case LINUX_WINDOW_TYPE_WAYLAND:
 				wayland_update_window_title();
 				break;
 			default:

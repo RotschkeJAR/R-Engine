@@ -55,9 +55,35 @@ namespace RE {
 					.pushConstantRangeCount = 0,
 					.pPushConstantRanges = nullptr
 				};
-				if (vkCreatePipelineLayout(vk_hDevice, &vk_processingPipelineLayoutCreateInfo, nullptr, &vk_hProcessingPipelineLayout) == VK_SUCCESS)
+				if (vkCreatePipelineLayout(vk_hDevice, &vk_processingPipelineLayoutCreateInfo, nullptr, &vk_hProcessingPipelineLayout) == VK_SUCCESS) {
+#ifdef RE_OS_LINUX
+					PRINT_DEBUG("Creating Vulkan pipeline layout dedicated for compute pipelines processing game objects");
+					const VkPushConstantRange vk_aPushConstants[] = {
+						{
+							.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+							.offset = 0,
+							.size = sizeof(WindowShaderData)
+						}
+					};
+					const VkPipelineLayoutCreateInfo vk_windowFramePipelineLayoutCreateInfo = {
+						.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+						.pNext = nullptr,
+						.flags = 0,
+						.setLayoutCount = 1,
+						.pSetLayouts = &vk_hCursorDescSetLayout,
+						.pushConstantRangeCount = sizeof(vk_aPushConstants) / sizeof(vk_aPushConstants[0]),
+						.pPushConstantRanges = vk_aPushConstants
+					};
+					if (vkCreatePipelineLayout(vk_hDevice, &vk_windowFramePipelineLayoutCreateInfo, nullptr, &vk_hWindowFramePipelineLayout) == VK_SUCCESS)
+						return true;
+					else
+						RE_FATAL_ERROR("Failed to create Vulkan pipeline layout dedicated for compute pipelines processing game objects");
+#else
 					return true;
-				else
+#endif
+					PRINT_DEBUG("Destroying Vulkan pipeline layout dedicated for compute pipeline sorting by depth for failing to create all");
+					vkDestroyPipelineLayout(vk_hDevice, vk_hProcessingPipelineLayout, nullptr);
+				} else
 					RE_FATAL_ERROR("Failed to create Vulkan pipeline layout dedicated for compute pipelines processing game objects");
 				PRINT_DEBUG("Destroying Vulkan pipeline layout dedicated for compute pipeline sorting by depth for failing to create all");
 				vkDestroyPipelineLayout(vk_hDevice, vk_hSortDepthPipelineLayout, nullptr);

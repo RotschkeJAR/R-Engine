@@ -6,6 +6,9 @@ namespace RE {
 		vk_hSortableDepthDescSetLayout,
 		vk_hCameraDescSetLayout,
 		vk_hSpriteDescSetLayout;
+#ifdef RE_OS_LINUX
+	VkDescriptorSetLayout vk_hCursorDescSetLayout;
+#endif
 
 	bool create_descriptor_set_layouts() {
 		PRINT_DEBUG("Creating Vulkan descriptor set layout for game objects");
@@ -117,9 +120,36 @@ namespace RE {
 					if (are_vulkan_features_enabled<ENABLED_FEATURE_UPDATE_DESCRIPTOR_SAMPLED_IMAGE_AFTER_BIND_BIT>())
 						vk_spriteLayoutCreateInfo.flags |= VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
 					vkGetDescriptorSetLayoutSupport(vk_hDevice, &vk_spriteLayoutCreateInfo, &vk_setLayoutSupported);
-					if (vk_rbLayoutSupported && vkCreateDescriptorSetLayout(vk_hDevice, &vk_spriteLayoutCreateInfo, nullptr, &vk_hSpriteDescSetLayout) == VK_SUCCESS)
+					if (vk_rbLayoutSupported && vkCreateDescriptorSetLayout(vk_hDevice, &vk_spriteLayoutCreateInfo, nullptr, &vk_hSpriteDescSetLayout) == VK_SUCCESS) {
+#ifdef RE_OS_LINUX
+						PRINT_DEBUG("Creating Vulkan descriptor set layout for cursor");
+						constexpr VkDescriptorSetLayoutBinding vk_aCursorLayoutBindings[] = {
+							{
+								.binding = 0,
+								.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+								.descriptorCount = 1,
+								.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+								.pImmutableSamplers = nullptr
+							}
+						};
+						const VkDescriptorSetLayoutCreateInfo vk_cursorLayoutCreateInfo = {
+							.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+							.pNext = nullptr,
+							.flags = 0,
+							.bindingCount = 1,
+							.pBindings = vk_aCursorLayoutBindings
+						};
+						vkGetDescriptorSetLayoutSupport(vk_hDevice, &vk_cursorLayoutCreateInfo, &vk_setLayoutSupported);
+						if (vk_rbLayoutSupported && vkCreateDescriptorSetLayout(vk_hDevice, &vk_cursorLayoutCreateInfo, nullptr, &vk_hCursorDescSetLayout) == VK_SUCCESS)
+							return true;
+						else
+							RE_FATAL_ERROR("Failed to create Vulkan descriptor set layout for cursor");
+#else
 						return true;
-					else
+#endif
+						PRINT_DEBUG("Destroying Vulkan descriptor set layout for textures and sprite layouts due to failure creating all layouts");
+						vkDestroyDescriptorSetLayout(vk_hDevice, vk_hSpriteDescSetLayout, nullptr);
+					} else
 						RE_FATAL_ERROR("Failed to create Vulkan descriptor set layout for textures and sprite layouts");
 					PRINT_DEBUG("Destroying Vulkan descriptor set layout for camera due to failure creating all layouts");
 					vkDestroyDescriptorSetLayout(vk_hDevice, vk_hCameraDescSetLayout, nullptr);
@@ -138,6 +168,9 @@ namespace RE {
 
 	void destroy_descriptor_set_layouts() {
 		PRINT_DEBUG("Destroying all Vulkan descriptor set layouts");
+#ifdef RE_OS_LINUX
+		vkDestroyDescriptorSetLayout(vk_hDevice, vk_hCursorDescSetLayout, nullptr);
+#endif
 		vkDestroyDescriptorSetLayout(vk_hDevice, vk_hSpriteDescSetLayout, nullptr);
 		vkDestroyDescriptorSetLayout(vk_hDevice, vk_hCameraDescSetLayout, nullptr);
 		vkDestroyDescriptorSetLayout(vk_hDevice, vk_hSortableDepthDescSetLayout, nullptr);

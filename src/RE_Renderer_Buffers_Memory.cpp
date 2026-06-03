@@ -8,25 +8,32 @@ namespace RE {
 	bool alloc_memory_for_renderer_buffers() {
 		PRINT_DEBUG("Filling buffer information for allocating shared memory");
 		constexpr uint8_t u8CameraBufferIndex = 0,
-			u8StagingRawGameObjectBufferIndex = 1;
-		SharedVulkanMemoryInfo localBufferInfos[] = {
+			u8StagingRawGameObjectBufferIndex = 1,
+			u8CursorBufferIndex = 2;
+		SharedVulkanMemoryInfo aLocalBufferInfos[] = {
 			{
 				.vulkanStorageObject = vk_hCameraBuffer,
 				.u32RegionIndex = 0
 			}, {
 				.vulkanStorageObject = vk_hStagingGameObjectsBuffer,
 				.u32RegionIndex = 0
+			},
+#ifdef RE_OS_LINUX
+			{
+				.vulkanStorageObject = vk_hCursorBuffer,
+				.u32RegionIndex = 0
 			}
+#endif
 		};
-		VulkanMemoryAllocationInfo localBufferAllocs[sizeof(localBufferInfos) / sizeof(localBufferInfos[0])];
+		VulkanMemoryAllocationInfo aLocalBufferAllocs[sizeof(aLocalBufferInfos) / sizeof(aLocalBufferInfos[0])];
 		PRINT_DEBUG("Allocating local Vulkan memory for buffers used by renderer");
 		size_t numberOfAllocatedMemories;
-		if (alloc_shared_vulkan_memory(sizeof(localBufferInfos) / sizeof(localBufferInfos[0]),
-				localBufferInfos,
+		if (alloc_shared_vulkan_memory(sizeof(aLocalBufferInfos) / sizeof(aLocalBufferInfos[0]),
+				aLocalBufferInfos,
 				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 				numberOfAllocatedMemories,
 				localBufferMemories,
-				localBufferAllocs) == VK_SUCCESS) {
+				aLocalBufferAllocs) == VK_SUCCESS) {
 			std::unique_ptr<void*[]> bufferMemoryPointers = std::make_unique<void*[]>(numberOfAllocatedMemories);
 			size_t memoryIndex = 0;
 			for (; memoryIndex < numberOfAllocatedMemories; memoryIndex++)
@@ -35,9 +42,29 @@ namespace RE {
 					break;
 				}
 			if (memoryIndex == numberOfAllocatedMemories) {
-				pCameraBufferMemory = &localBufferMemories[localBufferAllocs[u8CameraBufferIndex].indexToMemory];
-				pStagingGameObjectsBufferMemory = &localBufferMemories[localBufferAllocs[u8StagingRawGameObjectBufferIndex].indexToMemory];
-				paStagingGameObjectsBufferData = reinterpret_cast<GameObjectShaderData*>(bufferMemoryPointers[localBufferAllocs[u8StagingRawGameObjectBufferIndex].indexToMemory]);
+				{
+					const size_t cameraIndexToMemory = aLocalBufferAllocs[u8CameraBufferIndex].indexToMemory,
+						stagingGameObjectIndexToMemory = aLocalBufferAllocs[u8StagingRawGameObjectBufferIndex].indexToMemory;
+					pCameraBufferMemory = &localBufferMemories[cameraIndexToMemory];
+					for (uint32_t u32CameraDataIndex = 0; u32CameraDataIndex < get_max_camera_count() * RE_VK_FRAMES_IN_FLIGHT; u32CameraDataIndex++)
+						camerasShaderData[u32CameraDataIndex] = reinterpret_cast<CameraShaderData*>(
+								reinterpret_cast<uint8_t*>(bufferMemoryPointers[cameraIndexToMemory])
+									+ aLocalBufferAllocs[u8CameraBufferIndex].vk_memoryOffset
+									+ (u32CameraDataIndex > 0 ? next_multiple_inclusive<VkDeviceSize>(sizeof(CameraShaderData) * (u32CameraDataIndex - 1), vk_uniformBufferAlignment) : 0));
+					pStagingGameObjectsBufferMemory = &localBufferMemories[stagingGameObjectIndexToMemory];
+					paStagingGameObjectsBufferData = reinterpret_cast<GameObjectShaderData*>(
+							reinterpret_cast<uint8_t*>(
+								bufferMemoryPointers[stagingGameObjectIndexToMemory]) + aLocalBufferAllocs[u8StagingRawGameObjectBufferIndex].vk_memoryOffset);
+#ifdef RE_OS_LINUX
+					const size_t cursorIndexToMemory = aLocalBufferAllocs[u8CursorBufferIndex].indexToMemory;
+					pCursorBufferMemory = &localBufferMemories[cursorIndexToMemory];
+					for (uint8_t u8CursorDataIndex = 0; u8CursorDataIndex < RE_VK_FRAMES_IN_FLIGHT; u8CursorDataIndex++)
+						apCursorShaderData[u8CursorDataIndex] = reinterpret_cast<CursorShaderData*>(
+								reinterpret_cast<uint8_t*>(bufferMemoryPointers[cursorIndexToMemory])
+									+ aLocalBufferAllocs[u8CursorBufferIndex].vk_memoryOffset
+									+ (u8CursorDataIndex > 0 ? next_multiple_inclusive<VkDeviceSize>(sizeof(CursorShaderData) * (u8CursorDataIndex - 1), vk_uniformBufferAlignment) : 0));
+#endif
+				}
 				constexpr uint8_t u8DeviceBufferCount = 3,
 					u8GameObjectsBufferIndex = 0,
 					u8GameObjectsModelMatrixBufferIndex = 1,

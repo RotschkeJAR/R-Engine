@@ -8,6 +8,9 @@ namespace RE {
 	extern VkPipelineLayout vk_hGraphicsPipelineLayout,
 		vk_hSortDepthPipelineLayout,
 		vk_hProcessingPipelineLayout;
+#ifdef RE_OS_LINUX
+	extern VkPipelineLayout vk_hWindowFramePipelineLayout;
+#endif /* RE_OS_LINUX */
 
 	extern VkPipeline vk_hGraphicsPipeline2D,
 		vk_hGraphicsPipeline2DOpaqueOnly,
@@ -15,6 +18,9 @@ namespace RE {
 		vk_hGraphicsPipeline3DOpaqueOnly,
 		vk_hComputePipelinePreprocessing,
 		vk_hComputePipelineDepthSorting;
+#ifdef RE_OS_LINUX
+	extern VkPipeline vk_hGraphicsPipelineWindowFrame;
+#endif /* RE_OS_LINUX */
 
 	bool create_renderer_pipelines();
 	void destroy_renderer_pipelines();

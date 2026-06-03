@@ -195,6 +195,7 @@ class First : public Scene {
 
 int main_func() {
 	set_signal_handlers();
+	set_max_camera_count(1);
 	set_fps_limit(60);
 	First first;
 	Second secondInStack;

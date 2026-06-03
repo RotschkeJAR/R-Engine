@@ -50,7 +50,7 @@ namespace RE {
 			.queueFamilyIndexCount = static_cast<uint32_t>(queuesToShareAcross.size()),
 			.pQueueFamilyIndices = queuesToShareAcross.data(),
 			.preTransform = vk_surfaceCapabilities.currentTransform,
-			.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+			.compositeAlpha = vk_eCompositeAlphaSelected,
 			.presentMode = bVsyncEnabled ? vk_ePresentModeVsync : vk_ePresentModeNoVsync,
 			.clipped = VK_TRUE,
 			.oldSwapchain = vk_hOldSwapchain

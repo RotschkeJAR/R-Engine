@@ -7,6 +7,7 @@ namespace RE {
 	VkSurfaceKHR vk_hSurface;
 	VkSurfaceCapabilitiesKHR vk_surfaceCapabilities;
 	std::unique_ptr<VkSurfaceFormatKHR[]> surfaceFormatsAvailable;
+	VkCompositeAlphaFlagBitsKHR vk_eCompositeAlphaSelected;
 	uint32_t u32SurfaceFormatsAvailableCount;
 
 	// creating Vulkan surface is done by the window
@@ -20,6 +21,44 @@ namespace RE {
 	void fetch_vulkan_surface_infos() {
 		PRINT_DEBUG("Fetching Vulkan surface capabilities");
 		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(SELECTED_PHYSICAL_VULKAN_DEVICE, vk_hSurface, &vk_surfaceCapabilities);
+#ifdef RE_OS_WINDOWS
+		if ((vk_surfaceCapabilities.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR))
+			vk_eCompositeAlphaSelected = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+		else if ((vk_surfaceCapabilities.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR))
+			vk_eCompositeAlphaSelected = VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR;
+		else if ((vk_surfaceCapabilities.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR))
+			vk_eCompositeAlphaSelected = VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR;
+		else if ((vk_surfaceCapabilities.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR))
+			vk_eCompositeAlphaSelected = VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR;
+		else
+			RE_ABORT("No known alpha composition for Vulkan surface ", vk_hSurface, " is available");
+#elif defined RE_OS_LINUX
+		switch (eLinuxWindowType) {
+			case LINUX_WINDOW_TYPE_X11:
+				if ((vk_surfaceCapabilities.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR))
+					vk_eCompositeAlphaSelected = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+				else if ((vk_surfaceCapabilities.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR))
+					vk_eCompositeAlphaSelected = VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR;
+				else if ((vk_surfaceCapabilities.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR))
+					vk_eCompositeAlphaSelected = VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR;
+				else
+					RE_ABORT("No known alpha composition for Vulkan surface ", vk_hSurface, " is available with an X11 compositor");
+				break;
+			case LINUX_WINDOW_TYPE_WAYLAND:
+				if ((vk_surfaceCapabilities.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR))
+					vk_eCompositeAlphaSelected = VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR;
+				else if ((vk_surfaceCapabilities.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR))
+					vk_eCompositeAlphaSelected = VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR;
+				else if ((vk_surfaceCapabilities.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR))
+					vk_eCompositeAlphaSelected = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+				else
+					RE_ABORT("No known alpha composition for Vulkan surface ", vk_hSurface, " is available with a Wayland compositor");
+				break;
+			default:
+				RE_ABORT("Unknown window compositor in use: ", eLinuxWindowType);
+		}
+#endif
+		PRINT_LN("Composite alpha selected: ", std::hex, vk_eCompositeAlphaSelected);
 		PRINT_DEBUG("Fetching Vulkan surface formats");
 		vkGetPhysicalDeviceSurfaceFormatsKHR(SELECTED_PHYSICAL_VULKAN_DEVICE, vk_hSurface, &u32SurfaceFormatsAvailableCount, nullptr);
 		surfaceFormatsAvailable = std::make_unique<VkSurfaceFormatKHR[]>(u32SurfaceFormatsAvailableCount);

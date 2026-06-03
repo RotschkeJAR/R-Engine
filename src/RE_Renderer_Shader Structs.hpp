@@ -3,6 +3,20 @@
 
 namespace RE {
 
+typedef uint32_t ShaderBool;
+	constexpr ShaderBool SHR_TRUE = 1;
+	constexpr ShaderBool SHR_FALSE = 0;
+
+	struct WindowShaderData final {
+		uint32_t a2u32Size[2];
+		ShaderBool b32RenderEdges;
+		ShaderBool b32RenderBar;
+	};
+
+	struct CursorShaderData final {
+		uint32_t a2u32Position[2];
+	};
+
 	struct VertexData final {
 		float a4f32Coords[4],
 			a2f32TexCoords[2];

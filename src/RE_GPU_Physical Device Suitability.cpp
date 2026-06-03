@@ -205,6 +205,8 @@ namespace RE {
 			vkGetPhysicalDeviceFeatures2(vk_hPhysicalDevice, &vk_physicalDeviceFeatures_1_0);
 			if (!bIndexTypeUint8Available || !vk_indexTypeUint8Feature.indexTypeUint8)
 				optionals.emplace("8-bit unsigned indices aren't supported");
+			if (!vk_physicalDeviceFeatures_1_3.shaderDemoteToHelperInvocation)
+				incompatibilities.emplace("The shader operation \"demote\" has to be supported in SPIR-V");
 			if (!vk_physicalDeviceFeatures_1_3.synchronization2)
 				warnings.emplace("The advanced synchronization-feature is not supported");
 			if (!vk_physicalDeviceFeatures_1_3.dynamicRendering)

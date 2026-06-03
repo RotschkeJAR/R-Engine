@@ -45,6 +45,7 @@ namespace RE {
 	static XdgWmBase xdgWmBase = {};
 	static WlSeat wlSeat = {};
 	wl_surface *wl_pSurface;
+	static wl_output *wl_pCurrentOutput = nullptr;
 	static xdg_surface *xdg_pSurface;
 	static xdg_toplevel *xdg_pToplevel;
 	static std::vector<WaylandMonitorInfo> waylandMonitors;
@@ -191,6 +192,23 @@ namespace RE {
 		.ping = xdg_wm_base_ping
 	};
 
+	static void wayland_surface_enter_callback(void *const pData, wl_surface *const wl_pSurface, wl_output *const wl_pNewOutput) {
+		if (wl_pCurrentOutput != wl_pNewOutput)
+			wl_pCurrentOutput = wl_pNewOutput;
+	}
+
+	static void wayland_surface_leave_callback(void *const pData, wl_surface *const wl_pSurface, wl_output *const wl_pOldOutput) {
+		if (wl_pCurrentOutput == wl_pOldOutput)
+			wl_pCurrentOutput = nullptr;
+	}
+
+	static constexpr wl_surface_listener wl_surfaceListener {
+		.enter = wayland_surface_enter_callback,
+		.leave = wayland_surface_leave_callback,
+		.preferred_buffer_scale = nullptr,
+		.preferred_buffer_transform = nullptr
+	};
+
 	static void xdg_surface_configure_callback(void *const pData, xdg_surface *const xdg_pSurface, const uint32_t u32Serial) {
 		xdg_surface_ack_configure(xdg_pSurface, u32Serial);
 		wl_display_flush(wl_pDisplay);
@@ -260,9 +278,8 @@ namespace RE {
 	}
 
 	static void wayland_pointer_scroll_callback(void *const pData, wl_pointer *const wl_pPointer, const uint32_t u32Time, const uint32_t u32Axis, const wl_fixed_t wl_value) {
-		if (u32Axis == WL_POINTER_AXIS_VERTICAL_SCROLL && is_cursor_within_content()) {
+		if (u32Axis == WL_POINTER_AXIS_VERTICAL_SCROLL && is_cursor_within_content())
 			input_event(wl_fixed_to_double(wl_value) < 0 ? RE_INPUT_SCROLL_DOWN : RE_INPUT_SCROLL_UP, 0, true, true);
-		}
 	}
 
 	static constexpr wl_pointer_listener wl_pointerListener = {
@@ -285,19 +302,24 @@ namespace RE {
 		switch (u32Format) {
 			case WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1:
 				{
+					PRINT_DEBUG("Mapping keymap buffer from file descriptor ", i32FileDescriptor);
 					char *const pacKeymapBuffer = static_cast<char*>(mmap(nullptr, u32Size, PROT_READ, MAP_SHARED, i32FileDescriptor, 0));
 					if (pacKeymapBuffer) {
+						PRINT_DEBUG("Creating XKB keymap from mapped keymap buffer ", pacKeymapBuffer);
 						if ((waylandKeyboard.xkb_pKeymap = xkb_keymap_new_from_buffer(xkb_pContext, pacKeymapBuffer, u32Size, XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_COMPILE_NO_FLAGS))) {
+							PRINT_DEBUG("Creating XKB state from keymap ", waylandKeyboard.xkb_pKeymap);
 							if ((waylandKeyboard.xkb_pState = xkb_state_new(waylandKeyboard.xkb_pKeymap))) {
+								PRINT_DEBUG("Unmapping keymap buffer ", pacKeymapBuffer);
 								munmap(pacKeymapBuffer, u32Size);
 								return;
 							} else
-								RE_ERROR("");
+								RE_ERROR("Failed to create an XKB state from the keymap ", pacKeymapBuffer);
 						} else
-							RE_ERROR("");
+							RE_ERROR("Failed to create an XKB keymap");
+						PRINT_DEBUG("Unmapping content of file descriptor from RAM due to failure creating XKB resources");
 						munmap(pacKeymapBuffer, u32Size);
 					} else
-						RE_ERROR("");
+						RE_ERROR("Failed mapping the keymap from file descriptor ", i32FileDescriptor, " to RAM");
 				}
 				break;
 			case WL_KEYBOARD_KEYMAP_FORMAT_NO_KEYMAP:
@@ -313,23 +335,27 @@ namespace RE {
 	}
 
 	static void wayland_keyboard_key_callback(void *const pData, wl_keyboard *const wl_pKeyboard, const uint32_t u32Serial, const uint32_t u32Time, const uint32_t u32Key, const uint32_t u32State) {
-		const xkb_keysym_t xkb_keySym = xkb_state_key_get_one_sym(waylandKeyboard.xkb_pState, u32Key + 8);
+		const xkb_keysym_t xkb_keySym = xkb_state_key_get_one_sym(waylandKeyboard.xkb_pState, u32Key + KEYCODE_TO_XKB_OFFSET);
 		switch (xkb_keySym) {
 			case XKB_KEY_Super_L:
 			case XKB_KEY_Super_R:
 				return;
 			case XKB_KEY_F11:
-				const bool bFullscreen = !IS_FULLSCREEN();
-				if (bFullscreen) {
-					xdg_toplevel_set_max_size(xdg_pToplevel, std::numeric_limits<int32_t>::max(), std::numeric_limits<int32_t>::max());
-					xdg_toplevel_set_fullscreen(xdg_pToplevel, );
-				} else {
-					xdg_toplevel_unset_fullscreen(xdg_pToplevel);
-					xdg_toplevel_set_max_size(xdg_pToplevel, largestMonitorSize[0] + MAX_WINDOW_WIDTH_RELATIVE_TO_MONITOR, largestMonitorSize[1] + MAX_WINDOW_HEIGHT_RELATIVE_TO_MONITOR);
+				if (u32State == WL_KEYBOARD_KEY_STATE_PRESSED) {
+					PRINT_DEBUG("Switching fullscreen");
+					const bool bFullscreen = !IS_FULLSCREEN();
+					SET_FULLSCREEN(bFullscreen);
+					if (bFullscreen) {
+						xdg_toplevel_set_max_size(xdg_pToplevel, std::numeric_limits<int32_t>::max(), std::numeric_limits<int32_t>::max());
+						xdg_toplevel_set_fullscreen(xdg_pToplevel, wl_pCurrentOutput);
+					} else {
+						xdg_toplevel_unset_fullscreen(xdg_pToplevel);
+						xdg_toplevel_set_max_size(xdg_pToplevel, largestMonitorSize[0] + MAX_WINDOW_WIDTH_RELATIVE_TO_MONITOR, largestMonitorSize[1] + MAX_WINDOW_HEIGHT_RELATIVE_TO_MONITOR);
+					}
 				}
-				SET_FULLSCREEN(bFullscreen);
 				[[fallthrough]];
 			default:
+				PRINT_DEBUG("Firing input event with key symbol ", xkb_keySym, " and scancode ", u32Key);
 				input_event(key_from_virtual_xkb_keysym(xkb_keySym), u32Key, u32State == WL_KEYBOARD_KEY_STATE_PRESSED, false);
 				break;
 		}
@@ -475,30 +501,36 @@ namespace RE {
 		if (xdg_wm_base_add_listener(xdgWmBase.waylandObject, &xdg_wmBasePinger, nullptr) == 0) {
 			PRINT_DEBUG("Creating surface from the compositor ", wlCompositor.waylandObject, " in Wayland");
 			if ((wl_pSurface = wl_compositor_create_surface(wlCompositor.waylandObject))) {
-				PRINT_DEBUG("Retrieving XDG surface from XDG wm base ", xdgWmBase.waylandObject, " and Wayland surface ", wl_pSurface);
-				if ((xdg_pSurface = xdg_wm_base_get_xdg_surface(xdgWmBase.waylandObject, wl_pSurface))) {
-					PRINT_DEBUG("Adding a listener to the XDG surface");
-					if (xdg_surface_add_listener(xdg_pSurface, &xdg_surfaceListener, nullptr) == 0) {
-						PRINT_DEBUG("Retrieving XDG toplevel from surface ", xdg_pSurface);
-						if ((xdg_pToplevel = xdg_surface_get_toplevel(xdg_pSurface))) {
-							PRINT_DEBUG("Adding listener to the XDG toplevel ", xdg_pToplevel);
-							if (xdg_toplevel_add_listener(xdg_pToplevel, &xdg_toplevelListener, nullptr) == 0) {
-								xdg_toplevel_set_min_size(xdg_pToplevel, MIN_WINDOW_WIDTH + WINDOW_WAYLAND_EXTRA_WIDTH, MIN_WINDOW_HEIGHT + WINDOW_WAYLAND_EXTRA_HEIGHT);
-								if (!IS_FULLSCREEN())
-									xdg_toplevel_set_max_size(xdg_pToplevel, largestMonitorSize[0] + MAX_WINDOW_WIDTH_RELATIVE_TO_MONITOR, largestMonitorSize[1] + MAX_WINDOW_HEIGHT_RELATIVE_TO_MONITOR);
-								return true;
+				PRINT_DEBUG("Adding a listener to the Wayland surface ", wl_pSurface);
+				if (wl_surface_add_listener(wl_pSurface, &wl_surfaceListener, nullptr) == 0) {
+					PRINT_DEBUG("Retrieving XDG surface from XDG wm base ", xdgWmBase.waylandObject, " and Wayland surface ", wl_pSurface);
+					if ((xdg_pSurface = xdg_wm_base_get_xdg_surface(xdgWmBase.waylandObject, wl_pSurface))) {
+						PRINT_DEBUG("Adding a listener to the XDG surface");
+						if (xdg_surface_add_listener(xdg_pSurface, &xdg_surfaceListener, nullptr) == 0) {
+							PRINT_DEBUG("Retrieving XDG toplevel from surface ", xdg_pSurface);
+							if ((xdg_pToplevel = xdg_surface_get_toplevel(xdg_pSurface))) {
+								PRINT_DEBUG("Adding listener to the XDG toplevel ", xdg_pToplevel);
+								if (xdg_toplevel_add_listener(xdg_pToplevel, &xdg_toplevelListener, nullptr) == 0) {
+									xdg_toplevel_set_min_size(xdg_pToplevel, MIN_WINDOW_WIDTH + WINDOW_WAYLAND_EXTRA_WIDTH, MIN_WINDOW_HEIGHT + WINDOW_WAYLAND_EXTRA_HEIGHT);
+									if (!IS_FULLSCREEN())
+										xdg_toplevel_set_max_size(xdg_pToplevel, largestMonitorSize[0] + MAX_WINDOW_WIDTH_RELATIVE_TO_MONITOR, largestMonitorSize[1] + MAX_WINDOW_HEIGHT_RELATIVE_TO_MONITOR);
+									else
+										xdg_toplevel_set_fullscreen(xdg_pToplevel, waylandMonitors[0].wlOutput.waylandObject);
+									return true;
+								} else
+									RE_ERROR("Failed to add a listener to the XDG toplevel ", xdg_pToplevel);
+								PRINT_DEBUG("Destroying XDG toplevel ", xdg_pToplevel, " due to failure creating the window");
+								xdg_toplevel_destroy(xdg_pToplevel);
 							} else
-								RE_ERROR("Failed to add a listener to the XDG toplevel ", xdg_pToplevel);
-							PRINT_DEBUG("Destroying XDG toplevel ", xdg_pToplevel, " due to failure creating the window");
-							xdg_toplevel_destroy(xdg_pToplevel);
+								RE_ERROR("Failed to retrieve toplevel of XDG surface ", xdg_pSurface);
 						} else
-							RE_ERROR("Failed to retrieve toplevel of XDG surface ", xdg_pSurface);
+							RE_ERROR("Failed to add a listener to the XDG surface ", xdg_pSurface);
+						PRINT_DEBUG("Destroying XDG surface ", xdg_pToplevel, " due to failure creating the window");
+						xdg_surface_destroy(xdg_pSurface);
 					} else
-						RE_ERROR("Failed to add a listener to the XDG surface ", xdg_pSurface);
-					PRINT_DEBUG("Destroying XDG surface ", xdg_pToplevel, " due to failure creating the window");
-					xdg_surface_destroy(xdg_pSurface);
+						RE_ERROR("Failed to retrieve surface of XDG wm base ", xdgWmBase.waylandObject, " and Wayland surface ", wl_pSurface);
 				} else
-					RE_ERROR("Failed to retrieve surface of XDG wm base ", xdgWmBase.waylandObject, " and Wayland surface ", wl_pSurface);
+					RE_ERROR("Failed to add a listener to the Wayland surface ", wl_pSurface);
 				PRINT_DEBUG("Destroying surface ", wl_pSurface, " due to failure creating the window");
 				wl_surface_destroy(wl_pSurface);
 			} else

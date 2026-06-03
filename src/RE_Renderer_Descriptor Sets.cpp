@@ -10,8 +10,11 @@ namespace RE {
 				if (create_game_objects_descriptor_sets()) {
 					if (create_sortable_depth_desc_sets()) {
 						if (create_camera_descriptor_sets()) {
-							if (create_sprite_descriptor_sets())
-								return true;
+							if (create_sprite_descriptor_sets()) {
+								if (create_cursor_descriptor_sets())
+									return true;
+								destroy_sprite_descriptor_sets();
+							}
 							destroy_camera_descriptor_sets();
 						}
 						destroy_sortable_depth_desc_sets();
@@ -27,6 +30,7 @@ namespace RE {
 
 	void destroy_descriptor_sets() {
 		PRINT_DEBUG("Destroying Vulkan descriptor sets");
+		destroy_cursor_descriptor_sets();
 		destroy_sprite_descriptor_sets();
 		destroy_camera_descriptor_sets();
 		destroy_sortable_depth_desc_sets();

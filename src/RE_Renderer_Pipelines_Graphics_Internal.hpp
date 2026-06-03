@@ -16,6 +16,9 @@ namespace RE {
 
 	bool create_graphics_pipeline_3D_opaque_only(VkShaderModule vk_hVertexShader, VkShaderModule vk_hFragmentShader);
 	void destroy_graphics_pipeline_3D_opaque_only();
+
+	bool create_graphics_pipeline_window_frame();
+	void destroy_graphics_pipeline_window_frame();
 	
 }
 

@@ -11,17 +11,21 @@ namespace RE {
 			const VkDescriptorPoolSize vk_aPersistentPoolSizes[] = {
 				{
 					.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-					.descriptorCount = static_cast<uint32_t>(get_max_camera_count() * RE_VK_FRAMES_IN_FLIGHT)
+#ifdef RE_OS_LINUX
+					.descriptorCount = (get_max_camera_count() + 1U) * RE_VK_FRAMES_IN_FLIGHT
+#else
+					.descriptorCount = get_max_camera_count() * RE_VK_FRAMES_IN_FLIGHT
+#endif
 				}, {
 					.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-					.descriptorCount = 3 * RE_VK_FRAMES_IN_FLIGHT
+					.descriptorCount = 3U * RE_VK_FRAMES_IN_FLIGHT
 				}
 			};
 			const VkDescriptorPoolCreateInfo vk_persistentPoolCreateInfo = {
 				.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
 				.pNext = nullptr,
 				.flags = 0,
-				.maxSets = static_cast<uint32_t>(4 + get_max_camera_count() * RE_VK_FRAMES_IN_FLIGHT),
+				.maxSets = 4U + (get_max_camera_count() + 1U) * RE_VK_FRAMES_IN_FLIGHT,
 				.poolSizeCount = sizeof(vk_aPersistentPoolSizes) / sizeof(vk_aPersistentPoolSizes[0]),
 				.pPoolSizes = vk_aPersistentPoolSizes
 			};
@@ -55,10 +59,14 @@ namespace RE {
 			const VkDescriptorPoolSize vk_aPersistentPoolSizes[] = {
 				{
 					.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-					.descriptorCount = static_cast<uint32_t>(get_max_camera_count() * RE_VK_FRAMES_IN_FLIGHT)
+#ifdef RE_OS_LINUX
+					.descriptorCount = (get_max_camera_count() + 1U) * RE_VK_FRAMES_IN_FLIGHT
+#else
+					.descriptorCount = get_max_camera_count() * RE_VK_FRAMES_IN_FLIGHT
+#endif
 				}, {
 					.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-					.descriptorCount = 3 * RE_VK_FRAMES_IN_FLIGHT
+					.descriptorCount = 3U * RE_VK_FRAMES_IN_FLIGHT
 				}, {
 					.type = VK_DESCRIPTOR_TYPE_SAMPLER,
 					.descriptorCount = get_max_sprite_layout_count()

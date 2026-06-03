@@ -20,6 +20,9 @@ namespace RE {
 	bool create_camera_buffers(const VulkanQueueCollection &rQueues);
 	void destroy_camera_buffers();
 
+	bool create_cursor_buffers();
+	void destroy_cursor_buffers();
+
 	bool alloc_memory_for_renderer_buffers();
 	void free_memory_for_renderer_buffers();
 

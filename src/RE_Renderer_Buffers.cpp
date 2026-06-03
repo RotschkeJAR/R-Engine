@@ -15,8 +15,11 @@ namespace RE {
 				if (create_camera_buffers(queues)) {
 					if (create_game_objects_buffers()) {
 						if (create_staging_game_objects_buffer()) {
-							if (alloc_memory_for_renderer_buffers())
-								return true;
+							if (create_cursor_buffers()) {
+								if (alloc_memory_for_renderer_buffers())
+									return true;
+								destroy_cursor_buffers();
+							}
 							destroy_staging_game_objects_buffer();
 						}
 						destroy_game_objects_buffers();
@@ -33,6 +36,7 @@ namespace RE {
 	void destroy_renderer_buffers() {
 		PRINT_DEBUG("Destroying buffers and freeing memory used in the renderer");
 		free_memory_for_renderer_buffers();
+		destroy_cursor_buffers();
 		destroy_staging_game_objects_buffer();
 		destroy_game_objects_buffers();
 		destroy_camera_buffers();

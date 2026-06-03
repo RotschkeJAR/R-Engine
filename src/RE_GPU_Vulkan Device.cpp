@@ -1159,6 +1159,7 @@ namespace RE {
 		VkPhysicalDeviceVulkan13Features vk_enabledFeatures_1_3 = {
 			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES,
 			.pNext = are_vulkan_features_enabled<ENABLED_FEATURE_INDEX_UINT_8_BIT>() ? &vk_indexTypeUint8Feature : nullptr,
+			.shaderDemoteToHelperInvocation = VK_TRUE,
 			.synchronization2 = are_vulkan_features_enabled<ENABLED_FEATURE_SYNCHRONIZATION_2_BIT>(),
 			.dynamicRendering = VK_TRUE
 		};

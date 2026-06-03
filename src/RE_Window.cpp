@@ -125,6 +125,14 @@ namespace RE {
 		return !are_bits_true<decltype(u8WindowFlagBits)>(u8WindowFlagBits, WINDOW_MINIMIZED_BIT) && are_bits_true<decltype(u8WindowFlagBits)>(u8WindowFlagBits, WINDOW_VISIBLE_BIT);
 	}
 
+	bool should_render_window_frame_bar() {
+		return !are_bits_true<decltype(u8WindowFlagBits)>(u8WindowFlagBits, WINDOW_FULLSCREEN_BIT);
+	}
+
+	bool should_render_window_frame_edges() {
+		return !are_bits_true<decltype(u8WindowFlagBits)>(u8WindowFlagBits, WINDOW_MAXIMIZED_BIT) || !are_bits_true<decltype(u8WindowFlagBits)>(u8WindowFlagBits, WINDOW_FULLSCREEN_BIT);
+	}
+
 	bool create_vulkan_surface() {
 #ifdef RE_OS_WINDOWS
 		PRINT_DEBUG("Creating Vulkan surface linked to Windows");

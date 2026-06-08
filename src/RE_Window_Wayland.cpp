@@ -60,6 +60,35 @@ namespace RE {
 				&& (actualCursorPosition[1] >= WINDOW_WAYLAND_Y_OFFSET && actualCursorPosition[1] < static_cast<int32_t>(actualWindowSize[1]) - WINDOW_WAYLAND_BORDER_TOTAL_SIZE - WINDOW_WAYLAND_BAR_SIZE);
 	}
 
+	static WindowArea get_wayland_window_area_cursor_is_in() {
+		if (actualCursorPosition[0] < WINDOW_WAYLAND_BORDER_TOTAL_SIZE) {
+			if (actualCursorPosition[1] < WINDOW_WAYLAND_BORDER_TOTAL_SIZE)
+				return WINDOW_AREA_TOP_LEFT;
+			else if (actualCursorPosition[1] >= actualWindowSize[1] - WINDOW_WAYLAND_BORDER_TOTAL_SIZE)
+				return WINDOW_AREA_BOTTOM_LEFT;
+			return WINDOW_AREA_LEFT;
+		} else if (actualCursorPosition[0] >= actualWindowSize[0] - WINDOW_WAYLAND_BORDER_TOTAL_SIZE) {
+			if (actualCursorPosition[1] < WINDOW_WAYLAND_BORDER_TOTAL_SIZE)
+				return WINDOW_AREA_TOP_RIGHT;
+			else if (actualCursorPosition[1] >= actualWindowSize[1] - WINDOW_WAYLAND_BORDER_TOTAL_SIZE)
+				return WINDOW_AREA_BOTTOM_RIGHT;
+			return WINDOW_AREA_RIGHT;
+		} else if (actualCursorPosition[1] < WINDOW_WAYLAND_BORDER_TOTAL_SIZE)
+			return WINDOW_AREA_TOP;
+		else if (actualCursorPosition[1] >= actualWindowSize[1] - WINDOW_WAYLAND_BORDER_TOTAL_SIZE)
+			return WINDOW_AREA_BOTTOM;
+		else if (actualCursorPosition[1] < WINDOW_WAYLAND_BORDER_TOTAL_SIZE + WINDOW_WAYLAND_BAR_SIZE) {
+			if (actualCursorPosition[0] >= actualWindowSize[0] - WINDOW_WAYLAND_BORDER_TOTAL_SIZE - WINDOW_WAYLAND_BUTTON_WIDTH)
+				return WINDOW_AREA_BUTTON_CLOSE;
+			else if (actualCursorPosition[0] >= actualWindowSize[0] - WINDOW_WAYLAND_BORDER_TOTAL_SIZE - WINDOW_WAYLAND_BUTTON_WIDTH * 2)
+				return WINDOW_AREA_BUTTON_MAXIMIZE;
+			else if (actualCursorPosition[0] >= actualWindowSize[0] - WINDOW_WAYLAND_BORDER_TOTAL_SIZE - WINDOW_WAYLAND_BUTTON_WIDTH * 3)
+				return WINDOW_AREA_BUTTON_MINIMIZE;
+			return WINDOW_AREA_BAR;
+		} else
+			return WINDOW_AREA_CONTENT;
+	}
+
 	static void destroy_wayland_pointer() {
 		PRINT_DEBUG("Destroying pointer ", wl_pPointer);
 		if (wl_pointer_get_version(wl_pPointer) >= static_cast<uint32_t>(WL_POINTER_RELEASE_SINCE_VERSION))
@@ -231,10 +260,27 @@ namespace RE {
 		wl_region_add(wl_pRegion, WINDOW_WAYLAND_SHADOW_SIZE, WINDOW_WAYLAND_SHADOW_SIZE, actualWindowSize[0] - WINDOW_WAYLAND_SHADOW_SIZE * 2, actualWindowSize[1] - WINDOW_WAYLAND_SHADOW_SIZE * 2);
 		wl_surface_set_opaque_region(wl_pSurface, wl_pRegion);
 		wl_region_destroy(wl_pRegion);
+
+		bool bMaximized = false,
+			bFullscreen = false;
+		for (xdg_toplevel_state *xdg_pToplevelState = static_cast<xdg_toplevel_state*>(wl_pStates->data); xdg_pToplevelState != (static_cast<xdg_toplevel_state*>(wl_pStates->data) + wl_pStates->size / sizeof(xdg_toplevel_state)); xdg_pToplevelState++) {
+			switch (*xdg_pToplevelState) {
+				case XDG_TOPLEVEL_STATE_MAXIMIZED:
+					bMaximized = true;
+					break;
+				case XDG_TOPLEVEL_STATE_FULLSCREEN:
+					bFullscreen = true;
+					break;
+				default:
+					break;
+			}
+		}
+		set_bits<decltype(u8WindowFlagBits)>(u8WindowFlagBits, bMaximized, WINDOW_MAXIMIZED_BIT);
+		set_bits<decltype(u8WindowFlagBits)>(u8WindowFlagBits, bFullscreen, WINDOW_FULLSCREEN_BIT);
 	}
 
 	static void xdg_toplevel_close_callback(void *const pData, xdg_toplevel *const xdg_pToplevel) {
-		set_bits<uint8_t>(u8WindowFlagBits, true, WINDOW_CLOSE_FLAG_BIT);
+		set_bits<decltype(u8WindowFlagBits)>(u8WindowFlagBits, true, WINDOW_CLOSE_FLAG_BIT);
 	}
 
 	static constexpr xdg_toplevel_listener xdg_toplevelListener = {
@@ -258,10 +304,55 @@ namespace RE {
 	}
 
 	static void wayland_pointer_button_callback(void *const pData, wl_pointer *const wl_pPointer, const uint32_t u32Serial, const uint32_t u32Time, const uint32_t u32Button, const uint32_t u32State) {
-		if (!is_cursor_within_content()) {
+		const WindowArea eWindowAreaOfCursor = get_wayland_window_area_cursor_is_in();
+		if (eWindowAreaOfCursor != WINDOW_AREA_CONTENT) {
 			if (u32State != WL_POINTER_BUTTON_STATE_PRESSED || u32Button != BTN_LEFT)
 				return;
-			xdg_toplevel_move(xdg_pToplevel, wlSeat.waylandObject, u32Serial);
+			switch (eWindowAreaOfCursor) {
+				case WINDOW_AREA_TOP_LEFT:
+					xdg_toplevel_resize(xdg_pToplevel, wlSeat.waylandObject, u32Serial, XDG_TOPLEVEL_RESIZE_EDGE_TOP_LEFT);
+					break;
+				case WINDOW_AREA_TOP_RIGHT:
+					xdg_toplevel_resize(xdg_pToplevel, wlSeat.waylandObject, u32Serial, XDG_TOPLEVEL_RESIZE_EDGE_TOP_RIGHT);
+					break;
+				case WINDOW_AREA_BOTTOM_LEFT:
+					xdg_toplevel_resize(xdg_pToplevel, wlSeat.waylandObject, u32Serial, XDG_TOPLEVEL_RESIZE_EDGE_BOTTOM_LEFT);
+					break;
+				case WINDOW_AREA_BOTTOM_RIGHT:
+					xdg_toplevel_resize(xdg_pToplevel, wlSeat.waylandObject, u32Serial, XDG_TOPLEVEL_RESIZE_EDGE_BOTTOM_RIGHT);
+					break;
+				case WINDOW_AREA_LEFT:
+					xdg_toplevel_resize(xdg_pToplevel, wlSeat.waylandObject, u32Serial, XDG_TOPLEVEL_RESIZE_EDGE_LEFT);
+					break;
+				case WINDOW_AREA_RIGHT:
+					xdg_toplevel_resize(xdg_pToplevel, wlSeat.waylandObject, u32Serial, XDG_TOPLEVEL_RESIZE_EDGE_RIGHT);
+					break;
+				case WINDOW_AREA_TOP:
+					xdg_toplevel_resize(xdg_pToplevel, wlSeat.waylandObject, u32Serial, XDG_TOPLEVEL_RESIZE_EDGE_TOP);
+					break;
+				case WINDOW_AREA_BOTTOM:
+					xdg_toplevel_resize(xdg_pToplevel, wlSeat.waylandObject, u32Serial, XDG_TOPLEVEL_RESIZE_EDGE_BOTTOM);
+					break;
+				case WINDOW_AREA_BUTTON_CLOSE:
+					set_bits<decltype(u8WindowFlagBits)>(u8WindowFlagBits, true, WINDOW_CLOSE_FLAG_BIT);
+					break;
+				case WINDOW_AREA_BUTTON_MAXIMIZE:
+					{
+						const bool bMaximized = !are_bits_true<decltype(u8WindowFlagBits)>(u8WindowFlagBits, WINDOW_MAXIMIZED_BIT);
+						set_bits<decltype(u8WindowFlagBits)>(u8WindowFlagBits, bMaximized, WINDOW_MAXIMIZED_BIT);
+						if (bMaximized)
+							xdg_toplevel_set_maximized(xdg_pToplevel);
+						else
+							xdg_toplevel_unset_maximized(xdg_pToplevel);
+					}
+					break;
+				case WINDOW_AREA_BUTTON_MINIMIZE:
+					xdg_toplevel_set_minimized(xdg_pToplevel);
+					break;
+				default:
+					xdg_toplevel_move(xdg_pToplevel, wlSeat.waylandObject, u32Serial);
+					break;
+			}
 		} else {
 			switch (u32Button) {
 				case BTN_LEFT:

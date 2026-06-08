@@ -52,13 +52,14 @@ namespace RE {
 				.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
 				.stage = VK_SHADER_STAGE_VERTEX_BIT,
 				.module = vertexShader(),
-				.pName = "main"
+				.pName = "main",
+				.pSpecializationInfo = &vk_specializationInfo
 			}, {
 				.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
 				.stage = VK_SHADER_STAGE_FRAGMENT_BIT,
 				.module = fragmentShader(),
 				.pName = "main",
-				.pSpecializationInfo = &vk_specializationInfo
+				.pSpecializationInfo = nullptr
 			}
 		};
 		const VkPipelineVertexInputStateCreateInfo vk_vertexInput = {

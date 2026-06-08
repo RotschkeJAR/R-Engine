@@ -369,7 +369,6 @@ namespace RE {
 
 		XWindowAttributes x11_windowAttribs;
 		XGetWindowAttributes(x11_pDisplay, x11_hWindow, &x11_windowAttribs);
-		PRINT_LN(x11_windowAttribs.width, ", ", x11_windowAttribs.height);
 	}
 
 }

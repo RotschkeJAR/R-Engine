@@ -124,29 +124,44 @@ namespace RE {
 						.pStencilAttachment = nullptr
 					};
 					vkCmdBeginRendering(vk_hCommandBuffer, &vk_renderingInfo);
-					vkCmdBindPipeline(vk_hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hGraphicsPipelineWindowFrame);
-					const VkViewport vk_viewport = {
-						.x = 0.0f,
-						.y = 0.0f,
-						.width = static_cast<float>(vk_swapchainResolution.width),
-						.height = static_cast<float>(vk_swapchainResolution.height),
-						.minDepth = 0.0f,
-						.maxDepth = 0.0f
-					};
-					vkCmdSetViewport(vk_hCommandBuffer, 0, 1, &vk_viewport);
-					const VkRect2D vk_scissor = {
-						.offset = {},
-						.extent = vk_swapchainResolution
-					};
-					vkCmdSetScissor(vk_hCommandBuffer, 0, 1, &vk_scissor);
-					vkCmdBindDescriptorSets(vk_hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hWindowFramePipelineLayout, 0, 1, &vk_ahCursorDescSets[u8CurrentFrameInFlightIndex], 0, nullptr);
-					const WindowShaderData windowData = {
-						.a2u32Size = {vk_swapchainResolution.width, vk_swapchainResolution.height},
-						.b32RenderEdges = should_render_window_frame_edges() ? SHR_TRUE : SHR_FALSE,
-						.b32RenderBar = should_render_window_frame_bar() ? SHR_TRUE : SHR_FALSE
-					};
-					vkCmdPushConstants(vk_hCommandBuffer, vk_hWindowFramePipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(WindowShaderData), static_cast<const void*>(&windowData));
-					vkCmdDraw(vk_hCommandBuffer, 4, 1, 0, 0);
+					if (eLinuxWindowType == LINUX_WINDOW_TYPE_WAYLAND && should_render_window_frame_bar()) {
+						vkCmdBindPipeline(vk_hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hGraphicsPipelineWindowFrame);
+						const VkViewport vk_viewport = {
+							.x = 0.0f,
+							.y = 0.0f,
+							.width = static_cast<float>(vk_swapchainResolution.width),
+							.height = static_cast<float>(vk_swapchainResolution.height),
+							.minDepth = 0.0f,
+							.maxDepth = 0.0f
+						};
+						vkCmdSetViewport(vk_hCommandBuffer, 0, 1, &vk_viewport);
+						const VkRect2D vk_scissor = {
+							.offset = {},
+							.extent = vk_swapchainResolution
+						};
+						vkCmdSetScissor(vk_hCommandBuffer, 0, 1, &vk_scissor);
+						vkCmdBindDescriptorSets(vk_hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hWindowFramePipelineLayout, 0, 1, &vk_ahCursorDescSets[u8CurrentFrameInFlightIndex], 0, nullptr);
+						WindowShaderData windowData;
+						windowData.a2u32Size[0] = vk_swapchainResolution.width;
+						windowData.a2u32Size[1] = vk_swapchainResolution.height;
+						if (should_render_window_frame_edges()) {
+							windowData.u32WindowFrameToRender = WINDOW_FRAME_RENDER_MODE_SHADOWS;
+							windowData.b32RenderEdges = SHR_TRUE;
+							vkCmdPushConstants(vk_hCommandBuffer, vk_hWindowFramePipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(WindowShaderData), static_cast<const void*>(&windowData));
+							vkCmdDraw(vk_hCommandBuffer, 10, 1, 0, 0);
+							windowData.u32WindowFrameToRender = WINDOW_FRAME_RENDER_MODE_BAR;
+							vkCmdPushConstants(vk_hCommandBuffer, vk_hWindowFramePipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, offsetof(WindowShaderData, u32WindowFrameToRender), sizeof(WindowShaderData::u32WindowFrameToRender), static_cast<const void*>(&windowData.u32WindowFrameToRender));
+							vkCmdDraw(vk_hCommandBuffer, 10, 1, 0, 0);
+						} else {
+							windowData.u32WindowFrameToRender = WINDOW_FRAME_RENDER_MODE_BAR;
+							windowData.b32RenderEdges = SHR_FALSE;
+							vkCmdPushConstants(vk_hCommandBuffer, vk_hWindowFramePipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(WindowShaderData), static_cast<const void*>(&windowData));
+							vkCmdDraw(vk_hCommandBuffer, 4, 1, 0, 0);
+						}
+						windowData.u32WindowFrameToRender = WINDOW_FRAME_RENDER_MODE_BUTTONS;
+						vkCmdPushConstants(vk_hCommandBuffer, vk_hWindowFramePipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, offsetof(WindowShaderData, u32WindowFrameToRender), sizeof(WindowShaderData::u32WindowFrameToRender), static_cast<const void*>(&windowData.u32WindowFrameToRender));
+						vkCmdDraw(vk_hCommandBuffer, 4, 3, 0, 0);
+					}
 					vkCmdEndRendering(vk_hCommandBuffer);
 					const VkImageMemoryBarrier vk_swapchainImage2Info = {
 						.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,

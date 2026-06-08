@@ -38,6 +38,22 @@ namespace RE {
 	extern LinuxWindowType eLinuxWindowType;
 #endif
 
+	enum WindowArea {
+		WINDOW_AREA_TOP_LEFT = 0,
+		WINDOW_AREA_TOP_RIGHT = 1,
+		WINDOW_AREA_BOTTOM_LEFT = 2,
+		WINDOW_AREA_BOTTOM_RIGHT = 3,
+		WINDOW_AREA_LEFT = 4,
+		WINDOW_AREA_RIGHT = 5,
+		WINDOW_AREA_TOP = 6,
+		WINDOW_AREA_BOTTOM = 7,
+		WINDOW_AREA_BAR = 8,
+		WINDOW_AREA_BUTTON_CLOSE = 9,
+		WINDOW_AREA_BUTTON_MAXIMIZE = 10,
+		WINDOW_AREA_BUTTON_MINIMIZE = 11,
+		WINDOW_AREA_CONTENT = 12
+	};
+
 	extern Vector2u windowSize,
 		largestMonitorSize;
 	extern const char* pacWindowTitle;

@@ -41,16 +41,20 @@ namespace RE {
 					vk_eCompositeAlphaSelected = VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR;
 				else if ((vk_surfaceCapabilities.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR))
 					vk_eCompositeAlphaSelected = VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR;
+				else if ((vk_surfaceCapabilities.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR))
+					vk_eCompositeAlphaSelected = VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR;
 				else
 					RE_ABORT("No known alpha composition for Vulkan surface ", vk_hSurface, " is available with an X11 compositor");
 				break;
 			case LINUX_WINDOW_TYPE_WAYLAND:
-				if ((vk_surfaceCapabilities.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR))
-					vk_eCompositeAlphaSelected = VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR;
+				if ((vk_surfaceCapabilities.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR))
+					vk_eCompositeAlphaSelected = VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR;
 				else if ((vk_surfaceCapabilities.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR))
 					vk_eCompositeAlphaSelected = VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR;
 				else if ((vk_surfaceCapabilities.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR))
 					vk_eCompositeAlphaSelected = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+				else if ((vk_surfaceCapabilities.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR))
+					vk_eCompositeAlphaSelected = VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR;
 				else
 					RE_ABORT("No known alpha composition for Vulkan surface ", vk_hSurface, " is available with a Wayland compositor");
 				break;

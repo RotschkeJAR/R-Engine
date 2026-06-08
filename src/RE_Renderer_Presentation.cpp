@@ -49,9 +49,11 @@ namespace RE {
 			case VK_SUCCESS:
 				return true;
 			case VK_SUBOPTIMAL_KHR:
-			case VK_ERROR_OUT_OF_DATE_KHR:
 				mark_swapchain_dirty();
 				return true;
+			case VK_ERROR_OUT_OF_DATE_KHR:
+				mark_swapchain_dirty();
+				return false;
 			default:
 				RE_FATAL_ERROR("Failed to acquire the index of the next swapchain image for displaying. Return code: ", std::hex, vk_eAcquireResult);
 				return false;

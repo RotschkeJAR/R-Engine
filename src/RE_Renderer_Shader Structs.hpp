@@ -9,8 +9,8 @@ typedef uint32_t ShaderBool;
 
 	struct WindowShaderData final {
 		uint32_t a2u32Size[2];
+		uint32_t u32WindowFrameToRender;
 		ShaderBool b32RenderEdges;
-		ShaderBool b32RenderBar;
 	};
 
 	struct CursorShaderData final {

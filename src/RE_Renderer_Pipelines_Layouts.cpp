@@ -60,7 +60,7 @@ namespace RE {
 					PRINT_DEBUG("Creating Vulkan pipeline layout dedicated for compute pipelines processing game objects");
 					const VkPushConstantRange vk_aPushConstants[] = {
 						{
-							.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+							.stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
 							.offset = 0,
 							.size = sizeof(WindowShaderData)
 						}

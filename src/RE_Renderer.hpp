@@ -3,6 +3,8 @@
 
 #include "RE_GPU.hpp"
 
+#include "RE_Renderer_Shader Structs.hpp"
+
 namespace RE {
 
 #define RE_VK_FRAMES_IN_FLIGHT 2
@@ -29,6 +31,10 @@ namespace RE {
 
 	// MSAA
 	extern VkSampleCountFlagBits vk_eMsaaCount;
+
+#ifdef RE_OS_LINUX
+	extern CursorShaderData *pCursorShaderData;
+#endif
 
 }
 

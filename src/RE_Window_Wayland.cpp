@@ -248,9 +248,9 @@ namespace RE {
 	};
 
 	static void xdg_toplevel_configure_callback(void *const pData, xdg_toplevel *const xdg_pToplevel, int32_t i32Width, int32_t i32Height, wl_array *const wl_pStates) {
-		if (i32Width <= 0)
+		if (i32Width <= 0 && actualWindowSize[0] == 0)
 			i32Width = largestMonitorSize[0] / 5 * 3 + WINDOW_WAYLAND_EXTRA_WIDTH;
-		if (i32Height <= 0)
+		if (i32Height <= 0 && actualWindowSize[1] == 0)
 			i32Height = largestMonitorSize[1] / 5 * 3 + WINDOW_WAYLAND_EXTRA_HEIGHT;
 		actualWindowSize[0] = i32Width;
 		actualWindowSize[1] = i32Height;
@@ -299,6 +299,9 @@ namespace RE {
 	static void wayland_pointer_motion_callback(void *const pData, wl_pointer *const wl_pPointer, const uint32_t u32Time, const wl_fixed_t wl_x, const wl_fixed_t wl_y) {
 		actualCursorPosition[0] = wl_fixed_to_int(wl_x);
 		actualCursorPosition[1] = wl_fixed_to_int(wl_y);
+		if (pCursorShaderData)
+			for (uint8_t u8DimensionIndex = 0; u8DimensionIndex < actualCursorPosition.dimensions(); u8DimensionIndex++)
+				pCursorShaderData->a2u32Position[u8DimensionIndex] = actualCursorPosition[u8DimensionIndex];
 		if (is_cursor_within_content())
 			cursor_event(actualCursorPosition[0] - WINDOW_WAYLAND_X_OFFSET, actualCursorPosition[1] - WINDOW_WAYLAND_Y_OFFSET);
 	}
@@ -433,13 +436,14 @@ namespace RE {
 				return;
 			case XKB_KEY_F11:
 				if (u32State == WL_KEYBOARD_KEY_STATE_PRESSED) {
-					PRINT_DEBUG("Switching fullscreen");
 					const bool bFullscreen = !IS_FULLSCREEN();
 					SET_FULLSCREEN(bFullscreen);
 					if (bFullscreen) {
+						PRINT_DEBUG("Enabling fullscreen on Wayland window");
 						xdg_toplevel_set_max_size(xdg_pToplevel, std::numeric_limits<int32_t>::max(), std::numeric_limits<int32_t>::max());
 						xdg_toplevel_set_fullscreen(xdg_pToplevel, wl_pCurrentOutput);
 					} else {
+						PRINT_DEBUG("Disabling fullscreen on Wayland window");
 						xdg_toplevel_unset_fullscreen(xdg_pToplevel);
 						xdg_toplevel_set_max_size(xdg_pToplevel, largestMonitorSize[0] + MAX_WINDOW_WIDTH_RELATIVE_TO_MONITOR, largestMonitorSize[1] + MAX_WINDOW_HEIGHT_RELATIVE_TO_MONITOR);
 					}
@@ -636,6 +640,7 @@ namespace RE {
 		xdg_toplevel_destroy(xdg_pToplevel);
 		xdg_surface_destroy(xdg_pSurface);
 		wl_surface_destroy(wl_pSurface);
+		actualWindowSize.fill(0);
 	}
 
 	static bool init_wayland_input() {
@@ -658,6 +663,7 @@ namespace RE {
 		if (wl_pPointer)
 			destroy_wayland_pointer();
 		xkb_context_unref(xkb_pContext);
+		actualCursorPosition.fill(0);
 	}
 
 	bool wayland_create_window() {

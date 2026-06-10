@@ -20,7 +20,9 @@ namespace RE {
 			WINDOW_WAYLAND_SHADOW_SIZE,
 			WINDOW_WAYLAND_EDGE_SIZE,
 			WINDOW_WAYLAND_BAR_SIZE,
-			WINDOW_WAYLAND_BUTTON_WIDTH
+			WINDOW_WAYLAND_BUTTON_WIDTH,
+			WINDOW_WAYLAND_BUTTON_COUNT,
+			WINDOW_WAYLAND_BUTTON_TEXTURE_SIZE
 		};
 		constexpr VkSpecializationMapEntry vk_aSpecializationConstants[] = {
 			{
@@ -38,6 +40,14 @@ namespace RE {
 			}, {
 				.constantID = 3,
 				.offset = sizeof(uint32_t) * 3,
+				.size = sizeof(uint32_t)
+			}, {
+				.constantID = 4,
+				.offset = sizeof(uint32_t) * 4,
+				.size = sizeof(uint32_t)
+			}, {
+				.constantID = 5,
+				.offset = sizeof(uint32_t) * 5,
 				.size = sizeof(uint32_t)
 			}
 		};

@@ -22,7 +22,6 @@ namespace RE {
 #ifdef RE_OS_LINUX
 	extern VkBuffer vk_hCursorBuffer;
 	extern VulkanMemory *pCursorBufferMemory;
-	extern CursorShaderData *apCursorShaderData[RE_VK_FRAMES_IN_FLIGHT];
 #endif
 
 	bool create_renderer_buffers();

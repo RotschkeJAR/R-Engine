@@ -11,7 +11,9 @@ namespace RE {
 	
 	void get_queues_for_swapchain_images(std::vector<uint32_t> &rRenderTaskQueueIndices);
 	bool create_renderer_images();
+	bool create_swapchain_related_images();
 	void destroy_renderer_images();
+	void destroy_swapchain_related_images();
 
 	// Render target
 	extern VkImage vk_hRenderTargetImage;
@@ -30,6 +32,11 @@ namespace RE {
 		vk_eStelectedStencilFormat;
 	extern VkImageLayout vk_eDepthLayout,
 		vk_eStencilLayout;
+
+#ifdef RE_OS_LINUX
+	extern VkImage vk_hWindowButtonImage;
+	extern VkImageView vk_hWindowButtonImageView;
+#endif
 
 }
 

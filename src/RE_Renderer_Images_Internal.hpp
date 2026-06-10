@@ -36,9 +36,17 @@ namespace RE {
 	void destroy_depth_stencil_image();
 	void destroy_depth_stencil_image_views();
 
+	// Window button
+	bool create_window_button_image();
+	bool create_window_button_image_views();
+	void destroy_window_button_image();
+	void destroy_window_button_image_views();
+
 	// Memory
 	bool alloc_memory_for_renderer_images();
+	bool alloc_memory_for_swapchain_related_images();
 	void free_memory_for_renderer_images();
+	void free_memory_for_swapchain_related_images();
 
 }
 

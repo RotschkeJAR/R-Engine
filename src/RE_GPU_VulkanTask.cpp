@@ -384,6 +384,10 @@ namespace RE {
 	}
 
 	bool VulkanTask::submit(const uint32_t u32SemaphoresToWaitForCount, const VkSemaphoreSubmitInfo *const vk_paSemaphoresToWaitFor, const VkPipelineStageFlags2 *const vk_paeInternSemaphoreWaits, const uint32_t u32SemaphoresToSignal, const VkSemaphoreSubmitInfo *const vk_paSemaphoresToSignal, const VkFence vk_hFenceToSignal) const {
+#ifndef RE_DISABLE_DEBUGGING
+		if (!vk_paeInternSemaphoreWaits && u32FunctionsCount > 1)
+			RE_ABORT("Intern semaphore wait pipeline stages is null");
+#endif
 		PRINT_DEBUG_CLASS("Submitting command buffers");
 		std::vector<VkCommandBufferSubmitInfo> commandBufferSubmissionInfos;
 		commandBufferSubmissionInfos.reserve(u32FunctionsCount / u8CommandPoolCount);
@@ -423,6 +427,7 @@ namespace RE {
 				vk_submissionInfo.commandBufferInfoCount = commandBufferSubmissionInfos.size();
 				vk_submissionInfo.pCommandBufferInfos = commandBufferSubmissionInfos.data();
 				vk_submissionInfo.pSignalSemaphoreInfos = &vk_a2InternalSemaphoreSubmissionInfo[u8CurrentSemaphoreInfoIndex];
+				PRINT_LN(vk_submissionInfo.commandBufferInfoCount, ", ", vk_submissionInfo.pCommandBufferInfos[0].commandBuffer, ", ", vk_hLogicalQueue);
 				if (vkQueueSubmit2(vk_hLogicalQueue, 1, &vk_submissionInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
 					RE_ERROR("Failed to submit a subtask to the logical queue ", vk_hLogicalQueue, " at index ", u8LogicalQueueIndex);
 					return false;

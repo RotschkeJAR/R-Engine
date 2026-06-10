@@ -70,7 +70,7 @@ namespace RE {
 						.pNext = nullptr,
 						.flags = 0,
 						.setLayoutCount = 1,
-						.pSetLayouts = &vk_hCursorDescSetLayout,
+						.pSetLayouts = &vk_hWindowFrameDescSetLayout,
 						.pushConstantRangeCount = sizeof(vk_aPushConstants) / sizeof(vk_aPushConstants[0]),
 						.pPushConstantRanges = vk_aPushConstants
 					};

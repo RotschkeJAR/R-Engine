@@ -11,13 +11,18 @@ namespace RE {
 	LinuxWindowType eLinuxWindowType = LINUX_WINDOW_TYPE_X11;
 #endif
 	
-	Vector2u windowSize(600, 400), largestMonitorSize(1920, 1080);
+	Vector2u windowSize,
+		largestMonitorSize;
 	const char* pacWindowTitle = "Untitled game window";
 	Input eInputFullscreenToggle = RE_INPUT_KEY_F11;
 	uint8_t u8WindowFlagBits = 1 << WINDOW_FULLSCREEN_BIT;
 
 	bool create_window() {
 		PRINT_DEBUG("Creating window");
+		windowSize[0] = 600;
+		windowSize[1] = 400;
+		largestMonitorSize[0] = 1920;
+		largestMonitorSize[1] = 1080;
 		bool bSuccess;
 #ifdef RE_OS_WINDOWS
 		bSuccess = win64_create_window();

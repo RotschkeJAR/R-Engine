@@ -58,11 +58,7 @@ namespace RE {
 #ifdef RE_OS_LINUX
 					const size_t cursorIndexToMemory = aLocalBufferAllocs[u8CursorBufferIndex].indexToMemory;
 					pCursorBufferMemory = &localBufferMemories[cursorIndexToMemory];
-					for (uint8_t u8CursorDataIndex = 0; u8CursorDataIndex < RE_VK_FRAMES_IN_FLIGHT; u8CursorDataIndex++)
-						apCursorShaderData[u8CursorDataIndex] = reinterpret_cast<CursorShaderData*>(
-								reinterpret_cast<uint8_t*>(bufferMemoryPointers[cursorIndexToMemory])
-									+ aLocalBufferAllocs[u8CursorBufferIndex].vk_memoryOffset
-									+ (u8CursorDataIndex > 0 ? next_multiple_inclusive<VkDeviceSize>(sizeof(CursorShaderData) * (u8CursorDataIndex - 1), vk_uniformBufferAlignment) : 0));
+					pCursorShaderData = reinterpret_cast<CursorShaderData*>(reinterpret_cast<uint8_t*>(bufferMemoryPointers[cursorIndexToMemory]) + aLocalBufferAllocs[u8CursorBufferIndex].vk_memoryOffset);
 #endif
 				}
 				constexpr uint8_t u8DeviceBufferCount = 3,

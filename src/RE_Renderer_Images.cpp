@@ -28,6 +28,18 @@ namespace RE {
 	}
 
 	bool create_renderer_images() {
+		if (create_window_button_image()) {
+			if (alloc_memory_for_renderer_images()) {
+				if (create_window_button_image_views())
+					return true;
+				free_memory_for_renderer_images();
+			}
+			destroy_window_button_image();
+		}
+		return false;
+	}
+
+	bool create_swapchain_related_images() {
 		PRINT_DEBUG("Calculating size of renderable images");
 		switch (screenPercentageSettings.eMode) {
 			case RE_SCREEN_PERCENTAGE_MODE_NORMAL:
@@ -60,7 +72,7 @@ namespace RE {
 		if (create_depth_stencil_image()) {
 			if (bSkipCreatingSinglesampledImage || create_singlesampled_image()) {
 				if (bSkipCreatingRenderTargetImage || create_render_target_image()) {
-					if (alloc_memory_for_renderer_images() == VK_SUCCESS) {
+					if (alloc_memory_for_swapchain_related_images()) {
 						if (create_depth_stencil_image_views()) {
 							if (bSkipCreatingSinglesampledImage || create_singlesampled_image_views()) {
 								if (bSkipCreatingRenderTargetImage || create_render_target_image_views())
@@ -69,7 +81,7 @@ namespace RE {
 							}
 							destroy_depth_stencil_image_views();
 						}
-						free_memory_for_renderer_images();
+						free_memory_for_swapchain_related_images();
 					}
 					destroy_render_target_image();
 				}
@@ -81,14 +93,19 @@ namespace RE {
 	}
 
 	void destroy_renderer_images() {
-		PRINT_DEBUG("Destroying render image resources");
+		destroy_window_button_image_views();
+		destroy_window_button_image();
+		free_memory_for_renderer_images();
+	}
+
+	void destroy_swapchain_related_images() {
 		destroy_render_target_image_views();
 		destroy_render_target_image();
 		destroy_singlesampled_image_views();
 		destroy_singlesampled_image();
 		destroy_depth_stencil_image_views();
 		destroy_depth_stencil_image();
-		free_memory_for_renderer_images();
+		free_memory_for_swapchain_related_images();
 	}
 
 	void set_screen_percentage_settings(ScreenPercentageSettings newSettings) {
@@ -123,8 +140,8 @@ namespace RE {
 		if (!bSwapchainDirty && bRunning) {
 			PRINT_DEBUG("Applying new screen percentage settings");
 			wait_for_rendering_finished();
-			destroy_renderer_images();
-			create_renderer_images();
+			destroy_swapchain_related_images();
+			create_swapchain_related_images();
 		}
 	}
 
@@ -141,8 +158,8 @@ namespace RE {
 		if (!bSwapchainDirty && bRunning) {
 			PRINT_DEBUG("Applying new dynamic screen scaling settings");
 			wait_for_rendering_finished();
-			destroy_renderer_images();
-			create_renderer_images();
+			destroy_swapchain_related_images();
+			create_swapchain_related_images();
 		}
 	}
 
@@ -159,8 +176,8 @@ namespace RE {
 		if (!bSwapchainDirty && bRunning) {
 			PRINT_DEBUG("Applying new maximum size of the dynamic screen percentage");
 			wait_for_rendering_finished();
-			destroy_renderer_images();
-			create_renderer_images();
+			destroy_swapchain_related_images();
+			create_swapchain_related_images();
 		}
 	}
 

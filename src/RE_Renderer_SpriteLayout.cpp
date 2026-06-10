@@ -4,43 +4,68 @@
 namespace RE {
 
 	static std::jthread nextSpriteLayoutIndexSearchThread;
-    static std::unique_ptr<VulkanSpriteLayout[]> vulkanSpriteLayouts;
-    static uint16_t u16MaxSpriteLayoutCount = 255,
-        u16CurrentSpriteLayoutCount = 0,
-        u16NextSpriteLayoutIndex = 0;
+	static std::unique_ptr<VulkanSpriteLayout[]> vulkanSpriteLayouts;
+	VkSampler vk_hDefaultSampler;
+	static uint16_t u16MaxSpriteLayoutCount = 255,
+		u16CurrentSpriteLayoutCount = 0,
+		u16NextSpriteLayoutIndex = 0;
 
-    bool init_renderer_sprite_layouts() {
-        if (u16MaxSpriteLayoutCount) {
-            vulkanSpriteLayouts = std::make_unique<VulkanSpriteLayout[]>(u16MaxSpriteLayoutCount);
-            std::for_each(vulkanSpriteLayouts.get(), vulkanSpriteLayouts.get() + u16MaxSpriteLayoutCount, [](VulkanSpriteLayout &rSpriteLayout) {
-                rSpriteLayout.vk_hSampler = VK_NULL_HANDLE;
-            });
-        }
-        return true;
-    }
+	bool init_renderer_sprite_layouts() {
+		const VkSamplerCreateInfo vk_defaultSamplerCreateInfo = {
+			.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+			.pNext = nullptr,
+			.flags = 0,
+			.magFilter = VK_FILTER_LINEAR,
+			.minFilter = VK_FILTER_LINEAR,
+			.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+			.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+			.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+			.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+			.mipLodBias = 0.0f,
+			.anisotropyEnable = VK_FALSE,
+			.maxAnisotropy = 0.0f,
+			.compareEnable = VK_FALSE,
+			.compareOp = VK_COMPARE_OP_NEVER,
+			.minLod = 0.0f,
+			.maxLod = 0.0f,
+			.borderColor = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK,
+			.unnormalizedCoordinates = VK_FALSE
+		};
+		if (vkCreateSampler(vk_hDevice, &vk_defaultSamplerCreateInfo, nullptr, &vk_hDefaultSampler) == VK_SUCCESS) {
+			if (u16MaxSpriteLayoutCount) {
+				vulkanSpriteLayouts = std::make_unique<VulkanSpriteLayout[]>(u16MaxSpriteLayoutCount);
+				std::for_each(vulkanSpriteLayouts.get(), vulkanSpriteLayouts.get() + u16MaxSpriteLayoutCount, [](VulkanSpriteLayout &rSpriteLayout) {
+					rSpriteLayout.vk_hSampler = VK_NULL_HANDLE;
+				});
+			}
+			return true;
+		}
+		return false;
+	}
 
-    void destroy_renderer_sprite_layout() {
-        vulkanSpriteLayouts.reset();
-        u16CurrentSpriteLayoutCount = 0;
-        if (nextSpriteLayoutIndexSearchThread.joinable())
-        	nextSpriteLayoutIndexSearchThread.join();
-        u16NextSpriteLayoutIndex = 0;
-    }
+	void destroy_renderer_sprite_layout() {
+		vulkanSpriteLayouts.reset();
+		u16CurrentSpriteLayoutCount = 0;
+		if (nextSpriteLayoutIndexSearchThread.joinable())
+			nextSpriteLayoutIndexSearchThread.join();
+		u16NextSpriteLayoutIndex = 0;
+		vkDestroySampler(vk_hDevice, vk_hDefaultSampler, nullptr);
+	}
 
-    uint16_t get_index_of_sprite_layout(const VulkanSpriteLayout *const pSpriteLayout) {
-        return static_cast<uint16_t>(pSpriteLayout - vulkanSpriteLayouts.get());
-    }
+	uint16_t get_index_of_sprite_layout(const VulkanSpriteLayout *const pSpriteLayout) {
+		return static_cast<uint16_t>(pSpriteLayout - vulkanSpriteLayouts.get());
+	}
 
-    static void search_next_sprite_layout_index(uint16_t u16Expiry) {
-    	while (true) {
-		    u16NextSpriteLayoutIndex = (u16NextSpriteLayoutIndex + 1) % u16MaxSpriteLayoutCount;
+	static void search_next_sprite_layout_index(uint16_t u16Expiry) {
+		while (true) {
+			u16NextSpriteLayoutIndex = (u16NextSpriteLayoutIndex + 1) % u16MaxSpriteLayoutCount;
 			if (!vulkanSpriteLayouts[u16NextSpriteLayoutIndex].vk_hSampler)
-			    break;
+				break;
 			else if (!u16Expiry)
-			    RE_ABORT("Search for the next free slot for sprite layout allocation expired after ", u16MaxSpriteLayoutCount, " attempts, when ", u16CurrentSpriteLayoutCount, " sprite layouts were allocated");
+				RE_ABORT("Search for the next free slot for sprite layout allocation expired after ", u16MaxSpriteLayoutCount, " attempts, when ", u16CurrentSpriteLayoutCount, " sprite layouts were allocated");
 			u16Expiry--;
 		}
-    }
+	}
 
 	static VkFilter get_vulkan_filter(const TextureFilter eFilter) {
 		switch (eFilter) {
@@ -192,7 +217,7 @@ namespace RE {
 		if (!hSpriteLayout)
 			RE_NOTE("A null sprite layout had to be destroyed. The engine ignores that request");
 		else if (bRunning) {
-		    PRINT_DEBUG("Destroying sprite layout ", hSpriteLayout);
+			PRINT_DEBUG("Destroying sprite layout ", hSpriteLayout);
 			VulkanSpriteLayout *const pVulkanSpriteLayout = reinterpret_cast<VulkanSpriteLayout*>(hSpriteLayout);
 			vkDestroySampler(vk_hDevice, pVulkanSpriteLayout->vk_hSampler, nullptr);
 			pVulkanSpriteLayout->vk_hSampler = VK_NULL_HANDLE;
@@ -208,19 +233,19 @@ namespace RE {
 
 	[[nodiscard]]
 	uint16_t get_max_sprite_layout_count() {
-	    return u16MaxSpriteLayoutCount;
+		return u16MaxSpriteLayoutCount;
 	}
 
 	void set_max_sprite_layout_count(const uint16_t u16NewMaxSpriteLayoutCount) {
-	    if (!bRunning)
+		if (!bRunning)
 			RE_ERROR("The maximum count of sprite layouts cannot be changed while the engine is running");
-	    else
+		else
 			u16MaxSpriteLayoutCount = u16NewMaxSpriteLayoutCount;
 	}
 
 	[[nodiscard]]
 	uint16_t get_remaining_sprite_layout_allocs() {
-	    return u16MaxSpriteLayoutCount - u16CurrentSpriteLayoutCount;
+		return u16MaxSpriteLayoutCount - u16CurrentSpriteLayoutCount;
 	}
 
 }

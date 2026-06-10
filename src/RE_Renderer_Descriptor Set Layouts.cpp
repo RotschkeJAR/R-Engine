@@ -7,7 +7,7 @@ namespace RE {
 		vk_hCameraDescSetLayout,
 		vk_hSpriteDescSetLayout;
 #ifdef RE_OS_LINUX
-	VkDescriptorSetLayout vk_hCursorDescSetLayout;
+	VkDescriptorSetLayout vk_hWindowFrameDescSetLayout;
 #endif
 
 	bool create_descriptor_set_layouts() {
@@ -122,28 +122,34 @@ namespace RE {
 					vkGetDescriptorSetLayoutSupport(vk_hDevice, &vk_spriteLayoutCreateInfo, &vk_setLayoutSupported);
 					if (vk_rbLayoutSupported && vkCreateDescriptorSetLayout(vk_hDevice, &vk_spriteLayoutCreateInfo, nullptr, &vk_hSpriteDescSetLayout) == VK_SUCCESS) {
 #ifdef RE_OS_LINUX
-						PRINT_DEBUG("Creating Vulkan descriptor set layout for cursor");
-						constexpr VkDescriptorSetLayoutBinding vk_aCursorLayoutBindings[] = {
+						PRINT_DEBUG("Creating Vulkan descriptor set layout for window frame rendering");
+						const VkDescriptorSetLayoutBinding vk_aWindowFrameLayoutBindings[] = {
 							{
 								.binding = 0,
 								.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 								.descriptorCount = 1,
-								.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+								.stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
 								.pImmutableSamplers = nullptr
+							}, {
+								.binding = 1,
+								.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+								.descriptorCount = 1,
+								.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+								.pImmutableSamplers = &vk_hDefaultSampler
 							}
 						};
-						const VkDescriptorSetLayoutCreateInfo vk_cursorLayoutCreateInfo = {
+						const VkDescriptorSetLayoutCreateInfo vk_windowFrameLayoutCreateInfo = {
 							.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
 							.pNext = nullptr,
 							.flags = 0,
-							.bindingCount = 1,
-							.pBindings = vk_aCursorLayoutBindings
+							.bindingCount = sizeof(vk_aWindowFrameLayoutBindings) / sizeof(vk_aWindowFrameLayoutBindings[0]),
+							.pBindings = vk_aWindowFrameLayoutBindings
 						};
-						vkGetDescriptorSetLayoutSupport(vk_hDevice, &vk_cursorLayoutCreateInfo, &vk_setLayoutSupported);
-						if (vk_rbLayoutSupported && vkCreateDescriptorSetLayout(vk_hDevice, &vk_cursorLayoutCreateInfo, nullptr, &vk_hCursorDescSetLayout) == VK_SUCCESS)
+						vkGetDescriptorSetLayoutSupport(vk_hDevice, &vk_windowFrameLayoutCreateInfo, &vk_setLayoutSupported);
+						if (vk_rbLayoutSupported && vkCreateDescriptorSetLayout(vk_hDevice, &vk_windowFrameLayoutCreateInfo, nullptr, &vk_hWindowFrameDescSetLayout) == VK_SUCCESS)
 							return true;
 						else
-							RE_FATAL_ERROR("Failed to create Vulkan descriptor set layout for cursor");
+							RE_FATAL_ERROR("Failed to create Vulkan descriptor set layout for window frame rendering");
 #else
 						return true;
 #endif
@@ -169,7 +175,7 @@ namespace RE {
 	void destroy_descriptor_set_layouts() {
 		PRINT_DEBUG("Destroying all Vulkan descriptor set layouts");
 #ifdef RE_OS_LINUX
-		vkDestroyDescriptorSetLayout(vk_hDevice, vk_hCursorDescSetLayout, nullptr);
+		vkDestroyDescriptorSetLayout(vk_hDevice, vk_hWindowFrameDescSetLayout, nullptr);
 #endif
 		vkDestroyDescriptorSetLayout(vk_hDevice, vk_hSpriteDescSetLayout, nullptr);
 		vkDestroyDescriptorSetLayout(vk_hDevice, vk_hCameraDescSetLayout, nullptr);

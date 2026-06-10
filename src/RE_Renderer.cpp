@@ -2,8 +2,6 @@
 #include "RE_Window.hpp"
 #include "RE_Main.hpp"
 
-#include "RE_Renderer_Buffers.hpp"
-
 namespace RE {
 
 	Color backgroundClearColor(0.2f, 0.2f, 0.2f, 1.0f);
@@ -13,44 +11,43 @@ namespace RE {
 	uint8_t u8CurrentFrameInFlightIndex = 0;
 
 	bool init_renderer() {
-		PRINT_DEBUG("Initializing renderer");
 		if (create_render_tasks()) {
 			if (create_renderer_buffers()) {
-				if (create_swapchain()) {
-					if (setup_presentation()) {
-						if (create_descriptor_sets()) {
-							if (create_renderer_pipelines()) {
-								if (init_renderer_textures()) {
-									if (init_renderer_sprite_layouts()) {
-										if (init_renderer_meshes()) {
-											for (VulkanTask &rRenderTask : aRenderTasks)
-												for (uint8_t u8FunctionIndex = 0; u8FunctionIndex < 3; u8FunctionIndex++)
-													rRenderTask.record(u8FunctionIndex, 0, nullptr);
-											PRINT_DEBUG("Renderer successfully initialized");
-											return true;
+				if (create_renderer_images()) {
+					if (create_swapchain()) {
+						if (setup_presentation()) {
+							if (init_renderer_sprite_layouts()) {
+								if (create_descriptor_sets()) {
+									if (create_renderer_pipelines()) {
+										if (init_renderer_textures()) {
+											if (init_renderer_meshes()) {
+												for (VulkanTask &rRenderTask : aRenderTasks)
+													for (uint8_t u8FunctionIndex = 0; u8FunctionIndex < 3; u8FunctionIndex++)
+														rRenderTask.record(u8FunctionIndex, 0, nullptr);
+												return true;
+											}
+											destroy_renderer_textures();
 										}
-										destroy_renderer_sprite_layout();
+										destroy_renderer_pipelines();
 									}
-									destroy_renderer_textures();
+									destroy_descriptor_sets();
 								}
-								destroy_renderer_pipelines();
+								destroy_renderer_sprite_layout();
 							}
-							destroy_descriptor_sets();
+							destroy_presentation();
 						}
-						destroy_presentation();
+						destroy_swapchain();
 					}
-					destroy_swapchain();
+					destroy_renderer_images();
 				}
 				destroy_renderer_buffers();
 			}
 			destroy_render_tasks();
 		}
-		PRINT_DEBUG("Destroyed renderer after failure initializing it");
 		return false;
 	}
 
 	void destroy_renderer() {
-		PRINT_DEBUG("Destroying renderer");
 		destroy_renderer_meshes();
 		destroy_renderer_sprite_layout();
 		destroy_renderer_textures();
@@ -58,6 +55,7 @@ namespace RE {
 		destroy_descriptor_sets();
 		destroy_presentation();
 		destroy_swapchain();
+		destroy_renderer_images();
 		destroy_renderer_buffers();
 		destroy_render_tasks();
 	}
@@ -140,7 +138,7 @@ namespace RE {
 							.extent = vk_swapchainResolution
 						};
 						vkCmdSetScissor(vk_hCommandBuffer, 0, 1, &vk_scissor);
-						vkCmdBindDescriptorSets(vk_hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hWindowFramePipelineLayout, 0, 1, &vk_ahCursorDescSets[u8CurrentFrameInFlightIndex], 0, nullptr);
+						vkCmdBindDescriptorSets(vk_hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hWindowFramePipelineLayout, 0, 1, &vk_hWindowFrameDescSet, 0, nullptr);
 						WindowShaderData windowData;
 						windowData.a2u32Size[0] = vk_swapchainResolution.width;
 						windowData.a2u32Size[1] = vk_swapchainResolution.height;
@@ -160,7 +158,7 @@ namespace RE {
 						}
 						windowData.u32WindowFrameToRender = WINDOW_FRAME_RENDER_MODE_BUTTONS;
 						vkCmdPushConstants(vk_hCommandBuffer, vk_hWindowFramePipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, offsetof(WindowShaderData, u32WindowFrameToRender), sizeof(WindowShaderData::u32WindowFrameToRender), static_cast<const void*>(&windowData.u32WindowFrameToRender));
-						vkCmdDraw(vk_hCommandBuffer, 4, 3, 0, 0);
+						vkCmdDraw(vk_hCommandBuffer, 4, WINDOW_WAYLAND_BUTTON_COUNT * 2, 0, 0);
 					}
 					vkCmdEndRendering(vk_hCommandBuffer);
 					const VkImageMemoryBarrier vk_swapchainImage2Info = {
@@ -245,13 +243,11 @@ namespace RE {
 	}
 
 	bool swapchain_created_renderer() {
-		PRINT_DEBUG("Creating swapchain-related Vulkan objects in Renderer");
-		return create_renderer_images();
+		return create_swapchain_related_images();
 	}
 
 	void swapchain_destroyed_renderer() {
-		PRINT_DEBUG("Destroying swapchain-related Vulkan objects in Renderer");
-		destroy_renderer_images();
+		destroy_swapchain_related_images();
 	}
 
 	void set_background_color(const Color &rColor) {

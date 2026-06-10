@@ -12,14 +12,20 @@ namespace RE {
 				{
 					.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 #ifdef RE_OS_LINUX
-					.descriptorCount = (get_max_camera_count() + 1U) * RE_VK_FRAMES_IN_FLIGHT
+					.descriptorCount = get_max_camera_count() * RE_VK_FRAMES_IN_FLIGHT + 1U
 #else
 					.descriptorCount = get_max_camera_count() * RE_VK_FRAMES_IN_FLIGHT
 #endif
 				}, {
 					.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
 					.descriptorCount = 3U * RE_VK_FRAMES_IN_FLIGHT
+				},
+#ifdef RE_OS_LINUX
+				{
+					.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+					.descriptorCount = 1U
 				}
+#endif
 			};
 			const VkDescriptorPoolCreateInfo vk_persistentPoolCreateInfo = {
 				.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
@@ -60,7 +66,7 @@ namespace RE {
 				{
 					.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 #ifdef RE_OS_LINUX
-					.descriptorCount = (get_max_camera_count() + 1U) * RE_VK_FRAMES_IN_FLIGHT
+					.descriptorCount = get_max_camera_count() * RE_VK_FRAMES_IN_FLIGHT + 1U
 #else
 					.descriptorCount = get_max_camera_count() * RE_VK_FRAMES_IN_FLIGHT
 #endif
@@ -73,7 +79,13 @@ namespace RE {
 				}, {
 					.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
 					.descriptorCount = get_max_texture_count()
+				},
+#ifdef RE_OS_LINUX
+				{
+					.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+					.descriptorCount = 1U
 				}
+#endif
 			};
 			const VkDescriptorPoolCreateInfo vk_persistentPoolCreateInfo = {
 				.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,

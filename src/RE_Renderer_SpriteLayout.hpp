@@ -9,6 +9,8 @@ namespace RE {
 		VkSampler vk_hSampler;
 	};
 
+	extern VkSampler vk_hDefaultSampler;
+
 	bool init_renderer_sprite_layouts();
 	void destroy_renderer_sprite_layout();
 	uint16_t get_index_of_sprite_layout(const VulkanSpriteLayout *pSpriteLayout);

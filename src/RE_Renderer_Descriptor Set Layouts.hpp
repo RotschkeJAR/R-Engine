@@ -18,7 +18,7 @@ namespace RE {
 		vk_hCameraDescSetLayout,
 		vk_hSpriteDescSetLayout;
 #ifdef RE_OS_LINUX
-	extern VkDescriptorSetLayout vk_hCursorDescSetLayout;
+	extern VkDescriptorSetLayout vk_hWindowFrameDescSetLayout;
 #endif
 
 	bool create_descriptor_set_layouts();

@@ -38,6 +38,9 @@ namespace RE {
 	extern VkImageView vk_hWindowButtonImageView;
 #endif
 
+	extern VkImage vk_hCharacterImage;
+	extern VkImageView vk_hCharacterImageView;
+
 }
 
 #endif /* __RE_RENDERER_IMAGES_H__ */

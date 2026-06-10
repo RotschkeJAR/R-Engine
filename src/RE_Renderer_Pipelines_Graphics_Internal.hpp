@@ -19,6 +19,9 @@ namespace RE {
 
 	bool create_graphics_pipeline_window_frame();
 	void destroy_graphics_pipeline_window_frame();
+
+	bool create_graphics_pipeline_text();
+	void destroy_graphics_pipeline_text();
 	
 }
 

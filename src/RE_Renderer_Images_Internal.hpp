@@ -42,6 +42,12 @@ namespace RE {
 	void destroy_window_button_image();
 	void destroy_window_button_image_views();
 
+	// Characters
+	bool create_character_image();
+	bool create_character_image_view();
+	void destroy_character_image();
+	void destroy_character_image_view();
+
 	// Memory
 	bool alloc_memory_for_renderer_images();
 	bool alloc_memory_for_swapchain_related_images();

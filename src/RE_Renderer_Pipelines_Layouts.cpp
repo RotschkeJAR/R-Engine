@@ -4,7 +4,8 @@ namespace RE {
 	
 	VkPipelineLayout vk_hGraphicsPipelineLayout,
 		vk_hSortDepthPipelineLayout,
-		vk_hProcessingPipelineLayout;
+		vk_hProcessingPipelineLayout,
+		vk_hEmptyPipelineLayout;
 #ifdef RE_OS_LINUX
 	VkPipelineLayout vk_hWindowFramePipelineLayout;
 #endif /* RE_OS_LINUX */
@@ -56,31 +57,46 @@ namespace RE {
 					.pPushConstantRanges = nullptr
 				};
 				if (vkCreatePipelineLayout(vk_hDevice, &vk_processingPipelineLayoutCreateInfo, nullptr, &vk_hProcessingPipelineLayout) == VK_SUCCESS) {
-#ifdef RE_OS_LINUX
-					PRINT_DEBUG("Creating Vulkan pipeline layout dedicated for compute pipelines processing game objects");
-					const VkPushConstantRange vk_aPushConstants[] = {
-						{
-							.stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-							.offset = 0,
-							.size = sizeof(WindowShaderData)
-						}
-					};
-					const VkPipelineLayoutCreateInfo vk_windowFramePipelineLayoutCreateInfo = {
+					PRINT_DEBUG("Creating empty Vulkan piepline layout");
+					const VkPipelineLayoutCreateInfo vk_emptyPipelineLayoutCreateInfo = {
 						.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
 						.pNext = nullptr,
 						.flags = 0,
-						.setLayoutCount = 1,
-						.pSetLayouts = &vk_hWindowFrameDescSetLayout,
-						.pushConstantRangeCount = sizeof(vk_aPushConstants) / sizeof(vk_aPushConstants[0]),
-						.pPushConstantRanges = vk_aPushConstants
-					};
-					if (vkCreatePipelineLayout(vk_hDevice, &vk_windowFramePipelineLayoutCreateInfo, nullptr, &vk_hWindowFramePipelineLayout) == VK_SUCCESS)
-						return true;
-					else
-						RE_FATAL_ERROR("Failed to create Vulkan pipeline layout dedicated for compute pipelines processing game objects");
+						.setLayoutCount = 0,
+						.pSetLayouts = nullptr,
+						.pushConstantRangeCount = 0,
+						.pPushConstantRanges = nullptr
+					}
+					if (vkCreatePipelineLayout(vk_hDevice, &vk_emptyPipelineLayoutCreateInfo, nullptr, &vk_hEmptyPipelineLayout) == VK_SUCCESS) {
+#ifdef RE_OS_LINUX
+						PRINT_DEBUG("Creating Vulkan pipeline layout dedicated for compute pipelines processing game objects");
+						const VkPushConstantRange vk_aPushConstants[] = {
+							{
+								.stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+								.offset = 0,
+								.size = sizeof(WindowShaderData)
+							}
+						};
+						const VkPipelineLayoutCreateInfo vk_windowFramePipelineLayoutCreateInfo = {
+							.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+							.pNext = nullptr,
+							.flags = 0,
+							.setLayoutCount = 1,
+							.pSetLayouts = &vk_hWindowFrameDescSetLayout,
+							.pushConstantRangeCount = sizeof(vk_aPushConstants) / sizeof(vk_aPushConstants[0]),
+							.pPushConstantRanges = vk_aPushConstants
+						};
+						if (vkCreatePipelineLayout(vk_hDevice, &vk_windowFramePipelineLayoutCreateInfo, nullptr, &vk_hWindowFramePipelineLayout) == VK_SUCCESS)
+							return true;
+						else
+							RE_FATAL_ERROR("Failed to create Vulkan pipeline layout dedicated for compute pipelines processing game objects");
 #else
-					return true;
+						return true;
 #endif
+						PRINT_DEBUG("Destroying empty Vulkan pipeline layout for failing to create all");
+						vkDestroyPipelineLayout(vk_hDevice, vk_hEmptyPipelineLayout, nullptr);
+					} else
+						RE_FATAL_ERROR("");
 					PRINT_DEBUG("Destroying Vulkan pipeline layout dedicated for compute pipeline sorting by depth for failing to create all");
 					vkDestroyPipelineLayout(vk_hDevice, vk_hProcessingPipelineLayout, nullptr);
 				} else

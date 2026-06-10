@@ -13,7 +13,8 @@ namespace RE {
 
 	extern VkPipelineLayout vk_hGraphicsPipelineLayout,
 		vk_hSortDepthPipelineLayout,
-		vk_hProcessingPipelineLayout;
+		vk_hProcessingPipelineLayout,
+		vk_hEmptyPipelineLayout;
 #ifdef RE_OS_LINUX
 	extern VkPipelineLayout vk_hWindowFramePipelineLayout;
 #endif /* RE_OS_LINUX */

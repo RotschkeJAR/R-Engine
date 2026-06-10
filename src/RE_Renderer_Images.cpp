@@ -29,10 +29,16 @@ namespace RE {
 
 	bool create_renderer_images() {
 		if (create_window_button_image()) {
-			if (alloc_memory_for_renderer_images()) {
-				if (create_window_button_image_views())
-					return true;
-				free_memory_for_renderer_images();
+			if (create_character_image()) {
+				if (alloc_memory_for_renderer_images()) {
+					if (create_window_button_image_views()) {
+						if (create_character_image_view())
+							return true;
+						destroy_window_button_image_views();
+					}
+					free_memory_for_renderer_images();
+				}
+				destroy_character_image();
 			}
 			destroy_window_button_image();
 		}
@@ -93,6 +99,8 @@ namespace RE {
 	}
 
 	void destroy_renderer_images() {
+		destroy_character_image_view();
+		destroy_character_image();
 		destroy_window_button_image_views();
 		destroy_window_button_image();
 		free_memory_for_renderer_images();

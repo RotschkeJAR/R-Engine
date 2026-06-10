@@ -14,7 +14,7 @@ namespace RE {
 #ifdef RE_OS_LINUX
 					.descriptorCount = get_max_camera_count() * RE_VK_FRAMES_IN_FLIGHT + 1U
 #else
-					.descriptorCount = get_max_camera_count() * RE_VK_FRAMES_IN_FLIGHT
+					.descriptorCount = static_cast<uint32_t>(get_max_camera_count() * RE_VK_FRAMES_IN_FLIGHT)
 #endif
 				}, {
 					.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
@@ -68,7 +68,7 @@ namespace RE {
 #ifdef RE_OS_LINUX
 					.descriptorCount = get_max_camera_count() * RE_VK_FRAMES_IN_FLIGHT + 1U
 #else
-					.descriptorCount = get_max_camera_count() * RE_VK_FRAMES_IN_FLIGHT
+					.descriptorCount = static_cast<uint32_t>(get_max_camera_count() * RE_VK_FRAMES_IN_FLIGHT)
 #endif
 				}, {
 					.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,

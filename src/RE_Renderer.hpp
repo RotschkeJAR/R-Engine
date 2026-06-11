@@ -33,7 +33,8 @@ namespace RE {
 	extern VkSampleCountFlagBits vk_eMsaaCount;
 
 #ifdef RE_OS_LINUX
-	extern CursorShaderData *pCursorShaderData;
+	extern WindowFrameUniformData *pWindowFrameUniformData;
+	extern VkDrawIndirectCommand *pIndirectDrawWindowTitle;
 #endif
 
 }

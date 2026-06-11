@@ -12,6 +12,9 @@ namespace RE {
 			{
 				.vulkanStorageObject = vk_hWindowButtonImage,
 				.u32RegionIndex = 0
+			}, {
+				.vulkanStorageObject = vk_hCharacterImage,
+				.u32RegionIndex = 0
 			}
 		};
 		size_t memoryAllocationCount;

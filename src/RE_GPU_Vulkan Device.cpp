@@ -1171,6 +1171,7 @@ namespace RE {
 			.descriptorBindingUpdateUnusedWhilePending = are_vulkan_features_enabled<ENABLED_FEATURE_UPDATE_UNUSED_DESCRIPTORS_WHILE_PENDING_BIT>(),
 			.descriptorBindingPartiallyBound = VK_TRUE,
 			.runtimeDescriptorArray = VK_TRUE,
+			.uniformBufferStandardLayout = VK_TRUE,
 			.timelineSemaphore = VK_TRUE
 		};
 		const VkPhysicalDeviceVulkan11Features vk_enabledFeatures_1_1 = {

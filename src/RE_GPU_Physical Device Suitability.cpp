@@ -221,6 +221,8 @@ namespace RE {
 				incompatibilities.emplace("The GPU doesn't support partially bound descriptor bindings");
 			if (!vk_physicalDeviceFeatures_1_2.runtimeDescriptorArray)
 			    incompatibilities.emplace("Descriptor arrays, which size is defined at runtime, aren't supported");
+			if (!vk_physicalDeviceFeatures_1_2.uniformBufferStandardLayout)
+			    incompatibilities.emplace("The std430-layout has to be supported for uniforms in shaders");
 			if (!vk_physicalDeviceFeatures_1_2.timelineSemaphore)
 				incompatibilities.emplace("Timeline semaphores aren't supported");
 			if (!vk_physicalDeviceFeatures.sampleRateShading)

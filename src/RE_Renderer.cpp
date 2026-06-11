@@ -24,6 +24,15 @@ namespace RE {
 												for (VulkanTask &rRenderTask : aRenderTasks)
 													for (uint8_t u8FunctionIndex = 0; u8FunctionIndex < 3; u8FunctionIndex++)
 														rRenderTask.record(u8FunctionIndex, 0, nullptr);
+#ifdef RE_OS_LINUX
+												pIndirectDrawWindowTitle->vertexCount = 4;
+												pIndirectDrawWindowTitle->instanceCount = static_cast<uint32_t>(std::strlen(pacWindowTitle));
+												pIndirectDrawWindowTitle->firstVertex = 0;
+												pIndirectDrawWindowTitle->firstInstance = 0;
+												std::fill(std::begin(pWindowFrameUniformData->a2u32CursorPosition), std::end(pWindowFrameUniformData->a2u32CursorPosition), 0xFFFFFFFFU);
+												for (uint32_t i = 0; i < pIndirectDrawWindowTitle->instanceCount; i++)
+													pWindowFrameUniformData->au32TitleChars[i] = static_cast<uint32_t>(pacWindowTitle[i]);
+#endif
 												return true;
 											}
 											destroy_renderer_textures();
@@ -138,27 +147,34 @@ namespace RE {
 							.extent = vk_swapchainResolution
 						};
 						vkCmdSetScissor(vk_hCommandBuffer, 0, 1, &vk_scissor);
-						vkCmdBindDescriptorSets(vk_hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hWindowFramePipelineLayout, 0, 1, &vk_hWindowFrameDescSet, 0, nullptr);
+						const VkDescriptorSet vk_ahDescSets[] = {
+							vk_hWindowFrameDescSet,
+							vk_hCharacterDescSet
+						};
+						vkCmdBindDescriptorSets(vk_hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hWindowFramePipelineLayout, 0, sizeof(vk_ahDescSets) / sizeof(vk_ahDescSets[0]), vk_ahDescSets, 0, nullptr);
 						WindowShaderData windowData;
 						windowData.a2u32Size[0] = vk_swapchainResolution.width;
 						windowData.a2u32Size[1] = vk_swapchainResolution.height;
 						if (should_render_window_frame_edges()) {
 							windowData.u32WindowFrameToRender = WINDOW_FRAME_RENDER_MODE_SHADOWS;
 							windowData.b32RenderEdges = SHR_TRUE;
-							vkCmdPushConstants(vk_hCommandBuffer, vk_hWindowFramePipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(WindowShaderData), static_cast<const void*>(&windowData));
+							vkCmdPushConstants(vk_hCommandBuffer, vk_hWindowFramePipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(WindowShaderData), static_cast<const void*>(&windowData));
 							vkCmdDraw(vk_hCommandBuffer, 10, 1, 0, 0);
 							windowData.u32WindowFrameToRender = WINDOW_FRAME_RENDER_MODE_BAR;
-							vkCmdPushConstants(vk_hCommandBuffer, vk_hWindowFramePipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, offsetof(WindowShaderData, u32WindowFrameToRender), sizeof(WindowShaderData::u32WindowFrameToRender), static_cast<const void*>(&windowData.u32WindowFrameToRender));
+							vkCmdPushConstants(vk_hCommandBuffer, vk_hWindowFramePipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, offsetof(WindowShaderData, u32WindowFrameToRender), sizeof(WindowShaderData::u32WindowFrameToRender), static_cast<const void*>(&windowData.u32WindowFrameToRender));
 							vkCmdDraw(vk_hCommandBuffer, 10, 1, 0, 0);
 						} else {
 							windowData.u32WindowFrameToRender = WINDOW_FRAME_RENDER_MODE_BAR;
 							windowData.b32RenderEdges = SHR_FALSE;
-							vkCmdPushConstants(vk_hCommandBuffer, vk_hWindowFramePipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(WindowShaderData), static_cast<const void*>(&windowData));
+							vkCmdPushConstants(vk_hCommandBuffer, vk_hWindowFramePipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(WindowShaderData), static_cast<const void*>(&windowData));
 							vkCmdDraw(vk_hCommandBuffer, 4, 1, 0, 0);
 						}
 						windowData.u32WindowFrameToRender = WINDOW_FRAME_RENDER_MODE_BUTTONS;
-						vkCmdPushConstants(vk_hCommandBuffer, vk_hWindowFramePipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, offsetof(WindowShaderData, u32WindowFrameToRender), sizeof(WindowShaderData::u32WindowFrameToRender), static_cast<const void*>(&windowData.u32WindowFrameToRender));
-						vkCmdDraw(vk_hCommandBuffer, 4, WINDOW_WAYLAND_BUTTON_COUNT * 2, 0, 0);
+						vkCmdPushConstants(vk_hCommandBuffer, vk_hWindowFramePipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, offsetof(WindowShaderData, u32WindowFrameToRender), sizeof(WindowShaderData::u32WindowFrameToRender), static_cast<const void*>(&windowData.u32WindowFrameToRender));
+						vkCmdDraw(vk_hCommandBuffer, 4, 6, 0, 0);
+						windowData.u32WindowFrameToRender = WINDOW_FRAME_RENDER_MODE_TITLE;
+						vkCmdPushConstants(vk_hCommandBuffer, vk_hWindowFramePipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, offsetof(WindowShaderData, u32WindowFrameToRender), sizeof(WindowShaderData::u32WindowFrameToRender), static_cast<const void*>(&windowData.u32WindowFrameToRender));
+						vkCmdDrawIndirect(vk_hCommandBuffer, vk_hWindowFrameBuffer, sizeof(WindowFrameUniformData), 1, sizeof(VkDrawIndirectCommand));
 					}
 					vkCmdEndRendering(vk_hCommandBuffer);
 					const VkImageMemoryBarrier vk_swapchainImage2Info = {

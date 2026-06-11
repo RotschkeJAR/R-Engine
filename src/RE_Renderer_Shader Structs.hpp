@@ -13,8 +13,9 @@ typedef uint32_t ShaderBool;
 		ShaderBool b32RenderEdges;
 	};
 
-	struct CursorShaderData final {
-		uint32_t a2u32Position[2];
+	struct WindowFrameUniformData final {
+		uint32_t a2u32CursorPosition[2];
+		uint32_t au32TitleChars[256];
 	};
 
 	struct VertexData final {

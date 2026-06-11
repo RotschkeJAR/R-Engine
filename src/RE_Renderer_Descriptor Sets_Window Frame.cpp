@@ -17,14 +17,16 @@ namespace RE {
 		if (vkAllocateDescriptorSets(vk_hDevice, &vk_descSetAllocInfo, &vk_hWindowFrameDescSet) == VK_SUCCESS) {
 			PRINT_DEBUG("Writing to all descriptor sets for cursor");
 			const VkDescriptorBufferInfo vk_bufferDesc = {
-				.buffer = vk_hCursorBuffer,
+				.buffer = vk_hWindowFrameBuffer,
 				.offset = 0,
-				.range = sizeof(CursorShaderData)
+				.range = sizeof(WindowFrameUniformData)
 			};
-			const VkDescriptorImageInfo vk_imageDesc = {
-				.sampler = vk_hDefaultSampler,
-				.imageView = vk_hWindowButtonImageView,
-				.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+			const VkDescriptorImageInfo vk_aImageDesc[] = {
+				{
+					.sampler = vk_hDefaultSampler,
+					.imageView = vk_hWindowButtonImageView,
+					.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+				}
 			};
 			const VkWriteDescriptorSet vk_aWriteSets[] = {
 				{
@@ -44,9 +46,9 @@ namespace RE {
 					.dstSet = vk_hWindowFrameDescSet,
 					.dstBinding = 1,
 					.dstArrayElement = 0,
-					.descriptorCount = 1,
+					.descriptorCount = sizeof(vk_aImageDesc) / sizeof(vk_aImageDesc[0]),
 					.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-					.pImageInfo = &vk_imageDesc,
+					.pImageInfo = vk_aImageDesc,
 					.pBufferInfo = nullptr,
 					.pTexelBufferView = nullptr
 				}

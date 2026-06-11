@@ -5,43 +5,50 @@ namespace RE {
 	VkPipeline vk_hGraphicsPipelineText;
 	
 	bool create_graphics_pipeline_text() {
-		PRINT_DEBUG("");
+		PRINT_DEBUG("Creating temporary Vulkan shader modules for graphics pipeline rendering text");
+		Vulkan_Shader vertexShader("shaders/vertex_text.glsl.spv"),
+			fragmentShader("shaders/fragment_text.glsl.spv");
+		if (!vertexShader.valid() || !fragmentShader.valid()) {
+			RE_FATAL_ERROR("");
+			return false;
+		}
+		PRINT_DEBUG("Creating Vulkan graphics pipeline rendering text");
 		const VkPipelineShaderStageCreateInfo vk_aShaderStages[] = {
 			{
 				.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
 				.pNext = nullptr,
 				.flags = 0,
-				.stage = ,
-				.module = ,
-				.pName = ,
+				.stage = VK_SHADER_STAGE_VERTEX_BIT,
+				.module = vertexShader(),
+				.pName = "main",
 				.pSpecializationInfo = nullptr
 			}, {
 				.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
 				.pNext = nullptr,
 				.flags = 0,
-				.stage = ,
-				.module = ,
-				.pName = ,
+				.stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+				.module = fragmentShader(),
+				.pName = "main",
 				.pSpecializationInfo = nullptr
 			}
 		};
 		constexpr VkVertexInputBindingDescription vk_aVertexBindings[] = {
 			{
 				.binding = 0,
-				.stride = ,
+				.stride = sizeof(uint32_t),
 				.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE
 			}
 		};
 		constexpr VkVertexInputAttributeDescription vk_aVertexAttributes[] = {
 			{
-				.location = ,
+				.location = 0,
 				.binding = 0,
-				.format = ,
-				.offset = 
+				.format = VK_FORMAT_R32_UINT,
+				.offset = 0
 			}
 		};
 		const VkPipelineVertexInputStateCreateInfo vk_vertexInput = {
-			.sType = VK_STRUCTURE_TYPE_VERTEX_INPUT_STATE_CREATE_INFO,
+			.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
 			.pNext = nullptr,
 			.flags = 0,
 			.vertexBindingDescriptionCount = sizeof(vk_aVertexBindings) / sizeof(vk_aVertexBindings[0]),
@@ -50,7 +57,7 @@ namespace RE {
 			.pVertexAttributeDescriptions = vk_aVertexAttributes
 		};
 		constexpr VkPipelineInputAssemblyStateCreateInfo vk_inputAssembly = {
-			.sType = VK_STRUCTURE_TYPE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+			.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
 			.pNext = nullptr,
 			.flags = 0,
 			.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP,
@@ -69,15 +76,12 @@ namespace RE {
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
 			.pNext = nullptr,
 			.flags = 0,
-			.depthClampEnable = ,
+			.depthClampEnable = VK_FALSE,
 			.rasterizerDiscardEnable = VK_FALSE,
 			.polygonMode = VK_POLYGON_MODE_FILL,
-			.cullMode = ,
-			.frontFace = ,
-			.depthBiasEnable = ,
-			.depthBiasConstantFactor = ,
-			.depthBiasClamp = ,
-			.depthBiasSlopeFactor = ,
+			.cullMode = VK_CULL_MODE_NONE,
+			.frontFace = VK_FRONT_FACE_CLOCKWISE,
+			.depthBiasEnable = VK_FALSE,
 			.lineWidth = 1.0f
 		};
 		const VkPipelineMultisampleStateCreateInfo vk_multisample = {
@@ -107,7 +111,7 @@ namespace RE {
 			}
 		};
 		const VkPipelineColorBlendStateCreateInfo vk_colorBlends = {
-			.sType = VK_STRUCTURE_TYPE_COLOR_BLEND_STATE_CREATE_INFO,
+			.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
 			.pNext = nullptr,
 			.flags = 0,
 			.logicOpEnable = VK_FALSE,
@@ -120,7 +124,7 @@ namespace RE {
 			VK_DYNAMIC_STATE_SCISSOR
 		};
 		const VkPipelineDynamicStateCreateInfo vk_dynamicStates = {
-			.sType = VK_STRUCTURE_TYPE_DYNAMIC_TATE_CREATE_INFO,
+			.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
 			.pNext = nullptr,
 			.flags = 0,
 			.dynamicStateCount = sizeof(vk_aeDynamicStates) / sizeof(vk_aeDynamicStates[0]),
@@ -141,21 +145,21 @@ namespace RE {
 			.pDepthStencilState = &vk_depthStencil,
 			.pColorBlendState = &vk_colorBlends,
 			.pDynamicState = &vk_dynamicStates,
-			.layout = vk_hEmptyPipelineLayout,
+			.layout = vk_hTextPipelineLayout,
 			.renderPass = VK_NULL_HANDLE,
 			.subpass = 0,
 			.basePipelineHandle = VK_NULL_HANDLE,
 			.basePipelineIndex = -1
 		};
-		if (vkCreateGraphicsPipelines(vk_hDevice, VK_NULL_HANDLE, 1, &vk_createInfo, nullptr, &vk_hGraphicsPipelineText))
+		if (vkCreateGraphicsPipelines(vk_hDevice, VK_NULL_HANDLE, 1, &vk_createInfo, nullptr, &vk_hGraphicsPipelineText) == VK_SUCCESS)
 			return true;
 		else
-			RE_FATAL_ERROR("");
+			RE_FATAL_ERROR("Failed to create Vulkan graphics pipeline rendering text");
 		return false;
 	}
 
 	void destroy_graphics_pipeline_text() {
-		PRINT_DEBUG("");
+		PRINT_DEBUG("Destroying Vulkan graphics pipeline ", vk_hGraphicsPipelineText, " used for rendering text");
 		vkDestroyPipeline(vk_hDevice, vk_hGraphicsPipelineText, nullptr);
 	}
 

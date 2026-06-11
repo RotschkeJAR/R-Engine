@@ -20,8 +20,8 @@ namespace RE {
 	extern VkBuffer vk_ahGameObjectsModelMatrixBuffers[RE_VK_FRAMES_IN_FLIGHT];
 
 #ifdef RE_OS_LINUX
-	extern VkBuffer vk_hCursorBuffer;
-	extern VulkanMemory *pCursorBufferMemory;
+	extern VkBuffer vk_hWindowFrameBuffer;
+	extern VulkanMemory *pWindowFrameBufferMemory;
 #endif
 
 	bool create_renderer_buffers();

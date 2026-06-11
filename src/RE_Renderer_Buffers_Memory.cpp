@@ -20,7 +20,7 @@ namespace RE {
 			},
 #ifdef RE_OS_LINUX
 			{
-				.vulkanStorageObject = vk_hCursorBuffer,
+				.vulkanStorageObject = vk_hWindowFrameBuffer,
 				.u32RegionIndex = 0
 			}
 #endif
@@ -57,8 +57,9 @@ namespace RE {
 								bufferMemoryPointers[stagingGameObjectIndexToMemory]) + aLocalBufferAllocs[u8StagingRawGameObjectBufferIndex].vk_memoryOffset);
 #ifdef RE_OS_LINUX
 					const size_t cursorIndexToMemory = aLocalBufferAllocs[u8CursorBufferIndex].indexToMemory;
-					pCursorBufferMemory = &localBufferMemories[cursorIndexToMemory];
-					pCursorShaderData = reinterpret_cast<CursorShaderData*>(reinterpret_cast<uint8_t*>(bufferMemoryPointers[cursorIndexToMemory]) + aLocalBufferAllocs[u8CursorBufferIndex].vk_memoryOffset);
+					pWindowFrameBufferMemory = &localBufferMemories[cursorIndexToMemory];
+					pWindowFrameUniformData = reinterpret_cast<WindowFrameUniformData*>(reinterpret_cast<uint8_t*>(bufferMemoryPointers[cursorIndexToMemory]) + aLocalBufferAllocs[u8CursorBufferIndex].vk_memoryOffset);
+					pIndirectDrawWindowTitle = reinterpret_cast<VkDrawIndirectCommand*>(reinterpret_cast<uint8_t*>(pWindowFrameUniformData) + sizeof(WindowFrameUniformData));
 #endif
 				}
 				constexpr uint8_t u8DeviceBufferCount = 3,

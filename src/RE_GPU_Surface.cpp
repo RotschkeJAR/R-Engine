@@ -62,7 +62,6 @@ namespace RE {
 				RE_ABORT("Unknown window compositor in use: ", eLinuxWindowType);
 		}
 #endif
-		PRINT_LN("Composite alpha selected: ", std::hex, vk_eCompositeAlphaSelected);
 		PRINT_DEBUG("Fetching Vulkan surface formats");
 		vkGetPhysicalDeviceSurfaceFormatsKHR(SELECTED_PHYSICAL_VULKAN_DEVICE, vk_hSurface, &u32SurfaceFormatsAvailableCount, nullptr);
 		surfaceFormatsAvailable = std::make_unique<VkSurfaceFormatKHR[]>(u32SurfaceFormatsAvailableCount);

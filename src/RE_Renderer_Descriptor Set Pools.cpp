@@ -23,7 +23,7 @@ namespace RE {
 #ifdef RE_OS_LINUX
 				{
 					.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-					.descriptorCount = 1U
+					.descriptorCount = 3U
 				}
 #endif
 			};
@@ -83,7 +83,7 @@ namespace RE {
 #ifdef RE_OS_LINUX
 				{
 					.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-					.descriptorCount = 1U
+					.descriptorCount = 3U
 				}
 #endif
 			};

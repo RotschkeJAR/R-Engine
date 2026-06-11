@@ -1,6 +1,7 @@
 #include "RE_Renderer_Pipelines_Graphics_Internal.hpp"
 #include "RE_Vulkan_Wrappers.hpp"
 #include "RE_Window.hpp"
+#include "RE_Symbols.hpp"
 
 namespace RE {
 
@@ -21,8 +22,11 @@ namespace RE {
 			WINDOW_WAYLAND_EDGE_SIZE,
 			WINDOW_WAYLAND_BAR_SIZE,
 			WINDOW_WAYLAND_BUTTON_WIDTH,
-			WINDOW_WAYLAND_BUTTON_COUNT,
-			WINDOW_WAYLAND_BUTTON_TEXTURE_SIZE
+			WINDOW_BUTTON_TEXTURE_COUNT,
+			WINDOW_BUTTON_TEXTURE_SIZE,
+			CHAR_TEXTURE_SIZE,
+			2, /* gap between chars */
+			std::max(WINDOW_WAYLAND_BAR_SIZE / CHAR_TEXTURE_SIZE - 1, 1)
 		};
 		constexpr VkSpecializationMapEntry vk_aSpecializationConstants[] = {
 			{
@@ -49,6 +53,18 @@ namespace RE {
 				.constantID = 5,
 				.offset = sizeof(uint32_t) * 5,
 				.size = sizeof(uint32_t)
+			}, {
+				.constantID = 6,
+				.offset = sizeof(uint32_t) * 6,
+				.size = sizeof(uint32_t)
+			}, {
+				.constantID = 7,
+				.offset = sizeof(uint32_t) * 7,
+				.size = sizeof(uint32_t)
+			}, {
+				.constantID = 8,
+				.offset = sizeof(uint32_t) * 8,
+				.size = sizeof(uint32_t)
 			}
 		};
 		const VkSpecializationInfo vk_specializationInfo = {
@@ -69,7 +85,7 @@ namespace RE {
 				.stage = VK_SHADER_STAGE_FRAGMENT_BIT,
 				.module = fragmentShader(),
 				.pName = "main",
-				.pSpecializationInfo = nullptr
+				.pSpecializationInfo = &vk_specializationInfo
 			}
 		};
 		const VkPipelineVertexInputStateCreateInfo vk_vertexInput = {

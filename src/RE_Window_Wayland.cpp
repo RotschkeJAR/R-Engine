@@ -299,9 +299,9 @@ namespace RE {
 	static void wayland_pointer_motion_callback(void *const pData, wl_pointer *const wl_pPointer, const uint32_t u32Time, const wl_fixed_t wl_x, const wl_fixed_t wl_y) {
 		actualCursorPosition[0] = wl_fixed_to_int(wl_x);
 		actualCursorPosition[1] = wl_fixed_to_int(wl_y);
-		if (pCursorShaderData)
+		if (pWindowFrameUniformData)
 			for (uint8_t u8DimensionIndex = 0; u8DimensionIndex < actualCursorPosition.dimensions(); u8DimensionIndex++)
-				pCursorShaderData->a2u32Position[u8DimensionIndex] = actualCursorPosition[u8DimensionIndex];
+				pWindowFrameUniformData->a2u32CursorPosition[u8DimensionIndex] = actualCursorPosition[u8DimensionIndex];
 		if (is_cursor_within_content())
 			cursor_event(actualCursorPosition[0] - WINDOW_WAYLAND_X_OFFSET, actualCursorPosition[1] - WINDOW_WAYLAND_Y_OFFSET);
 	}
@@ -351,6 +351,9 @@ namespace RE {
 					break;
 				case WINDOW_AREA_BUTTON_MINIMIZE:
 					xdg_toplevel_set_minimized(xdg_pToplevel);
+					if (pWindowFrameUniformData)
+						for (uint8_t u8DimensionIndex = 0; u8DimensionIndex < actualCursorPosition.dimensions(); u8DimensionIndex++)
+							pWindowFrameUniformData->a2u32CursorPosition[u8DimensionIndex] = 0xFFFFFFFF;
 					break;
 				default:
 					xdg_toplevel_move(xdg_pToplevel, wlSeat.waylandObject, u32Serial);
@@ -707,6 +710,9 @@ namespace RE {
 		xdg_toplevel_set_title(xdg_pToplevel, pacWindowTitle);
 		xdg_toplevel_set_app_id(xdg_pToplevel, pacWindowTitle);
 		wl_display_flush(wl_pDisplay);
+		pIndirectDrawWindowTitle->instanceCount = static_cast<uint32_t>(std::strlen(pacWindowTitle));
+		for (uint32_t i = 0; i < pIndirectDrawWindowTitle->instanceCount; i++)
+			pWindowFrameUniformData->au32TitleChars[i] = static_cast<uint32_t>(pacWindowTitle[i]);
 	}
 
 	void wayland_window_proc() {

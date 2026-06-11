@@ -9,12 +9,13 @@ namespace RE {
 # define WINDOW_FRAME_RENDER_MODE_SHADOWS 0
 # define WINDOW_FRAME_RENDER_MODE_BAR 1
 # define WINDOW_FRAME_RENDER_MODE_BUTTONS 2
+# define WINDOW_FRAME_RENDER_MODE_TITLE 3
 #endif
 
 	extern VkPipelineLayout vk_hGraphicsPipelineLayout,
 		vk_hSortDepthPipelineLayout,
 		vk_hProcessingPipelineLayout,
-		vk_hEmptyPipelineLayout;
+		vk_hTextPipelineLayout;
 #ifdef RE_OS_LINUX
 	extern VkPipelineLayout vk_hWindowFramePipelineLayout;
 #endif /* RE_OS_LINUX */
@@ -23,6 +24,7 @@ namespace RE {
 		vk_hGraphicsPipeline2DOpaqueOnly,
 		vk_hGraphicsPipeline3D,
 		vk_hGraphicsPipeline3DOpaqueOnly,
+		vk_hGraphicsPipelineText,
 		vk_hComputePipelinePreprocessing,
 		vk_hComputePipelineDepthSorting;
 #ifdef RE_OS_LINUX

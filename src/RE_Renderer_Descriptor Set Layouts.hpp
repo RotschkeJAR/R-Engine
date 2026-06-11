@@ -16,7 +16,8 @@ namespace RE {
 	extern VkDescriptorSetLayout vk_hGameObjectsDescSetLayout,
 		vk_hSortableDepthDescSetLayout,
 		vk_hCameraDescSetLayout,
-		vk_hSpriteDescSetLayout;
+		vk_hSpriteDescSetLayout,
+		vk_hCharacterDescSetLayout;
 #ifdef RE_OS_LINUX
 	extern VkDescriptorSetLayout vk_hWindowFrameDescSetLayout;
 #endif

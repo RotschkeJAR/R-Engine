@@ -1,5 +1,5 @@
 #include "RE_Renderer_Images_Internal.hpp"
-#include "RE_Window.hpp"
+#include "RE_Symbols.hpp"
 
 namespace RE {
 	
@@ -10,16 +10,16 @@ namespace RE {
 
 	bool create_window_button_image() {
 		PRINT_DEBUG("Creating Vulkan image for window button textures");
-		if (create_vulkan_image(VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT,
+		if (create_vulkan_image(0,
 				VK_IMAGE_TYPE_2D,
 				VK_FORMAT_R8_UNORM,
 				VkExtent3D {
-					.width = WINDOW_WAYLAND_BUTTON_TEXTURE_SIZE,
-					.height = WINDOW_WAYLAND_BUTTON_TEXTURE_SIZE,
+					.width = WINDOW_BUTTON_TEXTURE_SIZE,
+					.height = WINDOW_BUTTON_TEXTURE_SIZE,
 					.depth = 1
 				},
 				1,
-				WINDOW_WAYLAND_BUTTON_COUNT,
+				WINDOW_BUTTON_TEXTURE_COUNT,
 				VK_SAMPLE_COUNT_1_BIT,
 				VK_IMAGE_TILING_OPTIMAL,
 				VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
@@ -36,7 +36,7 @@ namespace RE {
 	bool create_window_button_image_views() {
 		PRINT_DEBUG("");
 		Vulkan_Buffer stagingWindowButtonBuffer(0,
-				sizeof(uint8_t) * WINDOW_WAYLAND_BUTTON_TEXTURE_SIZE * WINDOW_WAYLAND_BUTTON_TEXTURE_SIZE * WINDOW_WAYLAND_BUTTON_COUNT,
+				sizeof(aau8WindowButtonTextures),
 				VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 				1,
 				nullptr,
@@ -46,61 +46,8 @@ namespace RE {
 			uint8_t *pau8StagingBufferMemory;
 			if (stagingWindowButtonBuffer.get_memory().map(0, 0, VK_WHOLE_SIZE, reinterpret_cast<void**>(&pau8StagingBufferMemory))) {
 				PRINT_DEBUG("");
-				constexpr uint8_t aau8TextureData[WINDOW_WAYLAND_BUTTON_COUNT][WINDOW_WAYLAND_BUTTON_TEXTURE_SIZE * WINDOW_WAYLAND_BUTTON_TEXTURE_SIZE] = {
-					{
-						0xFF, 0xFF, 0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0xFF, 0xFF,
-						0xFF, 0xFF, 0xFF, 0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0xFF, 0xFF, 0xFF,
-						0,    0xFF, 0xFF, 0xFF, 0,    0,    0,    0,    0,    0,    0,    0,    0xFF, 0xFF, 0xFF, 0,
-						0,    0,    0xFF, 0xFF, 0xFF, 0,    0,    0,    0,    0,    0,    0xFF, 0xFF, 0xFF, 0,    0,
-						0,    0,    0,    0xFF, 0xFF, 0xFF, 0,    0,    0,    0,    0xFF, 0xFF, 0xFF, 0,    0,    0,
-						0,    0,    0,    0,    0xFF, 0xFF, 0xFF, 0,    0,    0xFF, 0xFF, 0xFF, 0,    0,    0,    0,
-						0,    0,    0,    0,    0,    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0,    0,    0,    0,    0,
-						0,    0,    0,    0,    0,    0,    0xFF, 0xFF, 0xFF, 0xFF, 0,    0,    0,    0,    0,    0,
-						0,    0,    0,    0,    0,    0,    0xFF, 0xFF, 0xFF, 0xFF, 0,    0,    0,    0,    0,    0,
-						0,    0,    0,    0,    0,    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0,    0,    0,    0,    0,
-						0,    0,    0,    0,    0xFF, 0xFF, 0xFF, 0,    0,    0xFF, 0xFF, 0xFF, 0,    0,    0,    0,
-						0,    0,    0,    0xFF, 0xFF, 0xFF, 0,    0,    0,    0,    0xFF, 0xFF, 0xFF, 0,    0,    0,
-						0,    0,    0xFF, 0xFF, 0xFF, 0,    0,    0,    0,    0,    0,    0xFF, 0xFF, 0xFF, 0,    0,
-						0,    0xFF, 0xFF, 0xFF, 0,    0,    0,    0,    0,    0,    0,    0,    0xFF, 0xFF, 0xFF, 0,
-						0xFF, 0xFF, 0xFF, 0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0xFF, 0xFF, 0xFF,
-						0xFF, 0xFF, 0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0xFF, 0xFF
-					}, {
-						0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-						0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-						0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-						0xFF, 0xFF, 0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0xFF, 0xFF,
-						0xFF, 0xFF, 0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0xFF, 0xFF,
-						0xFF, 0xFF, 0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0xFF, 0xFF,
-						0xFF, 0xFF, 0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0xFF, 0xFF,
-						0xFF, 0xFF, 0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0xFF, 0xFF,
-						0xFF, 0xFF, 0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0xFF, 0xFF,
-						0xFF, 0xFF, 0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0xFF, 0xFF,
-						0xFF, 0xFF, 0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0xFF, 0xFF,
-						0xFF, 0xFF, 0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0xFF, 0xFF,
-						0xFF, 0xFF, 0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0xFF, 0xFF,
-						0xFF, 0xFF, 0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0xFF, 0xFF,
-						0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-						0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF
-					}, {
-						0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-						0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-						0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-						0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-						0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-						0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-						0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-						0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-						0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-						0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-						0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-						0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-						0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-						0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-						0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-						0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF
-					}
-				};
-				std::memcpy(pau8StagingBufferMemory, &aau8TextureData[0][0], sizeof(aau8TextureData));
+				std::memcpy(pau8StagingBufferMemory, aau8WindowButtonTextures, sizeof(aau8WindowButtonTextures));
+				stagingWindowButtonBuffer.get_memory().flush_mapped_memory(0, VK_WHOLE_SIZE);
 				PRINT_DEBUG("");
 				const uint8_t a2u8LogicalQueues[2] = {RE_VK_LOGICAL_QUEUE_IGNORED, aRenderTasks[0].logical_queue_index_for_function(RENDER_TASK_SUBINDEX_RENDERING)};
 				constexpr VkQueueFlagBits vk_a2eQueueTypes[2] = {VK_QUEUE_TRANSFER_BIT, VK_QUEUE_GRAPHICS_BIT};
@@ -131,7 +78,7 @@ namespace RE {
 										.baseMipLevel = 0,
 										.levelCount = 1,
 										.baseArrayLayer = 0,
-										.layerCount = WINDOW_WAYLAND_BUTTON_COUNT
+										.layerCount = WINDOW_BUTTON_TEXTURE_COUNT
 									}
 								};
 								vkCmdPipelineBarrier(vk_hCommandBuffer, VK_PIPELINE_STAGE_NONE, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &vk_imageBarrier0);
@@ -144,12 +91,12 @@ namespace RE {
 										.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 										.mipLevel = 0,
 										.baseArrayLayer = 0,
-										.layerCount = WINDOW_WAYLAND_BUTTON_COUNT
+										.layerCount = WINDOW_BUTTON_TEXTURE_COUNT
 									},
 									.imageOffset = {},
 									.imageExtent = {
-										.width = WINDOW_WAYLAND_BUTTON_TEXTURE_SIZE,
-										.height = WINDOW_WAYLAND_BUTTON_TEXTURE_SIZE,
+										.width = WINDOW_BUTTON_TEXTURE_SIZE,
+										.height = WINDOW_BUTTON_TEXTURE_SIZE,
 										.depth = 1
 									}
 								};
@@ -170,7 +117,7 @@ namespace RE {
 										.baseMipLevel = 0,
 										.levelCount = 1,
 										.baseArrayLayer = 0,
-										.layerCount = WINDOW_WAYLAND_BUTTON_COUNT
+										.layerCount = WINDOW_BUTTON_TEXTURE_COUNT
 									}
 								};
 								vkCmdPipelineBarrier(vk_hCommandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &vk_imageBarrier);
@@ -192,7 +139,7 @@ namespace RE {
 										.baseMipLevel = 0,
 										.levelCount = 1,
 										.baseArrayLayer = 0,
-										.layerCount = WINDOW_WAYLAND_BUTTON_COUNT
+										.layerCount = WINDOW_BUTTON_TEXTURE_COUNT
 									}
 								};
 								vkCmdPipelineBarrier(vk_hCommandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &vk_imageBarrier2);
@@ -217,7 +164,7 @@ namespace RE {
 											.baseMipLevel = 0,
 											.levelCount = 1,
 											.baseArrayLayer = 0,
-											.layerCount = WINDOW_WAYLAND_BUTTON_COUNT
+											.layerCount = WINDOW_BUTTON_TEXTURE_COUNT
 										}
 									};
 									vkCmdPipelineBarrier(vk_hCommandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &vk_imageBarrier);
@@ -246,7 +193,7 @@ namespace RE {
 												.baseMipLevel = 0,
 												.levelCount = 1,
 												.baseArrayLayer = 0,
-												.layerCount = WINDOW_WAYLAND_BUTTON_COUNT
+												.layerCount = WINDOW_BUTTON_TEXTURE_COUNT
 											},
 											&vk_hWindowButtonImageView)) {
 										PRINT_DEBUG("");

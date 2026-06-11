@@ -5,7 +5,8 @@ namespace RE {
 	VkDescriptorSetLayout vk_hGameObjectsDescSetLayout,
 		vk_hSortableDepthDescSetLayout,
 		vk_hCameraDescSetLayout,
-		vk_hSpriteDescSetLayout;
+		vk_hSpriteDescSetLayout,
+		vk_hCharacterDescSetLayout;
 #ifdef RE_OS_LINUX
 	VkDescriptorSetLayout vk_hWindowFrameDescSetLayout;
 #endif
@@ -16,7 +17,7 @@ namespace RE {
 		vk_setLayoutSupported.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_SUPPORT;
 		vk_setLayoutSupported.pNext = nullptr;
 		const VkBool32 &vk_rbLayoutSupported = vk_setLayoutSupported.supported;
-		constexpr VkDescriptorSetLayoutBinding vk_aGameObjectsLayoutBindings[RE_VK_GAME_OBJECTS_DESC_SET_BINDING_COUNT] = {
+		constexpr VkDescriptorSetLayoutBinding vk_aLayoutBindings[RE_VK_GAME_OBJECTS_DESC_SET_BINDING_COUNT] = {
 			{
 				.binding = RE_VK_GAME_OBJECTS_DESC_SET_INSTANCE_BINDING_INDEX,
 				.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
@@ -31,17 +32,17 @@ namespace RE {
 				.pImmutableSamplers = nullptr
 			}
 		};
-		const VkDescriptorSetLayoutCreateInfo vk_gameObjectsLayoutCreateInfo = {
+		const VkDescriptorSetLayoutCreateInfo vk_layoutCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
 			.pNext = nullptr,
 			.flags = 0,
 			.bindingCount = RE_VK_GAME_OBJECTS_DESC_SET_BINDING_COUNT,
-			.pBindings = vk_aGameObjectsLayoutBindings
+			.pBindings = vk_aLayoutBindings
 		};
-		vkGetDescriptorSetLayoutSupport(vk_hDevice, &vk_gameObjectsLayoutCreateInfo, &vk_setLayoutSupported);
-		if (vk_rbLayoutSupported && vkCreateDescriptorSetLayout(vk_hDevice, &vk_gameObjectsLayoutCreateInfo, nullptr, &vk_hGameObjectsDescSetLayout) == VK_SUCCESS) {
+		vkGetDescriptorSetLayoutSupport(vk_hDevice, &vk_layoutCreateInfo, &vk_setLayoutSupported);
+		if (vk_rbLayoutSupported && vkCreateDescriptorSetLayout(vk_hDevice, &vk_layoutCreateInfo, nullptr, &vk_hGameObjectsDescSetLayout) == VK_SUCCESS) {
 			PRINT_DEBUG("Creating Vulkan descriptor set layout for sortable depth");
-			constexpr VkDescriptorSetLayoutBinding vk_aSortableDepthLayoutBindings[RE_VK_GAME_OBJECTS_DESC_SET_BINDING_COUNT] = {
+			constexpr VkDescriptorSetLayoutBinding vk_aLayoutBindings[RE_VK_GAME_OBJECTS_DESC_SET_BINDING_COUNT] = {
 				{
 					.binding = 0,
 					.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
@@ -50,17 +51,17 @@ namespace RE {
 					.pImmutableSamplers = nullptr
 				}
 			};
-			const VkDescriptorSetLayoutCreateInfo vk_sortableDepthLayoutCreateInfo = {
+			const VkDescriptorSetLayoutCreateInfo vk_layoutCreateInfo = {
 				.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
 				.pNext = nullptr,
 				.flags = 0,
 				.bindingCount = 1,
-				.pBindings = vk_aSortableDepthLayoutBindings
+				.pBindings = vk_aLayoutBindings
 			};
-			vkGetDescriptorSetLayoutSupport(vk_hDevice, &vk_sortableDepthLayoutCreateInfo, &vk_setLayoutSupported);
-			if (vk_rbLayoutSupported && vkCreateDescriptorSetLayout(vk_hDevice, &vk_sortableDepthLayoutCreateInfo, nullptr, &vk_hSortableDepthDescSetLayout) == VK_SUCCESS) {
+			vkGetDescriptorSetLayoutSupport(vk_hDevice, &vk_layoutCreateInfo, &vk_setLayoutSupported);
+			if (vk_rbLayoutSupported && vkCreateDescriptorSetLayout(vk_hDevice, &vk_layoutCreateInfo, nullptr, &vk_hSortableDepthDescSetLayout) == VK_SUCCESS) {
 				PRINT_DEBUG("Creating Vulkan descriptor set layout for camera");
-				constexpr VkDescriptorSetLayoutBinding vk_aCameraLayoutBindings[] = {
+				constexpr VkDescriptorSetLayoutBinding vk_aLayoutBindings[] = {
 					{
 						.binding = 0,
 						.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -69,15 +70,15 @@ namespace RE {
 						.pImmutableSamplers = nullptr
 					}
 				};
-				const VkDescriptorSetLayoutCreateInfo vk_cameraLayoutCreateInfo = {
+				const VkDescriptorSetLayoutCreateInfo vk_layoutCreateInfo = {
 					.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
 					.pNext = nullptr,
 					.flags = 0,
 					.bindingCount = 1,
-					.pBindings = vk_aCameraLayoutBindings
+					.pBindings = vk_aLayoutBindings
 				};
-				vkGetDescriptorSetLayoutSupport(vk_hDevice, &vk_cameraLayoutCreateInfo, &vk_setLayoutSupported);
-				if (vk_rbLayoutSupported && vkCreateDescriptorSetLayout(vk_hDevice, &vk_cameraLayoutCreateInfo, nullptr, &vk_hCameraDescSetLayout) == VK_SUCCESS) {
+				vkGetDescriptorSetLayoutSupport(vk_hDevice, &vk_layoutCreateInfo, &vk_setLayoutSupported);
+				if (vk_rbLayoutSupported && vkCreateDescriptorSetLayout(vk_hDevice, &vk_layoutCreateInfo, nullptr, &vk_hCameraDescSetLayout) == VK_SUCCESS) {
 					PRINT_DEBUG("Creating Vulkan descriptor set layout for textures and sprite layouts");
 					VkDescriptorBindingFlags vk_amSpriteLayoutBindingFlags[RE_VK_SPRITE_DESC_SET_BINDING_COUNT] = {
 						VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT,
@@ -95,7 +96,7 @@ namespace RE {
 						.bindingCount = 2,
 						.pBindingFlags = vk_amSpriteLayoutBindingFlags
 					};
-					const VkDescriptorSetLayoutBinding vk_aSpriteLayoutBindings[RE_VK_SPRITE_DESC_SET_BINDING_COUNT] = {
+					const VkDescriptorSetLayoutBinding vk_aLayoutBindings[RE_VK_SPRITE_DESC_SET_BINDING_COUNT] = {
 						{
 							.binding = RE_VK_SPRITE_DESC_SET_SPRITE_LAYOUT_BINDING_INDEX,
 							.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
@@ -110,49 +111,71 @@ namespace RE {
 							.pImmutableSamplers = nullptr
 						}
 					};
-					VkDescriptorSetLayoutCreateInfo vk_spriteLayoutCreateInfo = {
+					VkDescriptorSetLayoutCreateInfo vk_layoutCreateInfo = {
 						.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
 						.pNext = &vk_spriteLayoutBindingCreateInfo,
 						.flags = 0,
 						.bindingCount = RE_VK_SPRITE_DESC_SET_BINDING_COUNT,
-						.pBindings = vk_aSpriteLayoutBindings
+						.pBindings = vk_aLayoutBindings
 					};
 					if (are_vulkan_features_enabled<ENABLED_FEATURE_UPDATE_DESCRIPTOR_SAMPLED_IMAGE_AFTER_BIND_BIT>())
-						vk_spriteLayoutCreateInfo.flags |= VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
-					vkGetDescriptorSetLayoutSupport(vk_hDevice, &vk_spriteLayoutCreateInfo, &vk_setLayoutSupported);
-					if (vk_rbLayoutSupported && vkCreateDescriptorSetLayout(vk_hDevice, &vk_spriteLayoutCreateInfo, nullptr, &vk_hSpriteDescSetLayout) == VK_SUCCESS) {
-#ifdef RE_OS_LINUX
-						PRINT_DEBUG("Creating Vulkan descriptor set layout for window frame rendering");
-						const VkDescriptorSetLayoutBinding vk_aWindowFrameLayoutBindings[] = {
+						vk_layoutCreateInfo.flags |= VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
+					vkGetDescriptorSetLayoutSupport(vk_hDevice, &vk_layoutCreateInfo, &vk_setLayoutSupported);
+					if (vk_rbLayoutSupported && vkCreateDescriptorSetLayout(vk_hDevice, &vk_layoutCreateInfo, nullptr, &vk_hSpriteDescSetLayout) == VK_SUCCESS) {
+						constexpr VkDescriptorSetLayoutBinding vk_aLayoutBindings[] = {
 							{
 								.binding = 0,
-								.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-								.descriptorCount = 1,
-								.stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-								.pImmutableSamplers = nullptr
-							}, {
-								.binding = 1,
 								.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 								.descriptorCount = 1,
 								.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
 								.pImmutableSamplers = &vk_hDefaultSampler
 							}
 						};
-						const VkDescriptorSetLayoutCreateInfo vk_windowFrameLayoutCreateInfo = {
+						const VkDescriptorSetLayoutCreateInfo vk_layoutCreateInfo = {
 							.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
 							.pNext = nullptr,
 							.flags = 0,
-							.bindingCount = sizeof(vk_aWindowFrameLayoutBindings) / sizeof(vk_aWindowFrameLayoutBindings[0]),
-							.pBindings = vk_aWindowFrameLayoutBindings
+							.bindingCount = sizeof(vk_aLayoutBindings) / sizeof(vk_aLayoutBindings[0]),
+							.pBindings = vk_aLayoutBindings
 						};
-						vkGetDescriptorSetLayoutSupport(vk_hDevice, &vk_windowFrameLayoutCreateInfo, &vk_setLayoutSupported);
-						if (vk_rbLayoutSupported && vkCreateDescriptorSetLayout(vk_hDevice, &vk_windowFrameLayoutCreateInfo, nullptr, &vk_hWindowFrameDescSetLayout) == VK_SUCCESS)
-							return true;
-						else
-							RE_FATAL_ERROR("Failed to create Vulkan descriptor set layout for window frame rendering");
+						vkGetDescriptorSetLayoutSupport(vk_hDevice, &vk_layoutCreateInfo, &vk_setLayoutSupported);
+						if (vk_rbLayoutSupported && vkCreateDescriptorSetLayout(vk_hDevice, &vk_layoutCreateInfo, nullptr, &vk_hCharacterDescSetLayout) == VK_SUCCESS) {
+#ifdef RE_OS_LINUX
+							PRINT_DEBUG("Creating Vulkan descriptor set layout for window frame rendering");
+							const VkDescriptorSetLayoutBinding vk_aLayoutBindings[] = {
+								{
+									.binding = 0,
+									.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+									.descriptorCount = 1,
+									.stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+									.pImmutableSamplers = nullptr
+								}, {
+									.binding = 1,
+									.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+									.descriptorCount = 1,
+									.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+									.pImmutableSamplers = &vk_hDefaultSampler
+								}
+							};
+							const VkDescriptorSetLayoutCreateInfo vk_layoutCreateInfo = {
+								.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+								.pNext = nullptr,
+								.flags = 0,
+								.bindingCount = sizeof(vk_aLayoutBindings) / sizeof(vk_aLayoutBindings[0]),
+								.pBindings = vk_aLayoutBindings
+							};
+							vkGetDescriptorSetLayoutSupport(vk_hDevice, &vk_layoutCreateInfo, &vk_setLayoutSupported);
+							if (vk_rbLayoutSupported && vkCreateDescriptorSetLayout(vk_hDevice, &vk_layoutCreateInfo, nullptr, &vk_hWindowFrameDescSetLayout) == VK_SUCCESS)
+								return true;
+							else
+								RE_FATAL_ERROR("Failed to create Vulkan descriptor set layout for window frame rendering");
 #else
-						return true;
+							return true;
 #endif
+							PRINT_DEBUG("Destroying Vulkan descriptor set layout for characters due to failure creating all layouts");
+							vkDestroyDescriptorSetLayout(vk_hDevice, vk_hCharacterDescSetLayout, nullptr);
+						} else
+							RE_FATAL_ERROR("Failed to create Vulkan descriptor set layout for characters");
 						PRINT_DEBUG("Destroying Vulkan descriptor set layout for textures and sprite layouts due to failure creating all layouts");
 						vkDestroyDescriptorSetLayout(vk_hDevice, vk_hSpriteDescSetLayout, nullptr);
 					} else
@@ -177,6 +200,7 @@ namespace RE {
 #ifdef RE_OS_LINUX
 		vkDestroyDescriptorSetLayout(vk_hDevice, vk_hWindowFrameDescSetLayout, nullptr);
 #endif
+		vkDestroyDescriptorSetLayout(vk_hDevice, vk_hCharacterDescSetLayout, nullptr);
 		vkDestroyDescriptorSetLayout(vk_hDevice, vk_hSpriteDescSetLayout, nullptr);
 		vkDestroyDescriptorSetLayout(vk_hDevice, vk_hCameraDescSetLayout, nullptr);
 		vkDestroyDescriptorSetLayout(vk_hDevice, vk_hSortableDepthDescSetLayout, nullptr);

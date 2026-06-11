@@ -7,7 +7,8 @@ namespace RE {
 
 	extern VkDescriptorSet vk_hSpriteDescSet,
 		vk_ahGameObjectsDescSets[RE_VK_FRAMES_IN_FLIGHT],
-		vk_ahSortableDepthDescSets[RE_VK_FRAMES_IN_FLIGHT];
+		vk_ahSortableDepthDescSets[RE_VK_FRAMES_IN_FLIGHT],
+		vk_hCharacterDescSet;
 	extern std::unique_ptr<VkDescriptorSet[]> cameraDescSets;
 #ifdef RE_OS_LINUX
 	extern VkDescriptorSet vk_hWindowFrameDescSet;

@@ -427,7 +427,6 @@ namespace RE {
 				vk_submissionInfo.commandBufferInfoCount = commandBufferSubmissionInfos.size();
 				vk_submissionInfo.pCommandBufferInfos = commandBufferSubmissionInfos.data();
 				vk_submissionInfo.pSignalSemaphoreInfos = &vk_a2InternalSemaphoreSubmissionInfo[u8CurrentSemaphoreInfoIndex];
-				PRINT_LN(vk_submissionInfo.commandBufferInfoCount, ", ", vk_submissionInfo.pCommandBufferInfos[0].commandBuffer, ", ", vk_hLogicalQueue);
 				if (vkQueueSubmit2(vk_hLogicalQueue, 1, &vk_submissionInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
 					RE_ERROR("Failed to submit a subtask to the logical queue ", vk_hLogicalQueue, " at index ", u8LogicalQueueIndex);
 					return false;

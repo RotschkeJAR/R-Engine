@@ -1,8 +1,11 @@
 #version 450 core
 
+#extension GL_EXT_scalar_block_layout : enable
+
 const uint shadowsToRender = 0;
 const uint barToRender = 1;
 const uint buttonsToRender = 2;
+const uint titleToRender = 3;
 
 layout (constant_id = 0) const uint shadowExtent = 4;
 layout (constant_id = 1) const uint edgeWidth = 1;
@@ -10,6 +13,9 @@ layout (constant_id = 2) const uint barHeight = 30;
 layout (constant_id = 3) const uint buttonWidth = 50;
 layout (constant_id = 4) const uint buttonCount = 3;
 layout (constant_id = 5) const uint buttonTextureSize = 8;
+layout (constant_id = 6) const uint charTextureSize = 8;
+layout (constant_id = 7) const uint charGap = 2;
+layout (constant_id = 8) const uint charScale = 1;
 
 layout (push_constant, std430) uniform PushConstants {
 	uvec2 windowSize;
@@ -17,13 +23,15 @@ layout (push_constant, std430) uniform PushConstants {
 	bool renderEdges;
 };
 
-layout (set = 0, binding = 0) uniform Cursor {
-	uvec2 position;
-} cursor;
+layout (std430, set = 0, binding = 0) uniform Metadata {
+	uvec2 cursorPosition;
+	uint titleChars[256];
+} metadata;
 
 layout (location = 0) out vec4 vertexInfo;
 layout (location = 1) out vec2 uv;
 layout (location = 2) flat out uint buttonIndex;
+layout (location = 3) flat out uint characterIndex;
 
 vec2 pixel_to_ndc(uvec2 pixel) {
 	return pixel / vec2(windowSize) * 2.0 - 1.0;
@@ -31,6 +39,7 @@ vec2 pixel_to_ndc(uvec2 pixel) {
 
 void main() {
 	buttonIndex = 0xFFFFFFFF;
+	characterIndex = 0xFFFFFFFF;
 	switch (windowFrameToRender) {
 		case shadowsToRender:
 			switch (gl_VertexIndex) {
@@ -71,7 +80,6 @@ void main() {
 			}
 			break;
 
-		// Edges
 		case barToRender:
 			switch (gl_VertexIndex) {
 				case 0:
@@ -116,16 +124,15 @@ void main() {
 			vertexInfo = vec4(0.8, 0.8, 0.8, 1.0);
 			break;
 			
-		// Close button
 		case buttonsToRender:
 			{
 				buttonIndex = gl_InstanceIndex % buttonCount;
 				uint offsetFromRight = windowSize.x - buttonWidth * buttonIndex - (renderEdges ? (shadowExtent + 1 + edgeWidth) : 0),
 					offsetFromTop = renderEdges ? (shadowExtent + edgeWidth) : 0;
-				const bool hovered = cursor.position.x > offsetFromRight - buttonWidth
-						&& cursor.position.x <= offsetFromRight
-						&& cursor.position.y > offsetFromTop
-						&& cursor.position.y <= offsetFromTop + barHeight;
+				const bool hovered = metadata.cursorPosition.x > offsetFromRight - buttonWidth
+						&& metadata.cursorPosition.x <= offsetFromRight
+						&& metadata.cursorPosition.y > offsetFromTop
+						&& metadata.cursorPosition.y <= offsetFromTop + barHeight;
 				if (gl_InstanceIndex < buttonCount) {
 					if (!hovered) {
 						gl_Position = vec4(0.0, 0.0, 0.0, 1.0);
@@ -181,6 +188,31 @@ void main() {
 							break;
 					}
 				}
+			}
+			break;
+
+		case titleToRender:
+			const uint computedCharTextureSize = charTextureSize * charScale;
+			const uint offsetFromLeft = (barHeight - computedCharTextureSize) / 2 + gl_InstanceIndex * (computedCharTextureSize + charGap) + (renderEdges ? (shadowExtent + edgeWidth) : 0),
+				offsetFromTop = (barHeight - computedCharTextureSize) / 2 + (renderEdges ? (shadowExtent + edgeWidth) : 0);
+			characterIndex = min(metadata.titleChars[gl_InstanceIndex], 256);
+			switch (gl_VertexIndex) {
+				case 0:
+					gl_Position = vec4(pixel_to_ndc(uvec2(offsetFromLeft, offsetFromTop)), 0.0, 1.0);
+					uv = vec2(0.0, 0.0);
+					break;
+				case 1:
+					gl_Position = vec4(pixel_to_ndc(uvec2(offsetFromLeft + computedCharTextureSize, offsetFromTop)), 0.0, 1.0);
+					uv = vec2(1.0, 0.0);
+					break;
+				case 2:
+					gl_Position = vec4(pixel_to_ndc(uvec2(offsetFromLeft, offsetFromTop + computedCharTextureSize)), 0.0, 1.0);
+					uv = vec2(0.0, 1.0);
+					break;
+				case 3:
+					gl_Position = vec4(pixel_to_ndc(uvec2(offsetFromLeft + computedCharTextureSize, offsetFromTop + computedCharTextureSize)), 0.0, 1.0);
+					uv = vec2(1.0, 1.0);
+					break;
 			}
 			break;
 	}

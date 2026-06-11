@@ -20,6 +20,9 @@ namespace RE {
 	bool create_window_frame_descriptor_sets();
 	void destroy_window_frame_descriptor_sets();
 
+	bool create_character_descriptor_sets();
+	void destroy_character_descriptor_sets();
+
 }
 
 #endif /* __RE_RENDERER_DESCRIPTOR_SETS_INTERNAL_H__ */

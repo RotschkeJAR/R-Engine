@@ -226,4 +226,8 @@ namespace RE {
 #endif
 	}
 
+	const char* get_window_title() {
+		return pacWindowTitle;
+	}
+
 }

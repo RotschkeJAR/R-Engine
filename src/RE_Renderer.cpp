@@ -26,12 +26,16 @@ namespace RE {
 														rRenderTask.record(u8FunctionIndex, 0, nullptr);
 #ifdef RE_OS_LINUX
 												pIndirectDrawWindowTitle->vertexCount = 4;
-												pIndirectDrawWindowTitle->instanceCount = static_cast<uint32_t>(std::strlen(pacWindowTitle));
 												pIndirectDrawWindowTitle->firstVertex = 0;
 												pIndirectDrawWindowTitle->firstInstance = 0;
 												std::fill(std::begin(pWindowFrameUniformData->a2u32CursorPosition), std::end(pWindowFrameUniformData->a2u32CursorPosition), 0xFFFFFFFFU);
-												for (uint32_t i = 0; i < pIndirectDrawWindowTitle->instanceCount; i++)
-													pWindowFrameUniformData->au32TitleChars[i] = static_cast<uint32_t>(pacWindowTitle[i]);
+												uint32_t u32CharacterCount;
+												for (u32CharacterCount = 0; u32CharacterCount < 256; u32CharacterCount++) {
+													pWindowFrameUniformData->au32TitleChars[u32CharacterCount] = static_cast<uint32_t>(pacWindowTitle[u32CharacterCount]);
+													if (pWindowFrameUniformData->au32TitleChars[u32CharacterCount] == 0)
+														break;
+												}
+												pIndirectDrawWindowTitle->instanceCount = u32CharacterCount;
 #endif
 												return true;
 											}

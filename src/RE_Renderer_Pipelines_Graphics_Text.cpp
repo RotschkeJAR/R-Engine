@@ -130,9 +130,18 @@ namespace RE {
 			.dynamicStateCount = sizeof(vk_aeDynamicStates) / sizeof(vk_aeDynamicStates[0]),
 			.pDynamicStates = vk_aeDynamicStates
 		};
+		const VkPipelineRenderingCreateInfo vk_dynamicRendering = {
+			.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
+			.pNext = nullptr,
+			.viewMask = 0,
+			.colorAttachmentCount = 1,
+			.pColorAttachmentFormats = &vk_eSwapchainImageFormat,
+			.depthAttachmentFormat = VK_FORMAT_UNDEFINED,
+			.stencilAttachmentFormat = VK_FORMAT_UNDEFINED
+		};
 		const VkGraphicsPipelineCreateInfo vk_createInfo = {
 			.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-			.pNext = nullptr,
+			.pNext = &vk_dynamicRendering,
 			.flags = 0,
 			.stageCount = sizeof(vk_aShaderStages) / sizeof(vk_aShaderStages[0]),
 			.pStages = vk_aShaderStages,

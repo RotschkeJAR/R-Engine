@@ -1363,6 +1363,8 @@ namespace RE {
 	void set_input_for_fullscreen_toggle(Input eNewInputFullscreenToggle);
 	Input get_input_for_fullscreen_toggle();
 	void set_window_title(const char *pacNewTitle);
+	[[nodiscard]]
+	const char* get_window_title();
 
 	// Console
 	void enable_colorful_printing(bool bEnable);

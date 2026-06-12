@@ -6,13 +6,15 @@ namespace RE {
 	static std::unique_ptr<VulkanMemory[]> swapchainRelatedImageMemories;
 
 	bool alloc_memory_for_renderer_images() {
-#ifdef RE_OS_LINUX
 		PRINT_DEBUG("Allocating shared Vulkan memory for images");
 		const SharedVulkanMemoryInfo aImageInfos[] = {
+#ifdef RE_OS_LINUX
 			{
 				.vulkanStorageObject = vk_hWindowButtonImage,
 				.u32RegionIndex = 0
-			}, {
+			},
+#endif
+			{
 				.vulkanStorageObject = vk_hCharacterImage,
 				.u32RegionIndex = 0
 			}
@@ -23,9 +25,6 @@ namespace RE {
 		else
 			RE_FATAL_ERROR("Failed to allocate memory for Vulkan images");
 		return false;
-#else
-		return true;
-#endif
 	}
 
 	bool alloc_memory_for_swapchain_related_images() {

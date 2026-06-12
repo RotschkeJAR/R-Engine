@@ -8,8 +8,10 @@ namespace RE {
 	bool alloc_memory_for_renderer_buffers() {
 		PRINT_DEBUG("Filling buffer information for allocating shared memory");
 		constexpr uint8_t u8CameraBufferIndex = 0,
-			u8StagingRawGameObjectBufferIndex = 1,
-			u8CursorBufferIndex = 2;
+			u8StagingRawGameObjectBufferIndex = 1;
+#ifdef RE_OS_LINUX
+		constexpr uint8_t u8WindowFrameBuffer = 2;
+#endif
 		SharedVulkanMemoryInfo aLocalBufferInfos[] = {
 			{
 				.vulkanStorageObject = vk_hCameraBuffer,
@@ -56,9 +58,9 @@ namespace RE {
 							reinterpret_cast<uint8_t*>(
 								bufferMemoryPointers[stagingGameObjectIndexToMemory]) + aLocalBufferAllocs[u8StagingRawGameObjectBufferIndex].vk_memoryOffset);
 #ifdef RE_OS_LINUX
-					const size_t cursorIndexToMemory = aLocalBufferAllocs[u8CursorBufferIndex].indexToMemory;
+					const size_t cursorIndexToMemory = aLocalBufferAllocs[u8WindowFrameBuffer].indexToMemory;
 					pWindowFrameBufferMemory = &localBufferMemories[cursorIndexToMemory];
-					pWindowFrameUniformData = reinterpret_cast<WindowFrameUniformData*>(reinterpret_cast<uint8_t*>(bufferMemoryPointers[cursorIndexToMemory]) + aLocalBufferAllocs[u8CursorBufferIndex].vk_memoryOffset);
+					pWindowFrameUniformData = reinterpret_cast<WindowFrameUniformData*>(reinterpret_cast<uint8_t*>(bufferMemoryPointers[cursorIndexToMemory]) + aLocalBufferAllocs[u8WindowFrameBuffer].vk_memoryOffset);
 					pIndirectDrawWindowTitle = reinterpret_cast<VkDrawIndirectCommand*>(reinterpret_cast<uint8_t*>(pWindowFrameUniformData) + sizeof(WindowFrameUniformData));
 #endif
 				}

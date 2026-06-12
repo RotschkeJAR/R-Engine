@@ -40,7 +40,7 @@
  *   Uncomment this, if you want to disable PRINT_DEBUG and PRINT_DEBUG_CLASS to
  * filter debug output and get better performance while the terminal is active.
  */
-#define RE_DISABLE_DEBUGGING
+//#define RE_DISABLE_DEBUGGING
 
 namespace RE {
 

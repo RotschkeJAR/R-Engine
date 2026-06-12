@@ -710,13 +710,12 @@ namespace RE {
 		xdg_toplevel_set_title(xdg_pToplevel, pacWindowTitle);
 		xdg_toplevel_set_app_id(xdg_pToplevel, pacWindowTitle);
 		wl_display_flush(wl_pDisplay);
-		uint32_t u32CharacterCount;
-		for (u32CharacterCount = 0; u32CharacterCount < 256; u32CharacterCount++) {
-			pWindowFrameUniformData->au32TitleChars[u32CharacterCount] = static_cast<uint32_t>(pacWindowTitle[u32CharacterCount]);
-			if (pWindowFrameUniformData->au32TitleChars[u32CharacterCount] == 0)
+		for (pIndirectDrawWindowTitle->instanceCount = 0; pIndirectDrawWindowTitle->instanceCount < 256; pIndirectDrawWindowTitle->instanceCount++) {
+			const uint32_t u32CharCode = static_cast<uint32_t>(pacWindowTitle[pIndirectDrawWindowTitle->instanceCount]);
+			pWindowFrameUniformData->au32TitleChars[pIndirectDrawWindowTitle->instanceCount] = u32CharCode;
+			if (u32CharCode == 0)
 				break;
 		}
-		pIndirectDrawWindowTitle->instanceCount = u32CharacterCount;
 	}
 
 	void wayland_window_proc() {

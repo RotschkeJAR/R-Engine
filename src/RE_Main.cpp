@@ -62,41 +62,25 @@ namespace RE {
 		if (init_logical_gpu()) {
 			if (init_renderer()) {
 				PRINT_DEBUG("Starting game loop");
-				std::chrono::high_resolution_clock::time_point currentFrameTime = std::chrono::high_resolution_clock::now(),
-					lastFrameTime = currentFrameTime,
-					lastExecutionTimepoint = currentFrameTime;
+				std::chrono::steady_clock::time_point currentFrameTime = std::chrono::steady_clock::now(),
+					lastFrameTime = currentFrameTime;
 				show_window(true);
 				bRunning = true;
 
 				// Game loop
 				while (!should_window_close() && bRunning && are_scenes_present() && !bErrorOccured) {
 					window_proc();
-					if (f32Deltaseconds > 0.0f) {
-						game_logic_update();
-						if (should_render())
-							render();
-						lastExecutionTimepoint = std::chrono::high_resolution_clock::now();
-						currentFrameTime = lastExecutionTimepoint;
-					} else
-						currentFrameTime = std::chrono::high_resolution_clock::now();
+					game_logic_update();
+					if (should_render())
+						render();
 
 					PRINT_DEBUG("Calculating deltatime for next frame");
+					currentFrameTime = std::chrono::steady_clock::now();
 					f32Deltaseconds = std::chrono::duration_cast<std::chrono::duration<float>>(currentFrameTime - lastFrameTime).count();
 					lastFrameTime = currentFrameTime;
-					if (f32Deltaseconds <= f32MaxDeltatime) {
-						if (f32Deltaseconds < f32MinDeltatime) {
-							const float fTimeToWait = f32MinDeltatime - f32Deltaseconds;
-							PRINT_DEBUG("Main thread sleeps for ", fTimeToWait, " seconds for FPS limit");
-							std::this_thread::sleep_for(std::chrono::duration<float>(fTimeToWait));
-						}
-					} else {
-						if (std::chrono::duration_cast<std::chrono::duration<float>>(currentFrameTime - lastExecutionTimepoint).count() >= f32MaxExhaustionTime) {
-							RE_ERROR("The main thread has been exhausted for more than ", f32MaxExhaustionTime, " seconds. Exiting normally");
-							break;
-						}
-						std::this_thread::sleep_for(std::chrono::duration<float>(f32MinDeltatime - (f32Deltaseconds - std::truncf(f32Deltaseconds / f32MinDeltatime) * f32MinDeltatime)));
-						f32Deltaseconds = 0.0f;
-					}
+					if (f32Deltaseconds < f32MinDeltatime)
+						std::this_thread::sleep_until(currentFrameTime + std::chrono::duration<float>(f32MinDeltatime - f32Deltaseconds));
+					f32Deltaseconds = std::min(f32Deltaseconds, f32MaxDeltatime);
 				}
 
 				PRINT_DEBUG("Exiting game loop");
@@ -140,7 +124,6 @@ namespace RE {
 		}
 	}
 
-	[[nodiscard]]
 	uint32_t get_fps_limit() {
 		return f32MinDeltatime > 0.0f ? CALCULATE_FPS(f32MinDeltatime) : 0;
 	}
@@ -163,7 +146,6 @@ namespace RE {
 		}
 	}
 
-	[[nodiscard]]
 	float get_max_lag_time() {
 		return f32MaxDeltatime;
 	}
@@ -181,7 +163,6 @@ namespace RE {
 		f32MaxExhaustionTime = f32MaxSecondsOfExhaustion;
 	}
 
-	[[nodiscard]]
 	float get_max_exhaustion_time() {
 		return f32MaxExhaustionTime;
 	}

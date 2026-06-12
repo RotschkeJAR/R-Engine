@@ -15,7 +15,11 @@ namespace RE {
 		largestMonitorSize;
 	const char* pacWindowTitle = "Untitled game window";
 	Input eInputFullscreenToggle = RE_INPUT_KEY_F11;
+#ifdef RE_OS_WINDOWS
 	uint8_t u8WindowFlagBits = 1 << WINDOW_FULLSCREEN_BIT;
+#else
+	uint8_t u8WindowFlagBits = 0;
+#endif
 
 	bool create_window() {
 		PRINT_DEBUG("Creating window");

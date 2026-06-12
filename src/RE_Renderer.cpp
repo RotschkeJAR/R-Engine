@@ -29,13 +29,12 @@ namespace RE {
 												pIndirectDrawWindowTitle->firstVertex = 0;
 												pIndirectDrawWindowTitle->firstInstance = 0;
 												std::fill(std::begin(pWindowFrameUniformData->a2u32CursorPosition), std::end(pWindowFrameUniformData->a2u32CursorPosition), 0xFFFFFFFFU);
-												uint32_t u32CharacterCount;
-												for (u32CharacterCount = 0; u32CharacterCount < 256; u32CharacterCount++) {
-													pWindowFrameUniformData->au32TitleChars[u32CharacterCount] = static_cast<uint32_t>(pacWindowTitle[u32CharacterCount]);
-													if (pWindowFrameUniformData->au32TitleChars[u32CharacterCount] == 0)
+												for (pIndirectDrawWindowTitle->instanceCount = 0; pIndirectDrawWindowTitle->instanceCount < 256; pIndirectDrawWindowTitle->instanceCount++) {
+													const uint32_t u32CharCode = static_cast<uint32_t>(pacWindowTitle[pIndirectDrawWindowTitle->instanceCount]);
+													pWindowFrameUniformData->au32TitleChars[pIndirectDrawWindowTitle->instanceCount] = u32CharCode;
+													if (u32CharCode == 0)
 														break;
 												}
-												pIndirectDrawWindowTitle->instanceCount = u32CharacterCount;
 #endif
 												return true;
 											}
@@ -99,7 +98,7 @@ namespace RE {
 						.srcAccessMask = VK_ACCESS_NONE,
 						.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
 						.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-						.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+						.newLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
 						.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 						.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 						.image = swapchainImages[u32SwapchainImageIndex],
@@ -109,7 +108,7 @@ namespace RE {
 					const VkRenderingAttachmentInfo vk_attachmentInfo = {
 						.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
 						.imageView = swapchainImageViews[u32SwapchainImageIndex],
-						.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+						.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
 						.resolveMode = VK_RESOLVE_MODE_NONE,
 						.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
 						.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
@@ -186,7 +185,7 @@ namespace RE {
 						.pNext = nullptr,
 						.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
 						.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT,
-						.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+						.oldLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
 						.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
 						.srcQueueFamilyIndex = queueFamilyIndices[u8CurrentLogicalQueue],
 						.dstQueueFamilyIndex = queueFamilyIndices[u8NextLogicalQueue],

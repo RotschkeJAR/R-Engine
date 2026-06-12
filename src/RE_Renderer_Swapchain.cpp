@@ -37,7 +37,7 @@ namespace RE {
 		const VkSwapchainCreateInfoKHR vk_swapchainCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
 			.surface = vk_hSurface,
-			.minImageCount = std::clamp<uint32_t>(vk_surfaceCapabilities.minImageCount + 1,
+			.minImageCount = std::clamp<uint32_t>(3,
 					vk_surfaceCapabilities.minImageCount,
 					vk_surfaceCapabilities.maxImageCount > 0 ? vk_surfaceCapabilities.maxImageCount : std::numeric_limits<uint32_t>::max()
 			),

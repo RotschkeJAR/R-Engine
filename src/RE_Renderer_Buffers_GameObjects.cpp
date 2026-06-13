@@ -17,7 +17,7 @@ namespace RE {
 			PRINT_DEBUG("Creating game object buffer in Vulkan");
 			if (create_vulkan_buffer(0,
 					vk_bufferSize,
-					VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+					VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
 					queuesForObjectBuffer.u8QueueCount,
 					queuesForObjectBuffer.queueFamilyIndices.get(),
 					&vk_ahGameObjectsBuffers[u8FrameInFlightCreateIndex]))

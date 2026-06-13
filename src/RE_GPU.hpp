@@ -9,7 +9,6 @@
 namespace RE {
 
 	// Surface
-	extern VkPresentModeKHR vk_ePresentModeVsync, vk_ePresentModeNoVsync;
 	extern VkSurfaceKHR vk_hSurface;
 	extern VkSurfaceCapabilitiesKHR vk_surfaceCapabilities;
 	extern std::unique_ptr<VkSurfaceFormatKHR[]> surfaceFormatsAvailable;

@@ -10,14 +10,11 @@ namespace RE {
 
 #define LOWEST_SMOOTH_FPS 15
 #define DELTATIME_FOR_LOWEST_SMOOTH_FPS (1.0f / LOWEST_SMOOTH_FPS)
-#define MIN_LAG_TIME 0.5f
-#define MIN_EXHAUSTION_TIME 10.0f
 
-	static float f32MinDeltatime = 1.0f / 60,
-		f32MaxDeltatime = DELTATIME_FOR_LOWEST_SMOOTH_FPS,
-		f32MaxExhaustionTime = f32MaxDeltatime + MIN_EXHAUSTION_TIME;
+	static float f32MaxDeltatime = DELTATIME_FOR_LOWEST_SMOOTH_FPS;
 	float f32Deltaseconds = 0.0f;
-	bool bRunning = false, bErrorOccured = false;
+	bool bRunning = false,
+		bErrorOccured = false;
 
 #define CALCULATE_FPS(DELTATIME) static_cast<uint32_t>(std::roundf(1.0f / DELTATIME))
 
@@ -78,12 +75,9 @@ namespace RE {
 					currentFrameTime = std::chrono::steady_clock::now();
 					f32Deltaseconds = std::chrono::duration_cast<std::chrono::duration<float>>(currentFrameTime - lastFrameTime).count();
 					lastFrameTime = currentFrameTime;
-					if (f32Deltaseconds < f32MinDeltatime)
-						std::this_thread::sleep_until(currentFrameTime + std::chrono::duration<float>(f32MinDeltatime - f32Deltaseconds));
 					f32Deltaseconds = std::min(f32Deltaseconds, f32MaxDeltatime);
 				}
 
-				PRINT_DEBUG("Exiting game loop");
 				bRunning = false;
 				show_window(false);
 				vkDeviceWaitIdle(vk_hDevice);
@@ -98,73 +92,20 @@ namespace RE {
 		return !bErrorOccured;
 	}
 
-	[[nodiscard]]
 	float get_deltaseconds() {
 		return f32Deltaseconds;
 	}
 
-	[[nodiscard]]
 	float get_fps_rate() {
 		return f32Deltaseconds > 0.0f ? (1.0f / f32Deltaseconds) : 0.0f;
 	}
 
-	void set_fps_limit(const uint32_t u32MaxFramesPerSecond) {
-		if (u32MaxFramesPerSecond < LOWEST_SMOOTH_FPS && u32MaxFramesPerSecond > 0)
-			RE_WARNING("The new FPS limit (", u32MaxFramesPerSecond, ") might be too low and cause visual stutters");
-		if (u32MaxFramesPerSecond > 0) {
-			PRINT_DEBUG("Setting FPS limit to ", u32MaxFramesPerSecond);
-			f32MinDeltatime = 1.0f / u32MaxFramesPerSecond;
-		} else {
-			PRINT_DEBUG("Removing the FPS limit (", CALCULATE_FPS(f32MinDeltatime), ")");
-			f32MinDeltatime = -1.0f;
-		}
-		if (f32MinDeltatime > f32MaxDeltatime - MIN_LAG_TIME) {
-			RE_NOTE("The new FPS limit (", u32MaxFramesPerSecond, " => ", f32MinDeltatime, " seconds) is to close to the maximum lag time (", f32MaxDeltatime, " seconds => ", CALCULATE_FPS(f32MaxDeltatime), " frames per second). Maximum lag time will be increased by ", MIN_LAG_TIME, " seconds.");
-			set_max_lag_time(std::max<float>(f32MinDeltatime + MIN_LAG_TIME, DELTATIME_FOR_LOWEST_SMOOTH_FPS));
-		}
+	void set_max_deltatime(const float f32NewMaxDeltatime) {
+		f32MaxDeltatime = f32NewMaxDeltatime;
 	}
 
-	uint32_t get_fps_limit() {
-		return f32MinDeltatime > 0.0f ? CALCULATE_FPS(f32MinDeltatime) : 0;
-	}
-
-	void set_max_lag_time(const float f32MaxSecondsOfLag) {
-		if (f32MaxSecondsOfLag <= 0.0f) {
-			RE_ERROR("Maximum lag time cannot be zero or negative. Maximum lag time won't be changed");
-			return;
-		} else if (f32MaxSecondsOfLag < DELTATIME_FOR_LOWEST_SMOOTH_FPS)
-			RE_WARNING("The new maximum lag time (", f32MaxSecondsOfLag, " seconds => ", CALCULATE_FPS(f32MaxSecondsOfLag), " frames per second) might be too low causing the simulation to stutter or freeze. Common fixed deltatime for ", LOWEST_SMOOTH_FPS, " FPS is ", DELTATIME_FOR_LOWEST_SMOOTH_FPS, " seconds");
-		if (f32MaxSecondsOfLag <= f32MinDeltatime) {
-			RE_ERROR("New maximum lag time (", f32MaxSecondsOfLag, " seconds => ", CALCULATE_FPS(f32MaxSecondsOfLag), " frames per second) is lower than the FPS limit (", f32MinDeltatime, " seconds => ", CALCULATE_FPS(f32MinDeltatime), " frames per second). Maximum lag time won't be changed");
-			return;
-		}
-		PRINT_DEBUG("Setting maximum deltatime to ", f32MaxSecondsOfLag, " seconds");
-		f32MaxDeltatime = f32MaxSecondsOfLag;
-		if (f32MaxDeltatime > f32MaxExhaustionTime - MIN_EXHAUSTION_TIME) {
-			RE_NOTE("New maximum lag time (", f32MaxDeltatime, " seconds) is too close to the maximum exhaustion time (", f32MaxExhaustionTime, " seconds). Maximum exhaustion time will be increased by ", MIN_EXHAUSTION_TIME, " seconds");
-			set_max_exhaustion_time(f32MaxDeltatime + MIN_EXHAUSTION_TIME);
-		}
-	}
-
-	float get_max_lag_time() {
+	float get_max_deltatime() {
 		return f32MaxDeltatime;
-	}
-
-	void set_max_exhaustion_time(const float f32MaxSecondsOfExhaustion) {
-		if (f32MaxSecondsOfExhaustion < MIN_EXHAUSTION_TIME) {
-			RE_ERROR("New maximum exhaustion time is not allowed to be smaller than ", MIN_EXHAUSTION_TIME, " seconds. The change will not be applied");
-			return;
-		}
-		if (f32MaxSecondsOfExhaustion < f32MaxDeltatime + MIN_EXHAUSTION_TIME) {
-			RE_ERROR("There should be at least ", MIN_EXHAUSTION_TIME, " seconds between the maximum lag time (", f32MaxDeltatime, " seconds) and new maximum exhaustion time (", f32MaxSecondsOfExhaustion, " seconds)");
-			return;
-		}
-		PRINT_DEBUG("Setting maximum exhaustion time to ", f32MaxSecondsOfExhaustion, " seconds");
-		f32MaxExhaustionTime = f32MaxSecondsOfExhaustion;
-	}
-
-	float get_max_exhaustion_time() {
-		return f32MaxExhaustionTime;
 	}
 
 }

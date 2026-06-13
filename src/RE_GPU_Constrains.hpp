@@ -17,7 +17,7 @@ namespace RE {
 		ENABLED_FEATURE_UPDATE_DESCRIPTOR_SAMPLED_IMAGE_AFTER_BIND_BIT  = 0x80,
 		ENABLED_FEATURE_UPDATE_UNUSED_DESCRIPTORS_WHILE_PENDING_BIT     = 0x100,
 		ENABLED_FEATURE_INDEX_UINT_8_BIT                                = 0x200,
-		ENABLED_FEATURE_MULTI_VIEWPORT_BIT                              = 0x400
+		ENABLED_FEATURE_DYNAMIC_RENDERING_BIT                           = 0x400
 	};
 
 	extern VulkanEnabledFeatureFlags mEnabledFeatures;

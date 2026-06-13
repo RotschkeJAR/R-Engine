@@ -3,7 +3,6 @@
 
 namespace RE {
 	
-	VkPresentModeKHR vk_ePresentModeVsync = VK_PRESENT_MODE_FIFO_KHR, vk_ePresentModeNoVsync = VK_PRESENT_MODE_FIFO_KHR;
 	VkSurfaceKHR vk_hSurface;
 	VkSurfaceCapabilitiesKHR vk_surfaceCapabilities;
 	std::unique_ptr<VkSurfaceFormatKHR[]> surfaceFormatsAvailable;
@@ -71,21 +70,6 @@ namespace RE {
 		vkGetPhysicalDeviceSurfacePresentModesKHR(SELECTED_PHYSICAL_VULKAN_DEVICE, vk_hSurface, &u32PresentModesCount, nullptr);
 		std::unique_ptr<VkPresentModeKHR[]> allSupportedPresentModes = std::make_unique<VkPresentModeKHR[]>(u32PresentModesCount);
 		vkGetPhysicalDeviceSurfacePresentModesKHR(SELECTED_PHYSICAL_VULKAN_DEVICE, vk_hSurface, &u32PresentModesCount, allSupportedPresentModes.get());
-
-		vk_ePresentModeVsync = VK_PRESENT_MODE_FIFO_KHR;
-		vk_ePresentModeNoVsync = VK_PRESENT_MODE_FIFO_KHR;
-		if (SELECTED_PHYSICAL_VULKAN_DEVICE_TYPE == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU || SELECTED_PHYSICAL_VULKAN_DEVICE_TYPE == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
-			for (uint32_t u32SurfaceFormatIndex = 0; u32SurfaceFormatIndex < u32SurfaceFormatsAvailableCount; u32SurfaceFormatIndex++)
-				switch (allSupportedPresentModes[u32SurfaceFormatIndex]) {
-					case VK_PRESENT_MODE_IMMEDIATE_KHR:
-						vk_ePresentModeNoVsync = VK_PRESENT_MODE_IMMEDIATE_KHR;
-						break;
-					case VK_PRESENT_MODE_MAILBOX_KHR:
-						vk_ePresentModeVsync = VK_PRESENT_MODE_MAILBOX_KHR;
-						break;
-					default:
-						break;
-				}
 	}
 
 	void select_best_vulkan_surface_format() {

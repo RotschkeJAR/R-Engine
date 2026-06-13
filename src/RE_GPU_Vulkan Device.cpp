@@ -1180,7 +1180,7 @@ namespace RE {
 		};
 		const VkPhysicalDeviceFeatures vk_physicalDeviceFeaturesEnabled = {
 			.sampleRateShading = are_vulkan_features_enabled<ENABLED_FEATURE_SAMPLE_RATE_SHADING_BIT>(),
-			.multiViewport = are_vulkan_features_enabled<ENABLED_FEATURE_MULTI_VIEWPORT_BIT>(),
+			.multiDrawIndirect = VK_TRUE,
 			.samplerAnisotropy = are_vulkan_features_enabled<ENABLED_FEATURE_ANISOTROPIC_FILTERING_BIT>(),
 			.sparseBinding = are_vulkan_features_enabled<ENABLED_FEATURE_SPARSE_BINDING_BIT>(),
 			.sparseResidencyBuffer = are_vulkan_features_enabled<ENABLED_FEATURE_SPARSE_RESIDENCY_BUFFER_BIT>(),

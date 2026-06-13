@@ -210,7 +210,7 @@ namespace RE {
 			if (!vk_physicalDeviceFeatures_1_3.synchronization2)
 				warnings.emplace("The advanced synchronization-feature is not supported");
 			if (!vk_physicalDeviceFeatures_1_3.dynamicRendering)
-				incompatibilities.emplace("The dynamic rendering-feature (relinquishment of static render passes) is not supported");
+				optionals.emplace("The dynamic rendering-feature (relinquishment of static render passes) is not supported");
 			if (!vk_physicalDeviceFeatures_1_2.shaderSampledImageArrayNonUniformIndexing)
 			    incompatibilities.emplace("Non-uniform indexing within the shaders is not supported");
 			if (!vk_physicalDeviceFeatures_1_2.descriptorBindingSampledImageUpdateAfterBind)
@@ -227,8 +227,8 @@ namespace RE {
 				incompatibilities.emplace("Timeline semaphores aren't supported");
 			if (!vk_physicalDeviceFeatures.sampleRateShading)
 				optionals.emplace("Sample shading (fragment shader executes per sample) is not supported");
-			if (!vk_physicalDeviceFeatures.multiViewport)
-				optionals.emplace("Multi Viewport is not supported");
+			if (!vk_physicalDeviceFeatures.multiDrawIndirect)
+				optionals.emplace("Indirect, multiple draw commands are not supported");
 			if (!vk_physicalDeviceFeatures.samplerAnisotropy)
 				optionals.emplace("Anisotropic filtering for textures is not supported");
 		}
@@ -560,11 +560,13 @@ namespace RE {
 			{ // Present modes
 				uint32_t u32PresentModeCount;
 				vkGetPhysicalDeviceSurfacePresentModesKHR(vk_hPhysicalDevice, vk_hSurface, &u32PresentModeCount, nullptr);
-				std::unique_ptr<VkPresentModeKHR[]> presentModes = std::make_unique<VkPresentModeKHR[]>(u32PresentModeCount);
-				vkGetPhysicalDeviceSurfacePresentModesKHR(vk_hPhysicalDevice, vk_hSurface, &u32PresentModeCount, presentModes.get());
+				constexpr uint32_t u32MaxPresentModeCount = 16;
+				u32PresentModeCount = std::min(u32PresentModeCount, u32MaxPresentModeCount);
+				VkPresentModeKHR vk_aePresentModes[u32MaxPresentModeCount];
+				vkGetPhysicalDeviceSurfacePresentModesKHR(vk_hPhysicalDevice, vk_hSurface, &u32PresentModeCount, vk_aePresentModes);
 				bool bFifoPresentationSupported = false;
 				for (uint32_t u32PresentModeIndex = 0; u32PresentModeIndex < u32PresentModeCount; u32PresentModeIndex++)
-					if (presentModes[u32PresentModeIndex] == VK_PRESENT_MODE_FIFO_KHR) {
+					if (vk_aePresentModes[u32PresentModeIndex] == VK_PRESENT_MODE_FIFO_KHR) {
 						bFifoPresentationSupported = true;
 						break;
 					}

@@ -45,13 +45,13 @@ namespace RE {
 			.imageColorSpace = surfaceFormatsAvailable[u32IndexToSelectedSurfaceFormat].colorSpace,
 			.imageExtent = vk_swapchainResolution,
 			.imageArrayLayers = 1,
-			.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+			.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
 			.imageSharingMode = queuesToShareAcross.size() == 1 ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT,
 			.queueFamilyIndexCount = static_cast<uint32_t>(queuesToShareAcross.size()),
 			.pQueueFamilyIndices = queuesToShareAcross.data(),
 			.preTransform = vk_surfaceCapabilities.currentTransform,
 			.compositeAlpha = vk_eCompositeAlphaSelected,
-			.presentMode = bVsyncEnabled ? vk_ePresentModeVsync : vk_ePresentModeNoVsync,
+			.presentMode = VK_PRESENT_MODE_FIFO_KHR,
 			.clipped = VK_TRUE,
 			.oldSwapchain = vk_hOldSwapchain
 		};

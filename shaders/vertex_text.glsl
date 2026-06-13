@@ -6,7 +6,7 @@ layout (location = 0) out vec2 uv;
 layout (location = 1) flat out uint charIndex;
 
 void main() {
-	charIndex = charCode;
+	charIndex = min(charCode, 256);
 	vec4 position;
 	switch (gl_VertexIndex) {
 		case 0:

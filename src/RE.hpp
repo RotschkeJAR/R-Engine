@@ -1442,15 +1442,9 @@ namespace RE {
 	float get_deltaseconds();
 	[[nodiscard]]
 	float get_fps_rate();
-	void set_fps_limit(uint32_t u32MaxFramesPerSecond);
+	void set_max_deltatime(float f32NewMaxDeltatime);
 	[[nodiscard]]
-	uint32_t get_fps_limit();
-	void set_max_lag_time(float f32MaxSecondsOfLag);
-	[[nodiscard]]
-	float get_max_lag_time();
-	void set_max_exhaustion_time(float f32MaxSecondsOfExhaustion);
-	[[nodiscard]]
-	float get_max_exhaustion_time();
+	float get_max_deltatime();
 
 	// Manager
 	void set_next_scene(Scene *pNextSceneParam);

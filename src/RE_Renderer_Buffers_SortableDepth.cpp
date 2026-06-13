@@ -10,7 +10,7 @@ namespace RE {
 			PRINT_DEBUG("Creating sortable depth buffer at frame-in-flight index ", u8FrameInFlightCreateIndex);
 			if (!create_vulkan_buffer(0,
 					get_max_game_object_count() * sizeof(DepthShaderData),
-					VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+					VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 					rQueues.u8QueueCount,
 					rQueues.queueFamilyIndices.get(),
 					&vk_ahSortableDepthBuffers[u8FrameInFlightCreateIndex])) {
@@ -29,7 +29,7 @@ namespace RE {
 
 	void destroy_sortable_depth_buffers() {
 		PRINT_DEBUG("Destroying sortable depth buffers in Vulkan");
-		for (VkBuffer vk_hSortableDepthBuffer : vk_ahSortableDepthBuffers)
+		for (const VkBuffer vk_hSortableDepthBuffer : vk_ahSortableDepthBuffers)
 			vkDestroyBuffer(vk_hDevice, vk_hSortableDepthBuffer, nullptr);
 	}
 

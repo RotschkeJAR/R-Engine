@@ -34,7 +34,7 @@ $(OUT): $(RE) $(TEST)/*.cpp
 		exit 1; \
 	fi
 	-@rm -f $(TEST)/*.gch
-	@if ! $(CC) $(CFLAG) *.o -o "$(OUT)" -L $(BIN) -l RE -l dl -l X11 -l Xrandr -l Xinerama -l wayland-client -l xkbcommon; then \
+	@if ! $(CC) $(CFLAG) *.o -o "$(OUT)" -L $(BIN) -l RE -l dl -l X11 -l Xrandr -l Xinerama -l wayland-client -l wayland-cursor -l xkbcommon; then \
 		echo "GAME - ERROR: Failed linking"; \
 		rm -f *.o; \
 		exit 1; \

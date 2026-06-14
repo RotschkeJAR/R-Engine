@@ -7,6 +7,7 @@
 #include <dlfcn.h>
 #include <linux/input-event-codes.h>
 #include <sys/mman.h>
+#include <wayland-cursor.h>
 
 namespace RE {
 
@@ -14,6 +15,7 @@ namespace RE {
 #define REQUIRED_VERSION_XDG_WM_BASE static_cast<uint32_t>(std::max(XDG_WM_BASE_PING_SINCE_VERSION, std::max(XDG_WM_BASE_DESTROY_SINCE_VERSION, std::max(XDG_WM_BASE_GET_XDG_SURFACE_SINCE_VERSION, XDG_WM_BASE_PONG_SINCE_VERSION))))
 #define REQUIRED_VERSION_WL_SEAT static_cast<uint32_t>(std::max(WL_SEAT_CAPABILITIES_SINCE_VERSION, std::max(WL_SEAT_GET_POINTER_SINCE_VERSION, WL_SEAT_GET_KEYBOARD_SINCE_VERSION)))
 #define REQUIRED_VERSION_WL_OUTPUT static_cast<uint32_t>(std::max(WL_OUTPUT_GEOMETRY_SINCE_VERSION, WL_OUTPUT_MODE_SINCE_VERSION))
+#define REQUIRED_VERSION_WL_SHM static_cast<uint32_t>(std::max(WL_SHM_FORMAT_SINCE_VERSION, WL_SHM_CREATE_POOL_SINCE_VERSION))
 
 #define KEYCODE_TO_XKB_OFFSET 8
 
@@ -44,6 +46,7 @@ namespace RE {
 	static WlCompositor wlCompositor = {};
 	static XdgWmBase xdgWmBase = {};
 	static WlSeat wlSeat = {};
+	static wl_shm *wl_pShm;
 	wl_surface *wl_pSurface;
 	static wl_output *wl_pCurrentOutput = nullptr;
 	static xdg_surface *xdg_pSurface;
@@ -51,6 +54,9 @@ namespace RE {
 	static std::vector<WaylandMonitorInfo> waylandMonitors;
 	static xkb_context *xkb_pContext;
 	static wl_pointer *wl_pPointer = nullptr;
+	static wl_surface *wl_pCursorSurface;
+	static wl_cursor_theme *wl_pCursorTheme;
+	static wl_cursor *wl_apCursors[1];
 	static WaylandKeyboardInfo waylandKeyboard = {};
 	static Vector2i actualCursorPosition,
 		actualWindowSize;
@@ -164,6 +170,17 @@ namespace RE {
 						Vector2u {});
 			} else
 				RE_ERROR("The version of output is too low (", u32Version, " < ", REQUIRED_VERSION_WL_OUTPUT, ")");
+		} else if (are_string_contents_equal(pacInterface, wl_shm_interface.name)) {
+			if (u32Version >= REQUIRED_VERSION_WL_SHM) {
+				PRINT_DEBUG("Binding a shared memory");
+				wl_pShm = reinterpret_cast<wl_shm*>(
+								wl_registry_bind(
+									wl_pRegistry,
+									u32Name,
+									&wl_shm_interface,
+									REQUIRED_VERSION_WL_SHM));
+			} else
+				RE_ERROR("The version of shared memory is too low (", u32Version, " < ", REQUIRED_VERSION_WL_SHM, ")");
 		}
 	}
 
@@ -291,6 +308,12 @@ namespace RE {
 	};
 
 	static void wayland_pointer_enter_callback(void *const pData, wl_pointer *const wl_pPointer, const uint32_t u32Serial, wl_surface *const wl_pSurface, const wl_fixed_t wl_x, const wl_fixed_t wl_y) {
+		PRINT_DEBUG("Setting the Wayland surface ", wl_pCursorSurface, " for the cursor ", wl_pPointer);
+		wl_buffer *const wl_pBuffer = wl_cursor_image_get_buffer(wl_apCursors[0]->images[0]);
+		wl_surface_attach(wl_pCursorSurface, wl_pBuffer, 0, 0);
+		wl_surface_damage(wl_pCursorSurface, 0, 0, wl_apCursors[0]->images[0]->width, wl_apCursors[0]->images[0]->height);
+		wl_surface_commit(wl_pCursorSurface);
+		wl_pointer_set_cursor(wl_pPointer, u32Serial, wl_pCursorSurface, wl_apCursors[0]->images[0]->hotspot_x, wl_apCursors[0]->images[0]->hotspot_y);
 	}
 
 	static void wayland_pointer_leave_callback(void *const pData, wl_pointer *const wl_pPointer, const uint32_t u32Serial, wl_surface *const wl_pSurface) {
@@ -425,7 +448,7 @@ namespace RE {
 		}
 	}
 
-	static void wayland_keyboard_enter_callback(void *const pData, wl_keyboard *const wl_pKeyboard, const uint32_t u32Serial, struct wl_surface *const wl_pSurface, struct wl_array *const wl_pKeys) {
+	static void wayland_keyboard_enter_callback(void *const pData, wl_keyboard *const wl_pKeyboard, const uint32_t u32Serial, wl_surface *const wl_pSurface, wl_array *const wl_pKeys) {
 	}
 
 	static void wayland_keyboard_leave_callback(void *const pData, wl_keyboard *const wl_pKeyboard, const uint32_t u32Serial, wl_surface *const wl_pSurface) {
@@ -650,9 +673,17 @@ namespace RE {
 		PRINT_DEBUG("Creating an XKB context");
 		if ((xkb_pContext = xkb_context_new(XKB_CONTEXT_NO_FLAGS))) {
 			PRINT_DEBUG("Adding listener to the Wayland seat ", wlSeat.waylandObject);
-			if (wl_seat_add_listener(wlSeat.waylandObject, &wl_seatListener, nullptr) == 0)
-				return true;
-			else
+			if (wl_seat_add_listener(wlSeat.waylandObject, &wl_seatListener, nullptr) == 0) {
+				if ((wl_pCursorSurface = wl_compositor_create_surface(wlCompositor.waylandObject))) {
+					if ((wl_pCursorTheme = wl_cursor_theme_load(nullptr, 24, wl_pShm))) {
+						if ((wl_apCursors[0] = wl_cursor_theme_get_cursor(wl_pCursorTheme, "left_ptr"))) {
+							return true;
+						}
+						wl_cursor_theme_destroy(wl_pCursorTheme);
+					}
+					wl_surface_destroy(wl_pCursorSurface);
+				}
+			} else
 				RE_ERROR("Failed to add a listener to the Wayland seat ", wlSeat.waylandObject);
 		} else
 			RE_ERROR("Failed to create an XKB context");
@@ -661,6 +692,8 @@ namespace RE {
 
 	static void destroy_wayland_input() {
 		PRINT_DEBUG("Destroying input-related resources");
+		wl_cursor_theme_destroy(wl_pCursorTheme);
+		wl_surface_destroy(wl_pCursorSurface);
 		if (waylandKeyboard.wl_pKeyboard)
 			destroy_wayland_keyboard();
 		if (wl_pPointer)

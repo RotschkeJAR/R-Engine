@@ -33,7 +33,7 @@ namespace RE {
 		}
 		PRINT_DEBUG("Starting the engine");
 #ifdef RE_OS_LINUX
-		if (getenv("WAYLAND_DISPLAY")) {
+		if (std::getenv("WAYLAND_DISPLAY")) {
 			PRINT_DEBUG("Creating a window in Wayland");
 			eLinuxWindowType = LINUX_WINDOW_TYPE_WAYLAND;
 			if (!create_window()) {

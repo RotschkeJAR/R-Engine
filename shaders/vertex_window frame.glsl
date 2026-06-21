@@ -16,6 +16,7 @@ layout (constant_id = 5) const uint buttonTextureSize = 8;
 layout (constant_id = 6) const uint charTextureSize = 8;
 layout (constant_id = 7) const uint charGap = 2;
 layout (constant_id = 8) const uint charScale = 1;
+layout (constant_id = 9) const uint windowAreaButtonCloseIndex = 9;
 
 layout (push_constant, std430) uniform PushConstants {
 	uvec2 windowSize;
@@ -25,6 +26,7 @@ layout (push_constant, std430) uniform PushConstants {
 
 layout (std430, set = 0, binding = 0) uniform Metadata {
 	uvec2 cursorPosition;
+	uint hoveredWindowAreaIndex;
 	uint titleChars[256];
 } metadata;
 
@@ -129,10 +131,7 @@ void main() {
 				buttonIndex = gl_InstanceIndex % buttonCount;
 				uint offsetFromRight = windowSize.x - buttonWidth * buttonIndex - (renderEdges ? (shadowExtent + 1 + edgeWidth) : 0),
 					offsetFromTop = renderEdges ? (shadowExtent + edgeWidth) : 0;
-				const bool hovered = metadata.cursorPosition.x > offsetFromRight - buttonWidth
-						&& metadata.cursorPosition.x <= offsetFromRight
-						&& metadata.cursorPosition.y > offsetFromTop
-						&& metadata.cursorPosition.y <= offsetFromTop + barHeight;
+				const bool hovered = metadata.hoveredWindowAreaIndex - windowAreaButtonCloseIndex == buttonIndex;
 				if (gl_InstanceIndex < buttonCount) {
 					if (!hovered) {
 						gl_Position = vec4(0.0, 0.0, 0.0, 1.0);

@@ -26,7 +26,8 @@ namespace RE {
 			WINDOW_BUTTON_TEXTURE_SIZE,
 			CHAR_TEXTURE_SIZE,
 			2, /* gap between chars */
-			std::max(WINDOW_WAYLAND_BAR_SIZE / CHAR_TEXTURE_SIZE - 1, 1)
+			std::max(WINDOW_WAYLAND_BAR_SIZE / CHAR_TEXTURE_SIZE - 1, 1),
+			static_cast<uint32_t>(WINDOW_AREA_BUTTON_CLOSE)
 		};
 		constexpr VkSpecializationMapEntry vk_aSpecializationConstants[] = {
 			{
@@ -64,6 +65,10 @@ namespace RE {
 			}, {
 				.constantID = 8,
 				.offset = sizeof(uint32_t) * 8,
+				.size = sizeof(uint32_t)
+			}, {
+				.constantID = 9,
+				.offset = sizeof(uint32_t) * 9,
 				.size = sizeof(uint32_t)
 			}
 		};

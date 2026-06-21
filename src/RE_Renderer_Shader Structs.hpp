@@ -15,6 +15,7 @@ typedef uint32_t ShaderBool;
 
 	struct WindowFrameUniformData final {
 		uint32_t a2u32CursorPosition[2];
+		uint32_t u32HoveredWindowAreaIndex;
 		uint32_t au32TitleChars[256];
 	};
 

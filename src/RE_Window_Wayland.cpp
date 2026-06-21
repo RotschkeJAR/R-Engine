@@ -61,34 +61,32 @@ namespace RE {
 	static Vector2i actualCursorPosition,
 		actualWindowSize;
 
-	static bool is_cursor_within_content() {
-		return (actualCursorPosition[0] >= WINDOW_WAYLAND_X_OFFSET && actualCursorPosition[0] < static_cast<int32_t>(actualWindowSize[0]) - WINDOW_WAYLAND_BORDER_TOTAL_SIZE)
-				&& (actualCursorPosition[1] >= WINDOW_WAYLAND_Y_OFFSET && actualCursorPosition[1] < static_cast<int32_t>(actualWindowSize[1]) - WINDOW_WAYLAND_BORDER_TOTAL_SIZE - WINDOW_WAYLAND_BAR_SIZE);
-	}
-
 	static WindowArea get_wayland_window_area_cursor_is_in() {
-		if (actualCursorPosition[0] < WINDOW_WAYLAND_BORDER_TOTAL_SIZE) {
-			if (actualCursorPosition[1] < WINDOW_WAYLAND_BORDER_TOTAL_SIZE)
+		if (are_bits_true<decltype(u8WindowFlagBits)>(u8WindowFlagBits, WINDOW_FULLSCREEN_BIT))
+			return WINDOW_AREA_CONTENT;
+		const int iWindowBorderWidth = are_bits_true<decltype(u8WindowFlagBits)>(u8WindowFlagBits, WINDOW_MAXIMIZED_BIT) ? 0 : WINDOW_WAYLAND_BORDER_TOTAL_SIZE;
+		if (actualCursorPosition[0] < iWindowBorderWidth) {
+			if (actualCursorPosition[1] < iWindowBorderWidth)
 				return WINDOW_AREA_TOP_LEFT;
-			else if (actualCursorPosition[1] >= actualWindowSize[1] - WINDOW_WAYLAND_BORDER_TOTAL_SIZE)
+			else if (actualCursorPosition[1] >= actualWindowSize[1] - iWindowBorderWidth)
 				return WINDOW_AREA_BOTTOM_LEFT;
 			return WINDOW_AREA_LEFT;
-		} else if (actualCursorPosition[0] >= actualWindowSize[0] - WINDOW_WAYLAND_BORDER_TOTAL_SIZE) {
-			if (actualCursorPosition[1] < WINDOW_WAYLAND_BORDER_TOTAL_SIZE)
+		} else if (actualCursorPosition[0] >= actualWindowSize[0] - iWindowBorderWidth) {
+			if (actualCursorPosition[1] < iWindowBorderWidth)
 				return WINDOW_AREA_TOP_RIGHT;
-			else if (actualCursorPosition[1] >= actualWindowSize[1] - WINDOW_WAYLAND_BORDER_TOTAL_SIZE)
+			else if (actualCursorPosition[1] >= actualWindowSize[1] - iWindowBorderWidth)
 				return WINDOW_AREA_BOTTOM_RIGHT;
 			return WINDOW_AREA_RIGHT;
-		} else if (actualCursorPosition[1] < WINDOW_WAYLAND_BORDER_TOTAL_SIZE)
+		} else if (actualCursorPosition[1] < iWindowBorderWidth)
 			return WINDOW_AREA_TOP;
-		else if (actualCursorPosition[1] >= actualWindowSize[1] - WINDOW_WAYLAND_BORDER_TOTAL_SIZE)
+		else if (actualCursorPosition[1] >= actualWindowSize[1] - iWindowBorderWidth)
 			return WINDOW_AREA_BOTTOM;
-		else if (actualCursorPosition[1] < WINDOW_WAYLAND_BORDER_TOTAL_SIZE + WINDOW_WAYLAND_BAR_SIZE) {
-			if (actualCursorPosition[0] >= actualWindowSize[0] - WINDOW_WAYLAND_BORDER_TOTAL_SIZE - WINDOW_WAYLAND_BUTTON_WIDTH)
+		else if (actualCursorPosition[1] < iWindowBorderWidth + WINDOW_WAYLAND_BAR_SIZE) {
+			if (actualCursorPosition[0] >= actualWindowSize[0] - iWindowBorderWidth - WINDOW_WAYLAND_BUTTON_WIDTH)
 				return WINDOW_AREA_BUTTON_CLOSE;
-			else if (actualCursorPosition[0] >= actualWindowSize[0] - WINDOW_WAYLAND_BORDER_TOTAL_SIZE - WINDOW_WAYLAND_BUTTON_WIDTH * 2)
+			else if (actualCursorPosition[0] >= actualWindowSize[0] - iWindowBorderWidth - WINDOW_WAYLAND_BUTTON_WIDTH * 2)
 				return WINDOW_AREA_BUTTON_MAXIMIZE;
-			else if (actualCursorPosition[0] >= actualWindowSize[0] - WINDOW_WAYLAND_BORDER_TOTAL_SIZE - WINDOW_WAYLAND_BUTTON_WIDTH * 3)
+			else if (actualCursorPosition[0] >= actualWindowSize[0] - iWindowBorderWidth - WINDOW_WAYLAND_BUTTON_WIDTH * 3)
 				return WINDOW_AREA_BUTTON_MINIMIZE;
 			return WINDOW_AREA_BAR;
 		} else
@@ -322,10 +320,13 @@ namespace RE {
 	static void wayland_pointer_motion_callback(void *const pData, wl_pointer *const wl_pPointer, const uint32_t u32Time, const wl_fixed_t wl_x, const wl_fixed_t wl_y) {
 		actualCursorPosition[0] = wl_fixed_to_int(wl_x);
 		actualCursorPosition[1] = wl_fixed_to_int(wl_y);
-		if (pWindowFrameUniformData)
+		const WindowArea eHoveredWindowArea = get_wayland_window_area_cursor_is_in();
+		if (pWindowFrameUniformData) {
 			for (uint8_t u8DimensionIndex = 0; u8DimensionIndex < actualCursorPosition.dimensions(); u8DimensionIndex++)
 				pWindowFrameUniformData->a2u32CursorPosition[u8DimensionIndex] = actualCursorPosition[u8DimensionIndex];
-		if (is_cursor_within_content())
+			pWindowFrameUniformData->u32HoveredWindowAreaIndex = static_cast<uint32_t>(eHoveredWindowArea);
+		}
+		if (eHoveredWindowArea == WINDOW_AREA_CONTENT)
 			cursor_event(actualCursorPosition[0] - WINDOW_WAYLAND_X_OFFSET, actualCursorPosition[1] - WINDOW_WAYLAND_Y_OFFSET);
 	}
 
@@ -398,7 +399,7 @@ namespace RE {
 	}
 
 	static void wayland_pointer_scroll_callback(void *const pData, wl_pointer *const wl_pPointer, const uint32_t u32Time, const uint32_t u32Axis, const wl_fixed_t wl_value) {
-		if (u32Axis == WL_POINTER_AXIS_VERTICAL_SCROLL && is_cursor_within_content())
+		if (u32Axis == WL_POINTER_AXIS_VERTICAL_SCROLL && get_wayland_window_area_cursor_is_in() == WINDOW_AREA_CONTENT)
 			input_event(wl_fixed_to_double(wl_value) < 0 ? RE_INPUT_SCROLL_DOWN : RE_INPUT_SCROLL_UP, 0, true, true);
 	}
 

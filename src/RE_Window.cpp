@@ -16,9 +16,9 @@ namespace RE {
 	const char* pacWindowTitle = "Untitled game window";
 	Input eInputFullscreenToggle = RE_INPUT_KEY_F11;
 #ifdef RE_OS_WINDOWS
-	uint8_t u8WindowFlagBits = 1 << WINDOW_FULLSCREEN_BIT;
+	WindowFlags mWindowFlagBits = WINDOW_FLAG_FULLSCREEN_BIT;
 #else
-	uint8_t u8WindowFlagBits = 0;
+	WindowFlags mWindowFlagBits = 0;
 #endif
 
 	bool create_window() {
@@ -42,7 +42,7 @@ namespace RE {
 				RE_ABORT("Window compositor is unknown: ", std::hex, eLinuxWindowType);
 		}
 #endif
-		set_bits<decltype(u8WindowFlagBits)>(u8WindowFlagBits, bSuccess, WINDOW_CREATED_BIT);
+		set_bitmasks(mWindowFlagBits, bSuccess, static_cast<WindowFlags>(WINDOW_FLAG_CREATED_BIT));
 		return bSuccess;
 	}
 
@@ -62,7 +62,7 @@ namespace RE {
 				RE_ABORT("Window compositor is unknown: ", std::hex, eLinuxWindowType);
 		}
 #endif
-		set_bits<decltype(u8WindowFlagBits)>(u8WindowFlagBits, false, WINDOW_CREATED_BIT, WINDOW_CLOSE_FLAG_BIT, WINDOW_MINIMIZED_BIT, WINDOW_MAXIMIZED_BIT, WINDOW_VISIBLE_BIT);
+		mWindowFlagBits &= ~(WINDOW_FLAG_CREATED_BIT | WINDOW_FLAG_CLOSE_BIT | WINDOW_FLAG_MINIMIZED_BIT | WINDOW_FLAG_MAXIMIZED_BIT | WINDOW_FLAG_VISIBLE_BIT);
 	}
 
 	void window_resize_event(const uint32_t u32NewWidth, const uint32_t u32NewHeight) {
@@ -74,7 +74,7 @@ namespace RE {
 
 	void show_window(const bool bShowWindow) {
 		PRINT_DEBUG("Showing/Hiding window");
-		set_bits<decltype(u8WindowFlagBits)>(u8WindowFlagBits, bShowWindow, WINDOW_VISIBLE_BIT);
+		set_bitmasks(mWindowFlagBits, bShowWindow, static_cast<WindowFlags>(WINDOW_FLAG_VISIBLE_BIT));
 #ifdef RE_OS_WINDOWS
 		win64_show_window();
 #elif defined RE_OS_LINUX
@@ -127,20 +127,20 @@ namespace RE {
 	}
 
 	bool should_window_close() {
-		return are_bits_true<decltype(u8WindowFlagBits)>(u8WindowFlagBits, WINDOW_CLOSE_FLAG_BIT);
+		return (mWindowFlagBits & WINDOW_FLAG_CLOSE_BIT);
 	}
 
 	bool should_render() {
-		return !are_bits_true<decltype(u8WindowFlagBits)>(u8WindowFlagBits, WINDOW_MINIMIZED_BIT) && are_bits_true<decltype(u8WindowFlagBits)>(u8WindowFlagBits, WINDOW_VISIBLE_BIT);
+		return !(mWindowFlagBits & WINDOW_FLAG_MINIMIZED_BIT) && (mWindowFlagBits & WINDOW_FLAG_VISIBLE_BIT);
 	}
 
 #ifdef RE_OS_LINUX
 	bool should_render_window_frame_bar() {
-		return !are_bits_true<decltype(u8WindowFlagBits)>(u8WindowFlagBits, WINDOW_FULLSCREEN_BIT);
+		return !(mWindowFlagBits & WINDOW_FLAG_FULLSCREEN_BIT);
 	}
 
 	bool should_render_window_frame_edges() {
-		return should_render_window_frame_bar() && !are_bits_true<decltype(u8WindowFlagBits)>(u8WindowFlagBits, WINDOW_MAXIMIZED_BIT);
+		return should_render_window_frame_bar() && !(mWindowFlagBits & WINDOW_FLAG_MAXIMIZED_BIT);
 	}
 #endif
 
@@ -212,7 +212,7 @@ namespace RE {
 			return;
 		PRINT_DEBUG("Updating window title");
 		pacWindowTitle = pacNewTitle;
-		if (!are_bits_true<decltype(u8WindowFlagBits)>(u8WindowFlagBits, WINDOW_CREATED_BIT))
+		if (!(mWindowFlagBits & WINDOW_FLAG_CREATED_BIT))
 			return;
 #ifdef RE_OS_WINDOWS
 		win64_update_window_title();

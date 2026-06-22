@@ -62,9 +62,9 @@ namespace RE {
 		actualWindowSize;
 
 	static WindowArea get_wayland_window_area_cursor_is_in() {
-		if (are_bits_true<decltype(u8WindowFlagBits)>(u8WindowFlagBits, WINDOW_FULLSCREEN_BIT))
+		if ((mWindowFlagBits & WINDOW_FLAG_FULLSCREEN_BIT))
 			return WINDOW_AREA_CONTENT;
-		const int iWindowBorderWidth = are_bits_true<decltype(u8WindowFlagBits)>(u8WindowFlagBits, WINDOW_MAXIMIZED_BIT) ? 0 : WINDOW_WAYLAND_BORDER_TOTAL_SIZE;
+		const int iWindowBorderWidth = (mWindowFlagBits & WINDOW_FLAG_MAXIMIZED_BIT) ? 0 : WINDOW_WAYLAND_BORDER_TOTAL_SIZE;
 		if (actualCursorPosition[0] < iWindowBorderWidth) {
 			if (actualCursorPosition[1] < iWindowBorderWidth)
 				return WINDOW_AREA_TOP_LEFT;
@@ -290,12 +290,12 @@ namespace RE {
 					break;
 			}
 		}
-		set_bits<decltype(u8WindowFlagBits)>(u8WindowFlagBits, bMaximized, WINDOW_MAXIMIZED_BIT);
-		set_bits<decltype(u8WindowFlagBits)>(u8WindowFlagBits, bFullscreen, WINDOW_FULLSCREEN_BIT);
+		set_bitmasks(mWindowFlagBits, bMaximized, static_cast<WindowFlags>(WINDOW_FLAG_MAXIMIZED_BIT));
+		set_bitmasks(mWindowFlagBits, bFullscreen, static_cast<WindowFlags>(WINDOW_FLAG_FULLSCREEN_BIT));
 	}
 
 	static void xdg_toplevel_close_callback(void *const pData, xdg_toplevel *const xdg_pToplevel) {
-		set_bits<decltype(u8WindowFlagBits)>(u8WindowFlagBits, true, WINDOW_CLOSE_FLAG_BIT);
+		mWindowFlagBits |= WINDOW_FLAG_CLOSE_BIT;
 	}
 
 	static constexpr xdg_toplevel_listener xdg_toplevelListener = {
@@ -361,12 +361,12 @@ namespace RE {
 					xdg_toplevel_resize(xdg_pToplevel, wlSeat.waylandObject, u32Serial, XDG_TOPLEVEL_RESIZE_EDGE_BOTTOM);
 					break;
 				case WINDOW_AREA_BUTTON_CLOSE:
-					set_bits<decltype(u8WindowFlagBits)>(u8WindowFlagBits, true, WINDOW_CLOSE_FLAG_BIT);
+					mWindowFlagBits |= WINDOW_FLAG_CLOSE_BIT;
 					break;
 				case WINDOW_AREA_BUTTON_MAXIMIZE:
 					{
-						const bool bMaximized = !are_bits_true<decltype(u8WindowFlagBits)>(u8WindowFlagBits, WINDOW_MAXIMIZED_BIT);
-						set_bits<decltype(u8WindowFlagBits)>(u8WindowFlagBits, bMaximized, WINDOW_MAXIMIZED_BIT);
+						const bool bMaximized = !(mWindowFlagBits & WINDOW_FLAG_MAXIMIZED_BIT);
+						set_bitmasks(mWindowFlagBits, bMaximized, static_cast<WindowFlags>(WINDOW_FLAG_MAXIMIZED_BIT));
 						if (bMaximized)
 							xdg_toplevel_set_maximized(xdg_pToplevel);
 						else
@@ -463,8 +463,8 @@ namespace RE {
 				return;
 			case XKB_KEY_F11:
 				if (u32State == WL_KEYBOARD_KEY_STATE_PRESSED) {
-					const bool bFullscreen = !IS_FULLSCREEN();
-					SET_FULLSCREEN(bFullscreen);
+					const bool bFullscreen = !(mWindowFlagBits & WINDOW_FLAG_FULLSCREEN_BIT);
+					set_bitmasks(mWindowFlagBits, bFullscreen, static_cast<WindowFlags>(WINDOW_FLAG_FULLSCREEN_BIT));
 					if (bFullscreen) {
 						PRINT_DEBUG("Enabling fullscreen on Wayland window");
 						xdg_toplevel_set_max_size(xdg_pToplevel, std::numeric_limits<int32_t>::max(), std::numeric_limits<int32_t>::max());
@@ -634,7 +634,7 @@ namespace RE {
 								PRINT_DEBUG("Adding listener to the XDG toplevel ", xdg_pToplevel);
 								if (xdg_toplevel_add_listener(xdg_pToplevel, &xdg_toplevelListener, nullptr) == 0) {
 									xdg_toplevel_set_min_size(xdg_pToplevel, MIN_WINDOW_WIDTH + WINDOW_WAYLAND_EXTRA_WIDTH, MIN_WINDOW_HEIGHT + WINDOW_WAYLAND_EXTRA_HEIGHT);
-									if (!IS_FULLSCREEN())
+									if (!(mWindowFlagBits & WINDOW_FLAG_FULLSCREEN_BIT))
 										xdg_toplevel_set_max_size(xdg_pToplevel, largestMonitorSize[0] + MAX_WINDOW_WIDTH_RELATIVE_TO_MONITOR, largestMonitorSize[1] + MAX_WINDOW_HEIGHT_RELATIVE_TO_MONITOR);
 									else
 										xdg_toplevel_set_fullscreen(xdg_pToplevel, waylandMonitors[0].wlOutput.waylandObject);

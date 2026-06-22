@@ -26,9 +26,9 @@ namespace RE {
 					PRINT_DEBUG("Obtaining extent of the window content area on Windows");
 					RECT win_contentRect;
 					GetClientRect(win_hWndParam, &win_contentRect);
-					set_bits<decltype(u8WindowFlagBits)>(u8WindowFlagBits, win_wParam == SIZE_MINIMIZED, WINDOW_MINIMIZED_BIT);
-					set_bits<decltype(u8WindowFlagBits)>(u8WindowFlagBits, win_wParam == SIZE_MAXIMIZED, WINDOW_MAXIMIZED_BIT);
-					if (are_bits_true<decltype(u8WindowFlagBits)>(u8WindowFlagBits, WINDOW_MAXIMIZED_BIT)) {
+					set_bitmasks<WindowFlags>(mWindowFlagBits, win_wParam == SIZE_MINIMIZED, static_cast<WindowFlags>(WINDOW_FLAG_MINIMIZED_BIT));
+					set_bitmasks<WindowFlags>(mWindowFlagBits, win_wParam == SIZE_MAXIMIZED, static_cast<WindowFlags>(WINDOW_FLAG_MAXIMIZED_BIT));
+					if ((mWindowFlagBits & WINDOW_FLAG_MAXIMIZED_BIT)) {
 						PRINT_DEBUG("Posting custom window message to notify maximization");
 						PostMessageW(win_hWndParam, RE_WIN64_WM_MAXIMIZED, static_cast<WPARAM>(0), static_cast<LPARAM>(0));
 					}
@@ -40,7 +40,7 @@ namespace RE {
 				return 0;
 			case WM_CLOSE: /* close */
 				PRINT_DEBUG("Posting window quit-message with exit code 0");
-				set_bits<decltype(u8WindowFlagBits)>(u8WindowFlagBits, true, WINDOW_CLOSE_FLAG_BIT);
+				mWindowFlagBits |= WINDOW_FLAG_CLOSE_BIT;
 				return 0;
 			case WM_DESTROY: /* window destroyed */
 				return 0;
@@ -94,8 +94,8 @@ namespace RE {
 					if (eInput == eInputFullscreenToggle && (win_uMsg == WM_KEYDOWN || win_uMsg == WM_SYSKEYDOWN)) {
 						MONITORINFO win_monitorInfo;
 						win_monitorInfo.cbSize = sizeof(MONITORINFO);
-						const bool bFullscreen = !IS_FULLSCREEN();
-						SET_FULLSCREEN(bFullscreen);
+						const bool bFullscreen = !(mWindowFlagBits & WINDOW_FLAG_FULLSCREEN_BIT);
+						set_bitmasks(mWindowFlagBits, bFullscreen, static_cast<WindowFlags>(WINDOW_FLAG_FULLSCREEN_BIT));
 						if (bFullscreen) {
 							win_hMonitor = MonitorFromWindow(win_hWindow, MONITOR_DEFAULTTONEAREST);
 							if (GetMonitorInfoW(win_hMonitor, &win_monitorInfo) == FALSE) {
@@ -263,7 +263,7 @@ namespace RE {
 			win_primaryMonitorInfo.cbSize = sizeof(MONITORINFO);
 			const bool bMonitorInfoRetrieved = GetMonitorInfoW(win_hPrimaryMonitor, &win_primaryMonitorInfo) == TRUE;
 			if (bMonitorInfoRetrieved) {
-				if (IS_FULLSCREEN()) {
+				if ((mWindowFlagBits & WINDOW_FLAG_FULLSCREEN_BIT)) {
 					PRINT_DEBUG("Creating fullscreen window on Windows on the primary monitor");
 					win_hMonitor = win_hPrimaryMonitor;
 					windowSize[0] = std::abs(win_primaryMonitorInfo.rcMonitor.right - win_primaryMonitorInfo.rcMonitor.left);
@@ -316,9 +316,9 @@ namespace RE {
 					goto WIN64_WINDOW_CREATION_FAILURE;
 				}
 			} else {
-				if (IS_FULLSCREEN()) {
+				if ((mWindowFlagBits & WINDOW_FLAG_FULLSCREEN_BIT)) {
 					RE_WARNING("No info was retrieved about the monitor, therefore the window starts with default size and position");
-					SET_FULLSCREEN(false);
+					mWindowFlagBits &= ~WINDOW_FLAG_FULLSCREEN_BIT;
 				}
 				PRINT_DEBUG("Creating window on Windows with default extent and position");
 				win_hWindow = CreateWindowExW(
@@ -385,7 +385,7 @@ namespace RE {
 	}
 
 	void win64_show_window() {
-		if (are_bits_true<decltype(u8WindowFlagBits)>(u8WindowFlagBits, WINDOW_VISIBLE_BIT)) {
+		if ((mWindowFlagBits & WINDOW_FLAG_VISIBLE_BIT)) {
 			PRINT_DEBUG("Showing window on Windows");
 			ShowWindow(win_hWindow, SW_SHOWNORMAL);
 		} else {

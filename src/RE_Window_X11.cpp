@@ -213,7 +213,7 @@ namespace RE {
 	}
 
 	void x11_show_window() {
-		if (are_bits_true<uint8_t>(u8WindowFlagBits, WINDOW_VISIBLE_BIT)) {
+		if ((mWindowFlagBits & WINDOW_FLAG_VISIBLE_BIT)) {
 			PRINT_DEBUG("Showing X11 window ", x11_hWindow);
 			XMapWindow(x11_pDisplay, x11_hWindow);
 		} else {
@@ -242,7 +242,7 @@ namespace RE {
 				case ClientMessage:
 					if (static_cast<Atom>(x11_event.xclient.data.l[0]) == x11_ahAtoms[RE_X11_ATOM_INDEX_CLOSE]) {
 						PRINT_DEBUG("Close event of X11 window ", x11_hWindow, " has been received by using its atom ", x11_ahAtoms[RE_X11_ATOM_INDEX_CLOSE]);
-						set_bits<uint8_t>(u8WindowFlagBits, true, WINDOW_CLOSE_FLAG_BIT);
+						mWindowFlagBits |= WINDOW_FLAG_CLOSE_BIT;
 					}
 					break;
 				case ConfigureNotify: /* window resized */
@@ -267,8 +267,8 @@ namespace RE {
 							a5cString[u8CharLength] = '\0';
 						const Input eInput = key_from_virtual_x11_keycode(static_cast<int64_t>(x11_keySym));
 						if (eInput == eInputFullscreenToggle && x11_event.type == KeyPress) {
-							const bool bFullscreen = !IS_FULLSCREEN();
-							SET_FULLSCREEN(bFullscreen);
+							const bool bFullscreen = !(mWindowFlagBits & WINDOW_FLAG_FULLSCREEN_BIT);
+							set_bitmasks(mWindowFlagBits, bFullscreen, static_cast<WindowFlags>(WINDOW_FLAG_FULLSCREEN_BIT));
 							if (bFullscreen)
 								x11_pSizes->flags &= ~PMaxSize;
 							else {
@@ -337,8 +337,8 @@ namespace RE {
 					break;
 				case MapNotify: /* window showed or unminimized/restored */
 					PRINT_DEBUG("X11 window ", x11_hWindow, " has been showed or unminimized/restored");
-					set_bits<uint8_t>(u8WindowFlagBits, false, WINDOW_MINIMIZED_BIT);
-					if (IS_FULLSCREEN()) {
+					mWindowFlagBits &= ~WINDOW_FLAG_MINIMIZED_BIT;
+					if ((mWindowFlagBits & WINDOW_FLAG_FULLSCREEN_BIT)) {
 						PRINT_DEBUG("Switching window immediatly to fullscreen");
 						x11_pSizes->flags &= ~PMaxSize;
 						XSetWMNormalHints(x11_pDisplay, x11_hWindow, x11_pSizes);
@@ -359,7 +359,7 @@ namespace RE {
 					break;
 				case UnmapNotify: /* window hidden or minimized/iconified */
 					PRINT_DEBUG("X11 window ", x11_hWindow, " has been hidden or minimized/iconified");
-					set_bits<uint8_t>(u8WindowFlagBits, true, WINDOW_MINIMIZED_BIT);
+					mWindowFlagBits |= WINDOW_FLAG_MINIMIZED_BIT;
 					break;
 				default:
 					PRINT_DEBUG("Unknown event type has been sent to the window: ", std::hex, x11_event.type);

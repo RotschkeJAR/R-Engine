@@ -464,8 +464,8 @@ namespace RE {
 
 	template <class... T> requires AreIntegrals<T...>
 	[[nodiscard]]
-	constexpr uint64_t gen_bitmask(const T... bits) {
-		return (... | (1UL << static_cast<uint64_t>(bits)));
+	constexpr uint64_t gen_bitmask(const T... bitIndices) {
+		return (... | (1UL << static_cast<uint64_t>(bitIndices)));
 	}
 
 	[[nodiscard]]
@@ -483,8 +483,8 @@ namespace RE {
 
 	template <class T, class... U> requires AreIntegrals<T, U...>
 	[[nodiscard]]
-	constexpr bool are_bits_true(const T value, const U... bits) {
-		const T bitmask = static_cast<T>(gen_bitmask<U...>(bits...));
+	constexpr bool are_bits_true(const T value, const U... bitIndices) {
+		const T bitmask = static_cast<T>(gen_bitmask<U...>(bitIndices...));
 		return (value & bitmask) == bitmask;
 	}
 
@@ -507,6 +507,15 @@ namespace RE {
 		return (((mValue & mBitmasks) == mBitmasks) && ...);
 	}
 
+	template <class T, class... U> requires AreIntegrals<T, U...>
+	constexpr T set_bitmasks(T &rmValue, const bool bNewState, const U... bitmasks) {
+		if (bNewState)
+			rmValue |= (bitmasks | ...);
+		else
+			rmValue &= ~(bitmasks | ...);
+		return rmValue;
+	}
+
 	template <class T> requires std::integral<T>
 	void get_indices_for_true_bits(const T mValue, uint8_t &ru8IndexCount, std::unique_ptr<uint8_t[]> &rIndices) {
 		ru8IndexCount = static_cast<uint8_t>(std::popcount<T>(mValue));
@@ -522,24 +531,24 @@ namespace RE {
 	}
 
 	template <class T, class... U> requires AreIntegrals<T, U...>
-	constexpr T set_bits(T& rValue, const bool bNewState, const U... bits) {
-		const T bitmask = gen_bitmask<U...>(bits...);
+	constexpr T set_bits(T& rmValue, const bool bNewState, const U... bitIndices) {
+		const T bitmask = gen_bitmask<U...>(bitIndices...);
 		if (bNewState)
-			rValue |= bitmask;
+			rmValue |= bitmask;
 		else
-			rValue &= ~bitmask;
-		return rValue;
+			rmValue &= ~bitmask;
+		return rmValue;
 	}
 
 	template <class T> requires std::integral<T>
-	constexpr T set_bits_in_range(T &rValue, const bool bNewState, const T begin, const T end) {
+	constexpr T set_bits_in_range(T &rmValue, const bool bNewState, const T begin, const T end) {
 		if (begin > end) {
 			FATAL_ERROR("Start (", begin, ") of the range is larger than end (", end, ")");
-			return rValue;
+			return rmValue;
 		}
 		for (T i = begin; i < end; i++)
-			set_bits<T>(rValue, bNewState, i);
-		return rValue;
+			set_bits<T>(rmValue, bNewState, i);
+		return rmValue;
 	}
 
 	template <class T> requires std::integral<T>

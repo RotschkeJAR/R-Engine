@@ -12,12 +12,15 @@ namespace RE {
 #define MAX_WINDOW_WIDTH_RELATIVE_TO_MONITOR -100
 #define MAX_WINDOW_HEIGHT_RELATIVE_TO_MONITOR -100
 
-#define WINDOW_CREATED_BIT 0
-#define WINDOW_VISIBLE_BIT 1
-#define WINDOW_MINIMIZED_BIT 2
-#define WINDOW_MAXIMIZED_BIT 3
-#define WINDOW_FULLSCREEN_BIT 4
-#define WINDOW_CLOSE_FLAG_BIT 5
+	typedef int WindowFlags;
+	enum WindowFlagBit : WindowFlags {
+		WINDOW_FLAG_CREATED_BIT = 0x1,
+		WINDOW_FLAG_VISIBLE_BIT = 0x2,
+		WINDOW_FLAG_MINIMIZED_BIT = 0x4,
+		WINDOW_FLAG_MAXIMIZED_BIT = 0x8,
+		WINDOW_FLAG_FULLSCREEN_BIT = 0x10,
+		WINDOW_FLAG_CLOSE_BIT = 0x20
+	};
 
 #ifdef RE_OS_LINUX
 #define WINDOW_WAYLAND_BORDER_TOTAL_SIZE 5
@@ -58,10 +61,7 @@ namespace RE {
 		largestMonitorSize;
 	extern const char* pacWindowTitle;
 	extern Input eInputFullscreenToggle;
-	extern uint8_t u8WindowFlagBits;
-
-#define SET_FULLSCREEN(BOOLEAN_FULLSCREEN) set_bits<decltype(u8WindowFlagBits)>(u8WindowFlagBits, static_cast<bool>(BOOLEAN_FULLSCREEN), WINDOW_FULLSCREEN_BIT)
-#define IS_FULLSCREEN() are_bits_true<decltype(u8WindowFlagBits)>(u8WindowFlagBits, WINDOW_FULLSCREEN_BIT)
+	extern WindowFlags mWindowFlagBits;
 
 	bool create_window();
 	void destroy_window();

@@ -44,6 +44,14 @@
 
 namespace RE {
 
+	typedef signed char schar;
+	typedef long long llong;
+	typedef unsigned char uchar;
+	typedef unsigned short ushort;
+	typedef unsigned int uint;
+	typedef unsigned long ulong;
+	typedef unsigned long long ullong;
+
 #define STRIP_QUOTE_MACRO(...) __VA_ARGS__
 
 

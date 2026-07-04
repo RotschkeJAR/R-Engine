@@ -12,7 +12,7 @@ namespace RE {
 #define WINDOW_BUTTON_TEXTURE_COUNT 3
 #define WINDOW_BUTTON_TEXTURE_SIZE 16
 	extern const uint8_t aau8WindowButtonTextures[WINDOW_BUTTON_TEXTURE_COUNT][WINDOW_BUTTON_TEXTURE_SIZE * WINDOW_BUTTON_TEXTURE_SIZE];
-
+	
 }
 
 #endif /* __RE_SYMBOLS_H__ */

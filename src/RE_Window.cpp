@@ -65,14 +65,14 @@ namespace RE {
 		mWindowFlagBits &= ~(WINDOW_FLAG_CREATED_BIT | WINDOW_FLAG_CLOSE_BIT | WINDOW_FLAG_MINIMIZED_BIT | WINDOW_FLAG_MAXIMIZED_BIT | WINDOW_FLAG_VISIBLE_BIT);
 	}
 
-	void window_resize_event(const uint32_t u32NewWidth, const uint32_t u32NewHeight) {
+	void window_resize_event(uint32_t u32NewWidth, uint32_t u32NewHeight) {
 		PRINT_DEBUG("Updating window dimensions after resize");
 		windowSize[0] = u32NewWidth;
 		windowSize[1] = u32NewHeight;
 		mark_swapchain_dirty();
 	}
 
-	void show_window(const bool bShowWindow) {
+	void show_window(bool bShowWindow) {
 		PRINT_DEBUG("Showing/Hiding window");
 		set_bitmasks(mWindowFlagBits, bShowWindow, static_cast<WindowFlags>(WINDOW_FLAG_VISIBLE_BIT));
 #ifdef RE_OS_WINDOWS
@@ -207,7 +207,7 @@ namespace RE {
 		return eInputFullscreenToggle;
 	}
 
-	void set_window_title(const char *const pacNewTitle) {
+	void set_window_title(const char *pacNewTitle) {
 		if (are_string_contents_equal(pacWindowTitle, pacNewTitle))
 			return;
 		PRINT_DEBUG("Updating window title");

@@ -102,7 +102,7 @@ Wrappers provided by C++ are not affected by this rule.
 The letter `p` has to be added before the prefix of the underlying datatype, e.g. `pu8` equals `uint8_t*`.
 The prefix can be stacked as many times as the C/C++ standard allows, that `ppd` (= `double**`) can also be valid.
 
-Void-pointers (`void*`) have to be named `h` as they're treated as handles.
+Void-pointers (`void*`) have to be named `h`, if they're treated as handles and their memory is neither readable or writable.
 This rule also applies to pointers pointing at empty structures or classes, e.g. `struct Handle {}`.
 
 Function pointers have to contain `pv`. This rule doesn't apply to function pointers used for libraries, e.g. functions retrieved from Vulkan do not need it.

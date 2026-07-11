@@ -40,7 +40,7 @@
  *   Uncomment this, if you want to disable PRINT_DEBUG and PRINT_DEBUG_CLASS to
  * filter debug output and get better performance while the terminal is active.
  */
-#define RE_DISABLE_DEBUGGING
+//#define RE_DISABLE_DEBUGGING
 
 namespace RE {
 
@@ -271,7 +271,7 @@ namespace RE {
 
 //================ Signals
 
-	                void set_signal_handlers();
+	void set_signal_handlers();
 
 
 
@@ -315,11 +315,12 @@ namespace RE {
 #endif
 #define PRINT_DEBUG_CLASS(...) PRINT_DEBUG("{", this, "} ", __VA_ARGS__)
 
-	[[noreturn]]    void abort(const std::string &rsDetail);
-	                void fatal_error(const std::string &rsDetail);
-					void error(const std::string &rsDetail);
-					void warning(const std::string &rsDetail);
-					void note(const std::string &rsDetail);
+	[[noreturn]]
+	void abort(const std::string &rsDetail);
+	void fatal_error(const std::string &rsDetail);
+	void error(const std::string &rsDetail);
+	void warning(const std::string &rsDetail);
+	void note(const std::string &rsDetail);
 #define ABORT(...) RE::abort(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), "\nIn ", __FILE__, ", function \"", __func__, "\", at line ", __LINE__))
 #define FATAL_ERROR(...) fatal_error(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), "\nIn ", __FILE__, ", function \"", __func__, "\", at line ", __LINE__))
 #define ERROR(...) error(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), "\nIn ", __FILE__, ", function \"", __func__, "\", at line ", __LINE__))

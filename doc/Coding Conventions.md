@@ -66,6 +66,7 @@ Only one API name can be included into the name at a time.
 | Prefix | API/Library             | Platfrom    |
 |--------|-------------------------|-------------|
 | `win`  | Windows                 | Windows     |
+| `lx`   | Linux                   | Linux       |
 | `x11`  | X.org/X11/X server      | Linux       |
 | `wl`   | Wayland                 | Linux       |
 | `xdg`  | XDG                     | Linux       |

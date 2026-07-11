@@ -3,7 +3,7 @@
 namespace RE {
 
     [[nodiscard]]
-    void* safe_malloc(const size_t size) {
+    void* safe_malloc(size_t size) {
 		void *const pMemory = std::malloc(size);
 		if (!pMemory)
 			RE_ABORT("Failed to allocate ", size, " bytes of memory with 'malloc'.");
@@ -11,7 +11,7 @@ namespace RE {
 	}
 
 	[[nodiscard]]
-	void* safe_align(const size_t alignment, const size_t size, void *&rpPointer, size_t &rSpace) {
+	void* safe_align(size_t alignment, size_t size, void *&rpPointer, size_t &rSpace) {
 		if (rSpace < size)
 			RE_WARNING("The remaining memory space is smaller than the required size");
 		if (rSpace < alignment)
@@ -26,7 +26,7 @@ namespace RE {
 	}
 
 	[[nodiscard]]
-	void* align_2(const size_t alignment, const size_t size, void *&rpPointer, size_t &rSpace) {
+	void* align_2(size_t alignment, size_t size, void *&rpPointer, size_t &rSpace) {
 		void *const pPointerToAlignedMemory = std::align(alignment, size, rpPointer, rSpace);
 		rpPointer = static_cast<uint8_t*>(rpPointer) + size;
 		rSpace -= size;
@@ -34,7 +34,7 @@ namespace RE {
 	}
 
 	[[nodiscard]]
-	void* safe_align_2(const size_t alignment, const size_t size, void *&rpPointer, size_t &rSpace) {
+	void* safe_align_2(size_t alignment, size_t size, void *&rpPointer, size_t &rSpace) {
 		void *const pPointerToAlignedMemory = safe_align(alignment, size, rpPointer, rSpace);
 		if (!pPointerToAlignedMemory)
 			return nullptr;

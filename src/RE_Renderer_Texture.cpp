@@ -1,10 +1,6 @@
 #include "RE_Renderer_Texture.hpp"
 #include "RE_Main.hpp"
-
-#define STB_IMAGE_IMPLEMENTATION
-#define STBI_WINDOWS_UTF8
-#define STBI_ASSERT(x)
-#include "stb_image.h"
+#include "RE_Asset.hpp"
 
 namespace RE {
 
@@ -44,7 +40,7 @@ namespace RE {
 		u16NextTextureIndex = 0;
 	}
 
-	uint16_t get_index_of_texture(const VulkanTexture *const pTexture) {
+	uint16_t get_index_of_texture(const VulkanTexture *pTexture) {
 		return static_cast<uint16_t>(pTexture - vulkanTextures.get());
 	}
 
@@ -60,7 +56,7 @@ namespace RE {
 	}
 
 	[[nodiscard]]
-	Texture alloc_texture_from_binary_data(const uint8_t *const pau8TextureBinaries, const uint32_t u32Width, const uint32_t u32Height, const uint32_t u32Channels) {
+	Texture alloc_texture_from_binary_data(const uint8_t *pau8TextureBinaries, uint32_t u32Width, uint32_t u32Height, uint32_t u32Channels) {
 		if (u16CurrentTextureCount == u16MaxTextureCount)
 			RE_ABORT("Textures overallocated. Maximum was ", u16MaxTextureCount);
 		else if (!pau8TextureBinaries || !u32Width || !u32Height || !u32Channels) {
@@ -117,7 +113,8 @@ namespace RE {
 		if (stagingImageBuffer.valid()) {
 			uint8_t *pau8StagingBufferContent;
 			if (stagingImageBuffer.get_memory().map(0, 0, VK_WHOLE_SIZE, reinterpret_cast<void**>(&pau8StagingBufferContent))) {
-				std::jthread textureCopyThread([&]() {
+				std::jthread textureCopyThread(
+						[&]() {
 							if (u32Channels == u32ActualChannels)
 								std::memcpy(pau8StagingBufferContent, pau8TextureBinaries, vk_imageBufferSize);
 							else {
@@ -189,7 +186,7 @@ namespace RE {
 							.u32FunctionsCount = 2
 						};
 						VulkanTask transferTask(occupiedTransferQueues, false, false, true);
-						transferTask.record(0, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, [&](const VkCommandBuffer vk_hCommandBuffer, const uint8_t u8PreviousLogicalQueue, const uint8_t u8CurrentLogicalQueue, const uint8_t u8NextLogicalQueue) {
+						transferTask.record(0, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, [&](VkCommandBuffer vk_hCommandBuffer, uint8_t u8PreviousLogicalQueue, uint8_t u8CurrentLogicalQueue, uint8_t u8NextLogicalQueue) {
 								const VkImageMemoryBarrier2 vk_imageLayoutBarrier = {
 									.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
 									.srcStageMask = VK_PIPELINE_STAGE_2_NONE,
@@ -270,7 +267,7 @@ namespace RE {
 								};
 								vkCmdPipelineBarrier2(vk_hCommandBuffer, &vk_transitImageLayoutFinalInfo);
 						});
-						transferTask.record(1, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, [&](const VkCommandBuffer vk_hCommandBuffer, const uint8_t u8PreviousLogicalQueue, const uint8_t u8CurrentLogicalQueue, const uint8_t u8NextLogicalQueue) {
+						transferTask.record(1, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, [&](VkCommandBuffer vk_hCommandBuffer, uint8_t u8PreviousLogicalQueue, uint8_t u8CurrentLogicalQueue, uint8_t u8NextLogicalQueue) {
 								if (u8PreviousLogicalQueue == u8CurrentLogicalQueue)
 									return;
 								const VkImageMemoryBarrier2 vk_inheritImageBarrier = {
@@ -389,17 +386,32 @@ namespace RE {
 		return nullptr;
 	}
 
-	Texture alloc_texture_loading_from_file(const char *const pacPathToTextureFile) {
-		PRINT_DEBUG("Loading image from \"", pacPathToTextureFile, "\"");
-		uint32_t u32Width, u32Height, u32Channels;
-		uint8_t *const pau8TextureBinaries = stbi_load(pacPathToTextureFile, reinterpret_cast<int32_t*>(&u32Width), reinterpret_cast<int32_t*>(&u32Height), reinterpret_cast<int32_t*>(&u32Channels), 0);
-		if (pau8TextureBinaries && u32Width && u32Height && u32Channels)
-			return alloc_texture_from_binary_data(pau8TextureBinaries, u32Width, u32Height, u32Channels);
-		RE_FATAL_ERROR("Failed loading image file \"", pacPathToTextureFile, "\"");
+	Texture alloc_texture_loading_from_file(const char *pacPathToTextureFile) {
+		PRINT_DEBUG("Opening image file from \"", pacPathToTextureFile, "\"");
+		AssetImage image;
+		if (asset_open(pacPathToTextureFile, image.file)) {
+			PRINT_DEBUG("Loading image");
+			if (asset_image_load(image)) {
+				PRINT_DEBUG("Closing image file");
+				asset_close(image.file);
+				auto xResult = alloc_texture_from_binary_data(
+						reinterpret_cast<const uint8_t*>(asset_image_get(image)),
+						asset_image_get_width(image),
+						asset_image_get_height(image),
+						asset_image_get_channels(image));
+				PRINT_DEBUG("Freeing image file");
+				asset_image_free(image);
+				return xResult;
+			} else
+				RE_FATAL_ERROR("Failed to load content of image \"", pacPathToTextureFile, "\"");
+			PRINT_DEBUG("Closing image file due to failure loading its content");
+			asset_close(image.file);
+		} else
+			RE_FATAL_ERROR("Failed to load texture file \"", pacPathToTextureFile, "\" into RAM");
 		return nullptr;
 	}
 
-	void free_texture(const Texture hTexture) {
+	void free_texture(Texture hTexture) {
 		if (!hTexture)
 			RE_ERROR("A null texture had to be freed. The engine will ignore this request");
 		else if (bRunning) {
@@ -414,7 +426,7 @@ namespace RE {
 	}
 
 	[[nodiscard]]
-	uint32_t get_width(const Texture hTexture) {
+	uint32_t get_width(Texture hTexture) {
 		if (!hTexture) {
 			RE_ERROR("A null texture has been passed to get its width");
 			return 0;
@@ -424,7 +436,7 @@ namespace RE {
 	}
 
 	[[nodiscard]]
-	uint32_t get_height(const Texture hTexture) {
+	uint32_t get_height(Texture hTexture) {
 		if (!hTexture) {
 			RE_ERROR("A null texture has been passed to get its height");
 			return 0;
@@ -433,7 +445,7 @@ namespace RE {
 		return reinterpret_cast<VulkanTexture*>(hTexture)->a2u32Size[1];
 	}
 
-	void set_max_texture_count(const uint16_t u16NewMaxTextureCount) {
+	void set_max_texture_count(uint16_t u16NewMaxTextureCount) {
 	    if (!bRunning)
 			RE_ERROR("The maximum texture count cannot be changed while the engine is running");
 	    else
@@ -460,7 +472,7 @@ namespace RE {
 		return u32MaxTextureExtent;
 	}
 
-	void set_max_texture_extent(const uint32_t u32NewMaxTextureExtent) {
+	void set_max_texture_extent(uint32_t u32NewMaxTextureExtent) {
 		u32MaxTextureExtent = u32NewMaxTextureExtent;
 	}
 

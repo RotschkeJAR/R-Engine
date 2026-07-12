@@ -7,7 +7,7 @@ SH           = shaders
 TEST         = test
 
 CC           = g++
-CFLAG        = -m64 -march=x86-64 -pedantic-errors -Wall -ffast-math
+CFLAG        = -m64 -march=x86-64 -pedantic-errors -Wall -ffast-math -MMD
 
 SC           = glslc
 SFLAG        = --target-env=vulkan1.3 --target-spv=spv1.6 -O

@@ -7,7 +7,7 @@ namespace RE {
 
 	struct AssetFile final {
 	#ifdef RE_OS_WINDOWS
-		HFILE win_hFile;
+		HANDLE win_hFile;
 	#elif defined RE_OS_LINUX
 		int iFileDesc;
 	#endif

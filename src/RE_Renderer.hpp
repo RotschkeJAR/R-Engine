@@ -7,7 +7,10 @@
 
 namespace RE {
 
-#define RE_VK_FRAMES_IN_FLIGHT 2
+#define RE_VK_FRAMES_IN_FLIGHT   2
+
+#define CHAR_TEXTURE_COUNT   0x5F
+#define CHAR_TEXTURE_SIZE    8
 
 	extern float f32SampleShadingRate;
 	extern uint8_t u8CurrentFrameInFlightIndex;

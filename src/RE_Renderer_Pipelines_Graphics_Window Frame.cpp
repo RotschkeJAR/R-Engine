@@ -1,7 +1,6 @@
 #include "RE_Renderer_Pipelines_Graphics_Internal.hpp"
 #include "RE_Vulkan_Wrappers.hpp"
 #include "RE_Window.hpp"
-#include "RE_Symbols.hpp"
 
 namespace RE {
 

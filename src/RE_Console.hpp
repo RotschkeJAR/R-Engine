@@ -5,7 +5,8 @@
 
 namespace RE {
 
-	extern uint32_t u32VulkanErrorCount, u32VulkanWarningCount;
+	extern uint32_t u32VulkanErrorCount,
+		u32VulkanWarningCount;
 
 	void print_error_count();
 	

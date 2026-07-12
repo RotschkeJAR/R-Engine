@@ -16,7 +16,7 @@ layout (constant_id = 5) const uint buttonTextureSize = 8;
 layout (constant_id = 6) const uint charTextureSize = 8;
 layout (constant_id = 7) const uint charGap = 2;
 layout (constant_id = 8) const uint charScale = 1;
-layout (constant_id = 9) const uint windowAreaButtonCloseIndex = 9;
+layout (constant_id = 9) const uint windowAreaButtonCloseIndex = 10;
 
 layout (push_constant, std430) uniform PushConstants {
 	uvec2 windowSize;
@@ -194,7 +194,7 @@ void main() {
 			const uint computedCharTextureSize = charTextureSize * charScale;
 			const uint offsetFromLeft = (barHeight - computedCharTextureSize) / 2 + gl_InstanceIndex * (computedCharTextureSize + charGap) + (renderEdges ? (shadowExtent + edgeWidth) : 0),
 				offsetFromTop = (barHeight - computedCharTextureSize) / 2 + (renderEdges ? (shadowExtent + edgeWidth) : 0);
-			characterIndex = min(metadata.titleChars[gl_InstanceIndex], 256);
+			characterIndex = (metadata.titleChars[gl_InstanceIndex] - 0x20) % 0x5F;
 			switch (gl_VertexIndex) {
 				case 0:
 					gl_Position = vec4(pixel_to_ndc(uvec2(offsetFromLeft, offsetFromTop)), 0.0, 1.0);

@@ -37,10 +37,8 @@
 #include <bit>
 
 /**
- *   Uncomment this, if you want to disable PRINT_DEBUG and PRINT_DEBUG_CLASS to
- * filter debug output and get better performance while the terminal is active.
+ * Use macro NDEBUG to disable code used for debugging
  */
-//#define RE_DISABLE_DEBUGGING
 
 namespace RE {
 
@@ -305,7 +303,7 @@ namespace RE {
 #define PRINT(...) print(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE_MACRO(__VA_ARGS__))
 #define PRINT_LN(...) PRINT(STRIP_QUOTE_MACRO(__VA_ARGS__), '\n')
 
-#ifndef RE_DISABLE_DEBUGGING
+#ifndef NDEBUG
 # define PRINT_DEBUG(...) [&](const char *const pacFile, const char *const pacFunc, const uint32_t u32Line) { \
 			time_t currentTime = std::time(0); \
 			println("[", std::put_time(std::gmtime(&currentTime), "%d.%b %Y, %H:%M:%S"), "] (", pacFile, ", at line ", u32Line, ", in function \"", pacFunc, "\"): ", STRIP_QUOTE_MACRO(__VA_ARGS__)); \

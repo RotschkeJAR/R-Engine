@@ -24,18 +24,21 @@ namespace RE {
 
 #define KEYCODE_TO_XKB_OFFSET   8
 
-#define CURSOR_TEXTURE_SIZE     41
-#define CURSOR_TEXTURE_COUNT    1
+#define EDGE_EXTENSION     20
 
-#define CURSOR_DEFAULT    0
-#define CURSOR_TEXT       0
-#define CURSOR_CROSSHAIR  0
-#define CURSOR_HORIZONTAL 0
-#define CURSOR_VERICAL    0
-#define CURSOR_DIAGONAL   0
-#define CURSOR_POINT      0
-#define CURSOR_OPEN       0
-#define CURSOR_GRAB       0
+#define CURSOR_TEXTURE_SIZE     41
+#define CURSOR_TEXTURE_COUNT    10
+
+#define CURSOR_DEFAULT        0
+#define CURSOR_TEXT           1
+#define CURSOR_CROSSHAIR      2
+#define CURSOR_HORIZONTAL     3
+#define CURSOR_VERICAL        4
+#define CURSOR_DIAGONAL_LTRB  5
+#define CURSOR_DIAGONAL_LBRT  6
+#define CURSOR_POINT          7
+#define CURSOR_OPEN           8
+#define CURSOR_GRAB           9
 
 	template <class WaylandObject>
 	struct GlobalWaylandObject final {
@@ -88,22 +91,30 @@ namespace RE {
 			return WINDOW_AREA_CONTENT;
 		const int iWindowBorderWidth = (mWindowFlagBits & WINDOW_FLAG_MAXIMIZED_BIT) ? 0 : WINDOW_WAYLAND_BORDER_TOTAL_SIZE;
 		if (actualCursorPosition[0] < iWindowBorderWidth) {
-			if (actualCursorPosition[1] < iWindowBorderWidth)
+			if (actualCursorPosition[1] < iWindowBorderWidth + EDGE_EXTENSION)
 				return WINDOW_AREA_TOP_LEFT;
-			else if (actualCursorPosition[1] >= actualWindowSize[1] - iWindowBorderWidth)
+			else if (actualCursorPosition[1] >= actualWindowSize[1] - iWindowBorderWidth - EDGE_EXTENSION)
 				return WINDOW_AREA_BOTTOM_LEFT;
 			return WINDOW_AREA_LEFT;
 		} else if (actualCursorPosition[0] >= actualWindowSize[0] - iWindowBorderWidth) {
-			if (actualCursorPosition[1] < iWindowBorderWidth)
+			if (actualCursorPosition[1] < iWindowBorderWidth + EDGE_EXTENSION)
 				return WINDOW_AREA_TOP_RIGHT;
-			else if (actualCursorPosition[1] >= actualWindowSize[1] - iWindowBorderWidth)
+			else if (actualCursorPosition[1] >= actualWindowSize[1] - iWindowBorderWidth - EDGE_EXTENSION)
 				return WINDOW_AREA_BOTTOM_RIGHT;
 			return WINDOW_AREA_RIGHT;
-		} else if (actualCursorPosition[1] < iWindowBorderWidth)
+		} else if (actualCursorPosition[1] < iWindowBorderWidth) {
+			if (actualCursorPosition[0] < iWindowBorderWidth + EDGE_EXTENSION)
+				return WINDOW_AREA_TOP_LEFT;
+			else if (actualCursorPosition[0] >= actualWindowSize[0] - iWindowBorderWidth - EDGE_EXTENSION)
+				return WINDOW_AREA_TOP_RIGHT;
 			return WINDOW_AREA_TOP;
-		else if (actualCursorPosition[1] >= actualWindowSize[1] - iWindowBorderWidth)
+		} else if (actualCursorPosition[1] >= actualWindowSize[1] - iWindowBorderWidth) {
+			if (actualCursorPosition[0] < iWindowBorderWidth + EDGE_EXTENSION)
+				return WINDOW_AREA_BOTTOM_LEFT;
+			else if (actualCursorPosition[0] >= actualWindowSize[0] - iWindowBorderWidth - EDGE_EXTENSION)
+				return WINDOW_AREA_BOTTOM_RIGHT;
 			return WINDOW_AREA_BOTTOM;
-		else if (actualCursorPosition[1] < iWindowBorderWidth + WINDOW_WAYLAND_BAR_SIZE) {
+		} else if (actualCursorPosition[1] < iWindowBorderWidth + WINDOW_WAYLAND_BAR_SIZE) {
 			if (actualCursorPosition[0] >= actualWindowSize[0] - iWindowBorderWidth - WINDOW_WAYLAND_BUTTON_WIDTH)
 				return WINDOW_AREA_BUTTON_CLOSE;
 			else if (actualCursorPosition[0] >= actualWindowSize[0] - iWindowBorderWidth - WINDOW_WAYLAND_BUTTON_WIDTH * 2)
@@ -116,7 +127,7 @@ namespace RE {
 	}
 
 	static void destroy_wayland_pointer() {
-		PRINT_DEBUG("Destroying pointer ", wl_pPointer);
+		PRINT_DEBUG("Destroying Wayland pointer ", wl_pPointer);
 		if (wl_pointer_get_version(wl_pPointer) >= static_cast<uint32_t>(WL_POINTER_RELEASE_SINCE_VERSION))
 			wl_pointer_release(wl_pPointer);
 		else
@@ -125,7 +136,7 @@ namespace RE {
 	}
 
 	static void destroy_wayland_keyboard() {
-		PRINT_DEBUG("Destroying keyboard ", waylandKeyboard.wl_pKeyboard);
+		PRINT_DEBUG("Destroying Wayland keyboard ", waylandKeyboard.wl_pKeyboard);
 		if (wl_keyboard_get_version(waylandKeyboard.wl_pKeyboard) >= static_cast<uint32_t>(WL_KEYBOARD_RELEASE_SINCE_VERSION))
 			wl_keyboard_release(waylandKeyboard.wl_pKeyboard);
 		else
@@ -136,7 +147,7 @@ namespace RE {
 	static void wayland_registry_add_callback(void *pData, wl_registry *wl_pRegistry, uint32_t u32Name, const char *pacInterface, uint32_t u32Version) {
 		if (are_string_contents_equal(pacInterface, wl_compositor_interface.name) && !wlCompositor.waylandObject) {
 			if (u32Version >= REQUIRED_VERSION_WL_COMPOSITOR) {
-				PRINT_DEBUG("Binding the compositor");
+				PRINT_DEBUG("Binding the Wayland compositor");
 				wlCompositor.waylandObject = reinterpret_cast<wl_compositor*>(
 						wl_registry_bind(
 							wl_pRegistry,
@@ -146,7 +157,7 @@ namespace RE {
 				wlCompositor.u32Name = u32Name;
 				wlCompositor.u32Version = u32Version;
 			} else
-				RE_ERROR("The version of compositor is too low (", u32Version, " < ", REQUIRED_VERSION_WL_COMPOSITOR, ")");
+				RE_ERROR("The version of Wayland compositor is too low (", u32Version, " < ", REQUIRED_VERSION_WL_COMPOSITOR, ")");
 		} else if (are_string_contents_equal(pacInterface, xdg_wm_base_interface.name) && !xdgWmBase.waylandObject) {
 			if (u32Version >= REQUIRED_VERSION_XDG_WM_BASE) {
 				PRINT_DEBUG("Binding the XDG wm base");
@@ -162,7 +173,7 @@ namespace RE {
 				RE_ERROR("The version of XDG wm base is too low (", u32Version, " < ", REQUIRED_VERSION_XDG_WM_BASE, ")");
 		} else if (are_string_contents_equal(pacInterface, wl_seat_interface.name) && !wlSeat.waylandObject) {
 			if (u32Version >= REQUIRED_VERSION_WL_SEAT) {
-				PRINT_DEBUG("Binding the seat");
+				PRINT_DEBUG("Binding the Wayland seat");
 				wlSeat.waylandObject = reinterpret_cast<wl_seat*>(
 						wl_registry_bind(
 							wl_pRegistry,
@@ -172,10 +183,10 @@ namespace RE {
 				wlSeat.u32Name = u32Name;
 				wlSeat.u32Version = u32Version;
 			} else
-				RE_ERROR("The version of seat is too low (", u32Version, " < ", REQUIRED_VERSION_WL_SEAT, ")");
+				RE_ERROR("The version of Wayland seat is too low (", u32Version, " < ", REQUIRED_VERSION_WL_SEAT, ")");
 		} else if (are_string_contents_equal(pacInterface, wl_output_interface.name)) {
 			if (u32Version >= REQUIRED_VERSION_WL_OUTPUT) {
-				PRINT_DEBUG("Binding a monitor");
+				PRINT_DEBUG("Binding a Wayland output");
 				waylandMonitors.emplace_back(
 						WlOutput {
 							reinterpret_cast<wl_output*>(
@@ -190,10 +201,10 @@ namespace RE {
 						Vector2u {},
 						1);
 			} else
-				RE_ERROR("The version of output is too low (", u32Version, " < ", REQUIRED_VERSION_WL_OUTPUT, ")");
+				RE_ERROR("The version of Wayland output is too low (", u32Version, " < ", REQUIRED_VERSION_WL_OUTPUT, ")");
 		} else if (are_string_contents_equal(pacInterface, wl_shm_interface.name)) {
 			if (u32Version >= REQUIRED_VERSION_WL_SHM) {
-				PRINT_DEBUG("Binding a shared memory");
+				PRINT_DEBUG("Binding a Wayland shared memory");
 				wl_pShm = reinterpret_cast<wl_shm*>(
 								wl_registry_bind(
 									wl_pRegistry,
@@ -201,7 +212,7 @@ namespace RE {
 									&wl_shm_interface,
 									REQUIRED_VERSION_WL_SHM));
 			} else
-				RE_ERROR("The version of shared memory is too low (", u32Version, " < ", REQUIRED_VERSION_WL_SHM, ")");
+				RE_ERROR("The version of Wayland shared memory is too low (", u32Version, " < ", REQUIRED_VERSION_WL_SHM, ")");
 		}
 	}
 
@@ -384,10 +395,12 @@ namespace RE {
 		int iNewCursorImage;
 		switch (eHoveredWindowArea) {
 			case WINDOW_AREA_TOP_LEFT:
+			case WINDOW_AREA_BOTTOM_RIGHT:
+				iNewCursorImage = CURSOR_DIAGONAL_LTRB;
+				break;
 			case WINDOW_AREA_TOP_RIGHT:
 			case WINDOW_AREA_BOTTOM_LEFT:
-			case WINDOW_AREA_BOTTOM_RIGHT:
-				iNewCursorImage = CURSOR_DIAGONAL;
+				iNewCursorImage = CURSOR_DIAGONAL_LBRT;
 				break;
 			case WINDOW_AREA_LEFT:
 			case WINDOW_AREA_RIGHT:
@@ -403,11 +416,13 @@ namespace RE {
 				iNewCursorImage = CURSOR_POINT;
 				break;
 			case WINDOW_AREA_BAR:
-				iNewCursorImage = CURSOR_OPEN;
+				iNewCursorImage = CURSOR_DEFAULT;
 				break;
 			case WINDOW_AREA_CONTENT:
 				iNewCursorImage = CURSOR_DEFAULT;
 				cursor_event(actualCursorPosition[0] - WINDOW_WAYLAND_X_OFFSET, actualCursorPosition[1] - WINDOW_WAYLAND_Y_OFFSET);
+				break;
+			default:
 				break;
 		}
 		if (iNewCursorImage != iLastCursorImage) {
@@ -469,9 +484,13 @@ namespace RE {
 						break;
 					case WINDOW_AREA_BUTTON_MINIMIZE:
 						xdg_toplevel_set_minimized(xdg_pToplevel);
-						if (pWindowFrameUniformData)
-							for (uint8_t u8DimensionIndex = 0; u8DimensionIndex < actualCursorPosition.dimensions(); u8DimensionIndex++)
-								pWindowFrameUniformData->a2u32CursorPosition[u8DimensionIndex] = 0xFFFFFFFF;
+						if (pWindowFrameUniformData) {
+							for (uint uDimensionIndex = 0; uDimensionIndex < actualCursorPosition.dimensions(); uDimensionIndex++) {
+								actualCursorPosition[uDimensionIndex] = 0xFFFFFFFFU;
+								pWindowFrameUniformData->a2u32CursorPosition[uDimensionIndex] = 0xFFFFFFFFU;
+							}
+							pWindowFrameUniformData->u32HoveredWindowAreaIndex = static_cast<uint32_t>(WINDOW_AREA_NONE);
+						}
 						break;
 					default:
 						xdg_toplevel_move(xdg_pToplevel, wlSeat.waylandObject, u32Serial);
@@ -582,10 +601,10 @@ namespace RE {
 		}
 	}
 
-	static void wayland_keyboard_modifiers_callback(void *const pData, wl_keyboard *const wl_pKeyboard, const uint32_t u32Serial, const uint32_t u32ModsDepressed, const uint32_t u32ModsLatched, const uint32_t u32ModsLocked, const uint32_t u32Group) {
+	static void wayland_keyboard_modifiers_callback(void *pData, wl_keyboard *wl_pKeyboard, uint32_t u32Serial, uint32_t u32ModsDepressed, uint32_t u32ModsLatched, uint32_t u32ModsLocked, uint32_t u32Group) {
 	}
 
-	static void wayland_keyboard_repeat_info_callback(void *const pData, wl_keyboard *const wl_pKeyboard, const int32_t i32Rate, const int32_t i32Delay) {
+	static void wayland_keyboard_repeat_info_callback(void *pData, wl_keyboard *wl_pKeyboard, int32_t i32Rate, int32_t i32Delay) {
 	}
 
 	static constexpr wl_keyboard_listener wl_keyboardListener = {
@@ -597,7 +616,7 @@ namespace RE {
 		.repeat_info = wayland_keyboard_repeat_info_callback
 	};
 
-	static void wayland_seat_capabilities_callback(void *const pData, wl_seat *wl_pSeat, const uint32_t m32Capabilities) {
+	static void wayland_seat_capabilities_callback(void *pData, wl_seat *wl_pSeat, uint32_t m32Capabilities) {
 		if ((m32Capabilities & WL_SEAT_CAPABILITY_POINTER)) {
 			wl_pPointer = wl_seat_get_pointer(wl_pSeat);
 			PRINT_DEBUG("Adding listener to the pointer ", wl_pPointer);
@@ -609,7 +628,6 @@ namespace RE {
 		WAYLAND_POINTER_INIT_FAILURE:
 			if (wl_pPointer)
 				destroy_wayland_pointer();
-			wl_pPointer = nullptr;
 		}
 		if ((m32Capabilities & WL_SEAT_CAPABILITY_KEYBOARD)) {
 			waylandKeyboard.wl_pKeyboard = wl_seat_get_keyboard(wl_pSeat);
@@ -622,7 +640,8 @@ namespace RE {
 		WAYLAND_KEYBOARD_INIT_FAILURE:
 			if (waylandKeyboard.wl_pKeyboard)
 				destroy_wayland_keyboard();
-			waylandKeyboard.wl_pKeyboard = nullptr;
+			if (wl_pPointer)
+				destroy_wayland_pointer();
 		}
 	}
 
@@ -846,7 +865,7 @@ namespace RE {
 										iLastCursorImage = CURSOR_DEFAULT;
 										PRINT_DEBUG("Opening cursor image file");
 										AssetImage cursorImage;
-										if (asset_open("rsc/Linux/cursor20.png", cursorImage.file)) {
+										if (asset_open("rsc/Linux/wayland_cursors.png", cursorImage.file)) {
 											PRINT_DEBUG("Loading cursor image");
 											if (asset_image_load(cursorImage, 4)) {
 												PRINT_DEBUG("Closing cursor image file");
@@ -856,10 +875,6 @@ namespace RE {
 														pCursorImage,
 														cursorImage.pBuffer,
 														sCursorBufferSize);
-												/*uint32_t *pau32CursorImage = reinterpret_cast<uint32_t*>(pCursorImage);
-												for (int i = 0; i < CURSOR_TEXTURE_SIZE * CURSOR_TEXTURE_SIZE; i++) {
-													pau32CursorImage[i] = 0xFFFF0000U;
-												}*/
 												PRINT_DEBUG("Freeing cursor image");
 												asset_image_free(cursorImage);
 												return true;
@@ -934,9 +949,7 @@ namespace RE {
 						xdg_toplevel_set_app_id(xdg_pToplevel, pacWindowTitle);
 						PRINT_DEBUG("Committing Wayland surface ", wl_pSurface, " and flushing display ", wl_pDisplay);
 						wl_surface_commit(wl_pSurface);
-						println("\\_/");
 						wl_display_flush(wl_pDisplay);
-						println("\\_/");
 						return true;
 					}
 					destroy_wayland_window();

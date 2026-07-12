@@ -1,7 +1,7 @@
 #ifndef __RE_RENDERER_DESCRIPTOR_SETS_INTERNAL_H__
 #define __RE_RENDERER_DESCRIPTOR_SETS_INTERNAL_H__
 
-#include "RE_Renderer_Descriptor Sets.hpp"
+#include "RE_Renderer_DescriptorSets.hpp"
 
 namespace RE {
 

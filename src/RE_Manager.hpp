@@ -1,7 +1,7 @@
 #ifndef __RE_MANAGER_H__
 #define __RE_MANAGER_H__
 
-#include "RE_Internal Header.hpp"
+#include "RE_Internal.hpp"
 
 namespace RE {
 

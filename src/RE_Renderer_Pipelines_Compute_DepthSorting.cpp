@@ -8,7 +8,7 @@ namespace RE {
 	bool create_compute_pipeline_depth_sorting() {
 		PRINT_DEBUG("Creating temporary Vulkan shader module for depth sorting");
 		VkShaderModule vk_hShader;
-		if (create_vulkan_shader_from_file("shaders/compute_depth sorting.glsl.spv", 0, &vk_hShader)) {
+		if (create_vulkan_shader_from_file("shaders/Compute_DepthSorting.glsl.spv", 0, &vk_hShader)) {
 			PRINT_DEBUG("Creating Vulkan compute pipeline for depth sorting");
 			const VkComputePipelineCreateInfo vk_createInfo = {
 				.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,

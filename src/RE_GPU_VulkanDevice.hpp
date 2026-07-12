@@ -1,7 +1,7 @@
 #ifndef __RE_GPU_VULKAN_DEVICE_H__
 #define __RE_GPU_VULKAN_DEVICE_H__
 
-#include "RE_GPU_Vulkan Instance.hpp"
+#include "RE_GPU_VulkanInstance.hpp"
 
 namespace RE {
 

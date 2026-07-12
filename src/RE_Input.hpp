@@ -1,8 +1,8 @@
 #ifndef __RE_INPUT_H__
 #define __RE_INPUT_H__
 
-#include "RE_Internal Header.hpp"
-#include "RE_Keycode Translator.hpp"
+#include "RE_Internal.hpp"
+#include "RE_KeycodeTranslator.hpp"
 
 namespace RE {
 

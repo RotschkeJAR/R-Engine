@@ -2,8 +2,8 @@
 
 namespace RE {
 
-#define VERTEX_SHADER_PATH "shaders/vertex_general.glsl.spv"
-#define FRAGMENT_SHADER_PATH "shaders/fragment_general.glsl.spv"
+#define VERTEX_SHADER_PATH "shaders/Vertex_General.glsl.spv"
+#define FRAGMENT_SHADER_PATH "shaders/Fragment_General.glsl.spv"
 	
 	bool create_graphics_pipelines() {
 		PRINT_DEBUG("Creating temporary Vulkan shader modules for vertex- and fragment-stage");

@@ -1,141 +1,87 @@
-SRC          = src
-LIB          = lib
-LIB_SPEC     = $(LIB)/Linux
-BIN          = bin
-LIB_BIN      = $(BIN)/lib
-SH           = shaders
-TEST         = test
+SRC          := src
+LIB          := lib
+LIB_SPEC     := $(LIB)/Linux
+SH           := shaders
+SH_SRC       := $(SH)/src
+TEST         := test
 
-CC           = g++
-CFLAG        = -m64 -march=x86-64 -pedantic-errors -Wall -ffast-math -MMD
+BIN           := bin
+LIB_BIN       := $(BIN)/lib
+LIB_SPEC_BIN  := $(LIB_BIN)/Linux
+TEST_BIN      := $(BIN)/test
 
-SC           = glslc
-SFLAG        = --target-env=vulkan1.3 --target-spv=spv1.6 -O
+CXX               := g++
+CXXFLAG           := -std=c++20 -m64 -march=x86-64 -pedantic-errors -Wall -ffast-math -MMD -MP
 
-RE           = $(BIN)/libRE.a
-OUT          = Game
+CC                := gcc
+CFLAG             := -std=c2x -m64 -march=x86-64 -pedantic-errors -Wall -ffast-math -MMD -MP -fPIC
 
-.PHONY: all, compile_shaders, update_git, fetch_git
+SC                := glslc
+SFLAG             := --target-env=vulkan1.3 --target-spv=spv1.6 -O -Werror -MD
 
-all:
-	@make --no-print-directory $(LIB_BIN)/*
-	@make --no-print-directory $(SH)/*.spv
-	@make --no-print-directory $(OUT)
+RE                := $(BIN)/libRE.a
+OUT               := Game
 
-$(OUT): $(RE) $(TEST)/*.cpp
-	@errorCaused=false; \
-	for file in $(TEST)/*.cpp; do \
-		echo $${file}; \
-		$(CC) $(CFLAG) -std=c++20 -x c++ -c "$${file}" -I "$(SRC)" -I "/usr/" || errorCaused=true; \
-	done; \
-	if $$errorCaused; then \
-		echo "GAME - ERROR: Failed compiling"; \
-		rm -f *.o && rm -f $(TEST)/*.gch; \
-		exit 1; \
-	fi
-	-@rm -f $(TEST)/*.gch
-	@if ! $(CC) $(CFLAG) *.o -o "$(OUT)" -L $(BIN) -l RE -l dl -l X11 -l Xrandr -l Xinerama -l wayland-client -l wayland-cursor -l xkbcommon; then \
-		echo "GAME - ERROR: Failed linking"; \
-		rm -f *.o; \
-		exit 1; \
-	fi
-	-@rm -f *.o
-	-@echo "GAME - SUCCESS"
+SOURCES               := $(wildcard $(SRC)/*.cpp)
+OBJECTS               := $(patsubst $(SRC)/%.cpp,$(BIN)/%.o,$(SOURCES))
+DEPENDENCIES          := $(patsubst $(SRC)/%.cpp,$(BIN)/%.d,$(SOURCES))
 
-$(RE): $(SRC)/* $(LIB_BIN)/*
-	-@rm -f *.o $(BIN)/*.o
-	@if [ "$(wildcard $(BIN)/*.gch)" != "" ]; then \
-		mv $(BIN)/*.gch $(SRC); \
-	fi
-	@errorCaused=false; \
-	for file in $(SRC)/*.cpp; do \
-		echo $${file}; \
-		if ! $(CC) $(CFLAG) -std=c++20 -x c++ -c "$${file}" -I $(LIB) -I $(LIB_SPEC) -I "$(HOME)/Vulkan SDK/x86_64/include"; then \
-			errorCaused=true; \
-		fi; \
-	done; \
-	if $$errorCaused; then \
-		echo "ENGINE - ERROR: Failed compiling"; \
-		rm -f *.o && rm -f $(SRC)/*.gch; \
-		exit 1; \
-	fi
-	@mv *.o $(BIN)
-	@if [ "$(wildcard $(SRC)/*.gch)" != "" ]; then \
-		mv $(SRC)/*.gch $(BIN); \
-	fi
-	-@rm -f $(RE)
-	@if ! ar rs "$(RE)" $(BIN)/*.o $(LIB_BIN)/*.o; then \
-		echo "ENGINE - ERROR: Failed creating static library"; \
-		rm -f $(RE); \
-		exit 1; \
-	fi
-	-@echo "ENGINE - SUCCESS"
+LIB_SOURCES           := $(wildcard $(LIB)/*.c)
+LIB_OBJECTS           := $(patsubst $(LIB)/%.c,$(LIB_BIN)/%.o,$(LIB_SOURCES))
+LIB_DEPENDENCIES      := $(patsubst $(LIB)/%.c,$(LIB_BIN)/%.d,$(LIB_SOURCES))
 
-$(LIB_BIN)/*: $(LIB)/* $(LIB_SPEC)/*
-	@errorCaused=false; \
-	for file in $(LIB)/*.c; do \
-		echo $${file}; \
-		if ! $(CC) $(CFLAG) -std=c2x -x c -c "$${file}"; then \
-			errorCaused=true; \
-		fi; \
-	done; \
-	for file in $(LIB)/*.cpp; do \
-		echo $${file}; \
-		if ! $(CC) $(CFLAG) -std=c++20 -x c++ -c "$${file}"; then \
-			errorCaused=true; \
-		fi; \
-	done; \
-	for file in $(LIB_SPEC)/*.c; do \
-		echo $${file}; \
-		if ! $(CC) $(CFLAG) -std=c2x -x c -c "$${file}"; then \
-			errorCaused=true; \
-		fi; \
-	done; \
-	for file in $(LIB_SPEC)/*.cpp; do \
-		echo $${file}; \
-		if ! $(CC) $(CFLAG) -std=c++20 -x c++ -c "$${file}"; then \
-			errorCaused=true; \
-		fi; \
-	done; \
-	if $$errorCaused; then \
-		echo "LIBRARIES - ERROR: Failed compiling libraries"; \
-		rm -f *.o; \
-		exit 1; \
-	fi
-	-@rm -f $(LIB_BIN)/*.o
-	@mv *.o $(LIB_BIN)
-	-@echo "LIBRARIES - SUCCESS"
+LIB_SPEC_SOURCES      := $(wildcard $(LIB_SPEC)/*.c)
+LIB_SPEC_OBJECTS      := $(patsubst $(LIB_SPEC)/%.c,$(LIB_SPEC_BIN)/%.o,$(LIB_SPEC_SOURCES))
+LIB_SPEC_DEPENDENCIES := $(patsubst $(LIB_SPEC)/%.c,$(LIB_SPEC_BIN)/%.d,$(LIB_SPEC_SOURCES))
 
-$(SH)/*.spv: $(SH)/*.glsl
-	@make --no-print-directory compile_shaders
+TEST_SOURCES          := $(wildcard $(TEST)/*.cpp)
+TEST_OBJECTS          := $(patsubst $(TEST)/%.cpp,$(TEST_BIN)/%.o,$(TEST_SOURCES))
+TEST_DEPENDENCIES     := $(patsubst $(TEST)/%.cpp,$(TEST_BIN)/%.d,$(TEST_SOURCES))
 
-compile_shaders:
-	-@rm -f $(SH)/*.spv
-	@errorCaused=false; \
-	for vertexShader in $(SH)/vertex_*.glsl; do \
-		echo $${vertexShader}; \
-		if ! $(SC) $(SFLAG) -x glsl -fshader-stage=vertex -o "$${vertexShader}.spv" "$${vertexShader}"; then \
-			errorCaused=true; \
-		fi; \
-	done; \
-	for fragmentShader in $(SH)/fragment_*.glsl; do \
-		echo $${fragmentShader}; \
-		if ! $(SC) $(SFLAG) -x glsl -fshader-stage=fragment -o "$${fragmentShader}.spv" "$${fragmentShader}"; then \
-			errorCaused=true; \
-		fi; \
-	done; \
-	for computeShader in $(SH)/compute_*.glsl; do \
-		echo $${computeShader}; \
-		if ! $(SC) $(SFLAG) -x glsl -fshader-stage=compute -o "$${computeShader}.spv" "$${computeShader}"; then \
-			errorCaused=true; \
-		fi; \
-	done; \
-	if $$errorCaused; then \
-		echo "SHADERS - ERROR: Failed compiling shaders"; \
-		rm -f $(SH)/*.spv; \
-		exit 1; \
-	fi
-	-@echo "SHADERS - SUCCESS"
+SHADER_SOURCES        := $(wildcard $(SH_SRC)/*.glsl)
+SHADER_BINARIES       := $(patsubst $(SH_SRC)/%.glsl,$(SH)/%.glsl.spv,$(SHADER_SOURCES))
+SHADER_DEPENDENCIES   := $(patsubst $(SH_SRC)/%.glsl,$(SH)/%.d,$(SHADER_SOURCES))
+
+.PHONY: all compile_shaders update_git fetch_git
+
+all: $(OUT) $(SHADER_BINARIES)
+
+$(OUT): $(RE) $(TEST_OBJECTS)
+	@$(CXX) $(CXXFLAG) $(TEST_OBJECTS) -o $@ -L $(BIN) -l RE -l dl -l X11 -l Xrandr -l Xinerama -l wayland-client -l xkbcommon
+
+$(RE): $(OBJECTS) $(LIB_OBJECTS) $(LIB_SPEC_OBJECTS)
+	@ar rs "$@" $^
+
+$(BIN)/%.o: $(SRC)/%.cpp | $(BIN)
+	@$(CXX) $(CXXFLAG) -c $< -o $@ -I $(LIB) -I $(LIB_SPEC) -I "$(HOME)/Vulkan SDK/x86_64/include"
+
+$(TEST_BIN)/%.o: $(TEST)/%.cpp | $(TEST_BIN)
+	@$(CXX) $(CXXFLAG) -c $< -o $@ -I $(SRC)
+
+$(LIB_BIN)/%.o: $(LIB)/%.c | $(LIB_BIN)
+	@$(CC) $(CFLAG) -c $< -o $@
+
+$(LIB_SPEC_BIN)/%.o: $(LIB_SPEC)/%.c | $(LIB_SPEC_BIN)
+	@$(CC) $(CFLAG) -c $< -o $@
+
+$(SH)/Vertex_%.glsl.spv: $(SH_SRC)/Vertex_%.glsl
+	@$(SC) $(SFLAG) -x glsl -fshader-stage=vertex $< -o $@
+
+$(SH)/Fragment_%.glsl.spv: $(SH_SRC)/Fragment_%.glsl
+	@$(SC) $(SFLAG) -x glsl -fshader-stage=fragment $< -o $@
+
+$(SH)/Compute_%.glsl.spv: $(SH_SRC)/Compute_%.glsl
+	@$(SC) $(SFLAG) -x glsl -fshader-stage=compute $< -o $@
+
+-include $(DEPENDENCIES)
+
+-include $(TEST_DEPENDENCIES)
+
+-include $(LIB_DEPENDENCIES)
+
+-include $(LIB_SPEC_DEPENDENCIES)
+
+-include $(SHADER_DEPENDENCIES)
 
 update_git:
 	@git add .
@@ -146,3 +92,15 @@ fetch_git:
 	-@rm -f $(SRC)/* && rm -f $(SH)/*
 	@git fetch --all
 	@git reset --hard origin/main
+
+$(BIN):
+	-@mkdir -p $@
+
+$(LIB_BIN): $(BIN)
+	-@mkdir -p $@
+
+$(LIB_SPEC_BIN): $(LIB_BIN)
+	-@mkdir -p $@
+
+$(TEST_BIN): $(BIN)
+	-@mkdir -p $@

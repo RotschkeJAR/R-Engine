@@ -1,7 +1,7 @@
 #ifndef __RE_GPU_VULKAN_INSTANCE_H__
 #define __RE_GPU_VULKAN_INSTANCE_H__
 
-#include "RE_Internal Header.hpp"
+#include "RE_Internal.hpp"
 
 #ifdef RE_OS_WINDOWS
 # define VK_USE_PLATFORM_WIN32_KHR

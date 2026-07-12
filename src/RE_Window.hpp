@@ -1,7 +1,7 @@
 #ifndef __RE_WINDOW_H__
 #define __RE_WINDOW_H__
 
-#include "RE_Internal Header.hpp"
+#include "RE_Internal.hpp"
 #include "RE_Input.hpp"
 #include "RE_GPU.hpp"
 

@@ -1,7 +1,7 @@
 #ifndef __RE_WINDOW_X11_H__
 #define __RE_WINDOW_X11_H__
 
-#include "RE_Internal Header.hpp"
+#include "RE_Internal.hpp"
 
 #ifdef RE_OS_LINUX
 

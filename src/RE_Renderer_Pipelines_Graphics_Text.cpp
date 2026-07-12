@@ -6,8 +6,8 @@ namespace RE {
 	
 	bool create_graphics_pipeline_text() {
 		PRINT_DEBUG("Creating temporary Vulkan shader modules for graphics pipeline rendering text");
-		Vulkan_Shader vertexShader("shaders/vertex_text.glsl.spv"),
-			fragmentShader("shaders/fragment_text.glsl.spv");
+		Vulkan_Shader vertexShader("shaders/Vertex_Text.glsl.spv"),
+			fragmentShader("shaders/Fragment_Text.glsl.spv");
 		if (!vertexShader.valid() || !fragmentShader.valid()) {
 			RE_FATAL_ERROR("");
 			return false;

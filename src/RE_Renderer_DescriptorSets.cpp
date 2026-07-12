@@ -1,5 +1,5 @@
-#include "RE_Renderer_Descriptor Sets_Internal.hpp"
-#include "RE_Renderer_Descriptor Set Pools.hpp"
+#include "RE_Renderer_DescriptorSets_Internal.hpp"
+#include "RE_Renderer_DescriptorSetPools.hpp"
 
 namespace RE {
 

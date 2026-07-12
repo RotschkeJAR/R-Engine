@@ -1,8 +1,8 @@
 #ifndef __RE_GPU_H__
 #define __RE_GPU_H__
 
-#include "RE_GPU_Vulkan Instance.hpp"
-#include "RE_GPU_Vulkan Device.hpp"
+#include "RE_GPU_VulkanInstance.hpp"
+#include "RE_GPU_VulkanDevice.hpp"
 #include "RE_GPU_Synchronization2.hpp"
 #include "RE_GPU_Constrains.hpp"
 

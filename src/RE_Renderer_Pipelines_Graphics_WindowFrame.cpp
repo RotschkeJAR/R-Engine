@@ -9,8 +9,8 @@ namespace RE {
 	VkPipeline vk_hGraphicsPipelineWindowFrame;
 
 	bool create_graphics_pipeline_window_frame() {
-		const Vulkan_Shader vertexShader("shaders/vertex_window frame.glsl.spv"),
-			fragmentShader("shaders/fragment_window frame.glsl.spv");
+		const Vulkan_Shader vertexShader("shaders/Vertex_WindowFrame.glsl.spv"),
+			fragmentShader("shaders/Fragment_WindowFrame.glsl.spv");
 		if (!vertexShader.valid() || !fragmentShader.valid()) {
 			RE_ERROR("Failed to create Vulkan shader modules for the graphics pipeline for window frame rendering");
 			return false;

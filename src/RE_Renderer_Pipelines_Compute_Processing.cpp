@@ -8,7 +8,7 @@ namespace RE {
 	bool create_compute_pipeline_preprocessing() {
 		PRINT_DEBUG("Creating temporary Vulkan shader module for processing game objects");
 		VkShaderModule vk_hShader;
-		if (create_vulkan_shader_from_file("shaders/compute_processing.glsl.spv", 0, &vk_hShader)) {
+		if (create_vulkan_shader_from_file("shaders/Compute_Processing.glsl.spv", 0, &vk_hShader)) {
 			PRINT_DEBUG("Creating Vulkan compute pipeline for processing game objects");
 			const VkComputePipelineCreateInfo vk_createInfo = {
 				.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,

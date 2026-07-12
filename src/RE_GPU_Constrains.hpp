@@ -1,7 +1,7 @@
 #ifndef __RE_GPU_CONSTRAINS_H__
 #define __RE_GPU_CONSTRAINS_H__
 
-#include "RE_GPU_Vulkan Device.hpp"
+#include "RE_GPU_VulkanDevice.hpp"
 
 namespace RE {
 

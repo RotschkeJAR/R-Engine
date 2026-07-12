@@ -3,7 +3,7 @@
 
 #include "RE_GPU.hpp"
 
-#include "RE_Renderer_Shader Structs.hpp"
+#include "RE_Renderer_ShaderStructs.hpp"
 
 namespace RE {
 

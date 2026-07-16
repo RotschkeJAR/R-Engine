@@ -24,6 +24,6 @@ for %%f in (%SRC%\compute_*.glsl) do (
 	%SC% %SFLAG% -x glsl -fshader-stage=compute -o "%%f.spv" "%%f"
 )
 
-move %SRC%/*.spv %DST%
+move %SRC%\*.spv %DST%
 
 pause

@@ -8,8 +8,8 @@ set BIN=bin\MinGW
 set TEST=test
 
 set CC=g++
-set CFLAG=-std=c++20 -pedantic-errors -Wall -march=x86-64 -m64 -ffast-math -O2 -D_WIN32_WINNT=0x0A00
-set LDFLAG=-lRE -lgdi32 -luser32 -I%SRC% -L%BIN% -static-libgcc -static-libstdc++
+set CFLAG=-std=c++20 -pedantic-errors -Wall -march=x86-64 -m64 -ffast-math -O2 -D _WIN32_WINNT=0x0A00 -D NDEBUG
+set LDFLAG=-l RE -l gdi32 -l user32 -I %SRC% -L %BIN% -static-libgcc -static-libstdc++
 
 set OUT_LIB=%BIN%\libRE.a
 

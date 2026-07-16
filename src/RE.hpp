@@ -991,7 +991,7 @@ namespace RE {
 			}
 
 			[[nodiscard]]
-			bool joinable() const {
+			bool joinable() {
 				std::lock_guard<std::mutex> std_lockGuardMute(std_mutex);
 				for (std::jthread &std_rThread : std_threads)
 					if (std_rThread.joinable())
@@ -1008,7 +1008,7 @@ namespace RE {
 			}
 
 			[[nodiscard]]
-			size_t free_slots() const {
+			size_t free_slots() {
 				std::lock_guard<std::mutex> std_lockGuardMute(std_mutex);
 				size_t numOfFreeSlots = 0;
 				for (std::jthread &std_rThread : std_threads)
@@ -1018,7 +1018,7 @@ namespace RE {
 			}
 
 			[[nodiscard]]
-			size_t occupied_slots() const {
+			size_t occupied_slots() {
 				return numOfThreads - free_slots();
 			}
 

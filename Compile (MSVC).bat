@@ -8,7 +8,7 @@ set BIN=bin\MSVC
 set TEST=test
 
 set CC=cl
-set CFLAG=/nologo /EHsc /TP /std:c++20 /W1 /favor:blend /D_WIN32_WINNT=0x0A00
+set CFLAG=/nologo /EHsc /TP /std:c++20 /W1 /favor:blend /D _WIN32_WINNT=0x0A00 /D NDEBUG
 set LDFLAG=gdi32.lib user32.lib
 
 set OUT_LIB=%BIN%\RE.lib

@@ -566,9 +566,18 @@ namespace RE {
 				vkGetPhysicalDeviceSurfacePresentModesKHR(vk_hPhysicalDevice, vk_hSurface, &u32PresentModeCount, vk_aePresentModes);
 				bool bFifoPresentationSupported = false;
 				for (uint32_t u32PresentModeIndex = 0; u32PresentModeIndex < u32PresentModeCount; u32PresentModeIndex++)
-					if (vk_aePresentModes[u32PresentModeIndex] == VK_PRESENT_MODE_FIFO_KHR) {
-						bFifoPresentationSupported = true;
-						break;
+					switch (vk_aePresentModes[u32PresentModeIndex]) {
+						case VK_PRESENT_MODE_FIFO_KHR:
+							bFifoPresentationSupported = true;
+							break;
+						case VK_PRESENT_MODE_IMMEDIATE_KHR:
+							i32Score += 100;
+							break;
+						case VK_PRESENT_MODE_MAILBOX_KHR:
+							i32Score += 50;
+							break;
+						default:
+							break;
 					}
 				if (!bFifoPresentationSupported)
 					incompatibilities.emplace("The GPU doesn't support the FIFO-present mode");

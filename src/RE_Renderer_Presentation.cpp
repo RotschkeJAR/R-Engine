@@ -84,7 +84,7 @@ namespace RE {
 		}
 	}
 
-	void enable_vsync(const bool bEnableVsync) {
+	void enable_vsync(bool bEnableVsync) {
 		bVsyncEnabled = bEnableVsync;
 		bSwapchainDirty = bRunning;
 	}

@@ -6,11 +6,11 @@ class Nexie : public GameObject {
 	public:
 		Nexie() : GameObject(0, 2) {}
 		~Nexie() {}
-		void start(Scene* pStartingScene) {
+		void start() {
 			PRINT_LN("start nexie");
 		}
-		void update(Scene* pCurrentScene) {}
-		void end(Scene* pEndingScene) {
+		void update() {}
+		void end() {
 			PRINT_LN("end nexie");
 		}
 };
@@ -29,11 +29,11 @@ class Clonus : public GameObject {
 	public:
 		Clonus() : GameObject(0, 0) {}
 		~Clonus() {}
-		void start(Scene* pStartingScene) {
+		void start() {
 			PRINT_LN("start clonus");
 		}
-		void update(Scene* pCurrentScene) {}
-		void end(Scene* pEndingScene) {
+		void update() {}
+		void end() {
 			PRINT_LN("end clonus");
 		}
 };
@@ -60,10 +60,10 @@ class Playy : public GameObject {
 		~Playy() {
 			pPlayy = nullptr;
 		}
-		void start(Scene* pStartingScene) {
+		void start() {
 			PRINT_LN("start objy");
 		}
-		void update(Scene* pCurrentScene) {
+		void update() {
 			bool randomResult = rng.random_bool(0.2);
 			if (randomResult)
 				hits++;
@@ -75,7 +75,7 @@ class Playy : public GameObject {
 			spriteRenderer.color.set_green(std::fmod(std::abs(transform.position[1]), 1.0f));
 			spriteRenderer.color.set_blue(std::fmod(std::abs(transform.position[2]), 1.0f));
 		}
-		void end(Scene* pEndingScene) {
+		void end() {
 			PRINT_LN(append_to_string(hits, ", ", misses).c_str());
 		}
 };
@@ -90,13 +90,13 @@ class Imagy : public GameObject {
 			transform.scale[1] = 0.3f;
 		}
 		~Imagy() {}
-		void start(Scene *pStartingScene) {
+		void start() {
 			/*const Texture hTexture = alloc_texture_loading_from_file("Image.png");
 			const SpriteLayoutSettings spriteLayoutSettings;
 			const SpriteLayout hSpriteLayout = create_sprite_layout(spriteLayoutSettings);
 			spriteRenderer.hSprite = create_sprite(hTexture, hSpriteLayout);*/
 		}
-		void update(Scene *pCurrentScene) {
+		void update() {
 			transform.position[0] = pPlayy->transform.position[0];
 			transform.position[1] = pPlayy->transform.position[1];
 			spriteRenderer.textureCoordinates[0] = pPlayy->transform.position[0];
@@ -104,7 +104,7 @@ class Imagy : public GameObject {
 			spriteRenderer.textureOffset[0] = pPlayy->transform.position[0];
 			spriteRenderer.textureOffset[1] = pPlayy->transform.position[1];
 		}
-		void end(Scene *pEndingScene) {
+		void end() {
 			/*const Texture hTexture = get_texture_from_sprite(spriteRenderer.hSprite);
 			const SpriteLayout hSpriteLayout = get_sprite_layout_from_sprite(spriteRenderer.hSprite);
 			destroy_sprite(spriteRenderer.hSprite);
@@ -188,14 +188,13 @@ class First : public Scene {
 					set_screen_percentage_settings(normal);
 				}
 			}
-			//PRINT_LN(get_fps_rate());
+			PRINT_LN(get_fps_rate());
 		}
 		void end() {}
 };
 
 int main_func() {
 	set_signal_handlers();
-	set_max_camera_count(1);
 	First first;
 	Second secondInStack;
 	second = &secondInStack;

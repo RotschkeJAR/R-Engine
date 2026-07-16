@@ -35,7 +35,8 @@ An extensible paramter pack doesn't have any special rules.
 
 ### Typedefs
 
-A new name for an existing datatype has to contain the suffix `_t`, unless the datatype is a pointer. In that case the suffix `_p` has to be used.
+A new name for an existing datatype has to contain the suffix `_t`, unless the datatype is a pointer or the letter of the new name is written in upper case.
+If it's a pointer, the suffix `_p` has to be used.
 The name has to be written in Camel Case.
 
 #### Handles

@@ -3,7 +3,7 @@
 
 namespace RE {
 
-	bool create_vulkan_fence(const VkFenceCreateFlags vk_mFlags, VkFence *const vk_phFence) {
+	bool create_vulkan_fence(VkFenceCreateFlags vk_mFlags, VkFence *vk_phFence) {
 		PRINT_DEBUG("Creating a Vulkan fence");
 		const VkFenceCreateInfo vk_createInfo = {
 			.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
@@ -17,7 +17,7 @@ namespace RE {
 
 	Vulkan_Fence::Vulkan_Fence() : vk_hFence(VK_NULL_HANDLE) {}
 
-	Vulkan_Fence::Vulkan_Fence(const VkFenceCreateFlags vk_mFlags) : Vulkan_Fence() {
+	Vulkan_Fence::Vulkan_Fence(VkFenceCreateFlags vk_mFlags) : Vulkan_Fence() {
 		PRINT_DEBUG_CLASS("Constructing Vulkan fence wrapper");
 		create(vk_mFlags);
 	}
@@ -32,11 +32,11 @@ namespace RE {
 		destroy();
 	}
 
-	bool Vulkan_Fence::create(const VkFenceCreateFlags vk_mFlags) {
-#ifndef RE_DISABLE_PRINT_DEBUGS
+	bool Vulkan_Fence::create(VkFenceCreateFlags vk_mFlags) {
+	#ifndef NDEBUG
 		if (valid())
 			RE_ERROR("Creating another Vulkan fence wrapper, when the old fence ", vk_hFence, " hasn't been destroyed yet");
-#endif
+	#endif
 		PRINT_DEBUG_CLASS("Creating Vulkan fence wrapper");
 		return create_vulkan_fence(vk_mFlags, &vk_hFence);
 	}
@@ -47,7 +47,7 @@ namespace RE {
 		vk_hFence = VK_NULL_HANDLE;
 	}
 
-	VkResult Vulkan_Fence::wait_for(const uint64_t u64Timeout) const {
+	VkResult Vulkan_Fence::wait_for(uint64_t u64Timeout) const {
 		PRINT_DEBUG_CLASS("Waiting for Vulkan fence wrapper for ", u64Timeout, " nanoseconds");
 		return vkWaitForFences(vk_hDevice, 1, &vk_hFence, VK_TRUE, u64Timeout);
 	}

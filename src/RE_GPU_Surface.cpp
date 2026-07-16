@@ -7,6 +7,8 @@ namespace RE {
 	VkSurfaceCapabilitiesKHR vk_surfaceCapabilities;
 	std::unique_ptr<VkSurfaceFormatKHR[]> surfaceFormatsAvailable;
 	VkCompositeAlphaFlagBitsKHR vk_eCompositeAlphaSelected;
+	VkPresentModeKHR vk_ePresentNoVsync = VK_PRESENT_MODE_FIFO_KHR,
+		vk_ePresentVsync = VK_PRESENT_MODE_FIFO_KHR;
 	uint32_t u32SurfaceFormatsAvailableCount;
 
 	// creating Vulkan surface is done by the window
@@ -15,6 +17,8 @@ namespace RE {
 		PRINT_DEBUG("Destroying Vulkan surface");
 		vkDestroySurfaceKHR(vk_hInstance, vk_hSurface, nullptr);
 		surfaceFormatsAvailable.reset();
+		vk_ePresentNoVsync = VK_PRESENT_MODE_FIFO_KHR;
+		vk_ePresentVsync = VK_PRESENT_MODE_FIFO_KHR;
 	}
 
 	void fetch_vulkan_surface_infos() {
@@ -70,6 +74,18 @@ namespace RE {
 		vkGetPhysicalDeviceSurfacePresentModesKHR(SELECTED_PHYSICAL_VULKAN_DEVICE, vk_hSurface, &u32PresentModesCount, nullptr);
 		std::unique_ptr<VkPresentModeKHR[]> allSupportedPresentModes = std::make_unique<VkPresentModeKHR[]>(u32PresentModesCount);
 		vkGetPhysicalDeviceSurfacePresentModesKHR(SELECTED_PHYSICAL_VULKAN_DEVICE, vk_hSurface, &u32PresentModesCount, allSupportedPresentModes.get());
+		for (uint32_t u32PresentModeIndex = 0; u32PresentModeIndex < u32PresentModesCount; u32PresentModeIndex++) {
+			switch (allSupportedPresentModes[u32PresentModeIndex]) {
+				case VK_PRESENT_MODE_IMMEDIATE_KHR:
+					vk_ePresentNoVsync = VK_PRESENT_MODE_IMMEDIATE_KHR;
+					break;
+				case VK_PRESENT_MODE_MAILBOX_KHR:
+					vk_ePresentVsync = VK_PRESENT_MODE_MAILBOX_KHR;
+					break;
+				default:
+					break;
+			}
+		}
 	}
 
 	void select_best_vulkan_surface_format() {

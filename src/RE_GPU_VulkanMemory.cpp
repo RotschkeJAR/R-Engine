@@ -2,7 +2,7 @@
 
 namespace RE {
 
-	static VkResult alloc_vulkan_memory(const void *const pNext, const VkDeviceSize vk_size, const uint32_t u32MemoryTypeIndex, VkDeviceMemory *const vk_phMemory) {
+	static VkResult alloc_vulkan_memory(const void *pNext, VkDeviceSize vk_size, uint32_t u32MemoryTypeIndex, VkDeviceMemory *vk_phMemory) {
 		if (u32VulkanMemoryAllocCount == u32MaxMemoryAllocs) {
 			RE_ERROR("Ran out of Vulkan memory allocations");
 			return VK_ERROR_TOO_MANY_OBJECTS;
@@ -23,11 +23,11 @@ namespace RE {
 	
 	VulkanMemory::VulkanMemory() : vk_hMemory(VK_NULL_HANDLE), vk_size(0), bMapped(false) {}
 
-	VulkanMemory::VulkanMemory(const VkDeviceSize vk_size, VkMemoryPropertyFlags vk_mProperties, const uint32_t m32DesiredMemoryTypes) : VulkanMemory() {
+	VulkanMemory::VulkanMemory(VkDeviceSize vk_size, VkMemoryPropertyFlags vk_mProperties, uint32_t m32DesiredMemoryTypes) : VulkanMemory() {
 		this->alloc(vk_size, vk_mProperties, m32DesiredMemoryTypes);
 	}
 
-	VulkanMemory::VulkanMemory(const VkDeviceSize vk_size, const uint8_t u8MemoryType) : VulkanMemory() {
+	VulkanMemory::VulkanMemory(VkDeviceSize vk_size, uint8_t u8MemoryType) : VulkanMemory() {
 		this->alloc(vk_size, u8MemoryType);
 	}
 
@@ -45,17 +45,17 @@ namespace RE {
 		this->free();
 	}
 
-	VkResult VulkanMemory::alloc(const VkDeviceSize vk_size, const VkMemoryPropertyFlags vk_mProperties, const uint32_t m32DesiredMemoryTypes) {
+	VkResult VulkanMemory::alloc(VkDeviceSize vk_size, VkMemoryPropertyFlags vk_mProperties, uint32_t m32DesiredMemoryTypes) {
 		PRINT_DEBUG_CLASS("Allocating Vulkan memory supporting properties ", std::hex, vk_mProperties, " and from types ", m32DesiredMemoryTypes);
-		const auto memoryTypeIndex = find_vulkan_memory_type(vk_mProperties, m32DesiredMemoryTypes);
-		if (memoryTypeIndex.has_value())
-			return this->alloc(vk_size, *memoryTypeIndex);
+		const auto xMemoryTypeIndex = find_vulkan_memory_type(vk_mProperties, m32DesiredMemoryTypes);
+		if (xMemoryTypeIndex.has_value())
+			return this->alloc(vk_size, *xMemoryTypeIndex);
 		else
 			RE_ERROR("Failed to find Vulkan memory type matching properties ", std::hex, vk_mProperties, " and from bitmask ", m32DesiredMemoryTypes);
 		return (vk_mProperties & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) ? VK_ERROR_OUT_OF_DEVICE_MEMORY : VK_ERROR_OUT_OF_HOST_MEMORY;
 	}
 
-	VkResult VulkanMemory::alloc(const VkDeviceSize vk_size, const uint8_t u8MemoryType) {
+	VkResult VulkanMemory::alloc(VkDeviceSize vk_size, uint8_t u8MemoryType) {
 		if (valid())
 			RE_ERROR("New memory is being allocated, even though the old Vulkan memory ", vk_hMemory, " occupying ", vk_size, " bytes hasn't been freed yet");
 		PRINT_DEBUG_CLASS("Allocating Vulkan memory at type index ", u8MemoryType);
@@ -70,7 +70,7 @@ namespace RE {
 		return vk_eResult;
 	}
 
-	VkResult VulkanMemory::alloc_for_buffer(const VkBuffer vk_hBuffer, const VkMemoryPropertyFlags vk_mProperties) {
+	VkResult VulkanMemory::alloc_for_buffer(VkBuffer vk_hBuffer, VkMemoryPropertyFlags vk_mProperties) {
 		if (valid())
 			RE_ERROR("New memory is being allocated, even though the old Vulkan memory ", vk_hMemory, " occupying ", vk_size, " bytes hasn't been freed yet");
 		PRINT_DEBUG_CLASS("Fetching requirements for memory for Vulkan buffer ", std::hex, vk_hBuffer);
@@ -86,9 +86,9 @@ namespace RE {
 		vkGetBufferMemoryRequirements2(vk_hDevice, &vk_bufferInfo, &vk_memoryRequirements);
 		PRINT_DEBUG_CLASS("Finding matching Vulkan memory type supporting properties ", std::hex, vk_mProperties);
 		vk_size = vk_memoryRequirements.memoryRequirements.size;
-		const auto memoryTypeIndex = find_vulkan_memory_type(vk_mProperties, vk_memoryRequirements.memoryRequirements.memoryTypeBits);
-		if (memoryTypeIndex.has_value()) {
-			u8MemoryType = *memoryTypeIndex;
+		const auto xMemoryTypeIndex = find_vulkan_memory_type(vk_mProperties, vk_memoryRequirements.memoryRequirements.memoryTypeBits);
+		if (xMemoryTypeIndex.has_value()) {
+			u8MemoryType = *xMemoryTypeIndex;
 			bCoherent = (vulkanMemoryTypes[u8MemoryType].propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) != 0;
 			bMapped = false;
 			PRINT_DEBUG_CLASS("Allocating Vulkan memory of type ", u8MemoryType);
@@ -121,7 +121,7 @@ namespace RE {
 		return vk_eLatestResult;
 	}
 
-	VkResult VulkanMemory::alloc_for_image(const VkImage vk_hImage, const VkMemoryPropertyFlags vk_mProperties) {
+	VkResult VulkanMemory::alloc_for_image(VkImage vk_hImage, VkMemoryPropertyFlags vk_mProperties) {
 		if (valid())
 			RE_ERROR("New memory is being allocated, even though the old Vulkan memory ", vk_hMemory, " occupying ", vk_size, " bytes hasn't been freed yet");
 		PRINT_DEBUG_CLASS("Fetching requirements for memory for Vulkan image ", std::hex, vk_hImage);
@@ -137,9 +137,9 @@ namespace RE {
 		vkGetImageMemoryRequirements2(vk_hDevice, &vk_imageInfo, &vk_memoryRequirements);
 		PRINT_DEBUG_CLASS("Finding matching Vulkan memory type supporting properties ", std::hex, vk_mProperties);
 		vk_size = vk_memoryRequirements.memoryRequirements.size;
-		const auto memoryTypeIndex = find_vulkan_memory_type(vk_mProperties, vk_memoryRequirements.memoryRequirements.memoryTypeBits);
-		if (memoryTypeIndex.has_value()) {
-			u8MemoryType = *memoryTypeIndex;
+		const auto xMemoryTypeIndex = find_vulkan_memory_type(vk_mProperties, vk_memoryRequirements.memoryRequirements.memoryTypeBits);
+		if (xMemoryTypeIndex.has_value()) {
+			u8MemoryType = *xMemoryTypeIndex;
 			bCoherent = (vulkanMemoryTypes[u8MemoryType].propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) != 0;
 			bMapped = false;
 			PRINT_DEBUG_CLASS("Allocating Vulkan memory of type ", u8MemoryType);
@@ -180,7 +180,7 @@ namespace RE {
 		vk_size = 0;
 	}
 
-	bool VulkanMemory::map(const VkMemoryMapFlags vk_eFlags, const VkDeviceSize vk_offset, const VkDeviceSize vk_size, void **const ppData) {
+	bool VulkanMemory::map(VkMemoryMapFlags vk_eFlags, VkDeviceSize vk_offset, VkDeviceSize vk_size, void **ppData) {
 		PRINT_DEBUG_CLASS("Mapping Vulkan memory to CPU");
 		if (vkMapMemory(vk_hDevice, vk_hMemory, vk_offset, vk_size, vk_eFlags, ppData) == VK_SUCCESS) {
 			bMapped = true;

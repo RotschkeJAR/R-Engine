@@ -9,10 +9,10 @@
 namespace RE {
 	
 #ifdef RE_OS_WINDOWS
-# define VK_A 0x41
-# define VK_Z 0x5A
-# define VK_0 0x30
-# define VK_9 0x39
+#	define VK_A 0x41
+#	define VK_Z 0x5A
+#	define VK_0 0x30
+#	define VK_9 0x39
 
 	constexpr WORD virtual_win64_keycode_from_key(const Input eKey) {
 		switch (eKey) {
@@ -130,8 +130,8 @@ namespace RE {
 		}
 	}
 
-	constexpr Input key_from_virtual_win64_keycode(const WORD i64VirtualKeyCode) {
-		switch (i64VirtualKeyCode) {
+	constexpr Input key_from_virtual_win64_keycode(const WORD win_virtualKeyCode) {
+		switch (win_virtualKeyCode) {
 			case VK_SPACE:
 				return RE_INPUT_KEY_SPACE;
 			case VK_RETURN:
@@ -227,14 +227,14 @@ namespace RE {
 			case VK_RWIN:
 				return RE_INPUT_UNKNOWN;
 			default:
-				if (i64VirtualKeyCode >= VK_A && i64VirtualKeyCode <= VK_Z)
-					return static_cast<Input>(i64VirtualKeyCode - VK_A + static_cast<WORD>(RE_INPUT_KEY_A));
-				else if (i64VirtualKeyCode >= VK_0 && i64VirtualKeyCode <= VK_9)
-					return static_cast<Input>(i64VirtualKeyCode - VK_0 + static_cast<WORD>(RE_INPUT_KEY_TOP_0));
-				else if (i64VirtualKeyCode >= VK_F1 && i64VirtualKeyCode <= VK_F24)
-					return static_cast<Input>(i64VirtualKeyCode - VK_F1 + static_cast<WORD>(RE_INPUT_KEY_F1));
-				else if (i64VirtualKeyCode >= VK_NUMPAD0 && i64VirtualKeyCode <= VK_NUMPAD9)
-					return static_cast<Input>(i64VirtualKeyCode - VK_NUMPAD0 + static_cast<WORD>(RE_INPUT_KEY_NUMPAD_0));
+				if (win_virtualKeyCode >= VK_A && win_virtualKeyCode <= VK_Z)
+					return static_cast<Input>(win_virtualKeyCode - VK_A + static_cast<WORD>(RE_INPUT_KEY_A));
+				else if (win_virtualKeyCode >= VK_0 && win_virtualKeyCode <= VK_9)
+					return static_cast<Input>(win_virtualKeyCode - VK_0 + static_cast<WORD>(RE_INPUT_KEY_TOP_0));
+				else if (win_virtualKeyCode >= VK_F1 && win_virtualKeyCode <= VK_F24)
+					return static_cast<Input>(win_virtualKeyCode - VK_F1 + static_cast<WORD>(RE_INPUT_KEY_F1));
+				else if (win_virtualKeyCode >= VK_NUMPAD0 && win_virtualKeyCode <= VK_NUMPAD9)
+					return static_cast<Input>(win_virtualKeyCode - VK_NUMPAD0 + static_cast<WORD>(RE_INPUT_KEY_NUMPAD_0));
 				else
 					return RE_INPUT_UNKNOWN;
 		}
@@ -358,8 +358,8 @@ namespace RE {
 		}
 	}
 
-	constexpr Input key_from_virtual_x11_keycode(const KeySym i64VirtualKeyCode) {
-		switch (i64VirtualKeyCode) {
+	constexpr Input key_from_virtual_x11_keycode(const KeySym x11_virtualKeyCode) {
+		switch (x11_virtualKeyCode) {
 			case XK_space:
 				return RE_INPUT_KEY_SPACE;
 			case XK_BackSpace:
@@ -489,19 +489,25 @@ namespace RE {
 				return RE_INPUT_KEY_NUMPAD_9;
 			case XK_numbersign:
 				return RE_INPUT_KEY_TOP_3;
+			case XK_dollar:
+				return RE_INPUT_KEY_TOP_4;
 			case XK_dead_circumflex:
 				return RE_INPUT_KEY_TOP_6;
+			case XK_parenleft:
+				return RE_INPUT_KEY_TOP_9;
+			case XK_parenright:
+				return RE_INPUT_KEY_TOP_0;
 			case XK_Menu:
 				return RE_INPUT_KEY_MENU;
 			default:
-				if (i64VirtualKeyCode >= XK_a && i64VirtualKeyCode <= XK_z)
-					return static_cast<Input>(i64VirtualKeyCode - XK_a + static_cast<KeySym>(RE_INPUT_KEY_A));
-				else if (i64VirtualKeyCode >= XK_A && i64VirtualKeyCode <= XK_Z)
-					return static_cast<Input>(i64VirtualKeyCode - XK_A + static_cast<KeySym>(RE_INPUT_KEY_A));
-				else if (i64VirtualKeyCode >= XK_0 && i64VirtualKeyCode <= XK_9)
-					return static_cast<Input>(i64VirtualKeyCode - XK_0 + static_cast<KeySym>(RE_INPUT_KEY_TOP_0));
-				else if (i64VirtualKeyCode >= XK_F1 && i64VirtualKeyCode <= XK_F25)
-					return static_cast<Input>(i64VirtualKeyCode - XK_F1 + static_cast<KeySym>(RE_INPUT_KEY_F1));
+				if (x11_virtualKeyCode >= XK_a && x11_virtualKeyCode <= XK_z)
+					return static_cast<Input>(x11_virtualKeyCode - XK_a + static_cast<KeySym>(RE_INPUT_KEY_A));
+				else if (x11_virtualKeyCode >= XK_A && x11_virtualKeyCode <= XK_Z)
+					return static_cast<Input>(x11_virtualKeyCode - XK_A + static_cast<KeySym>(RE_INPUT_KEY_A));
+				else if (x11_virtualKeyCode >= XK_0 && x11_virtualKeyCode <= XK_9)
+					return static_cast<Input>(x11_virtualKeyCode - XK_0 + static_cast<KeySym>(RE_INPUT_KEY_TOP_0));
+				else if (x11_virtualKeyCode >= XK_F1 && x11_virtualKeyCode <= XK_F25)
+					return static_cast<Input>(x11_virtualKeyCode - XK_F1 + static_cast<KeySym>(RE_INPUT_KEY_F1));
 				else
 					return RE_INPUT_UNKNOWN;
 		}
@@ -649,11 +655,11 @@ namespace RE {
 			case XKB_KEY_Right:
 				return RE_INPUT_KEY_ARROW_RIGHT;
 			case XKB_KEY_Down:
-				return RE_INPUT_KEY_BACKSPACE;
-			case XKB_KEY_Page_Up:
-				return RE_INPUT_KEY_BACKSPACE;
-			case XKB_KEY_Page_Down:
 				return RE_INPUT_KEY_ARROW_DOWN;
+			case XKB_KEY_Page_Up:
+				return RE_INPUT_KEY_PAGE_UP;
+			case XKB_KEY_Page_Down:
+				return RE_INPUT_KEY_PAGE_DOWN;
 			case XKB_KEY_End:
 				return RE_INPUT_KEY_END;
 			case XKB_KEY_Print:
@@ -721,62 +727,55 @@ namespace RE {
 			case XKB_KEY_space:
 				return RE_INPUT_KEY_SPACE;
 			case XKB_KEY_exclam:
-				return RE_INPUT_KEY_BACKSPACE;
-			case XKB_KEY_quotedbl:
-				return RE_INPUT_KEY_BACKSPACE;
-			case XKB_KEY_underscore:
+				return RE_INPUT_KEY_TOP_1;
 			case XKB_KEY_numbersign:
+				return RE_INPUT_KEY_TOP_3;
+			case XKB_KEY_underscore:
 			case XKB_KEY_minus:
 				return RE_INPUT_KEY_MINUS;
 			case XKB_KEY_dollar:
-				return RE_INPUT_KEY_BACKSPACE;
+				return RE_INPUT_KEY_TOP_4;
 			case XKB_KEY_percent:
-				return RE_INPUT_KEY_BACKSPACE;
+				return RE_INPUT_KEY_TOP_5;
 			case XKB_KEY_ampersand:
-				return RE_INPUT_KEY_BACKSPACE;
+				return RE_INPUT_KEY_TOP_7;
 			case XKB_KEY_apostrophe:
 				return RE_INPUT_KEY_APOSTROPHE;
-			case XKB_KEY_parenleft:
-				return RE_INPUT_KEY_BACKSPACE;
-			case XKB_KEY_parenright:
-				return RE_INPUT_KEY_BACKSPACE;
 			case XKB_KEY_asterisk:
-				return RE_INPUT_KEY_BACKSPACE;
-			case XKB_KEY_plus:
-				return RE_INPUT_KEY_BACKSPACE;
+				return RE_INPUT_KEY_TOP_8;
 			case XKB_KEY_semicolon:
+				return RE_INPUT_KEY_SEMICOLON;
 			case XKB_KEY_comma:
-				return RE_INPUT_KEY_BACKSPACE;
+				return RE_INPUT_KEY_COMMA;
 			case XKB_KEY_colon:
 			case XKB_KEY_period:
-				return RE_INPUT_KEY_BACKSPACE;
+				return RE_INPUT_KEY_PERIOD;
+			case XKB_KEY_question:
 			case XKB_KEY_slash:
-				return RE_INPUT_KEY_BACKSPACE;
+				return RE_INPUT_KEY_SLASH;
 			case XKB_KEY_bar:
 			case XKB_KEY_greater:
 			case XKB_KEY_less:
-				return RE_INPUT_KEY_BACKSPACE;
+				return RE_INPUT_KEY_WORLD_1;
+			case XKB_KEY_plus:
 			case XKB_KEY_equal:
-				return RE_INPUT_KEY_BACKSPACE;
-			case XKB_KEY_question:
-				return RE_INPUT_KEY_BACKSPACE;
-			case XKB_KEY_at:
-				return RE_INPUT_KEY_BACKSPACE;
-			case XKB_KEY_bracketleft:
-				return RE_INPUT_KEY_BACKSPACE;
-			case XKB_KEY_backslash:
-				return RE_INPUT_KEY_BACKSPACE;
-			case XKB_KEY_bracketright:
-				return RE_INPUT_KEY_BACKSPACE;
-			case XKB_KEY_grave:
-			case XKB_KEY_asciicircum:
-				return RE_INPUT_KEY_BACKSPACE;
+				return RE_INPUT_KEY_EQUALS;
 			case XKB_KEY_braceleft:
-				return RE_INPUT_KEY_BACKSPACE;
+			case XKB_KEY_bracketleft:
+				return RE_INPUT_KEY_BRACKET_LEFT;
+			case XKB_KEY_backslash:
+				return RE_INPUT_KEY_BACKSLASH;
 			case XKB_KEY_braceright:
-				return RE_INPUT_KEY_BACKSPACE;
-			case XKB_KEY_asciitilde:
-				return RE_INPUT_KEY_BACKSPACE;
+			case XKB_KEY_bracketright:
+				return RE_INPUT_KEY_BRACKET_RIGHT;
+			case XKB_KEY_grave:
+				return RE_INPUT_KEY_ACCENT;
+			case XKB_KEY_asciicircum:
+				return RE_INPUT_KEY_TOP_6;
+			case XKB_KEY_parenleft:
+				return RE_INPUT_KEY_TOP_9;
+			case XKB_KEY_parenright:
+				return RE_INPUT_KEY_TOP_0;
 			default:
 				if (xkb_keySym >= XKB_KEY_a && xkb_keySym <= XKB_KEY_z)
 					return static_cast<Input>(xkb_keySym - XKB_KEY_a + static_cast<xkb_keysym_t>(RE_INPUT_KEY_A));

@@ -1,54 +1,27 @@
 #include "RE_Internal.hpp"
 #include "RE_Manager.hpp"
 #include "RE_Main.hpp"
-#include "RE_List_GameObject.hpp"
 
 namespace RE {
 	
-	GameObject::GameObject(const uint32_t u32OwnId, const uint32_t u32SceneParentId) : bNew(true), u32OwnId(u32OwnId), u32SceneParentId(u32SceneParentId) {
-		if (u32CurrentGameObjectCount == u32MaxGameObjectCount)
-			RE_ABORT("Game object pool exhausted due to overallocation");
-		if (is_calling_object_active<CALLING_OBJECT_GAME_OBJECT>()) {
-			PRINT_DEBUG_CLASS("Enqueuing new game object");
-			if ((u32NewGameObjectCount % GAME_OBJECT_BATCH_SIZE) == 0) {
-				newGameObjects.emplace_back();
-				newGameObjects.back()[0] = this;
-			} else
-				newGameObjects.back()[u32NewGameObjectCount % GAME_OBJECT_BATCH_SIZE] = this;
-			u32ListIndex = u32NewGameObjectCount;
-			u32NewGameObjectCount++;
-		} else {
-			PRINT_DEBUG_CLASS("Directly adding new game object");
-			add_game_object(*this);
-		}
+	GameObject::GameObject(uint32_t u32OwnId, uint32_t u32SceneParentId) : bNew(true), u32OwnId(u32OwnId), u32SceneParentId(u32SceneParentId) {
+		add_game_object(this);
 	}
+	
 	GameObject::~GameObject() {
-		PRINT_DEBUG_CLASS("Destructing game object");
-		if (is_calling_object_active<CALLING_OBJECT_GAME_OBJECT>())
-			RE_WARNING("Game object ", this, " is being removed from the list while the engine is iterating over it. Mark it deletable to avoid potential bugs");
-		if (bNew) {
-			PRINT_DEBUG_CLASS("Removing game object from queue of new game objects");
-			GameObject &rMovingObject = *newGameObjects.back()[(u32NewGameObjectCount - 1) % GAME_OBJECT_BATCH_SIZE];
-			auto newGameObjectIter = newGameObjects.begin();
-			std::advance(newGameObjectIter, u32ListIndex / GAME_OBJECT_BATCH_SIZE);
-			(*newGameObjectIter)[u32ListIndex % GAME_OBJECT_BATCH_SIZE] = std::addressof(rMovingObject);
-			rMovingObject.u32ListIndex = u32ListIndex;
-			u32NewGameObjectCount--;
-		} else {
-			PRINT_DEBUG_CLASS("Removing game object from game object list");
-			GameObject &rMovingObject = *gameObjects.back()[(u32CurrentGameObjectCount - 1) % GAME_OBJECT_BATCH_SIZE];
-			auto gameObjectIter = gameObjects.begin();
-			std::advance(gameObjectIter, u32ListIndex / GAME_OBJECT_BATCH_SIZE);
-			(*gameObjectIter)[u32ListIndex % GAME_OBJECT_BATCH_SIZE] = std::addressof(rMovingObject);
-			rMovingObject.u32ListIndex = u32ListIndex;
-			u32CurrentGameObjectCount--;
-		}
+		remove_game_object(this);
 	}
 
-	void GameObject::marked_deletable() {}
+	void GameObject::start() {}
+	void GameObject::update() {}
+	void GameObject::end() {}
 
-	void GameObject::start(Scene *const pStartingScene) {}
-	void GameObject::update(Scene *const pCurrentScene) {}
-	void GameObject::end(Scene *const pEndingScene) {}
+	Transform& GameObject::get_transform() {
+		return transform;
+	}
+	
+	SpriteRenderer& GameObject::get_sprite_renderer() {
+		return spriteRenderer;
+	}
 
 }

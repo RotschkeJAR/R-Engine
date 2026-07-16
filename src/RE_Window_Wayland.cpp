@@ -388,8 +388,6 @@ namespace RE {
 		actualCursorPosition[1] = wl_fixed_to_int(wl_y);
 		const WindowArea eHoveredWindowArea = get_wayland_window_area_cursor_is_in();
 		if (pWindowFrameUniformData) {
-			for (uint8_t u8DimensionIndex = 0; u8DimensionIndex < actualCursorPosition.dimensions(); u8DimensionIndex++)
-				pWindowFrameUniformData->a2u32CursorPosition[u8DimensionIndex] = actualCursorPosition[u8DimensionIndex];
 			pWindowFrameUniformData->u32HoveredWindowAreaIndex = static_cast<uint32_t>(eHoveredWindowArea);
 		}
 		int iNewCursorImage;
@@ -487,7 +485,6 @@ namespace RE {
 						if (pWindowFrameUniformData) {
 							for (uint uDimensionIndex = 0; uDimensionIndex < actualCursorPosition.dimensions(); uDimensionIndex++) {
 								actualCursorPosition[uDimensionIndex] = 0xFFFFFFFFU;
-								pWindowFrameUniformData->a2u32CursorPosition[uDimensionIndex] = 0xFFFFFFFFU;
 							}
 							pWindowFrameUniformData->u32HoveredWindowAreaIndex = static_cast<uint32_t>(WINDOW_AREA_NONE);
 						}

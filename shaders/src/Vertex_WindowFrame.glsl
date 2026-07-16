@@ -25,7 +25,6 @@ layout (push_constant, std430) uniform PushConstants {
 };
 
 layout (std430, set = 0, binding = 0) uniform Metadata {
-	uvec2 cursorPosition;
 	uint hoveredWindowAreaIndex;
 	uint titleChars[256];
 } metadata;

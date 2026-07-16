@@ -3,7 +3,7 @@
 
 namespace RE {
 	
-	bool alloc_vulkan_command_buffers(const VkCommandPool vk_hCommandPool, const VkCommandBufferLevel vk_eLevel, const uint32_t u32Count, VkCommandBuffer *const vk_pahCommandBuffers) {
+	bool alloc_vulkan_command_buffers(VkCommandPool vk_hCommandPool, VkCommandBufferLevel vk_eLevel, uint32_t u32Count, VkCommandBuffer *vk_pahCommandBuffers) {
 		const VkCommandBufferAllocateInfo vk_allocInfo = {
 			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
 			.commandPool = vk_hCommandPool,

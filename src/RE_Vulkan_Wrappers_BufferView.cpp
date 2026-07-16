@@ -3,12 +3,13 @@
 
 namespace RE {
 	
-	bool create_vulkan_buffer_view(const VkBufferViewCreateFlags vk_eFlags, 
-			const VkBuffer vk_hBuffer, 
-			const VkFormat vk_eFormat, 
-			const VkDeviceSize vk_offset, 
-			const VkDeviceSize vk_range, 
-			VkBufferView *const vk_phBufferView) {
+	bool create_vulkan_buffer_view(
+			VkBufferViewCreateFlags vk_eFlags, 
+			VkBuffer vk_hBuffer, 
+			VkFormat vk_eFormat, 
+			VkDeviceSize vk_offset, 
+			VkDeviceSize vk_range, 
+			VkBufferView *vk_phBufferView) {
 		PRINT_DEBUG("Creating a Vulkan buffer view");
 		const VkBufferViewCreateInfo vk_createInfo = {
 			.sType = VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO,
@@ -26,11 +27,12 @@ namespace RE {
 
 	Vulkan_BufferView::Vulkan_BufferView() : vk_hBufferView(VK_NULL_HANDLE) {}
 	
-	Vulkan_BufferView::Vulkan_BufferView(const VkBufferViewCreateFlags vk_eFlags, 
-			const VkBuffer vk_hBuffer, 
-			const VkFormat vk_eFormat, 
-			const VkDeviceSize vk_offset, 
-			const VkDeviceSize vk_range) : Vulkan_BufferView() {
+	Vulkan_BufferView::Vulkan_BufferView(
+			VkBufferViewCreateFlags vk_eFlags, 
+			VkBuffer vk_hBuffer, 
+			VkFormat vk_eFormat, 
+			VkDeviceSize vk_offset, 
+			VkDeviceSize vk_range) : Vulkan_BufferView() {
 		PRINT_DEBUG_CLASS("Constructing Vulkan buffer view wrapper");
 		create(vk_eFlags, vk_hBuffer, vk_eFormat, vk_offset, vk_range);
 	}
@@ -45,15 +47,16 @@ namespace RE {
 		destroy();
 	}
 
-	bool Vulkan_BufferView::create(const VkBufferViewCreateFlags vk_eFlags, 
-			const VkBuffer vk_hBuffer, 
-			const VkFormat vk_eFormat, 
-			const VkDeviceSize vk_offset, 
-			const VkDeviceSize vk_range) {
-#ifndef RE_DISABLE_PRINT_DEBUGS
+	bool Vulkan_BufferView::create(
+			VkBufferViewCreateFlags vk_eFlags, 
+			VkBuffer vk_hBuffer, 
+			VkFormat vk_eFormat, 
+			VkDeviceSize vk_offset, 
+			VkDeviceSize vk_range) {
+	#ifndef NDEBUG
 		if (valid())
 			RE_ERROR("Creating another Vulkan buffer view wrapper, when the old Vulkan buffer view ", vk_hBufferView, " hasn't been destroyed yet");
-#endif
+	#endif
 		PRINT_DEBUG_CLASS("Creating Vulkan buffer view wrapper");
 		return create_vulkan_buffer_view(vk_eFlags, vk_hBuffer, vk_eFormat, vk_offset, vk_range, &vk_hBufferView);
 	}

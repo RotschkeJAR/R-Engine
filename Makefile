@@ -11,10 +11,10 @@ LIB_SPEC_BIN  := $(LIB_BIN)/Linux
 TEST_BIN      := $(BIN)/test
 
 CXX               := g++
-CXXFLAG           := -std=c++20 -m64 -march=x86-64 -pedantic-errors -Wall -ffast-math -MMD -MP
+CXXFLAG           := -std=c++20 -m64 -march=x86-64 -pedantic-errors -Wall -ffast-math -MMD -MP -D NDEBUG
 
 CC                := gcc
-CFLAG             := -std=c2x -m64 -march=x86-64 -pedantic-errors -Wall -ffast-math -MMD -MP -fPIC
+CFLAG             := -std=c2x -m64 -march=x86-64 -pedantic-errors -Wall -ffast-math -MMD -MP -fPIC -D NDEBUG
 
 SC                := glslc
 SFLAG             := --target-env=vulkan1.3 --target-spv=spv1.6 -O -Werror -MD
@@ -40,9 +40,12 @@ TEST_DEPENDENCIES     := $(patsubst $(TEST)/%.cpp,$(TEST_BIN)/%.d,$(TEST_SOURCES
 
 SHADER_SOURCES        := $(wildcard $(SH_SRC)/*.glsl)
 SHADER_BINARIES       := $(patsubst $(SH_SRC)/%.glsl,$(SH)/%.glsl.spv,$(SHADER_SOURCES))
-SHADER_DEPENDENCIES   := $(patsubst $(SH_SRC)/%.glsl,$(SH)/%.d,$(SHADER_SOURCES))
+SHADER_DEPENDENCIES   := $(patsubst $(SH_SRC)/%.glsl,$(SH)/%.glsl.spv.d,$(SHADER_SOURCES))
 
-.PHONY: all compile_shaders update_git fetch_git
+.PHONY: all \
+	clear \
+	update_git \
+	fetch_git
 
 all: $(OUT) $(SHADER_BINARIES)
 
@@ -82,6 +85,17 @@ $(SH)/Compute_%.glsl.spv: $(SH_SRC)/Compute_%.glsl
 -include $(LIB_SPEC_DEPENDENCIES)
 
 -include $(SHADER_DEPENDENCIES)
+
+clear:
+	-@rm -f $(SHADER_DEPENDENCIES) \
+		$(OBJECTS) \
+		$(DEPENDENCIES) \
+		$(LIB_OBJECTS) \
+		$(LIB_DEPENDENCIES) \
+		$(LIB_SPEC_OBJECTS) \
+		$(LIB_SPEC_DEPENDENCIES) \
+		$(TEST_OBJECTS) \
+		$(TEST_DEPENDENCIES)
 
 update_git:
 	@git add .

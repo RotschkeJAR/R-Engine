@@ -3,7 +3,7 @@
 
 namespace RE {
 	
-	bool create_vulkan_shader_from_file(const char *const pacDirectory, const VkShaderModuleCreateFlags vk_eFlags, VkShaderModule *const vk_phShaderModule) {
+	bool create_vulkan_shader_from_file(const char *pacDirectory, VkShaderModuleCreateFlags vk_eFlags, VkShaderModule *vk_phShaderModule) {
 		PRINT_DEBUG("Opening shader binary file \"", pacDirectory, "\"");
 		std::ifstream shaderFile(pacDirectory, std::ios::ate | std::ios::binary);
 		if (shaderFile.is_open()) {
@@ -31,7 +31,7 @@ namespace RE {
 
 	Vulkan_Shader::Vulkan_Shader() : vk_hShaderModule(VK_NULL_HANDLE) {}
 
-	Vulkan_Shader::Vulkan_Shader(const char *const pacDirectory, const VkShaderModuleCreateFlags vk_eFlags) : vk_hShaderModule(VK_NULL_HANDLE) {
+	Vulkan_Shader::Vulkan_Shader(const char *pacDirectory, VkShaderModuleCreateFlags vk_eFlags) : vk_hShaderModule(VK_NULL_HANDLE) {
 		PRINT_DEBUG_CLASS("Constructing Vulkan shader module wrapper");
 		create(pacDirectory, vk_eFlags);
 	}
@@ -46,8 +46,8 @@ namespace RE {
 		destroy();
 	}
 
-	bool Vulkan_Shader::create(const char *const pacDirectory, const VkShaderModuleCreateFlags vk_eFlags) {
-#ifndef RE_DISABLE_PRINT_DEBUGS
+	bool Vulkan_Shader::create(const char *pacDirectory, VkShaderModuleCreateFlags vk_eFlags) {
+#ifndef NDEBUG
 		if (valid())
 			RE_ERROR("Creating another Vulkan shader module wrapper, when the old shader module ", vk_hShaderModule, " hasn't been destroyed yet");
 #endif

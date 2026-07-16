@@ -8,7 +8,8 @@ namespace RE {
 
 	bool create_staging_game_objects_buffer() {
 		PRINT_DEBUG("Creating staging game object buffer in Vulkan");
-		if (create_vulkan_buffer(0,
+		if (create_vulkan_buffer(
+				0,
 				get_max_game_object_count() * sizeof(GameObjectShaderData),
 				VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 				1,

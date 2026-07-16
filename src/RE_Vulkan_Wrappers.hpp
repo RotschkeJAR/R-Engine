@@ -262,11 +262,37 @@ namespace RE {
 			VkFramebuffer operator()() const;
 	};
 
-	bool alloc_vulkan_command_buffers(VkCommandPool vk_hCommandPool,
+	class Vulkan_CommandPool final {
+		private:
+			VkCommandPool vk_hCommandPool;
+
+		public:
+			Vulkan_CommandPool();
+			Vulkan_CommandPool(VkCommandPoolCreateFlags vk_mCreateFlags, uint32_t u32QueueFamilyIndex);
+			Vulkan_CommandPool(Vulkan_CommandPool &rCopy) = delete;
+			Vulkan_CommandPool(Vulkan_CommandPool &&rrCopy);
+			~Vulkan_CommandPool();
+
+			bool create(VkCommandPoolCreateFlags vk_mCreateFlags, uint32_t u32QueueFamilyIndex);
+			void destroy();
+
+			VkCommandPool get() const;
+			const VkCommandPool* get_ptr() const;
+			bool valid() const;
+
+			operator VkCommandPool() const;
+			operator const VkCommandPool*() const;
+			operator bool() const;
+			VkCommandPool operator()() const;
+	};
+
+	bool alloc_vulkan_command_buffers(
+			VkCommandPool vk_hCommandPool,
 			VkCommandBufferLevel vk_eLevel,
 			uint32_t u32Count,
 			VkCommandBuffer *vk_pahCommandBuffers);
-	bool begin_recording_vulkan_command_buffer(VkCommandBuffer vk_hCommandBuffer,
+	bool begin_recording_vulkan_command_buffer(
+			VkCommandBuffer vk_hCommandBuffer,
 			VkCommandBufferUsageFlags vk_eUsage,
 			const VkCommandBufferInheritanceInfo* vk_pInheritance);
 
@@ -277,7 +303,7 @@ namespace RE {
 
 		public:
 			Vulkan_Fence();
-			explicit Vulkan_Fence(VkFenceCreateFlags vk_eCreateFlags);
+			explicit Vulkan_Fence(VkFenceCreateFlags vk_mCreateFlags);
 			Vulkan_Fence(Vulkan_Fence &rCopy) = delete;
 			Vulkan_Fence(Vulkan_Fence &&rrCopy);
 			~Vulkan_Fence();

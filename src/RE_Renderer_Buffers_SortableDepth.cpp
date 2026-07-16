@@ -8,7 +8,8 @@ namespace RE {
 		uint8_t u8FrameInFlightCreateIndex = 0;
 		for (; u8FrameInFlightCreateIndex < RE_VK_FRAMES_IN_FLIGHT; u8FrameInFlightCreateIndex++) {
 			PRINT_DEBUG("Creating sortable depth buffer at frame-in-flight index ", u8FrameInFlightCreateIndex);
-			if (!create_vulkan_buffer(0,
+			if (!create_vulkan_buffer(
+					0,
 					get_max_game_object_count() * sizeof(DepthShaderData),
 					VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 					rQueues.u8QueueCount,

@@ -3,13 +3,14 @@
 
 namespace RE {
 	
-	bool create_vulkan_image_view(const VkImageViewCreateFlags vk_mFlags, 
-			const VkImage vk_hImage, 
-			const VkImageViewType vk_eType, 
-			const VkFormat vk_eFormat, 
+	bool create_vulkan_image_view(
+			VkImageViewCreateFlags vk_mFlags, 
+			VkImage vk_hImage, 
+			VkImageViewType vk_eType, 
+			VkFormat vk_eFormat, 
 			const VkComponentMapping &vk_rComponentMapping, 
 			const VkImageSubresourceRange &vk_rSubresourceRange,
-			VkImageView *const vk_phImageView) {
+			VkImageView *vk_phImageView) {
 		PRINT_DEBUG("Creating a Vulkan image view");
 		const VkImageViewCreateInfo vk_createInfo = {
 			.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
@@ -28,10 +29,11 @@ namespace RE {
 
 	Vulkan_ImageView::Vulkan_ImageView() : vk_hImageView(VK_NULL_HANDLE) {}
 
-	Vulkan_ImageView::Vulkan_ImageView(const VkImageViewCreateFlags vk_mFlags, 
-			const VkImage vk_hImage, 
-			const VkImageViewType vk_eType, 
-			const VkFormat vk_eFormat, 
+	Vulkan_ImageView::Vulkan_ImageView(
+			VkImageViewCreateFlags vk_mFlags, 
+			VkImage vk_hImage, 
+			VkImageViewType vk_eType, 
+			VkFormat vk_eFormat, 
 			const VkComponentMapping &vk_rComponentMapping, 
 			const VkImageSubresourceRange &vk_rSubresourceRange) : Vulkan_ImageView() {
 		PRINT_DEBUG_CLASS("Constructing Vulkan image view wrapper");
@@ -48,13 +50,14 @@ namespace RE {
 		destroy();
 	}
 
-	bool Vulkan_ImageView::create(const VkImageViewCreateFlags vk_mFlags, 
-			const VkImage vk_hImage, 
-			const VkImageViewType vk_eType, 
-			const VkFormat vk_eFormat, 
-			const VkComponentMapping &vk_rComponentMapping, 
+	bool Vulkan_ImageView::create(
+			VkImageViewCreateFlags vk_mFlags,
+			VkImage vk_hImage,
+			VkImageViewType vk_eType,
+			VkFormat vk_eFormat,
+			const VkComponentMapping &vk_rComponentMapping,
 			const VkImageSubresourceRange &vk_rSubresourceRange) {
-#ifndef RE_DISABLE_PRINT_DEBUGS
+#ifndef NDEBUG
 		if (valid())
 			RE_ERROR("Creating another Vulkan image view wrapper, when the old image view ", vk_hImageView, " hasn't been destroyed yet");
 #endif

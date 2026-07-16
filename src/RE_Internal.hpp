@@ -1,5 +1,5 @@
-#ifndef __RE_EXT_H__
-#define __RE_EXT_H__
+#ifndef __RE_INTERNAL_H__
+#define __RE_INTERNAL_H__
 
 #include <algorithm>
 #include <numeric>
@@ -26,4 +26,4 @@
 
 namespace RE {}
 
-#endif /* __RE_EXT_H__ */
+#endif /* __RE_INTERNAL_H__ */

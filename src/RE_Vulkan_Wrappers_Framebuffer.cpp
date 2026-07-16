@@ -3,14 +3,15 @@
 
 namespace RE {
 	
-	bool create_vulkan_framebuffer(const VkFramebufferCreateFlags vk_mFlags, 
-			const VkRenderPass vk_hRenderPass, 
-			const uint32_t u32AttachmentCount, 
-			const VkImageView *const vk_pahAttachments, 
-			const uint32_t u32Width, 
-			const uint32_t u32Height, 
-			const uint32_t u32Layers, 
-			VkFramebuffer *const vk_phFramebuffer) {
+	bool create_vulkan_framebuffer(
+			VkFramebufferCreateFlags vk_mFlags, 
+			VkRenderPass vk_hRenderPass, 
+			uint32_t u32AttachmentCount, 
+			const VkImageView *vk_pahAttachments, 
+			uint32_t u32Width, 
+			uint32_t u32Height, 
+			uint32_t u32Layers, 
+			VkFramebuffer *vk_phFramebuffer) {
 		PRINT_DEBUG("Creating a Vulkan framebuffer");
 		const VkFramebufferCreateInfo vk_createInfo = {
 			.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
@@ -30,13 +31,14 @@ namespace RE {
 
 	Vulkan_Framebuffer::Vulkan_Framebuffer() : vk_hFramebuffer(VK_NULL_HANDLE) {}
 	
-	Vulkan_Framebuffer::Vulkan_Framebuffer(const VkFramebufferCreateFlags vk_mFlags, 
-			const VkRenderPass vk_hRenderPass, 
-			const uint32_t u32AttachmentCount, 
-			const VkImageView *const vk_pahAttachments, 
-			const uint32_t u32Width, 
-			const uint32_t u32Height, 
-			const uint32_t u32Layers) : Vulkan_Framebuffer() {
+	Vulkan_Framebuffer::Vulkan_Framebuffer(
+			VkFramebufferCreateFlags vk_mFlags, 
+			VkRenderPass vk_hRenderPass, 
+			uint32_t u32AttachmentCount, 
+			const VkImageView *vk_pahAttachments, 
+			uint32_t u32Width, 
+			uint32_t u32Height, 
+			uint32_t u32Layers) : Vulkan_Framebuffer() {
 		PRINT_DEBUG_CLASS("Constructing Vulkan framebuffer wrapper");
 		create(vk_mFlags, vk_hRenderPass, u32AttachmentCount, vk_pahAttachments, u32Width, u32Height, u32Layers);
 	}
@@ -51,17 +53,18 @@ namespace RE {
 		destroy();
 	}
 
-	bool Vulkan_Framebuffer::create(const VkFramebufferCreateFlags vk_mFlags, 
-			const VkRenderPass vk_hRenderPass, 
-			const uint32_t u32AttachmentCount, 
-			const VkImageView *const vk_pahAttachments, 
-			const uint32_t u32Width, 
-			const uint32_t u32Height, 
-			const uint32_t u32Layers) {
-#ifndef RE_DISABLE_PRINT_DEBUGS
+	bool Vulkan_Framebuffer::create(
+			VkFramebufferCreateFlags vk_mFlags, 
+			VkRenderPass vk_hRenderPass, 
+			uint32_t u32AttachmentCount, 
+			const VkImageView *vk_pahAttachments, 
+			uint32_t u32Width, 
+			uint32_t u32Height, 
+			uint32_t u32Layers) {
+	#ifndef NDEBUG
 		if (valid())
 			RE_ERROR("Creating another Vulkan framebuffer wrapper, when the old framebuffer ", vk_hFramebuffer, " hasn't been destroyed yet");
-#endif
+	#endif
 		PRINT_DEBUG_CLASS("Creating Vulkan framebuffer wrapper");
 		return create_vulkan_framebuffer(vk_mFlags, vk_hRenderPass, u32AttachmentCount, vk_pahAttachments, u32Width, u32Height, u32Layers, &vk_hFramebuffer);
 	}

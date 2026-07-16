@@ -3,12 +3,13 @@
 
 namespace RE {
 
-	bool create_vulkan_buffer(const VkBufferCreateFlags vk_mFlags, 
-			const VkDeviceSize vk_size, 
-			const VkBufferUsageFlags vk_mUsages, 
-			const uint32_t u32QueueFamilyCount, 
-			const uint32_t *const pau32QueueFamilies, 
-			VkBuffer *const vk_phBuffer) {
+	bool create_vulkan_buffer(
+			VkBufferCreateFlags vk_mFlags, 
+			VkDeviceSize vk_size, 
+			VkBufferUsageFlags vk_mUsages, 
+			uint32_t u32QueueFamilyCount, 
+			const uint32_t *pau32QueueFamilies, 
+			VkBuffer *vk_phBuffer) {
 		PRINT_DEBUG("Creating a Vulkan buffer");
 		VkBufferCreateInfo vk_createInfo;
 		vk_createInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -32,12 +33,13 @@ namespace RE {
 
 	Vulkan_Buffer::Vulkan_Buffer() : vk_hBuffer(VK_NULL_HANDLE) {}
 	
-	Vulkan_Buffer::Vulkan_Buffer(const VkBufferCreateFlags vk_mFlags, 
-			const VkDeviceSize vk_size, 
-			const VkBufferUsageFlags vk_mUsages, 
-			const uint32_t u32QueueFamilyCount, 
-			const uint32_t *const pau32QueueFamilies, 
-			const VkMemoryPropertyFlags vk_mMemoryPropertyFlags) : Vulkan_Buffer() {
+	Vulkan_Buffer::Vulkan_Buffer(
+			VkBufferCreateFlags vk_mFlags, 
+			VkDeviceSize vk_size, 
+			VkBufferUsageFlags vk_mUsages, 
+			uint32_t u32QueueFamilyCount, 
+			const uint32_t *pau32QueueFamilies, 
+			VkMemoryPropertyFlags vk_mMemoryPropertyFlags) : Vulkan_Buffer() {
 		PRINT_DEBUG_CLASS("Constructing Vulkan buffer wrapper");
 		create(vk_mFlags, 
 				vk_size, 
@@ -57,20 +59,21 @@ namespace RE {
 		destroy();
 	}
 
-	bool Vulkan_Buffer::create(const VkBufferCreateFlags vk_mFlags, 
-			const VkDeviceSize vk_size, 
-			const VkBufferUsageFlags vk_mUsages, 
-			const uint32_t u32QueueFamilyCount, 
-			const uint32_t *const pau32QueueFamilies, 
-			const VkMemoryPropertyFlags vk_mMemoryPropertyFlags) {
-#ifndef RE_DISABLE_PRINT_DEBUGS
+	bool Vulkan_Buffer::create(
+			VkBufferCreateFlags vk_mFlags, 
+			VkDeviceSize vk_size, 
+			VkBufferUsageFlags vk_mUsages, 
+			uint32_t u32QueueFamilyCount, 
+			const uint32_t *pau32QueueFamilies, 
+			VkMemoryPropertyFlags vk_mMemoryPropertyFlags) {
+	#ifndef NDEBUG
 		if (valid())
 			RE_ERROR("Creating another Vulkan buffer wrapper, when the old buffer ", vk_hBuffer, " hasn't been destroyed yet");
 		if ((vk_mFlags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT)) {
 			RE_ERROR("A sparse-bound Vulkan buffer had to be created in a wrapper");
 			return false;
 		}
-#endif
+	#endif
 		PRINT_DEBUG_CLASS("Creating Vulkan buffer in wrapper class");
 		if (create_vulkan_buffer(vk_mFlags, 
 				vk_size, 

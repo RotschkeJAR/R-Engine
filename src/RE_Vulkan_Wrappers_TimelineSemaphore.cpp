@@ -3,7 +3,7 @@
 
 namespace RE {
 
-	bool create_vulkan_timeline_semaphore(const VkSemaphoreCreateFlags vk_mFlags, const uint64_t u64InitialValue, VkSemaphore *const vk_phSemaphore) {
+	bool create_vulkan_timeline_semaphore(VkSemaphoreCreateFlags vk_mFlags, uint64_t u64InitialValue, VkSemaphore *vk_phSemaphore) {
 		PRINT_DEBUG("Creating a Vulkan timeline semaphore starting at value ", u64InitialValue);
 		const VkSemaphoreTypeCreateInfo vk_timelineSemaphoreCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO,
@@ -23,7 +23,7 @@ namespace RE {
 
 	Vulkan_TimelineSemaphore::Vulkan_TimelineSemaphore() : vk_hTimelineSemaphore(VK_NULL_HANDLE) {}
 
-	Vulkan_TimelineSemaphore::Vulkan_TimelineSemaphore(const VkSemaphoreCreateFlags vk_mFlags, const uint64_t u64InitialValue) : Vulkan_TimelineSemaphore() {
+	Vulkan_TimelineSemaphore::Vulkan_TimelineSemaphore(VkSemaphoreCreateFlags vk_mFlags, uint64_t u64InitialValue) : Vulkan_TimelineSemaphore() {
 		PRINT_DEBUG_CLASS("Constructing Vulkan timeline semaphore wrapper");
 		create(vk_mFlags, u64InitialValue);
 	}
@@ -38,8 +38,8 @@ namespace RE {
 		destroy();
 	}
 
-	bool Vulkan_TimelineSemaphore::create(const VkSemaphoreCreateFlags vk_mFlags, const uint64_t u64InitialValue) {
-#ifndef RE_DISABLE_PRINT_DEBUGS
+	bool Vulkan_TimelineSemaphore::create(VkSemaphoreCreateFlags vk_mFlags, uint64_t u64InitialValue) {
+#ifndef NDEBUG
 		if (valid())
 			RE_ERROR("Creating another Vulkan timeline semaphore wrapper, when the old timeline semaphore ", vk_hTimelineSemaphore, " hasn't been destroyed yet");
 #endif
@@ -53,7 +53,7 @@ namespace RE {
 		vk_hTimelineSemaphore = VK_NULL_HANDLE;
 	}
 
-	bool Vulkan_TimelineSemaphore::wait_for_reaching(const uint64_t u64Value) const {
+	bool Vulkan_TimelineSemaphore::wait_for_reaching(uint64_t u64Value) const {
 		PRINT_DEBUG_CLASS("Waiting for Vulkan timeline semaphore wrapper ", vk_hTimelineSemaphore, " reaching value ", u64Value);
 		const VkSemaphoreWaitInfo vk_waitSemaphoreInfo = {
 			.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO,
@@ -64,7 +64,7 @@ namespace RE {
 		return vkWaitSemaphores(vk_hDevice, &vk_waitSemaphoreInfo, std::numeric_limits<uint64_t>::max()) == VK_SUCCESS;
 	}
 	
-	void Vulkan_TimelineSemaphore::set_to(const uint64_t u64Value) const {
+	void Vulkan_TimelineSemaphore::set_to(uint64_t u64Value) const {
 		PRINT_DEBUG_CLASS("Signaling Vulkan timeline semaphore wrapper ", vk_hTimelineSemaphore, " to value ", u64Value);
 		const VkSemaphoreSignalInfo vk_signalSemaphoreInfo = {
 			.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO,

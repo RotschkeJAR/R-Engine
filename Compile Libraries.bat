@@ -11,8 +11,8 @@ set ERROR=false
 
 set BIN=bin\MinGW\lib
 
-set CC=g++
-set CFLAG=-std=c2x -pedantic-errors -Wall -march=x86-64 -m64 -ffast-math -O2 -D_WIN32_WINNT=0x0A00
+set CC=gcc
+set CFLAG=-std=c2x -pedantic-errors -Wall -march=x86-64 -m64 -ffast-math -O2 -D_WIN32_WINNT=0x0A00 -fPIC
 
 REM MinGW-specific compilation
 for %%f in (%SRC%\*.c) do (

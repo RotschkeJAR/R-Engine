@@ -33,12 +33,12 @@ namespace RE {
 				.location = 0,
 				.binding = 0,
 				.format = VK_FORMAT_R32G32B32A32_SFLOAT,
-				.offset = offsetof(VertexData, a4f32Coords)
+				.offset = offsetof(VertexData, coords)
 			}, {
 				.location = 1,
 				.binding = 0,
 				.format = VK_FORMAT_R32G32_SFLOAT,
-				.offset = offsetof(VertexData, a2f32TexCoords)
+				.offset = offsetof(VertexData, texCoords)
 			}
 		};
 		const VkPipelineVertexInputStateCreateInfo vk_vertexInput = {

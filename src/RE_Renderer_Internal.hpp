@@ -16,13 +16,18 @@
 #include "RE_Renderer_Texture.hpp"
 #include "RE_Renderer_SpriteLayout.hpp"
 #include "RE_Renderer_Mesh.hpp"
+#include "RE_Renderer_CommandBuffers.hpp"
 
 namespace RE {
+
+#define get_max_camera_count()        5
+#define get_max_game_object_count()   1024
 
 	bool swapchain_created_renderer();
 	void swapchain_destroyed_renderer();
 
 	extern Color backgroundClearColor;
+	extern uint8_t u8CurrentFrameInFlightIndex;
 
 	// Swapchain
 	extern VkSwapchainKHR vk_hSwapchain;
@@ -63,6 +68,9 @@ namespace RE {
 	// Dynamic rendering
 	void record_cmd_begin_dynamic_rendering(VkCommandBuffer vk_hCommandBuffer);
 	void record_cmd_end_dynamic_rendering(VkCommandBuffer vk_hCommandBuffer);
+
+	// Procedure
+	bool render_procedure();
 
 }
 

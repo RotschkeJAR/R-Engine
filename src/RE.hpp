@@ -276,7 +276,9 @@ namespace RE {
 //================ Console output
 
 	template <class... T>
-	void print(const T... content) {
+	void print(T... content) {
+		static std::mutex std_consoleMutex;
+		std::lock_guard<std::mutex> std_lockGuardConsole(std_consoleMutex);
 		const auto previousSettings = std::cout.setf(std::ios_base::showbase | std::ios_base::boolalpha);
 		([&]() {
 			if constexpr (std::is_same_v<T, int8_t> || std::is_same_v<T, uint8_t>)
@@ -295,7 +297,7 @@ namespace RE {
 		std::cout.flags(previousSettings);
 	}
 	template <class... T>
-	void println(const T... content) {
+	void println(T... content) {
 		print(content..., '\n');
 	}
 	void print_colored(const std::string &rsContent, TerminalColor eColor, bool bBackgroundColored, bool bBold);
@@ -304,12 +306,12 @@ namespace RE {
 #define PRINT_LN(...) PRINT(STRIP_QUOTE_MACRO(__VA_ARGS__), '\n')
 
 #ifndef NDEBUG
-# define PRINT_DEBUG(...) [&](const char *const pacFile, const char *const pacFunc, const uint32_t u32Line) { \
-			time_t currentTime = std::time(0); \
-			println("[", std::put_time(std::gmtime(&currentTime), "%d.%b %Y, %H:%M:%S"), "] (", pacFile, ", at line ", u32Line, ", in function \"", pacFunc, "\"): ", STRIP_QUOTE_MACRO(__VA_ARGS__)); \
-		} (__FILE__, __func__, __LINE__)
+#	define PRINT_DEBUG(...) [&](const char *pacFile, const char *pacFunc, uint32_t u32Line) { \
+				time_t currentTime = std::time(0); \
+				println("[", std::put_time(std::gmtime(&currentTime), "%d.%b %Y, %H:%M:%S"), "] (", pacFile, ", at line ", u32Line, ", in function \"", pacFunc, "\"): ", STRIP_QUOTE_MACRO(__VA_ARGS__)); \
+			} (__FILE__, __func__, __LINE__)
 #else
-# define PRINT_DEBUG(...)
+#	define PRINT_DEBUG(...)
 #endif
 #define PRINT_DEBUG_CLASS(...) PRINT_DEBUG("{", this, "} ", __VA_ARGS__)
 
@@ -459,6 +461,8 @@ namespace RE {
 
 //================ Arithmetic/Logic Utilities
 
+#define bool_to_int(BOOL_VAL)      ((BOOL_VAL) ? 1 : 0)
+
 	template <class T> requires std::is_arithmetic_v<T>
 	[[nodiscard]]
 	constexpr T nth_root(const T n, const T value) {
@@ -602,10 +606,7 @@ namespace RE {
 			currentFactor = std::trunc(currentFactor);
 		else if constexpr (std::is_same_v<long double, T>)
 			currentFactor = std::truncl(currentFactor);
-		if (sign<T>(value) >= 0 && sign<T>(multiple))
-			return (currentFactor + 1) * multiple;
-		else
-			return currentFactor * multiple;
+		return (currentFactor + bool_to_int(sign<T>(value) >= 0 && sign<T>(multiple))) * multiple;
 	}
 
 	// If value is a multiple, the returned number is the previous before the value
@@ -623,10 +624,7 @@ namespace RE {
 			currentFactor = std::trunc(currentFactor);
 		else if constexpr (std::is_same_v<long double, T>)
 			currentFactor = std::truncl(currentFactor);
-		if (sign<T>(value) == sign<T>(multiple))
-			return (currentFactor - 1) * multiple;
-		else
-			return currentFactor * multiple;
+		return (currentFactor - bool_to_int(sign<T>(value) == sign<T>(multiple))) * multiple;
 	}
 
 	template <class T> requires std::is_arithmetic_v<T>
@@ -728,7 +726,7 @@ namespace RE {
 			
 			T aCoords[dimensionCount];
 
-			explicit Vector(const T initialValue = 0) {
+			explicit Vector(const T initialValue = static_cast<T>(0)) {
 				fill(initialValue);
 			}
 
@@ -952,69 +950,117 @@ namespace RE {
 	template <size_t numOfThreads = 10> requires (numOfThreads > 0)
 	class Threadpool final {
 		private:
-			std::mutex hMutex;
-			std::array<std::jthread, numOfThreads> threads;
-			std::array<uint64_t, numOfThreads> agePerThread;
+			std::mutex std_mutex;
+			std::array<std::jthread, numOfThreads> std_threads;
+			std::array<uint64_t, numOfThreads> std_agePerThread;
 
-			size_t join_oldest_thread_and_occupy() {
-				std::lock_guard<std::mutex> lockGuardMute(hMutex);
-				const size_t oldThreadIndex = *std::min_element(agePerThread.begin(), agePerThread.end());
-				if (threads[oldThreadIndex].joinable())
-					threads[oldThreadIndex].join();
-				agePerThread[oldThreadIndex] = (*std::max_element(agePerThread.begin(), agePerThread.end())) + 1;
-				return oldThreadIndex;
+			size_t find_next_occupation() {
+				std::optional<size_t> std_occupyableThread;
+				for (size_t i = 0; i < numOfThreads; i++)
+					if (!std_threads[i].joinable()) {
+						std_occupyableThread = i;
+						break;
+					}
+				if (!std_occupyableThread.has_value())
+					std_occupyableThread = *std::min_element(std_agePerThread.begin(), std_agePerThread.end());
+				std_agePerThread[*std_occupyableThread] = (*std::max_element(std_agePerThread.begin(), std_agePerThread.end())) + 1;
+				return *std_occupyableThread;
 			}
 
 		public:
 			Threadpool() {
-				agePerThread.fill(0);
+				std_agePerThread.fill(0);
 			}
 			Threadpool(Threadpool &rCopy) = delete;
-			Threadpool(Threadpool &&rrCopy) : threads(std::move(rrCopy.threads)), agePerThread(std::move(rrCopy.agePerThread)) {
-				rrCopy.agePerThread.fill(0);
+			Threadpool(Threadpool &&rrCopy) : std_threads(std::move(rrCopy.std_threads)), std_agePerThread(std::move(rrCopy.std_agePerThread)) {
+				rrCopy.std_agePerThread.fill(0);
 			}
 			~Threadpool() {}
 
-			template <class F, class... paramTypes> requires std::invocable<F, paramTypes...>
-			void execute(F &&rrFunction, paramTypes... params) {
-				const size_t oldThreadIndex = join_oldest_thread_and_occupy();
-				threads[oldThreadIndex] = std::jthread(rrFunction, params...);
+			template <class F, class... Parameters> requires std::invocable<F, Parameters...>
+			void execute(F &&rrFunction, Parameters... params) {
+				std::lock_guard<std::mutex> std_lockGuardMute(std_mutex);
+				const size_t sOldThreadIndex = find_next_occupation();
+				std_threads[sOldThreadIndex] = std::jthread(rrFunction, params...);
 			}
 
 			void move_thread(std::jthread &&rrThread) {
-				const size_t oldThreadIndex = join_oldest_thread_and_occupy();
-				threads[oldThreadIndex] = rrThread;
+				std::lock_guard<std::mutex> std_lockGuardMute(std_mutex);
+				const size_t sOldThreadIndex = find_next_occupation();
+				std_threads[sOldThreadIndex] = rrThread;
 			}
 
-			bool joinable() {
-				for (std::jthread &rThread : threads)
-					if (rThread.joinable())
+			[[nodiscard]]
+			bool joinable() const {
+				std::lock_guard<std::mutex> std_lockGuardMute(std_mutex);
+				for (std::jthread &std_rThread : std_threads)
+					if (std_rThread.joinable())
 						return true;
 				return false;
 			}
 
 			void join() {
-				for (std::jthread &rThread : threads)
-					if (rThread.joinable())
-						rThread.join();
-				agePerThread.fill(0);
+				std::lock_guard<std::mutex> std_lockGuardMute(std_mutex);
+				for (std::jthread &std_rThread : std_threads)
+					if (std_rThread.joinable())
+						std_rThread.join();
+				std_agePerThread.fill(0);
 			}
 
-			size_t free_slots() {
+			[[nodiscard]]
+			size_t free_slots() const {
+				std::lock_guard<std::mutex> std_lockGuardMute(std_mutex);
 				size_t numOfFreeSlots = 0;
-				for (std::jthread &rThread : threads)
-					if (!rThread.joinable())
+				for (std::jthread &std_rThread : std_threads)
+					if (!std_rThread.joinable())
 						numOfFreeSlots++;
 				return numOfFreeSlots;
 			}
 
-			size_t occupied_slots() {
+			[[nodiscard]]
+			size_t occupied_slots() const {
 				return numOfThreads - free_slots();
 			}
 
-			consteval size_t amount_of_threads() {
+			[[nodiscard]]
+			static consteval size_t amount_of_threads() {
 				return numOfThreads;
 			}
+	};
+
+	class HardwareThreadpool final {
+		private:
+			std::mutex std_mutex;
+			std::unique_ptr<std::jthread[]> std_threads;
+			std::unique_ptr<uint64_t[]> std_agePerThread;
+
+			size_t find_next_occupation();
+
+		public:
+			static const size_t sAmountOfThreads;
+
+			HardwareThreadpool();
+			HardwareThreadpool(HardwareThreadpool &rCopy) = delete;
+			HardwareThreadpool(HardwareThreadpool &&rrCopy);
+			~HardwareThreadpool();
+
+			template <class F, class... Parameters> requires std::invocable<F, Parameters...>
+			void execute(F &&rrFunction, Parameters... params) {
+				std::lock_guard<std::mutex> std_lockGuardMute(std_mutex);
+				const size_t sOldThreadIndex = find_next_occupation();
+				std_threads[sOldThreadIndex] = std::jthread(rrFunction, params...);
+			}
+			void move_thread(std::jthread &&rrThread);
+			[[nodiscard]]
+			bool joinable();
+			void join();
+
+			[[nodiscard]]
+			size_t free_slots();
+			[[nodiscard]]
+			size_t occupied_slots();
+			[[nodiscard]]
+			static size_t amount_of_threads();
 	};
 
 	class RandomNumberGenerator final {
@@ -1202,28 +1248,23 @@ namespace RE {
 
 	class Camera {
 		private:
-			uint8_t u8ListIndex;
+			uint64_t u64ListIndex;
 			bool bNew;
 
 		public:
 			Transform transform;
 
 			Vector2f view;
-			float f32ViewDistance;
+			float fViewDistance;
 			bool bIgnoreAspectRatio;
 
 			Camera();
-			explicit Camera(const Transform &rTransform);
-			explicit Camera(const Vector2f &rView);
-			Camera(const Vector2f &rView, float f32ViewDistance);
-			Camera(const Vector2f &rView, float f32ViewDistance, bool bIgnoreAspectRatio);
 			Camera(const Camera &rCopy);
 			Camera(const Camera &&rrCopy) = delete;
 			virtual ~Camera();
 			virtual void update_before_render();
 			void activate();
 			void deactivate() const;
-			void mark_deletable();
 			void copy_from(const Camera &rOther);
 			[[nodiscard]]
 			bool equals(const Camera &rOther) const;
@@ -1234,15 +1275,14 @@ namespace RE {
 			[[nodiscard]]
 			bool operator !=(const Camera &rOther) const;
 
-		friend void add_new_camera_to_list(Camera *pCamera);
 		friend void delete_and_add_cameras();
-		friend void add_camera(Camera &rCamera);
-		friend void mark_camera_deletable(Camera *pCamera);
+		friend void add_camera(Camera *pNewCamera);
+		friend void remove_camera(Camera *pRemovableCamera);
 	};
 
 	class GameObject {
 		private:
-			uint32_t u32ListIndex;
+			uint64_t u64ListIndex;
 			bool bNew;
 
 		public:
@@ -1253,17 +1293,30 @@ namespace RE {
 
 			GameObject() = delete;
 			GameObject(uint32_t u32OwnId, uint32_t u32SceneParentId);
+			GameObject(GameObject &rCopy) = delete;
+			GameObject(GameObject &&rrCopy) = delete;
 			virtual ~GameObject();
 
-			virtual void marked_deletable();
+			virtual void start();
+			virtual void update();
+			virtual void end();
 
-			virtual void start(Scene *pStartingScene);
-			virtual void update(Scene *pCurrentScene);
-			virtual void end(Scene *pEndingScene);
+			Transform& get_transform();
+			SpriteRenderer& get_sprite_renderer();
+
+			void operator =(const GameObject &rOther) = delete;
+			[[nodiscard]]
+			consteval bool operator ==(const GameObject &rOther) const {
+				return false;
+			}
+			[[nodiscard]]
+			consteval bool operator !=(const GameObject &rOther) const {
+				return true;
+			}
 
 		friend void delete_and_add_game_objects();
-		friend void add_game_object(GameObject &rGameObject);
-		friend void mark_game_object_deletable(GameObject *pGameObject);
+		friend void add_game_object(GameObject *pNewGameObject);
+		friend void remove_game_object(GameObject *pRemovableGameObject);
 	};
 
 	class InputAction final {
@@ -1432,7 +1485,7 @@ namespace RE {
 			case RE_INPUT_MAX_ENUM:
 				return false;
 			default:
-				return true;
+				return eInput > RE_INPUT_NONE && eInput < RE_INPUT_MAX_ENUM;
 		}
 	}
 	[[nodiscard]]
@@ -1458,9 +1511,15 @@ namespace RE {
 	float get_deltaseconds();
 	[[nodiscard]]
 	float get_fps_rate();
-	void set_max_deltatime(float f32NewMaxDeltatime);
+	void set_max_deltatime(float fNewMaxDeltatime);
 	[[nodiscard]]
 	float get_max_deltatime();
+	void set_fps_limit(uint32_t u32NewFpsLimit);
+	[[nodiscard]]
+	uint32_t get_fps_limit();
+	void disable_fps_limit();
+	[[nodiscard]]
+	bool is_fps_limit_enabled();
 
 	// Manager
 	void set_next_scene(Scene *pNextSceneParam);
@@ -1483,18 +1542,16 @@ namespace RE {
 	// Game Object
 	void mark_game_object_deletable(GameObject *pGameObject);
 	[[nodiscard]]
-	uint32_t get_max_game_object_count();
-	void set_max_game_object_count(uint32_t u32NewMaxGameObjectCount);
+	uint64_t get_current_game_object_count();
 	[[nodiscard]]
-	uint32_t get_current_game_object_count();
+	uint64_t get_max_game_object_count();
 
 	// Camera
 	void mark_camera_deletable(Camera *pCamera);
 	[[nodiscard]]
-	uint8_t get_max_camera_count();
-	void set_max_camera_count(uint8_t u8NewMaxCameraCount);
+	uint64_t get_current_camera_count();
 	[[nodiscard]]
-	uint8_t get_current_camera_count();
+	uint64_t get_max_camera_count();
 	[[nodiscard]]
 	Camera* get_active_camera();
 	void deactivate_cameras();

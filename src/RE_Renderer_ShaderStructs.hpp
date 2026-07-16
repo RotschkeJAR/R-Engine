@@ -14,14 +14,13 @@ typedef uint32_t ShaderBool;
 	};
 
 	struct WindowFrameUniformData final {
-		uint32_t a2u32CursorPosition[2];
 		uint32_t u32HoveredWindowAreaIndex;
 		uint32_t au32TitleChars[256];
 	};
 
 	struct VertexData final {
-		float a4f32Coords[4],
-			a2f32TexCoords[2];
+		float coords[4];
+		float texCoords[2];
 	};
 
 	struct CameraShaderData final {

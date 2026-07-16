@@ -14,6 +14,8 @@ namespace RE {
 	extern std::unique_ptr<VkSurfaceFormatKHR[]> surfaceFormatsAvailable;
 	extern VkCompositeAlphaFlagBitsKHR vk_eCompositeAlphaSelected;
 	extern uint32_t u32SurfaceFormatsAvailableCount, u32IndexToSelectedSurfaceFormat;
+	extern VkPresentModeKHR vk_ePresentNoVsync,
+		vk_ePresentVsync;
 	bool init_logical_gpu();
 	void destroy_logical_gpu();
 

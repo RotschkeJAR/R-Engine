@@ -51,7 +51,7 @@ namespace RE {
 			.pQueueFamilyIndices = queuesToShareAcross.data(),
 			.preTransform = vk_surfaceCapabilities.currentTransform,
 			.compositeAlpha = vk_eCompositeAlphaSelected,
-			.presentMode = VK_PRESENT_MODE_FIFO_KHR,
+			.presentMode = bVsyncEnabled ? vk_ePresentVsync : vk_ePresentNoVsync,
 			.clipped = VK_TRUE,
 			.oldSwapchain = vk_hOldSwapchain
 		};

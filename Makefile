@@ -49,8 +49,8 @@ SHADER_DEPENDENCIES   := $(patsubst $(SH_SRC)/%.glsl,$(SH)/%.glsl.spv.d,$(SHADER
 
 all: $(OUT) $(SHADER_BINARIES)
 
-$(OUT): $(RE) $(TEST_OBJECTS)
-	@$(CXX) $(CXXFLAG) $(TEST_OBJECTS) -o $@ -L $(BIN) -l RE -l dl -l X11 -l Xrandr -l Xinerama -l wayland-client -l xkbcommon
+$(OUT): $(TEST_OBJECTS) $(RE)
+	@$(CXX) $(CXXFLAG) $< -o $@ -L $(BIN) -l RE -l dl -l X11 -l Xrandr -l Xinerama -l wayland-client -l xkbcommon
 
 $(RE): $(OBJECTS) $(LIB_OBJECTS) $(LIB_SPEC_OBJECTS)
 	@ar rs "$@" $^
@@ -103,7 +103,7 @@ update_git:
 	@git push -f
 
 fetch_git:
-	-@rm -f $(SRC)/* && rm -f $(SH)/*
+	-@rm -f $(SRC)/* && rm -f $(SH)/*.spv
 	@git fetch --all
 	@git reset --hard origin/main
 

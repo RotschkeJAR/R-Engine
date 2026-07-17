@@ -267,12 +267,6 @@ namespace RE {
 
 
 
-//================ Signals
-
-	void set_signal_handlers();
-
-
-
 //================ Console output
 
 	template <class... T>
@@ -370,11 +364,14 @@ namespace RE {
 
 //================ Strings
 
-	template <class T>
+	template <class T> requires (std::is_same_v<T, std::u8string>
+			|| std::is_same_v<T, const char8_t*>
+			|| std::is_same_v<T, char8_t*>
+			|| std::is_same_v<T, std::string>
+			|| std::is_same_v<T, char*>
+			|| std::is_same_v<T, const char*>)
 	[[nodiscard]]
 	const char* resolve_string_class(const T& rString) {
-		static_assert(!std::is_same_v<T, std::string_view>, "String views cannot be resolved");
-		static_assert(std::is_same_v<T, std::u8string> || std::is_same_v<T, const char*> || std::is_same_v<T, char*>, "This function only accepts string-like datatypes, that support plain characters (wide chars and unicodes except UTF-8 aren't accepted). String views cannot be resolved however");
 		if constexpr (std::is_same_v<T, std::u8string>)
 			return reinterpret_cast<const char*>(rString.c_str());
 		else if constexpr (std::is_same_v<T, const char8_t*> || std::is_same_v<T, char8_t*>)
@@ -391,14 +388,17 @@ namespace RE {
 	[[nodiscard]]
 	std::string array_to_string(const T (&rArray)[], const size_t arrayLength) {
 		std::stringstream sStream("{");
-		sStream.setf(std::ios_base::showbase | std::ios_base::boolalpha);
+		if constexpr (std::is_same_v<T, bool>)
+			sStream.setf(std::ios_base::boolalpha);
+		else if constexpr (std::is_integral_v<T>)
+			sStream.setf(std::ios_base::showbase);
 		for (size_t i = 0; i < arrayLength; i++) {
 			if (i)
 				sStream << ", ";
 			if constexpr (std::is_same_v<T, int8_t>)
-				sStream << rArray[i];
+				sStream << static_cast<int>(rArray[i]);
 			else if constexpr (std::is_same_v<T, uint8_t>)
-				sStream << rArray[i];
+				sStream << static_cast<unsigned int>(rArray[i]);
 			else
 				sStream << rArray[i];
 		}
@@ -410,12 +410,15 @@ namespace RE {
 	[[nodiscard]]
 	std::string append_to_string(const T... strings) {
 		std::stringstream sStream;
-		sStream.setf(std::ios_base::showbase | std::ios_base::boolalpha);
+		if constexpr ((std::is_same_v<T, bool> || ...))
+			sStream.setf(std::ios_base::boolalpha);
+		if constexpr ((std::is_integral_v<T> || ...))
+			sStream.setf(std::ios_base::showbase);
 		([&]() {
 			if constexpr (std::is_same_v<T, int8_t>)
-				sStream << static_cast<int16_t>(strings);
+				sStream << static_cast<int>(strings);
 			else if constexpr (std::is_same_v<T, uint8_t>)
-				sStream << static_cast<uint16_t>(strings);
+				sStream << static_cast<unsigned int>(strings);
 			else
 				sStream << strings;
 		} (), ...);
@@ -426,12 +429,15 @@ namespace RE {
 	[[nodiscard]]
 	std::wstring append_to_wstring(const T... strings) {
 		std::wstringstream wsStream;
-		wsStream.setf(std::ios_base::showbase | std::ios_base::boolalpha);
+		if constexpr ((std::is_same_v<T, bool> || ...))
+			wsStream.setf(std::ios_base::boolalpha);
+		if constexpr ((std::is_integral_v<T> || ...))
+			wsStream.setf(std::ios_base::showbase);
 		([&]() {
 			if constexpr (std::is_same_v<T, int8_t>)
-				wsStream << static_cast<int16_t>(strings);
+				wsStream << static_cast<int>(strings);
 			else if constexpr (std::is_same_v<T, uint8_t>)
-				wsStream << static_cast<uint16_t>(strings);
+				wsStream << static_cast<unsigned int>(strings);
 			else
 				wsStream << strings;
 		} (), ...);
@@ -1104,7 +1110,7 @@ namespace RE {
 			[[nodiscard]]
 			double random_normal();
 			[[nodiscard]]
-			bool random_bool(double f64Chance = 0.5);
+			bool random_bool(double dChance = 0.5);
 
 			template <class T>
 			[[nodiscard]]

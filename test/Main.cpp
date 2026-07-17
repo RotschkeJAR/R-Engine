@@ -194,7 +194,6 @@ class First : public Scene {
 };
 
 int main_func() {
-	set_signal_handlers();
 	First first;
 	Second secondInStack;
 	second = &secondInStack;

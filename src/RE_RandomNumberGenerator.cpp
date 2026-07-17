@@ -21,7 +21,8 @@ namespace RE {
 			std::random_device rd;
 			randomSeed = rd();
 		} catch (...) {
-			RE_ERROR("Failed seeding the random number generator due to the lack of a true random number generator. Using an undefined value instead");
+			RE_ERROR("Failed seeding the random number generator due to the lack of a true random number generator. Using time instead");
+			randomSeed = std::time(0);
 		}
 		this->seed(randomSeed);
 		return randomSeed;
@@ -33,9 +34,9 @@ namespace RE {
 	}
 
 	[[nodiscard]]
-	bool RandomNumberGenerator::random_bool(const double f64Chance) {
-		PRINT_DEBUG_CLASS("Rolling random number and checking if it's equal or lower than ", f64Chance);
-		return random_normal() < f64Chance;
+	bool RandomNumberGenerator::random_bool(const double dChance) {
+		PRINT_DEBUG_CLASS("Rolling random number and checking if it's equal or lower than ", dChance);
+		return random_normal() < dChance;
 	}
 
 }

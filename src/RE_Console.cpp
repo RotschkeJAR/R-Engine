@@ -12,8 +12,10 @@ namespace RE {
 #define PRINT_COLORS 0
 #define TREAT_WARNING_AS_ERROR 1
 #define ERRORS_ALWAYS_FATAL 2
-	static uint32_t u32ErrorCount = 0, u32WarningCount = 0;
-	uint32_t u32VulkanErrorCount = 0, u32VulkanWarningCount = 0;
+	static uint32_t u32ErrorCount = 0,
+		u32WarningCount = 0;
+	uint32_t u32VulkanErrorCount = 0,
+		u32VulkanWarningCount = 0;
 	uint8_t u8ConsoleSettings = 1 << PRINT_COLORS;
 
 	static void print_time() {

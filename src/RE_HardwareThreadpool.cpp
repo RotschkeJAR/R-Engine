@@ -22,7 +22,7 @@ namespace RE {
 		std_agePerThread = std::make_unique<uint64_t[]>(sAmountOfThreads);
 	}
 	
-	HardwareThreadpool::HardwareThreadpool(HardwareThreadpool &&rrCopy) : std_threads(std::move(std_threads)), std_agePerThread(std::move(std_agePerThread)) {}
+	HardwareThreadpool::HardwareThreadpool(HardwareThreadpool &&rrCopy) : std_threads(std::move(rrCopy.std_threads)), std_agePerThread(std::move(rrCopy.std_agePerThread)) {}
 	
 	HardwareThreadpool::~HardwareThreadpool() {
 		join();

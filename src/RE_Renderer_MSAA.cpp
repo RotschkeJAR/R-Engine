@@ -29,7 +29,6 @@ namespace RE {
 		}
 	}
 
-	[[nodiscard]]
 	MsaaMode get_msaa_mode() {
 		switch (vk_eMsaaCount) {
 			case VK_SAMPLE_COUNT_1_BIT:
@@ -51,7 +50,6 @@ namespace RE {
 		}
 	}
 
-	[[nodiscard]]
 	bool is_msaa_mode_supported(const MsaaMode eMsaaMode) {
 		return ((VK_SAMPLE_COUNT_1_BIT << eMsaaMode) & vk_mSupportedMsaaSamples) != 0;
 	}
@@ -77,7 +75,6 @@ namespace RE {
 		}
 	}
 
-	[[nodiscard]]
 	MsaaMode get_highest_supported_msaa_mode() {
 		for (int8_t i8MsaaModeIndex = static_cast<int8_t>(RE_MSAA_MODE_64); i8MsaaModeIndex > 0; i8MsaaModeIndex--) {
 			PRINT_DEBUG("Checking availability of MSAA mode ", i8MsaaModeIndex);

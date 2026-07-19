@@ -188,7 +188,7 @@ class First : public Scene {
 					set_screen_percentage_settings(normal);
 				}
 			}
-			PRINT_LN(get_fps_rate());
+			//PRINT_LN(get_fps_rate());
 		}
 		void end() {}
 };

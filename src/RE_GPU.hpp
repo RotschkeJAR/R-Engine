@@ -100,7 +100,7 @@ namespace RE {
 			uint32_t function_count() const;
 			uint8_t logical_queue_index_for_function(uint32_t u32FunctionIndex) const;
 			uint8_t logical_queue_index_for_presentation() const;
-			VulkanQueueCollection queues_of_functions(const uint32_t *pau32FunctionIndices, uint32_t u32FunctionIndexCount) const;
+			VulkanQueueCollection queues_of_functions(const uint32_t *pau32FunctionIndices, uint32_t u32FunctionIndexCount, bool bIncludePresentation) const;
 			bool valid() const;
 	};
 

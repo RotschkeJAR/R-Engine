@@ -65,4 +65,29 @@ namespace RE {
 		return vkWaitForFences(vk_hDevice, RE_VK_FRAMES_IN_FLIGHT, vk_ahRenderFences, VK_TRUE, std::numeric_limits<uint64_t>::max()) == VK_SUCCESS;
 	}
 
+#ifdef RE_OS_LINUX
+	bool prepare_render_tasks_for_dummy_presentation() {
+		PRINT_DEBUG("Preparing render tasks for dummy presentation");
+		if (wait_for_rendering_finished()) {
+			bool bSuccess = true;
+			for (uint uFrameInFlightIndex = 0; uFrameInFlightIndex < RE_VK_FRAMES_IN_FLIGHT; uFrameInFlightIndex++)
+				bSuccess = bSuccess
+						&& aRenderTasks[uFrameInFlightIndex].record(
+							RENDER_TASK_SUBINDEX_BUFFER_TRANSFER,
+							0,
+							nullptr)
+						&& aRenderTasks[uFrameInFlightIndex].record(
+							RENDER_TASK_SUBINDEX_PROCESSING,
+							0,
+							nullptr)
+						&& aRenderTasks[uFrameInFlightIndex].record(
+							RENDER_TASK_SUBINDEX_RENDERING,
+							0,
+							nullptr);
+			return bSuccess;
+		}
+		return false;
+	}
+#endif
+
 }

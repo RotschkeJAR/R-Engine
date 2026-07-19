@@ -11,7 +11,8 @@ namespace RE {
 
 	bool create_cursor_buffers() {
 		PRINT_DEBUG("Creating Vulkan buffer for data of the cursor");
-		if (create_vulkan_buffer(0,
+		if (create_vulkan_buffer(
+				0,
 				sizeof(WindowFrameUniformData) + sizeof(VkDrawIndirectCommand),
 				VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
 				1,

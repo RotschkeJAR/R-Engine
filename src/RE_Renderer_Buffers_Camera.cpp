@@ -8,7 +8,8 @@ namespace RE {
 
 	bool create_camera_buffers(const VulkanQueueCollection &rQueues) {
 		PRINT_DEBUG("Creating Vulkan buffer for data of the camera");
-		if (create_vulkan_buffer(0,
+		if (create_vulkan_buffer(
+				0,
 				next_multiple_inclusive<VkDeviceSize>(sizeof(CameraShaderData), vk_uniformBufferAlignment) * (get_max_camera_count() * RE_VK_FRAMES_IN_FLIGHT - 1) + sizeof(CameraShaderData),
 				VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 				static_cast<uint32_t>(rQueues.u8QueueCount),

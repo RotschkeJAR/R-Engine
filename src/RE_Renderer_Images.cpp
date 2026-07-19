@@ -10,23 +10,6 @@ namespace RE {
 	VkFormat vk_eRenderTargetFormat;
 	static bool bDynamicScreenPercentage = false;
 
-	void get_queues_for_swapchain_images(std::vector<uint32_t> &rRenderTaskQueueIndices) {
-		constexpr uint32_t au32FunctionsToLookup[] = {
-			RENDER_TASK_SUBINDEX_RENDERING,
-			RENDER_TASK_SUBINDEX_IMAGE_BLIT
-		};
-		constexpr uint32_t u32FunctionsToLookupCount = sizeof(au32FunctionsToLookup) / sizeof(au32FunctionsToLookup[0]);
-		rRenderTaskQueueIndices.reserve(u32FunctionsToLookupCount);
-		for (uint32_t u32FunctionToLookupIndex = 0; u32FunctionToLookupIndex < u32FunctionsToLookupCount; u32FunctionToLookupIndex++) {
-			const uint32_t u32QueueFamilyIndex = queueFamilyIndices[aRenderTasks[0].logical_queue_index_for_function(au32FunctionsToLookup[u32FunctionToLookupIndex])];
-			if (std::find(rRenderTaskQueueIndices.begin(), rRenderTaskQueueIndices.end(), u32QueueFamilyIndex) == rRenderTaskQueueIndices.end())
-				rRenderTaskQueueIndices.push_back(u32QueueFamilyIndex);
-		}
-		const uint32_t u32PresentIndex = aRenderTasks[0].logical_queue_index_for_presentation();
-		if (std::find(rRenderTaskQueueIndices.begin(), rRenderTaskQueueIndices.end(), u32PresentIndex) == rRenderTaskQueueIndices.end())
-			rRenderTaskQueueIndices.push_back(u32PresentIndex);
-	}
-
 	bool create_renderer_images() {
 		if (create_window_button_image()) {
 			if (create_character_image()) {

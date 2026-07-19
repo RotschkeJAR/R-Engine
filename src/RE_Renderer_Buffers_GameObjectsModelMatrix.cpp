@@ -9,7 +9,8 @@ namespace RE {
 		uint8_t u8FrameInFlightCreateIndex = 0;
 		for (; u8FrameInFlightCreateIndex < RE_VK_FRAMES_IN_FLIGHT; u8FrameInFlightCreateIndex++) {
 			PRINT_DEBUG("Creating game object model matrix buffer at frame-in-flight index ", u8FrameInFlightCreateIndex, " in Vulkan");
-			if (!create_vulkan_buffer(0,
+			if (!create_vulkan_buffer(
+					0,
 					vk_bufferSize,
 					VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 					rQueues.u8QueueCount,

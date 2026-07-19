@@ -6,7 +6,7 @@ namespace RE {
 
 	Color backgroundClearColor(0.2f, 0.2f, 0.2f, 1.0f);
 
-	float f32SampleShadingRate = 0.2f;
+	float fSampleShadingRate = 0.2f;
 
 	uint8_t u8CurrentFrameInFlightIndex = 0;
 
@@ -76,18 +76,10 @@ namespace RE {
 	}
 
 	void render() {
-		if (bSwapchainDirty)
+		if (bSwapchainDirty) {
 			if (!recreate_swapchain())
 				return;
-		if (!acquire_next_swapchain_image())
-			return;
-		vkWaitForFences(vk_hDevice, 1, &vk_ahRenderFences[u8CurrentFrameInFlightIndex], VK_TRUE, std::numeric_limits<uint64_t>::max());
-		if (!render_procedure()) {
-			RE_FATAL_ERROR("Failed to run the rendering procedure");
-			return;
 		}
-		PRINT_DEBUG("Submitting rendering task at frame-in-flight index ", u8CurrentFrameInFlightIndex);
-		vkResetFences(vk_hDevice, 1, &vk_ahRenderFences[u8CurrentFrameInFlightIndex]);
 		constexpr VkPipelineStageFlags2 vk_aeInternalWaitStages[] = {
 			VK_PIPELINE_STAGE_2_TRANSFER_BIT,
 			VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
@@ -107,6 +99,73 @@ namespace RE {
 			.stageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
 			.deviceIndex = 1
 		};
+		vkWaitForFences(vk_hDevice, 1, &vk_ahRenderFences[u8CurrentFrameInFlightIndex], VK_TRUE, std::numeric_limits<uint64_t>::max());
+		if (!should_render()) {
+		#ifdef RE_OS_LINUX
+			switch (eLinuxWindowType) {
+				case LINUX_WINDOW_TYPE_X11:
+					break;
+				case LINUX_WINDOW_TYPE_WAYLAND:
+					if (!acquire_next_swapchain_image())
+						break;
+					vkResetFences(vk_hDevice, 1, &vk_ahRenderFences[u8CurrentFrameInFlightIndex]);
+					aRenderTasks[u8CurrentFrameInFlightIndex].record(
+							RENDER_TASK_SUBINDEX_IMAGE_BLIT,
+							VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+							[&](VkCommandBuffer vk_hCommandBuffer, uint8_t u8PreviousLogicalQueue, uint8_t u8CurrentLogicalQueue, uint8_t u8NextLogicalQueue) {
+								const VkImageMemoryBarrier vk_swapchainImageLayoutTransferBarrier = {
+									.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+									.pNext = nullptr,
+									.srcAccessMask = VK_ACCESS_NONE,
+									.dstAccessMask = VK_ACCESS_NONE,
+									.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+									.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+									.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+									.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+									.image = swapchainImages[u32SwapchainImageIndex],
+									.subresourceRange = {
+										.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+										.baseMipLevel = 0,
+										.levelCount = 1,
+										.baseArrayLayer = 0,
+										.layerCount = 1
+									}
+								};
+								vkCmdPipelineBarrier(
+										vk_hCommandBuffer,
+										VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+										VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+										0,
+										0,
+										nullptr,
+										0,
+										nullptr,
+										1,
+										&vk_swapchainImageLayoutTransferBarrier);
+							});
+					aRenderTasks[u8CurrentFrameInFlightIndex].submit(
+							1,
+							&vk_waitSwapchainSemaphoreInfo,
+							vk_aeInternalWaitStages,
+							1,
+							&vk_signalSwapchainSemaphoreInfo,
+							vk_ahRenderFences[u8CurrentFrameInFlightIndex]);
+					present_swapchain_image();
+					u8CurrentFrameInFlightIndex = (u8CurrentFrameInFlightIndex + 1) % RE_VK_FRAMES_IN_FLIGHT;
+					u32CurrentSwapchainSemaphoreIndex = (u32CurrentSwapchainSemaphoreIndex + 1) % u32SwapchainImageCount;
+					goto INCREASE_INDICES_RENDERER;
+			}
+		#endif
+			return;
+		}
+		if (!acquire_next_swapchain_image())
+			return;
+		if (!render_procedure()) {
+			RE_FATAL_ERROR("Failed to run the rendering procedure");
+			return;
+		}
+		PRINT_DEBUG("Submitting rendering task at frame-in-flight index ", u8CurrentFrameInFlightIndex);
+		vkResetFences(vk_hDevice, 1, &vk_ahRenderFences[u8CurrentFrameInFlightIndex]);
 		if (!aRenderTasks[u8CurrentFrameInFlightIndex].submit(1,
 				&vk_waitSwapchainSemaphoreInfo,
 				vk_aeInternalWaitStages,
@@ -117,6 +176,7 @@ namespace RE {
 			return;
 		}
 		present_swapchain_image();
+	INCREASE_INDICES_RENDERER:
 		u8CurrentFrameInFlightIndex = (u8CurrentFrameInFlightIndex + 1) % RE_VK_FRAMES_IN_FLIGHT;
 		u32CurrentSwapchainSemaphoreIndex = (u32CurrentSwapchainSemaphoreIndex + 1) % u32SwapchainImageCount;
 	}
@@ -139,33 +199,30 @@ namespace RE {
 		backgroundClearColor.set_blue(fBlue);
 	}
 
-	[[nodiscard]]
 	Color get_background_color() {
 		return backgroundClearColor;
 	}
 
-	[[nodiscard]]
 	bool is_sample_shading_enabled() {
-		return f32SampleShadingRate != 0.0f;
+		return fSampleShadingRate != 0.0f;
 	}
 
 	void set_sample_shading_rate(const float f32NewSampleShadingRate) {
-		if (f32SampleShadingRate == f32NewSampleShadingRate)
+		if (fSampleShadingRate == f32NewSampleShadingRate)
 			return;
 		if (f32NewSampleShadingRate < 0.0f || f32NewSampleShadingRate > 1.0f) {
 			RE_ERROR("Sample shading rate should be in range between 0.0 and 1.0, but was ", f32NewSampleShadingRate, ". Request to change it has been discarded");
 			return;
 		} else {
 			PRINT_DEBUG("Setting sample shading rate to ", f32NewSampleShadingRate);
-			f32SampleShadingRate = f32NewSampleShadingRate;
+			fSampleShadingRate = f32NewSampleShadingRate;
 			wait_for_rendering_finished();
 			recreate_graphics_pipelines();
 		}
 	}
 
-	[[nodiscard]]
 	float get_sample_shading_rate() {
-		return f32SampleShadingRate;
+		return fSampleShadingRate;
 	}
 
 }

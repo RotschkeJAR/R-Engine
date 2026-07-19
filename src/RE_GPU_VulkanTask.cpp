@@ -462,7 +462,7 @@ namespace RE {
 		return true;
 	}
 
-	void VulkanTask::reset_all(const VkCommandPoolResetFlags vk_eResetFlags) const {
+	void VulkanTask::reset_all(VkCommandPoolResetFlags vk_eResetFlags) const {
 		for (uint8_t u8CommandPoolIndex = 0; u8CommandPoolIndex < u8CommandPoolCount; u8CommandPoolIndex++)
 			vkResetCommandPool(vk_hDevice, commandPools[u8CommandPoolIndex], vk_eResetFlags);
 	}
@@ -475,7 +475,7 @@ namespace RE {
 		return u32FunctionsCount;
 	}
 
-	uint8_t VulkanTask::logical_queue_index_for_function(const uint32_t u32FunctionIndex) const {
+	uint8_t VulkanTask::logical_queue_index_for_function(uint32_t u32FunctionIndex) const {
 		return queueIndexPerCommandPool[commandPoolIndexPerCommandBuffer[u32FunctionIndex]];
 	}
 
@@ -483,31 +483,26 @@ namespace RE {
 		return u8LogicalPresentQueueIndex;
 	}
 
-	VulkanQueueCollection VulkanTask::queues_of_functions(const uint32_t *pau32FunctionIndices, uint32_t u32FunctionIndexCount) const {
-		if (u8CommandPoolCount == 1) [[likely]] {
-			PRINT_DEBUG_CLASS("Returning queue information immediatly, because the task utilizes only a single queue");
-			VulkanQueueCollection queueCollection;
-			queueCollection.queueFamilyIndices = std::make_unique<uint32_t[]>(1);
-			queueCollection.logicalQueueIndices = std::make_unique<uint8_t[]>(1);
-			queueCollection.vk_eSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-			queueCollection.u8QueueCount = 1;
-			queueCollection.logicalQueueIndices[0] = queueIndexPerCommandPool[commandPoolIndexPerCommandBuffer[pau32FunctionIndices[0]]];
-			queueCollection.queueFamilyIndices[0] = queueFamilyIndices[queueCollection.logicalQueueIndices[0]];
-			return queueCollection;
-		}
+	VulkanQueueCollection VulkanTask::queues_of_functions(const uint32_t *pau32FunctionIndices, uint32_t u32FunctionIndexCount, bool bIncludePresentation) const {
 		PRINT_DEBUG_CLASS("Collecting queue information, that are used by functions listed in ", pau32FunctionIndices, "containing ", u32FunctionIndexCount, " indices");
-		std::vector<uint8_t> logicalQueueIndicesNeeded;
-		logicalQueueIndicesNeeded.reserve(std::min(u32FunctionIndexCount, static_cast<uint32_t>(u8CommandPoolCount)));
+		std::vector<uint8_t> std_logicalQueueIndicesNeeded;
+		std_logicalQueueIndicesNeeded.reserve(std::min(u32FunctionIndexCount, static_cast<uint32_t>(u8CommandPoolCount)) + bool_to_int(bIncludePresentation));
 		for (uint32_t u32FunctionIndex = 0; u32FunctionIndex < u32FunctionIndexCount; u32FunctionIndex++) {
 			PRINT_DEBUG_CLASS("Identifying queue used in at function index ", pau32FunctionIndices[u32FunctionIndex]);
 			const uint8_t u8LogicalQueueIndex = queueIndexPerCommandPool[commandPoolIndexPerCommandBuffer[pau32FunctionIndices[u32FunctionIndex]]];
-			if (std::find(logicalQueueIndicesNeeded.begin(), logicalQueueIndicesNeeded.end(), u8LogicalQueueIndex) == logicalQueueIndicesNeeded.end()) {
+			if (std::find(std_logicalQueueIndicesNeeded.begin(), std_logicalQueueIndicesNeeded.end(), u8LogicalQueueIndex) == std_logicalQueueIndicesNeeded.end()) {
 				PRINT_DEBUG_CLASS("Adding new logical queue index ", u8LogicalQueueIndex);
-				logicalQueueIndicesNeeded.push_back(u8LogicalQueueIndex);
+				std_logicalQueueIndicesNeeded.push_back(u8LogicalQueueIndex);
 			}
 		}
+		if (bIncludePresentation
+				&& u8LogicalPresentQueueIndex != RE_VK_LOGICAL_QUEUE_IGNORED
+				&& std::find(std_logicalQueueIndicesNeeded.begin(), std_logicalQueueIndicesNeeded.end(), u8LogicalPresentQueueIndex) == std_logicalQueueIndicesNeeded.end()) {
+			PRINT_DEBUG_CLASS("Adding logical queue index ", u8LogicalPresentQueueIndex, " for presentation");
+			std_logicalQueueIndicesNeeded.push_back(u8LogicalPresentQueueIndex);
+		}
 		PRINT_DEBUG_CLASS("Returning queue information");
-		const uint8_t u8QueueCount = static_cast<uint8_t>(logicalQueueIndicesNeeded.size());
+		const uint8_t u8QueueCount = static_cast<uint8_t>(std_logicalQueueIndicesNeeded.size());
 		VulkanQueueCollection queueCollection;
 		queueCollection.queueFamilyIndices = std::make_unique<uint32_t[]>(u8QueueCount);
 		queueCollection.logicalQueueIndices = std::make_unique<uint8_t[]>(u8QueueCount);
@@ -515,7 +510,7 @@ namespace RE {
 		queueCollection.u8QueueCount = u8QueueCount;
 		for (uint8_t u8QueueNeededIndex = 0; u8QueueNeededIndex < u8QueueCount; u8QueueNeededIndex++) {
 			PRINT_DEBUG_CLASS("Copying index of the needed logical queue at ", u8QueueNeededIndex);
-			const uint8_t u8LogicalQueueIndex = logicalQueueIndicesNeeded[u8QueueNeededIndex];
+			const uint8_t u8LogicalQueueIndex = std_logicalQueueIndicesNeeded[u8QueueNeededIndex];
 			queueCollection.logicalQueueIndices[u8QueueNeededIndex] = u8LogicalQueueIndex;
 			queueCollection.queueFamilyIndices[u8QueueNeededIndex] = queueFamilyIndices[u8LogicalQueueIndex];
 		}

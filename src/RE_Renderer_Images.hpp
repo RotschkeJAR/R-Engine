@@ -9,7 +9,6 @@ namespace RE {
 	extern Vector2u renderImageSize,
 		maxRenderImageSize;
 	
-	void get_queues_for_swapchain_images(std::vector<uint32_t> &rRenderTaskQueueIndices);
 	bool create_renderer_images();
 	bool create_swapchain_related_images();
 	void destroy_renderer_images();

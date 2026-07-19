@@ -72,7 +72,7 @@ namespace RE {
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
 			.rasterizationSamples = vk_eMsaaCount,
 			.sampleShadingEnable = is_sample_shading_enabled() ? VK_TRUE : VK_FALSE,
-			.minSampleShading = f32SampleShadingRate,
+			.minSampleShading = fSampleShadingRate,
 			.pSampleMask = nullptr,
 			.alphaToCoverageEnable = VK_FALSE,
 			.alphaToOneEnable = VK_FALSE

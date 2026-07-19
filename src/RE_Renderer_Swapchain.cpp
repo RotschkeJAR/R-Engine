@@ -31,13 +31,17 @@ namespace RE {
 			vk_swapchainResolution.width = std::clamp<uint32_t>(get_window_actual_width(), vk_surfaceCapabilities.minImageExtent.width, vk_surfaceCapabilities.maxImageExtent.width);
 			vk_swapchainResolution.height = std::clamp<uint32_t>(get_window_actual_height(), vk_surfaceCapabilities.minImageExtent.height, vk_surfaceCapabilities.maxImageExtent.height);
 		}
-		std::vector<uint32_t> queuesToShareAcross;
-		get_queues_for_swapchain_images(queuesToShareAcross);
+		const uint32_t au32RequiredQueues[] = {
+			RENDER_TASK_SUBINDEX_RENDERING,
+			RENDER_TASK_SUBINDEX_IMAGE_BLIT
+		};
+		const VulkanQueueCollection queuesForSwapchain = aRenderTasks[0].queues_of_functions(au32RequiredQueues, sizeof(au32RequiredQueues) / sizeof(au32RequiredQueues[0]), true);
 		PRINT_DEBUG("Creating swapchain");
 		const VkSwapchainCreateInfoKHR vk_swapchainCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
 			.surface = vk_hSurface,
-			.minImageCount = std::clamp<uint32_t>(3,
+			.minImageCount = std::clamp<uint32_t>(
+					3,
 					vk_surfaceCapabilities.minImageCount,
 					vk_surfaceCapabilities.maxImageCount > 0 ? vk_surfaceCapabilities.maxImageCount : std::numeric_limits<uint32_t>::max()
 			),
@@ -46,9 +50,9 @@ namespace RE {
 			.imageExtent = vk_swapchainResolution,
 			.imageArrayLayers = 1,
 			.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-			.imageSharingMode = queuesToShareAcross.size() == 1 ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT,
-			.queueFamilyIndexCount = static_cast<uint32_t>(queuesToShareAcross.size()),
-			.pQueueFamilyIndices = queuesToShareAcross.data(),
+			.imageSharingMode = queuesForSwapchain.vk_eSharingMode,
+			.queueFamilyIndexCount = static_cast<uint32_t>(queuesForSwapchain.u8QueueCount),
+			.pQueueFamilyIndices = queuesForSwapchain.queueFamilyIndices.get(),
 			.preTransform = vk_surfaceCapabilities.currentTransform,
 			.compositeAlpha = vk_eCompositeAlphaSelected,
 			.presentMode = bVsyncEnabled ? vk_ePresentVsync : vk_ePresentNoVsync,

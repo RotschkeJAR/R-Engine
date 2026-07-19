@@ -109,7 +109,13 @@ namespace RE {
 		}
 		PRINT_DEBUG("Creating temporary staging Vulkan buffer for transferring texture binaries");
 		const VkDeviceSize vk_imageBufferSize = sizeof(uint8_t) * u32Width * u32Height * u32ActualChannels;
-		Vulkan_Buffer stagingImageBuffer(0, vk_imageBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 1, nullptr, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+		Vulkan_Buffer stagingImageBuffer(
+				0,
+				vk_imageBufferSize,
+				VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+				1,
+				nullptr,
+				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 		if (stagingImageBuffer.valid()) {
 			uint8_t *pau8StagingBufferContent;
 			if (stagingImageBuffer.get_memory().map(0, 0, VK_WHOLE_SIZE, reinterpret_cast<void**>(&pau8StagingBufferContent))) {
@@ -161,7 +167,8 @@ namespace RE {
 							}
 						});
 				PRINT_DEBUG("Creating Vulkan image for storing texture on GPU");
-				if (create_vulkan_image(0,
+				if (create_vulkan_image(
+						0,
 						VK_IMAGE_TYPE_2D,
 						pVulkanTexture->vk_eFormat,
 						VkExtent3D{u32Width, u32Height, 1},
@@ -330,7 +337,8 @@ namespace RE {
 							[[unlikely]] default:
 								RE_ABORT("Unknown format selected for the texture: ", std::hex, pVulkanTexture->vk_eFormat, " (likely due to corruption)");
 						}
-						if (create_vulkan_image_view(0,
+						if (create_vulkan_image_view(
+								0,
 								pVulkanTexture->vk_hImage,
 								VK_IMAGE_VIEW_TYPE_2D_ARRAY,
 								pVulkanTexture->vk_eFormat,

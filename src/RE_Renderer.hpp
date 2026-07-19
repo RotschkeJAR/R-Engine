@@ -12,7 +12,7 @@ namespace RE {
 #define CHAR_TEXTURE_COUNT   0x5F
 #define CHAR_TEXTURE_SIZE    8
 
-	extern float f32SampleShadingRate;
+	extern float fSampleShadingRate;
 	extern uint8_t u8CurrentFrameInFlightIndex;
 
 	bool init_renderer();
@@ -25,6 +25,11 @@ namespace RE {
 
 	// Presentation
 	extern uint32_t u32IndexToSelectedSurfaceFormat;
+	
+	// Render Task
+#ifdef RE_OS_LINUX
+	bool prepare_render_tasks_for_dummy_presentation();
+#endif
 
 	// Depth-stencil buffers
 	void find_suitable_depth_stencil_formats();

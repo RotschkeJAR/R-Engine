@@ -321,9 +321,9 @@ namespace RE {
 	};
 
 	static void xdg_toplevel_configure_callback(void *pData, xdg_toplevel *xdg_pToplevel, int32_t i32Width, int32_t i32Height, wl_array *wl_pStates) {
-		if (i32Width <= 0 && actualWindowSize[0] == 0)
+		if (i32Width <= 0)
 			i32Width = largestMonitorSize[0] / 5 * 3 + WINDOW_WAYLAND_EXTRA_WIDTH;
-		if (i32Height <= 0 && actualWindowSize[1] == 0)
+		if (i32Height <= 0)
 			i32Height = largestMonitorSize[1] / 5 * 3 + WINDOW_WAYLAND_EXTRA_HEIGHT;
 		actualWindowSize[0] = i32Width;
 		actualWindowSize[1] = i32Height;
@@ -378,6 +378,7 @@ namespace RE {
 				wl_pCursorSurface,
 				CURSOR_TEXTURE_SIZE / 2 + 1,
 				CURSOR_TEXTURE_SIZE / 2 + 1);
+		mWindowFlagBits &= ~WINDOW_FLAG_MINIMIZED_BIT;
 	}
 
 	static void wayland_pointer_leave_callback(void *pData, wl_pointer *wl_pPointer, uint32_t u32Serial, wl_surface *wl_pSurface) {
@@ -482,6 +483,8 @@ namespace RE {
 						break;
 					case WINDOW_AREA_BUTTON_MINIMIZE:
 						xdg_toplevel_set_minimized(xdg_pToplevel);
+						prepare_render_tasks_for_dummy_presentation();
+						mWindowFlagBits |= WINDOW_FLAG_MINIMIZED_BIT;
 						if (pWindowFrameUniformData) {
 							for (uint uDimensionIndex = 0; uDimensionIndex < actualCursorPosition.dimensions(); uDimensionIndex++) {
 								actualCursorPosition[uDimensionIndex] = 0xFFFFFFFFU;
@@ -565,6 +568,7 @@ namespace RE {
 	}
 
 	static void wayland_keyboard_enter_callback(void *pData, wl_keyboard *wl_pKeyboard, uint32_t u32Serial, wl_surface *wl_pSurface, wl_array *wl_pKeys) {
+		mWindowFlagBits &= ~WINDOW_FLAG_MINIMIZED_BIT;
 	}
 
 	static void wayland_keyboard_leave_callback(void *pData, wl_keyboard *wl_pKeyboard, uint32_t u32Serial, wl_surface *wl_pSurface) {

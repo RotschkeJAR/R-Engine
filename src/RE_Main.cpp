@@ -72,8 +72,7 @@ namespace RE {
 						const std::chrono::steady_clock::time_point std_workStart = std::chrono::steady_clock::now();
 						window_proc();
 						game_logic_update();
-						if (should_render())
-							render();
+						render();
 
 						PRINT_DEBUG("Calculating deltatime for next frame");
 						const float fWorktime = std::chrono::duration_cast<std::chrono::duration<float>>(std::chrono::steady_clock::now() - std_workStart).count();

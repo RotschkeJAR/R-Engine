@@ -1,4 +1,4 @@
-#include "RE_Renderer_Internal.hpp"
+#include "RE_Renderer_Presentation.hpp"
 #include "RE_Main.hpp"
 
 namespace RE {
@@ -7,7 +7,7 @@ namespace RE {
 	std::unique_ptr<VkSemaphore[]> swapchainSemaphores;
 	uint32_t u32IndexToSelectedSurfaceFormat,
 		u32CurrentSwapchainSemaphoreIndex = 0,
-		u32SwapchainImageIndex;
+		u32CurrentSwapchainImageIndex;
 	bool bVsyncEnabled = true;
 
 	bool setup_presentation() {
@@ -44,7 +44,7 @@ namespace RE {
 
 	bool acquire_next_swapchain_image() {
 		PRINT_DEBUG("Acquiring index to the next Vulkan swapchain image");
-		const VkResult vk_eAcquireResult = vkAcquireNextImageKHR(vk_hDevice, vk_hSwapchain, std::numeric_limits<uint64_t>::max(), swapchainSemaphores[u32CurrentSwapchainSemaphoreIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE], VK_NULL_HANDLE, &u32SwapchainImageIndex);
+		const VkResult vk_eAcquireResult = vkAcquireNextImageKHR(vk_hDevice, vk_hSwapchain, std::numeric_limits<uint64_t>::max(), swapchainSemaphores[u32CurrentSwapchainSemaphoreIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE], VK_NULL_HANDLE, &u32CurrentSwapchainImageIndex);
 		switch (vk_eAcquireResult) {
 			case VK_SUCCESS:
 				return true;
@@ -61,14 +61,14 @@ namespace RE {
 	}
 
 	bool present_swapchain_image() {
-		PRINT_DEBUG("Submitting swapchain image at index ", u32SwapchainImageIndex, " to presentation");
+		PRINT_DEBUG("Submitting swapchain image at index ", u32CurrentSwapchainImageIndex, " to presentation");
 		const VkPresentInfoKHR vk_presentInfo = {
 			.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
 			.waitSemaphoreCount = 1,
 			.pWaitSemaphores = &swapchainSemaphores[u32CurrentSwapchainSemaphoreIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE + 1],
 			.swapchainCount = 1,
 			.pSwapchains = &vk_hSwapchain,
-			.pImageIndices = &u32SwapchainImageIndex
+			.pImageIndices = &u32CurrentSwapchainImageIndex
 		};
 		const VkResult vk_ePresentResult = vkQueuePresentKHR(vk_hPresentQueue, &vk_presentInfo);
 		switch (vk_ePresentResult) {
@@ -79,7 +79,7 @@ namespace RE {
 				mark_swapchain_dirty();
 				return true;
 			default:
-				RE_FATAL_ERROR("Failed to submit swapchain image at index ", u32SwapchainImageIndex, " to presentation. Return code: ", std::hex, vk_ePresentResult);
+				RE_FATAL_ERROR("Failed to submit swapchain image at index ", u32CurrentSwapchainImageIndex, " to presentation. Return code: ", std::hex, vk_ePresentResult);
 				return false;
 		}
 	}

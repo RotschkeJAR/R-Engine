@@ -122,7 +122,7 @@ namespace RE {
 									.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
 									.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 									.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-									.image = swapchainImages[u32SwapchainImageIndex],
+									.image = swapchainImages[u32CurrentSwapchainImageIndex],
 									.subresourceRange = {
 										.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 										.baseMipLevel = 0,

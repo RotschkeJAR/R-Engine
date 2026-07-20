@@ -1,4 +1,4 @@
-#include "RE_Renderer_Internal.hpp"
+#include "RE_Renderer_DynamicRendering.hpp"
 
 namespace RE {
 
@@ -9,7 +9,7 @@ namespace RE {
 			.imageView = renderTargetImageViews[u8CurrentFrameInFlightIndex],
 			.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 			.resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT,
-			.resolveImageView = swapchainImageViews[u32SwapchainImageIndex],
+			.resolveImageView = swapchainImageViews[u32CurrentSwapchainImageIndex],
 			.resolveImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 			.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
 			.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
@@ -26,7 +26,7 @@ namespace RE {
 		} else {
 			vk_colorAttachment.resolveMode = VK_RESOLVE_MODE_NONE;
 			if (!bBlittingRequired)
-				vk_colorAttachment.imageView = swapchainImageViews[u32SwapchainImageIndex];
+				vk_colorAttachment.imageView = swapchainImageViews[u32CurrentSwapchainImageIndex];
 		}
 		const VkRenderingAttachmentInfo vk_depthAttachment = {
 			.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,

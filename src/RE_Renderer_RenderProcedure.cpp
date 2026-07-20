@@ -1,4 +1,4 @@
-#include "RE_Renderer_Internal.hpp"
+#include "RE_Renderer_RenderProcedure.hpp"
 #include "RE_Window.hpp"
 
 namespace RE {
@@ -25,13 +25,13 @@ namespace RE {
 						.newLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
 						.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 						.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-						.image = swapchainImages[u32SwapchainImageIndex],
+						.image = swapchainImages[u32CurrentSwapchainImageIndex],
 						.subresourceRange = vk_imageRange
 					};
 					vkCmdPipelineBarrier(vk_hCommandBuffer, VK_PIPELINE_STAGE_NONE, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, nullptr, 0, nullptr, 1, &vk_swapchainImage1Info);
 					const VkRenderingAttachmentInfo vk_attachmentInfo = {
 						.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-						.imageView = swapchainImageViews[u32SwapchainImageIndex],
+						.imageView = swapchainImageViews[u32CurrentSwapchainImageIndex],
 						.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
 						.resolveMode = VK_RESOLVE_MODE_NONE,
 						.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
@@ -113,7 +113,7 @@ namespace RE {
 						.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
 						.srcQueueFamilyIndex = queueFamilyIndices[u8CurrentLogicalQueue],
 						.dstQueueFamilyIndex = queueFamilyIndices[u8NextLogicalQueue],
-						.image = swapchainImages[u32SwapchainImageIndex],
+						.image = swapchainImages[u32CurrentSwapchainImageIndex],
 						.subresourceRange = vk_imageRange
 					};
 					vkCmdPipelineBarrier(vk_hCommandBuffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &vk_swapchainImage2Info);
@@ -127,14 +127,14 @@ namespace RE {
 						.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 						.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 						.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-						.image = swapchainImages[u32SwapchainImageIndex],
+						.image = swapchainImages[u32CurrentSwapchainImageIndex],
 						.subresourceRange = vk_imageRange
 					};
 					vkCmdPipelineBarrier(vk_hCommandBuffer, VK_PIPELINE_STAGE_NONE, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &vk_swapchainImage1Info);
 					const VkClearColorValue vk_clearColor = {
 						.float32 = {backgroundClearColor.get_red(), backgroundClearColor.get_green(), backgroundClearColor.get_blue(), 1.0f}
 					};
-					vkCmdClearColorImage(vk_hCommandBuffer, swapchainImages[u32SwapchainImageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &vk_clearColor, 1, &vk_imageRange);
+					vkCmdClearColorImage(vk_hCommandBuffer, swapchainImages[u32CurrentSwapchainImageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &vk_clearColor, 1, &vk_imageRange);
 					const VkImageMemoryBarrier vk_swapchainImage2Info = {
 						.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
 						.pNext = nullptr,
@@ -144,7 +144,7 @@ namespace RE {
 						.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
 						.srcQueueFamilyIndex = queueFamilyIndices[u8CurrentLogicalQueue],
 						.dstQueueFamilyIndex = queueFamilyIndices[u8NextLogicalQueue],
-						.image = swapchainImages[u32SwapchainImageIndex],
+						.image = swapchainImages[u32CurrentSwapchainImageIndex],
 						.subresourceRange = vk_imageRange
 					};
 					vkCmdPipelineBarrier(vk_hCommandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &vk_swapchainImage2Info);

@@ -155,9 +155,10 @@ class First : public Scene {
 		Imagy imagy;
 		PlayerCamera playerCam;
 		InputAction trigger;
-		bool bCamActive, bMsaaEight;
+		bool bCamActive,
+			bNormalScreen;
 
-		First() : Scene(1), trigger(RE_INPUT_KEY_NUMPAD_ENTER), bCamActive(true), bMsaaEight(false) {}
+		First() : Scene(1), trigger(RE_INPUT_KEY_NUMPAD_ENTER), bCamActive(true), bNormalScreen(true) {}
 		~First() {}
 		void start() {
 			playerCam.activate();
@@ -177,15 +178,13 @@ class First : public Scene {
 					playerCam.deactivate();
 				bCamActive = !bCamActive;
 			} else if (is_pressed(RE_INPUT_KEY_SPACE)) {
-				bMsaaEight = !bMsaaEight;
-				if (bMsaaEight) {
-					set_msaa_mode(RE_MSAA_MODE_8);
-					const ScreenPercentageSettings constSized(Vector2u{50, 50});
-					set_screen_percentage_settings(constSized);
-				} else {
-					set_msaa_mode(RE_MSAA_MODE_1);
+				bNormalScreen = !bNormalScreen;
+				if (bNormalScreen) {
 					const ScreenPercentageSettings normal;
 					set_screen_percentage_settings(normal);
+				} else {
+					const ScreenPercentageSettings constSized(Vector2u{50, 50});
+					set_screen_percentage_settings(constSized);
 				}
 			}
 			//PRINT_LN(get_fps_rate());

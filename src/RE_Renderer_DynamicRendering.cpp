@@ -1,4 +1,5 @@
 #include "RE_Renderer_DynamicRendering.hpp"
+#include "RE_Settings.hpp"
 
 namespace RE {
 
@@ -20,7 +21,7 @@ namespace RE {
 			}
 		};
 		const bool bBlittingRequired = screenPercentageSettings.eMode != RE_SCREEN_PERCENTAGE_MODE_NORMAL;
-		if (vk_eMsaaCount != VK_SAMPLE_COUNT_1_BIT) {
+		if (vk_eMsaaMode != VK_SAMPLE_COUNT_1_BIT) {
 			if (bBlittingRequired)
 				vk_colorAttachment.resolveImageView = singlesampledImageViews[u8CurrentFrameInFlightIndex];
 		} else {

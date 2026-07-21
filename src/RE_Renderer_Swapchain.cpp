@@ -1,6 +1,7 @@
 #include "RE_Renderer_Swapchain.hpp"
 #include "RE_Window.hpp"
 #include "RE_Vulkan_Wrappers.hpp"
+#include "RE_Settings.hpp"
 
 namespace RE {
 
@@ -28,8 +29,8 @@ namespace RE {
 		if (vk_surfaceCapabilities.currentExtent.width != std::numeric_limits<uint32_t>::max() || vk_surfaceCapabilities.currentExtent.height != std::numeric_limits<uint32_t>::max() || !vk_surfaceCapabilities.currentExtent.width || !vk_surfaceCapabilities.currentExtent.height)
 			vk_swapchainResolution = vk_surfaceCapabilities.currentExtent;
 		else {
-			vk_swapchainResolution.width = std::clamp<uint32_t>(get_window_actual_width(), vk_surfaceCapabilities.minImageExtent.width, vk_surfaceCapabilities.maxImageExtent.width);
-			vk_swapchainResolution.height = std::clamp<uint32_t>(get_window_actual_height(), vk_surfaceCapabilities.minImageExtent.height, vk_surfaceCapabilities.maxImageExtent.height);
+			vk_swapchainResolution.width = std::clamp<uint32_t>(get_window_width(), vk_surfaceCapabilities.minImageExtent.width, vk_surfaceCapabilities.maxImageExtent.width);
+			vk_swapchainResolution.height = std::clamp<uint32_t>(get_window_height(), vk_surfaceCapabilities.minImageExtent.height, vk_surfaceCapabilities.maxImageExtent.height);
 		}
 		const uint32_t au32RequiredQueues[] = {
 			RENDER_TASK_SUBINDEX_RENDERING,
@@ -55,7 +56,7 @@ namespace RE {
 			.pQueueFamilyIndices = queuesForSwapchain.queueFamilyIndices.get(),
 			.preTransform = vk_surfaceCapabilities.currentTransform,
 			.compositeAlpha = vk_eCompositeAlphaSelected,
-			.presentMode = bVsyncEnabled ? vk_ePresentVsync : vk_ePresentNoVsync,
+			.presentMode = (mSettingsFlags & SETTINGS_FLAG_VSYNC_ENABLED_BIT) ? vk_ePresentVsync : vk_ePresentNoVsync,
 			.clipped = VK_TRUE,
 			.oldSwapchain = vk_hOldSwapchain
 		};

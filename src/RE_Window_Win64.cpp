@@ -1,6 +1,6 @@
-#include "RE_Window.hpp"
 #include "RE_Window_Win64.hpp"
 #include "RE_Main.hpp"
+#include "RE_Settings.hpp"
 
 #ifdef RE_OS_WINDOWS
 
@@ -72,6 +72,7 @@ namespace RE {
 						win_extScancode = MAKEWORD(win_scancode, 0xE0);
 					if ((win_keyFlags & KF_ALTDOWN) == KF_ALTDOWN && win_virtualKeyCode == VK_F4)
 						PostMessageW(win_hWndParam, WM_CLOSE, 0, 0);
+					const bool bKeyPressed = (win_keyFlags & KF_UP) != KF_UP;
 					bool bFallbackToInput = false;
 					switch (win_virtualKeyCode) {
 						case VK_SHIFT: // Have to be differentiated between left and right
@@ -90,62 +91,56 @@ namespace RE {
 						default:
 							break;
 					}
-					const Input eInput = key_from_virtual_win64_keycode(static_cast<int64_t>(win_virtualKeyCode));
-					if (eInput == eInputFullscreenToggle && (win_uMsg == WM_KEYDOWN || win_uMsg == WM_SYSKEYDOWN)) {
-						MONITORINFO win_monitorInfo;
-						win_monitorInfo.cbSize = sizeof(MONITORINFO);
-						const bool bFullscreen = !(mWindowFlagBits & WINDOW_FLAG_FULLSCREEN_BIT);
-						set_bitmasks(mWindowFlagBits, bFullscreen, static_cast<WindowFlags>(WINDOW_FLAG_FULLSCREEN_BIT));
-						if (bFullscreen) {
-							win_hMonitor = MonitorFromWindow(win_hWindow, MONITOR_DEFAULTTONEAREST);
-							if (GetMonitorInfoW(win_hMonitor, &win_monitorInfo) == FALSE) {
-								RE_FATAL_ERROR("Failed to retrieve monitor information to set window to windowed fullscreen");
-								return 0;
-							}
-							PRINT_DEBUG("Setting new style flags for the window");
-							SetWindowLongPtr(win_hWindow, GWL_EXSTYLE, RE_WIN64_WINDOWED_FULLSCREEN_EXTENDED_STYLE_FLAGS);
-							SetWindowLongPtr(win_hWindow, GWL_STYLE, RE_WIN64_WINDOWED_FULLSCREEN_STYLE_FLAGS);
-							windowSize[0] = static_cast<uint32_t>(std::abs(win_monitorInfo.rcMonitor.right - win_monitorInfo.rcMonitor.left));
-							windowSize[1] = static_cast<uint32_t>(std::abs(win_monitorInfo.rcMonitor.bottom - win_monitorInfo.rcMonitor.top));
-							PRINT_DEBUG("Repositioning window and resizing to fit on monitor");
-							if (SetWindowPos(
-									win_hWindow,
-									HWND_TOP,
-									win_monitorInfo.rcMonitor.left,
-									win_monitorInfo.rcMonitor.top,
-									windowSize[0],
-									windowSize[1],
-									SWP_FRAMECHANGED | SWP_SHOWWINDOW) == 0)
-								RE_FATAL_ERROR("Failed to set and reposition the window to windowed fullscreen");
-						} else {
-							PRINT_DEBUG("Retrieving information about monitor ", win_hMonitor);
-							if (GetMonitorInfoW(win_hMonitor, &win_monitorInfo) == FALSE) {
-								RE_FATAL_ERROR("Failed to retrieve monitor information to reset window from fullscreen");
-								return 0;
-							}
-							const Vector<LONG, windowSize.dimensions()> monitorSize(
-									std::abs(win_monitorInfo.rcWork.right - win_monitorInfo.rcWork.left),
-									std::abs(win_monitorInfo.rcWork.bottom - win_monitorInfo.rcWork.top));
-							PRINT_DEBUG("Setting new style flags for window ", win_hWindow);
-							SetWindowLongPtr(win_hWindow, GWL_EXSTYLE, RE_WIN64_WINDOW_EXTENDED_STYLE_FLAGS);
-							SetWindowLongPtr(win_hWindow, GWL_STYLE, RE_WIN64_WINDOW_STYLE_FLAGS);
-							for (size_t i = 0; i < windowSize.dimensions(); i++)
-								windowSize[i] = monitorSize[i] / 5 * 3;
-							PRINT_DEBUG("Repositioning and resizing to ", windowSize);
-							if (SetWindowPos(
-									win_hWindow,
-									HWND_TOP,
-									win_monitorInfo.rcWork.left + (monitorSize[0] - windowSize[0]) / 2,
-									win_monitorInfo.rcWork.top + (monitorSize[1] - windowSize[1]) / 2,
-									windowSize[0],
-									windowSize[1],
-									SWP_FRAMECHANGED | SWP_SHOWWINDOW) == 0)
-								RE_FATAL_ERROR("Failed to reset and reposition the window from fullscreen");
-							win_hMonitor = nullptr;
+					if ((mSettingsFlags & SETTINGS_FLAG_MENU_OPEN_BIT)) {
+						settings_handle_keyboard_input(win_virtualKeyCode);
+					} else {
+						switch (win_virtualKeyCode) {
+							case VK_F1:
+								shortcut_settings_f1(bKeyPressed);
+								break;
+							case VK_F2:
+								shortcut_settings_f2(bKeyPressed);
+								break;
+							case VK_F3:
+								shortcut_settings_f3(bKeyPressed);
+								break;
+							case VK_F4:
+								shortcut_settings_f4(bKeyPressed);
+								break;
+							case VK_F5:
+								shortcut_settings_f5(bKeyPressed);
+								break;
+							case VK_F6:
+								shortcut_settings_f6(bKeyPressed);
+								break;
+							case VK_F7:
+								shortcut_settings_f7(bKeyPressed);
+								break;
+							case VK_F8:
+								shortcut_settings_f8(bKeyPressed);
+								break;
+							case VK_F9:
+								shortcut_settings_f9(bKeyPressed);
+								break;
+							case VK_F10:
+								shortcut_settings_f10(bKeyPressed);
+								break;
+							case VK_F11:
+								shortcut_settings_f11(bKeyPressed);
+								break;
+							case VK_F12:
+								shortcut_settings_f12(bKeyPressed);
+								break;
+							default:
+								break;
 						}
 					}
 					PRINT_DEBUG("Firing general input event");
-					input_event(eInput, static_cast<uint32_t>(win_extScancode), (win_keyFlags & KF_UP) != KF_UP, bFallbackToInput);
+					input_event(
+							key_from_virtual_win64_keycode(static_cast<int64_t>(win_virtualKeyCode)),
+							static_cast<uint32_t>(win_extScancode),
+							bKeyPressed,
+							bFallbackToInput);
 				}
 				return 0;
 			case WM_CHAR:
@@ -263,7 +258,7 @@ namespace RE {
 			win_primaryMonitorInfo.cbSize = sizeof(MONITORINFO);
 			const bool bMonitorInfoRetrieved = GetMonitorInfoW(win_hPrimaryMonitor, &win_primaryMonitorInfo) == TRUE;
 			if (bMonitorInfoRetrieved) {
-				if ((mWindowFlagBits & WINDOW_FLAG_FULLSCREEN_BIT)) {
+				if ((mSettingsFlags & SETTINGS_FLAG_FULLSCREEN_BIT)) {
 					PRINT_DEBUG("Creating fullscreen window on Windows on the primary monitor");
 					win_hMonitor = win_hPrimaryMonitor;
 					windowSize[0] = std::abs(win_primaryMonitorInfo.rcMonitor.right - win_primaryMonitorInfo.rcMonitor.left);
@@ -316,9 +311,9 @@ namespace RE {
 					goto WIN64_WINDOW_CREATION_FAILURE;
 				}
 			} else {
-				if ((mWindowFlagBits & WINDOW_FLAG_FULLSCREEN_BIT)) {
+				if ((mSettingsFlags & SETTINGS_FLAG_FULLSCREEN_BIT)) {
 					RE_WARNING("No info was retrieved about the monitor, therefore the window starts with default size and position");
-					mWindowFlagBits &= ~WINDOW_FLAG_FULLSCREEN_BIT;
+					mSettingsFlags &= ~SETTINGS_FLAG_FULLSCREEN_BIT;
 				}
 				PRINT_DEBUG("Creating window on Windows with default extent and position");
 				win_hWindow = CreateWindowExW(
@@ -398,6 +393,58 @@ namespace RE {
 		PRINT_DEBUG("Updating window title on Windows");
 		if (SetWindowTextW(win_hWindow, convert_chars_to_wide(pacWindowTitle).c_str()) == FALSE)
 			RE_FATAL_ERROR("Failed updating the title in the window title bar on Windows");
+	}
+
+	void win64_update_fullscreen() {
+		MONITORINFO win_monitorInfo;
+		win_monitorInfo.cbSize = sizeof(MONITORINFO);
+		if ((mSettingsFlags & SETTINGS_FLAG_FULLSCREEN_BIT)) {
+			win_hMonitor = MonitorFromWindow(win_hWindow, MONITOR_DEFAULTTONEAREST);
+			if (GetMonitorInfoW(win_hMonitor, &win_monitorInfo) == FALSE) {
+				RE_FATAL_ERROR("Failed to retrieve monitor information to set window to windowed fullscreen");
+				return;
+			}
+			PRINT_DEBUG("Setting new style flags for the window");
+			SetWindowLongPtr(win_hWindow, GWL_EXSTYLE, RE_WIN64_WINDOWED_FULLSCREEN_EXTENDED_STYLE_FLAGS);
+			SetWindowLongPtr(win_hWindow, GWL_STYLE, RE_WIN64_WINDOWED_FULLSCREEN_STYLE_FLAGS);
+			windowSize[0] = static_cast<uint32_t>(std::abs(win_monitorInfo.rcMonitor.right - win_monitorInfo.rcMonitor.left));
+			windowSize[1] = static_cast<uint32_t>(std::abs(win_monitorInfo.rcMonitor.bottom - win_monitorInfo.rcMonitor.top));
+			PRINT_DEBUG("Repositioning window and resizing to fit on monitor");
+			if (SetWindowPos(
+					win_hWindow,
+					HWND_TOP,
+					win_monitorInfo.rcMonitor.left,
+					win_monitorInfo.rcMonitor.top,
+					windowSize[0],
+					windowSize[1],
+					SWP_FRAMECHANGED | SWP_SHOWWINDOW) == 0)
+				RE_FATAL_ERROR("Failed to set and reposition the window to windowed fullscreen");
+		} else {
+			PRINT_DEBUG("Retrieving information about monitor ", win_hMonitor);
+			if (GetMonitorInfoW(win_hMonitor, &win_monitorInfo) == FALSE) {
+				RE_FATAL_ERROR("Failed to retrieve monitor information to reset window from fullscreen");
+				return;
+			}
+			const Vector<LONG, windowSize.dimensions()> monitorSize(
+					std::abs(win_monitorInfo.rcWork.right - win_monitorInfo.rcWork.left),
+					std::abs(win_monitorInfo.rcWork.bottom - win_monitorInfo.rcWork.top));
+			PRINT_DEBUG("Setting new style flags for window ", win_hWindow);
+			SetWindowLongPtr(win_hWindow, GWL_EXSTYLE, RE_WIN64_WINDOW_EXTENDED_STYLE_FLAGS);
+			SetWindowLongPtr(win_hWindow, GWL_STYLE, RE_WIN64_WINDOW_STYLE_FLAGS);
+			for (size_t i = 0; i < windowSize.dimensions(); i++)
+				windowSize[i] = monitorSize[i] / 5 * 3;
+			PRINT_DEBUG("Repositioning and resizing to ", windowSize);
+			if (SetWindowPos(
+					win_hWindow,
+					HWND_TOP,
+					win_monitorInfo.rcWork.left + (monitorSize[0] - windowSize[0]) / 2,
+					win_monitorInfo.rcWork.top + (monitorSize[1] - windowSize[1]) / 2,
+					windowSize[0],
+					windowSize[1],
+					SWP_FRAMECHANGED | SWP_SHOWWINDOW) == 0)
+				RE_FATAL_ERROR("Failed to reset and reposition the window from fullscreen");
+			win_hMonitor = nullptr;
+		}
 	}
 
 	void win64_window_proc() {

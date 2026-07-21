@@ -1,7 +1,7 @@
 #ifndef __RE_WINDOW_X11_H__
 #define __RE_WINDOW_X11_H__
 
-#include "RE_Internal.hpp"
+#include "RE_Window_Internal.hpp"
 
 #ifdef RE_OS_LINUX
 
@@ -26,6 +26,7 @@ namespace RE {
 	void x11_destroy_window();
 	void x11_show_window();
 	void x11_update_window_title();
+	void x11_update_fullscreen();
 	void x11_window_proc();
 
 }

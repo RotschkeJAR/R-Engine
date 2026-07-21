@@ -2,17 +2,17 @@
 #define __RE_H__
 
 #if defined(_WIN64) || defined(_MSC_VER)
-# define RE_OS_WINDOWS 1
-# define NOGDI
-# ifdef _MSC_VER
-#  define NOMINMAX
-# endif
-# define WIN32_LEAN_AND_MEAN /* speeds compilation up */
-# include <windows.h>
+#	define RE_OS_WINDOWS 1
+#	define NOGDI
+#	ifdef _MSC_VER
+#		define NOMINMAX
+#	endif
+#	define WIN32_LEAN_AND_MEAN /* speeds compilation up */
+#	include <windows.h>
 #elif defined(__linux__)
-# define RE_OS_LINUX 1
+#	define RE_OS_LINUX 1
 #else
-# warning The targeted OS is unknown to R-Engine
+#	warning The targeted OS is unknown to R-Engine
 #endif
 
 #include <iostream>
@@ -180,42 +180,30 @@ namespace RE {
 		RE_INPUT_KEY_PAUSE = 0x4B,
 		RE_INPUT_KEY_PAGE_UP = 0x4C,
 		RE_INPUT_KEY_PAGE_DOWN = 0x4D,
-		RE_INPUT_KEY_F1 = 0x4E,
-		RE_INPUT_KEY_F2 = 0x4F,
-		RE_INPUT_KEY_F3 = 0x50,
-		RE_INPUT_KEY_F4 = 0x51,
-		RE_INPUT_KEY_F5 = 0x52,
-		RE_INPUT_KEY_F6 = 0x53,
-		RE_INPUT_KEY_F7 = 0x54,
-		RE_INPUT_KEY_F8 = 0x55,
-		RE_INPUT_KEY_F9 = 0x56,
-		RE_INPUT_KEY_F10 = 0x57,
-		RE_INPUT_KEY_F11 = 0x58,
-		RE_INPUT_KEY_F12 = 0x59,
-		RE_INPUT_KEY_CAPS_LOCK = 0x5A,
-		RE_INPUT_KEY_NUMPAD_LOCK = 0x5B,
-		RE_INPUT_KEY_NUMPAD_0 = 0x5C,
-		RE_INPUT_KEY_NUMPAD_1 = 0x5D,
-		RE_INPUT_KEY_NUMPAD_2 = 0x5E,
-		RE_INPUT_KEY_NUMPAD_3 = 0x5F,
-		RE_INPUT_KEY_NUMPAD_4 = 0x60,
-		RE_INPUT_KEY_NUMPAD_5 = 0x61,
-		RE_INPUT_KEY_NUMPAD_6 = 0x62,
-		RE_INPUT_KEY_NUMPAD_7 = 0x63,
-		RE_INPUT_KEY_NUMPAD_8 = 0x64,
-		RE_INPUT_KEY_NUMPAD_9 = 0x65,
-		RE_INPUT_KEY_NUMPAD_ADD = 0x66,
-		RE_INPUT_KEY_NUMPAD_SUBTRACT = 0x67,
-		RE_INPUT_KEY_NUMPAD_MULTIPLY = 0x68,
-		RE_INPUT_KEY_NUMPAD_DIVIDE = 0x69,
-		RE_INPUT_KEY_NUMPAD_ENTER = 0x6A,
-		RE_INPUT_KEY_NUMPAD_PERIOD = 0x6B,
+		RE_INPUT_KEY_CAPS_LOCK = 0x4E,
+		RE_INPUT_KEY_NUMPAD_LOCK = 0x4F,
+		RE_INPUT_KEY_NUMPAD_0 = 0x50,
+		RE_INPUT_KEY_NUMPAD_1 = 0x51,
+		RE_INPUT_KEY_NUMPAD_2 = 0x52,
+		RE_INPUT_KEY_NUMPAD_3 = 0x53,
+		RE_INPUT_KEY_NUMPAD_4 = 0x54,
+		RE_INPUT_KEY_NUMPAD_5 = 0x55,
+		RE_INPUT_KEY_NUMPAD_6 = 0x56,
+		RE_INPUT_KEY_NUMPAD_7 = 0x57,
+		RE_INPUT_KEY_NUMPAD_8 = 0x58,
+		RE_INPUT_KEY_NUMPAD_9 = 0x59,
+		RE_INPUT_KEY_NUMPAD_ADD = 0x5A,
+		RE_INPUT_KEY_NUMPAD_SUBTRACT = 0x5B,
+		RE_INPUT_KEY_NUMPAD_MULTIPLY = 0x5C,
+		RE_INPUT_KEY_NUMPAD_DIVIDE = 0x5D,
+		RE_INPUT_KEY_NUMPAD_ENTER = 0x5E,
+		RE_INPUT_KEY_NUMPAD_PERIOD = 0x5F,
 		/**
 		 * Represents a key, that does not exist on US-keyboards:
 		 * - UK, DE (next to left shift): less than, (shift) greater than, (right Alt = AltGr) vertical bar/pipe
 		 */
-		RE_INPUT_KEY_WORLD_1 = 0x6C,
-		RE_INPUT_MAX_ENUM = 0x6D
+		RE_INPUT_KEY_WORLD_1 = 0x60,
+		RE_INPUT_MAX_ENUM = 0x61
 	};
 
 	enum TextureFilter {
@@ -246,17 +234,6 @@ namespace RE {
 		RE_SCREEN_PERCENTAGE_MODE_NORMAL,
 		RE_SCREEN_PERCENTAGE_MODE_SCALED,
 		RE_SCREEN_PERCENTAGE_MODE_CONST_SIZE
-	};
-
-	enum MsaaMode {
-		RE_MSAA_MODE_1 = 0,
-		RE_MSAA_MODE_2 = 1,
-		RE_MSAA_MODE_4 = 2,
-		RE_MSAA_MODE_8 = 3,
-		RE_MSAA_MODE_16 = 4,
-		RE_MSAA_MODE_32 = 5,
-		RE_MSAA_MODE_64 = 6,
-		RE_MSAA_MODE_DISABLED = RE_MSAA_MODE_1
 	};
 
 	enum DepthPrecission {
@@ -1435,8 +1412,6 @@ namespace RE {
 	};
 
 	// Window
-	void set_input_for_fullscreen_toggle(Input eNewInputFullscreenToggle);
-	Input get_input_for_fullscreen_toggle();
 	void set_window_title(const char *pacNewTitle);
 	[[nodiscard]]
 	const char* get_window_title();
@@ -1517,15 +1492,9 @@ namespace RE {
 	float get_deltaseconds();
 	[[nodiscard]]
 	float get_fps_rate();
-	void set_max_deltatime(float fNewMaxDeltatime);
-	[[nodiscard]]
-	float get_max_deltatime();
-	void set_fps_limit(uint32_t u32NewFpsLimit);
-	[[nodiscard]]
-	uint32_t get_fps_limit();
-	void disable_fps_limit();
-	[[nodiscard]]
-	bool is_fps_limit_enabled();
+
+	// Settings
+	void open_settings();
 
 	// Manager
 	void set_next_scene(Scene *pNextSceneParam);
@@ -1561,11 +1530,6 @@ namespace RE {
 	[[nodiscard]]
 	Camera* get_active_camera();
 	void deactivate_cameras();
-
-	// Render system
-	void enable_vsync(bool bEnableVsync);
-	[[nodiscard]]
-	bool is_vsync_enabled();
 
 	// Texture
 	[[nodiscard]]
@@ -1611,14 +1575,6 @@ namespace RE {
 	void set_screen_percentage_settings(ScreenPercentageSettings newSettings);
 	[[nodiscard]]
 	ScreenPercentageSettings get_screen_percentage_settings();
-	void set_msaa_mode(MsaaMode eNewMsaaMode);
-	[[nodiscard]]
-	MsaaMode get_msaa_mode();
-	[[nodiscard]]
-	bool is_msaa_mode_supported(MsaaMode eMsaaMode);
-	void get_supported_msaa_modes(uint8_t u8ListLength, MsaaMode *paeSupportedMsaaModes, uint8_t *pu8SupportedMsaaModeCount);
-	[[nodiscard]]
-	MsaaMode get_highest_supported_msaa_mode();
 	void set_background_color(const Color &rColor);
 	void set_background_color(float f32Red, float f32Green, float f32Blue);
 	[[nodiscard]]

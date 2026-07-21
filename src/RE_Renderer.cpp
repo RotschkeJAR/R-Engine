@@ -176,6 +176,8 @@ namespace RE {
 			return;
 		}
 		present_swapchain_image();
+		goto INCREASE_INDICES_RENDERER;
+		
 	INCREASE_INDICES_RENDERER:
 		u8CurrentFrameInFlightIndex = (u8CurrentFrameInFlightIndex + 1) % RE_VK_FRAMES_IN_FLIGHT;
 		u32CurrentSwapchainSemaphoreIndex = (u32CurrentSwapchainSemaphoreIndex + 1) % u32SwapchainImageCount;

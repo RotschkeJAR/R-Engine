@@ -59,7 +59,8 @@ namespace RE {
 				if (vkCreatePipelineLayout(vk_hDevice, &vk_processingPipelineLayoutCreateInfo, nullptr, &vk_hProcessingPipelineLayout) == VK_SUCCESS) {
 					PRINT_DEBUG("Creating empty Vulkan piepline layout");
 					const VkDescriptorSetLayout vk_ahDescSetLayouts[] = {
-						vk_hCharacterDescSetLayout
+						vk_hCharacterDescSetLayout,
+						vk_hTextDescSetLayout
 					};
 					const VkPipelineLayoutCreateInfo vk_emptyPipelineLayoutCreateInfo = {
 						.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
@@ -71,7 +72,7 @@ namespace RE {
 						.pPushConstantRanges = nullptr
 					};
 					if (vkCreatePipelineLayout(vk_hDevice, &vk_emptyPipelineLayoutCreateInfo, nullptr, &vk_hTextPipelineLayout) == VK_SUCCESS) {
-#ifdef RE_OS_LINUX
+					#ifdef RE_OS_LINUX
 						PRINT_DEBUG("Creating Vulkan pipeline layout dedicated for compute pipelines processing game objects");
 						const VkDescriptorSetLayout vk_ahDescSetLayouts[] = {
 							vk_hWindowFrameDescSetLayout,
@@ -97,9 +98,9 @@ namespace RE {
 							return true;
 						else
 							RE_FATAL_ERROR("Failed to create Vulkan pipeline layout dedicated for compute pipelines processing game objects");
-#else
+					#else
 						return true;
-#endif
+					#endif
 						PRINT_DEBUG("Destroying empty Vulkan pipeline layout for failing to create all");
 						vkDestroyPipelineLayout(vk_hDevice, vk_hTextPipelineLayout, nullptr);
 					} else

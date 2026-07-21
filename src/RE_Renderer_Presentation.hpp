@@ -12,7 +12,6 @@ namespace RE {
 	extern std::unique_ptr<VkSemaphore[]> swapchainSemaphores;
 	extern uint32_t u32CurrentSwapchainSemaphoreIndex,
 		u32CurrentSwapchainImageIndex;
-	extern bool bVsyncEnabled;
 
 	bool setup_presentation();
 	void destroy_presentation();

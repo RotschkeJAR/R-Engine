@@ -7,8 +7,10 @@ layout (location = 0) out vec4 color;
 
 layout (set = 0, binding = 0) uniform sampler2DArray charTextures;
 
+layout (set = 1, binding = 0) uniform vec4 textColor;
+
 void main() {
-	color = texture(charTextures, vec3(uv, float(charIndex)));
+	color = texture(charTextures, vec3(uv, float(charIndex))) * textColor;
 	if (color.w < 1.0)
 		discard;
 }

@@ -37,9 +37,6 @@ namespace RE {
 	// Textures
 	extern VkDescriptorSet vk_hTextureDescSet;
 
-	// MSAA
-	extern VkSampleCountFlagBits vk_eMsaaCount;
-
 #ifdef RE_OS_LINUX
 	extern WindowFrameUniformData *pWindowFrameUniformData;
 	extern VkDrawIndirectCommand *pIndirectDrawWindowTitle;

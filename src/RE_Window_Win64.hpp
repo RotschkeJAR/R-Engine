@@ -1,7 +1,7 @@
 #ifndef __RE_WINDOW_WIN64_H__
 #define __RE_WINDOW_WIN64_H__
 
-#include "RE_Internal.hpp"
+#include "RE_Window_Internal.hpp"
 
 #ifdef RE_OS_WINDOWS
 
@@ -24,6 +24,7 @@ namespace RE {
 	void win64_destroy_window();
 	void win64_show_window();
 	void win64_update_window_title();
+	void win64_update_fullscreen();
 	void win64_window_proc();
 
 }

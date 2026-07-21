@@ -1,7 +1,7 @@
-#include "RE_Window.hpp"
 #include "RE_Window_Wayland.hpp"
 #include "RE_Renderer.hpp"
 #include "RE_Asset.hpp"
+#include "RE_Settings.hpp"
 
 #ifdef RE_OS_LINUX
 
@@ -576,29 +576,58 @@ namespace RE {
 
 	static void wayland_keyboard_key_callback(void *pData, wl_keyboard *wl_pKeyboard, uint32_t u32Serial, uint32_t u32Time, uint32_t u32Key, uint32_t u32State) {
 		const xkb_keysym_t xkb_keySym = xkb_state_key_get_one_sym(waylandKeyboard.xkb_pState, u32Key + KEYCODE_TO_XKB_OFFSET);
-		switch (xkb_keySym) {
-			case XKB_KEY_Super_L:
-			case XKB_KEY_Super_R:
-				return;
-			case XKB_KEY_F11:
-				if (u32State == WL_KEYBOARD_KEY_STATE_PRESSED) {
-					const bool bFullscreen = !(mWindowFlagBits & WINDOW_FLAG_FULLSCREEN_BIT);
-					set_bitmasks(mWindowFlagBits, bFullscreen, static_cast<WindowFlags>(WINDOW_FLAG_FULLSCREEN_BIT));
-					if (bFullscreen) {
-						PRINT_DEBUG("Enabling fullscreen on Wayland window");
-						xdg_toplevel_set_max_size(xdg_pToplevel, std::numeric_limits<int32_t>::max(), std::numeric_limits<int32_t>::max());
-						xdg_toplevel_set_fullscreen(xdg_pToplevel, wl_pCurrentOutput);
-					} else {
-						PRINT_DEBUG("Disabling fullscreen on Wayland window");
-						xdg_toplevel_unset_fullscreen(xdg_pToplevel);
-						xdg_toplevel_set_max_size(xdg_pToplevel, largestMonitorSize[0] + MAX_WINDOW_WIDTH_RELATIVE_TO_MONITOR, largestMonitorSize[1] + MAX_WINDOW_HEIGHT_RELATIVE_TO_MONITOR);
-					}
+		if (xkb_keySym == XKB_KEY_Super_L || xkb_keySym == XKB_KEY_Super_R)
+			return;
+		if ((mSettingsFlags & SETTINGS_FLAG_MENU_OPEN_BIT)) {
+			settings_handle_keyboard_input(xkb_keySym);
+		} else {
+			const bool bKeyPressed = u32State == WL_KEYBOARD_KEY_STATE_PRESSED;
+			if ((mSettingsFlags & SETTINGS_FLAG_MENU_OPEN_BIT)) {
+				settings_handle_keyboard_input(xkb_keySym);
+			} else {
+				switch (xkb_keySym) {
+					case XKB_KEY_F1:
+						shortcut_settings_f1(bKeyPressed);
+						break;
+					case XKB_KEY_F2:
+						shortcut_settings_f2(bKeyPressed);
+						break;
+					case XKB_KEY_F3:
+						shortcut_settings_f3(bKeyPressed);
+						break;
+					case XKB_KEY_F4:
+						shortcut_settings_f4(bKeyPressed);
+						break;
+					case XKB_KEY_F5:
+						shortcut_settings_f5(bKeyPressed);
+						break;
+					case XKB_KEY_F6:
+						shortcut_settings_f6(bKeyPressed);
+						break;
+					case XKB_KEY_F7:
+						shortcut_settings_f7(bKeyPressed);
+						break;
+					case XKB_KEY_F8:
+						shortcut_settings_f8(bKeyPressed);
+						break;
+					case XKB_KEY_F9:
+						shortcut_settings_f9(bKeyPressed);
+						break;
+					case XKB_KEY_F10:
+						shortcut_settings_f10(bKeyPressed);
+						break;
+					case XKB_KEY_F11:
+						shortcut_settings_f11(bKeyPressed);
+						break;
+					case XKB_KEY_F12:
+						shortcut_settings_f12(bKeyPressed);
+						break;
+					default:
+						break;
 				}
-				[[fallthrough]];
-			default:
-				PRINT_DEBUG("Firing input event with key symbol ", xkb_keySym, " and scancode ", u32Key);
-				input_event(key_from_virtual_xkb_keysym(xkb_keySym), u32Key, u32State == WL_KEYBOARD_KEY_STATE_PRESSED, false);
-				break;
+			}
+			PRINT_DEBUG("Firing input event with key symbol ", xkb_keySym, " and scancode ", u32Key);
+			input_event(key_from_virtual_xkb_keysym(xkb_keySym), u32Key, bKeyPressed, false);
 		}
 	}
 
@@ -988,10 +1017,30 @@ namespace RE {
 		}
 	}
 
+	void wayland_update_fullscreen() {
+		if ((mSettingsFlags & SETTINGS_FLAG_FULLSCREEN_BIT)) {
+			PRINT_DEBUG("Enabling fullscreen on Wayland window");
+			xdg_toplevel_set_max_size(xdg_pToplevel, std::numeric_limits<int32_t>::max(), std::numeric_limits<int32_t>::max());
+			xdg_toplevel_set_fullscreen(xdg_pToplevel, wl_pCurrentOutput);
+		} else {
+			PRINT_DEBUG("Disabling fullscreen on Wayland window");
+			xdg_toplevel_unset_fullscreen(xdg_pToplevel);
+			xdg_toplevel_set_max_size(xdg_pToplevel, largestMonitorSize[0] + MAX_WINDOW_WIDTH_RELATIVE_TO_MONITOR, largestMonitorSize[1] + MAX_WINDOW_HEIGHT_RELATIVE_TO_MONITOR);
+		}
+	}
+
 	void wayland_window_proc() {
 		PRINT_DEBUG("Calling Wayland window procedure");
 		wl_display_dispatch_pending(wl_pDisplay);
 		wl_display_flush(wl_pDisplay);
+	}
+
+	uint32_t wayland_get_actual_window_width() {
+		return actualWindowSize[0];
+	}
+	
+	uint32_t wayland_get_actual_window_height() {
+		return actualWindowSize[1];
 	}
 
 }

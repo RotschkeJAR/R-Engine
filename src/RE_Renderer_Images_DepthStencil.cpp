@@ -1,6 +1,7 @@
 #include "RE_Renderer_Images_Internal.hpp"
 #include "RE_Window.hpp"
 #include "RE_Main.hpp"
+#include "RE_Settings.hpp"
 
 namespace RE {
 	
@@ -208,7 +209,7 @@ namespace RE {
 		vk_depthStencilCreateInfo.extent.depth = 1;
 		vk_depthStencilCreateInfo.mipLevels = 1;
 		vk_depthStencilCreateInfo.arrayLayers = RE_VK_FRAMES_IN_FLIGHT;
-		vk_depthStencilCreateInfo.samples = vk_eMsaaCount;
+		vk_depthStencilCreateInfo.samples = vk_eMsaaMode;
 		vk_depthStencilCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
 		vk_depthStencilCreateInfo.usage = vk_mDepthStencilImageUsages;
 		if ((m8DepthStencilFeatures & DEPTH_STENCIL_FEATURE_TRANSIENT_ATTACHMENT_BIT))

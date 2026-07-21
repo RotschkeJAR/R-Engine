@@ -1,6 +1,7 @@
 #include "RE_Renderer_Images_Internal.hpp"
 #include "RE_Main.hpp"
 #include "RE_Window.hpp"
+#include "RE_Settings.hpp"
 
 namespace RE {
 
@@ -55,7 +56,7 @@ namespace RE {
 			return true;
 		}
 		const bool bBlittingRequired = renderImageSize[0] != vk_swapchainResolution.width || renderImageSize[1] != vk_swapchainResolution.height,
-			bResolvingRequired = vk_eMsaaCount != VK_SAMPLE_COUNT_1_BIT,
+			bResolvingRequired = vk_eMsaaMode != VK_SAMPLE_COUNT_1_BIT,
 			bSkipCreatingSinglesampledImage = !(bBlittingRequired && bResolvingRequired),
 			bSkipCreatingRenderTargetImage = bBlittingRequired || bResolvingRequired;
 		if (create_depth_stencil_image()) {

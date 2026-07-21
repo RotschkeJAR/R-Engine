@@ -1,5 +1,6 @@
 #include "RE_Renderer_Pipelines_Graphics_Internal.hpp"
 #include "RE_Vulkan_Wrappers.hpp"
+#include "RE_Settings.hpp"
 
 namespace RE {
 
@@ -70,7 +71,7 @@ namespace RE {
 		};
 		const VkPipelineMultisampleStateCreateInfo vk_multisampling = {
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
-			.rasterizationSamples = vk_eMsaaCount,
+			.rasterizationSamples = vk_eMsaaMode,
 			.sampleShadingEnable = is_sample_shading_enabled() ? VK_TRUE : VK_FALSE,
 			.minSampleShading = fSampleShadingRate,
 			.pSampleMask = nullptr,

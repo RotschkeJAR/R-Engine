@@ -1,6 +1,6 @@
-#include "RE_Window.hpp"
 #include "RE_Window_X11.hpp"
 #include "RE_Main.hpp"
+#include "RE_Settings.hpp"
 
 #include <cstring>
 
@@ -230,6 +230,31 @@ namespace RE {
 		XFlush(x11_pDisplay);
 	}
 
+	void x11_update_fullscreen() {
+		const bool bFullscreen = (mSettingsFlags & SETTINGS_FLAG_FULLSCREEN_BIT);
+		if (bFullscreen)
+			x11_pSizes->flags &= ~PMaxSize;
+		else {
+			x11_pSizes->flags |= PMaxSize;
+			x11_pSizes->max_width = largestMonitorSize[0] + MAX_WINDOW_WIDTH_RELATIVE_TO_MONITOR;
+			x11_pSizes->max_height = largestMonitorSize[1] + MAX_WINDOW_HEIGHT_RELATIVE_TO_MONITOR;
+		}
+		XSetWMNormalHints(x11_pDisplay, x11_hWindow, x11_pSizes);
+		XEvent x11_fullscreenEvent = {};
+		x11_fullscreenEvent.type = ClientMessage;
+		x11_fullscreenEvent.xclient.window = x11_hWindow;
+		x11_fullscreenEvent.xclient.send_event = True;
+		x11_fullscreenEvent.xclient.message_type = x11_ahAtoms[RE_X11_ATOM_INDEX_STATE];
+		x11_fullscreenEvent.xclient.format = 32;
+		x11_fullscreenEvent.xclient.data.l[0] = bFullscreen ? _NET_WM_STATE_ADD : _NET_WM_STATE_REMOVE;
+		x11_fullscreenEvent.xclient.data.l[1] = x11_ahAtoms[RE_X11_ATOM_INDEX_FULLSCREEN];
+		x11_fullscreenEvent.xclient.data.l[2] = 0;
+		x11_fullscreenEvent.xclient.data.l[3] = 1;
+		x11_fullscreenEvent.xclient.data.l[4] = 0;
+		XSendEvent(x11_pDisplay, XDefaultRootWindow(x11_pDisplay), False, SubstructureRedirectMask | SubstructureNotifyMask, &x11_fullscreenEvent);
+		XFlush(x11_pDisplay);
+	}
+
 	void x11_window_proc() {
 		PRINT_DEBUG("Calling X11 window procedure");
 		int32_t i32PendingEvents = XPending(x11_pDisplay);
@@ -259,38 +284,57 @@ namespace RE {
 						XKeyEvent &x11_rKeyEvent = x11_event.xkey;
 						const bool bKeyPressed = x11_rKeyEvent.type == KeyPress;
 						const KeyCode x11_scancode = x11_rKeyEvent.keycode;
-						KeySym x11_keySym = XLookupKeysym(&x11_rKeyEvent, 0);
+						const KeySym x11_keySym = XLookupKeysym(&x11_rKeyEvent, 0);
+						if ((mSettingsFlags & SETTINGS_FLAG_MENU_OPEN_BIT)) {
+							settings_handle_keyboard_input(x11_keySym);
+						} else {
+							switch (x11_keySym) {
+								case XK_F1:
+									shortcut_settings_f1(bKeyPressed);
+									break;
+								case XK_F2:
+									shortcut_settings_f2(bKeyPressed);
+									break;
+								case XK_F3:
+									shortcut_settings_f3(bKeyPressed);
+									break;
+								case XK_F4:
+									shortcut_settings_f4(bKeyPressed);
+									break;
+								case XK_F5:
+									shortcut_settings_f5(bKeyPressed);
+									break;
+								case XK_F6:
+									shortcut_settings_f6(bKeyPressed);
+									break;
+								case XK_F7:
+									shortcut_settings_f7(bKeyPressed);
+									break;
+								case XK_F8:
+									shortcut_settings_f8(bKeyPressed);
+									break;
+								case XK_F9:
+									shortcut_settings_f9(bKeyPressed);
+									break;
+								case XK_F10:
+									shortcut_settings_f10(bKeyPressed);
+									break;
+								case XK_F11:
+									shortcut_settings_f11(bKeyPressed);
+									break;
+								case XK_F12:
+									shortcut_settings_f12(bKeyPressed);
+									break;
+								default:
+									break;
+							}
+						}
 						PRINT_DEBUG("Key with scancode ", std::hex, x11_scancode, ", which translates to symbol ", x11_keySym, ", has been received and its new pressed-state is ", bKeyPressed, ". Translating to UTF-8 character");
 						char a5cString[5];
 						const uint8_t u8CharLength = Xutf8LookupString(x11_hInputContext, &x11_rKeyEvent, a5cString, sizeof(a5cString) - 1, &x11_keySym, nullptr);
 						if (bKeyPressed && u8CharLength)
 							a5cString[u8CharLength] = '\0';
 						const Input eInput = key_from_virtual_x11_keycode(static_cast<int64_t>(x11_keySym));
-						if (eInput == eInputFullscreenToggle && x11_event.type == KeyPress) {
-							const bool bFullscreen = !(mWindowFlagBits & WINDOW_FLAG_FULLSCREEN_BIT);
-							set_bitmasks(mWindowFlagBits, bFullscreen, static_cast<WindowFlags>(WINDOW_FLAG_FULLSCREEN_BIT));
-							if (bFullscreen)
-								x11_pSizes->flags &= ~PMaxSize;
-							else {
-								x11_pSizes->flags |= PMaxSize;
-								x11_pSizes->max_width = largestMonitorSize[0] + MAX_WINDOW_WIDTH_RELATIVE_TO_MONITOR;
-								x11_pSizes->max_height = largestMonitorSize[1] + MAX_WINDOW_HEIGHT_RELATIVE_TO_MONITOR;
-							}
-							XSetWMNormalHints(x11_pDisplay, x11_hWindow, x11_pSizes);
-							XEvent x11_fullscreenEvent = {};
-							x11_fullscreenEvent.type = ClientMessage;
-							x11_fullscreenEvent.xclient.window = x11_hWindow;
-							x11_fullscreenEvent.xclient.send_event = True;
-							x11_fullscreenEvent.xclient.message_type = x11_ahAtoms[RE_X11_ATOM_INDEX_STATE];
-							x11_fullscreenEvent.xclient.format = 32;
-							x11_fullscreenEvent.xclient.data.l[0] = bFullscreen ? _NET_WM_STATE_ADD : _NET_WM_STATE_REMOVE;
-							x11_fullscreenEvent.xclient.data.l[1] = x11_ahAtoms[RE_X11_ATOM_INDEX_FULLSCREEN];
-							x11_fullscreenEvent.xclient.data.l[2] = 0;
-							x11_fullscreenEvent.xclient.data.l[3] = 1;
-							x11_fullscreenEvent.xclient.data.l[4] = 0;
-							XSendEvent(x11_pDisplay, XDefaultRootWindow(x11_pDisplay), False, SubstructureRedirectMask | SubstructureNotifyMask, &x11_fullscreenEvent);
-							XFlush(x11_pDisplay);
-						}
 						PRINT_DEBUG("Firing general input event");
 						input_event(eInput, static_cast<uint32_t>(x11_scancode), bKeyPressed, false);
 					}
@@ -366,9 +410,6 @@ namespace RE {
 					break;
 			}
 		}
-
-		XWindowAttributes x11_windowAttribs;
-		XGetWindowAttributes(x11_pDisplay, x11_hWindow, &x11_windowAttribs);
 	}
 
 }

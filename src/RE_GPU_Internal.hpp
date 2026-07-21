@@ -40,7 +40,8 @@ namespace RE {
 	extern std::unique_ptr<VkDeviceSize[]> occupiedSpacePerVulkanHeap;
 	extern std::unique_ptr<VkMemoryType[]> vulkanMemoryTypes;
 	extern uint32_t u32VulkanMemoryAllocCount;
-	extern uint8_t u8MemoryHeapCount, u8MemoryTypeCount;
+	extern uint8_t u8MemoryHeapCount,
+		u8MemoryTypeCount;
 	void alloc_gpu_memory_info();
 	void free_gpu_memory_info();
 

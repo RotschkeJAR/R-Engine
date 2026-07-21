@@ -9,10 +9,31 @@ namespace RE {
 		Vulkan_Shader vertexShader("shaders/Vertex_Text.glsl.spv"),
 			fragmentShader("shaders/Fragment_Text.glsl.spv");
 		if (!vertexShader.valid() || !fragmentShader.valid()) {
-			RE_FATAL_ERROR("");
+			RE_FATAL_ERROR("Failed opening the shaders for text rendering");
 			return false;
 		}
 		PRINT_DEBUG("Creating Vulkan graphics pipeline rendering text");
+		const uint32_t au32SpecializationVariables[] = {
+			0x20, /* first renderable character in Unicode */
+			CHAR_TEXTURE_COUNT
+		};
+		const VkSpecializationMapEntry vk_aSpecializations[] = {
+			{
+				.constantID = 0,
+				.offset = 0,
+				.size = sizeof(uint32_t)
+			}, {
+				.constantID = 1,
+				.offset = sizeof(uint32_t),
+				.size = sizeof(uint32_t)
+			}
+		};
+		const VkSpecializationInfo vk_shaderSpecialization = {
+			.mapEntryCount = sizeof(vk_aSpecializations) / sizeof(vk_aSpecializations[0]),
+			.pMapEntries = vk_aSpecializations,
+			.dataSize = sizeof(au32SpecializationVariables),
+			.pData = au32SpecializationVariables
+		};
 		const VkPipelineShaderStageCreateInfo vk_aShaderStages[] = {
 			{
 				.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
@@ -21,7 +42,7 @@ namespace RE {
 				.stage = VK_SHADER_STAGE_VERTEX_BIT,
 				.module = vertexShader(),
 				.pName = "main",
-				.pSpecializationInfo = nullptr
+				.pSpecializationInfo = &vk_shaderSpecialization
 			}, {
 				.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
 				.pNext = nullptr,

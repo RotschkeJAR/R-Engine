@@ -8,6 +8,8 @@
 
 namespace RE {
 
+#define PREFERRED_GPU_MEMORY_ALIGNMENT   16
+
 	// Surface
 	extern VkSurfaceKHR vk_hSurface;
 	extern VkSurfaceCapabilitiesKHR vk_surfaceCapabilities;
@@ -29,10 +31,10 @@ namespace RE {
 	extern std::unique_ptr<PhysicalVulkanDeviceInfo[]> physicalDevicesAvailable;
 	extern uint32_t u32PhysicalDevicesAvailableCount, u32IndexToSelectedPhysicalDevice;
 	void select_physical_vulkan_device(uint32_t u32PhysicalDeviceIndex);
-#define SELECTED_PHYSICAL_VULKAN_DEVICE physicalDevicesAvailable[u32IndexToSelectedPhysicalDevice].vk_hPhysicalDevice
-#define SELECTED_PHYSICAL_VULKAN_DEVICE_NAME physicalDevicesAvailable[u32IndexToSelectedPhysicalDevice].pacName
-#define SELECTED_PHYSICAL_VULKAN_DEVICE_TYPE physicalDevicesAvailable[u32IndexToSelectedPhysicalDevice].vk_eType
-#define SELECTED_PHYSICAL_VULKAN_DEVICE_SCORING physicalDevicesAvailable[u32IndexToSelectedPhysicalDevice].i32Scoring
+#define SELECTED_PHYSICAL_VULKAN_DEVICE           physicalDevicesAvailable[u32IndexToSelectedPhysicalDevice].vk_hPhysicalDevice
+#define SELECTED_PHYSICAL_VULKAN_DEVICE_NAME      physicalDevicesAvailable[u32IndexToSelectedPhysicalDevice].pacName
+#define SELECTED_PHYSICAL_VULKAN_DEVICE_TYPE      physicalDevicesAvailable[u32IndexToSelectedPhysicalDevice].vk_eType
+#define SELECTED_PHYSICAL_VULKAN_DEVICE_SCORING   physicalDevicesAvailable[u32IndexToSelectedPhysicalDevice].i32Scoring
 
 	// Scheduler
 #define RE_VK_LOGICAL_QUEUE_IGNORED std::numeric_limits<uint8_t>::max()
@@ -127,7 +129,8 @@ namespace RE {
 			VkDeviceMemory vk_hMemory;
 			VkDeviceSize vk_size;
 			uint8_t u8MemoryType;
-			bool bCoherent, bMapped;
+			bool bCoherent,
+				bMapped;
 
 		public:
 			VulkanMemory();
@@ -139,8 +142,8 @@ namespace RE {
 			
 			VkResult alloc(VkDeviceSize vk_size, VkMemoryPropertyFlags vk_mProperties, uint32_t m32DesiredMemoryTypes);
 			VkResult alloc(VkDeviceSize vk_size, uint8_t u8MemoryTypeIndex);
-			VkResult alloc_for_buffer(VkBuffer vk_hBuffer, const VkMemoryPropertyFlags vk_mProperties);
-			VkResult alloc_for_image(VkImage vk_hImage, const VkMemoryPropertyFlags vk_mProperties);
+			VkResult alloc_for_buffer(VkBuffer vk_hBuffer, VkMemoryPropertyFlags vk_mProperties);
+			VkResult alloc_for_image(VkImage vk_hImage, VkMemoryPropertyFlags vk_mProperties);
 			void free();
 			bool map(VkMemoryMapFlags vk_eFlags, VkDeviceSize vk_offset, VkDeviceSize vk_size, void **ppData);
 			void unmap();

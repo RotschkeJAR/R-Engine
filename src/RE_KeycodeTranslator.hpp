@@ -112,8 +112,6 @@ namespace RE {
 						return VK_A + (win64_keyId - static_cast<WORD>(RE_INPUT_KEY_A));
 					if (win64_keyId >= static_cast<WORD>(RE_INPUT_KEY_TOP_0) && win64_keyId <= static_cast<WORD>(RE_INPUT_KEY_TOP_9))
 						return VK_0 + (win64_keyId - static_cast<WORD>(RE_INPUT_KEY_TOP_0));
-					if (win64_keyId >= static_cast<WORD>(RE_INPUT_KEY_F1) && win64_keyId <= static_cast<WORD>(RE_INPUT_KEY_F12))
-						return VK_F1 + (win64_keyId - static_cast<WORD>(RE_INPUT_KEY_F1));
 					if (win64_keyId >= static_cast<WORD>(RE_INPUT_KEY_NUMPAD_0) && win64_keyId <= static_cast<WORD>(RE_INPUT_KEY_NUMPAD_9))
 						return VK_NUMPAD0 + (win64_keyId - static_cast<WORD>(RE_INPUT_KEY_NUMPAD_0));
 				}
@@ -229,14 +227,11 @@ namespace RE {
 			default:
 				if (win_virtualKeyCode >= VK_A && win_virtualKeyCode <= VK_Z)
 					return static_cast<Input>(win_virtualKeyCode - VK_A + static_cast<WORD>(RE_INPUT_KEY_A));
-				else if (win_virtualKeyCode >= VK_0 && win_virtualKeyCode <= VK_9)
+				if (win_virtualKeyCode >= VK_0 && win_virtualKeyCode <= VK_9)
 					return static_cast<Input>(win_virtualKeyCode - VK_0 + static_cast<WORD>(RE_INPUT_KEY_TOP_0));
-				else if (win_virtualKeyCode >= VK_F1 && win_virtualKeyCode <= VK_F24)
-					return static_cast<Input>(win_virtualKeyCode - VK_F1 + static_cast<WORD>(RE_INPUT_KEY_F1));
-				else if (win_virtualKeyCode >= VK_NUMPAD0 && win_virtualKeyCode <= VK_NUMPAD9)
+				if (win_virtualKeyCode >= VK_NUMPAD0 && win_virtualKeyCode <= VK_NUMPAD9)
 					return static_cast<Input>(win_virtualKeyCode - VK_NUMPAD0 + static_cast<WORD>(RE_INPUT_KEY_NUMPAD_0));
-				else
-					return RE_INPUT_UNKNOWN;
+				return RE_INPUT_UNKNOWN;
 		}
 	}
 
@@ -341,11 +336,10 @@ namespace RE {
 						return XK_a + (x11_keyId - static_cast<KeySym>(RE_INPUT_KEY_A));
 					if (x11_keyId >= static_cast<KeySym>(RE_INPUT_KEY_TOP_0) && x11_keyId <= static_cast<KeySym>(RE_INPUT_KEY_TOP_9))
 						return XK_0 + (x11_keyId - static_cast<KeySym>(RE_INPUT_KEY_TOP_0));
-					if (x11_keyId >= static_cast<KeySym>(RE_INPUT_KEY_F1) && x11_keyId <= static_cast<KeySym>(RE_INPUT_KEY_F12))
-						return XK_F1 + (x11_keyId - static_cast<KeySym>(RE_INPUT_KEY_F1));
 					if (x11_keyId >= static_cast<KeySym>(RE_INPUT_KEY_NUMPAD_0) && x11_keyId <= static_cast<KeySym>(RE_INPUT_KEY_NUMPAD_9))
 						return XK_KP_0 + (x11_keyId - static_cast<KeySym>(RE_INPUT_KEY_NUMPAD_0));
 				}
+				[[fallthrough]];
 			case RE_INPUT_UNKNOWN:
 			case RE_INPUT_NONE:
 			case RE_INPUT_SCROLL_UP:
@@ -502,14 +496,11 @@ namespace RE {
 			default:
 				if (x11_virtualKeyCode >= XK_a && x11_virtualKeyCode <= XK_z)
 					return static_cast<Input>(x11_virtualKeyCode - XK_a + static_cast<KeySym>(RE_INPUT_KEY_A));
-				else if (x11_virtualKeyCode >= XK_A && x11_virtualKeyCode <= XK_Z)
+				if (x11_virtualKeyCode >= XK_A && x11_virtualKeyCode <= XK_Z)
 					return static_cast<Input>(x11_virtualKeyCode - XK_A + static_cast<KeySym>(RE_INPUT_KEY_A));
-				else if (x11_virtualKeyCode >= XK_0 && x11_virtualKeyCode <= XK_9)
+				if (x11_virtualKeyCode >= XK_0 && x11_virtualKeyCode <= XK_9)
 					return static_cast<Input>(x11_virtualKeyCode - XK_0 + static_cast<KeySym>(RE_INPUT_KEY_TOP_0));
-				else if (x11_virtualKeyCode >= XK_F1 && x11_virtualKeyCode <= XK_F25)
-					return static_cast<Input>(x11_virtualKeyCode - XK_F1 + static_cast<KeySym>(RE_INPUT_KEY_F1));
-				else
-					return RE_INPUT_UNKNOWN;
+				return RE_INPUT_UNKNOWN;
 		}
 	}
 
@@ -612,8 +603,6 @@ namespace RE {
 						return XKB_KEY_a + (xkb_keyId - static_cast<xkb_keysym_t>(RE_INPUT_KEY_A));
 					if (xkb_keyId >= static_cast<xkb_keysym_t>(RE_INPUT_KEY_TOP_0) && xkb_keyId <= static_cast<xkb_keysym_t>(RE_INPUT_KEY_TOP_9))
 						return XKB_KEY_0 + (xkb_keyId - static_cast<xkb_keysym_t>(RE_INPUT_KEY_TOP_0));
-					if (xkb_keyId >= static_cast<xkb_keysym_t>(RE_INPUT_KEY_F1) && xkb_keyId <= static_cast<xkb_keysym_t>(RE_INPUT_KEY_F12))
-						return XKB_KEY_F1 + (xkb_keyId - static_cast<xkb_keysym_t>(RE_INPUT_KEY_F1));
 					if (xkb_keyId >= static_cast<xkb_keysym_t>(RE_INPUT_KEY_NUMPAD_0) && xkb_keyId <= static_cast<xkb_keysym_t>(RE_INPUT_KEY_NUMPAD_9))
 						return XKB_KEY_KP_0 + (xkb_keyId - static_cast<xkb_keysym_t>(RE_INPUT_KEY_NUMPAD_0));
 				}
@@ -779,14 +768,11 @@ namespace RE {
 			default:
 				if (xkb_keySym >= XKB_KEY_a && xkb_keySym <= XKB_KEY_z)
 					return static_cast<Input>(xkb_keySym - XKB_KEY_a + static_cast<xkb_keysym_t>(RE_INPUT_KEY_A));
-				else if (xkb_keySym >= XKB_KEY_A && xkb_keySym <= XKB_KEY_Z)
+				if (xkb_keySym >= XKB_KEY_A && xkb_keySym <= XKB_KEY_Z)
 					return static_cast<Input>(xkb_keySym - XKB_KEY_A + static_cast<xkb_keysym_t>(RE_INPUT_KEY_A));
-				else if (xkb_keySym >= XKB_KEY_0 && xkb_keySym <= XKB_KEY_9)
+				if (xkb_keySym >= XKB_KEY_0 && xkb_keySym <= XKB_KEY_9)
 					return static_cast<Input>(xkb_keySym - XKB_KEY_0 + static_cast<xkb_keysym_t>(RE_INPUT_KEY_TOP_0));
-				else if (xkb_keySym >= XKB_KEY_F1 && xkb_keySym <= XKB_KEY_F12)
-					return static_cast<Input>(xkb_keySym - XKB_KEY_F1 + static_cast<xkb_keysym_t>(RE_INPUT_KEY_F1));
-				else
-					return RE_INPUT_UNKNOWN;
+				return RE_INPUT_UNKNOWN;
 		}
 	}
 	

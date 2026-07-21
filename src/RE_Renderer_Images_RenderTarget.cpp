@@ -1,4 +1,5 @@
 #include "RE_Renderer_Images_Internal.hpp"
+#include "RE_Settings.hpp"
 
 namespace RE {
 	
@@ -23,7 +24,7 @@ namespace RE {
 				},
 				1,
 				RE_VK_FRAMES_IN_FLIGHT,
-				vk_eMsaaCount,
+				vk_eMsaaMode,
 				VK_IMAGE_TILING_OPTIMAL,
 				vk_mRenderTargetImageUsages,
 				occupiedQueuesInfo.u8QueueCount,

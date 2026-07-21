@@ -8,7 +8,6 @@ namespace RE {
 	uint32_t u32IndexToSelectedSurfaceFormat,
 		u32CurrentSwapchainSemaphoreIndex = 0,
 		u32CurrentSwapchainImageIndex;
-	bool bVsyncEnabled = true;
 
 	bool setup_presentation() {
 		PRINT_DEBUG("Creating ", RE_VK_SWAPCHAIN_SEMAPHORE_COUNT, " Vulkan swapchain semaphores");
@@ -82,16 +81,6 @@ namespace RE {
 				RE_FATAL_ERROR("Failed to submit swapchain image at index ", u32CurrentSwapchainImageIndex, " to presentation. Return code: ", std::hex, vk_ePresentResult);
 				return false;
 		}
-	}
-
-	void enable_vsync(bool bEnableVsync) {
-		bVsyncEnabled = bEnableVsync;
-		bSwapchainDirty = bRunning;
-	}
-
-	[[nodiscard]]
-	bool is_vsync_enabled() {
-		return bVsyncEnabled;
 	}
 
 }

@@ -56,24 +56,31 @@ $(RE): $(OBJECTS) $(LIB_OBJECTS) $(LIB_SPEC_OBJECTS)
 	@ar rs "$@" $^
 
 $(BIN)/%.o: $(SRC)/%.cpp | $(BIN)
+	-@echo $<
 	@$(CXX) $(CXXFLAG) -c $< -o $@ -I $(LIB) -I $(LIB_SPEC) -I "$(HOME)/Vulkan SDK/x86_64/include"
 
 $(TEST_BIN)/%.o: $(TEST)/%.cpp | $(TEST_BIN)
+	-@echo $<
 	@$(CXX) $(CXXFLAG) -c $< -o $@ -I $(SRC)
 
 $(LIB_BIN)/%.o: $(LIB)/%.c | $(LIB_BIN)
+	-@echo $<
 	@$(CC) $(CFLAG) -c $< -o $@
 
 $(LIB_SPEC_BIN)/%.o: $(LIB_SPEC)/%.c | $(LIB_SPEC_BIN)
+	-@echo $<
 	@$(CC) $(CFLAG) -c $< -o $@
 
 $(SH)/Vertex_%.glsl.spv: $(SH_SRC)/Vertex_%.glsl
+	-@echo $<
 	@$(SC) $(SFLAG) -x glsl -fshader-stage=vertex $< -o $@
 
 $(SH)/Fragment_%.glsl.spv: $(SH_SRC)/Fragment_%.glsl
+	-@echo $<
 	@$(SC) $(SFLAG) -x glsl -fshader-stage=fragment $< -o $@
 
 $(SH)/Compute_%.glsl.spv: $(SH_SRC)/Compute_%.glsl
+	-@echo $<
 	@$(SC) $(SFLAG) -x glsl -fshader-stage=compute $< -o $@
 
 -include $(DEPENDENCIES)

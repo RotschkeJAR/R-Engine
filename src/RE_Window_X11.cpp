@@ -1,6 +1,7 @@
 #include "RE_Window_X11.hpp"
 #include "RE_Main.hpp"
 #include "RE_Settings.hpp"
+#include "RE_KeycodeTranslator.hpp"
 
 #include <cstring>
 
@@ -284,7 +285,7 @@ namespace RE {
 						XKeyEvent &x11_rKeyEvent = x11_event.xkey;
 						const bool bKeyPressed = x11_rKeyEvent.type == KeyPress;
 						const KeyCode x11_scancode = x11_rKeyEvent.keycode;
-						const KeySym x11_keySym = XLookupKeysym(&x11_rKeyEvent, 0);
+						KeySym x11_keySym = XLookupKeysym(&x11_rKeyEvent, 0);
 						if ((mSettingsFlags & SETTINGS_FLAG_MENU_OPEN_BIT)) {
 							settings_handle_keyboard_input(x11_keySym);
 						} else {
@@ -326,17 +327,14 @@ namespace RE {
 									shortcut_settings_f12(bKeyPressed);
 									break;
 								default:
+									char a5cString[5];
+									const uint8_t u8CharLength = Xutf8LookupString(x11_hInputContext, &x11_rKeyEvent, a5cString, sizeof(a5cString) - 1, &x11_keySym, nullptr);
+									if (bKeyPressed && u8CharLength)
+										a5cString[u8CharLength] = '\0';
+									input_event(key_from_virtual_x11_keycode(x11_keySym), static_cast<uint32_t>(x11_scancode), bKeyPressed, false);
 									break;
 							}
 						}
-						PRINT_DEBUG("Key with scancode ", std::hex, x11_scancode, ", which translates to symbol ", x11_keySym, ", has been received and its new pressed-state is ", bKeyPressed, ". Translating to UTF-8 character");
-						char a5cString[5];
-						const uint8_t u8CharLength = Xutf8LookupString(x11_hInputContext, &x11_rKeyEvent, a5cString, sizeof(a5cString) - 1, &x11_keySym, nullptr);
-						if (bKeyPressed && u8CharLength)
-							a5cString[u8CharLength] = '\0';
-						const Input eInput = key_from_virtual_x11_keycode(static_cast<int64_t>(x11_keySym));
-						PRINT_DEBUG("Firing general input event");
-						input_event(eInput, static_cast<uint32_t>(x11_scancode), bKeyPressed, false);
 					}
 					break;
 				case ButtonPress:
@@ -382,7 +380,7 @@ namespace RE {
 				case MapNotify: /* window showed or unminimized/restored */
 					PRINT_DEBUG("X11 window ", x11_hWindow, " has been showed or unminimized/restored");
 					mWindowFlagBits &= ~WINDOW_FLAG_MINIMIZED_BIT;
-					if ((mWindowFlagBits & WINDOW_FLAG_FULLSCREEN_BIT)) {
+					if ((mSettingsFlags & SETTINGS_FLAG_FULLSCREEN_BIT)) {
 						PRINT_DEBUG("Switching window immediatly to fullscreen");
 						x11_pSizes->flags &= ~PMaxSize;
 						XSetWMNormalHints(x11_pDisplay, x11_hWindow, x11_pSizes);
@@ -410,6 +408,14 @@ namespace RE {
 					break;
 			}
 		}
+	}
+
+	uint32_t x11_get_actual_window_width() {
+		return windowSize[0];
+	}
+
+	uint32_t x11_get_actual_window_height() {
+		return windowSize[1];
 	}
 
 }

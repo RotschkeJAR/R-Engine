@@ -2,7 +2,6 @@
 #define __RE_INPUT_H__
 
 #include "RE_Internal.hpp"
-#include "RE_KeycodeTranslator.hpp"
 
 namespace RE {
 

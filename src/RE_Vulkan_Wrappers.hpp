@@ -262,6 +262,10 @@ namespace RE {
 			VkFramebuffer operator()() const;
 	};
 
+	bool create_vulkan_command_pool(
+			VkCommandPoolCreateFlags vk_mCreateFlags,
+			uint32_t u32QueueFamilyIndex,
+			VkCommandPool *vk_phCommandPool);
 	class Vulkan_CommandPool final {
 		private:
 			VkCommandPool vk_hCommandPool;

@@ -5,7 +5,51 @@
 #include "RE_Input.hpp"
 #include "RE_GPU.hpp"
 
+#ifdef RE_OS_WINDOWS
+#	define UNICODE
+#	ifdef _MSC_VER
+#		define NOMINMAX
+#	endif
+#	define WIN32_LEAN_AND_MEAN /* speeds compilation up */
+#	define WINVER _WIN32_WINNT
+#	include <windows.h>
+#	include <shellscalingapi.h>
+#	include <windowsx.h>
+#elif defined RE_OS_LINUX
+#	include <X11/Xlib.h>
+#	include <X11/Xutil.h>
+#	include <X11/Xatom.h>
+#	include <X11/Xlocale.h>
+#	include <X11/keysym.h>
+#	include <X11/XKBlib.h>
+#	include <X11/extensions/Xrandr.h>
+#	include <X11/extensions/Xinerama.h>
+#	define _NET_WM_STATE_REMOVE 0
+#	define _NET_WM_STATE_ADD 1
+#	define _NET_WM_STATE_TOGGLE 2
+#	include <wayland-client.h>
+#	include <xdg-shell-client-protocol.h>
+#	include <xkbcommon/xkbcommon.h>
+#endif
+
 namespace RE {
+
+	enum WindowArea {
+		WINDOW_AREA_NONE = 0,
+		WINDOW_AREA_TOP_LEFT = 1,
+		WINDOW_AREA_TOP_RIGHT = 2,
+		WINDOW_AREA_BOTTOM_LEFT = 3,
+		WINDOW_AREA_BOTTOM_RIGHT = 4,
+		WINDOW_AREA_LEFT = 5,
+		WINDOW_AREA_RIGHT = 6,
+		WINDOW_AREA_TOP = 7,
+		WINDOW_AREA_BOTTOM = 8,
+		WINDOW_AREA_BAR = 9,
+		WINDOW_AREA_BUTTON_CLOSE = 10,
+		WINDOW_AREA_BUTTON_MAXIMIZE = 11,
+		WINDOW_AREA_BUTTON_MINIMIZE = 12,
+		WINDOW_AREA_CONTENT = 13
+	};
 
 #ifdef RE_OS_LINUX
 #	define WINDOW_WAYLAND_BORDER_TOTAL_SIZE     5
@@ -30,14 +74,16 @@ namespace RE {
 #endif
 
 	extern const char* pacWindowTitle;
+	extern Vector2u windowSize,
+		largestMonitorSize;
 
 	bool create_window();
 	void destroy_window();
 	void show_window(bool bShowWindow);
 	void update_fullscreen();
 	void window_proc();
-	uint32_t get_window_width();
-	uint32_t get_window_height();
+	uint32_t get_actual_window_width();
+	uint32_t get_actual_window_height();
 	bool should_window_close();
 	bool should_render();
 #ifdef RE_OS_LINUX

@@ -3,13 +3,13 @@
 
 namespace RE {
 
-#define MAXIMUM_PHYSICAL_KEYS 150
-#define FIRST_KEY_IN_INPUT RE_INPUT_KEY_SPACE
-#define SIZE_OF_INPUT_TO_KEY_BUFFER_INDEX_TABLE (RE_INPUT_MAX_ENUM - FIRST_KEY_IN_INPUT)
-#define KEY_BUFFER_OFFSET 1
-#define KEY_BUFFER_SIZE ((MAXIMUM_PHYSICAL_KEYS + KEY_BUFFER_OFFSET) / 8 + ((MAXIMUM_PHYSICAL_KEYS + KEY_BUFFER_OFFSET) % 8 > 0 ? 1 : 0))
+#define MAXIMUM_PHYSICAL_KEYS                      150
+#define FIRST_KEY_IN_INPUT                         RE_INPUT_KEY_SPACE
+#define SIZE_OF_INPUT_TO_KEY_BUFFER_INDEX_TABLE    (RE_INPUT_MAX_ENUM - FIRST_KEY_IN_INPUT)
+#define KEY_BUFFER_OFFSET                          1
+#define KEY_BUFFER_SIZE                            ((MAXIMUM_PHYSICAL_KEYS + KEY_BUFFER_OFFSET) / 8 + ((MAXIMUM_PHYSICAL_KEYS + KEY_BUFFER_OFFSET) % 8 > 0 ? 1 : 0))
 
-#define FAILURE_KEY_BUFFER_INDEX 0
+#define FAILURE_KEY_BUFFER_INDEX             0
 
 	enum AskingState {
 		ASKING_STATE_BOTH,
@@ -32,17 +32,14 @@ namespace RE {
 	static Vector2i cursorPosition,
 		prevCursorPosition;
 
-	[[nodiscard]]
 	static uint8_t mouse_input_to_uint8(const Input eInput) {
 		return static_cast<uint8_t>(eInput - RE_INPUT_SCROLL_UP);
 	}
 
-	[[nodiscard]]
 	static uint8_t key_input_to_uint8(const Input eInput) {
 		return static_cast<uint8_t>(eInput - FIRST_KEY_IN_INPUT);
 	}
 
-	[[nodiscard]]
 	static uint8_t get_key_buffer_index_for_scancode(const uint32_t u32SearchedScancode) {
 		PRINT_DEBUG("Looking for key buffer index for scancode ", std::hex, u32SearchedScancode);
 		uint8_t u8MinIndex = 0, u8MaxIndex = u8NumberOfKeys > 0 ? (u8NumberOfKeys - 1) : 0;
@@ -67,13 +64,11 @@ namespace RE {
 		return FAILURE_KEY_BUFFER_INDEX;
 	}
 
-	[[nodiscard]]
 	static uint8_t get_key_buffer_index_for_input(const Input eSearchedInput) {
 		return is_key_input(eSearchedInput) ? au8InputToKeyBufferIndexTable[key_input_to_uint8(eSearchedInput)] : FAILURE_KEY_BUFFER_INDEX;
 	}
 
 	template <AskingState eStateToCheck>
-	[[nodiscard]]
 	static bool get_state_of_user_input(const Input eInput, const uint32_t u32Scancode) {
 		switch (eInput) {
 			case RE_INPUT_SCROLL_UP:
@@ -238,57 +233,47 @@ namespace RE {
 		set_bits_in_range<uint8_t>(u8MouseBuffer, false, RE_INPUT_SCROLL_UP, RE_INPUT_SCROLL_DOWN + 1);
 	}
 
-	[[nodiscard]]
 	bool is_down(const Input eInput, const uint32_t u32Scancode) {
 		PRINT_DEBUG("Getting present state of input ", std::hex, eInput, " and scancode ", u32Scancode);
 		return get_state_of_user_input<ASKING_STATE_PRESENT>(eInput, u32Scancode);
 	}
 	
-	[[nodiscard]]
 	bool was_down(const Input eInput, const uint32_t u32Scancode) {
 		PRINT_DEBUG("Getting past state of input ", std::hex, eInput, " and scancode ", u32Scancode);
 		return get_state_of_user_input<ASKING_STATE_PAST>(eInput, u32Scancode);
 	}
 
-	[[nodiscard]]
 	bool is_pressed(const Input eInput, const uint32_t u32Scancode) {
 		PRINT_DEBUG("Getting pressed state of input ", std::hex, eInput, " and scancode ", u32Scancode);
 		return get_state_of_user_input<ASKING_STATE_PRESSED>(eInput, u32Scancode);
 	}
 
-	[[nodiscard]]
 	bool is_released(const Input eInput, const uint32_t u32Scancode) {
 		PRINT_DEBUG("Getting released state of input ", std::hex, eInput, " and scancode ", u32Scancode);
 		return get_state_of_user_input<ASKING_STATE_RELEASED>(eInput, u32Scancode);
 	}
 
-	[[nodiscard]]
 	bool is_held_down(const Input eInput, const uint32_t u32Scancode) {
 		PRINT_DEBUG("Getting held state of input ", std::hex, eInput, " and scancode ", u32Scancode);
 		return get_state_of_user_input<ASKING_STATE_BOTH>(eInput, u32Scancode);
 	}
 
-	[[nodiscard]]
 	int32_t get_cursor_position_x() {
 		return cursorPosition[0];
 	}
 
-	[[nodiscard]]
 	int32_t get_cursor_position_y() {
 		return cursorPosition[1];
 	}
 
-	[[nodiscard]]
 	float get_cursor_normal_position_x() {
 		return cursorPosition[0] / static_cast<float>(windowSize[0]);
 	}
 
-	[[nodiscard]]
 	float get_cursor_normal_position_y() {
 		return cursorPosition[1] / static_cast<float>(windowSize[1]);
 	}
 
-	[[nodiscard]]
 	Input map_scancode_to_input(const uint32_t u32Scancode) {
 		if (u32Scancode) {
 			PRINT_DEBUG("Mapping key scancode ", std::hex, u32Scancode, " to input");
@@ -312,7 +297,6 @@ namespace RE {
 		return RE_INPUT_UNKNOWN;
 	}
 
-	[[nodiscard]]
 	uint32_t map_input_to_scancode(const Input eInput) {
 		if (eInput >= FIRST_KEY_IN_INPUT && eInput < RE_INPUT_MAX_ENUM) {
 			PRINT_DEBUG("Mapping input ", std::hex, eInput, " to scancode");

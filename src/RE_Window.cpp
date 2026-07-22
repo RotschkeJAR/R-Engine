@@ -1,6 +1,6 @@
 #include "RE_Window_Internal.hpp"
-#include "RE_GPU.hpp"
 #include "RE_Renderer.hpp"
+#include "RE_Settings.hpp"
 
 namespace RE {
 
@@ -107,30 +107,32 @@ namespace RE {
 	#endif
 	}
 
-	uint32_t get_window_width() {
+	uint32_t get_actual_window_width() {
 	#ifdef RE_OS_WINDOWS
-		return windowSize[0];
+		return win64_get_actual_window_width();
 	#elif defined RE_OS_LINUX
 		switch (eLinuxWindowType) {
 			case LINUX_WINDOW_TYPE_X11:
-				return windowSize[0];
+				return x11_get_actual_window_width();
 			case LINUX_WINDOW_TYPE_WAYLAND:
 				return wayland_get_actual_window_width();
 		}
 	#endif
+		return 0;
 	}
-
-	uint32_t get_window_height() {
+	
+	uint32_t get_actual_window_height() {
 	#ifdef RE_OS_WINDOWS
-		return windowSize[1];
+		return win64_get_actual_window_height();
 	#elif defined RE_OS_LINUX
 		switch (eLinuxWindowType) {
 			case LINUX_WINDOW_TYPE_X11:
-				return windowSize[1];
+				return x11_get_actual_window_height();
 			case LINUX_WINDOW_TYPE_WAYLAND:
 				return wayland_get_actual_window_height();
 		}
 	#endif
+		return 0;
 	}
 
 	bool should_window_close() {
@@ -143,7 +145,7 @@ namespace RE {
 
 #ifdef RE_OS_LINUX
 	bool should_render_window_frame_bar() {
-		return !(mWindowFlagBits & WINDOW_FLAG_FULLSCREEN_BIT);
+		return !static_cast<bool>(mSettingsFlags & SETTINGS_FLAG_FULLSCREEN_BIT);
 	}
 
 	bool should_render_window_frame_edges() {
@@ -184,6 +186,7 @@ namespace RE {
 				}
 		}
 	#endif
+		return false;
 	}
 
 	const char* get_vulkan_required_surface_extension_name() {
@@ -197,6 +200,7 @@ namespace RE {
 				return VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME;
 		}
 	#endif
+		return nullptr;
 	}
 
 	void set_window_title(const char *pacNewTitle) {

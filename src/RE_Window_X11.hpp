@@ -5,18 +5,6 @@
 
 #ifdef RE_OS_LINUX
 
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
-#include <X11/Xatom.h>
-#include <X11/Xlocale.h>
-#include <X11/keysym.h>
-#include <X11/XKBlib.h>
-#include <X11/extensions/Xrandr.h>
-#include <X11/extensions/Xinerama.h>
-#define _NET_WM_STATE_REMOVE 0
-#define _NET_WM_STATE_ADD 1
-#define _NET_WM_STATE_TOGGLE 2
-
 namespace RE {
 	
 	extern Display *x11_pDisplay;
@@ -28,6 +16,8 @@ namespace RE {
 	void x11_update_window_title();
 	void x11_update_fullscreen();
 	void x11_window_proc();
+	uint32_t x11_get_actual_window_width();
+	uint32_t x11_get_actual_window_height();
 
 }
 

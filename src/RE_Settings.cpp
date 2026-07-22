@@ -1,4 +1,5 @@
 #include "RE_Settings_Internal.hpp"
+#include "RE_Renderer.hpp"
 
 namespace RE {
 	
@@ -24,10 +25,14 @@ namespace RE {
 	}
 
 	void open_settings() {
-		mSettingsFlags |= SETTINGS_FLAG_MENU_OPEN_BIT;
+		if (init_settings_gui())
+			mSettingsFlags |= SETTINGS_FLAG_MENU_OPEN_BIT;
+		else
+			RE_ERROR("Failed to open settings GUI");
 	}
 
 	void close_settings() {
+		destroy_settings_gui();
 		mSettingsFlags &= ~SETTINGS_FLAG_MENU_OPEN_BIT;
 		reset_all_input();
 	}

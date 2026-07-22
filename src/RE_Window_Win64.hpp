@@ -5,16 +5,6 @@
 
 #ifdef RE_OS_WINDOWS
 
-# define UNICODE
-# ifdef _MSC_VER
-#  define NOMINMAX
-# endif
-# define WIN32_LEAN_AND_MEAN /* speeds compilation up */
-# define WINVER _WIN32_WINNT
-# include <windows.h>
-# include <shellscalingapi.h>
-# include <windowsx.h>
-
 namespace RE {
 	
 	extern HINSTANCE win_hInstance;
@@ -26,6 +16,8 @@ namespace RE {
 	void win64_update_window_title();
 	void win64_update_fullscreen();
 	void win64_window_proc();
+	uint32_t win64_get_actual_window_width();
+	uint32_t win64_get_actual_window_height();
 
 }
 

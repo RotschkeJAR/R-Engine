@@ -26,11 +26,14 @@ namespace RE {
 			swapchainImageViews.reset();
 		}
 		PRINT_DEBUG("Computing information for Vulkan swapchain creation");
-		if (vk_surfaceCapabilities.currentExtent.width != std::numeric_limits<uint32_t>::max() || vk_surfaceCapabilities.currentExtent.height != std::numeric_limits<uint32_t>::max() || !vk_surfaceCapabilities.currentExtent.width || !vk_surfaceCapabilities.currentExtent.height)
+		if (vk_surfaceCapabilities.currentExtent.width < std::numeric_limits<uint32_t>::max()
+				&& vk_surfaceCapabilities.currentExtent.height < std::numeric_limits<uint32_t>::max()
+				&& vk_surfaceCapabilities.currentExtent.width > 0
+				&& vk_surfaceCapabilities.currentExtent.height > 0) {
 			vk_swapchainResolution = vk_surfaceCapabilities.currentExtent;
-		else {
-			vk_swapchainResolution.width = std::clamp<uint32_t>(get_window_width(), vk_surfaceCapabilities.minImageExtent.width, vk_surfaceCapabilities.maxImageExtent.width);
-			vk_swapchainResolution.height = std::clamp<uint32_t>(get_window_height(), vk_surfaceCapabilities.minImageExtent.height, vk_surfaceCapabilities.maxImageExtent.height);
+		} else {
+			vk_swapchainResolution.width = std::clamp<uint32_t>(get_actual_window_width(), vk_surfaceCapabilities.minImageExtent.width, vk_surfaceCapabilities.maxImageExtent.width);
+			vk_swapchainResolution.height = std::clamp<uint32_t>(get_actual_window_height(), vk_surfaceCapabilities.minImageExtent.height, vk_surfaceCapabilities.maxImageExtent.height);
 		}
 		const uint32_t au32RequiredQueues[] = {
 			RENDER_TASK_SUBINDEX_RENDERING,
@@ -42,7 +45,7 @@ namespace RE {
 			.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
 			.surface = vk_hSurface,
 			.minImageCount = std::clamp<uint32_t>(
-					3,
+					RE_VK_FRAMES_IN_FLIGHT + 1,
 					vk_surfaceCapabilities.minImageCount,
 					vk_surfaceCapabilities.maxImageCount > 0 ? vk_surfaceCapabilities.maxImageCount : std::numeric_limits<uint32_t>::max()
 			),

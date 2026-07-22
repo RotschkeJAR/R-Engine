@@ -42,6 +42,10 @@ namespace RE {
 	extern VkDrawIndirectCommand *pIndirectDrawWindowTitle;
 #endif
 
+	// Settings GUI
+	bool init_settings_gui();
+	void destroy_settings_gui();
+
 }
 
 #endif /* __RE_RENDERER_H__ */

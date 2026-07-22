@@ -6,6 +6,7 @@
 namespace RE {
 	
 	bool render_procedure();
+	bool present_empty();
 
 }
 

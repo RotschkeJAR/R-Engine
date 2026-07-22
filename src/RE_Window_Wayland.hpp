@@ -5,10 +5,6 @@
 
 #ifdef RE_OS_LINUX
 
-#include <wayland-client.h>
-#include <xdg-shell-client-protocol.h>
-#include <xkbcommon/xkbcommon.h>
-
 namespace RE {
 	
 	extern wl_display *wl_pDisplay;

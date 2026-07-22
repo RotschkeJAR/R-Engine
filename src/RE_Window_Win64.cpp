@@ -1,6 +1,7 @@
 #include "RE_Window_Win64.hpp"
 #include "RE_Main.hpp"
 #include "RE_Settings.hpp"
+#include "RE_KeycodeTranslator.hpp"
 
 #ifdef RE_OS_WINDOWS
 
@@ -132,15 +133,14 @@ namespace RE {
 								shortcut_settings_f12(bKeyPressed);
 								break;
 							default:
+								input_event(
+										key_from_virtual_win64_keycode(win_virtualKeyCode),
+										static_cast<uint32_t>(win_extScancode),
+										bKeyPressed,
+										bFallbackToInput);
 								break;
 						}
 					}
-					PRINT_DEBUG("Firing general input event");
-					input_event(
-							key_from_virtual_win64_keycode(static_cast<int64_t>(win_virtualKeyCode)),
-							static_cast<uint32_t>(win_extScancode),
-							bKeyPressed,
-							bFallbackToInput);
 				}
 				return 0;
 			case WM_CHAR:
@@ -460,6 +460,14 @@ namespace RE {
 			PRINT_DEBUG("Calling procedure on window");
 			DispatchMessageW(&win_msg); /* calls window procedure */
 		} while (win_msgInQueue);
+	}
+
+	uint32_t win64_get_actual_window_width() {
+		return windowSize[0];
+	}
+	
+	uint32_t win64_get_actual_window_height() {
+		return windowSize[1];
 	}
 
 	void win64_set_hinstance(const HINSTANCE win_hNewInstance) {

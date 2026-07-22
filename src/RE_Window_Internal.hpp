@@ -22,26 +22,7 @@ namespace RE {
 		WINDOW_FLAG_MAXIMIZED_BIT = 0x8,
 		WINDOW_FLAG_CLOSE_BIT = 0x10
 	};
-
-	enum WindowArea {
-		WINDOW_AREA_NONE = 0,
-		WINDOW_AREA_TOP_LEFT = 1,
-		WINDOW_AREA_TOP_RIGHT = 2,
-		WINDOW_AREA_BOTTOM_LEFT = 3,
-		WINDOW_AREA_BOTTOM_RIGHT = 4,
-		WINDOW_AREA_LEFT = 5,
-		WINDOW_AREA_RIGHT = 6,
-		WINDOW_AREA_TOP = 7,
-		WINDOW_AREA_BOTTOM = 8,
-		WINDOW_AREA_BAR = 9,
-		WINDOW_AREA_BUTTON_CLOSE = 10,
-		WINDOW_AREA_BUTTON_MAXIMIZE = 11,
-		WINDOW_AREA_BUTTON_MINIMIZE = 12,
-		WINDOW_AREA_CONTENT = 13
-	};
 	
-	extern Vector2u windowSize,
-		largestMonitorSize;
 	extern WindowFlags mWindowFlagBits;
 
 	void window_resize_event(uint32_t u32NewWidth, uint32_t u32NewHeight);

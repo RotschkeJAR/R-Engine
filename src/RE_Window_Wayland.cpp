@@ -2,6 +2,7 @@
 #include "RE_Renderer.hpp"
 #include "RE_Asset.hpp"
 #include "RE_Settings.hpp"
+#include "RE_KeycodeTranslator.hpp"
 
 #ifdef RE_OS_LINUX
 
@@ -87,7 +88,7 @@ namespace RE {
 		iLastCursorImage;
 
 	static WindowArea get_wayland_window_area_cursor_is_in() {
-		if ((mWindowFlagBits & WINDOW_FLAG_FULLSCREEN_BIT))
+		if ((mSettingsFlags & SETTINGS_FLAG_FULLSCREEN_BIT))
 			return WINDOW_AREA_CONTENT;
 		const int iWindowBorderWidth = (mWindowFlagBits & WINDOW_FLAG_MAXIMIZED_BIT) ? 0 : WINDOW_WAYLAND_BORDER_TOTAL_SIZE;
 		if (actualCursorPosition[0] < iWindowBorderWidth) {
@@ -349,7 +350,7 @@ namespace RE {
 			}
 		}
 		set_bitmasks(mWindowFlagBits, bMaximized, static_cast<WindowFlags>(WINDOW_FLAG_MAXIMIZED_BIT));
-		set_bitmasks(mWindowFlagBits, bFullscreen, static_cast<WindowFlags>(WINDOW_FLAG_FULLSCREEN_BIT));
+		set_bitmasks(mSettingsFlags, bFullscreen, static_cast<SettingsFlags_t>(SETTINGS_FLAG_FULLSCREEN_BIT));
 	}
 
 	static void xdg_toplevel_close_callback(void *pData, xdg_toplevel *xdg_pToplevel) {
@@ -623,11 +624,10 @@ namespace RE {
 						shortcut_settings_f12(bKeyPressed);
 						break;
 					default:
+						input_event(key_from_virtual_xkb_keysym(xkb_keySym), u32Key, bKeyPressed, false);
 						break;
 				}
 			}
-			PRINT_DEBUG("Firing input event with key symbol ", xkb_keySym, " and scancode ", u32Key);
-			input_event(key_from_virtual_xkb_keysym(xkb_keySym), u32Key, bKeyPressed, false);
 		}
 	}
 
@@ -814,7 +814,7 @@ namespace RE {
 								PRINT_DEBUG("Adding listener to the XDG toplevel ", xdg_pToplevel);
 								if (xdg_toplevel_add_listener(xdg_pToplevel, &xdg_toplevelListener, nullptr) == 0) {
 									xdg_toplevel_set_min_size(xdg_pToplevel, MIN_WINDOW_WIDTH + WINDOW_WAYLAND_EXTRA_WIDTH, MIN_WINDOW_HEIGHT + WINDOW_WAYLAND_EXTRA_HEIGHT);
-									if (!(mWindowFlagBits & WINDOW_FLAG_FULLSCREEN_BIT))
+									if (!(mSettingsFlags & SETTINGS_FLAG_FULLSCREEN_BIT))
 										xdg_toplevel_set_max_size(xdg_pToplevel, largestMonitorSize[0] + MAX_WINDOW_WIDTH_RELATIVE_TO_MONITOR, largestMonitorSize[1] + MAX_WINDOW_HEIGHT_RELATIVE_TO_MONITOR);
 									else
 										xdg_toplevel_set_fullscreen(xdg_pToplevel, waylandMonitors[0].wlOutput.waylandObject);

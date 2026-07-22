@@ -15,7 +15,8 @@ namespace RE {
 	extern VkSurfaceCapabilitiesKHR vk_surfaceCapabilities;
 	extern std::unique_ptr<VkSurfaceFormatKHR[]> surfaceFormatsAvailable;
 	extern VkCompositeAlphaFlagBitsKHR vk_eCompositeAlphaSelected;
-	extern uint32_t u32SurfaceFormatsAvailableCount, u32IndexToSelectedSurfaceFormat;
+	extern uint32_t u32SurfaceFormatsAvailableCount,
+		u32IndexToSelectedSurfaceFormat;
 	extern VkPresentModeKHR vk_ePresentNoVsync,
 		vk_ePresentVsync;
 	bool init_logical_gpu();
@@ -29,7 +30,8 @@ namespace RE {
 		int32_t i32Scoring;
 	};
 	extern std::unique_ptr<PhysicalVulkanDeviceInfo[]> physicalDevicesAvailable;
-	extern uint32_t u32PhysicalDevicesAvailableCount, u32IndexToSelectedPhysicalDevice;
+	extern uint32_t u32PhysicalDevicesAvailableCount,
+		u32IndexToSelectedPhysicalDevice;
 	void select_physical_vulkan_device(uint32_t u32PhysicalDeviceIndex);
 #define SELECTED_PHYSICAL_VULKAN_DEVICE           physicalDevicesAvailable[u32IndexToSelectedPhysicalDevice].vk_hPhysicalDevice
 #define SELECTED_PHYSICAL_VULKAN_DEVICE_NAME      physicalDevicesAvailable[u32IndexToSelectedPhysicalDevice].pacName
@@ -97,7 +99,7 @@ namespace RE {
 			void destroy();
 			bool record(uint32_t u32FunctionIndex, VkCommandBufferUsageFlags vk_eUsageFlags, std::function<void (VkCommandBuffer vk_hCommandBuffer, uint8_t u8PreviousLogicalQueue, uint8_t u8CurrentLogicalQueue, uint8_t u8NextLogicalQueue)> recorderFunction) const;
 			bool submit(uint32_t u32SemaphoresToWaitForCount, const VkSemaphoreSubmitInfo *vk_paSemaphoresToWaitFor, const VkPipelineStageFlags2 *vk_paeInternSemaphoreWaits, uint32_t u32SemaphoresToSignal, const VkSemaphoreSubmitInfo *vk_paSemaphoresToSignal, VkFence vk_hFenceToSignal) const;
-			void reset_all(VkCommandPoolResetFlags vk_eResetFlags) const;
+			void reset_all(VkCommandPoolResetFlags vk_eResetFlags = 0) const;
 			VkCommandPool command_pool_of_function(uint32_t u32FunctionIndex) const;
 			uint32_t function_count() const;
 			uint8_t logical_queue_index_for_function(uint32_t u32FunctionIndex) const;

@@ -63,12 +63,11 @@ namespace RE {
 						while (!should_window_close() && bRunning && are_scenes_present() && !bErrorOccured) {
 							const std::chrono::steady_clock::time_point std_workStart = std::chrono::steady_clock::now();
 							window_proc();
-							if ((mSettingsFlags & SETTINGS_FLAG_MENU_OPEN_BIT)) {
+							if ((mSettingsFlags & SETTINGS_FLAG_MENU_OPEN_BIT))
 								settings_update();
-							} else {
+							else
 								game_logic_update();
-								render();
-							}
+							render();
 
 							PRINT_DEBUG("Calculating deltatime for next frame");
 							if (fMinDeltatime > 0.0f) {

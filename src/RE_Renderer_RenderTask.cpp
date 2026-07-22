@@ -1,15 +1,32 @@
 #include "RE_Renderer_RenderTask.hpp"
+#include "RE_GPU.hpp"
 
 namespace RE {
 	
 	VulkanTask aRenderTasks[RE_VK_FRAMES_IN_FLIGHT];
 	VkFence vk_ahRenderFences[RE_VK_FRAMES_IN_FLIGHT];
+#ifdef RE_OS_LINUX
+	VkCommandPool vk_hCommandPoolEmptyPresent;
+	VkCommandBuffer vk_hCommandBufferEmptyPresent;
+	VkFence vk_hEmptyPresentFence;
+#endif
 
 	bool create_render_tasks() {
 		PRINT_DEBUG("Initializing first render task");
-		constexpr VkQueueFlagBits vk_aeQueuesUsedForRendering[] = {VK_QUEUE_TRANSFER_BIT, VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT, VK_QUEUE_TRANSFER_BIT};
-		constexpr bool bIndividualResets = true, bTransient = false;
-		if (aRenderTasks[0].init(sizeof(vk_aeQueuesUsedForRendering) / sizeof(vk_aeQueuesUsedForRendering[0]), vk_aeQueuesUsedForRendering, bIndividualResets, true, bTransient)) {
+		constexpr VkQueueFlagBits vk_aeQueuesUsedForRendering[] = {
+			VK_QUEUE_TRANSFER_BIT,
+			VK_QUEUE_COMPUTE_BIT,
+			VK_QUEUE_GRAPHICS_BIT,
+			VK_QUEUE_TRANSFER_BIT
+		};
+		constexpr bool bIndividualResets = true,
+			bTransient = false;
+		if (aRenderTasks[0].init(
+				sizeof(vk_aeQueuesUsedForRendering) / sizeof(vk_aeQueuesUsedForRendering[0]),
+				vk_aeQueuesUsedForRendering,
+				bIndividualResets,
+				true,
+				bTransient)) {
 			size_t renderTaskCreateIndex = 1;
 			while (renderTaskCreateIndex < RE_VK_FRAMES_IN_FLIGHT) {
 				PRINT_DEBUG("Initializing render task at index ", renderTaskCreateIndex, " by using the first render task's precomputed data");
@@ -30,9 +47,31 @@ namespace RE {
 					}
 					break;
 				}
-				if (syncObjCreateIndex == RE_VK_FRAMES_IN_FLIGHT)
+				if (syncObjCreateIndex == RE_VK_FRAMES_IN_FLIGHT) {
+				#ifdef RE_OS_LINUX
+					PRINT_DEBUG("Creating Vulkan command pool for empty presentations");
+					if (create_vulkan_command_pool(
+							0,
+							queueFamilyIndices[aRenderTasks[0].logical_queue_index_for_function(RENDER_TASK_SUBINDEX_IMAGE_BLIT)],
+							&vk_hCommandPoolEmptyPresent)) {
+						PRINT_DEBUG("Allocating Vulkan command buffer from pool ", vk_hCommandPoolEmptyPresent, " for empty presentations");
+						if (alloc_vulkan_command_buffers(
+								vk_hCommandPoolEmptyPresent,
+								VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+								1,
+								&vk_hCommandBufferEmptyPresent)) {
+							PRINT_DEBUG("Creating Vulkan fence to synchronize empty presentations");
+							if (create_vulkan_fence(VK_FENCE_CREATE_SIGNALED_BIT, &vk_hEmptyPresentFence)) {
+								return true;
+							}
+						}
+						PRINT_DEBUG("Destroying Vulkan command pool due to failure setting up resources for empty presentations");
+						vkDestroyCommandPool(vk_hDevice, vk_hCommandPoolEmptyPresent, nullptr);
+					}
+				#else
 					return true;
-				else
+				#endif
+				} else
 					RE_FATAL_ERROR("Failed to create Vulkan fence at index ", syncObjCreateIndex, " to wait on rendering to finish");
 				for (size_t syncObjDestroyIndex = 0; syncObjDestroyIndex < syncObjCreateIndex; syncObjDestroyIndex++) {
 					PRINT_DEBUG("Destroying Vulkan fence ", vk_ahRenderFences[syncObjDestroyIndex], " at index ", syncObjDestroyIndex, " due to failure initializing all synchronization objects");
@@ -50,6 +89,12 @@ namespace RE {
 	}
 
 	void destroy_render_tasks() {
+	#ifdef RE_OS_LINUX
+		PRINT_DEBUG("Destroying Vulkan fence used for empty presentations");
+		vkDestroyFence(vk_hDevice, vk_hEmptyPresentFence, nullptr);
+		PRINT_DEBUG("Destroying Vulkan command pool used for empty presentations");
+		vkDestroyCommandPool(vk_hDevice, vk_hCommandPoolEmptyPresent, nullptr);
+	#endif
 		for (size_t syncObjDestroyIndex = 0; syncObjDestroyIndex < RE_VK_FRAMES_IN_FLIGHT; syncObjDestroyIndex++) {
 			PRINT_DEBUG("Destroying Vulkan fence ", vk_ahRenderFences[syncObjDestroyIndex], " at index ", syncObjDestroyIndex);
 			vkDestroyFence(vk_hDevice, vk_ahRenderFences[syncObjDestroyIndex], nullptr);

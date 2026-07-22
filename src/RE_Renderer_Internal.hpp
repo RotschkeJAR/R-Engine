@@ -22,6 +22,7 @@
 #include "RE_Renderer_RenderTask.hpp"
 #include "RE_Renderer_RenderProcedure.hpp"
 #include "RE_Renderer_DynamicRendering.hpp"
+#include "RE_Renderer_SettingsGUI.hpp"
 
 namespace RE {
 

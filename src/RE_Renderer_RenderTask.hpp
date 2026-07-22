@@ -12,7 +12,11 @@ namespace RE {
 
 	extern VulkanTask aRenderTasks[RE_VK_FRAMES_IN_FLIGHT];
 	extern VkFence vk_ahRenderFences[RE_VK_FRAMES_IN_FLIGHT];
-	extern uint8_t u8CurrentFrameInFlightIndex;
+#ifdef RE_OS_LINUX
+	extern VkCommandPool vk_hCommandPoolEmptyPresent;
+	extern VkCommandBuffer vk_hCommandBufferEmptyPresent;
+	extern VkFence vk_hEmptyPresentFence;
+#endif
 
 	bool create_render_tasks();
 	void destroy_render_tasks();

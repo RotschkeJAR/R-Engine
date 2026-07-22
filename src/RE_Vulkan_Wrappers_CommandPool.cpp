@@ -1,6 +1,21 @@
 #include "RE_Vulkan_Wrappers.hpp"
 
 namespace RE {
+
+	bool create_vulkan_command_pool(VkCommandPoolCreateFlags vk_mCreateFlags, uint32_t u32QueueFamilyIndex, VkCommandPool *vk_phCommandPool) {
+		PRINT_DEBUG("Creating a Vulkan command pool");
+		const VkCommandPoolCreateInfo vk_createInfo = {
+			.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+			.pNext = nullptr,
+			.flags = vk_mCreateFlags,
+			.queueFamilyIndex = u32QueueFamilyIndex
+		};
+		if (vkCreateCommandPool(vk_hDevice, &vk_createInfo, nullptr, vk_phCommandPool) == VK_SUCCESS)
+			return true;
+		else
+			RE_ERROR("Failed to create a Vulkan command pool");
+		return false;
+	}
 	
 	Vulkan_CommandPool::Vulkan_CommandPool() : vk_hCommandPool(VK_NULL_HANDLE) {}
 
@@ -24,13 +39,7 @@ namespace RE {
 			RE_ERROR("Creating another Vulkan command pool wrapper, when the old command pool ", vk_hCommandPool, " hasn't been destroyed yet");
 	#endif
 		PRINT_DEBUG("Creating Vulkan command pool wrapper");
-		const VkCommandPoolCreateInfo vk_createInfo = {
-			.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
-			.pNext = nullptr,
-			.flags = vk_mCreateFlags,
-			.queueFamilyIndex = u32QueueFamilyIndex
-		};
-		return vkCreateCommandPool(vk_hDevice, &vk_createInfo, nullptr, &vk_hCommandPool) == VK_SUCCESS;
+		return create_vulkan_command_pool(vk_mCreateFlags, u32QueueFamilyIndex, &vk_hCommandPool);
 	}
 	
 	void Vulkan_CommandPool::destroy() {

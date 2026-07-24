@@ -1,15 +1,13 @@
-#include "RE_Renderer_Buffers_Internal.hpp"
+#include "RE_Renderer_WindowFrame_Buffers.hpp"
 
 namespace RE {
-	
-#ifdef RE_OS_LINUX
 
 	VkBuffer vk_hWindowFrameBuffer;
 	VulkanMemory *pWindowFrameBufferMemory;
 	WindowFrameUniformData *pWindowFrameUniformData = nullptr;
 	VkDrawIndirectCommand *pIndirectDrawWindowTitle = nullptr;
 
-	bool create_cursor_buffers() {
+	bool create_window_frame_buffers() {
 		PRINT_DEBUG("Creating Vulkan buffer for data of the cursor");
 		if (create_vulkan_buffer(
 				0,
@@ -24,21 +22,10 @@ namespace RE {
 		return false;
 	}
 
-	void destroy_cursor_buffers() {
+	void destroy_window_frame_buffers() {
 		PRINT_DEBUG("Destroying Vulkan buffer used for cursor data");
 		vkDestroyBuffer(vk_hDevice, vk_hWindowFrameBuffer, nullptr);
 		pWindowFrameUniformData = nullptr;
 	}
-
-#else
-
-	bool create_cursor_buffers() {
-		return true;
-	}
-
-	void destroy_cursor_buffers() {
-	}
-
-#endif
 
 }

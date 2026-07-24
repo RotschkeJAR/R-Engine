@@ -5,6 +5,8 @@
 
 namespace RE {
 	
+	bool init_settings_gui();
+	void destroy_settings_gui();
 	void render_settings_gui();
 
 }

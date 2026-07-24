@@ -3,7 +3,8 @@
 namespace RE {
 	
 	std::unique_ptr<PhysicalVulkanDeviceInfo[]> physicalDevicesAvailable;
-	uint32_t u32PhysicalDevicesAvailableCount, u32IndexToSelectedPhysicalDevice;
+	uint32_t u32PhysicalDevicesAvailableCount,
+		u32IndexToSelectedPhysicalDevice;
 
 	bool alloc_physical_vulkan_device_list() {
 		PRINT_DEBUG("Getting all available physical Vulkan devices");

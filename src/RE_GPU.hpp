@@ -32,7 +32,6 @@ namespace RE {
 	extern std::unique_ptr<PhysicalVulkanDeviceInfo[]> physicalDevicesAvailable;
 	extern uint32_t u32PhysicalDevicesAvailableCount,
 		u32IndexToSelectedPhysicalDevice;
-	void select_physical_vulkan_device(uint32_t u32PhysicalDeviceIndex);
 #define SELECTED_PHYSICAL_VULKAN_DEVICE           physicalDevicesAvailable[u32IndexToSelectedPhysicalDevice].vk_hPhysicalDevice
 #define SELECTED_PHYSICAL_VULKAN_DEVICE_NAME      physicalDevicesAvailable[u32IndexToSelectedPhysicalDevice].pacName
 #define SELECTED_PHYSICAL_VULKAN_DEVICE_TYPE      physicalDevicesAvailable[u32IndexToSelectedPhysicalDevice].vk_eType
@@ -45,7 +44,6 @@ namespace RE {
 	extern std::unique_ptr<VkQueueFlags[]> vk_paeQueueTypes;
 	extern std::vector<bool> presentationAvailablePerQueue;
 	extern uint8_t u8LogicalQueueCount;
-	void create_queue_create_infos(const float *pfPriority, std::vector<VkDeviceQueueCreateInfo> &vk_rpaLogicalQueueCreateInfos);
 	VkQueue get_present_queue(uint8_t u8PreferredQueueIndex);
 
 	class VulkanQueueCollection final {
@@ -121,7 +119,14 @@ namespace RE {
 		size_t indexToMemory;
 		VkDeviceSize vk_memoryOffset;
 	};
-	VkResult alloc_shared_vulkan_memory(const uint32_t u32SharedMemoryInfoCount, const SharedVulkanMemoryInfo *paSharedMemoryInfos, const VkMemoryPropertyFlags vk_mMemoryProperties, size_t &rAllocatedMemoryCount, std::unique_ptr<VulkanMemory[]> &rAllocatedMemory, VulkanMemoryAllocationInfo *paAllocationResults = nullptr, bool *pbVulkanStorageObjectsUnbound = nullptr);
+	VkResult alloc_shared_vulkan_memory(
+			uint32_t u32SharedMemoryInfoCount,
+			const SharedVulkanMemoryInfo *paSharedMemoryInfos,
+			VkMemoryPropertyFlags vk_mMemoryProperties,
+			size_t &rAllocatedMemoryCount,
+			std::unique_ptr<VulkanMemory[]> &rAllocatedMemory,
+			VulkanMemoryAllocationInfo *paAllocationResults = nullptr,
+			bool *pbVulkanStorageObjectsUnbound = nullptr);
 	std::optional<uint8_t> find_vulkan_memory_type(VkMemoryPropertyFlags vk_mProperties, uint32_t m32MemoryTypeBits);
 	bool do_memory_properties_exist(VkMemoryPropertyFlags vk_mProperties);
 	bool is_staging_before_gpu_use_necessary();
@@ -149,8 +154,8 @@ namespace RE {
 			void free();
 			bool map(VkMemoryMapFlags vk_eFlags, VkDeviceSize vk_offset, VkDeviceSize vk_size, void **ppData);
 			void unmap();
-			bool flush_mapped_memory(VkDeviceSize vk_offset, VkDeviceSize vk_size);
-			bool invalidate_mapped_memory(VkDeviceSize vk_offset, VkDeviceSize vk_size);
+			bool flush_mapped_memory(VkDeviceSize vk_offset = 0, VkDeviceSize vk_size = VK_WHOLE_SIZE);
+			bool invalidate_mapped_memory(VkDeviceSize vk_offset = 0, VkDeviceSize vk_size = VK_WHOLE_SIZE);
 
 			bool valid() const;
 			VkDeviceMemory get() const;

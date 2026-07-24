@@ -1,4 +1,4 @@
-#include "RE_Renderer_SettingsGUI_Internal.hpp"
+#include "RE_Renderer_SettingsGUI_Buffers.hpp"
 
 namespace RE {
 

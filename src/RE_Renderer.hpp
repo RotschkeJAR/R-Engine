@@ -12,9 +12,6 @@ namespace RE {
 #define CHAR_TEXTURE_COUNT   0x5F
 #define CHAR_TEXTURE_SIZE    8
 
-	extern float fSampleShadingRate;
-	extern uint8_t u8CurrentFrameInFlightIndex;
-
 	bool init_renderer();
 	void destroy_renderer();
 	void render();
@@ -33,9 +30,6 @@ namespace RE {
 
 	// Depth-stencil buffers
 	void find_suitable_depth_stencil_formats();
-
-	// Textures
-	extern VkDescriptorSet vk_hTextureDescSet;
 
 #ifdef RE_OS_LINUX
 	extern WindowFrameUniformData *pWindowFrameUniformData;

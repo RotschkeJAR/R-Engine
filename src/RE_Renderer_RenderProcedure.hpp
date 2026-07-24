@@ -6,7 +6,9 @@
 namespace RE {
 	
 	bool render_procedure();
+#ifdef RE_OS_LINUX
 	bool present_empty();
+#endif
 
 }
 

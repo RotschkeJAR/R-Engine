@@ -1,4 +1,4 @@
-#include "RE_Renderer_SettingsGUI_Internal.hpp"
+#include "RE_Renderer_SettingsGUI_DescriptorSets.hpp"
 
 namespace RE {
 

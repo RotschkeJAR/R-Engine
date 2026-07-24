@@ -22,24 +22,21 @@ namespace RE {
 									if (create_renderer_pipelines()) {
 										if (init_renderer_textures()) {
 											if (init_renderer_meshes()) {
-												if (init_renderer_command_buffers()) {
-													for (VulkanTask &rRenderTask : aRenderTasks)
-														for (uint8_t u8FunctionIndex = 0; u8FunctionIndex < 3; u8FunctionIndex++)
-															rRenderTask.record(u8FunctionIndex, 0, nullptr);
-												#ifdef RE_OS_LINUX
-													pIndirectDrawWindowTitle->vertexCount = 4;
-													pIndirectDrawWindowTitle->firstVertex = 0;
-													pIndirectDrawWindowTitle->firstInstance = 0;
-													for (pIndirectDrawWindowTitle->instanceCount = 0; pIndirectDrawWindowTitle->instanceCount < 256; pIndirectDrawWindowTitle->instanceCount++) {
-														const uint32_t u32CharCode = static_cast<uint32_t>(pacWindowTitle[pIndirectDrawWindowTitle->instanceCount]);
-														pWindowFrameUniformData->au32TitleChars[pIndirectDrawWindowTitle->instanceCount] = u32CharCode;
-														if (u32CharCode == 0)
-															break;
-													}
-												#endif
-													return true;
+												for (VulkanTask &rRenderTask : aRenderTasks)
+													for (uint8_t u8FunctionIndex = 0; u8FunctionIndex < 3; u8FunctionIndex++)
+														rRenderTask.record(u8FunctionIndex, 0, nullptr);
+											#ifdef RE_OS_LINUX
+												pIndirectDrawWindowTitle->vertexCount = 4;
+												pIndirectDrawWindowTitle->firstVertex = 0;
+												pIndirectDrawWindowTitle->firstInstance = 0;
+												for (pIndirectDrawWindowTitle->instanceCount = 0; pIndirectDrawWindowTitle->instanceCount < 256; pIndirectDrawWindowTitle->instanceCount++) {
+													const uint32_t u32CharCode = static_cast<uint32_t>(pacWindowTitle[pIndirectDrawWindowTitle->instanceCount]);
+													pWindowFrameUniformData->au32TitleChars[pIndirectDrawWindowTitle->instanceCount] = u32CharCode;
+													if (u32CharCode == 0)
+														break;
 												}
-												destroy_renderer_meshes();
+											#endif
+												return true;
 											}
 											destroy_renderer_textures();
 										}
@@ -63,7 +60,6 @@ namespace RE {
 	}
 
 	void destroy_renderer() {
-		destroy_renderer_command_buffers();
 		destroy_renderer_meshes();
 		destroy_renderer_sprite_layout();
 		destroy_renderer_textures();

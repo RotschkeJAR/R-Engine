@@ -6,9 +6,6 @@ namespace RE {
 		vk_hSortDepthPipelineLayout,
 		vk_hProcessingPipelineLayout,
 		vk_hTextPipelineLayout;
-#ifdef RE_OS_LINUX
-	VkPipelineLayout vk_hWindowFramePipelineLayout;
-#endif /* RE_OS_LINUX */
 
 	bool create_pipeline_layouts() {
 		PRINT_DEBUG("Creating Vulkan pipeline layout dedicated for graphics pipelines");
@@ -72,37 +69,7 @@ namespace RE {
 						.pPushConstantRanges = nullptr
 					};
 					if (vkCreatePipelineLayout(vk_hDevice, &vk_emptyPipelineLayoutCreateInfo, nullptr, &vk_hTextPipelineLayout) == VK_SUCCESS) {
-					#ifdef RE_OS_LINUX
-						PRINT_DEBUG("Creating Vulkan pipeline layout dedicated for compute pipelines processing game objects");
-						const VkDescriptorSetLayout vk_ahDescSetLayouts[] = {
-							vk_hWindowFrameDescSetLayout,
-							vk_hCharacterDescSetLayout
-						};
-						const VkPushConstantRange vk_aPushConstants[] = {
-							{
-								.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-								.offset = 0,
-								.size = sizeof(WindowShaderData)
-							}
-						};
-						const VkPipelineLayoutCreateInfo vk_windowFramePipelineLayoutCreateInfo = {
-							.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-							.pNext = nullptr,
-							.flags = 0,
-							.setLayoutCount = sizeof(vk_ahDescSetLayouts) / sizeof(vk_ahDescSetLayouts[0]),
-							.pSetLayouts = vk_ahDescSetLayouts,
-							.pushConstantRangeCount = sizeof(vk_aPushConstants) / sizeof(vk_aPushConstants[0]),
-							.pPushConstantRanges = vk_aPushConstants
-						};
-						if (vkCreatePipelineLayout(vk_hDevice, &vk_windowFramePipelineLayoutCreateInfo, nullptr, &vk_hWindowFramePipelineLayout) == VK_SUCCESS)
-							return true;
-						else
-							RE_FATAL_ERROR("Failed to create Vulkan pipeline layout dedicated for compute pipelines processing game objects");
-					#else
 						return true;
-					#endif
-						PRINT_DEBUG("Destroying empty Vulkan pipeline layout for failing to create all");
-						vkDestroyPipelineLayout(vk_hDevice, vk_hTextPipelineLayout, nullptr);
 					} else
 						RE_FATAL_ERROR("");
 					PRINT_DEBUG("Destroying Vulkan pipeline layout dedicated for compute pipeline sorting by depth for failing to create all");
@@ -122,9 +89,6 @@ namespace RE {
 
 	void destroy_pipeline_layouts() {
 		PRINT_DEBUG("Destroying all Vulkan pipeline layouts");
-#ifdef RE_OS_LINUX
-		vkDestroyPipelineLayout(vk_hDevice, vk_hWindowFramePipelineLayout, nullptr);
-#endif /* RE_OS_LINUX */
 		vkDestroyPipelineLayout(vk_hDevice, vk_hTextPipelineLayout, nullptr);
 		vkDestroyPipelineLayout(vk_hDevice, vk_hProcessingPipelineLayout, nullptr);
 		vkDestroyPipelineLayout(vk_hDevice, vk_hSortDepthPipelineLayout, nullptr);

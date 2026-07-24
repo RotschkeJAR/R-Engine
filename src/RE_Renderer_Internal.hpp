@@ -2,7 +2,6 @@
 #define __RE_RENDERER_INTERNAL_H__
 
 #include "RE_Renderer.hpp"
-#include "RE_GPU.hpp"
 #include "RE_Vulkan_Wrappers.hpp"
 
 #include "RE_Renderer_ShaderStructs.hpp"
@@ -23,6 +22,7 @@
 #include "RE_Renderer_RenderProcedure.hpp"
 #include "RE_Renderer_DynamicRendering.hpp"
 #include "RE_Renderer_SettingsGUI.hpp"
+#include "RE_Renderer_WindowFrame.hpp"
 
 namespace RE {
 
@@ -33,6 +33,7 @@ namespace RE {
 	void swapchain_destroyed_renderer();
 
 	extern Color backgroundClearColor;
+	extern float fSampleShadingRate;
 	extern uint8_t u8CurrentFrameInFlightIndex;
 
 }

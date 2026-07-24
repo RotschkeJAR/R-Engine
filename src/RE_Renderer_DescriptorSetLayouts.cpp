@@ -8,13 +8,10 @@ namespace RE {
 		vk_hSpriteDescSetLayout,
 		vk_hCharacterDescSetLayout,
 		vk_hTextDescSetLayout;
-#ifdef RE_OS_LINUX
-	VkDescriptorSetLayout vk_hWindowFrameDescSetLayout;
-#endif
 
 	bool create_descriptor_set_layouts() {
 		PRINT_DEBUG("Creating Vulkan descriptor set layout for game objects");
-	    VkDescriptorSetLayoutSupport vk_setLayoutSupported;
+		VkDescriptorSetLayoutSupport vk_setLayoutSupported;
 		vk_setLayoutSupported.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_SUPPORT;
 		vk_setLayoutSupported.pNext = nullptr;
 		const VkBool32 &vk_rbLayoutSupported = vk_setLayoutSupported.supported;
@@ -159,40 +156,7 @@ namespace RE {
 							};
 							vkGetDescriptorSetLayoutSupport(vk_hDevice, &vk_layoutCreateInfo, &vk_setLayoutSupported);
 							if (vk_rbLayoutSupported && vkCreateDescriptorSetLayout(vk_hDevice, &vk_layoutCreateInfo, nullptr, &vk_hTextDescSetLayout) == VK_SUCCESS) {
-#ifdef RE_OS_LINUX
-								PRINT_DEBUG("Creating Vulkan descriptor set layout for window frame rendering");
-								const VkDescriptorSetLayoutBinding vk_aLayoutBindings[] = {
-									{
-										.binding = 0,
-										.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-										.descriptorCount = 1,
-										.stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-										.pImmutableSamplers = nullptr
-									}, {
-										.binding = 1,
-										.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-										.descriptorCount = 1,
-										.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
-										.pImmutableSamplers = &vk_hDefaultSampler
-									}
-								};
-								const VkDescriptorSetLayoutCreateInfo vk_layoutCreateInfo = {
-									.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-									.pNext = nullptr,
-									.flags = 0,
-									.bindingCount = sizeof(vk_aLayoutBindings) / sizeof(vk_aLayoutBindings[0]),
-									.pBindings = vk_aLayoutBindings
-								};
-								vkGetDescriptorSetLayoutSupport(vk_hDevice, &vk_layoutCreateInfo, &vk_setLayoutSupported);
-								if (vk_rbLayoutSupported && vkCreateDescriptorSetLayout(vk_hDevice, &vk_layoutCreateInfo, nullptr, &vk_hWindowFrameDescSetLayout) == VK_SUCCESS)
-									return true;
-								else
-									RE_FATAL_ERROR("Failed to create Vulkan descriptor set layout for window frame rendering");
-#else
 								return true;
-#endif
-								PRINT_DEBUG("Destroying Vulkan descriptor set layout for texts due to failure creating all layouts");
-								vkDestroyDescriptorSetLayout(vk_hDevice, vk_hTextDescSetLayout, nullptr);
 							} else
 								RE_FATAL_ERROR("Failed to create Vulkan descriptor set layout for texts");
 							PRINT_DEBUG("Destroying Vulkan descriptor set layout for characters due to failure creating all layouts");
@@ -220,9 +184,6 @@ namespace RE {
 
 	void destroy_descriptor_set_layouts() {
 		PRINT_DEBUG("Destroying all Vulkan descriptor set layouts");
-#ifdef RE_OS_LINUX
-		vkDestroyDescriptorSetLayout(vk_hDevice, vk_hWindowFrameDescSetLayout, nullptr);
-#endif
 		vkDestroyDescriptorSetLayout(vk_hDevice, vk_hTextDescSetLayout, nullptr);
 		vkDestroyDescriptorSetLayout(vk_hDevice, vk_hCharacterDescSetLayout, nullptr);
 		vkDestroyDescriptorSetLayout(vk_hDevice, vk_hSpriteDescSetLayout, nullptr);

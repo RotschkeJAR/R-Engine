@@ -295,6 +295,7 @@ namespace RE {
 		return false;
 	}
 
+#ifdef RE_OS_LINUX
 	bool present_empty() {
 		if (!acquire_next_swapchain_image())
 			return true;
@@ -382,5 +383,6 @@ namespace RE {
 			RE_FATAL_ERROR("Failed to wait for the signaling of Vulkan fence ", vk_hEmptyPresentFence, " used to synchronize empty presentation");
 		return false;
 	}
+#endif
 
 }

@@ -5,8 +5,7 @@ namespace RE {
 
 	VkQueue vk_hPresentQueue;
 	std::unique_ptr<VkSemaphore[]> swapchainSemaphores;
-	uint32_t u32IndexToSelectedSurfaceFormat,
-		u32CurrentSwapchainSemaphoreIndex = 0,
+	uint32_t u32CurrentSwapchainSemaphoreIndex = 0,
 		u32CurrentSwapchainImageIndex;
 
 	bool setup_presentation() {

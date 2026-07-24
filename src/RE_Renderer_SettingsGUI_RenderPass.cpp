@@ -1,11 +1,11 @@
-#include "RE_Renderer_SettingsGUI_Internal.hpp"
+#include "RE_Renderer_SettingsGUI_RenderPass.hpp"
 
 namespace RE {
 
 	VkRenderPass vk_hSettingsRenderPass;
-	std::unique_ptr<VkFramebuffer[]> std_settingsFramebuffers;
 
 	bool create_settings_gui_renderpass() {
+		PRINT_DEBUG("Creating Vulkan render pass ", vk_hSettingsRenderPass, " for rendering settings GUI");
 		const VkAttachmentDescription vk_aAttachmentDescs[] = {
 			{
 				.flags = 0,
@@ -72,36 +72,13 @@ namespace RE {
 			.pDependencies = vk_aDependencies
 		};
 		if (vkCreateRenderPass(vk_hDevice, &vk_renderPassCreateInfo, nullptr, &vk_hSettingsRenderPass) == VK_SUCCESS) {
-			std_settingsFramebuffers = std::make_unique<VkFramebuffer[]>(u32SwapchainImageCount);
-			VkFramebufferCreateInfo vk_framebufferCreateInfo;
-			vk_framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-			vk_framebufferCreateInfo.pNext = nullptr;
-			vk_framebufferCreateInfo.flags = 0;
-			vk_framebufferCreateInfo.renderPass = vk_hSettingsRenderPass;
-			vk_framebufferCreateInfo.attachmentCount = 1;
-			vk_framebufferCreateInfo.width = vk_swapchainResolution.width;
-			vk_framebufferCreateInfo.height = vk_swapchainResolution.height;
-			vk_framebufferCreateInfo.layers = 1;
-			uint uFramebufferCreateIndex;
-			for (uFramebufferCreateIndex = 0; uFramebufferCreateIndex < u32SwapchainImageCount; uFramebufferCreateIndex++) {
-				vk_framebufferCreateInfo.pAttachments = &swapchainImageViews[uFramebufferCreateIndex];
-				if (vkCreateFramebuffer(vk_hDevice, &vk_framebufferCreateInfo, nullptr, &std_settingsFramebuffers[uFramebufferCreateIndex]) != VK_SUCCESS)
-					break;
-			}
-			if (uFramebufferCreateIndex == u32SwapchainImageCount)
-				return true;
-			for (uint uFramebufferDestroyIndex = 0; uFramebufferDestroyIndex < uFramebufferCreateIndex; uFramebufferDestroyIndex++)
-				vkDestroyFramebuffer(vk_hDevice, std_settingsFramebuffers[uFramebufferDestroyIndex], nullptr);
-			std_settingsFramebuffers.reset();
-			vkDestroyRenderPass(vk_hDevice, vk_hSettingsRenderPass, nullptr);
+			return true;
 		}
 		return false;
 	}
 
 	void destroy_settings_gui_renderpass() {
-		for (uint uFramebufferDestroyIndex = 0; uFramebufferDestroyIndex < u32SwapchainImageCount; uFramebufferDestroyIndex++)
-			vkDestroyFramebuffer(vk_hDevice, std_settingsFramebuffers[uFramebufferDestroyIndex], nullptr);
-		std_settingsFramebuffers.reset();
+		PRINT_DEBUG("Destroying Vulkan render pass ", vk_hSettingsRenderPass, " used for rendering settings GUI");
 		vkDestroyRenderPass(vk_hDevice, vk_hSettingsRenderPass, nullptr);
 	}
 

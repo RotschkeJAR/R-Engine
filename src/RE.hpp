@@ -23,6 +23,7 @@
 #include <stdint.h>
 #include <random>
 #include <limits.h>
+#include <climits>
 #include <array>
 #include <variant>
 #include <ctime>

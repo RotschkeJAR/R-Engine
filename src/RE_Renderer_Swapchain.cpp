@@ -136,8 +136,8 @@ namespace RE {
 
 	bool recreate_swapchain() {
 		PRINT_DEBUG("Recreating swapchain");
-		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(SELECTED_PHYSICAL_VULKAN_DEVICE, vk_hSurface, &vk_surfaceCapabilities);
 		wait_for_rendering_finished();
+		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(SELECTED_PHYSICAL_VULKAN_DEVICE, vk_hSurface, &vk_surfaceCapabilities);
 		if (create_swapchain()) {
 			return true;
 		} else

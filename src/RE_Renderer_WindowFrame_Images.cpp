@@ -1,15 +1,12 @@
-#include "RE_Renderer_Images_Internal.hpp"
-#include "RE_Window.hpp"
+#include "RE_Renderer_WindowFrame_Images.hpp"
 #include "RE_Asset.hpp"
 
 namespace RE {
-	
-#ifdef RE_OS_LINUX
 
 	VkImage vk_hWindowButtonImage;
 	VkImageView vk_hWindowButtonImageView;
 
-	bool create_window_button_image() {
+	bool create_window_frame_images() {
 		PRINT_DEBUG("Creating Vulkan image for window button textures");
 		if (create_vulkan_image(
 				0,
@@ -35,7 +32,7 @@ namespace RE {
 		return false;
 	}
 
-	bool create_window_button_image_views() {
+	bool create_window_frame_image_views() {
 		PRINT_DEBUG("Allocating staging Vulkan buffer for window button textures");
 		constexpr VkDeviceSize vk_stagingBufferSize = (WINDOW_BUTTON_TEXTURE_SIZE * WINDOW_BUTTON_TEXTURE_SIZE) * WINDOW_BUTTON_TEXTURE_COUNT * sizeof(uint8_t);
 		Vulkan_Buffer stagingWindowButtonBuffer(
@@ -59,7 +56,7 @@ namespace RE {
 						PRINT_DEBUG("Copying content of asset file to staging Vulkan buffer");
 						std::memcpy(pStagingBufferMemory, windowButtonImage.pBuffer, vk_stagingBufferSize);
 						asset_image_free(windowButtonImage);
-						stagingWindowButtonBuffer.get_memory().flush_mapped_memory(0, VK_WHOLE_SIZE);
+						stagingWindowButtonBuffer.get_memory().flush_mapped_memory();
 						PRINT_DEBUG("Creating Vulkan task for transferring window button textures to GPU");
 						const uint8_t a2u8LogicalQueues[2] = {RE_VK_LOGICAL_QUEUE_IGNORED, aRenderTasks[0].logical_queue_index_for_function(RENDER_TASK_SUBINDEX_RENDERING)};
 						constexpr VkQueueFlagBits vk_a2eQueueTypes[2] = {VK_QUEUE_TRANSFER_BIT, VK_QUEUE_GRAPHICS_BIT};
@@ -240,32 +237,14 @@ namespace RE {
 		return false;
 	}
 
-	void destroy_window_button_image() {
+	void destroy_window_frame_images() {
 		PRINT_DEBUG("Destroying Vulkan image containing window button textures");
 		vkDestroyImage(vk_hDevice, vk_hWindowButtonImage, nullptr);
 	}
 
-	void destroy_window_button_image_views() {
+	void destroy_window_frame_image_views() {
 		PRINT_DEBUG("Destroying Vulkan image view pointing to window button textures");
 		vkDestroyImageView(vk_hDevice, vk_hWindowButtonImageView, nullptr);
 	}
-
-#else
-
-	bool create_window_button_image() {
-		return true;
-	}
-
-	bool create_window_button_image_views() {
-		return true;
-	}
-
-	void destroy_window_button_image() {
-	}
-
-	void destroy_window_button_image_views() {
-	}
-
-#endif
 
 }

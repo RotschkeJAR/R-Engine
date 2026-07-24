@@ -6,7 +6,8 @@ namespace RE {
 	std::unique_ptr<VkDeviceSize[]> occupiedSpacePerVulkanHeap;
 	std::unique_ptr<VkMemoryType[]> vulkanMemoryTypes;
 	uint32_t u32VulkanMemoryAllocCount = 0;
-	uint8_t u8MemoryHeapCount, u8MemoryTypeCount;
+	uint8_t u8MemoryHeapCount,
+		u8MemoryTypeCount;
 
 	void alloc_gpu_memory_info() {
 		PRINT_DEBUG("Fetching memory properties of selected physical Vulkan device");
@@ -108,7 +109,15 @@ namespace RE {
 		return false;
 	}
 
-	VkResult alloc_shared_vulkan_memory(const uint32_t u32SharedMemoryInfoCount, const SharedVulkanMemoryInfo *const paSharedMemoryInfos, const VkMemoryPropertyFlags vk_mMemoryProperties, size_t &rAllocatedMemoryCount, std::unique_ptr<VulkanMemory[]> &rAllocatedMemory, VulkanMemoryAllocationInfo *const paAllocationResults, bool *const pbVulkanStorageObjectsUnbound) {
+	VkResult alloc_shared_vulkan_memory(
+			const uint32_t u32SharedMemoryInfoCount,
+			const SharedVulkanMemoryInfo *const paSharedMemoryInfos,
+			const VkMemoryPropertyFlags vk_mMemoryProperties,
+			size_t &rAllocatedMemoryCount,
+			std::unique_ptr<VulkanMemory[]> &rAllocatedMemory,
+			VulkanMemoryAllocationInfo *const paAllocationResults,
+			bool *const pbVulkanStorageObjectsUnbound) {
+	#define WRITE_BIND_STATUS_TO_PTR(BOOL_VAL) if (pbVulkanStorageObjectsUnbound) {*pbVulkanStorageObjectsUnbound = BOOL_VAL;}
 		if (pbVulkanStorageObjectsUnbound) {
 			PRINT_DEBUG("Writing current status of Vulkan storage objects to ", pbVulkanStorageObjectsUnbound);
 			*pbVulkanStorageObjectsUnbound = true;
@@ -260,8 +269,7 @@ namespace RE {
 							vk_eBindResult = vkBindBufferMemory2(vk_hDevice, static_cast<uint32_t>(bindBufferInfos.size()), bindBufferInfos.data());
 							if (vk_eBindResult != VK_SUCCESS) {
 								RE_ERROR("Failed binding Vulkan memory to ", bindBufferInfos.size(), " buffer/-s");
-								if (pbVulkanStorageObjectsUnbound && bindBufferInfos.size() > 1)
-									*pbVulkanStorageObjectsUnbound = false;
+								WRITE_BIND_STATUS_TO_PTR(false);
 								return vk_eBindResult;
 							}
 						}
@@ -270,8 +278,7 @@ namespace RE {
 							vk_eBindResult = vkBindImageMemory2(vk_hDevice, static_cast<uint32_t>(bindImageInfos.size()), bindImageInfos.data());
 							if (vk_eBindResult != VK_SUCCESS) {
 								RE_ERROR("Failed binding Vulkan memory to ", bindBufferInfos.size(), " image/-s");
-								if (pbVulkanStorageObjectsUnbound && bindImageInfos.size() > 1)
-									*pbVulkanStorageObjectsUnbound = false;
+								WRITE_BIND_STATUS_TO_PTR(false);
 								return vk_eBindResult;
 							}
 						}
@@ -284,8 +291,7 @@ namespace RE {
 					vk_eBindResult = vkBindBufferMemory2(vk_hDevice, static_cast<uint32_t>(bindBufferInfos.size()), bindBufferInfos.data());
 					if (vk_eBindResult != VK_SUCCESS) {
 						RE_ERROR("Failed binding Vulkan memory to ", bindBufferInfos.size(), " buffer/-s");
-						if (pbVulkanStorageObjectsUnbound && bindBufferInfos.size() > 1)
-							*pbVulkanStorageObjectsUnbound = false;
+						WRITE_BIND_STATUS_TO_PTR(false);
 						return vk_eBindResult;
 					}
 				}
@@ -294,16 +300,12 @@ namespace RE {
 					vk_eBindResult = vkBindImageMemory2(vk_hDevice, static_cast<uint32_t>(bindImageInfos.size()), bindImageInfos.data());
 					if (vk_eBindResult != VK_SUCCESS) {
 						RE_ERROR("Failed binding Vulkan memory to ", bindBufferInfos.size(), " image/-s");
-						if (pbVulkanStorageObjectsUnbound && bindImageInfos.size() > 1)
-							*pbVulkanStorageObjectsUnbound = false;
+						WRITE_BIND_STATUS_TO_PTR(false);
 						return vk_eBindResult;
 					}
 				}
 			}
-			if (pbVulkanStorageObjectsUnbound) {
-				PRINT_DEBUG("Writing updated status of Vulkan storage objects to ", pbVulkanStorageObjectsUnbound);
-				*pbVulkanStorageObjectsUnbound = false;
-			}
+			WRITE_BIND_STATUS_TO_PTR(false);
 			allocatedMemories.emplace_back(std::move(vulkanMemory));
 			continue;
 
@@ -319,6 +321,7 @@ namespace RE {
 						vk_eResult = vulkanMemory.alloc_for_buffer(vk_hBuffer, vk_mMemoryProperties);
 						if (vk_eResult != VK_SUCCESS) {
 							RE_ERROR("Failed allocating and binding Vulkan memory to buffer ", vk_hBuffer);
+							WRITE_BIND_STATUS_TO_PTR(false);
 							return vk_eResult;
 						}
 					}
@@ -330,6 +333,7 @@ namespace RE {
 						vk_eResult = vulkanMemory.alloc_for_image(vk_hImage, vk_mMemoryProperties);
 						if (vk_eResult != VK_SUCCESS) {
 							RE_ERROR("Failed allocating and binding Vulkan memory to image ", vk_hImage);
+							WRITE_BIND_STATUS_TO_PTR(false);
 							return vk_eResult;
 						}
 					}
@@ -337,6 +341,7 @@ namespace RE {
 				[[unlikely]] default:
 					RE_ABORT("There's no Vulkan storage object to allocate and bind memory to or the index is invalid");
 			}
+			WRITE_BIND_STATUS_TO_PTR(false);
 			allocatedMemories.emplace_back(std::move(vulkanMemory));
 		}
 		PRINT_DEBUG("Writing count of allocated Vulkan memories to ", std::addressof(rAllocatedMemoryCount), " and pointer to array of memories to ", std::addressof(rAllocatedMemory));
@@ -350,36 +355,37 @@ namespace RE {
 			memoryIndex++;
 		}
 		return VK_SUCCESS;
+	#undef WRITE_BIND_STATUS_TO_PTR(BOOL_VAL)
 	}
 
 	std::optional<uint8_t> find_vulkan_memory_type(const VkMemoryPropertyFlags vk_mProperties, const uint32_t m32MemoryTypeBits) {
 		std::optional<uint8_t> selectedMemoryTypeIndex;
-		uint16_t u16LowestMismatchScore = std::numeric_limits<uint16_t>::max();
+		int iLowestMismatchScore = INT_MAX;
 		for (uint8_t u8MemoryTypeIndex = 0; u8MemoryTypeIndex < u8MemoryTypeCount; u8MemoryTypeIndex++) {
 			if ((vulkanMemoryTypes[u8MemoryTypeIndex].propertyFlags & vk_mProperties) == vk_mProperties
 					&& are_bits_true(m32MemoryTypeBits, u8MemoryTypeIndex)) {
 				const VkMemoryPropertyFlags vk_mMismatchingProperties = vulkanMemoryTypes[u8MemoryTypeIndex].propertyFlags & (~vk_mProperties);
-				uint16_t u16MismatchScore = 0;
+				int iMismatchScore = 0;
 				if ((vk_mMismatchingProperties & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) != 0)
-					u16MismatchScore += 500;
+					iMismatchScore += 500;
 				if ((vk_mMismatchingProperties & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0)
-					u16MismatchScore += 500;
+					iMismatchScore += 500;
 				if ((vk_mMismatchingProperties & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) != 0)
-					u16MismatchScore += 1;
+					iMismatchScore += 1;
 				if ((vk_mMismatchingProperties & VK_MEMORY_PROPERTY_HOST_CACHED_BIT) != 0)
-					u16MismatchScore += 100;
+					iMismatchScore += 100;
 				if ((vk_mMismatchingProperties & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) != 0)
-					u16MismatchScore += 10;
+					iMismatchScore += 10;
 				if ((vk_mMismatchingProperties & VK_MEMORY_PROPERTY_PROTECTED_BIT) != 0)
 					continue;
 				if ((vk_mMismatchingProperties & VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD) != 0)
-					u16MismatchScore += 100;
+					iMismatchScore += 100;
 				if ((vk_mMismatchingProperties & VK_MEMORY_PROPERTY_DEVICE_UNCACHED_BIT_AMD) != 0)
-					u16MismatchScore += 100;
+					iMismatchScore += 100;
 				if ((vk_mMismatchingProperties & VK_MEMORY_PROPERTY_RDMA_CAPABLE_BIT_NV) != 0)
-					u16MismatchScore += 100;
-				if (u16LowestMismatchScore > u16MismatchScore) {
-					u16LowestMismatchScore = u16MismatchScore;
+					iMismatchScore += 100;
+				if (iLowestMismatchScore > iMismatchScore) {
+					iLowestMismatchScore = iMismatchScore;
 					selectedMemoryTypeIndex = u8MemoryTypeIndex;
 				}
 			}
@@ -389,7 +395,7 @@ namespace RE {
 
 	bool do_memory_properties_exist(const VkMemoryPropertyFlags vk_mProperties) {
 		PRINT_DEBUG("Checking if any memory type supports queried properties (", std::hex, vk_mProperties, ")");
-		return find_vulkan_memory_type(vk_mProperties, 0xFFFFFFFF).has_value();
+		return find_vulkan_memory_type(vk_mProperties, 0xFFFFFFFFU).has_value();
 	}
 
 	bool is_staging_before_gpu_use_necessary() {

@@ -13,6 +13,8 @@ The following datatypes are allowed to be aliased into the given names:
 * `unsigned long`: `ulong`
 * `unsigned long long`: `ullong`
 
+It's not obligated to use aliases for existing datatypes except for the use of external APIs.
+
 ## Naming
 
 The naming conventions defined here only apply to everything, that is defined within this software and exposed to other.

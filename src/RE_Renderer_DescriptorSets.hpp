@@ -10,9 +10,6 @@ namespace RE {
 		vk_ahSortableDepthDescSets[RE_VK_FRAMES_IN_FLIGHT],
 		vk_hCharacterDescSet;
 	extern std::unique_ptr<VkDescriptorSet[]> cameraDescSets;
-#ifdef RE_OS_LINUX
-	extern VkDescriptorSet vk_hWindowFrameDescSet;
-#endif
 	
 	bool create_descriptor_sets();
 	void destroy_descriptor_sets();

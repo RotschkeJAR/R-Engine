@@ -9,7 +9,8 @@ namespace RE {
 	VkCompositeAlphaFlagBitsKHR vk_eCompositeAlphaSelected;
 	VkPresentModeKHR vk_ePresentNoVsync = VK_PRESENT_MODE_FIFO_KHR,
 		vk_ePresentVsync = VK_PRESENT_MODE_FIFO_KHR;
-	uint32_t u32SurfaceFormatsAvailableCount;
+	uint32_t u32SurfaceFormatsAvailableCount,
+		u32IndexToSelectedSurfaceFormat;
 
 	// creating Vulkan surface is done by the window
 
@@ -90,32 +91,32 @@ namespace RE {
 
 	void select_best_vulkan_surface_format() {
 		PRINT_DEBUG("Selecting best Vulkan surface format");
-		int32_t i32BestSurfaceFormatScore = std::numeric_limits<int32_t>::min();
+		int iBestSurfaceFormatScore = INT_MIN;
 		for (uint32_t u32SurfaceFormatIndex = 0; u32SurfaceFormatIndex < u32SurfaceFormatsAvailableCount; u32SurfaceFormatIndex++) {
-			int32_t i32CurrentSurfaceFormatScore = 0;
+			int iCurrentSurfaceFormatScore = 0;
 			switch (surfaceFormatsAvailable[u32SurfaceFormatIndex].format) {
 				// SDR
 				case VK_FORMAT_R8G8B8A8_UNORM:
-					i32CurrentSurfaceFormatScore += 990;
+					iCurrentSurfaceFormatScore += 990;
 					break;
 				case VK_FORMAT_B8G8R8A8_UNORM:
-					i32CurrentSurfaceFormatScore += 989;
+					iCurrentSurfaceFormatScore += 989;
 					break;
 				case VK_FORMAT_R8G8B8A8_SRGB:
-					i32CurrentSurfaceFormatScore += 1000;
+					iCurrentSurfaceFormatScore += 1000;
 					break;
 				case VK_FORMAT_B8G8R8A8_SRGB:
-					i32CurrentSurfaceFormatScore += 999;
+					iCurrentSurfaceFormatScore += 999;
 					break;
 
 				// other or unknown
 				default:
-					i32CurrentSurfaceFormatScore += -2000;
+					iCurrentSurfaceFormatScore += -2000;
 					break;
 			}
-			i32CurrentSurfaceFormatScore += surfaceFormatsAvailable[u32SurfaceFormatIndex].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR ? 1000 : -1000;
-			if (i32BestSurfaceFormatScore < i32CurrentSurfaceFormatScore) {
-				i32BestSurfaceFormatScore = i32CurrentSurfaceFormatScore;
+			iCurrentSurfaceFormatScore += surfaceFormatsAvailable[u32SurfaceFormatIndex].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR ? 1000 : -1000;
+			if (iBestSurfaceFormatScore < iCurrentSurfaceFormatScore) {
+				iBestSurfaceFormatScore = iCurrentSurfaceFormatScore;
 				u32IndexToSelectedSurfaceFormat = u32SurfaceFormatIndex;
 				PRINT_DEBUG("Found new best Vulkan surface format at index ", u32IndexToSelectedSurfaceFormat, ", which has color space ", std::hex, surfaceFormatsAvailable[u32IndexToSelectedSurfaceFormat].colorSpace, " and format ", surfaceFormatsAvailable[u32IndexToSelectedSurfaceFormat].format, ".");
 			}

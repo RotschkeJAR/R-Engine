@@ -3,11 +3,14 @@
 namespace RE {
 	
 	bool init_settings_gui() {
-		return true;
+		if (create_settings_gui_renderpass()) {
+			return true;
+		}
+		return false;
 	}
 
 	void destroy_settings_gui() {
-
+		destroy_settings_gui_renderpass();
 	}
 
 	void render_settings_gui() {

@@ -5,7 +5,7 @@ namespace RE {
 	
 	VulkanTask aRenderTasks[RE_VK_FRAMES_IN_FLIGHT];
 	VkFence vk_ahRenderFences[RE_VK_FRAMES_IN_FLIGHT];
-#ifdef RE_OS_LINUX
+#ifdef RENDERER_INCLUDE_EMPTY_PRESENT
 	VkCommandPool vk_hCommandPoolEmptyPresent;
 	VkCommandBuffer vk_hCommandBufferEmptyPresent;
 	VkFence vk_hEmptyPresentFence;
@@ -48,7 +48,7 @@ namespace RE {
 					break;
 				}
 				if (syncObjCreateIndex == RE_VK_FRAMES_IN_FLIGHT) {
-				#ifdef RE_OS_LINUX
+				#ifdef RENDERER_INCLUDE_EMPTY_PRESENT
 					PRINT_DEBUG("Creating Vulkan command pool for empty presentations");
 					if (create_vulkan_command_pool(
 							0,
@@ -89,7 +89,7 @@ namespace RE {
 	}
 
 	void destroy_render_tasks() {
-	#ifdef RE_OS_LINUX
+	#ifdef RENDERER_INCLUDE_EMPTY_PRESENT
 		PRINT_DEBUG("Destroying Vulkan fence used for empty presentations");
 		vkDestroyFence(vk_hDevice, vk_hEmptyPresentFence, nullptr);
 		PRINT_DEBUG("Destroying Vulkan command pool used for empty presentations");
@@ -110,7 +110,7 @@ namespace RE {
 		return vkWaitForFences(vk_hDevice, RE_VK_FRAMES_IN_FLIGHT, vk_ahRenderFences, VK_TRUE, std::numeric_limits<uint64_t>::max()) == VK_SUCCESS;
 	}
 
-#ifdef RE_OS_LINUX
+#ifdef RENDERER_INCLUDE_EMPTY_PRESENT
 	bool prepare_render_tasks_for_dummy_presentation() {
 		PRINT_DEBUG("Preparing render tasks for dummy presentation");
 		if (wait_for_rendering_finished()) {

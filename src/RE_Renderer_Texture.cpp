@@ -304,6 +304,7 @@ namespace RE {
 								vkCmdPipelineBarrier2(vk_hCommandBuffer, &vk_inheritImageInfo);
 						});
 						PRINT_DEBUG("Submitting Vulkan task for transferring texture to GPU");
+						constexpr uint64_t u64TextureTransferTimeoutSec = 6;
 						Vulkan_Fence transferFence(0);
 						textureCopyThread.join();
 						constexpr VkPipelineStageFlags2 vk_eWaitStage = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
@@ -371,15 +372,30 @@ namespace RE {
 								.pBufferInfo = nullptr,
 								.pTexelBufferView = nullptr
 							};
-							transferFence.wait_for();
-							if (!are_vulkan_features_enabled<ENABLED_FEATURE_UPDATE_UNUSED_DESCRIPTORS_WHILE_PENDING_BIT>())
-								wait_for_rendering_finished();
-							vkUpdateDescriptorSets(vk_hDevice, 1, &vk_updateInfo, 0, nullptr);
-							return reinterpret_cast<Texture>(pVulkanTexture);
+							switch (transferFence.wait_for(u64TextureTransferTimeoutSec * 1000000000)) {
+								case VK_SUCCESS:
+									if (!are_vulkan_features_enabled<ENABLED_FEATURE_UPDATE_UNUSED_DESCRIPTORS_WHILE_PENDING_BIT>())
+										wait_for_rendering_finished();
+									vkUpdateDescriptorSets(vk_hDevice, 1, &vk_updateInfo, 0, nullptr);
+									return reinterpret_cast<Texture>(pVulkanTexture);
+								case VK_TIMEOUT:
+									RE_ABORT("Texture transfer to the GPU timed out after ", u64TextureTransferTimeoutSec, " seconds");
+								default:
+									RE_FATAL_ERROR("Failed to synchronize texture transfer with the CPU");
+									break;
+							}
 						} else
 							RE_FATAL_ERROR("Failed to create Vulkan image view for image ", pVulkanTexture->vk_hImage);
 						PRINT_DEBUG("Freeing Vulkan image's memory on GPU due to failure creating an image view");
-						transferFence.wait_for();
+						switch (transferFence.wait_for(u64TextureTransferTimeoutSec * 1000000000)) {
+							case VK_SUCCESS:
+								break;
+							case VK_TIMEOUT:
+								RE_ABORT("Texture transfer to the GPU timed out after ", u64TextureTransferTimeoutSec, " seconds");
+							default:
+								RE_FATAL_ERROR("Failed to synchronize texture transfer with the CPU after failing to create Vulkan image view");
+								break;
+						}
 						pVulkanTexture->imageMemory.free();
 					} else
 						RE_FATAL_ERROR("Failed to allocate Vulkan memory for the image ", std::hex, pVulkanTexture->vk_hImage, " to store texture data");

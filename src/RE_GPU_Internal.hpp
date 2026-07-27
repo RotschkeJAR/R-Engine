@@ -34,7 +34,7 @@ namespace RE {
 	// Scheduler
 	bool setup_logical_device_queues();
 	void destroy_logical_device_queues();
-	void select_physical_vulkan_device(uint32_t u32PhysicalDeviceIndex);
+	void create_device_queue_create_infos(const float *pfPriority, std::vector<VkDeviceQueueCreateInfo> &rLogicalQueueCreateInfos);
 
 	// Memory
 	extern std::unique_ptr<VkMemoryHeap[]> vulkanMemoryHeaps;

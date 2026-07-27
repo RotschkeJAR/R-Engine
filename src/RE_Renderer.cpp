@@ -19,28 +19,20 @@ namespace RE {
 						if (setup_presentation()) {
 							if (init_renderer_sprite_layouts()) {
 								if (create_descriptor_sets()) {
-									if (create_renderer_pipelines()) {
-										if (init_renderer_textures()) {
-											if (init_renderer_meshes()) {
-												for (VulkanTask &rRenderTask : aRenderTasks)
-													for (uint8_t u8FunctionIndex = 0; u8FunctionIndex < 3; u8FunctionIndex++)
-														rRenderTask.record(u8FunctionIndex, 0, nullptr);
-											#ifdef RE_OS_LINUX
-												pIndirectDrawWindowTitle->vertexCount = 4;
-												pIndirectDrawWindowTitle->firstVertex = 0;
-												pIndirectDrawWindowTitle->firstInstance = 0;
-												for (pIndirectDrawWindowTitle->instanceCount = 0; pIndirectDrawWindowTitle->instanceCount < 256; pIndirectDrawWindowTitle->instanceCount++) {
-													const uint32_t u32CharCode = static_cast<uint32_t>(pacWindowTitle[pIndirectDrawWindowTitle->instanceCount]);
-													pWindowFrameUniformData->au32TitleChars[pIndirectDrawWindowTitle->instanceCount] = u32CharCode;
-													if (u32CharCode == 0)
-														break;
+									if (create_render_pass()) {
+										if (create_renderer_pipelines()) {
+											if (init_renderer_textures()) {
+												if (init_renderer_meshes()) {
+													for (VulkanTask &rRenderTask : aRenderTasks)
+														for (unsigned uFunctionIndex = 0; uFunctionIndex < aRenderTasks[0].function_count(); uFunctionIndex++)
+															rRenderTask.record(uFunctionIndex, 0, nullptr);
+													return true;
 												}
-											#endif
-												return true;
+												destroy_renderer_textures();
 											}
-											destroy_renderer_textures();
+											destroy_renderer_pipelines();
 										}
-										destroy_renderer_pipelines();
+										destroy_render_pass();
 									}
 									destroy_descriptor_sets();
 								}
@@ -67,6 +59,7 @@ namespace RE {
 		destroy_descriptor_sets();
 		destroy_presentation();
 		destroy_swapchain();
+		destroy_render_pass();
 		destroy_renderer_images();
 		destroy_renderer_buffers();
 		destroy_render_tasks();
@@ -101,10 +94,17 @@ namespace RE {
 	}
 
 	bool swapchain_created_renderer() {
-		return create_swapchain_related_images();
+		if (create_swapchain_related_images()) {
+			if (create_renderer_framebuffers()) {
+				return true;
+			}
+			destroy_swapchain_related_images();
+		}
+		return false;
 	}
 
 	void swapchain_destroyed_renderer() {
+		destroy_renderer_framebuffers();
 		destroy_swapchain_related_images();
 	}
 

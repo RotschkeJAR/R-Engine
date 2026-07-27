@@ -36,6 +36,7 @@ namespace RE {
 #define SELECTED_PHYSICAL_VULKAN_DEVICE_NAME      physicalDevicesAvailable[u32IndexToSelectedPhysicalDevice].pacName
 #define SELECTED_PHYSICAL_VULKAN_DEVICE_TYPE      physicalDevicesAvailable[u32IndexToSelectedPhysicalDevice].vk_eType
 #define SELECTED_PHYSICAL_VULKAN_DEVICE_SCORING   physicalDevicesAvailable[u32IndexToSelectedPhysicalDevice].i32Scoring
+	void select_physical_vulkan_device(uint32_t u32PhysicalDeviceIndex);
 
 	// Scheduler
 #define RE_VK_LOGICAL_QUEUE_IGNORED std::numeric_limits<uint8_t>::max()

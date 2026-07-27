@@ -1,5 +1,5 @@
 #ifndef __RE_RENDERER_IMAGES_H__
-#define __RE_RENDERER_IMAGES_H__
+#define __RE_RENDERER_IMAGES_H__ 1
 
 #include "RE_Renderer_Internal.hpp"
 
@@ -10,33 +10,25 @@ namespace RE {
 		maxRenderImageSize;
 	
 	bool create_renderer_images();
-	bool create_swapchain_related_images();
 	void destroy_renderer_images();
+	bool create_swapchain_related_images();
 	void destroy_swapchain_related_images();
 
 	// Render target
 	extern VkImage vk_hRenderTargetImage;
-	extern std::array<VkImageView, RE_VK_FRAMES_IN_FLIGHT> renderTargetImageViews;
+	extern VkImageView vk_ahRenderTargetImageViews[RE_VK_FRAMES_IN_FLIGHT];
 
 	// Singlesampled images
 	extern VkImage vk_hSinglesampledImage;
-	extern std::array<VkImageView, RE_VK_FRAMES_IN_FLIGHT> singlesampledImageViews;
+	extern VkImageView vk_ahSinglesampledImageViews[RE_VK_FRAMES_IN_FLIGHT];
 
 	// Depth-stencil images
-	extern VkImage vk_hDepthImage,
-		vk_hStencilImage;
-	extern std::array<VkImageView, RE_VK_FRAMES_IN_FLIGHT> depthImageViews,
-		stencilImageViews;
-	extern VkFormat vk_eSelectedDepthFormat,
-		vk_eStelectedStencilFormat;
-	extern VkImageLayout vk_eDepthLayout,
-		vk_eStencilLayout;
+	extern VkImage vk_hDepthStencilImage;
+	extern VkImageView vk_ahDepthStencilImageViews[RE_VK_FRAMES_IN_FLIGHT];
+	extern VkFormat vk_eSelectedDepthStencilFormat;
+	extern bool bStencilsEnabled;
 
-#ifdef RE_OS_LINUX
-	extern VkImage vk_hWindowButtonImage;
-	extern VkImageView vk_hWindowButtonImageView;
-#endif
-
+	// Characters
 	extern VkImage vk_hCharacterImage;
 	extern VkImageView vk_hCharacterImageView;
 

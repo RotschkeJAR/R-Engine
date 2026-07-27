@@ -5,13 +5,6 @@
 
 namespace RE {
 
-#ifdef RE_OS_LINUX
-# define WINDOW_FRAME_RENDER_MODE_SHADOWS 0
-# define WINDOW_FRAME_RENDER_MODE_BAR 1
-# define WINDOW_FRAME_RENDER_MODE_BUTTONS 2
-# define WINDOW_FRAME_RENDER_MODE_TITLE 3
-#endif
-
 	extern VkPipelineLayout vk_hGraphicsPipelineLayout,
 		vk_hSortDepthPipelineLayout,
 		vk_hProcessingPipelineLayout,

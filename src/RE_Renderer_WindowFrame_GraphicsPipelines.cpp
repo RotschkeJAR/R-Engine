@@ -2,11 +2,13 @@
 
 namespace RE {
 
+#ifdef RENDERER_INCLUDE_WINDOW_FRAME
+
 	VkPipelineLayout vk_hWindowFramePipelineLayout;
 	VkPipeline vk_hWindowFrameGraphicsPipeline;
 
 	bool create_window_frame_graphics_pipelines() {
-		PRINT_DEBUG("Creating Vulkan pipeline layout dedicated for compute pipelines processing game objects");
+		PRINT_DEBUG("Creating Vulkan pipeline layout for window frame rendering");
 		const VkDescriptorSetLayout vk_ahDescSetLayouts[] = {
 			vk_hWindowFrameDescSetLayout,
 			vk_hCharacterDescSetLayout
@@ -172,18 +174,9 @@ namespace RE {
 				.dynamicStateCount = sizeof(vk_aeDynamicStates) / sizeof(vk_aeDynamicStates[0]),
 				.pDynamicStates = vk_aeDynamicStates
 			};
-			const VkPipelineRenderingCreateInfo vk_dynamicRenderingInfo = {
-				.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
-				.pNext = nullptr,
-				.viewMask = 0,
-				.colorAttachmentCount = 1,
-				.pColorAttachmentFormats = &vk_eSwapchainImageFormat,
-				.depthAttachmentFormat = VK_FORMAT_UNDEFINED,
-				.stencilAttachmentFormat = VK_FORMAT_UNDEFINED
-			};
 			const VkGraphicsPipelineCreateInfo vk_createInfo = {
 				.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-				.pNext = &vk_dynamicRenderingInfo,
+				.pNext = nullptr,
 				.flags = 0,
 				.stageCount = sizeof(vk_aShaderStages) / sizeof(vk_aShaderStages[0]),
 				.pStages = vk_aShaderStages,
@@ -197,8 +190,8 @@ namespace RE {
 				.pColorBlendState = &vk_colorBlend,
 				.pDynamicState = &vk_dynamicStates,
 				.layout = vk_hWindowFramePipelineLayout,
-				.renderPass = VK_NULL_HANDLE,
-				.subpass = 0,
+				.renderPass = vk_hRenderPass,
+				.subpass = RENDER_SUBPASS_WINDOW_FRAME,
 				.basePipelineHandle = VK_NULL_HANDLE,
 				.basePipelineIndex = -1
 			};
@@ -214,7 +207,10 @@ namespace RE {
 	void destroy_window_frame_graphics_pipelines() {
 		PRINT_DEBUG("Destroying Vulkan graphics pipeline ", vk_hWindowFrameGraphicsPipeline, " used for window frame rendering");
 		vkDestroyPipeline(vk_hDevice, vk_hWindowFrameGraphicsPipeline, nullptr);
+		PRINT_DEBUG("Destroying Vulkan pipeline layout ", vk_hWindowFramePipelineLayout, " used for window frame rendering");
 		vkDestroyPipelineLayout(vk_hDevice, vk_hWindowFramePipelineLayout, nullptr);
 	}
+
+#endif
 
 }

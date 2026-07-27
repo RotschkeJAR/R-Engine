@@ -3,7 +3,7 @@
 namespace RE {
 	
 	VkImage vk_hSinglesampledImage = VK_NULL_HANDLE;
-	std::array<VkImageView, RE_VK_FRAMES_IN_FLIGHT> singlesampledImageViews;
+	VkImageView vk_ahSinglesampledImageViews[RE_VK_FRAMES_IN_FLIGHT] = {};
 
 	bool create_singlesampled_image() {
 		PRINT_DEBUG("Fetching details about occupied queues for the singlesampled render target");
@@ -33,6 +33,7 @@ namespace RE {
 			return true;
 		else
 			RE_FATAL_ERROR("Failed to create Vulkan image used as singlesampled render target");
+		vk_hSinglesampledImage = VK_NULL_HANDLE;
 		return false;
 	}
 
@@ -57,7 +58,7 @@ namespace RE {
 		while (u8FramesInFlightCreateIndex < RE_VK_FRAMES_IN_FLIGHT) {
 			vk_viewCreateInfo.subresourceRange.baseArrayLayer = u8FramesInFlightCreateIndex;
 			PRINT_DEBUG("Creating Vulkan image view at index ", u8FramesInFlightCreateIndex, " pointing at singlesampled image ", vk_hSinglesampledImage, " with format ", std::hex, vk_eSwapchainImageFormat);
-			const VkResult vk_eResult = vkCreateImageView(vk_hDevice, &vk_viewCreateInfo, nullptr, &singlesampledImageViews[u8FramesInFlightCreateIndex]);
+			const VkResult vk_eResult = vkCreateImageView(vk_hDevice, &vk_viewCreateInfo, nullptr, &vk_ahSinglesampledImageViews[u8FramesInFlightCreateIndex]);
 			if (vk_eResult == VK_SUCCESS) {
 				u8FramesInFlightCreateIndex++;
 				continue;
@@ -69,11 +70,9 @@ namespace RE {
 			return true;
 		PRINT_DEBUG("Destroying Vulkan image view pointing at singlesampled image due to failure to create all image views");
 		for (uint8_t u8FramesInFlightDestroyIndex = 0; u8FramesInFlightDestroyIndex < u8FramesInFlightCreateIndex; u8FramesInFlightDestroyIndex++) {
-			vkDestroyImageView(vk_hDevice, singlesampledImageViews[u8FramesInFlightDestroyIndex], nullptr);
-			singlesampledImageViews[u8FramesInFlightDestroyIndex] = VK_NULL_HANDLE;
+			vkDestroyImageView(vk_hDevice, vk_ahSinglesampledImageViews[u8FramesInFlightDestroyIndex], nullptr);
+			vk_ahSinglesampledImageViews[u8FramesInFlightDestroyIndex] = VK_NULL_HANDLE;
 		}
-		vk_hSinglesampledImage = VK_NULL_HANDLE;
-		singlesampledImageViews.fill(VK_NULL_HANDLE);
 		return false;
 	}
 
@@ -85,9 +84,10 @@ namespace RE {
 
 	void destroy_singlesampled_image_views() {
 		PRINT_DEBUG("Destroying Vulkan image views pointing at the singlesampled render target");
-		for (const VkImageView vk_hSinglesampledView : singlesampledImageViews)
-			vkDestroyImageView(vk_hDevice, vk_hSinglesampledView, nullptr);
-		singlesampledImageViews.fill(VK_NULL_HANDLE);
+		for (VkImageView &vk_rhSinglesampledView : vk_ahSinglesampledImageViews) {
+			vkDestroyImageView(vk_hDevice, vk_rhSinglesampledView, nullptr);
+			vk_rhSinglesampledView = VK_NULL_HANDLE;
+		}
 	}
 
 }

@@ -2,6 +2,8 @@
 
 namespace RE {
 
+#ifdef RENDERER_INCLUDE_WINDOW_FRAME
+
 	static std::unique_ptr<VulkanMemory[]> std_windowFrameResourceMemoriesLocal,
 		std_windowFrameResourceMemories;
 
@@ -26,7 +28,7 @@ namespace RE {
 			std::unique_ptr<void*[]> std_bufferMemories = std::make_unique<void*[]>(sMemoryAllocated);
 			size_t sMemoryIndex;
 			for (sMemoryIndex = 0; sMemoryIndex < sMemoryAllocated; sMemoryIndex++)
-				if (!std_windowFrameResourceMemoriesLocal.map(0, 0, VK_WHOLE_SIZE, &std_bufferMemories[sMemoryIndex]))
+				if (!std_windowFrameResourceMemoriesLocal[sMemoryIndex].map(0, 0, VK_WHOLE_SIZE, &std_bufferMemories[sMemoryIndex]))
 					break;
 			if (sMemoryIndex == sMemoryAllocated) {
 				const size_t sBufferIndexToMemory = aAllocInfos[sBufferIndex].indexToMemory;
@@ -63,5 +65,7 @@ namespace RE {
 		std_windowFrameResourceMemories.reset();
 		std_windowFrameResourceMemoriesLocal.reset();
 	}
+
+#endif
 
 }

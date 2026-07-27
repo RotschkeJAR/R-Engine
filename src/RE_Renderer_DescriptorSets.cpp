@@ -11,10 +11,8 @@ namespace RE {
 					if (create_sortable_depth_desc_sets()) {
 						if (create_camera_descriptor_sets()) {
 							if (create_sprite_descriptor_sets()) {
-								if (create_window_frame_descriptor_sets()) {
-									if (create_character_descriptor_sets())
-										return true;
-									destroy_character_descriptor_sets();
+								if (create_character_descriptor_sets()) {
+									return true;
 								}
 								destroy_sprite_descriptor_sets();
 							}
@@ -34,7 +32,6 @@ namespace RE {
 	void destroy_descriptor_sets() {
 		PRINT_DEBUG("Destroying Vulkan descriptor sets");
 		destroy_character_descriptor_sets();
-		destroy_window_frame_descriptor_sets();
 		destroy_sprite_descriptor_sets();
 		destroy_camera_descriptor_sets();
 		destroy_sortable_depth_desc_sets();

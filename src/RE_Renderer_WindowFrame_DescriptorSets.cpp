@@ -2,6 +2,8 @@
 
 namespace RE {
 
+#ifdef RENDERER_INCLUDE_WINDOW_FRAME
+
 	VkDescriptorSetLayout vk_hWindowFrameDescSetLayout;
 	VkDescriptorSet vk_hWindowFrameDescSet;
 
@@ -85,13 +87,18 @@ namespace RE {
 				return true;
 			} else
 				RE_FATAL_ERROR("Failed to allocate Vulkan descriptor sets for window frame");
+			PRINT_DEBUG("Destroying Vulkan descriptor set layout ", vk_hWindowFrameDescSetLayout, " for failing creating descriptor sets for window frame");
+			vkDestroyDescriptorSetLayout(vk_hDevice, vk_hWindowFrameDescSetLayout, nullptr);
 		} else
 			RE_FATAL_ERROR("Failed to create Vulkan descriptor set layout for window frame rendering");
 		return false;
 	}
 
 	void destroy_window_frame_descriptor_sets() {
+		PRINT_DEBUG("Destroying Vulkan descriptor set layout ", vk_hWindowFrameDescSetLayout);
 		vkDestroyDescriptorSetLayout(vk_hDevice, vk_hWindowFrameDescSetLayout, nullptr);
 	}
+
+#endif
 
 }

@@ -5,6 +5,8 @@
 
 namespace RE {
 
+#ifdef RENDERER_INCLUDE_WINDOW_FRAME
+
 	extern VkImage vk_hWindowButtonImage;
 	extern VkImageView vk_hWindowButtonImageView;
 
@@ -12,6 +14,8 @@ namespace RE {
 	bool create_window_frame_image_views();
 	void destroy_window_frame_images();
 	void destroy_window_frame_image_views();
+
+#endif
 
 }
 

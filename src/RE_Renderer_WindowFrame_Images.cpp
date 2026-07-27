@@ -3,6 +3,8 @@
 
 namespace RE {
 
+#ifdef RENDERER_INCLUDE_WINDOW_FRAME
+
 	VkImage vk_hWindowButtonImage;
 	VkImageView vk_hWindowButtonImageView;
 
@@ -246,5 +248,7 @@ namespace RE {
 		PRINT_DEBUG("Destroying Vulkan image view pointing to window button textures");
 		vkDestroyImageView(vk_hDevice, vk_hWindowButtonImageView, nullptr);
 	}
+
+#endif
 
 }

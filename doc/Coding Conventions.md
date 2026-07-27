@@ -3,6 +3,8 @@
 This document covers the rules on how source code has to be written for this software to keep read- and maintainability.
 The coding conventions listed here do apply to the internals and the interface defined by this software.
 
+In this document a tabulator in a script is treated as an equivalent to 4 spaces.
+
 Elements, which were defined by APIs or any other software, are not allowed to be aliased to cover the convention rules.
 The following datatypes are allowed to be aliased into the given names:
 * `signed char`: `schar`
@@ -223,6 +225,8 @@ If it continues on subsequent lines after a backslash, it has to be indented by 
 		+ in \
 		+ here)
 ```
+
+Simple macro `define`s, that are used for preprocessing only and control the including of certain code during compilation usually are one-liners and therefore aren't affected by this convention rule. Such `define`s are allowed to store a value, e.g. 1, but isn't required and doesn't have to be intended to align with surrounding macros.
 
 Preprocessor commands such as `ifdef`, `define` and `endif` have to be indented as much as the context they belong to.
 

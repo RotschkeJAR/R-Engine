@@ -1,7 +1,5 @@
 #include "RE_GPU_Internal.hpp"
 
-#include <queue>
-
 namespace RE {
 
 	VkDevice vk_hDevice = VK_NULL_HANDLE;
@@ -192,7 +190,8 @@ namespace RE {
 	PFN_vkGetDeviceImageSparseMemoryRequirements vkGetDeviceImageSparseMemoryRequirements = nullptr;
 
 	// Vulkan 1.4
-	/* PFN_vkCmdSetLineStipple vkCmdSetLineStipple = nullptr;
+#ifdef VK_VERSION_1_4
+	PFN_vkCmdSetLineStipple vkCmdSetLineStipple = nullptr;
 	PFN_vkMapMemory2 vkMapMemory2 = nullptr;
 	PFN_vkUnmapMemory2 vkUnmapMemory2 = nullptr;
 	PFN_vkCmdBindIndexBuffer2 vkCmdBindIndexBuffer2 = nullptr;
@@ -210,15 +209,18 @@ namespace RE {
 	PFN_vkCopyMemoryToImage vkCopyMemoryToImage = nullptr;
 	PFN_vkCopyImageToMemory vkCopyImageToMemory = nullptr;
 	PFN_vkCopyImageToImage vkCopyImageToImage = nullptr;
-	PFN_vkTransitionImageLayout vkTransitionImageLayout = nullptr; */
+	PFN_vkTransitionImageLayout vkTransitionImageLayout = nullptr;
+#endif
 
 	// Debug Messages
+#ifndef NDEBUG
 	PFN_vkQueueBeginDebugUtilsLabelEXT vkQueueBeginDebugUtilsLabelEXT = nullptr;
 	PFN_vkQueueEndDebugUtilsLabelEXT vkQueueEndDebugUtilsLabelEXT = nullptr;
 	PFN_vkQueueInsertDebugUtilsLabelEXT vkQueueInsertDebugUtilsLabelEXT = nullptr;
 	PFN_vkCmdBeginDebugUtilsLabelEXT vkCmdBeginDebugUtilsLabelEXT = nullptr;
 	PFN_vkCmdEndDebugUtilsLabelEXT vkCmdEndDebugUtilsLabelEXT = nullptr;
 	PFN_vkCmdInsertDebugUtilsLabelEXT vkCmdInsertDebugUtilsLabelEXT = nullptr;
+#endif
 	// Swapchain
 	PFN_vkCreateSwapchainKHR vkCreateSwapchainKHR = nullptr;
 	PFN_vkDestroySwapchainKHR vkDestroySwapchainKHR = nullptr;
@@ -229,7 +231,7 @@ namespace RE {
 	PFN_vkGetDeviceGroupSurfacePresentModesKHR vkGetDeviceGroupSurfacePresentModesKHR = nullptr;
 	PFN_vkAcquireNextImage2KHR vkAcquireNextImage2KHR = nullptr;
 
-	static bool load_vulkan_1_0_device() {
+	static bool load_vulkan_1_0_with_device() {
 		PRINT_DEBUG("Loading device-level Vulkan 1.0-functions");
 		vkGetDeviceQueue = reinterpret_cast<PFN_vkGetDeviceQueue>(load_vulkan_func_with_device("vkGetDeviceQueue"));
 		if (!vkGetDeviceQueue)
@@ -591,7 +593,7 @@ namespace RE {
 		return true;
 	}
 
-	static bool load_vulkan_1_1_device() {
+	static bool load_vulkan_1_1_with_device() {
 		PRINT_DEBUG("Loading device-level Vulkan 1.1-functions");
 		vkBindBufferMemory2 = reinterpret_cast<PFN_vkBindBufferMemory2>(load_vulkan_func_with_device("vkBindBufferMemory2"));
 		if (!vkBindBufferMemory2)
@@ -644,7 +646,7 @@ namespace RE {
 		return true;
 	}
 
-	static bool load_vulkan_1_2_device() {
+	static bool load_vulkan_1_2_with_device() {
 		PRINT_DEBUG("Loading device-level Vulkan 1.2-functions");
 		vkCmdDrawIndirectCount = reinterpret_cast<PFN_vkCmdDrawIndirectCount>(load_vulkan_func_with_device("vkCmdDrawIndirectCount"));
 		if (!vkCmdDrawIndirectCount)
@@ -688,7 +690,7 @@ namespace RE {
 		return true;
 	}
 
-	static bool load_vulkan_1_3_device() {
+	static bool load_vulkan_1_3_with_device() {
 		PRINT_DEBUG("Loading device-level Vulkan 1.3-functions");
 		vkCreatePrivateDataSlot = reinterpret_cast<PFN_vkCreatePrivateDataSlot>(load_vulkan_func_with_device("vkCreatePrivateDataSlot"));
 		if (!vkCreatePrivateDataSlot)
@@ -701,8 +703,6 @@ namespace RE {
 			return false;
 		vkGetPrivateData = reinterpret_cast<PFN_vkGetPrivateData>(load_vulkan_func_with_device("vkGetPrivateData"));
 		if (!vkGetPrivateData)
-			return false;
-		if (!load_synchronization_2_funcs())
 			return false;
 		vkCmdCopyBuffer2 = reinterpret_cast<PFN_vkCmdCopyBuffer2>(load_vulkan_func_with_device("vkCmdCopyBuffer2"));
 		if (!vkCmdCopyBuffer2)
@@ -782,10 +782,13 @@ namespace RE {
 		vkGetDeviceImageSparseMemoryRequirements = reinterpret_cast<PFN_vkGetDeviceImageSparseMemoryRequirements>(load_vulkan_func_with_device("vkGetDeviceImageSparseMemoryRequirements"));
 		if (!vkGetDeviceImageSparseMemoryRequirements)
 			return false;
+		if (!load_synchronization_2_funcs())
+			return false;
 		return true;
 	}
 
-	/* static bool load_vulkan_1_4_device() {
+#ifdef VK_VERSION_1_4
+	static bool load_vulkan_1_4_with_device() {
 		PRINT_DEBUG("Loading device-level Vulkan 1.4-functions");
 		vkCmdSetLineStipple = reinterpret_cast<PFN_vkCmdSetLineStipple>(load_vulkan_func_with_device("vkCmdSetLineStipple"));
 		if (!vkCmdSetLineStipple)
@@ -845,10 +848,16 @@ namespace RE {
 		if (!vkTransitionImageLayout)
 			return false;
 		return true;
-	} */
+	}
+#else
+	consteval bool load_vulkan_1_4_with_device() {
+		return true;
+	}
+#endif
 
 	static bool load_extension_funcs_with_device() {
 		PRINT_DEBUG("Loading device-level Vulkan extension-functions");
+	#ifndef NDEBUG
 		vkQueueBeginDebugUtilsLabelEXT = reinterpret_cast<PFN_vkQueueBeginDebugUtilsLabelEXT>(load_vulkan_func_with_device("vkQueueBeginDebugUtilsLabelEXT"));
 		if (!vkQueueBeginDebugUtilsLabelEXT)
 			return false;
@@ -867,6 +876,7 @@ namespace RE {
 		vkCmdInsertDebugUtilsLabelEXT = reinterpret_cast<PFN_vkCmdInsertDebugUtilsLabelEXT>(load_vulkan_func_with_device("vkCmdInsertDebugUtilsLabelEXT"));
 		if (!vkCmdInsertDebugUtilsLabelEXT)
 			return false;
+	#endif
 		vkCreateSwapchainKHR = reinterpret_cast<PFN_vkCreateSwapchainKHR>(load_vulkan_func_with_device("vkCreateSwapchainKHR"));
 		if (!vkCreateSwapchainKHR)
 			return false;
@@ -1056,7 +1066,6 @@ namespace RE {
 		vkDestroyPrivateDataSlot = nullptr;
 		vkSetPrivateData = nullptr;
 		vkGetPrivateData = nullptr;
-		unload_synchronization_2_funcs();
 		vkCmdCopyBuffer2 = nullptr;
 		vkCmdCopyImage2 = nullptr;
 		vkCmdCopyBufferToImage2 = nullptr;
@@ -1083,9 +1092,11 @@ namespace RE {
 		vkGetDeviceBufferMemoryRequirements = nullptr;
 		vkGetDeviceImageMemoryRequirements = nullptr;
 		vkGetDeviceImageSparseMemoryRequirements = nullptr;
+		unload_synchronization_2_funcs();
 
 		// Vulkan 1.4
-		/* vkCmdSetLineStipple = nullptr;
+	#ifdef VK_VERSION_1_4
+		vkCmdSetLineStipple = nullptr;
 		vkMapMemory2 = nullptr;
 		vkUnmapMemory2 = nullptr;
 		vkCmdBindIndexBuffer2 = nullptr;
@@ -1103,15 +1114,18 @@ namespace RE {
 		vkCopyMemoryToImage = nullptr;
 		vkCopyImageToMemory = nullptr;
 		vkCopyImageToImage = nullptr;
-		vkTransitionImageLayout = nullptr; */
+		vkTransitionImageLayout = nullptr;
+	#endif
 
 		// Debug extension
+	#ifndef NDEBUG
 		vkQueueBeginDebugUtilsLabelEXT = nullptr;
 		vkQueueEndDebugUtilsLabelEXT = nullptr;
 		vkQueueInsertDebugUtilsLabelEXT = nullptr;
 		vkCmdBeginDebugUtilsLabelEXT = nullptr;
 		vkCmdEndDebugUtilsLabelEXT = nullptr;
 		vkCmdInsertDebugUtilsLabelEXT = nullptr;
+	#endif
 		// Swapchain extension
 		vkCreateSwapchainKHR = nullptr;
 		vkDestroySwapchainKHR = nullptr;
@@ -1130,15 +1144,15 @@ namespace RE {
 		if (are_vulkan_features_enabled<ENABLED_FEATURE_INDEX_UINT_8_BIT>()) {
 			uint32_t u32ExtensionCount;
 			vkEnumerateDeviceExtensionProperties(SELECTED_PHYSICAL_VULKAN_DEVICE, nullptr, &u32ExtensionCount, nullptr);
-			std::unique_ptr<VkExtensionProperties[]> extensions = std::make_unique<VkExtensionProperties[]>(u32ExtensionCount);
-			vkEnumerateDeviceExtensionProperties(SELECTED_PHYSICAL_VULKAN_DEVICE, nullptr, &u32ExtensionCount, extensions.get());
+			std::unique_ptr<VkExtensionProperties[]> std_extensions = std::make_unique<VkExtensionProperties[]>(u32ExtensionCount);
+			vkEnumerateDeviceExtensionProperties(SELECTED_PHYSICAL_VULKAN_DEVICE, nullptr, &u32ExtensionCount, std_extensions.get());
 			bool bAvailableEXT = false;
 			for (uint32_t u32ExtensionIndex = 0; u32ExtensionIndex < u32ExtensionCount; u32ExtensionIndex++) {
-				if (are_string_contents_equal(extensions[u32ExtensionIndex].extensionName, VK_KHR_INDEX_TYPE_UINT8_EXTENSION_NAME)) {
+				if (are_string_contents_equal(std_extensions[u32ExtensionIndex].extensionName, VK_KHR_INDEX_TYPE_UINT8_EXTENSION_NAME)) {
 					logicalDeviceExtensions.emplace_back(VK_KHR_INDEX_TYPE_UINT8_EXTENSION_NAME);
 					bAvailableEXT = false;
 					break;
-				} else if (are_string_contents_equal(extensions[u32ExtensionIndex].extensionName, VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME))
+				} else if (are_string_contents_equal(std_extensions[u32ExtensionIndex].extensionName, VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME))
 					bAvailableEXT = true;
 			}
 			if (bAvailableEXT)
@@ -1147,8 +1161,8 @@ namespace RE {
 
 		PRINT_DEBUG("Creating create Vulkan queue-information structs");
 		constexpr float fQueuePriority = 1.0f;
-		std::vector<VkDeviceQueueCreateInfo> vk_paDeviceQueueCreateInfos;
-		create_queue_create_infos(&fQueuePriority, vk_paDeviceQueueCreateInfos);
+		std::vector<VkDeviceQueueCreateInfo> std_deviceQueueCreateInfos;
+		create_device_queue_create_infos(&fQueuePriority, std_deviceQueueCreateInfos);
 
 		PRINT_DEBUG("Creating logical Vulkan device");
 		VkPhysicalDeviceIndexTypeUint8Features vk_indexTypeUint8Feature = {
@@ -1190,8 +1204,8 @@ namespace RE {
 		const VkDeviceCreateInfo vk_deviceCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
 			.pNext = &vk_enabledFeatures_1_1,
-			.queueCreateInfoCount = static_cast<uint32_t>(vk_paDeviceQueueCreateInfos.size()),
-			.pQueueCreateInfos = vk_paDeviceQueueCreateInfos.data(),
+			.queueCreateInfoCount = static_cast<uint32_t>(std_deviceQueueCreateInfos.size()),
+			.pQueueCreateInfos = std_deviceQueueCreateInfos.data(),
 			.enabledExtensionCount = static_cast<uint32_t>(logicalDeviceExtensions.size()),
 			.ppEnabledExtensionNames = logicalDeviceExtensions.data(),
 			.pEnabledFeatures = &vk_physicalDeviceFeaturesEnabled
@@ -1202,11 +1216,11 @@ namespace RE {
 		}
 
 		PRINT_DEBUG("Loading logical Vulkan device-level functions with device ", vk_hDevice);
-		if (!load_vulkan_1_0_device()
-				|| !load_vulkan_1_1_device()
-				|| !load_vulkan_1_2_device()
-				|| !load_vulkan_1_3_device()
-				/* || !load_vulkan_1_4_device() */
+		if (!load_vulkan_1_0_with_device()
+				|| !load_vulkan_1_1_with_device()
+				|| !load_vulkan_1_2_with_device()
+				|| !load_vulkan_1_3_with_device()
+				|| !load_vulkan_1_4_with_device()
 				|| !load_extension_funcs_with_device()) {
 			destroy_logical_vulkan_device();
 			return false;

@@ -90,7 +90,7 @@ namespace RE {
 	static WindowArea get_wayland_window_area_cursor_is_in() {
 		if ((mSettingsFlags & SETTINGS_FLAG_FULLSCREEN_BIT))
 			return WINDOW_AREA_CONTENT;
-		const int iWindowBorderWidth = (mWindowFlagBits & WINDOW_FLAG_MAXIMIZED_BIT) ? 0 : WINDOW_WAYLAND_BORDER_TOTAL_SIZE;
+		const int iWindowBorderWidth = (mWindowFlagBits & WINDOW_FLAG_MAXIMIZED_BIT) ? 0 : WINDOW_BORDER_TOTAL_SIZE;
 		if (actualCursorPosition[0] < iWindowBorderWidth) {
 			if (actualCursorPosition[1] < iWindowBorderWidth + EDGE_EXTENSION)
 				return WINDOW_AREA_TOP_LEFT;
@@ -115,12 +115,12 @@ namespace RE {
 			else if (actualCursorPosition[0] >= actualWindowSize[0] - iWindowBorderWidth - EDGE_EXTENSION)
 				return WINDOW_AREA_BOTTOM_RIGHT;
 			return WINDOW_AREA_BOTTOM;
-		} else if (actualCursorPosition[1] < iWindowBorderWidth + WINDOW_WAYLAND_BAR_SIZE) {
-			if (actualCursorPosition[0] >= actualWindowSize[0] - iWindowBorderWidth - WINDOW_WAYLAND_BUTTON_WIDTH)
+		} else if (actualCursorPosition[1] < iWindowBorderWidth + WINDOW_BAR_SIZE) {
+			if (actualCursorPosition[0] >= actualWindowSize[0] - iWindowBorderWidth - WINDOW_BUTTON_WIDTH)
 				return WINDOW_AREA_BUTTON_CLOSE;
-			else if (actualCursorPosition[0] >= actualWindowSize[0] - iWindowBorderWidth - WINDOW_WAYLAND_BUTTON_WIDTH * 2)
+			else if (actualCursorPosition[0] >= actualWindowSize[0] - iWindowBorderWidth - WINDOW_BUTTON_WIDTH * 2)
 				return WINDOW_AREA_BUTTON_MAXIMIZE;
-			else if (actualCursorPosition[0] >= actualWindowSize[0] - iWindowBorderWidth - WINDOW_WAYLAND_BUTTON_WIDTH * 3)
+			else if (actualCursorPosition[0] >= actualWindowSize[0] - iWindowBorderWidth - WINDOW_BUTTON_WIDTH * 3)
 				return WINDOW_AREA_BUTTON_MINIMIZE;
 			return WINDOW_AREA_BAR;
 		} else
@@ -323,15 +323,15 @@ namespace RE {
 
 	static void xdg_toplevel_configure_callback(void *pData, xdg_toplevel *xdg_pToplevel, int32_t i32Width, int32_t i32Height, wl_array *wl_pStates) {
 		if (i32Width <= 0)
-			i32Width = largestMonitorSize[0] / 5 * 3 + WINDOW_WAYLAND_EXTRA_WIDTH;
+			i32Width = largestMonitorSize[0] / 5 * 3 + WINDOW_EXTRA_WIDTH;
 		if (i32Height <= 0)
-			i32Height = largestMonitorSize[1] / 5 * 3 + WINDOW_WAYLAND_EXTRA_HEIGHT;
+			i32Height = largestMonitorSize[1] / 5 * 3 + WINDOW_EXTRA_HEIGHT;
 		actualWindowSize[0] = i32Width;
 		actualWindowSize[1] = i32Height;
-		window_resize_event(static_cast<uint32_t>(i32Width - WINDOW_WAYLAND_EXTRA_WIDTH), static_cast<uint32_t>(i32Height - WINDOW_WAYLAND_EXTRA_HEIGHT));
+		window_resize_event(static_cast<uint32_t>(i32Width - WINDOW_EXTRA_WIDTH), static_cast<uint32_t>(i32Height - WINDOW_EXTRA_HEIGHT));
 		PRINT_DEBUG("Updating regions on Wayland surface ", wl_pSurface);
 		wl_region *const wl_pRegion = wl_compositor_create_region(wlCompositor.waylandObject);
-		wl_region_add(wl_pRegion, WINDOW_WAYLAND_SHADOW_SIZE, WINDOW_WAYLAND_SHADOW_SIZE, actualWindowSize[0] - WINDOW_WAYLAND_SHADOW_SIZE * 2, actualWindowSize[1] - WINDOW_WAYLAND_SHADOW_SIZE * 2);
+		wl_region_add(wl_pRegion, WINDOW_SHADOW_SIZE, WINDOW_SHADOW_SIZE, actualWindowSize[0] - WINDOW_SHADOW_SIZE * 2, actualWindowSize[1] - WINDOW_SHADOW_SIZE * 2);
 		wl_surface_set_opaque_region(wl_pSurface, wl_pRegion);
 		wl_region_destroy(wl_pRegion);
 
@@ -420,7 +420,7 @@ namespace RE {
 				break;
 			case WINDOW_AREA_CONTENT:
 				iNewCursorImage = CURSOR_DEFAULT;
-				cursor_event(actualCursorPosition[0] - WINDOW_WAYLAND_X_OFFSET, actualCursorPosition[1] - WINDOW_WAYLAND_Y_OFFSET);
+				cursor_event(actualCursorPosition[0] - WINDOW_X_OFFSET, actualCursorPosition[1] - WINDOW_Y_OFFSET);
 				break;
 			default:
 				break;
@@ -813,7 +813,7 @@ namespace RE {
 							if ((xdg_pToplevel = xdg_surface_get_toplevel(xdg_pSurface))) {
 								PRINT_DEBUG("Adding listener to the XDG toplevel ", xdg_pToplevel);
 								if (xdg_toplevel_add_listener(xdg_pToplevel, &xdg_toplevelListener, nullptr) == 0) {
-									xdg_toplevel_set_min_size(xdg_pToplevel, MIN_WINDOW_WIDTH + WINDOW_WAYLAND_EXTRA_WIDTH, MIN_WINDOW_HEIGHT + WINDOW_WAYLAND_EXTRA_HEIGHT);
+									xdg_toplevel_set_min_size(xdg_pToplevel, MIN_WINDOW_WIDTH + WINDOW_EXTRA_WIDTH, MIN_WINDOW_HEIGHT + WINDOW_EXTRA_HEIGHT);
 									if (!(mSettingsFlags & SETTINGS_FLAG_FULLSCREEN_BIT))
 										xdg_toplevel_set_max_size(xdg_pToplevel, largestMonitorSize[0] + MAX_WINDOW_WIDTH_RELATIVE_TO_MONITOR, largestMonitorSize[1] + MAX_WINDOW_HEIGHT_RELATIVE_TO_MONITOR);
 									else

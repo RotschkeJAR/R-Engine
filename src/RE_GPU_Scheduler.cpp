@@ -14,11 +14,31 @@ namespace RE {
 		VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT // General computing
 	};
 	constexpr uint8_t u8RecommendedQueueTypesCount = sizeof(vk_aeRecommendedQueueTypes) / sizeof(vk_aeRecommendedQueueTypes[0]);
-#define QUEUE_INDEX_RENDERING 0
-#define QUEUE_INDEX_TRANSFER 1
-#define QUEUE_INDEX_GENERAL_COMPUTING 2
+#define QUEUE_INDEX_RENDERING          0
+#define QUEUE_INDEX_TRANSFER           1
+#define QUEUE_INDEX_GENERAL_COMPUTING  2
 
-	void create_queue_create_infos(const float *pfPriority, std::vector<VkDeviceQueueCreateInfo> &rLogicalQueueCreateInfos) {
+	bool setup_logical_device_queues() {
+		VkDeviceQueueInfo2 vk_queueInfoGet;
+		vk_queueInfoGet.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_INFO_2;
+		vk_queueInfoGet.pNext = nullptr;
+		vk_queueInfoGet.flags = 0;
+		vk_queueInfoGet.queueIndex = 0;
+		for (uint8_t u8LogicalQueueIndex = 0; u8LogicalQueueIndex < u8LogicalQueueCount; u8LogicalQueueIndex++) {
+			PRINT_DEBUG("Getting logical queue at index ", u8LogicalQueueIndex);
+			vk_queueInfoGet.queueFamilyIndex = queueFamilyIndices[u8LogicalQueueIndex];
+			vkGetDeviceQueue2(vk_hDevice, &vk_queueInfoGet, &vk_pahQueues[u8LogicalQueueIndex]);
+		}
+		return true;
+	}
+
+	void destroy_logical_device_queues() {
+		vk_pahQueues.reset();
+		vk_paeQueueTypes.reset();
+		queueFamilyIndices.reset();
+	}
+
+	void create_device_queue_create_infos(const float *pfPriority, std::vector<VkDeviceQueueCreateInfo> &rLogicalQueueCreateInfos) {
 		PRINT_DEBUG("Fetching information about available queues on physical Vulkan device");
 		uint32_t u32QueueFamilyCount;
 		vkGetPhysicalDeviceQueueFamilyProperties2(SELECTED_PHYSICAL_VULKAN_DEVICE, &u32QueueFamilyCount, nullptr);
@@ -232,26 +252,6 @@ namespace RE {
 
 			u8LogicalQueueCreateIndex++;
 		}
-	}
-
-	bool setup_logical_device_queues() {
-		VkDeviceQueueInfo2 vk_queueInfoGet;
-		vk_queueInfoGet.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_INFO_2;
-		vk_queueInfoGet.pNext = nullptr;
-		vk_queueInfoGet.flags = 0;
-		vk_queueInfoGet.queueIndex = 0;
-		for (uint8_t u8LogicalQueueIndex = 0; u8LogicalQueueIndex < u8LogicalQueueCount; u8LogicalQueueIndex++) {
-			PRINT_DEBUG("Getting logical queue at index ", u8LogicalQueueIndex);
-			vk_queueInfoGet.queueFamilyIndex = queueFamilyIndices[u8LogicalQueueIndex];
-			vkGetDeviceQueue2(vk_hDevice, &vk_queueInfoGet, &vk_pahQueues[u8LogicalQueueIndex]);
-		}
-		return true;
-	}
-
-	void destroy_logical_device_queues() {
-		vk_pahQueues.reset();
-		vk_paeQueueTypes.reset();
-		queueFamilyIndices.reset();
 	}
 
 	VkQueue get_present_queue(const uint8_t u8PreferredQueueIndex) {

@@ -12,21 +12,22 @@ namespace RE {
 	static bool bDynamicScreenPercentage = false;
 
 	bool create_renderer_images() {
-		if (create_window_button_image()) {
-			if (create_character_image()) {
-				if (alloc_memory_for_renderer_images()) {
-					if (create_window_button_image_views()) {
-						if (create_character_image_view())
-							return true;
-						destroy_window_button_image_views();
-					}
-					free_memory_for_renderer_images();
+		if (create_character_image()) {
+			if (alloc_memory_for_renderer_images()) {
+				if (create_character_image_view()) {
+					return true;
 				}
-				destroy_character_image();
+				free_memory_for_renderer_images();
 			}
-			destroy_window_button_image();
+			destroy_character_image();
 		}
 		return false;
+	}
+
+	void destroy_renderer_images() {
+		destroy_character_image_view();
+		destroy_character_image();
+		free_memory_for_renderer_images();
 	}
 
 	bool create_swapchain_related_images() {
@@ -82,14 +83,6 @@ namespace RE {
 		return false;
 	}
 
-	void destroy_renderer_images() {
-		destroy_character_image_view();
-		destroy_character_image();
-		destroy_window_button_image_views();
-		destroy_window_button_image();
-		free_memory_for_renderer_images();
-	}
-
 	void destroy_swapchain_related_images() {
 		destroy_render_target_image_views();
 		destroy_render_target_image();
@@ -137,7 +130,6 @@ namespace RE {
 		}
 	}
 
-	[[nodiscard]]
 	ScreenPercentageSettings get_screen_percentage_settings() {
 		return screenPercentageSettings;
 	}
@@ -155,7 +147,6 @@ namespace RE {
 		}
 	}
 
-	[[nodiscard]]
 	bool is_dynamic_screen_percentage_enabled() {
 		return bDynamicScreenPercentage;
 	}
@@ -177,17 +168,14 @@ namespace RE {
 		set_maximum_size_for_dynamic_screen_percentage(Vector2u(u32MaxWidth, u32MaxHeight));
 	}
 
-	[[nodiscard]]
 	Vector2u get_maximum_size_for_dynamic_screen_scaling() {
 		return maxRenderImageSize;
 	}
 
-	[[nodiscard]]
 	uint32_t get_maximum_width_for_dynamic_screen_scaling() {
 		return maxRenderImageSize[0];
 	}
 
-	[[nodiscard]]
 	uint32_t get_maximum_height_for_dynamic_screen_scaling() {
 		return maxRenderImageSize[1];
 	}

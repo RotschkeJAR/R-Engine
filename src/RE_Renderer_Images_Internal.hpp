@@ -20,27 +20,22 @@ namespace RE {
 	void destroy_singlesampled_image_views();
 	
 	// Depth-stencil images
-#define DEPTH_STENCIL_FEATURE_S8_SUPPORTED_BIT			0x01
-#define DEPTH_STENCIL_FEATURE_D16_SUPPORTED_BIT			0x02
-#define DEPTH_STENCIL_FEATURE_D24_SUPPORTED_BIT			0x04
-#define DEPTH_STENCIL_FEATURE_D32_SUPPORTED_BIT			0x08
-#define DEPTH_STENCIL_FEATURE_D16_S8_SUPPORTED_BIT		0x10
-#define DEPTH_STENCIL_FEATURE_D24_S8_SUPPORTED_BIT		0x20
-#define DEPTH_STENCIL_FEATURE_D32_S8_SUPPORTED_BIT		0x40
-#define DEPTH_STENCIL_FEATURE_TRANSIENT_ATTACHMENT_BIT	0x80
+	typedef unsigned DepthStencilFeatureFlags;
+	enum DepthStencilFeatureBits : DepthStencilFeatureFlags {
+		DEPTH_STENCIL_FEATURE_D16_SUPPORTED_BIT = 0x1,
+		DEPTH_STENCIL_FEATURE_D24_SUPPORTED_BIT = 0x2,
+		DEPTH_STENCIL_FEATURE_D32_SUPPORTED_BIT = 0x4,
+		DEPTH_STENCIL_FEATURE_D16_S8_SUPPORTED_BIT = 0x8,
+		DEPTH_STENCIL_FEATURE_D24_S8_SUPPORTED_BIT = 0x10,
+		DEPTH_STENCIL_FEATURE_D32_S8_SUPPORTED_BIT = 0x20,
+		DEPTH_STENCIL_FEATURE_TRANSIENT_ATTACHMENT_BIT = 0x40
+	};
 	constexpr VkImageUsageFlags vk_mDepthStencilImageUsages = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-	extern uint8_t m8DepthStencilFeatures;
-#define GET_COMBINED_USAGE_FLAGS_FOR_DEPTH_STENCIL_IMAGE() (vk_mDepthStencilImageUsages | ((m8DepthStencilFeatures & DEPTH_STENCIL_FEATURE_TRANSIENT_ATTACHMENT_BIT) ? VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT : 0))
+	extern DepthStencilFeatureFlags mDepthStencilFeatures;
 	bool create_depth_stencil_image();
 	bool create_depth_stencil_image_views();
 	void destroy_depth_stencil_image();
 	void destroy_depth_stencil_image_views();
-
-	// Window button
-	bool create_window_button_image();
-	bool create_window_button_image_views();
-	void destroy_window_button_image();
-	void destroy_window_button_image_views();
 
 	// Characters
 	bool create_character_image();

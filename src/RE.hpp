@@ -1,5 +1,5 @@
 #ifndef __RE_H__
-#define __RE_H__
+#define __RE_H__ 1
 
 #if defined(_WIN64) || defined(_MSC_VER)
 #	define RE_OS_WINDOWS 1

@@ -1,5 +1,5 @@
 #ifndef __RE_RENDERER_INTERNAL_H__
-#define __RE_RENDERER_INTERNAL_H__
+#define __RE_RENDERER_INTERNAL_H__ 1
 
 #include "RE_Renderer.hpp"
 #include "RE_Vulkan_Wrappers.hpp"
@@ -15,14 +15,14 @@
 #include "RE_Renderer_Texture.hpp"
 #include "RE_Renderer_SpriteLayout.hpp"
 #include "RE_Renderer_Mesh.hpp"
-#include "RE_Renderer_CommandBuffers.hpp"
 #include "RE_Renderer_Swapchain.hpp"
 #include "RE_Renderer_Presentation.hpp"
 #include "RE_Renderer_RenderTask.hpp"
 #include "RE_Renderer_RenderProcedure.hpp"
-#include "RE_Renderer_DynamicRendering.hpp"
 #include "RE_Renderer_SettingsGUI.hpp"
 #include "RE_Renderer_WindowFrame.hpp"
+#include "RE_Renderer_RenderPass.hpp"
+#include "RE_Renderer_Framebuffers.hpp"
 
 namespace RE {
 

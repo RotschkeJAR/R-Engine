@@ -14,10 +14,8 @@ namespace RE {
 				if (create_graphics_pipeline_2D_opaque_only(generalVertexShader(), generalFragmentShader())) {
 					if (create_graphics_pipeline_3D(generalVertexShader(), generalFragmentShader())) {
 						if (create_graphics_pipeline_3D_opaque_only(generalVertexShader(), generalFragmentShader())) {
-							if (create_graphics_pipeline_window_frame()) {
-								if (create_graphics_pipeline_text())
-									return true;
-								destroy_graphics_pipeline_window_frame();
+							if (create_graphics_pipeline_text()) {
+								return true;
 							}
 							destroy_graphics_pipeline_3D_opaque_only();
 						}
@@ -34,7 +32,6 @@ namespace RE {
 
 	void destroy_graphics_pipelines() {
 		destroy_graphics_pipeline_text();
-		destroy_graphics_pipeline_window_frame();
 		destroy_graphics_pipeline_3D_opaque_only();
 		destroy_graphics_pipeline_3D();
 		destroy_graphics_pipeline_2D_opaque_only();

@@ -4,7 +4,7 @@
 namespace RE {
 	
 	VkImage vk_hRenderTargetImage = VK_NULL_HANDLE;
-	std::array<VkImageView, RE_VK_FRAMES_IN_FLIGHT> renderTargetImageViews;
+	VkImageView vk_ahRenderTargetImageViews[RE_VK_FRAMES_IN_FLIGHT] = {};
 
 	bool create_render_target_image() {
 		PRINT_DEBUG("Fetching details about occupied queues for the render target");
@@ -14,7 +14,8 @@ namespace RE {
 		};
 		const VulkanQueueCollection occupiedQueuesInfo = aRenderTasks[0].queues_of_functions(au32QueueIndices, sizeof(au32QueueIndices) / sizeof(au32QueueIndices[0]), false);
 		PRINT_DEBUG("Creating Vulkan image used as render target");
-		if (create_vulkan_image(0,
+		if (create_vulkan_image(
+				0,
 				VK_IMAGE_TYPE_2D,
 				vk_eSwapchainImageFormat,
 				VkExtent3D {
@@ -34,6 +35,7 @@ namespace RE {
 			return true;
 		else
 			RE_FATAL_ERROR("Failed to create Vulkan image used as render target");
+		vk_hRenderTargetImage = VK_NULL_HANDLE;
 		return false;
 	}
 
@@ -54,27 +56,23 @@ namespace RE {
 		vk_viewCreateInfo.subresourceRange.baseMipLevel = 0;
 		vk_viewCreateInfo.subresourceRange.levelCount = 1;
 		vk_viewCreateInfo.subresourceRange.layerCount = 1;
-		uint8_t u8FrameInFlightCreateIndex = 0;
-		while (u8FrameInFlightCreateIndex < RE_VK_FRAMES_IN_FLIGHT) {
-			PRINT_DEBUG("Creating Vulkan image view at index ", u8FrameInFlightCreateIndex, " pointing at image ", vk_hRenderTargetImage, " used as render target");
-			vk_viewCreateInfo.subresourceRange.baseArrayLayer = u8FrameInFlightCreateIndex;
-			const VkResult vk_eResult = vkCreateImageView(vk_hDevice, &vk_viewCreateInfo, nullptr, &renderTargetImageViews[u8FrameInFlightCreateIndex]);
-			if (vk_eResult == VK_SUCCESS) {
-				u8FrameInFlightCreateIndex++;
+		unsigned uFrameInFlightCreateIndex;
+		for (uFrameInFlightCreateIndex = 0; uFrameInFlightCreateIndex < RE_VK_FRAMES_IN_FLIGHT; uFrameInFlightCreateIndex++) {
+			PRINT_DEBUG("Creating Vulkan image view at index ", uFrameInFlightCreateIndex, " pointing at image ", vk_hRenderTargetImage, " used as render target");
+			vk_viewCreateInfo.subresourceRange.baseArrayLayer = uFrameInFlightCreateIndex;
+			if (vkCreateImageView(vk_hDevice, &vk_viewCreateInfo, nullptr, &vk_ahRenderTargetImageViews[uFrameInFlightCreateIndex]) == VK_SUCCESS) {
 				continue;
 			} else
-				RE_FATAL_ERROR("Failed to create Vulkan image view at index ", u8FrameInFlightCreateIndex, " pointing at image ", vk_hRenderTargetImage, " used as render target (Vulkan error code: ", std::hex, vk_eResult, ")");
+				RE_FATAL_ERROR("Failed to create Vulkan image view at index ", uFrameInFlightCreateIndex, " pointing at image ", vk_hRenderTargetImage, " used as render target");
 			break;
 		}
-		if (u8FrameInFlightCreateIndex == RE_VK_FRAMES_IN_FLIGHT)
+		if (uFrameInFlightCreateIndex == RE_VK_FRAMES_IN_FLIGHT)
 			return true;
 		PRINT_DEBUG("Destroying Vulkan image views pointing at the render target due to failure creating all image views");
-		for (uint8_t u8FrameInFlightDestroyIndex = 0; u8FrameInFlightDestroyIndex < u8FrameInFlightCreateIndex; u8FrameInFlightDestroyIndex++) {
-			vkDestroyImageView(vk_hDevice, renderTargetImageViews[u8FrameInFlightDestroyIndex], nullptr);
-			renderTargetImageViews[u8FrameInFlightDestroyIndex] = VK_NULL_HANDLE;
+		for (uint8_t u8FrameInFlightDestroyIndex = 0; u8FrameInFlightDestroyIndex < uFrameInFlightCreateIndex; u8FrameInFlightDestroyIndex++) {
+			vkDestroyImageView(vk_hDevice, vk_ahRenderTargetImageViews[u8FrameInFlightDestroyIndex], nullptr);
+			vk_ahRenderTargetImageViews[u8FrameInFlightDestroyIndex] = VK_NULL_HANDLE;
 		}
-		vk_hRenderTargetImage = VK_NULL_HANDLE;
-		renderTargetImageViews.fill(VK_NULL_HANDLE);
 		return false;
 	}
 
@@ -86,9 +84,10 @@ namespace RE {
 
 	void destroy_render_target_image_views() {
 		PRINT_DEBUG("Destroying Vulkan image views used as render targets");
-		for (const VkImageView vk_hRenderTargetImageView : renderTargetImageViews)
-			vkDestroyImageView(vk_hDevice, vk_hRenderTargetImageView, nullptr);
-		renderTargetImageViews.fill(VK_NULL_HANDLE);
+		for (VkImageView &vk_rhRenderTargetImageView : vk_ahRenderTargetImageViews) {
+			vkDestroyImageView(vk_hDevice, vk_rhRenderTargetImageView, nullptr);
+			vk_rhRenderTargetImageView = VK_NULL_HANDLE;
+		}
 	}
 
 }

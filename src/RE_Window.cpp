@@ -143,7 +143,11 @@ namespace RE {
 		return !(mWindowFlagBits & WINDOW_FLAG_MINIMIZED_BIT) && (mWindowFlagBits & WINDOW_FLAG_VISIBLE_BIT);
 	}
 
-#ifdef RE_OS_LINUX
+#ifdef RENDERER_INCLUDE_WINDOW_FRAME
+	bool should_render_window_frame() {
+		return eLinuxWindowType == LINUX_WINDOW_TYPE_WAYLAND;
+	}
+
 	bool should_render_window_frame_bar() {
 		return !static_cast<bool>(mSettingsFlags & SETTINGS_FLAG_FULLSCREEN_BIT);
 	}

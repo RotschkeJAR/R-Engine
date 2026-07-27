@@ -1,3 +1,5 @@
+BUILD ?= release
+
 SRC          := src
 LIB          := lib
 LIB_SPEC     := $(LIB)/Linux
@@ -11,10 +13,22 @@ LIB_SPEC_BIN  := $(LIB_BIN)/Linux
 TEST_BIN      := $(BIN)/test
 
 CXX               := g++
-CXXFLAG           := -std=c++20 -m64 -march=x86-64 -pedantic-errors -Wall -ffast-math -MMD -MP -D NDEBUG
+ifeq ($(BUILD),debug)
+	CXXFLAG       := -std=c++20 -m64 -march=x86-64 -pedantic-errors -Wall -ffast-math -MMD -MP
+else ifeq ($(BUILD),release)
+	CXXFLAG       := -std=c++20 -m64 -march=x86-64 -pedantic-errors -Wall -ffast-math -MMD -MP -D NDEBUG
+else
+	$(error Unknown build type '$(BUILD)')
+endif
 
 CC                := gcc
-CFLAG             := -std=c2x -m64 -march=x86-64 -pedantic-errors -Wall -ffast-math -MMD -MP -fPIC -D NDEBUG
+ifeq ($(BUILD),debug)
+	CFLAG         := -std=c2x -m64 -march=x86-64 -pedantic-errors -Wall -ffast-math -MMD -MP -fPIC
+else ifeq ($(BUILD),release)
+	CFLAG         := -std=c2x -m64 -march=x86-64 -pedantic-errors -Wall -ffast-math -MMD -MP -fPIC -D NDEBUG
+else
+	$(error Unknown build type '$(BUILD)')
+endif
 
 SC                := glslc
 SFLAG             := --target-env=vulkan1.3 --target-spv=spv1.6 -O -Werror -MD
@@ -42,10 +56,19 @@ SHADER_SOURCES        := $(wildcard $(SH_SRC)/*.glsl)
 SHADER_BINARIES       := $(patsubst $(SH_SRC)/%.glsl,$(SH)/%.glsl.spv,$(SHADER_SOURCES))
 SHADER_DEPENDENCIES   := $(patsubst $(SH_SRC)/%.glsl,$(SH)/%.glsl.spv.d,$(SHADER_SOURCES))
 
-.PHONY: all \
+.PHONY: release \
+	debug \
+	all \
+	debug \
 	clear \
 	update_git \
 	fetch_git
+
+release:
+	@make all BUILD=release --no-print-directory
+
+debug:
+	@make all BUILD=debug --no-print-directory
 
 all: $(OUT) $(SHADER_BINARIES)
 

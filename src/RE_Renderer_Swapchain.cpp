@@ -14,6 +14,7 @@ namespace RE {
 	bool bSwapchainDirty = false;
 	
 	bool create_swapchain() {
+		vk_eSwapchainImageFormat = surfaceFormatsAvailable[u32IndexToSelectedSurfaceFormat].format;
 		const VkSwapchainKHR vk_hOldSwapchain = vk_hSwapchain;
 		if (vk_hOldSwapchain != VK_NULL_HANDLE) {
 			PRINT_DEBUG("Cleaning up ressources used for outdated swapchain");
@@ -49,7 +50,7 @@ namespace RE {
 					vk_surfaceCapabilities.minImageCount,
 					vk_surfaceCapabilities.maxImageCount > 0 ? vk_surfaceCapabilities.maxImageCount : std::numeric_limits<uint32_t>::max()
 			),
-			.imageFormat = surfaceFormatsAvailable[u32IndexToSelectedSurfaceFormat].format,
+			.imageFormat = vk_eSwapchainImageFormat,
 			.imageColorSpace = surfaceFormatsAvailable[u32IndexToSelectedSurfaceFormat].colorSpace,
 			.imageExtent = vk_swapchainResolution,
 			.imageArrayLayers = 1,
@@ -64,7 +65,6 @@ namespace RE {
 			.oldSwapchain = vk_hOldSwapchain
 		};
 		if (vkCreateSwapchainKHR(vk_hDevice, &vk_swapchainCreateInfo, nullptr, &vk_hSwapchain) == VK_SUCCESS) {
-			vk_eSwapchainImageFormat = surfaceFormatsAvailable[u32IndexToSelectedSurfaceFormat].format;
 			if (vk_hOldSwapchain != VK_NULL_HANDLE) {
 				PRINT_DEBUG("Destroying old swapchain");
 				vkDestroySwapchainKHR(vk_hDevice, vk_hOldSwapchain, nullptr);

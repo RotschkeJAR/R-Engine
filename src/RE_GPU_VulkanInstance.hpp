@@ -4,14 +4,15 @@
 #include "RE_Internal.hpp"
 
 #ifdef RE_OS_WINDOWS
-# define VK_USE_PLATFORM_WIN32_KHR
+#	define VK_USE_PLATFORM_WIN32_KHR
 #elif defined RE_OS_LINUX
-# define VK_USE_PLATFORM_WAYLAND_KHR
-# define VK_USE_PLATFORM_XLIB_KHR
+#	define VK_USE_PLATFORM_WAYLAND_KHR
+#	define VK_USE_PLATFORM_XLIB_KHR
 #endif
 #define VK_NO_PROTOTYPES
 #include <vulkan/vulkan.h>
 
+#undef VK_VERSION_1_4
 #define RE_VK_API_VERSION VK_API_VERSION_1_3
 
 static_assert(VK_HEADER_VERSION_COMPLETE >= RE_VK_API_VERSION, "The Vulkan header has to support all versions up to 1.3 to compile successfully");
@@ -62,6 +63,7 @@ namespace RE {
 	extern PFN_vkGetPhysicalDeviceToolProperties vkGetPhysicalDeviceToolProperties;
 
 	// Debug Messages
+#ifndef NDEBUG
 	extern PFN_vkSetDebugUtilsObjectNameEXT vkSetDebugUtilsObjectNameEXT;
 	extern PFN_vkSetDebugUtilsObjectTagEXT vkSetDebugUtilsObjectTagEXT;
 	extern PFN_vkQueueBeginDebugUtilsLabelEXT vkQueueBeginDebugUtilsLabelEXT;
@@ -73,6 +75,7 @@ namespace RE {
 	extern PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT;
 	extern PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT;
 	extern PFN_vkSubmitDebugUtilsMessageEXT vkSubmitDebugUtilsMessageEXT;
+#endif
 
 	// Surface
 	extern PFN_vkDestroySurfaceKHR vkDestroySurfaceKHR;
@@ -103,7 +106,7 @@ namespace RE {
 	// X11-Surface
 	extern PFN_vkCreateXlibSurfaceKHR vkCreateXlibSurfaceKHR;
 	extern PFN_vkGetPhysicalDeviceXlibPresentationSupportKHR vkGetPhysicalDeviceXlibPresentationSupportKHR;
-#endif /* RE_OS_WINDOWS, RE_OS_LINUX */
+#endif
 
 }
 

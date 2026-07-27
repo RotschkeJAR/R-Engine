@@ -1,5 +1,5 @@
 #ifndef __RE_WINDOW_H__
-#define __RE_WINDOW_H__
+#define __RE_WINDOW_H__ 1
 
 #include "RE_Internal.hpp"
 #include "RE_Input.hpp"
@@ -30,6 +30,8 @@
 #	include <wayland-client.h>
 #	include <xdg-shell-client-protocol.h>
 #	include <xkbcommon/xkbcommon.h>
+#	define RENDERER_INCLUDE_WINDOW_FRAME 1
+#	define RENDERER_INCLUDE_EMPTY_PRESENT 1
 #endif
 
 namespace RE {
@@ -53,13 +55,13 @@ namespace RE {
 
 #define WINDOW_BORDER_TOTAL_SIZE      5
 #define WINDOW_SHADOW_SIZE            4
-#define WINDOW_EDGE_SIZE              (WINDOW_WAYLAND_BORDER_TOTAL_SIZE - WINDOW_WAYLAND_SHADOW_SIZE)
+#define WINDOW_EDGE_SIZE              (WINDOW_BORDER_TOTAL_SIZE - WINDOW_SHADOW_SIZE)
 #define WINDOW_BAR_SIZE               30
 #define WINDOW_BUTTON_WIDTH           50
-#define WINDOW_EXTRA_WIDTH            (WINDOW_WAYLAND_BORDER_TOTAL_SIZE * 2)
-#define WINDOW_EXTRA_HEIGHT           (WINDOW_WAYLAND_BORDER_TOTAL_SIZE * 2 + WINDOW_WAYLAND_BAR_SIZE)
-#define WINDOW_X_OFFSET               WINDOW_WAYLAND_BORDER_TOTAL_SIZE
-#define WINDOW_Y_OFFSET               (WINDOW_WAYLAND_BORDER_TOTAL_SIZE + WINDOW_WAYLAND_BAR_SIZE)
+#define WINDOW_EXTRA_WIDTH            (WINDOW_BORDER_TOTAL_SIZE * 2)
+#define WINDOW_EXTRA_HEIGHT           (WINDOW_BORDER_TOTAL_SIZE * 2 + WINDOW_BAR_SIZE)
+#define WINDOW_X_OFFSET               WINDOW_BORDER_TOTAL_SIZE
+#define WINDOW_Y_OFFSET               (WINDOW_BORDER_TOTAL_SIZE + WINDOW_BAR_SIZE)
 #define WINDOW_CHAR_GAP_SIZE          2
 #define WINDOW_BUTTON_TEXTURE_COUNT   3
 #define WINDOW_BUTTON_TEXTURE_SIZE    16
@@ -86,9 +88,20 @@ namespace RE {
 	uint32_t get_actual_window_height();
 	bool should_window_close();
 	bool should_render();
-#ifdef RE_OS_LINUX
+#ifdef RENDERER_INCLUDE_WINDOW_FRAME
+	bool should_render_window_frame();
 	bool should_render_window_frame_bar();
 	bool should_render_window_frame_edges();
+#else
+	consteval bool should_render_window_frame() {
+		return false;
+	}
+	consteval bool should_render_window_frame_bar() {
+		return false;
+	}
+	consteval bool should_render_window_frame_edges() {
+		return false;
+	}
 #endif
 	bool create_vulkan_surface();
 	const char* get_vulkan_required_surface_extension_name();

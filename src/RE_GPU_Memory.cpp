@@ -355,7 +355,7 @@ namespace RE {
 			memoryIndex++;
 		}
 		return VK_SUCCESS;
-	#undef WRITE_BIND_STATUS_TO_PTR(BOOL_VAL)
+	#undef WRITE_BIND_STATUS_TO_PTR
 	}
 
 	std::optional<uint8_t> find_vulkan_memory_type(const VkMemoryPropertyFlags vk_mProperties, const uint32_t m32MemoryTypeBits) {

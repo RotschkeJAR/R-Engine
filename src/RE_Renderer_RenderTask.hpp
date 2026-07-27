@@ -2,6 +2,7 @@
 #define __RE_RENDERER_RENDER_TASK_H__
 
 #include "RE_Renderer_Internal.hpp"
+#include "RE_Window.hpp"
 
 namespace RE {
 	
@@ -12,7 +13,7 @@ namespace RE {
 
 	extern VulkanTask aRenderTasks[RE_VK_FRAMES_IN_FLIGHT];
 	extern VkFence vk_ahRenderFences[RE_VK_FRAMES_IN_FLIGHT];
-#ifdef RE_OS_LINUX
+#ifdef RENDERER_INCLUDE_EMPTY_PRESENT
 	extern VkCommandPool vk_hCommandPoolEmptyPresent;
 	extern VkCommandBuffer vk_hCommandBufferEmptyPresent;
 	extern VkFence vk_hEmptyPresentFence;

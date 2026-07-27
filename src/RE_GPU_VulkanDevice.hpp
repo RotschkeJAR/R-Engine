@@ -200,7 +200,8 @@ namespace RE {
 	extern PFN_vkGetDeviceImageSparseMemoryRequirements vkGetDeviceImageSparseMemoryRequirements;
 
 	// Vulkan 1.4
-	/* extern PFN_vkCmdSetLineStipple vkCmdSetLineStipple;
+#ifdef VK_VERSION_1_4
+	extern PFN_vkCmdSetLineStipple vkCmdSetLineStipple;
 	extern PFN_vkMapMemory2 vkMapMemory2;
 	extern PFN_vkUnmapMemory2 vkUnmapMemory2;
 	extern PFN_vkCmdBindIndexBuffer2 vkCmdBindIndexBuffer2;
@@ -218,7 +219,8 @@ namespace RE {
 	extern PFN_vkCopyMemoryToImage vkCopyMemoryToImage;
 	extern PFN_vkCopyImageToMemory vkCopyImageToMemory;
 	extern PFN_vkCopyImageToImage vkCopyImageToImage;
-	extern PFN_vkTransitionImageLayout vkTransitionImageLayout; */
+	extern PFN_vkTransitionImageLayout vkTransitionImageLayout;
+#endif
 
 }
 

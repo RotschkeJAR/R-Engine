@@ -3,7 +3,7 @@
 
 namespace RE {
 
-typedef uint32_t ShaderBool;
+	typedef uint32_t ShaderBool;
 	constexpr ShaderBool SHR_TRUE = 1;
 	constexpr ShaderBool SHR_FALSE = 0;
 

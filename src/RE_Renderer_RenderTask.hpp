@@ -1,5 +1,5 @@
 #ifndef __RE_RENDERER_RENDER_TASK_H__
-#define __RE_RENDERER_RENDER_TASK_H__
+#define __RE_RENDERER_RENDER_TASK_H__ 1
 
 #include "RE_Renderer_Internal.hpp"
 #include "RE_Window.hpp"

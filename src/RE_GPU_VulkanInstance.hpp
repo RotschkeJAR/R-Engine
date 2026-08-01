@@ -1,5 +1,5 @@
 #ifndef __RE_GPU_VULKAN_INSTANCE_H__
-#define __RE_GPU_VULKAN_INSTANCE_H__
+#define __RE_GPU_VULKAN_INSTANCE_H__ 1
 
 #include "RE_Internal.hpp"
 

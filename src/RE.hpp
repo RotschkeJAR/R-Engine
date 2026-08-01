@@ -1351,35 +1351,6 @@ namespace RE {
 			bool has_valid_input_values() const;
 	};
 
-	class ScreenPercentageSettings final {
-		public:
-			ScreenPercentageMode eMode;
-			union {
-				float f32Scale;
-				Vector2u constSize;
-			};
-			TextureFilter eScalingFilter;
-
-			ScreenPercentageSettings();
-			explicit ScreenPercentageSettings(float f32Scale);
-			ScreenPercentageSettings(float f32Scale, TextureFilter eScalingFilter);
-			explicit ScreenPercentageSettings(const Vector2u &rConstSize);
-			ScreenPercentageSettings(const Vector2u &rConstSize, TextureFilter eScalingFilter);
-			ScreenPercentageSettings(ScreenPercentageMode eMode, const std::variant<float, Vector2u> &rSettings);
-			ScreenPercentageSettings(ScreenPercentageMode eMode, const std::variant<float, Vector2u> &rSettings, TextureFilter eScalingFilter);
-			ScreenPercentageSettings(const ScreenPercentageSettings &rCopy);
-			ScreenPercentageSettings(const ScreenPercentageSettings &&rrCopy) = delete;
-			~ScreenPercentageSettings();
-			void copy_from(const ScreenPercentageSettings &rCopy);
-			[[nodiscard]]
-			bool equals(const ScreenPercentageSettings &rCompare) const;
-			void operator =(const ScreenPercentageSettings &rCopy);
-			[[nodiscard]]
-			bool operator ==(const ScreenPercentageSettings &rCompare) const;
-			[[nodiscard]]
-			bool operator !=(const ScreenPercentageSettings &rCompare) const;
-	};
-
 	class SpriteLayoutSettings final {
 		public:
 			TextureFilter eMagFilter;
@@ -1573,18 +1544,18 @@ namespace RE {
 	Mesh get_mesh_square_3D();
 
 	// Renderer
-	void set_screen_percentage_settings(ScreenPercentageSettings newSettings);
-	[[nodiscard]]
-	ScreenPercentageSettings get_screen_percentage_settings();
+	void set_screen_percentage(float fNewPercentage);
 	void set_background_color(const Color &rColor);
-	void set_background_color(float f32Red, float f32Green, float f32Blue);
+	void set_background_color(float fRed, float fGreen, float fBlue);
 	[[nodiscard]]
 	Color get_background_color();
+	void set_depth_stencil_settings(DepthPrecission eNewDepthPrecission, bool bNewStencilsEnabled);
+	void set_depth_precission(DepthPrecission eNewDepthPrecission);
+	void set_stencils_enabled(bool bNewStencilsEnabled);
 	[[nodiscard]]
-	bool is_sample_shading_enabled();
-	void set_sample_shading_rate(float f32NewSampleShadingRate);
+	DepthPrecission get_depth_precission();
 	[[nodiscard]]
-	float get_sample_shading_rate();
+	bool are_stencils_enabled();
 
 #ifdef RE_OS_WINDOWS
 	void win64_set_hinstance(HINSTANCE win_hNewInstance);

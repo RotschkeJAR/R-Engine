@@ -1,46 +1,70 @@
 #include "RE_Renderer_Framebuffers.hpp"
+#include "RE_Settings.hpp"
 
 namespace RE {
 
-	std::unique_ptr<VkFramebuffer[]> std_framebuffers;
+	VkFramebuffer vk_ahFramebuffers[RE_VK_FRAMES_IN_FLIGHT];
+	std::unique_ptr<VkFramebuffer[]> std_swapchainFramebuffers;
 
 	bool create_renderer_framebuffers() {
-		std_framebuffers = std::make_unique<VkFramebuffer[]>(u32SwapchainImageCount);
-		VkImageView vk_aAttachments[] = {
-			VK_NULL_HANDLE,
-			vk_ahRenderTargetImageViews[0],
-			vk_ahDepthStencilImageViews[0],
-			vk_ahSinglesampledImageViews[0]
-		};
-		const VkFramebufferCreateInfo vk_framebufferCreateInfo = {
+		VkImageView vk_ahAttachments[3];
+		VkFramebufferCreateInfo vk_framebufferCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
 			.pNext = nullptr,
 			.flags = 0,
 			.renderPass = vk_hRenderPass,
-			.attachmentCount = 3U + bool_to_int(vk_hSinglesampledImage != VK_NULL_HANDLE),
-			.pAttachments = vk_aAttachments,
-			.width = vk_swapchainResolution.width,
-			.height = vk_swapchainResolution.height,
+			.attachmentCount = 2U + bool_to_int(IS_SINGLESAMPLED_IMAGE_REQUIRED()),
+			.pAttachments = vk_ahAttachments,
+			.width = renderImageSize[0],
+			.height = renderImageSize[1],
 			.layers = 1
 		};
-		uint32_t u32FramebufferCreateIndex;
-		for (u32FramebufferCreateIndex = 0; u32FramebufferCreateIndex < u32SwapchainImageCount; u32FramebufferCreateIndex++) {
-			vk_aAttachments[0] = swapchainImageViews[u32FramebufferCreateIndex];
-			if (vkCreateFramebuffer(vk_hDevice, &vk_framebufferCreateInfo, nullptr, &std_framebuffers[u32FramebufferCreateIndex]) == VK_SUCCESS) {
+		unsigned uFramebufferCreateIndex;
+		for (uFramebufferCreateIndex = 0; uFramebufferCreateIndex < RE_VK_FRAMES_IN_FLIGHT; uFramebufferCreateIndex++) {
+			vk_ahAttachments[0] = vk_ahRenderTargetImageViews[uFramebufferCreateIndex];
+			vk_ahAttachments[1] = vk_ahDepthStencilImageViews[uFramebufferCreateIndex];
+			vk_ahAttachments[2] = vk_ahSinglesampledImageViews[uFramebufferCreateIndex];
+			if (vkCreateFramebuffer(vk_hDevice, &vk_framebufferCreateInfo, nullptr, &vk_ahFramebuffers[uFramebufferCreateIndex]) == VK_SUCCESS) {
 				continue;
-			}
+			} else
+				RE_FATAL_ERROR("");
 			break;
 		}
-		for (uint32_t u32FramebufferDestroyIndex = 0; u32FramebufferDestroyIndex < u32FramebufferCreateIndex; u32FramebufferDestroyIndex++)
-			vkDestroyFramebuffer(vk_hDevice, std_framebuffers[u32FramebufferDestroyIndex], nullptr);
-		std_framebuffers.reset();
+		if (uFramebufferCreateIndex == RE_VK_FRAMES_IN_FLIGHT) {
+			std_swapchainFramebuffers = std::make_unique<VkFramebuffer[]>(u32SwapchainImageCount);
+			vk_framebufferCreateInfo.renderPass = vk_hSwapchainRenderPass;
+			vk_framebufferCreateInfo.attachmentCount = 1;
+			vk_framebufferCreateInfo.width = vk_swapchainResolution.width;
+			vk_framebufferCreateInfo.height = vk_swapchainResolution.height;
+			uint32_t u32FramebufferCreateIndex;
+			for (u32FramebufferCreateIndex = 0; u32FramebufferCreateIndex < u32SwapchainImageCount; u32FramebufferCreateIndex++) {
+				vk_ahAttachments[0] = swapchainImageViews[u32FramebufferCreateIndex];
+				if (vkCreateFramebuffer(vk_hDevice, &vk_framebufferCreateInfo, nullptr, &std_swapchainFramebuffers[u32FramebufferCreateIndex]) == VK_SUCCESS) {
+					continue;
+				} else
+					RE_FATAL_ERROR("");
+				break;
+			}
+			if (u32FramebufferCreateIndex == u32SwapchainImageCount) {
+				return true;
+			}
+			for (uint32_t u32FramebufferDestroyIndex = 0; u32FramebufferDestroyIndex < u32FramebufferCreateIndex; u32FramebufferDestroyIndex++)
+				vkDestroyFramebuffer(vk_hDevice, std_swapchainFramebuffers[u32FramebufferDestroyIndex], nullptr);
+			std_swapchainFramebuffers.reset();
+		}
+		for (unsigned uFramebufferDestroyIndex = 0; uFramebufferDestroyIndex < uFramebufferCreateIndex; uFramebufferDestroyIndex++) {
+			vkDestroyFramebuffer(vk_hDevice, vk_ahFramebuffers[uFramebufferDestroyIndex], nullptr);
+			vk_ahFramebuffers[uFramebufferDestroyIndex] = VK_NULL_HANDLE;
+		}
 		return false;
 	}
 
 	void destroy_renderer_framebuffers() {
 		for (uint32_t u32FramebufferDestroyIndex = 0; u32FramebufferDestroyIndex < u32SwapchainImageCount; u32FramebufferDestroyIndex++)
-			vkDestroyFramebuffer(vk_hDevice, std_framebuffers[u32FramebufferDestroyIndex], nullptr);
-		std_framebuffers.reset();
+			vkDestroyFramebuffer(vk_hDevice, std_swapchainFramebuffers[u32FramebufferDestroyIndex], nullptr);
+		std_swapchainFramebuffers.reset();
+		for (VkFramebuffer &vk_rhFramebuffer : vk_ahFramebuffers)
+			vkDestroyFramebuffer(vk_hDevice, vk_rhFramebuffer, nullptr);
 	}
 
 }

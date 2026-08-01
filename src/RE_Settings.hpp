@@ -1,5 +1,5 @@
 #ifndef __RE_SETTINGS_H__
-#define __RE_SETTINGS_H__
+#define __RE_SETTINGS_H__ 1
 
 #include "RE_GPU.hpp"
 
@@ -11,11 +11,21 @@ namespace RE {
 		SETTINGS_FLAG_FULLSCREEN_BIT = 0x2,
 		SETTINGS_FLAG_VSYNC_ENABLED_BIT = 0x4
 	};
+
+#define SCREEN_PERCENTAGE_100_PERCENT 10000U
 	
 	extern SettingsFlags_t mSettingsFlags;
 	extern VkSampleCountFlagBits vk_eMsaaMode;
+	extern VkFilter vk_eScreenFilter;
+	extern unsigned uScreenPercentage;
 	extern float fMaxDeltatime,
-		fMinDeltatime;
+		fMinDeltatime,
+		fSampleShadingRate;
+
+#define IS_MSAA_ENABLED()                     (vk_eMsaaMode != VK_SAMPLE_COUNT_1_BIT)
+#define IS_SAMPLE_SHADING_ENABLED()           (fSampleShadingRate > 0.0f)
+#define RENDER_IMAGE_SIZE_EQUALS_SWAPCHAIN()  (uScreenPercentage == SCREEN_PERCENTAGE_100_PERCENT)
+#define IS_SINGLESAMPLED_IMAGE_REQUIRED()     (IS_MSAA_ENABLED() && !RENDER_IMAGE_SIZE_EQUALS_SWAPCHAIN())
 
 	bool load_settings();
 	bool init_settings();

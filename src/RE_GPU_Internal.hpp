@@ -1,5 +1,5 @@
 #ifndef __RE_GPU_INTERNAL_H__
-#define __RE_GPU_INTERNAL_H__
+#define __RE_GPU_INTERNAL_H__ 1
 
 #include "RE_GPU.hpp"
 #include "RE_Renderer.hpp"

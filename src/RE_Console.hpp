@@ -1,5 +1,5 @@
 #ifndef __RE_CONSOLE_H__
-#define __RE_CONSOLE_H__
+#define __RE_CONSOLE_H__ 1
 
 #include "RE.hpp"
 

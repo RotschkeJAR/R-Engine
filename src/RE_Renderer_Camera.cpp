@@ -35,12 +35,12 @@ namespace RE {
 			PRINT_DEBUG("Updating camera before transferring its matrices");
 			pActiveCamera->update_before_render();
 			PRINT_DEBUG("Updating camera matrices");
-			camerasShaderData[u8CurrentFrameInFlightIndex]->viewMatrix[12] = -pActiveCamera->transform.position[0];
-			camerasShaderData[u8CurrentFrameInFlightIndex]->viewMatrix[13] = -pActiveCamera->transform.position[1];
-			camerasShaderData[u8CurrentFrameInFlightIndex]->viewMatrix[14] = -pActiveCamera->transform.position[2];
-			camerasShaderData[u8CurrentFrameInFlightIndex]->projectionMatrix[0] = 1.0f / pActiveCamera->view[0];
-			camerasShaderData[u8CurrentFrameInFlightIndex]->projectionMatrix[5] = -1.0f / pActiveCamera->view[1];
-			camerasShaderData[u8CurrentFrameInFlightIndex]->projectionMatrix[10] = 1.0f / pActiveCamera->fViewDistance;
+			camerasShaderData[uCurrentFrameInFlightIndex]->viewMatrix[12] = -pActiveCamera->transform.position[0];
+			camerasShaderData[uCurrentFrameInFlightIndex]->viewMatrix[13] = -pActiveCamera->transform.position[1];
+			camerasShaderData[uCurrentFrameInFlightIndex]->viewMatrix[14] = -pActiveCamera->transform.position[2];
+			camerasShaderData[uCurrentFrameInFlightIndex]->projectionMatrix[0] = 1.0f / pActiveCamera->view[0];
+			camerasShaderData[uCurrentFrameInFlightIndex]->projectionMatrix[5] = -1.0f / pActiveCamera->view[1];
+			camerasShaderData[uCurrentFrameInFlightIndex]->projectionMatrix[10] = 1.0f / pActiveCamera->fViewDistance;
 			if (!pCameraBufferMemory->flush_mapped_memory(0, VK_WHOLE_SIZE)) {
 				RE_FATAL_ERROR("Failed flushing non-coherent Vulkan memory used for camera uniforms");
 				return;
@@ -67,7 +67,7 @@ namespace RE {
 			pActiveCamera = nullptr;
 			if (!bRunning)
 				return;
-			const uint8_t u8IndexToCopyFrom = u8CurrentFrameInFlightIndex == 0 ? (RE_VK_FRAMES_IN_FLIGHT - 1) : u8CurrentFrameInFlightIndex;
+			const uint8_t u8IndexToCopyFrom = uCurrentFrameInFlightIndex == 0 ? (RE_VK_FRAMES_IN_FLIGHT - 1) : uCurrentFrameInFlightIndex;
 			for (uint8_t u8CameraUniformBufferIndex = 0; u8CameraUniformBufferIndex < RE_VK_FRAMES_IN_FLIGHT; u8CameraUniformBufferIndex++) {
 				if (u8CameraUniformBufferIndex == u8IndexToCopyFrom)
 					continue;

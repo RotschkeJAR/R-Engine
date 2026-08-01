@@ -1,5 +1,5 @@
 #ifndef __RE_RENDERER_IMAGES_INTERNAL_H__
-#define __RE_RENDERER_IMAGES_INTERNAL_H__
+#define __RE_RENDERER_IMAGES_INTERNAL_H__ 1
 
 #include "RE_Renderer_Images.hpp"
 
@@ -13,7 +13,7 @@ namespace RE {
 	void destroy_render_target_image_views();
 
 	// Singlesampled images
-	constexpr VkImageUsageFlags vk_mSinglesampledImageUsages = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+	constexpr VkImageUsageFlags vk_mSinglesampledImageUsages = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 	bool create_singlesampled_image();
 	bool create_singlesampled_image_views();
 	void destroy_singlesampled_image();

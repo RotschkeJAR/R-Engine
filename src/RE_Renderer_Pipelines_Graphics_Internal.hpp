@@ -1,5 +1,5 @@
 #ifndef __RE_RENDERER_PIPELINES_GRAPHICS_INTERNAL_H__
-#define __RE_RENDERER_PIPELINES_GRAPHICS_INTERNAL_H__
+#define __RE_RENDERER_PIPELINES_GRAPHICS_INTERNAL_H__ 1
 
 #include "RE_Renderer_Pipelines_Graphics.hpp"
 
@@ -16,9 +16,6 @@ namespace RE {
 
 	bool create_graphics_pipeline_3D_opaque_only(VkShaderModule vk_hVertexShader, VkShaderModule vk_hFragmentShader);
 	void destroy_graphics_pipeline_3D_opaque_only();
-
-	bool create_graphics_pipeline_text();
-	void destroy_graphics_pipeline_text();
 	
 }
 

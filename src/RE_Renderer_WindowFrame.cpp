@@ -45,7 +45,7 @@ namespace RE {
 		destroy_window_frame_buffers();
 	}
 
-	void render_window_frame(VkCommandBuffer vk_hCommandBuffer) {
+	void render_window_frame(const VkCommandBuffer vk_hCommandBuffer) {
 		if (should_render_window_frame_bar()) {
 			vkCmdBindPipeline(vk_hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hWindowFrameGraphicsPipeline);
 			const VkDescriptorSet vk_ahDescSets[] = {
@@ -97,8 +97,8 @@ namespace RE {
 						vk_hCommandBuffer,
 						vk_hWindowFramePipelineLayout,
 						VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-						offsetof(WindowShaderData, u32WindowFrameToRender),
-						sizeof(WindowShaderData::u32WindowFrameToRender),
+						0,
+						sizeof(WindowShaderData),
 						static_cast<const void*>(&windowPushConstants));
 				vkCmdDraw(vk_hCommandBuffer, 10, 1, 0, 0);
 			} else {
@@ -118,8 +118,8 @@ namespace RE {
 					vk_hCommandBuffer,
 					vk_hWindowFramePipelineLayout,
 					VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-					offsetof(WindowShaderData, u32WindowFrameToRender),
-					sizeof(WindowShaderData::u32WindowFrameToRender),
+					0,
+					sizeof(WindowShaderData),
 					static_cast<const void*>(&windowPushConstants));
 			vkCmdDraw(vk_hCommandBuffer, 4, 6, 0, 0);
 			windowPushConstants.u32WindowFrameToRender = WINDOW_FRAME_RENDER_MODE_TITLE;
@@ -127,8 +127,8 @@ namespace RE {
 					vk_hCommandBuffer,
 					vk_hWindowFramePipelineLayout,
 					VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-					offsetof(WindowShaderData, u32WindowFrameToRender),
-					sizeof(WindowShaderData::u32WindowFrameToRender),
+					0,
+					sizeof(WindowShaderData),
 					static_cast<const void*>(&windowPushConstants));
 			vkCmdDrawIndirect(
 					vk_hCommandBuffer,

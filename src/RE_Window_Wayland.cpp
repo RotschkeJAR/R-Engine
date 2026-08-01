@@ -71,7 +71,7 @@ namespace RE {
 	static WlSeat wlSeat = {};
 	static wl_shm *wl_pShm;
 	wl_surface *wl_pSurface;
-	static wl_output *wl_pCurrentOutput = nullptr;
+	static wl_output *wl_pCurrentOutput;
 	static xdg_surface *xdg_pSurface;
 	static xdg_toplevel *xdg_pToplevel;
 	static std::vector<WaylandMonitorInfo> waylandMonitors;
@@ -292,8 +292,6 @@ namespace RE {
 	}
 
 	static void wayland_surface_leave_callback(void *pData, wl_surface *wl_pSurface, wl_output *wl_pOldOutput) {
-		if (wl_pCurrentOutput == wl_pOldOutput)
-			wl_pCurrentOutput = nullptr;
 	}
 
 	static void wayland_surface_preferred_buffer_scale_callback(void *pData, wl_surface *wl_pSurface, int32_t i32Factor) {
@@ -322,22 +320,11 @@ namespace RE {
 	};
 
 	static void xdg_toplevel_configure_callback(void *pData, xdg_toplevel *xdg_pToplevel, int32_t i32Width, int32_t i32Height, wl_array *wl_pStates) {
-		if (i32Width <= 0)
-			i32Width = largestMonitorSize[0] / 5 * 3 + WINDOW_EXTRA_WIDTH;
-		if (i32Height <= 0)
-			i32Height = largestMonitorSize[1] / 5 * 3 + WINDOW_EXTRA_HEIGHT;
-		actualWindowSize[0] = i32Width;
-		actualWindowSize[1] = i32Height;
-		window_resize_event(static_cast<uint32_t>(i32Width - WINDOW_EXTRA_WIDTH), static_cast<uint32_t>(i32Height - WINDOW_EXTRA_HEIGHT));
-		PRINT_DEBUG("Updating regions on Wayland surface ", wl_pSurface);
-		wl_region *const wl_pRegion = wl_compositor_create_region(wlCompositor.waylandObject);
-		wl_region_add(wl_pRegion, WINDOW_SHADOW_SIZE, WINDOW_SHADOW_SIZE, actualWindowSize[0] - WINDOW_SHADOW_SIZE * 2, actualWindowSize[1] - WINDOW_SHADOW_SIZE * 2);
-		wl_surface_set_opaque_region(wl_pSurface, wl_pRegion);
-		wl_region_destroy(wl_pRegion);
-
 		bool bMaximized = false,
 			bFullscreen = false;
-		for (xdg_toplevel_state *xdg_pToplevelState = static_cast<xdg_toplevel_state*>(wl_pStates->data); xdg_pToplevelState != (static_cast<xdg_toplevel_state*>(wl_pStates->data) + wl_pStates->size / sizeof(xdg_toplevel_state)); xdg_pToplevelState++) {
+		for (xdg_toplevel_state *xdg_pToplevelState = static_cast<xdg_toplevel_state*>(wl_pStates->data);
+				xdg_pToplevelState != (static_cast<xdg_toplevel_state*>(wl_pStates->data) + wl_pStates->size / sizeof(xdg_toplevel_state));
+				xdg_pToplevelState++) {
 			switch (*xdg_pToplevelState) {
 				case XDG_TOPLEVEL_STATE_MAXIMIZED:
 					bMaximized = true;
@@ -351,6 +338,44 @@ namespace RE {
 		}
 		set_bitmasks(mWindowFlagBits, bMaximized, static_cast<WindowFlags>(WINDOW_FLAG_MAXIMIZED_BIT));
 		set_bitmasks(mSettingsFlags, bFullscreen, static_cast<SettingsFlags_t>(SETTINGS_FLAG_FULLSCREEN_BIT));
+		
+		if (bFullscreen && !waylandMonitors.empty()) {
+			bool bMonitorFound = false;
+			for (WaylandMonitorInfo &rMonitorInfo : waylandMonitors) {
+				if (wl_pCurrentOutput == rMonitorInfo.wlOutput.waylandObject) {
+					i32Width = rMonitorInfo.size[0];
+					i32Height = rMonitorInfo.size[1];
+					bMonitorFound = true;
+					break;
+				}
+			}
+			if (!bMonitorFound)
+				goto REGULAR_WINDOW_SIZE_SETUP;
+		} else {
+		REGULAR_WINDOW_SIZE_SETUP:
+			if (i32Width <= 0)
+				i32Width = largestMonitorSize[0] / 5 * 3 + WINDOW_EXTRA_WIDTH;
+			if (i32Height <= 0)
+				i32Height = largestMonitorSize[1] / 5 * 3 + WINDOW_EXTRA_HEIGHT;
+		}
+		actualWindowSize[0] = i32Width;
+		actualWindowSize[1] = i32Height;
+		if (should_render_window_frame_edges()) {
+			i32Width -= WINDOW_EXTRA_WIDTH;
+			i32Height -= WINDOW_BORDER_TOTAL_SIZE * 2;
+		}
+		if (should_render_window_frame_bar())
+			i32Height -= WINDOW_BAR_SIZE;
+		window_resize_event(static_cast<uint32_t>(i32Width), static_cast<uint32_t>(i32Height));
+
+		PRINT_DEBUG("Updating regions on Wayland surface ", wl_pSurface);
+		wl_region *const wl_pRegion = wl_compositor_create_region(wlCompositor.waylandObject);
+		if (!bFullscreen && !bMaximized)
+			wl_region_add(wl_pRegion, WINDOW_SHADOW_SIZE, WINDOW_SHADOW_SIZE, actualWindowSize[0] - WINDOW_SHADOW_SIZE * 2, actualWindowSize[1] - WINDOW_SHADOW_SIZE * 2);
+		else
+			wl_region_add(wl_pRegion, 0, 0, actualWindowSize[0], actualWindowSize[1]);
+		wl_surface_set_opaque_region(wl_pSurface, wl_pRegion);
+		wl_region_destroy(wl_pRegion);
 	}
 
 	static void xdg_toplevel_close_callback(void *pData, xdg_toplevel *xdg_pToplevel) {
@@ -545,15 +570,15 @@ namespace RE {
 					PRINT_DEBUG("Mapping keymap buffer from file descriptor ", i32FileDescriptor);
 					char *const pacKeymapBuffer = static_cast<char*>(mmap(nullptr, u32Size, PROT_READ, MAP_SHARED, i32FileDescriptor, 0));
 					if (pacKeymapBuffer) {
-						PRINT_DEBUG("Creating XKB keymap from mapped keymap buffer ", pacKeymapBuffer);
+						PRINT_DEBUG("Creating XKB keymap from mapped keymap buffer");
 						if ((waylandKeyboard.xkb_pKeymap = xkb_keymap_new_from_buffer(xkb_pContext, pacKeymapBuffer, u32Size, XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_COMPILE_NO_FLAGS))) {
-							PRINT_DEBUG("Creating XKB state from keymap ", waylandKeyboard.xkb_pKeymap);
+							PRINT_DEBUG("Creating XKB state from keymap");
 							if ((waylandKeyboard.xkb_pState = xkb_state_new(waylandKeyboard.xkb_pKeymap))) {
-								PRINT_DEBUG("Unmapping keymap buffer ", pacKeymapBuffer);
+								PRINT_DEBUG("Unmapping keymap buffer");
 								munmap(pacKeymapBuffer, u32Size);
 								return;
 							} else
-								RE_ERROR("Failed to create an XKB state from the keymap ", pacKeymapBuffer);
+								RE_ERROR("Failed to create an XKB state from the keymap");
 						} else
 							RE_ERROR("Failed to create an XKB keymap");
 						PRINT_DEBUG("Unmapping content of file descriptor from RAM due to failure creating XKB resources");
@@ -693,6 +718,9 @@ namespace RE {
 						if (wl_output_add_listener(rMonitorInfo.wlOutput.waylandObject, &wl_outputListener, nullptr) != 0) {
 							RE_ERROR("Failed to add a listener to Wayland output ", rMonitorInfo.wlOutput.waylandObject);
 							break;
+						}
+						if (monitorIndex == 0) {
+							wl_pCurrentOutput = rMonitorInfo.wlOutput.waylandObject;
 						}
 						monitorIndex++;
 					}

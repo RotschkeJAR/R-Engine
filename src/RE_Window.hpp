@@ -53,9 +53,9 @@ namespace RE {
 		WINDOW_AREA_CONTENT = 13
 	};
 
-#define WINDOW_BORDER_TOTAL_SIZE      5
 #define WINDOW_SHADOW_SIZE            4
-#define WINDOW_EDGE_SIZE              (WINDOW_BORDER_TOTAL_SIZE - WINDOW_SHADOW_SIZE)
+#define WINDOW_EDGE_SIZE              1
+#define WINDOW_BORDER_TOTAL_SIZE      (WINDOW_SHADOW_SIZE + WINDOW_EDGE_SIZE)
 #define WINDOW_BAR_SIZE               30
 #define WINDOW_BUTTON_WIDTH           50
 #define WINDOW_EXTRA_WIDTH            (WINDOW_BORDER_TOTAL_SIZE * 2)

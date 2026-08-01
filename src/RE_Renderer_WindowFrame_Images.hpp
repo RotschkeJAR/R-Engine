@@ -1,5 +1,5 @@
 #ifndef __RE_RENDERER_WINDOW_FRAME_IMAGES_H__
-#define __RE_RENDERER_WINDOW_FRAME_IMAGES_H__
+#define __RE_RENDERER_WINDOW_FRAME_IMAGES_H__ 1
 
 #include "RE_Renderer_WindowFrame_Internal.hpp"
 

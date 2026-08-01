@@ -1,5 +1,5 @@
 #ifndef __RE_SPRITE_LAYOUT_H__
-#define __RE_SPRITE_LAYOUT_H__
+#define __RE_SPRITE_LAYOUT_H__ 1
 
 #include "RE_Renderer_Internal.hpp"
 

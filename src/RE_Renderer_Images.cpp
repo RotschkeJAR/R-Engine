@@ -1,15 +1,11 @@
 #include "RE_Renderer_Images_Internal.hpp"
 #include "RE_Main.hpp"
 #include "RE_Window.hpp"
-#include "RE_Settings.hpp"
 
 namespace RE {
 
-	ScreenPercentageSettings screenPercentageSettings;
-	Vector2u renderImageSize,
-		maxRenderImageSize;
-	VkFormat vk_eRenderTargetFormat;
-	static bool bDynamicScreenPercentage = false;
+	Vector2u renderImageSize;
+	static float fGameScreenPercentage = 1.0f;
 
 	bool create_renderer_images() {
 		if (create_character_image()) {
@@ -32,42 +28,27 @@ namespace RE {
 
 	bool create_swapchain_related_images() {
 		PRINT_DEBUG("Calculating size of renderable images");
-		switch (screenPercentageSettings.eMode) {
-			case RE_SCREEN_PERCENTAGE_MODE_NORMAL:
-				renderImageSize[0] = vk_swapchainResolution.width;
-				renderImageSize[1] = vk_swapchainResolution.height;
-				break;
-			case RE_SCREEN_PERCENTAGE_MODE_SCALED:
-				renderImageSize[0] = static_cast<uint32_t>(std::round(vk_swapchainResolution.width * screenPercentageSettings.f32Scale));
-				renderImageSize[1] = static_cast<uint32_t>(std::round(vk_swapchainResolution.height * screenPercentageSettings.f32Scale));
-				break;
-			case RE_SCREEN_PERCENTAGE_MODE_CONST_SIZE:
-				if (screenPercentageSettings.constSize.any_of([](const decltype(screenPercentageSettings.constSize)::type size) {return size <= 0;}))
-					screenPercentageSettings.constSize = largestMonitorSize;
-				renderImageSize = screenPercentageSettings.constSize;
-				break;
-			[[unlikely]] default:
-				RE_ABORT("Unknown screen percentage mode selected ", std::hex, screenPercentageSettings.eMode, " in the settings");
-		}
-		if (maxRenderImageSize.any_of([](const decltype(maxRenderImageSize)::type size) {return size <= 0;}))
-			maxRenderImageSize = largestMonitorSize;
-		if (bDynamicScreenPercentage && screenPercentageSettings.eMode != RE_SCREEN_PERCENTAGE_MODE_CONST_SIZE) {
-			renderImageSize[0] = std::clamp<uint32_t>(renderImageSize[0], 1, maxRenderImageSize[0]);
-			renderImageSize[1] = std::clamp<uint32_t>(renderImageSize[1], 1, maxRenderImageSize[1]);
-			return true;
-		}
-		const bool bBlittingRequired = renderImageSize[0] != vk_swapchainResolution.width || renderImageSize[1] != vk_swapchainResolution.height,
-			bResolvingRequired = vk_eMsaaMode != VK_SAMPLE_COUNT_1_BIT,
-			bSkipCreatingSinglesampledImage = !(bBlittingRequired && bResolvingRequired),
-			bSkipCreatingRenderTargetImage = bBlittingRequired || bResolvingRequired;
+		for (unsigned uDimensionIndex = 0; uDimensionIndex < renderImageSize.dimensions(); uDimensionIndex++)
+			renderImageSize[uDimensionIndex] = std::clamp<uint32_t>(
+					static_cast<uint32_t>(std::round(windowSize[uDimensionIndex] * (uScreenPercentage / static_cast<float>(SCREEN_PERCENTAGE_100_PERCENT)) * fGameScreenPercentage)),
+					1U,
+					windowSize[uDimensionIndex]);
+		const bool bSinglesampledImageRequired = IS_SINGLESAMPLED_IMAGE_REQUIRED();
 		if (create_depth_stencil_image()) {
-			if (bSkipCreatingSinglesampledImage || create_singlesampled_image()) {
-				if (bSkipCreatingRenderTargetImage || create_render_target_image()) {
+			if (!bSinglesampledImageRequired)
+				goto SKIP_SINGLESAMPLED_IMAGE_CREATION;
+			if (create_singlesampled_image()) {
+			SKIP_SINGLESAMPLED_IMAGE_CREATION:
+				if (create_render_target_image()) {
 					if (alloc_memory_for_swapchain_related_images()) {
 						if (create_depth_stencil_image_views()) {
-							if (bSkipCreatingSinglesampledImage || create_singlesampled_image_views()) {
-								if (bSkipCreatingRenderTargetImage || create_render_target_image_views())
+							if (!bSinglesampledImageRequired)
+								goto SKIP_SINGLESAMPLED_IMAGE_VIEW_CREATION;
+							if (create_singlesampled_image_views()) {
+							SKIP_SINGLESAMPLED_IMAGE_VIEW_CREATION:
+								if (create_render_target_image_views()) {
 									return true;
+								}
 								destroy_singlesampled_image_views();
 							}
 							destroy_depth_stencil_image_views();
@@ -93,91 +74,21 @@ namespace RE {
 		free_memory_for_swapchain_related_images();
 	}
 
-	void set_screen_percentage_settings(ScreenPercentageSettings newSettings) {
-		bool bNormalInstead = false;
-		if (screenPercentageSettings.eMode == newSettings.eMode)
-			switch (newSettings.eMode) {
-				case RE_SCREEN_PERCENTAGE_MODE_NORMAL:
-					return;
-				case RE_SCREEN_PERCENTAGE_MODE_SCALED:
-					if (newSettings.f32Scale == 1.0f) {
-						RE_WARNING("Screen percentage had to be changed to 100%, however this has the same effect like the normal mode. Therefore the normal mode will be enabled instead");
-						if (screenPercentageSettings.eMode == RE_SCREEN_PERCENTAGE_MODE_NORMAL)
-							return;
-						bNormalInstead = true;
-					} else if (screenPercentageSettings.f32Scale == newSettings.f32Scale && screenPercentageSettings.eScalingFilter == newSettings.eScalingFilter)
-						return;
-					break;
-				case RE_SCREEN_PERCENTAGE_MODE_CONST_SIZE:
-					if (newSettings.constSize.any_of(0)) {
-						RE_WARNING("The new constant size of the updated screen percentage settings has a member equal zero. The changes won't be applied");
-						return;
-					} else if (screenPercentageSettings.constSize == newSettings.constSize && screenPercentageSettings.eScalingFilter == newSettings.eScalingFilter)
-						return;
-					break;
-				[[unlikely]] default:
-					RE_ABORT("Unknown screen percentage mode, that was supposed to be updated to: ", std::hex, newSettings.eMode);
+	void set_screen_percentage(float fNewPercentage) {
+		if (fNewPercentage <= 0.0f) {
+			RE_ERROR("Screen percentage cannot be zero or negative");
+			return;
+		}
+		fNewPercentage = std::min<float>(fNewPercentage, 1.0f);
+		if (fGameScreenPercentage != fNewPercentage) {
+			fGameScreenPercentage = fNewPercentage;
+			if (!bSwapchainDirty && bRunning) {
+				PRINT_DEBUG("Applying new screen percentage settings");
+				wait_for_rendering_finished();
+				destroy_swapchain_related_images();
+				create_swapchain_related_images();
 			}
-		PRINT_DEBUG("Updating screen percentage settings");
-		screenPercentageSettings = newSettings;
-		if (bNormalInstead)
-			screenPercentageSettings.eMode = RE_SCREEN_PERCENTAGE_MODE_NORMAL;
-		if (!bSwapchainDirty && bRunning) {
-			PRINT_DEBUG("Applying new screen percentage settings");
-			wait_for_rendering_finished();
-			destroy_swapchain_related_images();
-			create_swapchain_related_images();
 		}
-	}
-
-	ScreenPercentageSettings get_screen_percentage_settings() {
-		return screenPercentageSettings;
-	}
-
-	void enable_dynamic_screen_percentage(const bool bEnable) {
-		if (bDynamicScreenPercentage == bEnable)
-			return;
-		PRINT_DEBUG("Updating dynamic screen scaling settings (enabled: ", bEnable, ")");
-		bDynamicScreenPercentage = bEnable;
-		if (!bSwapchainDirty && bRunning) {
-			PRINT_DEBUG("Applying new dynamic screen scaling settings");
-			wait_for_rendering_finished();
-			destroy_swapchain_related_images();
-			create_swapchain_related_images();
-		}
-	}
-
-	bool is_dynamic_screen_percentage_enabled() {
-		return bDynamicScreenPercentage;
-	}
-
-	void set_maximum_size_for_dynamic_screen_percentage(Vector2u newSize) {
-		if (maxRenderImageSize == newSize)
-			return;
-		PRINT_DEBUG("Updating maximum size of dynamic screen percentage to ", newSize);
-		maxRenderImageSize = newSize;
-		if (!bSwapchainDirty && bRunning) {
-			PRINT_DEBUG("Applying new maximum size of the dynamic screen percentage");
-			wait_for_rendering_finished();
-			destroy_swapchain_related_images();
-			create_swapchain_related_images();
-		}
-	}
-
-	void set_maximum_size_for_dynamic_screen_percentage(const uint32_t u32MaxWidth, const uint32_t u32MaxHeight) {
-		set_maximum_size_for_dynamic_screen_percentage(Vector2u(u32MaxWidth, u32MaxHeight));
-	}
-
-	Vector2u get_maximum_size_for_dynamic_screen_scaling() {
-		return maxRenderImageSize;
-	}
-
-	uint32_t get_maximum_width_for_dynamic_screen_scaling() {
-		return maxRenderImageSize[0];
-	}
-
-	uint32_t get_maximum_height_for_dynamic_screen_scaling() {
-		return maxRenderImageSize[1];
 	}
 
 }

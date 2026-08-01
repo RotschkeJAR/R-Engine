@@ -2,6 +2,8 @@
 #include "RE_Window.hpp"
 
 namespace RE {
+
+#define SCREEN_PERCENTAGE_STEP (SCREEN_PERCENTAGE_100_PERCENT / 20U)
 	
 	void shortcut_settings_f1(bool bFuncKeyPressed) {
 		// Toggle audio mute

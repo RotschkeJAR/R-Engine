@@ -39,8 +39,8 @@ vec2 pixel_to_ndc(uvec2 pixel) {
 }
 
 void main() {
-	buttonIndex = 0xFFFFFFFF;
-	characterIndex = 0xFFFFFFFF;
+	buttonIndex = 0xFFFFFFFFu;
+	characterIndex = 0xFFFFFFFFu;
 	switch (windowFrameToRender) {
 		case shadowsToRender:
 			switch (gl_VertexIndex) {
@@ -161,7 +161,7 @@ void main() {
 							gl_Position = vec4(pixel_to_ndc(uvec2(offsetFromRight - buttonWidth, offsetFromTop + barHeight)), 0.0, 1.0);
 							break;
 					}
-					buttonIndex = 0xFFFFFFFF;
+					buttonIndex = 0xFFFFFFFFu;
 				} else {
 					const uint computedTextureSize = buttonTextureSize;
 					vertexInfo = hovered ? vec4(1.0, 1.0, 1.0, 1.0) : vec4(0.0, 0.0, 0.0, 1.0);

@@ -5,9 +5,7 @@
 
 namespace RE {
 
-	extern ScreenPercentageSettings screenPercentageSettings;
-	extern Vector2u renderImageSize,
-		maxRenderImageSize;
+	extern Vector2u renderImageSize;
 	
 	bool create_renderer_images();
 	void destroy_renderer_images();
@@ -26,7 +24,6 @@ namespace RE {
 	extern VkImage vk_hDepthStencilImage;
 	extern VkImageView vk_ahDepthStencilImageViews[RE_VK_FRAMES_IN_FLIGHT];
 	extern VkFormat vk_eSelectedDepthStencilFormat;
-	extern bool bStencilsEnabled;
 
 	// Characters
 	extern VkImage vk_hCharacterImage;

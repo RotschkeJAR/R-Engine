@@ -1,5 +1,5 @@
 #ifndef __RE_INPUT_H__
-#define __RE_INPUT_H__
+#define __RE_INPUT_H__ 1
 
 #include "RE_Internal.hpp"
 

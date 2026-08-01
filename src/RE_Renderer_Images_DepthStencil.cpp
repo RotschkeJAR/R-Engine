@@ -7,10 +7,8 @@ namespace RE {
 	
 	VkImage vk_hDepthStencilImage = VK_NULL_HANDLE;
 	VkImageView vk_ahDepthStencilImageViews[RE_VK_FRAMES_IN_FLIGHT] = {};
-	VkFormat vk_eSelectedDepthStencilFormat;
-	static DepthPrecission eDepthPrecission = RE_DEPTH_PRECISSION_LOW;
+	VkFormat vk_eSelectedDepthStencilFormat = VK_FORMAT_D16_UNORM;
 	DepthStencilFeatureFlags mDepthStencilFeatures = 0;
-	bool bStencilsEnabled = false;
 
 	static DepthStencilFeatureBits get_depth_stencil_feature(DepthPrecission ePrecission, bool bStencils) {
 		if (bStencils) {
@@ -79,10 +77,10 @@ namespace RE {
 	COMPATIBLE_DEPTH_STENCIL_MODE_FOUND:
 		PRINT_DEBUG("Writing adjusted depth precission");
 		reDepthPrecission = static_cast<DepthPrecission>(iNextDepthPrecission);
-		if (reDepthPrecission == RE_DEPTH_PRECISSION_MODERATE && !bStencilsEnabled && (mDepthStencilFeatures & DEPTH_STENCIL_FEATURE_D32_SUPPORTED_BIT)) {
+		if (reDepthPrecission == RE_DEPTH_PRECISSION_MODERATE && !rbStencilsEnabled && (mDepthStencilFeatures & DEPTH_STENCIL_FEATURE_D32_SUPPORTED_BIT)) {
 			PRINT_DEBUG("Depth precission will be upgraded from moderate to high quality without stencils (D24 -> D32)");
 			reDepthPrecission = RE_DEPTH_PRECISSION_HIGH;
-		} else if (reDepthPrecission == RE_DEPTH_PRECISSION_LOW && bStencilsEnabled && (mDepthStencilFeatures & DEPTH_STENCIL_FEATURE_D24_S8_SUPPORTED_BIT)) {
+		} else if (reDepthPrecission == RE_DEPTH_PRECISSION_LOW && rbStencilsEnabled && (mDepthStencilFeatures & DEPTH_STENCIL_FEATURE_D24_S8_SUPPORTED_BIT)) {
 			PRINT_DEBUG("Depth precission will be upgraded from low to moderate quality without stencils (D16_S8 -> D24_S8)");
 			reDepthPrecission = RE_DEPTH_PRECISSION_MODERATE;
 		}
@@ -183,11 +181,13 @@ namespace RE {
 				break;
 			}
 		}
+		DepthPrecission eDepthPrecission = get_depth_precission();
+		bool bStencilsEnabled = are_stencils_enabled();
 		adjust_depth_stencil_mode(eDepthPrecission, bStencilsEnabled);
+		set_depth_stencil_settings(eDepthPrecission, bStencilsEnabled);
 	}
 
 	bool create_depth_stencil_image() {
-		vk_eSelectedDepthStencilFormat = get_depth_stencil_format(eDepthPrecission, bStencilsEnabled);
 		const VkImageCreateInfo vk_depthStencilCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
 			.pNext = nullptr,
@@ -231,10 +231,10 @@ namespace RE {
 				.r = VK_COMPONENT_SWIZZLE_IDENTITY,
 				.g = VK_COMPONENT_SWIZZLE_IDENTITY,
 				.b = VK_COMPONENT_SWIZZLE_IDENTITY,
-				.a = VK_COMPONENT_SWIZZLE_ONE
+				.a = VK_COMPONENT_SWIZZLE_IDENTITY
 			},
 			.subresourceRange = {
-				.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | static_cast<VkImageAspectFlags>(bStencilsEnabled ? VK_IMAGE_ASPECT_STENCIL_BIT : 0),
+				.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | static_cast<VkImageAspectFlags>(are_stencils_enabled() ? VK_IMAGE_ASPECT_STENCIL_BIT : 0),
 				.baseMipLevel = 0,
 				.levelCount = 1,
 				.layerCount = 1,
@@ -278,7 +278,8 @@ namespace RE {
 
 	void set_depth_stencil_settings(DepthPrecission eNewDepthPrecission, bool bNewStencilsEnabled) {
 		adjust_depth_stencil_mode(eNewDepthPrecission, bNewStencilsEnabled);
-		if (eDepthPrecission == eNewDepthPrecission && bStencilsEnabled == bNewStencilsEnabled)
+		const VkFormat vk_eNewDepthStencilFormat = get_depth_stencil_format(eNewDepthPrecission, bNewStencilsEnabled);
+		if (vk_eNewDepthStencilFormat == vk_eSelectedDepthStencilFormat)
 			return;
 		if (bRunning) {
 			PRINT_DEBUG("Destroying depth and stencil Vulkan images");
@@ -286,11 +287,45 @@ namespace RE {
 			destroy_renderer_images();
 		}
 		PRINT_DEBUG("Updating depth and stencil settings");
-		eDepthPrecission = eNewDepthPrecission;
-		bStencilsEnabled = bNewStencilsEnabled;
+		vk_eSelectedDepthStencilFormat = vk_eNewDepthStencilFormat;
 		if (bRunning) {
 			PRINT_DEBUG("Recreating depth and stencil Vulkan images");
 			create_renderer_images();
+		}
+	}
+
+	void set_depth_precission(DepthPrecission eNewDepthPrecission) {
+		set_depth_stencil_settings(eNewDepthPrecission, are_stencils_enabled());
+	}
+
+	void set_stencils_enabled(bool bNewStencilsEnabled) {
+		set_depth_stencil_settings(get_depth_precission(), bNewStencilsEnabled);
+	}
+
+	DepthPrecission get_depth_precission() {
+		switch (vk_eSelectedDepthStencilFormat) {
+			case VK_FORMAT_D16_UNORM:
+			case VK_FORMAT_D16_UNORM_S8_UINT:
+				return RE_DEPTH_PRECISSION_LOW;
+			case VK_FORMAT_X8_D24_UNORM_PACK32:
+			case VK_FORMAT_D24_UNORM_S8_UINT:
+				return RE_DEPTH_PRECISSION_MODERATE;
+			case VK_FORMAT_D32_SFLOAT:
+			case VK_FORMAT_D32_SFLOAT_S8_UINT:
+				return RE_DEPTH_PRECISSION_HIGH;
+			default:
+				RE_ABORT("An invalid depth-stencil format is selected: ", std::hex, vk_eSelectedDepthStencilFormat);
+		}
+	}
+
+	bool are_stencils_enabled() {
+		switch (vk_eSelectedDepthStencilFormat) {
+			case VK_FORMAT_D16_UNORM_S8_UINT:
+			case VK_FORMAT_D24_UNORM_S8_UINT:
+			case VK_FORMAT_D32_SFLOAT_S8_UINT:
+				return true;
+			default:
+				return false;
 		}
 	}
 

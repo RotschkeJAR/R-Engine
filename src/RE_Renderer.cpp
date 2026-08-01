@@ -7,40 +7,42 @@ namespace RE {
 
 	Color backgroundClearColor(0.2f, 0.2f, 0.2f, 1.0f);
 
-	float fSampleShadingRate = 0.2f;
-
-	uint8_t u8CurrentFrameInFlightIndex = 0;
+	unsigned uCurrentFrameInFlightIndex = 0;
 
 	bool init_renderer() {
+		vk_eSwapchainImageFormat = surfaceFormatsAvailable[u32IndexToSelectedSurfaceFormat].format;
 		if (create_render_tasks()) {
 			if (create_renderer_buffers()) {
 				if (create_renderer_images()) {
-					if (create_swapchain()) {
-						if (setup_presentation()) {
-							if (init_renderer_sprite_layouts()) {
-								if (create_descriptor_sets()) {
-									if (create_render_pass()) {
+					if (create_render_pass()) {
+						if (create_swapchain()) {
+							if (setup_presentation()) {
+								if (init_renderer_sprite_layouts()) {
+									if (create_descriptor_sets()) {
 										if (create_renderer_pipelines()) {
 											if (init_renderer_textures()) {
 												if (init_renderer_meshes()) {
-													for (VulkanTask &rRenderTask : aRenderTasks)
-														for (unsigned uFunctionIndex = 0; uFunctionIndex < aRenderTasks[0].function_count(); uFunctionIndex++)
-															rRenderTask.record(uFunctionIndex, 0, nullptr);
-													return true;
+													if (init_window_frame()) {
+														for (VulkanTask &rRenderTask : aRenderTasks)
+															for (unsigned uFunctionIndex = 0; uFunctionIndex < aRenderTasks[0].function_count(); uFunctionIndex++)
+																rRenderTask.record(uFunctionIndex, 0, nullptr);
+														return true;
+													}
+													destroy_renderer_meshes();
 												}
 												destroy_renderer_textures();
 											}
 											destroy_renderer_pipelines();
 										}
-										destroy_render_pass();
+										destroy_descriptor_sets();
 									}
-									destroy_descriptor_sets();
+									destroy_renderer_sprite_layout();
 								}
-								destroy_renderer_sprite_layout();
+								destroy_presentation();
 							}
-							destroy_presentation();
+							destroy_swapchain();
 						}
-						destroy_swapchain();
+						destroy_render_pass();
 					}
 					destroy_renderer_images();
 				}
@@ -52,6 +54,7 @@ namespace RE {
 	}
 
 	void destroy_renderer() {
+		destroy_window_frame();
 		destroy_renderer_meshes();
 		destroy_renderer_sprite_layout();
 		destroy_renderer_textures();
@@ -83,14 +86,14 @@ namespace RE {
 			return;
 		}
 		if ((mSettingsFlags & SETTINGS_FLAG_MENU_OPEN_BIT))
-			render_settings_gui();
+			present_empty();
 		else
 			render_procedure();
 		goto INCREASE_INDICES_RENDERER;
 		
 	INCREASE_INDICES_RENDERER:
-		u8CurrentFrameInFlightIndex = (u8CurrentFrameInFlightIndex + 1) % RE_VK_FRAMES_IN_FLIGHT;
-		u32CurrentSwapchainSemaphoreIndex = (u32CurrentSwapchainSemaphoreIndex + 1) % u32SwapchainImageCount;
+		uCurrentFrameInFlightIndex = (uCurrentFrameInFlightIndex + 1U) % RE_VK_FRAMES_IN_FLIGHT;
+		u32CurrentSwapchainSemaphoreIndex = (u32CurrentSwapchainSemaphoreIndex + 1U) % u32SwapchainImageCount;
 	}
 
 	bool swapchain_created_renderer() {
@@ -110,6 +113,7 @@ namespace RE {
 
 	void set_background_color(const Color &rColor) {
 		backgroundClearColor = rColor;
+		backgroundClearColor.set_alpha(1.0f);
 	}
 
 	void set_background_color(float fRed, float fGreen, float fBlue) {
@@ -120,28 +124,6 @@ namespace RE {
 
 	Color get_background_color() {
 		return backgroundClearColor;
-	}
-
-	bool is_sample_shading_enabled() {
-		return fSampleShadingRate != 0.0f;
-	}
-
-	void set_sample_shading_rate(const float fNewSampleShadingRate) {
-		if (fSampleShadingRate == fNewSampleShadingRate)
-			return;
-		if (fNewSampleShadingRate < 0.0f || fNewSampleShadingRate > 1.0f) {
-			RE_ERROR("Sample shading rate should be in range between 0.0 and 1.0, but was ", fNewSampleShadingRate, ". Request to change it has been discarded");
-			return;
-		} else {
-			PRINT_DEBUG("Setting sample shading rate to ", fNewSampleShadingRate);
-			fSampleShadingRate = fNewSampleShadingRate;
-			wait_for_rendering_finished();
-			recreate_graphics_pipelines();
-		}
-	}
-
-	float get_sample_shading_rate() {
-		return fSampleShadingRate;
 	}
 
 }

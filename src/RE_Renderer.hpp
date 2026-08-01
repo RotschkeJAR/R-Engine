@@ -1,5 +1,5 @@
 #ifndef __RE_RENDERER_H__
-#define __RE_RENDERER_H__
+#define __RE_RENDERER_H__ 1
 
 #include "RE_GPU.hpp"
 
@@ -28,7 +28,7 @@ namespace RE {
 	bool prepare_render_tasks_for_dummy_presentation();
 #endif
 
-	// Depth-stencil buffers
+	// Depth-stencil images
 	void find_suitable_depth_stencil_formats();
 
 #ifdef RE_OS_LINUX

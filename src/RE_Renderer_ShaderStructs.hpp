@@ -1,5 +1,5 @@
 #ifndef __RE_RENDERER_SHADER_STRUCTS_H__
-#define __RE_RENDERER_SHADER_STRUCTS_H__
+#define __RE_RENDERER_SHADER_STRUCTS_H__ 1
 
 namespace RE {
 

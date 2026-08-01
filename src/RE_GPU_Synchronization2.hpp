@@ -1,5 +1,5 @@
 #ifndef __RE_GPU_SYNCHRONIZATION_2_H__
-#define __RE_GPU_SYNCHRONIZATION_2_H__
+#define __RE_GPU_SYNCHRONIZATION_2_H__ 1
 
 #include "RE_GPU.hpp"
 

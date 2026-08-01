@@ -12,10 +12,12 @@ namespace RE {
 #define PRINT_COLORS 0
 #define TREAT_WARNING_AS_ERROR 1
 #define ERRORS_ALWAYS_FATAL 2
+#ifndef NDEBUG
 	static uint32_t u32ErrorCount = 0,
 		u32WarningCount = 0;
 	uint32_t u32VulkanErrorCount = 0,
 		u32VulkanWarningCount = 0;
+#endif
 	uint8_t u8ConsoleSettings = 1 << PRINT_COLORS;
 
 	static void print_time() {
@@ -25,17 +27,17 @@ namespace RE {
 
 	[[nodiscard]]
 	static std::string escape_code_to_string(const TerminalColor eColor, const bool bBackgroundColored, const bool bBold) {
-		uint32_t u32Id = static_cast<uint32_t>(eColor);
-		if (u32Id >= static_cast<uint32_t>(RE_TERMINAL_COLOR_BRIGHT_BLACK))
-			u32Id += 90 - static_cast<uint32_t>(RE_TERMINAL_COLOR_BRIGHT_BLACK);
+		unsigned uId = static_cast<unsigned>(eColor);
+		if (uId >= static_cast<unsigned>(RE_TERMINAL_COLOR_BRIGHT_BLACK))
+			uId += 90U - static_cast<unsigned>(RE_TERMINAL_COLOR_BRIGHT_BLACK);
 		else
-			u32Id += 30;
+			uId += 30U;
 		if (bBackgroundColored)
-			u32Id += 10;
+			uId += 10U;
 		std::string result("\033[");
 		if (bBold)
 			result.append("1;");
-		result.append(std::format("{}", u32Id));
+		result.append(std::format("{}", uId));
 		result.append("m");
 		return result;
 	}
@@ -52,12 +54,14 @@ namespace RE {
 	}
 
 	void print_error_count() {
+	#ifndef NDEBUG
 		println("Error counter:");
 		println("=============================");
 		println("Errors:             ", u32ErrorCount);
 		println("Warnings:           ", u32WarningCount);
 		println("Vulkan errors:      ", u32VulkanErrorCount);
 		println("Vulkan warnings:    ", u32VulkanWarningCount);
+	#endif
 	}
 
 	void print_colored(const std::string &rsContent, const TerminalColor eColor, const bool bBackgroundColored, const bool bBold) {
@@ -81,7 +85,6 @@ namespace RE {
 		print("   ");
 		print_error_msg(rsDetail);
 		print_error_count();
-		std::signal(SIGABRT, SIG_DFL);
 		std::abort();
 	}
 
@@ -90,7 +93,9 @@ namespace RE {
 		print_colored("FATAL ERROR", RE_TERMINAL_COLOR_RED, false, false);
 		print_error_msg(rsDetail);
 		bErrorOccured = true;
+	#ifndef NDEBUG
 		u32ErrorCount++;
+	#endif
 	}
 	
 	void error(const std::string &rsDetail) {
@@ -102,7 +107,9 @@ namespace RE {
 		print_colored("ERROR", RE_TERMINAL_COLOR_BRIGHT_RED, false, false);
 		print("      ");
 		print_error_msg(rsDetail);
+	#ifndef NDEBUG
 		u32ErrorCount++;
+	#endif
 	}
 
 	void warning(const std::string &rsDetail) {
@@ -114,7 +121,9 @@ namespace RE {
 		print_colored("WARNING", RE_TERMINAL_COLOR_YELLOW, false, false);
 		print("    ");
 		print_error_msg(rsDetail);
+	#ifndef NDEBUG
 		u32WarningCount++;
+	#endif
 	}
 
 	void note(const std::string &rsDetail) {

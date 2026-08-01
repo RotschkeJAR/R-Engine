@@ -1,5 +1,5 @@
 #ifndef __RE_MAIN_H__
-#define __RE_MAIN_H__
+#define __RE_MAIN_H__ 1
 
 #include "RE_Internal.hpp"
 

@@ -1,5 +1,5 @@
 #ifndef __RE_VULKAN_WRAPPERS_H__
-#define __RE_VULKAN_WRAPPERS_H__
+#define __RE_VULKAN_WRAPPERS_H__ 1
 
 #include "RE_GPU.hpp"
 

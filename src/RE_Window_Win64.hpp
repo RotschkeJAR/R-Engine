@@ -1,5 +1,5 @@
 #ifndef __RE_WINDOW_WIN64_H__
-#define __RE_WINDOW_WIN64_H__
+#define __RE_WINDOW_WIN64_H__ 1
 
 #include "RE_Window_Internal.hpp"
 

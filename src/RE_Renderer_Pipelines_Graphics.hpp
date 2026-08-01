@@ -1,5 +1,5 @@
 #ifndef __RE_RENDERER_PIPELINES_GRAPHICS_H__
-#define __RE_RENDERER_PIPELINES_GRAPHICS_H__
+#define __RE_RENDERER_PIPELINES_GRAPHICS_H__ 1
 
 #include "RE_Renderer_Pipelines_Internal.hpp"
 

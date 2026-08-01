@@ -14,7 +14,6 @@ namespace RE {
 	bool bSwapchainDirty = false;
 	
 	bool create_swapchain() {
-		vk_eSwapchainImageFormat = surfaceFormatsAvailable[u32IndexToSelectedSurfaceFormat].format;
 		const VkSwapchainKHR vk_hOldSwapchain = vk_hSwapchain;
 		if (vk_hOldSwapchain != VK_NULL_HANDLE) {
 			PRINT_DEBUG("Cleaning up ressources used for outdated swapchain");
@@ -54,7 +53,7 @@ namespace RE {
 			.imageColorSpace = surfaceFormatsAvailable[u32IndexToSelectedSurfaceFormat].colorSpace,
 			.imageExtent = vk_swapchainResolution,
 			.imageArrayLayers = 1,
-			.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+			.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
 			.imageSharingMode = queuesForSwapchain.vk_eSharingMode,
 			.queueFamilyIndexCount = static_cast<uint32_t>(queuesForSwapchain.u8QueueCount),
 			.pQueueFamilyIndices = queuesForSwapchain.queueFamilyIndices.get(),
@@ -115,9 +114,9 @@ namespace RE {
 			swapchainImageViews.reset();
 			PRINT_DEBUG("Destroying recently created swapchain");
 			vkDestroySwapchainKHR(vk_hDevice, vk_hSwapchain, nullptr);
-			vk_hSwapchain = VK_NULL_HANDLE;
 		} else
 			RE_FATAL_ERROR("Failed creating Vulkan swapchain");
+		vk_hSwapchain = VK_NULL_HANDLE;
 		return false;
 	}
 	

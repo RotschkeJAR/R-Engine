@@ -5,7 +5,8 @@
 
 namespace RE {
 
-	extern std::unique_ptr<VkFramebuffer[]> std_framebuffers;
+	extern VkFramebuffer vk_ahFramebuffers[RE_VK_FRAMES_IN_FLIGHT];
+	extern std::unique_ptr<VkFramebuffer[]> std_swapchainFramebuffers;
 
 	bool create_renderer_framebuffers();
 	void destroy_renderer_framebuffers();

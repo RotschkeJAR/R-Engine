@@ -1,12 +1,12 @@
 #ifndef __RE_RENDERER_PRESENTATION_H__
-#define __RE_RENDERER_PRESENTATION_H__
+#define __RE_RENDERER_PRESENTATION_H__ 1
 
 #include "RE_Renderer_Internal.hpp"
 
 namespace RE {
 	
-#define RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE 2
-#define RE_VK_SWAPCHAIN_SEMAPHORE_COUNT (u32SwapchainImageCount * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE)
+#define RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE   2
+#define RE_VK_SWAPCHAIN_SEMAPHORE_COUNT        (u32SwapchainImageCount * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE)
 	
 	extern VkQueue vk_hPresentQueue;
 	extern std::unique_ptr<VkSemaphore[]> swapchainSemaphores;

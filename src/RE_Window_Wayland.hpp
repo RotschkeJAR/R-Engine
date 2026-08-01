@@ -1,5 +1,5 @@
 #ifndef __RE_WINDOW_WAYLAND_H__
-#define __RE_WINDOW_WAYLAND_H__
+#define __RE_WINDOW_WAYLAND_H__ 1
 
 #include "RE_Window_Internal.hpp"
 

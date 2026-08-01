@@ -3,6 +3,7 @@
 
 #include "RE_Renderer.hpp"
 #include "RE_Vulkan_Wrappers.hpp"
+#include "RE_Settings.hpp"
 
 #include "RE_Renderer_ShaderStructs.hpp"
 #include "RE_Renderer_DescriptorSets.hpp"
@@ -19,7 +20,6 @@
 #include "RE_Renderer_Presentation.hpp"
 #include "RE_Renderer_RenderTask.hpp"
 #include "RE_Renderer_RenderProcedure.hpp"
-#include "RE_Renderer_SettingsGUI.hpp"
 #include "RE_Renderer_WindowFrame.hpp"
 #include "RE_Renderer_RenderPass.hpp"
 #include "RE_Renderer_Framebuffers.hpp"
@@ -33,8 +33,7 @@ namespace RE {
 	void swapchain_destroyed_renderer();
 
 	extern Color backgroundClearColor;
-	extern float fSampleShadingRate;
-	extern uint8_t u8CurrentFrameInFlightIndex;
+	extern unsigned uCurrentFrameInFlightIndex;
 
 }
 

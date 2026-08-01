@@ -1,5 +1,5 @@
 #ifndef __RE_INTERNAL_H__
-#define __RE_INTERNAL_H__
+#define __RE_INTERNAL_H__ 1
 
 #include <algorithm>
 #include <numeric>

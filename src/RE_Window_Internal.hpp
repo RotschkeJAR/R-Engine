@@ -1,5 +1,5 @@
 #ifndef __RE_WINDOW_INTERNAL_H__
-#define __RE_WINDOW_INTERNAL_H__
+#define __RE_WINDOW_INTERNAL_H__ 1
 
 #include "RE_Window.hpp"
 

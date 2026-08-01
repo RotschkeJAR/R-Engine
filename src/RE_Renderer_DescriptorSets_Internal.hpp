@@ -1,5 +1,5 @@
 #ifndef __RE_RENDERER_DESCRIPTOR_SETS_INTERNAL_H__
-#define __RE_RENDERER_DESCRIPTOR_SETS_INTERNAL_H__
+#define __RE_RENDERER_DESCRIPTOR_SETS_INTERNAL_H__ 1
 
 #include "RE_Renderer_DescriptorSets.hpp"
 

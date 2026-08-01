@@ -1,5 +1,5 @@
 #ifndef __RE_RENDERER_PIPELINES_INTERNAL_H__
-#define __RE_RENDERER_PIPELINES_INTERNAL_H__
+#define __RE_RENDERER_PIPELINES_INTERNAL_H__ 1
 
 #include "RE_Renderer_Pipelines.hpp"
 #include "RE_Renderer_Pipelines_Layouts.hpp"

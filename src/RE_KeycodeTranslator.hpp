@@ -1,5 +1,5 @@
 #ifndef __RE_KEYCODE_TRANSLATOR_H__
-#define __RE_KEYCODE_TRANSLATOR_H__
+#define __RE_KEYCODE_TRANSLATOR_H__ 1
 
 #include "RE_Window.hpp"
 

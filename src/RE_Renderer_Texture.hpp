@@ -1,5 +1,5 @@
 #ifndef __RE_TEXTURE_H__
-#define __RE_TEXTURE_H__
+#define __RE_TEXTURE_H__ 1
 
 #include "RE_Renderer_Internal.hpp"
 

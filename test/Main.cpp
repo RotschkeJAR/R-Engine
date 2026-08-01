@@ -180,11 +180,9 @@ class First : public Scene {
 			} else if (is_pressed(RE_INPUT_KEY_SPACE)) {
 				bNormalScreen = !bNormalScreen;
 				if (bNormalScreen) {
-					const ScreenPercentageSettings normal;
-					set_screen_percentage_settings(normal);
+					set_screen_percentage(1.0f);
 				} else {
-					const ScreenPercentageSettings constSized(Vector2u{50, 50});
-					set_screen_percentage_settings(constSized);
+					set_screen_percentage(0.4f);
 				}
 			}
 			//PRINT_LN(get_fps_rate());

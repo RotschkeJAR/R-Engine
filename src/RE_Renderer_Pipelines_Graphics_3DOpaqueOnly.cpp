@@ -72,7 +72,7 @@ namespace RE {
 		const VkPipelineMultisampleStateCreateInfo vk_multisampling = {
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
 			.rasterizationSamples = vk_eMsaaMode,
-			.sampleShadingEnable = is_sample_shading_enabled() ? VK_TRUE : VK_FALSE,
+			.sampleShadingEnable = IS_SAMPLE_SHADING_ENABLED() ? VK_TRUE : VK_FALSE,
 			.minSampleShading = fSampleShadingRate,
 			.pSampleMask = nullptr,
 			.alphaToCoverageEnable = VK_FALSE,
@@ -123,7 +123,7 @@ namespace RE {
 			.pDynamicState = &vk_dynamicStates,
 			.layout = vk_hGraphicsPipelineLayout,
 			.renderPass = vk_hRenderPass,
-			.subpass = RENDER_SUBPASS_SCENERY,
+			.subpass = u32SubpassScenery,
 			.basePipelineHandle = vk_hPreviousPipeline,
 			.basePipelineIndex = -1
 		};

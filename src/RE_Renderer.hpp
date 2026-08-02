@@ -37,8 +37,10 @@ namespace RE {
 #endif
 
 	// Settings GUI
-	bool init_settings_gui();
-	void destroy_settings_gui();
+	consteval bool init_settings_gui() {
+		return true;
+	}
+	consteval void destroy_settings_gui() {}
 
 }
 

@@ -30,6 +30,7 @@
 #	include <wayland-client.h>
 #	include <xdg-shell-client-protocol.h>
 #	include <xkbcommon/xkbcommon.h>
+
 #	define RENDERER_INCLUDE_WINDOW_FRAME 1
 #	define RENDERER_INCLUDE_EMPTY_PRESENT 1
 #endif

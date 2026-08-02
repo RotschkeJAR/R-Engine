@@ -6,8 +6,13 @@
 namespace RE {
 	
 	bool render_procedure();
+	
 #ifdef RENDERER_INCLUDE_EMPTY_PRESENT
 	bool present_empty();
+#else
+	consteval bool present_empty() {
+		return true;
+	}
 #endif
 
 }

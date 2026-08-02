@@ -18,7 +18,7 @@ namespace RE {
 		return true;
 	}
 	consteval void destroy_window_frame() {}
-	consteval void render_window_frame(VkCommandBuffer vk_hCommandBuffer) {}
+	inline void render_window_frame(VkCommandBuffer vk_hCommandBuffer) {}
 
 #endif
 

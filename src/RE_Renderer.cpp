@@ -85,10 +85,11 @@ namespace RE {
 		#endif
 			return;
 		}
-		if ((mSettingsFlags & SETTINGS_FLAG_MENU_OPEN_BIT))
+		if ((mSettingsFlags & SETTINGS_FLAG_MENU_OPEN_BIT)) {
 			present_empty();
-		else
+		} else {
 			render_procedure();
+		}
 		goto INCREASE_INDICES_RENDERER;
 		
 	INCREASE_INDICES_RENDERER:

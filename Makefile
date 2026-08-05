@@ -1,8 +1,8 @@
 # GNU Make 4.4.1
 
 # Possible values:
-#	debug
 #	release
+#	debug
 BUILD    ?= release
 
 # Possible values:
@@ -30,9 +30,9 @@ ifeq ($(COMPILER),GNU)
 else
 	ifeq ($(COMPILER),MSVC)
 		CC            := cl
-		CFLAG         := /nologo /EHsc /TP /std:c17 /W1 /favor:blend /D _WIN32_WINNT=0x0A00
+		CFLAG         := /nologo /EHsc /TP /std:c17 /W1 /favor:blend /O2 /D _WIN32_WINNT=0x0A00
 		CXX           := cl
-		CXXFLAG       := /nologo /EHsc /TP /std:c++20 /W1 /favor:blend /D _WIN32_WINNT=0x0A00
+		CXXFLAG       := /nologo /EHsc /TP /std:c++20 /W1 /favor:blend /O2 /D _WIN32_WINNT=0x0A00
 		LD            := link
 		ifeq ($(BUILD),release)
 			CFLAG     += /D NDEBUG
@@ -56,7 +56,11 @@ BIN          := bin
 LIB_BIN      := $(BIN)/lib
 TEST_BIN     := $(BIN)/test
 
-OUT          := Game
+ifeq ($(OS),$(WINDOWS))
+	OUT      := Game.exe
+else
+	OUT      := Game
+endif
 
 SOURCES               := $(wildcard $(SRC)/*.cpp)
 DEPENDENCIES          := $(patsubst $(SRC)/%.cpp,$(BIN)/%.d,$(SOURCES))
@@ -119,28 +123,28 @@ all: $(OUT) $(SHADER_BINARIES)
 
 $(OUT): $(TEST_OBJECTS) $(RE)
 ifeq ($(OS),$(WINDOWS))
-	@if [ $(BUILD) = "debug" ]; then \
-		if [ $(COMPILER) = "GNU" ]; then \
+	@if $(BUILD)==debug ( \
+		if $(COMPILER)==GNU ( \
 			$(LD) $< -o $@ -L $(BIN) -l RE -l gdi32 -l user32 -static-libgcc -static-libstdc++; \
-		elif [ $(COMPILER) = "MSVC" ]; then \
-			$(LD) /NOLOGO $(subst /,\,$^) gdi32.lib user32.lib /OUT:"$@" /SUBSYSTEM:CONSOLE; \
-		else \
+		) else if $(COMPILER)==MSVC ( \
+			$(LD) /NOLOGO $(subst /,\,$^) gdi32.lib user32.lib /OUT:"$@" /SUBSYSTEM:CONSOLE \
+		) else ( \
 			echo Unknown compiler selected '$(COMPILER)'; \
 			exit 1; \
-		fi \
-	elif [ $(BUILD) = "release" ]; then \
-		if [ $(COMPILER) = "GNU" ]; then \
+		) \
+	) else if $(BUILD)==release ( \
+		if $(COMPILER)==GNU ( \
 			$(LD) $< -o $@ -L $(BIN) -l RE -l gdi32 -l user32 -static-libgcc -static-libstdc++ -mwindows; \
-		elif [ $(COMPILER) = "MSVC" ]; then \
-			$(LD) /NOLOGO $(subst /,\,$^) gdi32.lib user32.lib /OUT:"$@" /SUBSYSTEM:WINDOWS; \
-		else \
+		) else if $(COMPILER)==MSVC ( \
+			$(LD) /NOLOGO $(subst /,\,$^) gdi32.lib user32.lib /OUT:"$@" /SUBSYSTEM:WINDOWS \
+		) else ( \
 			echo Unknown compiler selected '$(COMPILER)'; \
 			exit 1; \
-		fi \
-	else \
+		) \
+	) else ( \
 		echo Unknown build configuration '$(BUILD)'; \
 		exit 1; \
-	fi
+	)
 else
 	@$(LD) $< -o $@ -L $(BIN) -l RE -l dl -l X11 -l Xrandr -l Xinerama -l wayland-client -l xkbcommon
 endif

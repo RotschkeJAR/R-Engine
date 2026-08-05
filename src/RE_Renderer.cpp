@@ -86,7 +86,7 @@ namespace RE {
 			return;
 		}
 		if ((mSettingsFlags & SETTINGS_FLAG_MENU_OPEN_BIT)) {
-			present_empty();
+			[[maybe_unused]] bool bDiscardCode = present_empty();
 		} else {
 			render_procedure();
 		}

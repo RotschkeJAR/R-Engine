@@ -7,7 +7,7 @@ namespace RE {
 		if (rLogicalQueueIndices.size() == 1)
 			return rLogicalQueueIndices[0];
 		int32_t i32LowestCountForSideFeatures = std::numeric_limits<int32_t>::max();
-		uint8_t u8BestQueue;
+		uint8_t u8BestQueue = 0;
 		for (const uint8_t u8LogicalQueueIndex : rLogicalQueueIndices) {
 			const int32_t i32SideFeatureCount = std::popcount<VkQueueFlags>(vk_paeQueueTypes[u8LogicalQueueIndex] & (~vk_eRequiredQueueTypes));
 			if (i32LowestCountForSideFeatures > i32SideFeatureCount) {

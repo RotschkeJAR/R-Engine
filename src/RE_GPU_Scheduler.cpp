@@ -104,7 +104,7 @@ namespace RE {
 		if (!renderQueues.empty()) {
 			PRINT_DEBUG("Finding best render queue");
 			abRecommendedQueueTypesExisting[QUEUE_INDEX_RENDERING] = true;
-			uint32_t u32BestQueue;
+			uint32_t u32BestQueue = 0;
 			uint8_t u8LeastSideFeaturesInQueue = std::numeric_limits<uint8_t>::max();
 			for (const uint32_t u32QueueIndex : renderQueues) {
 				const uint8_t u8SideFeaturesCount = std::popcount<VkQueueFlags>(vk_paQueueFamilyProperties[u32QueueIndex].queueFamilyProperties.queueFlags & (~vk_aeRecommendedQueueTypes[QUEUE_INDEX_RENDERING]));

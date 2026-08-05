@@ -4,10 +4,7 @@ shaders/*.d
 *.xcf
 
 # Windows-specific
-Game (MinGW; Console).exe
-Game (MinGW; Windows).exe
-Game (MSVC; Console).exe
-Game (MSVC; Windows).exe
+Game.exe
 
 # Linux-specific
 Game

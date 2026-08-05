@@ -30,6 +30,8 @@ namespace RE {
 			case LINUX_WINDOW_TYPE_WAYLAND:
 				bSuccess = wayland_create_window();
 				break;
+			default:
+				RE_ABORT("The compositor is unknown to create a window");
 		}
 	#endif
 		set_bitmasks(mWindowFlagBits, bSuccess, static_cast<WindowFlags>(WINDOW_FLAG_CREATED_BIT));
@@ -48,6 +50,8 @@ namespace RE {
 			case LINUX_WINDOW_TYPE_WAYLAND:
 				wayland_destroy_window();
 				break;
+			default:
+				RE_ABORT("The compositor is unknown to destroy the window");
 		}
 	#endif
 		mWindowFlagBits &= ~(WINDOW_FLAG_CREATED_BIT | WINDOW_FLAG_CLOSE_BIT | WINDOW_FLAG_MINIMIZED_BIT | WINDOW_FLAG_MAXIMIZED_BIT | WINDOW_FLAG_VISIBLE_BIT);
@@ -72,6 +76,8 @@ namespace RE {
 			case LINUX_WINDOW_TYPE_WAYLAND:
 				wayland_show_window();
 				break;
+			default:
+				RE_ABORT("The compositor is unknown to show the window");
 		}
 	#endif
 	}
@@ -87,6 +93,8 @@ namespace RE {
 			case LINUX_WINDOW_TYPE_WAYLAND:
 				wayland_update_fullscreen();
 				break;
+			default:
+				RE_ABORT("The compositor is unknown to update the fullscreen state of the window");
 		}
 	#endif
 	}
@@ -103,6 +111,8 @@ namespace RE {
 			case LINUX_WINDOW_TYPE_WAYLAND:
 				wayland_window_proc();
 				break;
+			default:
+				RE_ABORT("The compositor is unknown to call the window procedure");
 		}
 	#endif
 	}
@@ -116,6 +126,8 @@ namespace RE {
 				return x11_get_actual_window_width();
 			case LINUX_WINDOW_TYPE_WAYLAND:
 				return wayland_get_actual_window_width();
+			default:
+				RE_ABORT("The compositor is unknown to get the actual window width");
 		}
 	#endif
 		return 0;
@@ -130,6 +142,8 @@ namespace RE {
 				return x11_get_actual_window_height();
 			case LINUX_WINDOW_TYPE_WAYLAND:
 				return wayland_get_actual_window_height();
+			default:
+				RE_ABORT("The compositor is unknown to get the actual window height");
 		}
 	#endif
 		return 0;
@@ -188,6 +202,8 @@ namespace RE {
 					};
 					return vkCreateWaylandSurfaceKHR(vk_hInstance, &vk_waylandSurfaceCreateInfo, nullptr, &vk_hSurface) == VK_SUCCESS;
 				}
+			default:
+				RE_ABORT("The compositor is unknown to create a Vulkan surface linked to it");
 		}
 	#endif
 		return false;
@@ -202,6 +218,8 @@ namespace RE {
 				return VK_KHR_XLIB_SURFACE_EXTENSION_NAME;
 			case LINUX_WINDOW_TYPE_WAYLAND:
 				return VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME;
+			default:
+				RE_ABORT("The compositor is unknown to get the extension name for the Vulkan surface linking to the window");
 		}
 	#endif
 		return nullptr;
@@ -224,6 +242,8 @@ namespace RE {
 			case LINUX_WINDOW_TYPE_WAYLAND:
 				wayland_update_window_title();
 				break;
+			default:
+				RE_ABORT("The compositor is unknown to update the title of the window");
 		}
 	#endif
 	}

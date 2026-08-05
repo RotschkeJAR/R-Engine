@@ -124,7 +124,7 @@ namespace RE {
 							if (u32Channels == u32ActualChannels)
 								std::memcpy(pau8StagingBufferContent, pau8TextureBinaries, vk_imageBufferSize);
 							else {
-								uint8_t a4u8ChannelValue[4];
+								uint8_t a4u8ChannelValue[4] = {};
 								for (uint64_t u64PixelIndex = 0; u64PixelIndex < u32Width * u32Height; u64PixelIndex++) {
 									switch (u32Channels) {
 										case 1:

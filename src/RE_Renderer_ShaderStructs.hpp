@@ -3,6 +3,8 @@
 
 namespace RE {
 
+#define MAX_CHARS_IN_WINDOW_TITLE   256
+
 	typedef uint32_t ShaderBool;
 	constexpr ShaderBool SHR_TRUE = 1;
 	constexpr ShaderBool SHR_FALSE = 0;
@@ -15,7 +17,7 @@ namespace RE {
 
 	struct WindowFrameUniformData final {
 		uint32_t u32HoveredWindowAreaIndex;
-		uint32_t au32TitleChars[256];
+		uint32_t au32TitleChars[MAX_CHARS_IN_WINDOW_TITLE];
 	};
 
 	struct VertexData final {

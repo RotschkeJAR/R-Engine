@@ -17,11 +17,7 @@ namespace RE {
 #define REQUIRED_VERSION_XDG_WM_BASE         static_cast<uint32_t>(std::max(XDG_WM_BASE_PING_SINCE_VERSION, std::max(XDG_WM_BASE_DESTROY_SINCE_VERSION, std::max(XDG_WM_BASE_GET_XDG_SURFACE_SINCE_VERSION, XDG_WM_BASE_PONG_SINCE_VERSION))))
 #define REQUIRED_VERSION_WL_SEAT             static_cast<uint32_t>(std::max(WL_SEAT_CAPABILITIES_SINCE_VERSION, std::max(WL_SEAT_GET_POINTER_SINCE_VERSION, WL_SEAT_GET_KEYBOARD_SINCE_VERSION)))
 #define REQUIRED_VERSION_WL_OUTPUT           static_cast<uint32_t>(std::max(WL_OUTPUT_GEOMETRY_SINCE_VERSION, std::max(WL_OUTPUT_MODE_SINCE_VERSION, WL_OUTPUT_SCALE_SINCE_VERSION)))
-#ifdef WL_SHM_RELEASE_SINCE_VERSION
-#	define REQUIRED_VERSION_WL_SHM           static_cast<uint32_t>(std::max(WL_SHM_FORMAT_SINCE_VERSION, std::max(WL_SHM_CREATE_POOL_SINCE_VERSION, WL_SHM_RELEASE_SINCE_VERSION)))
-#else
-#	define REQUIRED_VERSION_WL_SHM           static_cast<uint32_t>(std::max(WL_SHM_FORMAT_SINCE_VERSION, WL_SHM_CREATE_POOL_SINCE_VERSION))
-#endif
+#define REQUIRED_VERSION_WL_SHM              static_cast<uint32_t>(std::max(WL_SHM_FORMAT_SINCE_VERSION, WL_SHM_CREATE_POOL_SINCE_VERSION))
 
 #define KEYCODE_TO_XKB_OFFSET   8
 
@@ -69,9 +65,9 @@ namespace RE {
 	static WlCompositor wlCompositor = {};
 	static XdgWmBase xdgWmBase = {};
 	static WlSeat wlSeat = {};
-	static wl_shm *wl_pShm;
+	static wl_shm *wl_pShm = nullptr;
 	wl_surface *wl_pSurface;
-	static wl_output *wl_pCurrentOutput;
+	static wl_output *wl_pCurrentOutput = nullptr;
 	static xdg_surface *xdg_pSurface;
 	static xdg_toplevel *xdg_pToplevel;
 	static std::vector<WaylandMonitorInfo> waylandMonitors;
@@ -222,10 +218,14 @@ namespace RE {
 			if (xWaylandMonitorIter->wlOutput.u32Name != u32Name)
 				continue;
 			PRINT_DEBUG("Removing the Wayland output object ", xWaylandMonitorIter->wlOutput.waylandObject);
+		#ifdef WL_OUTPUT_RELEASE_SINCE_VERSION
 			if (xWaylandMonitorIter->wlOutput.u32Version >= static_cast<uint32_t>(WL_OUTPUT_RELEASE_SINCE_VERSION))
 				wl_output_release(xWaylandMonitorIter->wlOutput.waylandObject);
 			else
 				wl_output_destroy(xWaylandMonitorIter->wlOutput.waylandObject);
+		#else
+			wl_output_destroy(xWaylandMonitorIter->wlOutput.waylandObject);
+		#endif
 			waylandMonitors.erase(xWaylandMonitorIter);
 			return;
 		}
@@ -292,6 +292,8 @@ namespace RE {
 	}
 
 	static void wayland_surface_leave_callback(void *pData, wl_surface *wl_pSurface, wl_output *wl_pOldOutput) {
+		if (wl_pCurrentOutput == wl_pOldOutput)
+			wl_pCurrentOutput = nullptr;
 	}
 
 	static void wayland_surface_preferred_buffer_scale_callback(void *pData, wl_surface *wl_pSurface, int32_t i32Factor) {
@@ -719,9 +721,6 @@ namespace RE {
 							RE_ERROR("Failed to add a listener to Wayland output ", rMonitorInfo.wlOutput.waylandObject);
 							break;
 						}
-						if (monitorIndex == 0) {
-							wl_pCurrentOutput = rMonitorInfo.wlOutput.waylandObject;
-						}
 						monitorIndex++;
 					}
 					if (monitorIndex == waylandMonitors.size()) {
@@ -1037,7 +1036,9 @@ namespace RE {
 		xdg_toplevel_set_title(xdg_pToplevel, pacWindowTitle);
 		xdg_toplevel_set_app_id(xdg_pToplevel, pacWindowTitle);
 		wl_display_flush(wl_pDisplay);
-		for (pIndirectDrawWindowTitle->instanceCount = 0; pIndirectDrawWindowTitle->instanceCount < 256; pIndirectDrawWindowTitle->instanceCount++) {
+		for (pIndirectDrawWindowTitle->instanceCount = 0;
+				pIndirectDrawWindowTitle->instanceCount < sizeof(WindowFrameUniformData::au32TitleChars) / sizeof(WindowFrameUniformData::au32TitleChars[0]);
+				pIndirectDrawWindowTitle->instanceCount++) {
 			const uint32_t u32CharCode = static_cast<uint32_t>(pacWindowTitle[pIndirectDrawWindowTitle->instanceCount]);
 			pWindowFrameUniformData->au32TitleChars[pIndirectDrawWindowTitle->instanceCount] = u32CharCode;
 			if (u32CharCode == 0)
@@ -1049,6 +1050,8 @@ namespace RE {
 		if ((mSettingsFlags & SETTINGS_FLAG_FULLSCREEN_BIT)) {
 			PRINT_DEBUG("Enabling fullscreen on Wayland window");
 			xdg_toplevel_set_max_size(xdg_pToplevel, std::numeric_limits<int32_t>::max(), std::numeric_limits<int32_t>::max());
+			if (!wl_pCurrentOutput)
+				wl_pCurrentOutput = waylandMonitors[0].wlOutput.waylandObject;
 			xdg_toplevel_set_fullscreen(xdg_pToplevel, wl_pCurrentOutput);
 		} else {
 			PRINT_DEBUG("Disabling fullscreen on Wayland window");

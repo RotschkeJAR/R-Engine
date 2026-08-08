@@ -35,6 +35,8 @@
 #	define RENDERER_INCLUDE_EMPTY_PRESENT 1
 #endif
 
+#include "RE_Renderer.hpp"
+
 namespace RE {
 
 	enum WindowArea {

@@ -6,12 +6,14 @@
 BUILD    ?= release
 
 # Possible values:
+#	enabled
+#	disabled
+CONSOLE  ?= disabled
+
+# Possible values:
 #	GNU
 #	MSVC
 COMPILER ?= GNU
-
-WINDOWS      := Windows_NT
-LINUX        := 
 
 ifeq ($(COMPILER),GNU)
 	CC                := gcc
@@ -23,7 +25,7 @@ ifeq ($(COMPILER),GNU)
 		CFLAG         += -D NDEBUG
 		CXXFLAG       += -D NDEBUG
 	endif
-	ifeq ($(OS),$(WINDOWS))
+	ifeq ($(OS),Windows_NT)
 		CFLAG         += -D _WIN32_WINNT=0x0A00
 		CXXFLAG       += -D _WIN32_WINNT=0x0A00
 	endif
@@ -56,7 +58,7 @@ BIN          := bin
 LIB_BIN      := $(BIN)/lib
 TEST_BIN     := $(BIN)/test
 
-ifeq ($(OS),$(WINDOWS))
+ifeq ($(OS),Windows_NT)
 	OUT      := Game.exe
 else
 	OUT      := Game
@@ -75,7 +77,7 @@ SHADER_SOURCES        := $(wildcard $(SH_SRC)/*.glsl)
 SHADER_BINARIES       := $(patsubst $(SH_SRC)/%.glsl,$(SH)/%.glsl.spv,$(SHADER_SOURCES))
 SHADER_DEPENDENCIES   := $(patsubst $(SH_SRC)/%.glsl,$(SH)/%.glsl.spv.d,$(SHADER_SOURCES))
 
-ifeq ($(OS),$(WINDOWS))
+ifeq ($(OS),Windows_NT)
 	LIB_SPEC          := $(LIB_SRC)/Windows
 	LIB_SPEC_BIN      := $(LIB_BIN)/Windows
 	VULKAN_LIB        := "C:\VulkanSDK\Include"
@@ -122,7 +124,7 @@ debug:
 all: $(OUT) $(SHADER_BINARIES)
 
 $(OUT): $(TEST_OBJECTS) $(RE)
-ifeq ($(OS),$(WINDOWS))
+ifeq ($(OS),Windows_NT)
 	@if $(BUILD)==debug ( \
 		if $(COMPILER)==GNU ( \
 			$(LD) $< -o $@ -L $(BIN) -l RE -l gdi32 -l user32 -static-libgcc -static-libstdc++; \
@@ -133,13 +135,24 @@ ifeq ($(OS),$(WINDOWS))
 			exit 1; \
 		) \
 	) else if $(BUILD)==release ( \
-		if $(COMPILER)==GNU ( \
-			$(LD) $< -o $@ -L $(BIN) -l RE -l gdi32 -l user32 -static-libgcc -static-libstdc++ -mwindows; \
-		) else if $(COMPILER)==MSVC ( \
-			$(LD) /NOLOGO $(subst /,\,$^) gdi32.lib user32.lib /OUT:"$@" /SUBSYSTEM:WINDOWS \
+		if $(CONSOLE)==enabled ( \
+			if $(COMPILER)==GNU ( \
+				$(LD) $< -o $@ -L $(BIN) -l RE -l gdi32 -l user32 -static-libgcc -static-libstdc++ \
+			) else if $(COMPILER)==MSVC ( \
+				$(LD) /NOLOGO $(subst /,\,$^) gdi32.lib user32.lib /OUT:"$@" /SUBSYSTEM:CONSOLE \
+			) else ( \
+				echo Unknown compiler selected '$(COMPILER)'; \
+				exit 1; \
+			) \
 		) else ( \
-			echo Unknown compiler selected '$(COMPILER)'; \
-			exit 1; \
+			if $(COMPILER)==GNU ( \
+				$(LD) $< -o $@ -L $(BIN) -l RE -l gdi32 -l user32 -static-libgcc -static-libstdc++ -mwindows; \
+			) else if $(COMPILER)==MSVC ( \
+				$(LD) /NOLOGO $(subst /,\,$^) gdi32.lib user32.lib /OUT:"$@" /SUBSYSTEM:WINDOWS \
+			) else ( \
+				echo Unknown compiler selected '$(COMPILER)'; \
+				exit 1; \
+			) \
 		) \
 	) else ( \
 		echo Unknown build configuration '$(BUILD)'; \
@@ -220,7 +233,7 @@ $(SH)/Compute_%.glsl.spv: $(SH_SRC)/Compute_%.glsl
 
 -include $(SHADER_DEPENDENCIES)
 
-ifeq ($(OS),$(WINDOWS))
+ifeq ($(OS),Windows_NT)
 
 clear:
 	-@del /f $(subst /,\,$(SHADER_DEPENDENCIES) \
@@ -278,7 +291,7 @@ update_git:
 	@git push -f
 
 fetch_git:
-ifeq ($(OS),$(WINDOWS))
+ifeq ($(OS),Windows_NT)
 	-@del /f $(subst /,\,$(SOURCES) $(SHADER_BINARIES))
 else
 	-@rm -f $(SOURCES) $(SHADER_BINARIES)

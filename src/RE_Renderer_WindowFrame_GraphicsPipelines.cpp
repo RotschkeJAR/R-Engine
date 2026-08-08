@@ -34,7 +34,7 @@ namespace RE {
 				fragmentShader("shaders/Fragment_WindowFrame.glsl.spv");
 			if (vertexShader.valid() && fragmentShader.valid()) {
 				PRINT_DEBUG("Creating Vulkan graphics pipeline for window frame rendering");
-				constexpr uint32_t au32SpecialConstants[] = {
+				constexpr int32_t au32SpecialConstants[] = {
 					WINDOW_SHADOW_SIZE,
 					WINDOW_EDGE_SIZE,
 					WINDOW_BAR_SIZE,
@@ -43,50 +43,55 @@ namespace RE {
 					WINDOW_BUTTON_TEXTURE_SIZE,
 					CHAR_TEXTURE_SIZE,
 					WINDOW_CHAR_GAP_SIZE,
-					static_cast<uint32_t>(std::max(WINDOW_BAR_SIZE / CHAR_TEXTURE_SIZE - 1, 1)),
-					static_cast<uint32_t>(WINDOW_AREA_BUTTON_CLOSE)
+					std::max(WINDOW_BAR_SIZE / CHAR_TEXTURE_SIZE - 1, 1),
+					WINDOW_AREA_BUTTON_CLOSE,
+					MAX_CHARS_IN_WINDOW_TITLE
 				};
 				constexpr VkSpecializationMapEntry vk_aSpecializationConstants[] = {
 					{
 						.constantID = 0,
 						.offset = 0,
-						.size = sizeof(uint32_t)
+						.size = sizeof(int32_t)
 					}, {
 						.constantID = 1,
-						.offset = sizeof(uint32_t),
-						.size = sizeof(uint32_t)
+						.offset = sizeof(int32_t),
+						.size = sizeof(int32_t)
 					}, {
 						.constantID = 2,
-						.offset = sizeof(uint32_t) * 2,
-						.size = sizeof(uint32_t)
+						.offset = sizeof(int32_t) * 2,
+						.size = sizeof(int32_t)
 					}, {
 						.constantID = 3,
-						.offset = sizeof(uint32_t) * 3,
-						.size = sizeof(uint32_t)
+						.offset = sizeof(int32_t) * 3,
+						.size = sizeof(int32_t)
 					}, {
 						.constantID = 4,
-						.offset = sizeof(uint32_t) * 4,
-						.size = sizeof(uint32_t)
+						.offset = sizeof(int32_t) * 4,
+						.size = sizeof(int32_t)
 					}, {
 						.constantID = 5,
-						.offset = sizeof(uint32_t) * 5,
-						.size = sizeof(uint32_t)
+						.offset = sizeof(int32_t) * 5,
+						.size = sizeof(int32_t)
 					}, {
 						.constantID = 6,
-						.offset = sizeof(uint32_t) * 6,
-						.size = sizeof(uint32_t)
+						.offset = sizeof(int32_t) * 6,
+						.size = sizeof(int32_t)
 					}, {
 						.constantID = 7,
-						.offset = sizeof(uint32_t) * 7,
-						.size = sizeof(uint32_t)
+						.offset = sizeof(int32_t) * 7,
+						.size = sizeof(int32_t)
 					}, {
 						.constantID = 8,
-						.offset = sizeof(uint32_t) * 8,
-						.size = sizeof(uint32_t)
+						.offset = sizeof(int32_t) * 8,
+						.size = sizeof(int32_t)
 					}, {
-							.constantID = 9,
-						.offset = sizeof(uint32_t) * 9,
-						.size = sizeof(uint32_t)
+						.constantID = 9,
+						.offset = sizeof(int32_t) * 9,
+						.size = sizeof(int32_t)
+					}, {
+						.constantID = 10,
+						.offset = sizeof(int32_t) * 10,
+						.size = sizeof(int32_t)
 					}
 				};
 				const VkSpecializationInfo vk_specializationInfo = {

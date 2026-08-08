@@ -7,16 +7,17 @@ const uint barToRender = 1;
 const uint buttonsToRender = 2;
 const uint titleToRender = 3;
 
-layout (constant_id = 0) const uint shadowExtent = 4;
-layout (constant_id = 1) const uint edgeWidth = 1;
-layout (constant_id = 2) const uint barHeight = 30;
-layout (constant_id = 3) const uint buttonWidth = 50;
-layout (constant_id = 4) const uint buttonCount = 3;
-layout (constant_id = 5) const uint buttonTextureSize = 8;
-layout (constant_id = 6) const uint charTextureSize = 8;
-layout (constant_id = 7) const uint charGap = 2;
-layout (constant_id = 8) const uint charScale = 1;
-layout (constant_id = 9) const uint windowAreaButtonCloseIndex = 10;
+layout (constant_id = 0) const int shadowExtent = 4;
+layout (constant_id = 1) const int edgeWidth = 1;
+layout (constant_id = 2) const int barHeight = 30;
+layout (constant_id = 3) const int buttonWidth = 50;
+layout (constant_id = 4) const int buttonCount = 3;
+layout (constant_id = 5) const int buttonTextureSize = 8;
+layout (constant_id = 6) const int charTextureSize = 8;
+layout (constant_id = 7) const int charGap = 2;
+layout (constant_id = 8) const int charScale = 1;
+layout (constant_id = 9) const int windowAreaButtonCloseIndex = 10;
+layout (constant_id = 10) const int maxCharsTitle = 256;
 
 layout (push_constant, std430) uniform PushConstants {
 	uvec2 windowSize;
@@ -26,7 +27,7 @@ layout (push_constant, std430) uniform PushConstants {
 
 layout (std430, set = 0, binding = 0) uniform Metadata {
 	uint hoveredWindowAreaIndex;
-	uint titleChars[256];
+	uint titleChars[maxCharsTitle];
 } metadata;
 
 layout (location = 0) out vec4 vertexInfo;

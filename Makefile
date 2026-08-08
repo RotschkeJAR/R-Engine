@@ -284,17 +284,3 @@ $(TEST_BIN): $(BIN)
 	-@mkdir -p $@
 
 endif
-
-update_git:
-	@git add .
-	@git commit -m "$(commit_name)"
-	@git push -f
-
-fetch_git:
-ifeq ($(OS),Windows_NT)
-	-@del /f $(subst /,\,$(SOURCES) $(SHADER_BINARIES))
-else
-	-@rm -f $(SOURCES) $(SHADER_BINARIES)
-endif
-	@git fetch --all
-	@git reset --hard origin/main

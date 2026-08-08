@@ -442,14 +442,12 @@ namespace RE {
 			case WINDOW_AREA_BUTTON_MINIMIZE:
 				iNewCursorImage = CURSOR_POINT;
 				break;
-			case WINDOW_AREA_BAR:
-				iNewCursorImage = CURSOR_DEFAULT;
-				break;
 			case WINDOW_AREA_CONTENT:
 				iNewCursorImage = CURSOR_DEFAULT;
 				cursor_event(actualCursorPosition[0] - WINDOW_X_OFFSET, actualCursorPosition[1] - WINDOW_Y_OFFSET);
 				break;
 			default:
+				iNewCursorImage = CURSOR_DEFAULT;
 				break;
 		}
 		if (iNewCursorImage != iLastCursorImage) {

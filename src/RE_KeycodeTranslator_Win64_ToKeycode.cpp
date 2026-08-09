@@ -17,8 +17,6 @@ namespace RE {
 				return VK_RETURN;
 			case RE_INPUT_KEY_PAUSE:
 				return VK_PAUSE;
-			case RE_INPUT_KEY_CAPS_LOCK:
-				return VK_CAPITAL;
 			case RE_INPUT_KEY_ESCAPE:
 				return VK_ESCAPE;
 			case RE_INPUT_KEY_PAGE_UP:
@@ -96,26 +94,16 @@ namespace RE {
 			case RE_INPUT_KEY_WORLD_1:
 				return VK_OEM_102;
 			default:
-				{
-					const WORD win64_keyId = static_cast<WORD>(eKey);
-					if (win64_keyId >= static_cast<WORD>(RE_INPUT_KEY_A) && win64_keyId <= static_cast<WORD>(RE_INPUT_KEY_Z))
-						return VK_A + (win64_keyId - static_cast<WORD>(RE_INPUT_KEY_A));
-					if (win64_keyId >= static_cast<WORD>(RE_INPUT_KEY_TOP_0) && win64_keyId <= static_cast<WORD>(RE_INPUT_KEY_TOP_9))
-						return VK_0 + (win64_keyId - static_cast<WORD>(RE_INPUT_KEY_TOP_0));
-					if (win64_keyId >= static_cast<WORD>(RE_INPUT_KEY_NUMPAD_0) && win64_keyId <= static_cast<WORD>(RE_INPUT_KEY_NUMPAD_9))
-						return VK_NUMPAD0 + (win64_keyId - static_cast<WORD>(RE_INPUT_KEY_NUMPAD_0));
-				}
-				[[fallthrough]];
-			case RE_INPUT_UNKNOWN:
-			case RE_INPUT_NONE:
-			case RE_INPUT_SCROLL_UP:
-			case RE_INPUT_SCROLL_DOWN:
-			case RE_INPUT_BUTTON_LEFT:
-			case RE_INPUT_BUTTON_RIGHT:
-			case RE_INPUT_BUTTON_MIDDLE:
-			case RE_INPUT_MAX_ENUM:
-				return 0;
+				break;
 		}
+		const WORD win64_keyId = static_cast<WORD>(eKey);
+		if (win64_keyId >= static_cast<WORD>(RE_INPUT_KEY_A) && win64_keyId <= static_cast<WORD>(RE_INPUT_KEY_Z))
+			return VK_A + (win64_keyId - static_cast<WORD>(RE_INPUT_KEY_A));
+		if (win64_keyId >= static_cast<WORD>(RE_INPUT_KEY_0) && win64_keyId <= static_cast<WORD>(RE_INPUT_KEY_9))
+			return VK_0 + (win64_keyId - static_cast<WORD>(RE_INPUT_KEY_0));
+		if (win64_keyId >= static_cast<WORD>(RE_INPUT_KEY_NUMPAD_0) && win64_keyId <= static_cast<WORD>(RE_INPUT_KEY_NUMPAD_9))
+			return VK_NUMPAD0 + (win64_keyId - static_cast<WORD>(RE_INPUT_KEY_NUMPAD_0));
+		return 0;
 	}
 
 #endif

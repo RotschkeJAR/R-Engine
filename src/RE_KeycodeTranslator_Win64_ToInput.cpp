@@ -101,14 +101,15 @@ namespace RE {
 			case VK_RWIN:
 				return RE_INPUT_UNKNOWN;
 			default:
-				if (win_virtualKeyCode >= VK_A && win_virtualKeyCode <= VK_Z)
-					return static_cast<Input>(win_virtualKeyCode - VK_A + static_cast<WORD>(RE_INPUT_KEY_A));
-				if (win_virtualKeyCode >= VK_0 && win_virtualKeyCode <= VK_9)
-					return static_cast<Input>(win_virtualKeyCode - VK_0 + static_cast<WORD>(RE_INPUT_KEY_TOP_0));
-				if (win_virtualKeyCode >= VK_NUMPAD0 && win_virtualKeyCode <= VK_NUMPAD9)
-					return static_cast<Input>(win_virtualKeyCode - VK_NUMPAD0 + static_cast<WORD>(RE_INPUT_KEY_NUMPAD_0));
-				return RE_INPUT_UNKNOWN;
+				break;
 		}
+		if (win_virtualKeyCode >= VK_A && win_virtualKeyCode <= VK_Z)
+			return static_cast<Input>(win_virtualKeyCode - VK_A + static_cast<WORD>(RE_INPUT_KEY_A));
+		if (win_virtualKeyCode >= VK_0 && win_virtualKeyCode <= VK_9)
+			return static_cast<Input>(win_virtualKeyCode - VK_0 + static_cast<WORD>(RE_INPUT_KEY_0));
+		if (win_virtualKeyCode >= VK_NUMPAD0 && win_virtualKeyCode <= VK_NUMPAD9)
+			return static_cast<Input>(win_virtualKeyCode - VK_NUMPAD0 + static_cast<WORD>(RE_INPUT_KEY_NUMPAD_0));
+		return RE_INPUT_UNKNOWN;
 	}
 
 #endif

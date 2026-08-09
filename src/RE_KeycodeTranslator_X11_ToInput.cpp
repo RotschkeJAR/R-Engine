@@ -40,10 +40,10 @@ namespace RE {
 				return RE_INPUT_KEY_INSERT;
 			case XK_End:
 				return RE_INPUT_KEY_END;
+			case XK_Begin:
+				return RE_INPUT_KEY_BEGIN;
 			case XK_Print:
 				return RE_INPUT_KEY_PRINT_SCREEN;
-			case XK_Num_Lock:
-				return RE_INPUT_KEY_NUMPAD_LOCK;
 			case XK_Shift_L:
 				return RE_INPUT_KEY_SHIFT_LEFT;
 			case XK_Shift_R:
@@ -52,11 +52,8 @@ namespace RE {
 				return RE_INPUT_KEY_CTRL_LEFT;
 			case XK_Control_R:
 				return RE_INPUT_KEY_CTRL_RIGHT;
-			case XK_Caps_Lock:
-				return RE_INPUT_KEY_CAPS_LOCK;
 			case XK_Alt_L:
 				return RE_INPUT_KEY_ALT_LEFT;
-			case XK_ISO_Level3_Shift:
 			case XK_Alt_R:
 				return RE_INPUT_KEY_ALT_RIGHT;
 			case XK_slash:
@@ -64,29 +61,29 @@ namespace RE {
 			case XK_backslash:
 				return RE_INPUT_KEY_BACKSLASH;
 			case XK_less:
+				return RE_INPUT_KEY_LESS;
 			case XK_greater:
-				return RE_INPUT_KEY_WORLD_1;
+				return RE_INPUT_KEY_GREATER;
+			case XK_bar:
+				return RE_INPUT_KEY_BAR;
 			case XK_comma:
 				return RE_INPUT_KEY_COMMA;
 			case XK_period:
 				return RE_INPUT_KEY_PERIOD;
 			case XK_semicolon:
-			case XK_odiaeresis:
 				return RE_INPUT_KEY_SEMICOLON;
-			case XK_dead_acute:
 			case XK_apostrophe:
-			case XK_adiaeresis:
 				return RE_INPUT_KEY_APOSTROPHE;
 			case XK_grave:
 				return RE_INPUT_KEY_ACCENT;
 			case XK_bracketleft:
-			case XK_udiaeresis:
 				return RE_INPUT_KEY_BRACKET_LEFT;
 			case XK_bracketright:
 				return RE_INPUT_KEY_BRACKET_RIGHT;
-			case XK_plus:
 			case XK_equal:
 				return RE_INPUT_KEY_EQUALS;
+			case XK_plus:
+				return RE_INPUT_KEY_PLUS;
 			case XK_minus:
 				return RE_INPUT_KEY_MINUS;
 			case XK_KP_Add:
@@ -118,13 +115,12 @@ namespace RE {
 			case XK_KP_Left:
 			case XK_KP_4:
 				return RE_INPUT_KEY_NUMPAD_4;
-			case XK_KP_Begin:
 			case XK_KP_5:
 				return RE_INPUT_KEY_NUMPAD_5;
 			case XK_KP_Right:
 			case XK_KP_6:
 				return RE_INPUT_KEY_NUMPAD_6;
-			case XK_KP_Home:
+			case XK_KP_Begin:
 			case XK_KP_7:
 				return RE_INPUT_KEY_NUMPAD_7;
 			case XK_KP_Up:
@@ -133,27 +129,24 @@ namespace RE {
 			case XK_KP_Page_Up:
 			case XK_KP_9:
 				return RE_INPUT_KEY_NUMPAD_9;
-			case XK_numbersign:
-				return RE_INPUT_KEY_TOP_3;
-			case XK_dollar:
-				return RE_INPUT_KEY_TOP_4;
-			case XK_dead_circumflex:
-				return RE_INPUT_KEY_TOP_6;
-			case XK_parenleft:
-				return RE_INPUT_KEY_TOP_9;
-			case XK_parenright:
-				return RE_INPUT_KEY_TOP_0;
 			case XK_Menu:
 				return RE_INPUT_KEY_MENU;
+			case XK_parenright:
+				return RE_INPUT_KEY_PARENTHESIS_RIGHT;
+			case XK_parenleft:
+				return RE_INPUT_KEY_PARENTHESIS_LEFT;
+			case XK_ssharp:
+				return RE_INPUT_KEY_SHARP_S;
 			default:
-				if (x11_virtualKeyCode >= XK_a && x11_virtualKeyCode <= XK_z)
-					return static_cast<Input>(x11_virtualKeyCode - XK_a + static_cast<KeySym>(RE_INPUT_KEY_A));
-				if (x11_virtualKeyCode >= XK_A && x11_virtualKeyCode <= XK_Z)
-					return static_cast<Input>(x11_virtualKeyCode - XK_A + static_cast<KeySym>(RE_INPUT_KEY_A));
-				if (x11_virtualKeyCode >= XK_0 && x11_virtualKeyCode <= XK_9)
-					return static_cast<Input>(x11_virtualKeyCode - XK_0 + static_cast<KeySym>(RE_INPUT_KEY_TOP_0));
-				return RE_INPUT_UNKNOWN;
+				break;
 		}
+		if (x11_virtualKeyCode >= XK_a && x11_virtualKeyCode <= XK_z)
+			return static_cast<Input>(x11_virtualKeyCode - XK_a + static_cast<KeySym>(RE_INPUT_KEY_A));
+		if (x11_virtualKeyCode >= XK_A && x11_virtualKeyCode <= XK_Z)
+			return static_cast<Input>(x11_virtualKeyCode - XK_A + static_cast<KeySym>(RE_INPUT_KEY_A));
+		if (x11_virtualKeyCode >= XK_0 && x11_virtualKeyCode <= XK_9)
+			return static_cast<Input>(x11_virtualKeyCode - XK_0 + static_cast<KeySym>(RE_INPUT_KEY_0));
+		return RE_INPUT_UNKNOWN;
 	}
 
 #endif

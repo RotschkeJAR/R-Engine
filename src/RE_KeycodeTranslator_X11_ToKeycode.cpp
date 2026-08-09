@@ -30,6 +30,8 @@ namespace RE {
 				return XK_equal;
 			case RE_INPUT_KEY_MINUS:
 				return XK_minus;
+			case RE_INPUT_KEY_PLUS:
+				return XK_plus;
 			case RE_INPUT_KEY_CTRL_RIGHT:
 				return XK_Control_R;
 			case RE_INPUT_KEY_CTRL_LEFT:
@@ -66,6 +68,8 @@ namespace RE {
 				return XK_Home;
 			case RE_INPUT_KEY_END:
 				return XK_End;
+			case RE_INPUT_KEY_BEGIN:
+				return XK_Begin;
 			case RE_INPUT_KEY_PRINT_SCREEN:
 				return XK_Print;
 			case RE_INPUT_KEY_SCROLL_LOCK:
@@ -76,10 +80,6 @@ namespace RE {
 				return XK_Page_Up;
 			case RE_INPUT_KEY_PAGE_DOWN:
 				return XK_Page_Down;
-			case RE_INPUT_KEY_CAPS_LOCK:
-				return XK_Caps_Lock;
-			case RE_INPUT_KEY_NUMPAD_LOCK:
-				return XK_Num_Lock;
 			case RE_INPUT_KEY_NUMPAD_ADD:
 				return XK_KP_Add;
 			case RE_INPUT_KEY_NUMPAD_SUBTRACT:
@@ -94,29 +94,29 @@ namespace RE {
 				return XK_KP_Decimal;
 			case RE_INPUT_KEY_MENU:
 				return XK_Menu;
-			case RE_INPUT_KEY_WORLD_1:
+			case RE_INPUT_KEY_LESS:
 				return XK_less;
+			case RE_INPUT_KEY_GREATER:
+				return XK_greater;
+			case RE_INPUT_KEY_BAR:
+				return XK_bar;
+			case RE_INPUT_KEY_PARENTHESIS_RIGHT:
+				return XK_parenright;
+			case RE_INPUT_KEY_PARENTHESIS_LEFT:
+				return XK_parenleft;
+			case RE_INPUT_KEY_SHARP_S:
+				return XK_ssharp;
 			default:
-				{
-					const KeySym x11_keyId = static_cast<KeySym>(eKey);
-					if (x11_keyId >= static_cast<KeySym>(RE_INPUT_KEY_A) && x11_keyId <= static_cast<KeySym>(RE_INPUT_KEY_Z))
-						return XK_a + (x11_keyId - static_cast<KeySym>(RE_INPUT_KEY_A));
-					if (x11_keyId >= static_cast<KeySym>(RE_INPUT_KEY_TOP_0) && x11_keyId <= static_cast<KeySym>(RE_INPUT_KEY_TOP_9))
-						return XK_0 + (x11_keyId - static_cast<KeySym>(RE_INPUT_KEY_TOP_0));
-					if (x11_keyId >= static_cast<KeySym>(RE_INPUT_KEY_NUMPAD_0) && x11_keyId <= static_cast<KeySym>(RE_INPUT_KEY_NUMPAD_9))
-						return XK_KP_0 + (x11_keyId - static_cast<KeySym>(RE_INPUT_KEY_NUMPAD_0));
-				}
-				[[fallthrough]];
-			case RE_INPUT_UNKNOWN:
-			case RE_INPUT_NONE:
-			case RE_INPUT_SCROLL_UP:
-			case RE_INPUT_SCROLL_DOWN:
-			case RE_INPUT_BUTTON_LEFT:
-			case RE_INPUT_BUTTON_RIGHT:
-			case RE_INPUT_BUTTON_MIDDLE:
-			case RE_INPUT_MAX_ENUM:
-				return 0;
+				break;
 		}
+		const KeySym x11_keyId = static_cast<KeySym>(eKey);
+		if (x11_keyId >= static_cast<KeySym>(RE_INPUT_KEY_A) && x11_keyId <= static_cast<KeySym>(RE_INPUT_KEY_Z))
+			return XK_a + (x11_keyId - static_cast<KeySym>(RE_INPUT_KEY_A));
+		if (x11_keyId >= static_cast<KeySym>(RE_INPUT_KEY_0) && x11_keyId <= static_cast<KeySym>(RE_INPUT_KEY_9))
+			return XK_0 + (x11_keyId - static_cast<KeySym>(RE_INPUT_KEY_0));
+		if (x11_keyId >= static_cast<KeySym>(RE_INPUT_KEY_NUMPAD_0) && x11_keyId <= static_cast<KeySym>(RE_INPUT_KEY_NUMPAD_9))
+			return XK_KP_0 + (x11_keyId - static_cast<KeySym>(RE_INPUT_KEY_NUMPAD_0));
+		return XK_VoidSymbol;
 	}
 
 #endif

@@ -326,6 +326,9 @@ namespace RE {
 								case XK_F12:
 									shortcut_settings_f12(bKeyPressed);
 									break;
+								case XK_Caps_Lock:
+								case XK_Num_Lock:
+									continue;
 								default:
 									char a5cString[5];
 									const uint8_t u8CharLength = Xutf8LookupString(x11_hInputContext, &x11_rKeyEvent, a5cString, sizeof(a5cString) - 1, &x11_keySym, nullptr);

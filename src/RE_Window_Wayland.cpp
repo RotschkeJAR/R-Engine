@@ -648,6 +648,9 @@ namespace RE {
 					case XKB_KEY_F12:
 						shortcut_settings_f12(bKeyPressed);
 						break;
+					case XKB_KEY_Caps_Lock:
+					case XKB_KEY_Num_Lock:
+						return;
 					default:
 						input_event(key_from_virtual_xkb_keysym(xkb_keySym), u32Key, bKeyPressed, false);
 						break;

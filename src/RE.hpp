@@ -1304,53 +1304,7 @@ namespace RE {
 		friend void remove_game_object(GameObject *pRemovableGameObject);
 	};
 
-	class InputAction final {
-		private:
-			uint32_t u32KeyScancode;
-			Input eInput;
-
-		public:
-			InputAction();
-			explicit InputAction(Input eInput);
-			explicit InputAction(uint32_t u32KeyScancode);
-			InputAction(const InputAction &rCopy);
-			InputAction(const InputAction &&rrCopy) = delete;
-			~InputAction();
-			[[nodiscard]]
-			bool is_scroll_wheel() const;
-			[[nodiscard]]
-			bool is_button() const;
-			[[nodiscard]]
-			bool is_mouse() const;
-			[[nodiscard]]
-			bool is_key() const;
-
-			// Queries engine to set its input to the next user input
-			void update_input();
-			[[nodiscard]]
-			bool is_updating() const;
-			void cancel_update() const;
-			[[nodiscard]]
-			static bool can_update();
-
-			void change_to_input(Input eInput);
-			void change_to_scancode(uint32_t u32NewScancode);
-
-			[[nodiscard]]
-			bool is_down() const;
-			[[nodiscard]]
-			bool was_down() const;
-			[[nodiscard]]
-			bool is_pressed() const;
-			[[nodiscard]]
-			bool is_released() const;
-			[[nodiscard]]
-			bool is_held_down() const;
-			void reset_input_state() const;
-
-			[[nodiscard]]
-			bool has_valid_input_values() const;
-	};
+	typedef class InputAction_T final {} *InputAction;
 
 	class SpriteLayoutSettings final {
 		public:
@@ -1419,17 +1373,6 @@ namespace RE {
 	void reset_keyboard_input();
 
 	// Input
-	[[nodiscard]]
-	bool is_down(Input eInput, uint32_t u32Scancode = 0);
-	[[nodiscard]]
-	bool was_down(Input eInput, uint32_t u32Scancode = 0);
-	[[nodiscard]]
-	bool is_pressed(Input eInput, uint32_t u32Scancode = 0);
-	[[nodiscard]]
-	bool is_released(Input eInput, uint32_t u32Scancode = 0);
-	[[nodiscard]]
-	bool is_held_down(Input eInput, uint32_t u32Scancode = 0);
-	void reset_input_at(Input eInput, uint32_t u32Scancode = 0);
 	void reset_all_input();
 	[[nodiscard]]
 	constexpr bool is_valid_input(const Input eInput) {

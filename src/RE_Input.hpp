@@ -11,6 +11,12 @@ namespace RE {
 	void cursor_event(int32_t i32X, int32_t i32Y);
 	void update_input_buffers();
 
+	bool is_down(Input eInput, uint32_t u32Scancode = 0);
+	bool was_down(Input eInput, uint32_t u32Scancode = 0);
+	bool is_pressed(Input eInput, uint32_t u32Scancode = 0);
+	bool is_released(Input eInput, uint32_t u32Scancode = 0);
+	bool is_held_down(Input eInput, uint32_t u32Scancode = 0);
+
 }
 
 #endif /* __RE_INPUT_H__ */

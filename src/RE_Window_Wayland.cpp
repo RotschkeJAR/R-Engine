@@ -530,21 +530,31 @@ namespace RE {
 		} else {
 			switch (u32Button) {
 				case BTN_LEFT:
-					input_event(RE_INPUT_BUTTON_LEFT, 0, u32State == WL_POINTER_BUTTON_STATE_PRESSED, true);
+					button_event(RE_INPUT_BUTTON_LEFT, u32State == WL_POINTER_BUTTON_STATE_PRESSED);
 					break;
 				case BTN_RIGHT:
-					input_event(RE_INPUT_BUTTON_RIGHT, 0, u32State == WL_POINTER_BUTTON_STATE_PRESSED, true);
+					button_event(RE_INPUT_BUTTON_RIGHT, u32State == WL_POINTER_BUTTON_STATE_PRESSED);
 					break;
 				case BTN_MIDDLE:
-					input_event(RE_INPUT_BUTTON_MIDDLE, 0, u32State == WL_POINTER_BUTTON_STATE_PRESSED, true);
+					button_event(RE_INPUT_BUTTON_MIDDLE, u32State == WL_POINTER_BUTTON_STATE_PRESSED);
 					break;
 			}
 		}
 	}
 
 	static void wayland_pointer_scroll_callback(void *pData, wl_pointer *wl_pPointer, uint32_t u32Time, uint32_t u32Axis, wl_fixed_t wl_value) {
-		if (u32Axis == WL_POINTER_AXIS_VERTICAL_SCROLL && get_wayland_window_area_cursor_is_in() == WINDOW_AREA_CONTENT)
-			input_event(wl_fixed_to_double(wl_value) < 0 ? RE_INPUT_SCROLL_DOWN : RE_INPUT_SCROLL_UP, 0, true, true);
+		if (get_wayland_window_area_cursor_is_in() != WINDOW_AREA_CONTENT)
+			return;
+		switch (u32Axis) {
+			case WL_POINTER_AXIS_VERTICAL_SCROLL:
+				scroll_event(static_cast<int>(round_away_from_zero<double>(wl_fixed_to_double(wl_value))), 0);
+				break;
+			case WL_POINTER_AXIS_HORIZONTAL_SCROLL:
+				scroll_event(0, static_cast<int>(round_away_from_zero<double>(wl_fixed_to_double(wl_value))));
+				break;
+			default:
+				break;
+		}
 	}
 
 	static constexpr wl_pointer_listener wl_pointerListener = {
@@ -652,7 +662,7 @@ namespace RE {
 					case XKB_KEY_Num_Lock:
 						return;
 					default:
-						input_event(key_from_virtual_xkb_keysym(xkb_keySym), u32Key, bKeyPressed, false);
+						keyboard_event(key_from_virtual_xkb_keysym(xkb_keySym), u32Key, bKeyPressed);
 						break;
 				}
 			}

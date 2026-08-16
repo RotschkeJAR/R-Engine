@@ -121,7 +121,11 @@ namespace RE {
 					.screen = i32DefaultScreen,
 					.c_class = TrueColor
 				};
-				XVisualInfo *const x11_availableVisualInfos = XGetVisualInfo(x11_pDisplay, VisualScreenMask | VisualClassMask, &x11_visualTemplate, &i32VisualsCount);
+				XVisualInfo *const x11_availableVisualInfos = XGetVisualInfo(
+						x11_pDisplay,
+						VisualScreenMask | VisualClassMask,
+						&x11_visualTemplate,
+						&i32VisualsCount);
 				if (i32VisualsCount) {
 					PRINT_DEBUG("Selecting first available visuals provided by X11");
 					const XVisualInfo x11_visualInfo = x11_availableVisualInfos[0];
@@ -139,7 +143,19 @@ namespace RE {
 							static_assert(windowSize.dimensions() == monitorSize.dimensions());
 							windowSize[i] = monitorSize[i] / 5 * 3;
 						}
-						x11_hWindow = XCreateWindow(x11_pDisplay, x11_hRootWindowOfDefaultScreen, (monitorSize[0] - windowSize[0]) / 2, (monitorSize[1] - windowSize[1]) / 2, windowSize[0], windowSize[1], 0, x11_visualInfo.depth, InputOutput, x11_visualInfo.visual, CWColormap | CWEventMask, &winAttrib);
+						x11_hWindow = XCreateWindow(
+								x11_pDisplay,
+								x11_hRootWindowOfDefaultScreen,
+								(monitorSize[0] - windowSize[0]) / 2,
+								(monitorSize[1] - windowSize[1]) / 2,
+								windowSize[0],
+								windowSize[1],
+								0,
+								x11_visualInfo.depth,
+								InputOutput,
+								x11_visualInfo.visual,
+								CWColormap | CWEventMask,
+								&winAttrib);
 						if (x11_hWindow) {
 							PRINT_DEBUG("Applying size limits to X11 window ", x11_hWindow);
 							x11_pSizes->flags = PMinSize | PMaxSize;
@@ -164,7 +180,13 @@ namespace RE {
 								x11_hInputMethod = XOpenIM(x11_pDisplay, nullptr, nullptr, nullptr);
 								if (x11_hInputMethod) {
 									PRINT_DEBUG("Creating X11 input context");
-									x11_hInputContext = XCreateIC(x11_hInputMethod, XNInputStyle, XIMPreeditNothing | XIMStatusNothing, XNClientWindow, x11_hWindow, nullptr);
+									x11_hInputContext = XCreateIC(
+											x11_hInputMethod,
+											XNInputStyle,
+											XIMPreeditNothing | XIMStatusNothing,
+											XNClientWindow,
+											x11_hWindow,
+											nullptr);
 									if (x11_hInputContext) {
 										PRINT_DEBUG("Updating name of displayed X11 window");
 										x11_update_window_title();
@@ -227,7 +249,15 @@ namespace RE {
 
 	void x11_update_window_title() {
 		PRINT_DEBUG("Updating property of X11 window ", x11_hWindow, " with atom ", x11_ahAtoms[RE_X11_ATOM_INDEX_NAME], " displaying its name with UTF-8-support atom ", x11_ahAtoms[RE_X11_ATOM_INDEX_UTF8], " and flushing server ", x11_pDisplay);
-		XChangeProperty(x11_pDisplay, x11_hWindow, x11_ahAtoms[RE_X11_ATOM_INDEX_NAME], x11_ahAtoms[RE_X11_ATOM_INDEX_UTF8], 8, PropModeReplace, reinterpret_cast<const unsigned char*>(pacWindowTitle), std::strlen(pacWindowTitle));
+		XChangeProperty(
+				x11_pDisplay,
+				x11_hWindow,
+				x11_ahAtoms[RE_X11_ATOM_INDEX_NAME],
+				x11_ahAtoms[RE_X11_ATOM_INDEX_UTF8],
+				8,
+				PropModeReplace,
+				reinterpret_cast<const unsigned char*>(pacWindowTitle),
+				std::strlen(pacWindowTitle));
 		XFlush(x11_pDisplay);
 	}
 
@@ -259,6 +289,7 @@ namespace RE {
 	void x11_window_proc() {
 		PRINT_DEBUG("Calling X11 window procedure");
 		int32_t i32PendingEvents = XPending(x11_pDisplay);
+		int aiScrollCounts[2] = {};
 		while (i32PendingEvents > 0) {
 			i32PendingEvents--;
 			PRINT_DEBUG("Obtaining data of next X11 event. Remaining events after it: ", i32PendingEvents);
@@ -334,7 +365,7 @@ namespace RE {
 									const uint8_t u8CharLength = Xutf8LookupString(x11_hInputContext, &x11_rKeyEvent, a5cString, sizeof(a5cString) - 1, &x11_keySym, nullptr);
 									if (bKeyPressed && u8CharLength)
 										a5cString[u8CharLength] = '\0';
-									input_event(key_from_virtual_x11_keycode(x11_keySym), static_cast<uint32_t>(x11_scancode), bKeyPressed, false);
+									keyboard_event(key_from_virtual_x11_keycode(x11_keySym), static_cast<uint32_t>(x11_scancode), bKeyPressed);
 									break;
 							}
 						}
@@ -349,23 +380,23 @@ namespace RE {
 						switch (x11_buttonEvent.button) {
 							case Button1: /* left click */
 								PRINT_DEBUG("LMB's new pressed-state is ", bButtonPressed);
-								input_event(RE_INPUT_BUTTON_LEFT, 0, bButtonPressed, false);
+								button_event(RE_INPUT_BUTTON_LEFT, bButtonPressed);
 								break;
 							case Button2: /* middle click */
 								PRINT_DEBUG("MMB's new pressed-state is ", bButtonPressed);
-								input_event(RE_INPUT_BUTTON_MIDDLE, 0, bButtonPressed, false);
+								button_event(RE_INPUT_BUTTON_MIDDLE, bButtonPressed);
 								break;
 							case Button3: /* right click */
 								PRINT_DEBUG("RMB's new pressed-state is ", bButtonPressed);
-								input_event(RE_INPUT_BUTTON_RIGHT, 0, bButtonPressed, false);
+								button_event(RE_INPUT_BUTTON_RIGHT, bButtonPressed);
 								break;
 							case Button4: /* up scroll */
 								PRINT_DEBUG("Scrolled up");
-								input_event(RE_INPUT_SCROLL_UP, 0, true, false);
+								aiScrollCounts[0] += 1;
 								break;
 							case Button5: /* down scroll */
 								PRINT_DEBUG("Scrolled down");
-								input_event(RE_INPUT_SCROLL_DOWN, 0, true, false);
+								aiScrollCounts[0] -= 1;
 								break;
 							default:
 								PRINT_DEBUG("Unknown mouse button pressed: ", std::hex, x11_buttonEvent.button);
@@ -411,6 +442,7 @@ namespace RE {
 					break;
 			}
 		}
+		scroll_event(aiScrollCounts[0], aiScrollCounts[1]);
 	}
 
 	uint32_t x11_get_actual_window_width() {

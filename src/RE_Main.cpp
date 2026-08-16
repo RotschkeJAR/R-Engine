@@ -51,46 +51,49 @@ namespace RE {
 			}
 		}
 	#endif
-		if (init_manager()) {
-			if (init_logical_gpu()) {
-				if (init_renderer()) {
-					if (init_settings()) {
-						PRINT_DEBUG("Starting game loop");
-						show_window(true);
-						bRunning = true;
+		if (init_input()) {
+			if (init_manager()) {
+				if (init_logical_gpu()) {
+					if (init_renderer()) {
+						if (init_settings()) {
+							PRINT_DEBUG("Starting game loop");
+							show_window(true);
+							bRunning = true;
 
-						// Game loop
-						while (!should_window_close() && bRunning && are_scenes_present() && !bErrorOccured) {
-							const std::chrono::steady_clock::time_point std_workStart = std::chrono::steady_clock::now();
-							window_proc();
-							if ((mSettingsFlags & SETTINGS_FLAG_MENU_OPEN_BIT))
-								settings_update();
-							else
-								game_logic_update();
-							render();
+							// Game loop
+							while (!should_window_close() && bRunning && are_scenes_present() && !bErrorOccured) {
+								const std::chrono::steady_clock::time_point std_workStart = std::chrono::steady_clock::now();
+								window_proc();
+								if ((mSettingsFlags & SETTINGS_FLAG_MENU_OPEN_BIT))
+									settings_update();
+								else
+									game_logic_update();
+								render();
 
-							PRINT_DEBUG("Calculating deltatime for next frame");
-							if (fMinDeltatime > 0.0f) {
-								const float fWorktime = std::chrono::duration_cast<std::chrono::duration<float>>(std::chrono::steady_clock::now() - std_workStart).count();
-								if (fWorktime < fMinDeltatime)
-									std::this_thread::sleep_for(std::chrono::duration<float>(fMinDeltatime - fWorktime));
+								PRINT_DEBUG("Calculating deltatime for next frame");
+								if (fMinDeltatime > 0.0f) {
+									const float fWorktime = std::chrono::duration_cast<std::chrono::duration<float>>(std::chrono::steady_clock::now() - std_workStart).count();
+									if (fWorktime < fMinDeltatime)
+										std::this_thread::sleep_for(std::chrono::duration<float>(fMinDeltatime - fWorktime));
+								}
+								fDeltaseconds = std::chrono::duration_cast<std::chrono::duration<float>>(std::chrono::steady_clock::now() - std_workStart).count();
+								fDeltaseconds = std::min(fDeltaseconds, fMaxDeltatime);
 							}
-							fDeltaseconds = std::chrono::duration_cast<std::chrono::duration<float>>(std::chrono::steady_clock::now() - std_workStart).count();
-							fDeltaseconds = std::min(fDeltaseconds, fMaxDeltatime);
-						}
 
-						bRunning = false;
-						show_window(false);
-						vkDeviceWaitIdle(vk_hDevice);
-						last_game_logic_update();
-						fDeltaseconds = 0.0f;
-						destroy_settings();
+							bRunning = false;
+							show_window(false);
+							vkDeviceWaitIdle(vk_hDevice);
+							last_game_logic_update();
+							fDeltaseconds = 0.0f;
+							destroy_settings();
+						}
+						destroy_renderer();
 					}
-					destroy_renderer();
+					destroy_logical_gpu();
 				}
-				destroy_logical_gpu();
+				destroy_manager();
 			}
-			destroy_manager();
+			destroy_input();
 		}
 		destroy_window();
 		print_error_count();

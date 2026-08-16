@@ -55,6 +55,7 @@ namespace RE {
 		}
 	#endif
 		mWindowFlagBits &= ~(WINDOW_FLAG_CREATED_BIT | WINDOW_FLAG_CLOSE_BIT | WINDOW_FLAG_MINIMIZED_BIT | WINDOW_FLAG_MAXIMIZED_BIT | WINDOW_FLAG_VISIBLE_BIT);
+		reset_all_input();
 	}
 
 	void window_resize_event(uint32_t u32NewWidth, uint32_t u32NewHeight) {

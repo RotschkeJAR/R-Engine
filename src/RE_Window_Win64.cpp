@@ -74,7 +74,6 @@ namespace RE {
 					if ((win_keyFlags & KF_ALTDOWN) == KF_ALTDOWN && win_virtualKeyCode == VK_F4)
 						PostMessageW(win_hWndParam, WM_CLOSE, 0, 0);
 					const bool bKeyPressed = (win_keyFlags & KF_UP) != KF_UP;
-					bool bFallbackToInput = false;
 					switch (win_virtualKeyCode) {
 						case VK_SHIFT: // Have to be differentiated between left and right
 						case VK_CONTROL:
@@ -84,11 +83,9 @@ namespace RE {
 							break;
 						case VK_LWIN: // Ignore Windows-keys
 						case VK_RWIN:
+						case VK_CAPITAL:
+						case VK_NUMLOCK:
 							return 0;
-						case VK_NUMLOCK: // May have different scancode than expected
-						case VK_SNAPSHOT:
-							bFallbackToInput = true;
-							break;
 						default:
 							break;
 					}
@@ -133,11 +130,10 @@ namespace RE {
 								shortcut_settings_f12(bKeyPressed);
 								break;
 							default:
-								input_event(
+								keyboard_event(
 										key_from_virtual_win64_keycode(win_virtualKeyCode),
 										static_cast<uint32_t>(win_extScancode),
-										bKeyPressed,
-										bFallbackToInput);
+										bKeyPressed);
 								break;
 						}
 					}
@@ -149,33 +145,33 @@ namespace RE {
 				}
 				return 0;
 			case WM_LBUTTONDOWN: /* left mouse button pressed */
-				PRINT_DEBUG("Firing general input event for LMB-pressed");
-				input_event(RE_INPUT_BUTTON_LEFT, 0, true, false);
+				PRINT_DEBUG("Firing general input event for LMB pressed");
+				button_event(RE_INPUT_BUTTON_LEFT, true);
 				SetCapture(win_hWndParam);
 				return 0;
 			case WM_LBUTTONUP: /* left mouse button released */
-				PRINT_DEBUG("Firing general input event for LMB-released");
-				input_event(RE_INPUT_BUTTON_LEFT, 0, false, false);
+				PRINT_DEBUG("Firing general input event for LMB released");
+				button_event(RE_INPUT_BUTTON_LEFT, false);
 				ReleaseCapture();
 				return 0;
 			case WM_RBUTTONDOWN: /* right mouse button pressed */
-				PRINT_DEBUG("Firing general input event for RMB-pressed");
-				input_event(RE_INPUT_BUTTON_RIGHT, 0, true, false);
+				PRINT_DEBUG("Firing general input event for RMB pressed");
+				button_event(RE_INPUT_BUTTON_RIGHT, true);
 				SetCapture(win_hWndParam);
 				return 0;
 			case WM_RBUTTONUP: /* right mouse button released */
-				PRINT_DEBUG("Firing general input event for RMB-released");
-				input_event(RE_INPUT_BUTTON_RIGHT, 0, false, false);
+				PRINT_DEBUG("Firing general input event for RMB released");
+				button_event(RE_INPUT_BUTTON_RIGHT, false);
 				ReleaseCapture();
 				return 0;
 			case WM_MBUTTONDOWN: /* middle mouse button pressed */
-				PRINT_DEBUG("Firing general input event for MMB-pressed");
-				input_event(RE_INPUT_BUTTON_MIDDLE, 0, true, false);
+				PRINT_DEBUG("Firing general input event for MMB pressed");
+				button_event(RE_INPUT_BUTTON_MIDDLE, true);
 				SetCapture(win_hWndParam);
 				return 0;
 			case WM_MBUTTONUP: /* middle mouse button released */
-				PRINT_DEBUG("Firing general input event for MMB-released");
-				input_event(RE_INPUT_BUTTON_MIDDLE, 0, false, false);
+				PRINT_DEBUG("Firing general input event for MMB released");
+				button_event(RE_INPUT_BUTTON_MIDDLE, false);
 				ReleaseCapture();
 				return 0;
 			case WM_MOUSEMOVE: /* mouse moved */
@@ -193,15 +189,13 @@ namespace RE {
 					return TRUE;
 				}
 				break;
-			case WM_MOUSEWHEEL: /* mouse wheel used/scrolled */
-				{
-					PRINT_DEBUG("Firing general input event for scrolling");
-					const int32_t deltaMouseWheel = GET_WHEEL_DELTA_WPARAM(win_wParam);
-					if (deltaMouseWheel > 0)
-						input_event(RE_INPUT_SCROLL_UP, 0, true, false);
-					else
-						input_event(RE_INPUT_SCROLL_DOWN, 0, true, false);
-				}
+			case WM_MOUSEWHEEL: /* mouse vertical wheel used/scrolled */
+				PRINT_DEBUG("Firing scroll event");
+				scroll_event(GET_WHEEL_DELTA_WPARAM(win_wParam), 0);
+				return 0;
+			case WM_MOUSEHWHEEL: /* mouse horizontal wheel used/scrolled */
+				PRINT_DEBUG("Firing scroll event");
+				scroll_event(0.0, GET_WHEEL_DELTA_WPARAM(win_wParam));
 				return 0;
 			case RE_WIN64_WM_MAXIMIZED:
 				{

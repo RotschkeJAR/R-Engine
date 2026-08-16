@@ -104,12 +104,23 @@ namespace RE {
 	enum Input {
 		RE_INPUT_UNKNOWN = -0x1,
 		RE_INPUT_NONE = 0,
-		RE_INPUT_SCROLL_UP = 0x1,
-		RE_INPUT_SCROLL_DOWN = 0x2,
+
+		/* Mouse wheel */
+		RE_INPUT_SCROLL_VERTICAL = 0x1,
+		RE_INPUT_SCROLL_FIRST = RE_INPUT_SCROLL_VERTICAL,
+		RE_INPUT_SCROLL_HORIZONTAL = 0x2,
+		RE_INPUT_SCROLL_LAST = RE_INPUT_SCROLL_HORIZONTAL,
+
+		/* Mouse buttons */
 		RE_INPUT_BUTTON_LEFT = 0x3,
+		RE_INPUT_BUTTON_FIRST = RE_INPUT_BUTTON_LEFT,
 		RE_INPUT_BUTTON_RIGHT = 0x4,
 		RE_INPUT_BUTTON_MIDDLE = 0x5,
+		RE_INPUT_BUTTON_LAST = RE_INPUT_BUTTON_MIDDLE,
+
+		/* Keyboard */
 		RE_INPUT_KEY_SPACE = 0x6,
+		RE_INPUT_KEY_FIRST = RE_INPUT_KEY_SPACE,
 		RE_INPUT_KEY_A = 0x7,
 		RE_INPUT_KEY_B = 0x8,
 		RE_INPUT_KEY_C = 0x9,
@@ -205,7 +216,9 @@ namespace RE {
 		RE_INPUT_KEY_PARENTHESIS_RIGHT = 0x63, /* ) */
 		RE_INPUT_KEY_PARENTHESIS_LEFT = 0x64, /* ( */
 		RE_INPUT_KEY_SHARP_S = 0x65, /* ß */
-		RE_INPUT_MAX_ENUM = 0x66
+		RE_INPUT_KEY_LAST = RE_INPUT_KEY_SHARP_S,
+		
+		RE_INPUT_MAX_ENUM = RE_INPUT_KEY_LAST + 1
 	};
 
 	enum TextureFilter {
@@ -456,6 +469,17 @@ namespace RE {
 			return static_cast<T>(0);
 		}
 		return std::pow(value, static_cast<T>(1.0) / n);
+	}
+
+	template <class T> requires std::is_floating_point_v<T>
+	[[nodiscard]]
+	constexpr T round_away_from_zero(const T value) {
+		if constexpr (std::is_same_v<T, float>)
+			return value > 0.0f ? ceilf(value) : floorf(value);
+		else if constexpr (std::is_same_v<T, long double>)
+			return value > 0.0L ? ceill(value) : floorl(value);
+		else
+			return value > 0.0 ? ceil(value) : floor(value);
 	}
 
 	template <class... T> requires AreIntegrals<T...>
@@ -1354,24 +1378,6 @@ namespace RE {
 	[[nodiscard]]
 	bool are_errors_always_fatal();
 
-	// Cursor input
-	[[nodiscard]]
-	int32_t get_cursor_position_x();
-	[[nodiscard]]
-	int32_t get_cursor_position_y();
-	[[nodiscard]]
-	float get_cursor_normal_position_x();
-	[[nodiscard]]
-	float get_cursor_normal_position_y();
-	void reset_mouse_input();
-
-	// Keyboard input
-	[[nodiscard]]
-	Input map_scancode_to_input(uint32_t u32Scancode);
-	[[nodiscard]]
-	uint32_t map_input_to_scancode(Input eInput);
-	void reset_keyboard_input();
-
 	// Input
 	void reset_all_input();
 	[[nodiscard]]
@@ -1382,12 +1388,14 @@ namespace RE {
 			case RE_INPUT_MAX_ENUM:
 				return false;
 			default:
-				return eInput > RE_INPUT_NONE && eInput < RE_INPUT_MAX_ENUM;
+				return (eInput >= RE_INPUT_SCROLL_FIRST && eInput <= RE_INPUT_SCROLL_LAST)
+						|| (eInput >= RE_INPUT_BUTTON_FIRST && eInput <= RE_INPUT_BUTTON_LAST)
+						|| (eInput >= RE_INPUT_KEY_FIRST && eInput <= RE_INPUT_KEY_LAST);
 		}
 	}
 	[[nodiscard]]
 	constexpr bool is_scroll_input(const Input eInput) {
-		return eInput == RE_INPUT_SCROLL_UP || eInput == RE_INPUT_SCROLL_DOWN;
+		return eInput == RE_INPUT_SCROLL_VERTICAL || eInput == RE_INPUT_SCROLL_HORIZONTAL;
 	}
 	[[nodiscard]]
 	constexpr bool is_button_input(const Input eInput) {
@@ -1401,6 +1409,12 @@ namespace RE {
 	constexpr bool is_key_input(const Input eInput) {
 		return eInput >= RE_INPUT_KEY_SPACE && eInput < RE_INPUT_MAX_ENUM;
 	}
+
+	// Cursor input
+	void reset_mouse_input();
+
+	// Keyboard input
+	void reset_keyboard_input();
 
 	// Program execution
 	bool execute();

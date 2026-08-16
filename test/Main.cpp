@@ -46,10 +46,9 @@ Playy *pPlayy = nullptr;
 class Playy : public GameObject {
 	public:
 		RandomNumberGenerator rng;
-		InputAction left, right, up, down;
 		uint64_t hits, misses;
 
-		Playy() : GameObject(1, 1), left(RE_INPUT_KEY_ARROW_LEFT), right(RE_INPUT_KEY_ARROW_RIGHT), up(RE_INPUT_KEY_ARROW_UP), down(RE_INPUT_KEY_ARROW_DOWN), hits(0), misses(0) {
+		Playy() : GameObject(1, 1), hits(0), misses(0) {
 			pPlayy = this;
 			transform.position[0] = 0.7f;
 			transform.position[1] = 0.7f;
@@ -69,8 +68,6 @@ class Playy : public GameObject {
 				hits++;
 			else
 				misses++;
-			transform.position[0] += (right.is_down() - left.is_down()) * 0.62f * get_deltaseconds();
-			transform.position[1] += (up.is_down() - down.is_down()) * 0.62f * get_deltaseconds();
 			spriteRenderer.color.set_red(std::fmod(std::abs(transform.position[0]), 1.0f));
 			spriteRenderer.color.set_green(std::fmod(std::abs(transform.position[1]), 1.0f));
 			spriteRenderer.color.set_blue(std::fmod(std::abs(transform.position[2]), 1.0f));
@@ -127,10 +124,9 @@ class Background : public GameObject {
 
 class PlayerCamera : public Camera {
 	private:
-		InputAction zoomerIn, zoomerOut;
 
 	public:
-		PlayerCamera() : zoomerIn(RE_INPUT_SCROLL_UP), zoomerOut(RE_INPUT_SCROLL_DOWN) {
+		PlayerCamera() {
 			transform.position[2] = -10.0f;
 			view[0] = 1.33f;
 			view[1] = view[0];
@@ -141,10 +137,6 @@ class PlayerCamera : public Camera {
 				transform.position[0] = pPlayy->transform.position[0];
 				transform.position[1] = pPlayy->transform.position[1];
 			}
-			if (zoomerIn.is_down())
-				view[0] -= get_deltaseconds();
-			else if (zoomerOut.is_down())
-				view[0] += get_deltaseconds();
 		}
 };
 
@@ -154,11 +146,10 @@ class First : public Scene {
 		Background background;
 		Imagy imagy;
 		PlayerCamera playerCam;
-		InputAction trigger;
 		bool bCamActive,
 			bNormalScreen;
 
-		First() : Scene(1), trigger(RE_INPUT_KEY_NUMPAD_ENTER), bCamActive(true), bNormalScreen(true) {}
+		First() : Scene(1), bCamActive(true), bNormalScreen(true) {}
 		~First() {}
 		void start() {
 			playerCam.activate();
@@ -167,24 +158,6 @@ class First : public Scene {
 			NOTE("test message\ntesty");
 		}
 		void update() {
-			if (trigger.is_pressed())
-				set_next_scene();
-			else if (is_pressed(RE_INPUT_KEY_ESCAPE))
-				trigger.update_input();
-			else if (is_pressed(RE_INPUT_KEY_Q)) {
-				if (!bCamActive)
-					playerCam.activate();
-				else
-					playerCam.deactivate();
-				bCamActive = !bCamActive;
-			} else if (is_pressed(RE_INPUT_KEY_SPACE)) {
-				bNormalScreen = !bNormalScreen;
-				if (bNormalScreen) {
-					set_screen_percentage(1.0f);
-				} else {
-					set_screen_percentage(0.4f);
-				}
-			}
 			//PRINT_LN(get_fps_rate());
 		}
 		void end() {}

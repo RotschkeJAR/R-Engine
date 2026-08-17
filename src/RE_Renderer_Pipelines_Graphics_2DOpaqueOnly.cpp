@@ -21,6 +21,7 @@ namespace RE {
 		vk_rRasterization.rasterizerDiscardEnable = VK_FALSE;
 		vk_rRasterization.polygonMode = VK_POLYGON_MODE_FILL;
 		vk_rRasterization.cullMode = VK_CULL_MODE_NONE;
+		vk_rRasterization.frontFace = VK_FRONT_FACE_CLOCKWISE;
 		vk_rRasterization.depthBiasEnable = VK_FALSE;
 		vk_rRasterization.depthBiasConstantFactor = 0.0f;
 		vk_rRasterization.depthBiasClamp = 0.0f;

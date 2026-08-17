@@ -427,8 +427,9 @@ namespace RE {
 				vk_submissionInfo.commandBufferInfoCount = commandBufferSubmissionInfos.size();
 				vk_submissionInfo.pCommandBufferInfos = commandBufferSubmissionInfos.data();
 				vk_submissionInfo.pSignalSemaphoreInfos = &vk_a2InternalSemaphoreSubmissionInfo[u8CurrentSemaphoreInfoIndex];
-				if (vkQueueSubmit2(vk_hLogicalQueue, 1, &vk_submissionInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
-					RE_ERROR("Failed to submit a subtask to the logical queue ", vk_hLogicalQueue, " at index ", u8LogicalQueueIndex);
+				const VkResult vk_eResultSubmit = vkQueueSubmit2(vk_hLogicalQueue, 1, &vk_submissionInfo, VK_NULL_HANDLE);
+				if (vk_eResultSubmit != VK_SUCCESS) {
+					RE_ERROR("Failed to submit a subtask to the logical queue ", vk_hLogicalQueue, " at index ", u8LogicalQueueIndex, " (code ", vk_eResultSubmit, ")");
 					return false;
 				}
 				vk_a2InternalSemaphoreSubmissionInfo[(u8CurrentSemaphoreInfoIndex + 1) % u8SemaphoreInfoCount].value = vk_a2InternalSemaphoreSubmissionInfo[u8CurrentSemaphoreInfoIndex].value + 1;
@@ -455,8 +456,9 @@ namespace RE {
 		vk_submissionInfo.pSignalSemaphoreInfos = vk_paSemaphoresToSignal;
 		const uint8_t u8LogicalQueueIndex = queueIndexPerCommandPool[commandPoolIndexPerCommandBuffer[u32FunctionsCount - 1]];
 		const VkQueue vk_hLogicalQueue = vk_pahQueues[u8LogicalQueueIndex];
-		if (vkQueueSubmit2(vk_hLogicalQueue, 1, &vk_submissionInfo, vk_hFenceToSignal) != VK_SUCCESS) {
-			RE_ERROR("Failed to submit last subtask to the logical queue ", vk_hLogicalQueue, " at index ", u8LogicalQueueIndex);
+		const VkResult vk_eResultLastSubmit = vkQueueSubmit2(vk_hLogicalQueue, 1, &vk_submissionInfo, vk_hFenceToSignal);
+		if (vk_eResultLastSubmit != VK_SUCCESS) {
+			RE_ERROR("Failed to submit last subtask to the logical queue ", vk_hLogicalQueue, " at index ", u8LogicalQueueIndex, " (code ", vk_eResultLastSubmit, ")");
 			return false;
 		}
 		return true;

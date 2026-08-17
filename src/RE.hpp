@@ -267,8 +267,8 @@ namespace RE {
 		std::lock_guard<std::mutex> std_lockGuardConsole(std_consoleMutex);
 		const auto previousSettings = std::cout.setf(std::ios_base::showbase | std::ios_base::boolalpha);
 		([&]() {
-			if constexpr (std::is_same_v<T, int8_t> || std::is_same_v<T, uint8_t>)
-				std::cout << static_cast<int16_t>(content);
+			if constexpr (std::is_same_v<T, int8_t> || std::is_same_v<T, uint8_t> || std::is_same_v<T, signed char> || std::is_same_v<T, unsigned char>)
+				std::cout << static_cast<int>(content);
 			else if constexpr (std::is_same_v<T, std::wstring> || std::is_same_v<T, const wchar_t*> || std::is_same_v<T, wchar_t>)
 				std::wcout << content;
 			else if constexpr (std::is_same_v<T, char8_t>)
@@ -288,11 +288,12 @@ namespace RE {
 	}
 	void print_colored(const std::string &rsContent, TerminalColor eColor, bool bBackgroundColored, bool bBold);
 	void println_colored(const std::string &rsContent, TerminalColor eColor, bool bBackgroundColored, bool bBold);
-#define PRINT(...) print(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE_MACRO(__VA_ARGS__))
-#define PRINT_LN(...) PRINT(STRIP_QUOTE_MACRO(__VA_ARGS__), '\n')
+#define PRINT(...)     print(__FILE__, " (line ", __LINE__, "): ", STRIP_QUOTE_MACRO(__VA_ARGS__))
+#define PRINT_LN(...)  PRINT(STRIP_QUOTE_MACRO(__VA_ARGS__), '\n')
 
 #ifndef NDEBUG
-#	define PRINT_DEBUG(...) [&](const char *pacFile, const char *pacFunc, uint32_t u32Line) { \
+#	define PRINT_DEBUG(...) \
+			[&](const char *pacFile, const char *pacFunc, uint32_t u32Line) { \
 				time_t currentTime = std::time(0); \
 				println("[", std::put_time(std::gmtime(&currentTime), "%d.%b %Y, %H:%M:%S"), "] (", pacFile, ", at line ", u32Line, ", in function \"", pacFunc, "\"): ", STRIP_QUOTE_MACRO(__VA_ARGS__)); \
 			} (__FILE__, __func__, __LINE__)
@@ -307,11 +308,11 @@ namespace RE {
 	void error(const std::string &rsDetail);
 	void warning(const std::string &rsDetail);
 	void note(const std::string &rsDetail);
-#define ABORT(...) RE::abort(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), "\nIn ", __FILE__, ", function \"", __func__, "\", at line ", __LINE__))
-#define FATAL_ERROR(...) fatal_error(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), "\nIn ", __FILE__, ", function \"", __func__, "\", at line ", __LINE__))
-#define ERROR(...) error(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), "\nIn ", __FILE__, ", function \"", __func__, "\", at line ", __LINE__))
-#define WARNING(...) warning(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), "\nIn ", __FILE__, ", function \"", __func__, "\", at line ", __LINE__))
-#define NOTE(...) note(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), "\nIn ", __FILE__, ", function \"", __func__, "\", at line ", __LINE__))
+#define ABORT(...)         RE::abort(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), "\nIn ", __FILE__, ", function \"", __func__, "\", at line ", __LINE__))
+#define FATAL_ERROR(...)   fatal_error(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), "\nIn ", __FILE__, ", function \"", __func__, "\", at line ", __LINE__))
+#define ERROR(...)         error(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), "\nIn ", __FILE__, ", function \"", __func__, "\", at line ", __LINE__))
+#define WARNING(...)       warning(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), "\nIn ", __FILE__, ", function \"", __func__, "\", at line ", __LINE__))
+#define NOTE(...)          note(append_to_string(STRIP_QUOTE_MACRO(__VA_ARGS__), "\nIn ", __FILE__, ", function \"", __func__, "\", at line ", __LINE__))
 
 
 
@@ -320,14 +321,14 @@ namespace RE {
 #define DELETE_SAFELY(PTR_REF) do { \
 			if (!PTR_REF) \
 				break; \
-			PRINT_DEBUG("Safely deleting ", PTR_REF); \
+			PRINT_DEBUG("Freeing ", PTR_REF); \
 			delete (PTR_REF); \
 			(PTR_REF) = nullptr; \
 		} while (false)
 #define DELETE_ARRAY_SAFELY(PTR_REF) do { \
 			if (!PTR_REF) \
 				break; \
-			PRINT_DEBUG("Safely deleting array ", PTR_REF); \
+			PRINT_DEBUG("Freeing array ", PTR_REF); \
 			delete[] (PTR_REF); \
 			(PTR_REF) = nullptr; \
 		} while (false)
@@ -466,9 +467,9 @@ namespace RE {
 	constexpr T nth_root(const T n, const T value) {
 		if (n <= 0) {
 			FATAL_ERROR("The value of 'n' shouldn't be zero or negative in an nth root");
-			return static_cast<T>(0);
+			return 0;
 		}
-		return std::pow(value, static_cast<T>(1.0) / n);
+		return std::pow(value, static_cast<T>(1) / n);
 	}
 
 	template <class T> requires std::is_floating_point_v<T>

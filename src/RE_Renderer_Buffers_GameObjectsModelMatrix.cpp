@@ -12,7 +12,7 @@ namespace RE {
 			if (!create_vulkan_buffer(
 					0,
 					vk_bufferSize,
-					VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+					VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 					rQueues.u8QueueCount,
 					rQueues.queueFamilyIndices.get(),
 					&vk_ahGameObjectsModelMatrixBuffers[u8FrameInFlightCreateIndex])) {

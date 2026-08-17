@@ -16,7 +16,7 @@ namespace RE {
 	#	warning The targeted OS is unknown, so the engine will terminate immediatly upon execution
 		RE_ERROR("The OS is unknown. The engine can't initialize");
 		return false;
-	#endif
+	#else
 		if (bErrorOccured) {
 			RE_ERROR("A fatal error occured before and further attempts to run the engine will be dropped");
 			return false;
@@ -27,10 +27,10 @@ namespace RE {
 		PRINT_DEBUG("Starting the engine");
 		if (!load_settings())
 			return false;
-	#ifdef RE_OS_WINDOWS
+	#	ifdef RE_OS_WINDOWS
 		if (!create_window())
 			return false;
-	#elif defined RE_OS_LINUX
+	#	elif defined RE_OS_LINUX
 		if (std::getenv("WAYLAND_DISPLAY")) {
 			PRINT_DEBUG("Creating a window in Wayland");
 			eLinuxWindowType = LINUX_WINDOW_TYPE_WAYLAND;
@@ -50,7 +50,7 @@ namespace RE {
 				return false;
 			}
 		}
-	#endif
+	#	endif
 		if (init_input()) {
 			if (init_manager()) {
 				if (init_logical_gpu()) {
@@ -98,6 +98,7 @@ namespace RE {
 		destroy_window();
 		print_error_count();
 		return !bErrorOccured;
+	#endif
 	}
 
 	float get_deltaseconds() {

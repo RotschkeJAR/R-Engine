@@ -5,17 +5,29 @@
 
 namespace RE {
 	
-	bool create_graphics_pipeline_2D(VkShaderModule vk_hVertexShader, VkShaderModule vk_hFragmentShader);
-	void destroy_graphics_pipeline_2D();
+	void setup_graphics_pipeline_2D(
+			VkPipelineInputAssemblyStateCreateInfo &vk_rInputAssembly,
+			VkPipelineRasterizationStateCreateInfo &vk_rRasterization,
+			VkPipelineColorBlendAttachmentState &vk_rColorBlendAttachment,
+			VkPipelineColorBlendStateCreateInfo &vk_rColorBlend);
 	
-	bool create_graphics_pipeline_2D_opaque_only(VkShaderModule vk_hVertexShader, VkShaderModule vk_hFragmentShader);
-	void destroy_graphics_pipeline_2D_opaque_only();
+	void setup_graphics_pipeline_2D_opaque_only(
+			VkPipelineInputAssemblyStateCreateInfo &vk_rInputAssembly,
+			VkPipelineRasterizationStateCreateInfo &vk_rRasterization,
+			VkPipelineColorBlendAttachmentState &vk_rColorBlendAttachment,
+			VkPipelineColorBlendStateCreateInfo &vk_rColorBlend);
 
-	bool create_graphics_pipeline_3D(VkShaderModule vk_hVertexShader, VkShaderModule vk_hFragmentShader);
-	void destroy_graphics_pipeline_3D();
+	void setup_graphics_pipeline_3D(
+			VkPipelineInputAssemblyStateCreateInfo &vk_rInputAssembly,
+			VkPipelineRasterizationStateCreateInfo &vk_rRasterization,
+			VkPipelineColorBlendAttachmentState &vk_rColorBlendAttachment,
+			VkPipelineColorBlendStateCreateInfo &vk_rColorBlend);
 
-	bool create_graphics_pipeline_3D_opaque_only(VkShaderModule vk_hVertexShader, VkShaderModule vk_hFragmentShader);
-	void destroy_graphics_pipeline_3D_opaque_only();
+	void setup_graphics_pipeline_3D_opaque_only(
+			VkPipelineInputAssemblyStateCreateInfo &vk_rInputAssembly,
+			VkPipelineRasterizationStateCreateInfo &vk_rRasterization,
+			VkPipelineColorBlendAttachmentState &vk_rColorBlendAttachment,
+			VkPipelineColorBlendStateCreateInfo &vk_rColorBlend);
 	
 }
 

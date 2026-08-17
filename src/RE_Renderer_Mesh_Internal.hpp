@@ -6,9 +6,6 @@
 namespace RE {
 
 #define PERMANENT_MESH_COUNT    2
-
-	extern VulkanMesh square2D,
-		square3D;
 	
 	bool create_renderer_mesh_square_2D();
 	void destroy_renderer_mesh_square_2D();

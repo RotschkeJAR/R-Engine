@@ -19,6 +19,9 @@ namespace RE {
 		VkIndexType vk_eIndexType;
 		MeshType eMeshType;
 	};
+
+	extern VulkanMesh square2D,
+		square3D;
 	
 	bool init_renderer_meshes();
 	void destroy_renderer_meshes();

@@ -24,8 +24,6 @@ namespace RE {
 				return RE_INPUT_KEY_DELETE;
 			case VK_INSERT:
 				return RE_INPUT_KEY_INSERT;
-			case VK_CAPITAL:
-				return RE_INPUT_KEY_CAPS_LOCK;
 			case VK_ESCAPE:
 				return RE_INPUT_KEY_ESCAPE;
 			case VK_PRIOR:
@@ -52,8 +50,6 @@ namespace RE {
 				return RE_INPUT_KEY_NUMPAD_SUBTRACT;
 			case VK_DIVIDE:
 				return RE_INPUT_KEY_NUMPAD_DIVIDE;
-			case VK_NUMLOCK:
-				return RE_INPUT_KEY_NUMPAD_LOCK;
 			case VK_SCROLL:
 				return RE_INPUT_KEY_SCROLL_LOCK;
 			case VK_LSHIFT:
@@ -82,8 +78,6 @@ namespace RE {
 				return RE_INPUT_KEY_BRACKET_RIGHT;
 			case VK_OEM_7:
 				return RE_INPUT_KEY_APOSTROPHE;
-			case VK_OEM_102:
-				return RE_INPUT_KEY_WORLD_1;
 			case VK_OEM_COMMA:
 				return RE_INPUT_KEY_COMMA;
 			case VK_OEM_PERIOD:
@@ -97,9 +91,6 @@ namespace RE {
 				return RE_INPUT_KEY_NUMPAD_PERIOD;
 			case VK_APPS:
 				return RE_INPUT_KEY_MENU;
-			case VK_LWIN:
-			case VK_RWIN:
-				return RE_INPUT_UNKNOWN;
 			default:
 				break;
 		}

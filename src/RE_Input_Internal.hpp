@@ -6,7 +6,7 @@
 namespace RE {
 
 	typedef unsigned keyboardbuffer_t;
-#define KEY_BUFFER_CHUNK_SIZE                      UINT_WIDTH
+#define KEY_BUFFER_CHUNK_SIZE                      (sizeof(keyboardbuffer_t) * CHAR_BIT)
 #define MAXIMUM_PHYSICAL_KEYS                      150
 #define SIZE_OF_INPUT_TO_KEY_BUFFER_INDEX_TABLE    (RE_INPUT_KEY_LAST - RE_INPUT_KEY_FIRST + 1)
 #define KEY_BUFFER_OFFSET                          1
@@ -14,7 +14,7 @@ namespace RE {
 #define FAILURE_KEY_BUFFER_INDEX                   0
 
 	typedef unsigned cursorbuffer_t;
-#define CURSOR_BUFFER_CHUNK_SIZE       UINT_WIDTH
+#define CURSOR_BUFFER_CHUNK_SIZE       (sizeof(cursorbuffer_t) * CHAR_BIT)
 
 #define CURSOR_DIMENSIONS  2
 #define CURSOR_X           0

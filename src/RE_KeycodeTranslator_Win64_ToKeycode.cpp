@@ -49,8 +49,6 @@ namespace RE {
 				return VK_SUBTRACT;
 			case RE_INPUT_KEY_NUMPAD_DIVIDE:
 				return VK_DIVIDE;
-			case RE_INPUT_KEY_NUMPAD_LOCK:
-				return VK_NUMLOCK;
 			case RE_INPUT_KEY_SCROLL_LOCK:
 				return VK_SCROLL;
 			case RE_INPUT_KEY_SHIFT_RIGHT:
@@ -91,8 +89,6 @@ namespace RE {
 				return VK_DECIMAL;
 			case RE_INPUT_KEY_MENU:
 				return VK_APPS;
-			case RE_INPUT_KEY_WORLD_1:
-				return VK_OEM_102;
 			default:
 				break;
 		}

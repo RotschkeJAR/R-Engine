@@ -1,5 +1,8 @@
 # GNU Make 4.4.1
 
+# For Windows GNU compilers are pulled from git repository:
+#	https://github.com/mstorsjo/llvm-mingw/releases
+
 # Possible values:
 #	release
 #	debug
@@ -127,7 +130,7 @@ $(OUT): $(TEST_OBJECTS) $(RE)
 ifeq ($(OS),Windows_NT)
 	@if $(BUILD)==debug ( \
 		if $(COMPILER)==GNU ( \
-			$(LD) $< -o $@ -L $(BIN) -l RE -l gdi32 -l user32 -static-libgcc -static-libstdc++; \
+			$(LD) $< -o $@ -L $(BIN) -l RE -l gdi32 -l user32 -static-libgcc -static-libstdc++ \
 		) else if $(COMPILER)==MSVC ( \
 			$(LD) /NOLOGO $(subst /,\,$^) gdi32.lib user32.lib /OUT:"$@" /SUBSYSTEM:CONSOLE \
 		) else ( \

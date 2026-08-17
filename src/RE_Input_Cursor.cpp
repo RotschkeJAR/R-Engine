@@ -41,33 +41,33 @@ namespace RE {
 		const unsigned BIT_INDEX_NAME = BUTTON_INDEX_NAME % CURSOR_BUFFER_CHUNK_SIZE
 
 	bool is_button_down(Input eInput) {
-		PRINT_DEBUG("Getting present state of button ", std::hex, eInput, " and scancode ", scancode);
+		PRINT_DEBUG("Getting present state of button ", std::hex, eInput);
 		FETCH_INDICES_PROC(buttonIndex, bitIndex);
 		return are_bits_true<cursorbuffer_t>(cursorBuffer, bitIndex);
 	}
 
 	bool was_button_down(Input eInput) {
-		PRINT_DEBUG("Getting past state of button ", std::hex, eInput, " and scancode ", scancode);
+		PRINT_DEBUG("Getting past state of button ", std::hex, eInput);
 		FETCH_INDICES_PROC(buttonIndex, bitIndex);
 		return are_bits_true<cursorbuffer_t>(prevCursorBuffer, bitIndex);
 	}
 
 	bool is_button_pressed(Input eInput) {
-		PRINT_DEBUG("Getting pressed state of button ", std::hex, eInput, " and scancode ", scancode);
+		PRINT_DEBUG("Getting pressed state of button ", std::hex, eInput);
 		FETCH_INDICES_PROC(buttonIndex, bitIndex);
 		const auto xCursorBufferBitmask = gen_bitmask<cursorbuffer_t>(bitIndex);
 		return (cursorBuffer & xCursorBufferBitmask) != 0 && (prevCursorBuffer & xCursorBufferBitmask) == 0;
 	}
 
 	bool is_button_released(Input eInput) {
-		PRINT_DEBUG("Getting released state of button ", std::hex, eInput, " and scancode ", scancode);
+		PRINT_DEBUG("Getting released state of button ", std::hex, eInput);
 		FETCH_INDICES_PROC(buttonIndex, bitIndex);
 		const auto xCursorBufferBitmask = gen_bitmask<cursorbuffer_t>(bitIndex);
 		return (cursorBuffer & xCursorBufferBitmask) == 0 && (prevCursorBuffer & xCursorBufferBitmask) != 0;
 	}
 
 	bool is_button_held_down(Input eInput) {
-		PRINT_DEBUG("Getting held state of button ", std::hex, eInput, " and scancode ", scancode);
+		PRINT_DEBUG("Getting held state of button ", std::hex, eInput);
 		FETCH_INDICES_PROC(buttonIndex, bitIndex);
 		return (cursorBuffer & prevCursorBuffer & gen_bitmask<cursorbuffer_t>(bitIndex)) != 0;
 	}

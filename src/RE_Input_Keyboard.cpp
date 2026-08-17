@@ -60,7 +60,7 @@ namespace RE {
 	}
 
 	void keyboard_event(Input eEnteredInput, scancode_t enteredScancode, bool bPressed) {
-		PRINT_DEBUG("Input has been received with input ", std::hex, eEnteredInput, ", scancode ", enteredScancode, ", pressed-state ", bPressed, " and fallback-to-input-state ", bFallbackToInput);
+		PRINT_DEBUG("Input has been received with input ", std::hex, eEnteredInput, ", scancode ", enteredScancode, ", pressed-state ", bPressed);
 		unsigned uKeyBufferIndex = FAILURE_KEY_BUFFER_INDEX;
 		if (enteredScancode)
 			uKeyBufferIndex = get_key_buffer_index_for_scancode(enteredScancode);

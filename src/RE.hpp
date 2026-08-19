@@ -475,7 +475,12 @@ namespace RE {
 	template <class T> requires std::is_floating_point_v<T>
 	[[nodiscard]]
 	constexpr T round_away_from_zero(const T value) {
-		return value > 0 ? std::ceil<T>(value) : std::floor<T>(value);
+		if constexpr (std::is_same_v<T, float>)
+			return value > 0 ? ceilf(value) : floorf(value);
+		else if constexpr (std::is_same_v<T, long double>)
+			return value > 0 ? ceill(value) : floorl(value);
+		else
+			return value > 0 ? ceil(value) : floor(value);
 	}
 
 	template <class... T> requires AreIntegrals<T...>

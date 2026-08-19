@@ -186,7 +186,7 @@ namespace RE {
 					.dynamicStateCount = sizeof(vk_aeDynamicStates) / sizeof(vk_aeDynamicStates[0]),
 					.pDynamicStates = vk_aeDynamicStates
 				};
-				const VkGraphicsPipelineCreateInfo vk_createInfo = {
+				VkGraphicsPipelineCreateInfo vk_createInfo = {
 					.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
 					.pNext = nullptr,
 					.flags = 0,

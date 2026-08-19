@@ -21,8 +21,8 @@
 #include "RE_Renderer_RenderTask.hpp"
 #include "RE_Renderer_RenderProcedure.hpp"
 #include "RE_Renderer_WindowFrame.hpp"
-#include "RE_Renderer_RenderPass.hpp"
 #include "RE_Renderer_Framebuffers.hpp"
+#include "RE_Renderer_RenderPass.hpp"
 
 namespace RE {
 

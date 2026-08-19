@@ -45,7 +45,9 @@ namespace RE {
 					WINDOW_CHAR_GAP_SIZE,
 					std::max(WINDOW_BAR_SIZE / CHAR_TEXTURE_SIZE - 1, 1),
 					WINDOW_AREA_BUTTON_CLOSE,
-					MAX_CHARS_IN_WINDOW_TITLE
+					MAX_CHARS_IN_WINDOW_TITLE,
+					-1, /* DONT_RENDER_BUTTON */
+					-1  /* DONT_RENDER_CHARACTER */
 				};
 				constexpr VkSpecializationMapEntry vk_aSpecializationConstants[] = {
 					{
@@ -91,6 +93,14 @@ namespace RE {
 					}, {
 						.constantID = 10,
 						.offset = sizeof(int32_t) * 10,
+						.size = sizeof(int32_t)
+					}, {
+						.constantID = 11,
+						.offset = sizeof(int32_t) * 11,
+						.size = sizeof(int32_t)
+					}, {
+						.constantID = 12,
+						.offset = sizeof(int32_t) * 12,
 						.size = sizeof(int32_t)
 					}
 				};
@@ -197,6 +207,8 @@ namespace RE {
 					.basePipelineHandle = VK_NULL_HANDLE,
 					.basePipelineIndex = -1
 				};
+				VkPipelineRenderingCreateInfo vk_renderingCreateInfo;
+				setup_swapchain_pipelines_render_pass(vk_createInfo, vk_renderingCreateInfo);
 				if (vkCreateGraphicsPipelines(vk_hDevice, VK_NULL_HANDLE, 1, &vk_createInfo, nullptr, &vk_hWindowFrameGraphicsPipeline) == VK_SUCCESS) {
 					return true;
 				} else

@@ -13,17 +13,12 @@ struct GameObject {
 	float position[3];
 	float rotation[3];
 	float scale[3];
-	vec4 color;
+	float color[4];
 	uint textureId;
 };
 
 struct GameObjectModelMatrix {
 	mat4 modelMatrix;
-};
-
-struct Depth {
-	float depth;
-	uint objectIndex;
 };
 
 
@@ -42,24 +37,21 @@ layout(set = 1, binding = 0) uniform CameraMatrices {
 
 
 void main() {
+	// Optimization: Discard vertices by rendering them outside view
+	if (gameObjects.data[I_instance_index].color[3] <= 0.0
+			|| gameObjects.data[I_instance_index].scale[0] == 0.0
+			|| gameObjects.data[I_instance_index].scale[1] == 0.0
+			|| gameObjects.data[I_instance_index].scale[2] == 0.0) {
+		gl_Position = vec4(-2.0, -2.0, -2.0, 1.0);
+		return;
+	}
+	
 	gl_Position = cam.projection * cam.view * modelMatrices.data[I_instance_index].modelMatrix * I_vertex_position;
-	O_color = gameObjects.data[I_instance_index].color;
+	O_color = vec4(
+			gameObjects.data[I_instance_index].color[0],
+			gameObjects.data[I_instance_index].color[1],
+			gameObjects.data[I_instance_index].color[2],
+			gameObjects.data[I_instance_index].color[3]);
 	O_textureCoords = I_vertex_textureCoords;
 	O_textureId = gameObjects.data[I_instance_index].textureId;
-
-	// Testing
-	switch (gl_VertexIndex) {
-		case 0:
-			gl_Position = vec4(-0.5, 0.5, 0.0, 1.0);
-			O_color = vec4(0.0, 1.0, 0.0, 1.0);
-			break;
-		case 1:
-			gl_Position = vec4(0.0, -0.5, 0.0, 1.0);
-			O_color = vec4(1.0, 0.0, 0.0, 1.0);
-			break;
-		case 2:
-			gl_Position = vec4(0.5, 0.5, 0.0, 1.0);
-			O_color = vec4(0.0, 0.0, 1.0, 1.0);
-			break;
-	}
 }

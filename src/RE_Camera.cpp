@@ -1,5 +1,5 @@
 #include "RE_Internal.hpp"
-#include "RE_Renderer_Camera.hpp"
+#include "RE_Renderer.hpp"
 #include "RE_Main.hpp"
 #include "RE_Manager.hpp"
 

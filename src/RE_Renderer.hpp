@@ -3,19 +3,24 @@
 
 #include "RE_GPU.hpp"
 
-#include "RE_Renderer_ShaderStructs.hpp"
-
 namespace RE {
+
+	struct WindowFrameUniformData;
 
 #define RE_VK_FRAMES_IN_FLIGHT   2
 
 #define CHAR_TEXTURE_COUNT   0x5F
 #define CHAR_TEXTURE_SIZE    8
 
+#define MAX_CHARS_IN_WINDOW_TITLE   256
+
 	bool init_renderer();
 	void destroy_renderer();
 	void render();
 	bool wait_for_rendering_finished();
+
+	// Camera
+	void attach_camera(Camera *pCamera);
 
 	// Swapchain
 	void mark_swapchain_dirty();
@@ -43,5 +48,7 @@ namespace RE {
 	consteval void destroy_settings_gui() {}
 
 }
+
+#include "RE_Renderer_ShaderStructs.hpp"
 
 #endif /* __RE_RENDERER_H__ */

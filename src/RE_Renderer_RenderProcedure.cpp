@@ -10,55 +10,39 @@ namespace RE {
 			case VK_SUCCESS:
 				if (!acquire_next_swapchain_image())
 					return true;
+				calculate_camera_matrices();
 				if (aRenderTasks[uCurrentFrameInFlightIndex].record(
 						RENDER_TASK_SUBINDEX_RENDERING,
 						VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
 						[&](VkCommandBuffer vk_hCommandBuffer, uint8_t u8PreviousLogicalQueue, uint8_t u8CurrentLogicalQueue, uint8_t u8NextLogicalQueue) {
-							VkClearValue vk_aClears[] = {
-								{
-									.color = {
-										.float32 = {
-											backgroundClearColor[0],
-											backgroundClearColor[1],
-											backgroundClearColor[2],
-											backgroundClearColor[3]
-										}
-									}
-								}, {
-									.depthStencil = {
-										.depth = 1.0f,
-										.stencil = 0
-									}
+							GameObjectShaderData shaderData = {
+								.position = {0.0f, 0.0f, 0.0f},
+								.rotation = {0.0f, 0.0f, 0.0f},
+								.scale = {1.0f, 1.0f, 1.0f},
+								.color = {1.0f, 0.0f, 0.0f, 1.0f},
+								.textureId = DONT_USE_TEXTURE
+							};
+							vkCmdUpdateBuffer(vk_hCommandBuffer, vk_ahGameObjectsBuffers[uCurrentFrameInFlightIndex], 0, sizeof(shaderData), &shaderData);
+							GameObjectModelMatrixShaderData modelMatrix = {
+								.modelMatrix = {
+									1.0f, 0.0f, 0.0f, 0.0f,
+									0.0f, 1.0f, 0.0f, 0.0f,
+									0.0f, 0.0f, 1.0f, 0.0f,
+									0.0f, 0.0f, 0.0f, 1.0f
 								}
 							};
-							VkRenderPassBeginInfo vk_renderPassBeginInfo = {
-								.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-								.pNext = nullptr,
-								.renderPass = vk_hRenderPass,
-								.framebuffer = vk_ahFramebuffers[uCurrentFrameInFlightIndex],
-								.renderArea = {
-									.offset = {
-										.x = 0,
-										.y = 0
-									},
-									.extent = {
-										.width = renderImageSize[0],
-										.height = renderImageSize[1]
-									}
-								},
-								.clearValueCount = sizeof(vk_aClears) / sizeof(vk_aClears[0]),
-								.pClearValues = vk_aClears
-							};
-							const VkSubpassBeginInfo vk_subpassBeginInfo = {
-								.sType = VK_STRUCTURE_TYPE_SUBPASS_BEGIN_INFO,
-								.pNext = nullptr,
-								.contents = VK_SUBPASS_CONTENTS_INLINE
-							};
-							const VkSubpassEndInfo vk_subpassEndInfo = {
-								.sType = VK_STRUCTURE_TYPE_SUBPASS_END_INFO,
-								.pNext = nullptr
-							};
-							vkCmdBeginRenderPass2(vk_hCommandBuffer, &vk_renderPassBeginInfo, &vk_subpassBeginInfo);
+							vkCmdUpdateBuffer(vk_hCommandBuffer, vk_ahGameObjectsModelMatrixBuffers[uCurrentFrameInFlightIndex], 0, sizeof(modelMatrix), &modelMatrix);
+							vkCmdFillBuffer(vk_hCommandBuffer, vk_ahSortableDepthBuffers[uCurrentFrameInFlightIndex], 0, VK_WHOLE_SIZE, 0U);
+							VkClearValue vk_aClears[RENDER_PASS_ATTACHMENT_COUNT];
+							VkRenderPassBeginInfo vk_renderPassBeginInfo;
+							VkSubpassBeginInfo vk_subpassBeginInfo;
+							VkSubpassEndInfo vk_subpassEndInfo;
+							begin_render_pass(
+									vk_hCommandBuffer,
+									vk_aClears,
+									vk_renderPassBeginInfo,
+									vk_subpassBeginInfo,
+									vk_subpassEndInfo);
 							vkCmdBindPipeline(vk_hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hGraphicsPipeline2D);
 							const VkDescriptorSet vk_ahDescSets[] = {
 								vk_ahGameObjectsDescSets[uCurrentFrameInFlightIndex],
@@ -84,7 +68,10 @@ namespace RE {
 							};
 							vkCmdSetViewport(vk_hCommandBuffer, 0, 1, &vk_viewport);
 							const VkRect2D vk_scissor = {
-								.offset = {},
+								.offset = {
+									.x = 0,
+									.y = 0
+								},
 								.extent = {
 									.width = renderImageSize[0],
 									.height = renderImageSize[1]
@@ -97,19 +84,12 @@ namespace RE {
 							};
 							constexpr VkDeviceSize vk_aVertexBufferOffsets[sizeof(vk_ahVertexBuffers) / sizeof(vk_ahVertexBuffers[0])] = {};
 							vkCmdBindVertexBuffers(vk_hCommandBuffer, 0, sizeof(vk_ahVertexBuffers) / sizeof(vk_ahVertexBuffers[0]), vk_ahVertexBuffers, vk_aVertexBufferOffsets);
-							vkCmdDraw(vk_hCommandBuffer, 3, 1, 0, 0);
-							vkCmdEndRenderPass2(vk_hCommandBuffer, &vk_subpassEndInfo);
-							vk_renderPassBeginInfo.renderPass = vk_hSwapchainRenderPass;
-							vk_renderPassBeginInfo.framebuffer = std_swapchainFramebuffers[u32CurrentSwapchainImageIndex];
-							vk_renderPassBeginInfo.renderArea.extent = vk_swapchainResolution;
-							vk_aClears[0].color.float32[0] = 0.0f;
-							vk_aClears[0].color.float32[1] = 0.0f;
-							vk_aClears[0].color.float32[2] = 0.0f;
-							vk_aClears[0].color.float32[3] = 1.0f;
-							vkCmdBeginRenderPass2(vk_hCommandBuffer, &vk_renderPassBeginInfo, &vk_subpassBeginInfo);
+							vkCmdDraw(vk_hCommandBuffer, square2D.u32VertexCount, 1, 0, 0);
+							end_render_pass(vk_hCommandBuffer, vk_subpassEndInfo);
+							begin_swapchain_render_pass(vk_hCommandBuffer, vk_aClears, vk_renderPassBeginInfo, vk_subpassBeginInfo);
 							if (should_render_window_frame())
 								render_window_frame(vk_hCommandBuffer);
-							vkCmdEndRenderPass2(vk_hCommandBuffer, &vk_subpassEndInfo);
+							end_swapchain_render_pass(vk_hCommandBuffer, vk_subpassEndInfo);
 						})) {
 					if (aRenderTasks[uCurrentFrameInFlightIndex].record(
 							RENDER_TASK_SUBINDEX_IMAGE_BLIT,

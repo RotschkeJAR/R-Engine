@@ -14,17 +14,39 @@ namespace RE {
 			PRINT_DEBUG("Creating Vulkan graphics pipelines");
 			VkPipeline vk_ahPreviousPipelines[GRAPHICS_PIPELINE_COUNT];
 			std::copy(std::begin(vk_ahGraphicsPipelines), std::end(vk_ahGraphicsPipelines), std::begin(vk_ahPreviousPipelines));
+			const uint32_t au32Constants[] = {
+				DONT_USE_TEXTURE
+			};
+			const VkSpecializationMapEntry vk_aMapEntries[] = {
+				{
+					.constantID = 0,
+					.offset = 0,
+					.size = sizeof(uint32_t)
+				}
+			};
+			const VkSpecializationInfo vk_specializationInfo = {
+				.mapEntryCount = sizeof(vk_aMapEntries) / sizeof(vk_aMapEntries[0]),
+				.pMapEntries = vk_aMapEntries,
+				.dataSize = sizeof(au32Constants),
+				.pData = au32Constants
+			};
 			const VkPipelineShaderStageCreateInfo vk_aShaderStages[] = {
 				{
 					.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+					.pNext = nullptr,
+					.flags = 0,
 					.stage = VK_SHADER_STAGE_VERTEX_BIT,
 					.module = generalVertexShader(),
-					.pName = "main"
+					.pName = "main",
+					.pSpecializationInfo = &vk_specializationInfo
 				}, {
 					.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+					.pNext = nullptr,
+					.flags = 0,
 					.stage = VK_SHADER_STAGE_FRAGMENT_BIT,
 					.module = generalFragmentShader(),
-					.pName = "main"
+					.pName = "main",
+					.pSpecializationInfo = &vk_specializationInfo
 				}
 			};
 			constexpr VkVertexInputBindingDescription vk_aVertexBindings[] = {
@@ -98,7 +120,7 @@ namespace RE {
 				.dynamicStateCount = sizeof(vk_aeDynamicStates) / sizeof(vk_aeDynamicStates[0]),
 				.pDynamicStates = vk_aeDynamicStates
 			};
-			const VkGraphicsPipelineCreateInfo vk_aCreateInfos[GRAPHICS_PIPELINE_COUNT] = {
+			VkGraphicsPipelineCreateInfo vk_aCreateInfos[GRAPHICS_PIPELINE_COUNT] = {
 				{
 					.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
 					.pNext = nullptr,
@@ -115,8 +137,6 @@ namespace RE {
 					.pColorBlendState = &vk_aColorBlends[GRAPHICS_PIPELINE_2D],
 					.pDynamicState = &vk_dynamicStates,
 					.layout = vk_hGraphicsPipelineLayout,
-					.renderPass = vk_hRenderPass,
-					.subpass = u32SubpassScenery,
 					.basePipelineHandle = vk_ahPreviousPipelines[GRAPHICS_PIPELINE_2D],
 					.basePipelineIndex = -1
 				}, {
@@ -135,8 +155,6 @@ namespace RE {
 					.pColorBlendState = &vk_aColorBlends[GRAPHICS_PIPELINE_2D_OPAQUE],
 					.pDynamicState = &vk_dynamicStates,
 					.layout = vk_hGraphicsPipelineLayout,
-					.renderPass = vk_hRenderPass,
-					.subpass = u32SubpassScenery,
 					.basePipelineHandle = vk_ahPreviousPipelines[GRAPHICS_PIPELINE_2D_OPAQUE],
 					.basePipelineIndex = -1
 				}, {
@@ -155,8 +173,6 @@ namespace RE {
 					.pColorBlendState = &vk_aColorBlends[GRAPHICS_PIPELINE_3D],
 					.pDynamicState = &vk_dynamicStates,
 					.layout = vk_hGraphicsPipelineLayout,
-					.renderPass = vk_hRenderPass,
-					.subpass = u32SubpassScenery,
 					.basePipelineHandle = vk_ahPreviousPipelines[GRAPHICS_PIPELINE_3D],
 					.basePipelineIndex = -1
 				}, {
@@ -175,12 +191,11 @@ namespace RE {
 					.pColorBlendState = &vk_aColorBlends[GRAPHICS_PIPELINE_3D_OPAQUE],
 					.pDynamicState = &vk_dynamicStates,
 					.layout = vk_hGraphicsPipelineLayout,
-					.renderPass = vk_hRenderPass,
-					.subpass = u32SubpassScenery,
 					.basePipelineHandle = vk_ahPreviousPipelines[GRAPHICS_PIPELINE_3D_OPAQUE],
 					.basePipelineIndex = -1
 				}
 			};
+			VkPipelineRenderingCreateInfo vk_dynamicRenderPassInfo;
 			setup_graphics_pipeline_2D(
 					vk_aInputAssemblies[GRAPHICS_PIPELINE_2D],
 					vk_aRasterizations[GRAPHICS_PIPELINE_2D],
@@ -201,7 +216,14 @@ namespace RE {
 					vk_aRasterizations[GRAPHICS_PIPELINE_3D_OPAQUE],
 					vk_aColorBlendAttachments[GRAPHICS_PIPELINE_3D_OPAQUE],
 					vk_aColorBlends[GRAPHICS_PIPELINE_3D_OPAQUE]);
-			const VkResult vk_eResult = vkCreateGraphicsPipelines(vk_hDevice, VK_NULL_HANDLE, GRAPHICS_PIPELINE_COUNT, vk_aCreateInfos, nullptr, vk_ahGraphicsPipelines);
+			setup_graphics_pipelines_render_pass(vk_aCreateInfos, vk_dynamicRenderPassInfo);
+			const VkResult vk_eResult = vkCreateGraphicsPipelines(
+					vk_hDevice,
+					VK_NULL_HANDLE,
+					GRAPHICS_PIPELINE_COUNT,
+					vk_aCreateInfos,
+					nullptr,
+					vk_ahGraphicsPipelines);
 			if (vk_eResult == VK_SUCCESS) {
 				PRINT_DEBUG("Destroying previous Vulkan graphics pipelines");
 				for (VkPipeline vk_hPreviousPipeline : vk_ahPreviousPipelines)

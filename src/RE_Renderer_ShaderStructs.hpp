@@ -1,9 +1,9 @@
 #ifndef __RE_RENDERER_SHADER_STRUCTS_H__
 #define __RE_RENDERER_SHADER_STRUCTS_H__ 1
 
-namespace RE {
+#include "RE_Renderer.hpp"
 
-#define MAX_CHARS_IN_WINDOW_TITLE   256
+namespace RE {
 
 	typedef uint32_t ShaderBool;
 	constexpr ShaderBool SHR_TRUE = 1;

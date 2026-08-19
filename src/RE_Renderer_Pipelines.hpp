@@ -1,6 +1,9 @@
 #ifndef __RE_RENDERER_PIPELINES_H__
 #define __RE_RENDERER_PIPELINES_H__ 1
 
+#define GRAPHICS_PIPELINE_COUNT       4
+#define COMPUTE_PIPELINE_COUNT           2
+
 #include "RE_Renderer_Internal.hpp"
 
 namespace RE {
@@ -9,8 +12,7 @@ namespace RE {
 		vk_hSortDepthPipelineLayout,
 		vk_hProcessingPipelineLayout,
 		vk_hTextPipelineLayout;
-
-#define GRAPHICS_PIPELINE_COUNT       4
+		
 #define GRAPHICS_PIPELINE_2D          0
 #define GRAPHICS_PIPELINE_2D_OPAQUE   1
 #define GRAPHICS_PIPELINE_3D          2
@@ -23,7 +25,6 @@ namespace RE {
 #define vk_hGraphicsPipeline3D           vk_ahGraphicsPipelines[GRAPHICS_PIPELINE_3D]
 #define vk_hGraphicsPipeline3DOpaqueOnly vk_ahGraphicsPipelines[GRAPHICS_PIPELINE_3D_OPAQUE]
 
-#define COMPUTE_PIPELINE_COUNT           2
 #define COMPUTE_PIPELINE_PREPROCESSING   0
 #define COMPUTE_PIPELINE_DEPTH_SORTING   1
 

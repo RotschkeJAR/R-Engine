@@ -48,7 +48,7 @@ namespace RE {
 	extern uint32_t u32MaxComputeWorkGroupInvocations;
 	extern uint32_t u32MaxIndexedDrawCount;
 	extern uint32_t u32MaxIndirectCount;
-	extern float f32MaxSamplerAnisotropy;
+	extern float fMaxSamplerAnisotropy;
 	extern uint32_t u32MappedMemoryAlignment;
 
 	template <VulkanEnabledFeatureBits... featureBits>

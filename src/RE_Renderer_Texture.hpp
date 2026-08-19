@@ -5,6 +5,8 @@
 
 namespace RE {
 
+#define DONT_USE_TEXTURE    0xFFFFFFFFU
+
 	struct VulkanTexture final {
 		VulkanMemory imageMemory;
 		VkImage vk_hImage;

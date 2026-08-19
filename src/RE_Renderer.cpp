@@ -23,6 +23,7 @@ namespace RE {
 											if (init_renderer_textures()) {
 												if (init_renderer_meshes()) {
 													if (init_window_frame()) {
+														init_camera_matrices();
 														for (VulkanTask &rRenderTask : aRenderTasks)
 															for (unsigned uFunctionIndex = 0; uFunctionIndex < aRenderTasks[0].function_count(); uFunctionIndex++)
 																rRenderTask.record(uFunctionIndex, 0, nullptr);

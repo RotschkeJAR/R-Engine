@@ -30,7 +30,7 @@ namespace RE {
 	uint32_t u32MaxComputeWorkGroupInvocations;
 	uint32_t u32MaxIndexedDrawCount;
 	uint32_t u32MaxIndirectCount;
-	float f32MaxSamplerAnisotropy;
+	float fMaxSamplerAnisotropy;
 	uint32_t u32MappedMemoryAlignment;
 
 	void fetch_gpu_constrains() {
@@ -117,7 +117,7 @@ namespace RE {
 			u32MaxComputeWorkGroupInvocations = vk_physicalDeviceLimits.maxComputeWorkGroupInvocations;
 			u32MaxIndexedDrawCount = vk_physicalDeviceLimits.maxDrawIndexedIndexValue;
 			u32MaxIndirectCount = vk_physicalDeviceLimits.maxDrawIndirectCount;
-			f32MaxSamplerAnisotropy = vk_physicalDeviceLimits.maxSamplerAnisotropy;
+			fMaxSamplerAnisotropy = vk_physicalDeviceLimits.maxSamplerAnisotropy;
 			u32MappedMemoryAlignment = vk_physicalDeviceLimits.minMemoryMapAlignment;
 		}
 		{ // Extensions

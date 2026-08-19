@@ -1,7 +1,8 @@
 #version 450 core
-#extension GL_EXT_nonuniform_qualifier : enable
 
-#define DONT_USE_TEXTURE    0xFFFFFFFFU
+#extension GL_EXT_nonuniform_qualifier : require
+
+layout (constant_id = 0) const uint DONT_USE_TEXTURE = 0xFFFFFFFF;
 
 layout (location = 0) in vec4 O_color;
 layout (location = 1) in vec2 O_textureCoords;
@@ -14,10 +15,12 @@ layout (location = 0) out vec4 color;
 
 void main() {
 	if (O_textureId != DONT_USE_TEXTURE)
-		color = texture(sampler2DArray(textures[nonuniformEXT(O_textureId) & 0xFFFF], samplers[(nonuniformEXT(O_textureId) >> 16) & 0xFFFF]), vec3(O_textureCoords, 0)) * O_color;
+		color = texture(
+					sampler2DArray(
+						textures[nonuniformEXT(O_textureId) & 0xFFFF],
+						samplers[(nonuniformEXT(O_textureId) >> 16) & 0xFFFF]),
+					vec3(O_textureCoords, 0)
+				) * O_color;
 	else
 		color = O_color;
-
-	// Testing
-	color = O_color;
 }

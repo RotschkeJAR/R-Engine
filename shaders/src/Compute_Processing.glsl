@@ -37,11 +37,10 @@ layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
 void main() {
 	const uint index = gl_GlobalInvocationID.x;
 	modelMatrices.models[index] = mat4(
-		gameObjects.data[index].scale[0],		0.0,									0.0,									0.0,
-		0.0,									gameObjects.data[index].scale[1],		0.0,									0.0,
-		0.0,									0.0,									gameObjects.data[index].scale[2],		0.0,
-		gameObjects.data[index].position[0],	gameObjects.data[index].position[1],	gameObjects.data[index].position[2],	1.0
-	);
+			gameObjects.data[index].scale[0],		0.0,									0.0,									0.0,
+			0.0,									gameObjects.data[index].scale[1],		0.0,									0.0,
+			0.0,									0.0,									gameObjects.data[index].scale[2],		0.0,
+			gameObjects.data[index].position[0],	gameObjects.data[index].position[1],	gameObjects.data[index].position[2],	1.0);
 	depths.data[index].depth = vec4(cam.projection * cam.view * modelMatrices.models[index] * vec4(0.0, 0.0, 0.0, 1.0)).z;
 	depths.data[index].objectIndex = index;
 }

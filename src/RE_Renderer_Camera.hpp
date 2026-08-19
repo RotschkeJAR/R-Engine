@@ -9,7 +9,6 @@ namespace RE {
 
 	void init_camera_matrices();
 	void calculate_camera_matrices();
-	void attach_camera(Camera *pCamera);
 
 }
 

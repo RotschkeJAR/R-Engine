@@ -136,13 +136,13 @@ namespace RE {
 			.borderColor = get_vulkan_border_color(rSettings.eBorderColor),
 			.unnormalizedCoordinates = VK_FALSE
 		};
-		if (rSettings.f32MaxAnisotropy >= 1.0f && are_vulkan_features_enabled<ENABLED_FEATURE_ANISOTROPIC_FILTERING_BIT>()) {
+		if (rSettings.fMaxAnisotropy >= 1.0f && are_vulkan_features_enabled<ENABLED_FEATURE_ANISOTROPIC_FILTERING_BIT>()) {
 			vk_spriteLayoutCreateInfo.anisotropyEnable = VK_TRUE;
-			if (get_maximum_allowed_anisotropy() < rSettings.f32MaxAnisotropy) {
-				RE_NOTE("The GPU doesn't support any higher anisotropy than ", get_maximum_allowed_anisotropy(), ". It was set to ", rSettings.f32MaxAnisotropy, " and has been clamped down to the limit");
+			if (get_maximum_allowed_anisotropy() < rSettings.fMaxAnisotropy) {
+				RE_NOTE("The GPU doesn't support any higher anisotropy than ", get_maximum_allowed_anisotropy(), ". It was set to ", rSettings.fMaxAnisotropy, " and has been clamped down to the limit");
 				vk_spriteLayoutCreateInfo.maxAnisotropy = get_maximum_allowed_anisotropy();
 			} else
-				vk_spriteLayoutCreateInfo.maxAnisotropy = rSettings.f32MaxAnisotropy;
+				vk_spriteLayoutCreateInfo.maxAnisotropy = rSettings.fMaxAnisotropy;
 		} else
 			vk_spriteLayoutCreateInfo.anisotropyEnable = VK_FALSE;
 		return vkCreateSampler(vk_hDevice, &vk_spriteLayoutCreateInfo, nullptr, &vk_rhSamplerOut) == VK_SUCCESS;
@@ -228,7 +228,7 @@ namespace RE {
 
 	[[nodiscard]]
 	float get_maximum_allowed_anisotropy() {
-		return f32MaxSamplerAnisotropy;
+		return fMaxSamplerAnisotropy;
 	}
 
 	[[nodiscard]]

@@ -475,12 +475,7 @@ namespace RE {
 	template <class T> requires std::is_floating_point_v<T>
 	[[nodiscard]]
 	constexpr T round_away_from_zero(const T value) {
-		if constexpr (std::is_same_v<T, float>)
-			return value > 0.0f ? ceilf(value) : floorf(value);
-		else if constexpr (std::is_same_v<T, long double>)
-			return value > 0.0L ? ceill(value) : floorl(value);
-		else
-			return value > 0.0 ? ceil(value) : floor(value);
+		return value > 0 ? std::ceil<T>(value) : std::floor<T>(value);
 	}
 
 	template <class... T> requires AreIntegrals<T...>
@@ -1142,52 +1137,52 @@ namespace RE {
 
 	class Color final {
 		public:
-			static constexpr uint8_t u8ColorChannelCount = 4;
-			static constexpr float f32MinColor = 0.0f,
-				f32MaxColor = 1.0f;
+			static constexpr unsigned uColorChannelCount = 4;
+			static constexpr float fMinColor = 0.0f,
+				fMaxColor = 1.0f;
 
 			[[nodiscard]]
-			static constexpr float clamp(const float f32ChannelValue) {
-				return std::clamp(f32ChannelValue, f32MinColor, f32MaxColor);
+			static constexpr float clamp(const float fChannelValue) {
+				return std::clamp(fChannelValue, fMinColor, fMaxColor);
 			}
 
 		private:
-			float afChannels[u8ColorChannelCount];
+			float afChannels[uColorChannelCount];
 
 		public:
 			Color();
-			Color(float f32Red, float f32Green, float f32Blue, float f32Alpha);
+			Color(float fRed, float fGreen, float fBlue, float fAlpha);
 			Color(const Color &rCopy);
 			Color(const Color &&rrCopy) = delete;
 			~Color();
 
 			[[nodiscard]]
 			float get_channel(uint8_t u8ChannelIndex) const;
-			template <uint8_t u8ChannelIndex> requires (u8ChannelIndex < u8ColorChannelCount)
+			template <uint8_t u8ChannelIndex> requires (u8ChannelIndex < uColorChannelCount)
 			[[nodiscard]]
 			float get_channel() const {
 				return afChannels[u8ChannelIndex];
 			}
-			void set_channel(uint8_t u8ChannelIndex, float f32Normal);
-			template <uint8_t u8ChannelIndex> requires (u8ChannelIndex < u8ColorChannelCount)
-			void set_channel(const float f32Normal) {
-				afChannels[u8ChannelIndex] = this->clamp(f32Normal);
+			void set_channel(uint8_t u8ChannelIndex, float fNormal);
+			template <uint8_t u8ChannelIndex> requires (u8ChannelIndex < uColorChannelCount)
+			void set_channel(const float fNormal) {
+				afChannels[u8ChannelIndex] = this->clamp(fNormal);
 			}
 
 			void copy_from(const Color &rCopy);
 			[[nodiscard]]
 			bool equals(const Color &rOther) const;
 
-			void set_red(float f32Red);
+			void set_red(float fRed);
 			[[nodiscard]]
 			float get_red() const;
-			void set_green(float f32Green);
+			void set_green(float fGreen);
 			[[nodiscard]]
 			float get_green() const;
-			void set_blue(float f32Blue);
+			void set_blue(float fBlue);
 			[[nodiscard]]
 			float get_blue() const;
-			void set_alpha(float f32Alpha);
+			void set_alpha(float fAlpha);
 			[[nodiscard]]
 			float get_alpha() const;
 
@@ -1338,7 +1333,7 @@ namespace RE {
 			TextureFilter eMipmapFilter;
 			TextureRepetition eTextureRepetitionU;
 			TextureRepetition eTextureRepetitionV;
-			float f32MaxAnisotropy; // must be equal or greater than 1, otherwise anisotropic filtering is disabled
+			float fMaxAnisotropy; // must be equal or greater than 1, otherwise anisotropic filtering is disabled
 			BorderColor eBorderColor;
 
 			SpriteLayoutSettings();
@@ -1347,9 +1342,9 @@ namespace RE {
 			SpriteLayoutSettings(TextureFilter eMagFilter, TextureFilter eMinFilter, TextureFilter eMipmapFilter);
 			SpriteLayoutSettings(TextureRepetition eTextureRepetitionU);
 			SpriteLayoutSettings(TextureRepetition eTextureRepetitionU, TextureRepetition eTextureRepetitionV);
-			explicit SpriteLayoutSettings(float f32MaxAnisotropy);
+			explicit SpriteLayoutSettings(float fMaxAnisotropy);
 			explicit SpriteLayoutSettings(BorderColor eBorderColor);
-			SpriteLayoutSettings(TextureFilter eMagFilter, TextureFilter eMinFilter, TextureFilter eMipmapFilter, TextureRepetition eTextureRepetitionU, TextureRepetition eTextureRepetitionV, float f32MaxAnisotropy, BorderColor eBorderColor);
+			SpriteLayoutSettings(TextureFilter eMagFilter, TextureFilter eMinFilter, TextureFilter eMipmapFilter, TextureRepetition eTextureRepetitionU, TextureRepetition eTextureRepetitionV, float fMaxAnisotropy, BorderColor eBorderColor);
 			SpriteLayoutSettings(const SpriteLayoutSettings &rCopy);
 			SpriteLayoutSettings(const SpriteLayoutSettings &&rrCopy) = delete;
 			~SpriteLayoutSettings();

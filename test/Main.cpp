@@ -46,7 +46,8 @@ Playy *pPlayy = nullptr;
 class Playy : public GameObject {
 	public:
 		RandomNumberGenerator rng;
-		uint64_t hits, misses;
+		uint64_t hits,
+			misses;
 
 		Playy() : GameObject(1, 1), hits(0), misses(0) {
 			pPlayy = this;
@@ -127,7 +128,7 @@ class PlayerCamera : public Camera {
 
 	public:
 		PlayerCamera() {
-			transform.position[2] = -10.0f;
+			//transform.position[2] = -10.0f;
 			view[0] = 1.33f;
 			view[1] = view[0];
 		}

@@ -30,7 +30,7 @@ namespace RE {
 		PRINT_DEBUG("Calculating size of renderable images");
 		for (unsigned uDimensionIndex = 0; uDimensionIndex < renderImageSize.dimensions(); uDimensionIndex++)
 			renderImageSize[uDimensionIndex] = std::clamp<uint32_t>(
-					static_cast<uint32_t>(std::round(windowSize[uDimensionIndex] * (uScreenPercentage / static_cast<float>(SCREEN_PERCENTAGE_100_PERCENT)) * fGameScreenPercentage)),
+					static_cast<uint32_t>(std::round(windowSize[uDimensionIndex] * (iScreenPercentage / static_cast<float>(SCREEN_PERCENTAGE_100)) * fGameScreenPercentage)),
 					1U,
 					windowSize[uDimensionIndex]);
 		const bool bSinglesampledImageRequired = IS_SINGLESAMPLED_IMAGE_REQUIRED();

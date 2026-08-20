@@ -67,37 +67,37 @@ namespace RE {
 		}
 	}
 
-	static VkFilter get_vulkan_filter(const TextureFilter eFilter) {
+	static VkFilter get_vulkan_filter(const Filter eFilter) {
 		switch (eFilter) {
-			case RE_TEXTURE_FILTER_NEAREST:
+			case RE_FILTER_NEAREST:
 				return VK_FILTER_NEAREST;
-			case RE_TEXTURE_FILTER_LINEAR:
+			case RE_FILTER_LINEAR:
 				return VK_FILTER_LINEAR;
 			default:
 				RE_ABORT("Unknown texture filter ", std::hex, eFilter);
 		}
 	}
 
-	static VkSamplerMipmapMode get_vulkan_mipmap_mode(const TextureFilter eFilter) {
+	static VkSamplerMipmapMode get_vulkan_mipmap_mode(const Filter eFilter) {
 		switch (eFilter) {
-			case RE_TEXTURE_FILTER_NEAREST:
+			case RE_FILTER_NEAREST:
 				return VK_SAMPLER_MIPMAP_MODE_NEAREST;
-			case RE_TEXTURE_FILTER_LINEAR:
+			case RE_FILTER_LINEAR:
 				return VK_SAMPLER_MIPMAP_MODE_LINEAR;
 			default:
 				RE_ABORT("Unknown texture filter ", std::hex, eFilter, " for mipmaps");
 		}
 	}
 
-	static VkSamplerAddressMode get_vulkan_sampler_address_mode(const TextureRepetition eRepitition) {
+	static VkSamplerAddressMode get_vulkan_sampler_address_mode(const Repetition eRepitition) {
 		switch (eRepitition) {
-			case RE_TEXTURE_REPETITION_REPEAT:
+			case RE_REPETITION_REPEAT:
 				return VK_SAMPLER_ADDRESS_MODE_REPEAT;
-			case RE_TEXTURE_REPETITION_MIRRORED_REPEAT:
+			case RE_REPETITION_MIRRORED_REPEAT:
 				return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
-			case RE_TEXTURE_REPETITION_CLAMP_TO_EDGE:
+			case RE_REPETITION_CLAMP_TO_EDGE:
 				return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-			case RE_TEXTURE_REPETITION_CLAMP_TO_BORDER:
+			case RE_REPETITION_CLAMP_TO_BORDER:
 				return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
 			default:
 				RE_ABORT("Unknown texture repetition ", std::hex, eRepitition);
@@ -126,8 +126,8 @@ namespace RE {
 			.magFilter = get_vulkan_filter(rSettings.eMagFilter),
 			.minFilter = get_vulkan_filter(rSettings.eMinFilter),
 			.mipmapMode = get_vulkan_mipmap_mode(rSettings.eMipmapFilter),
-			.addressModeU = get_vulkan_sampler_address_mode(rSettings.eTextureRepetitionU),
-			.addressModeV = get_vulkan_sampler_address_mode(rSettings.eTextureRepetitionV),
+			.addressModeU = get_vulkan_sampler_address_mode(rSettings.eRepetitionU),
+			.addressModeV = get_vulkan_sampler_address_mode(rSettings.eRepetitionV),
 			.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
 			.mipLodBias = 0.0f,
 			.compareEnable = VK_FALSE,

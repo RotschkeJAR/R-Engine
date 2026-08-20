@@ -54,7 +54,7 @@ namespace RE {
 					.pPushConstantRanges = nullptr
 				};
 				if (vkCreatePipelineLayout(vk_hDevice, &vk_processingPipelineLayoutCreateInfo, nullptr, &vk_hProcessingPipelineLayout) == VK_SUCCESS) {
-					PRINT_DEBUG("Creating empty Vulkan piepline layout");
+					PRINT_DEBUG("Creating Vulkan piepline layout dedicated for rendering text");
 					const VkDescriptorSetLayout vk_ahDescSetLayouts[] = {
 						vk_hCharacterDescSetLayout,
 						vk_hTextDescSetLayout
@@ -71,7 +71,7 @@ namespace RE {
 					if (vkCreatePipelineLayout(vk_hDevice, &vk_emptyPipelineLayoutCreateInfo, nullptr, &vk_hTextPipelineLayout) == VK_SUCCESS) {
 						return true;
 					} else
-						RE_FATAL_ERROR("");
+						RE_FATAL_ERROR("Failed to create Vulkan pipeline layout for dedicated for rendering text");
 					PRINT_DEBUG("Destroying Vulkan pipeline layout dedicated for compute pipeline sorting by depth for failing to create all");
 					vkDestroyPipelineLayout(vk_hDevice, vk_hProcessingPipelineLayout, nullptr);
 				} else

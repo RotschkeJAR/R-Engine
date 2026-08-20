@@ -1,8 +1,8 @@
 #ifndef __RE_RENDERER_PIPELINES_H__
 #define __RE_RENDERER_PIPELINES_H__ 1
 
-#define GRAPHICS_PIPELINE_COUNT       4
-#define COMPUTE_PIPELINE_COUNT           2
+#define GRAPHICS_PIPELINE_COUNT    4
+#define COMPUTE_PIPELINE_COUNT     2
 
 #include "RE_Renderer_Internal.hpp"
 

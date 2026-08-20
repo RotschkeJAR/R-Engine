@@ -69,6 +69,9 @@ namespace RE {
 				}
 			}
 		};
+		uint32_t u32AttachmentCount = static_cast<uint32_t>(sizeof(vk_aImageAttachmentBarriers) / sizeof(vk_aImageAttachmentBarriers[0]) - 1);
+		if (!RENDER_IMAGE_SIZE_EQUALS_SWAPCHAIN() && IS_MSAA_ENABLED())
+			u32AttachmentCount ++;
 		const VkDependencyInfo vk_dependencyInfo = {
 			.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 			.pNext = nullptr,
@@ -77,8 +80,7 @@ namespace RE {
 			.pMemoryBarriers = nullptr,
 			.bufferMemoryBarrierCount = 0,
 			.pBufferMemoryBarriers = nullptr,
-			.imageMemoryBarrierCount = static_cast<uint32_t>(
-					sizeof(vk_aImageAttachmentBarriers) / sizeof(vk_aImageAttachmentBarriers[0]) - bool_to_int(!RENDER_IMAGE_SIZE_EQUALS_SWAPCHAIN() &&IS_MSAA_ENABLED())),
+			.imageMemoryBarrierCount = u32AttachmentCount,
 			.pImageMemoryBarriers = vk_aImageAttachmentBarriers
 		};
 		vkCmdPipelineBarrier2(vk_hCommandBuffer, &vk_dependencyInfo);
@@ -203,12 +205,12 @@ namespace RE {
 			.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-			.image = swapchainImages[u32CurrentSwapchainImageIndex],
+			.image = std_swapchainImages[u32CurrentSwapchainImageIndex],
 			.subresourceRange = {
 				.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 				.baseMipLevel = 0,
 				.levelCount = 1,
-				.baseArrayLayer = uCurrentFrameInFlightIndex,
+				.baseArrayLayer = 0,
 				.layerCount = 1
 			}
 		};
@@ -227,7 +229,7 @@ namespace RE {
 		const VkRenderingAttachmentInfo vk_renderingAttachment = {
 			.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
 			.pNext = nullptr,
-			.imageView = swapchainImageViews[u32CurrentSwapchainImageIndex],
+			.imageView = std_swapchainImageViews[u32CurrentSwapchainImageIndex],
 			.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 			.resolveMode = VK_RESOLVE_MODE_NONE,
 			.resolveImageView = VK_NULL_HANDLE,
@@ -280,7 +282,7 @@ namespace RE {
 			.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-			.image = swapchainImages[u32CurrentSwapchainImageIndex],
+			.image = std_swapchainImages[u32CurrentSwapchainImageIndex],
 			.subresourceRange = {
 				.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 				.baseMipLevel = 0,

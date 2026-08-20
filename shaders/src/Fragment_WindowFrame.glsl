@@ -11,8 +11,8 @@ layout (constant_id = 7) const int CHAR_GAP = 2;
 layout (constant_id = 8) const int CHAR_SCALE = 1;
 layout (constant_id = 9) const int WINDOW_AREA_BUTTON_CLOSE_INDEX = 10;
 layout (constant_id = 10) const int MAX_CHARS_TITLE = 256;
-layout (constant_id = 11) const uint DONT_RENDER_BUTTON = 0xFFFFFFFFu;
-layout (constant_id = 12) const uint DONT_RENDER_CHARACTER = 0xFFFFFFFFu;
+layout (constant_id = 11) const uint DONT_RENDER_BUTTON = ~0U;
+layout (constant_id = 12) const uint DONT_RENDER_CHARACTER = ~0U;
 
 layout (push_constant, std430) uniform PushConstants {
 	uvec2 windowSize;

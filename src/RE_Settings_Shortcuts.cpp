@@ -3,7 +3,7 @@
 
 namespace RE {
 
-#define SCREEN_PERCENTAGE_STEP (SCREEN_PERCENTAGE_100_PERCENT / 20U)
+#define SCREEN_PERCENTAGE_STEP (SCREEN_PERCENTAGE_1 * 5)
 	
 	void shortcut_settings_f1(bool bFuncKeyPressed) {
 		// Toggle audio mute
@@ -43,20 +43,29 @@ namespace RE {
 
 	void shortcut_settings_f7(bool bFuncKeyPressed) {
 		// Decrease screen percentage
-		if (!bFuncKeyPressed || (mSettingsFlags & SETTINGS_FLAG_MENU_OPEN_BIT))
+		if (!bFuncKeyPressed || (mSettingsFlags & SETTINGS_FLAG_MENU_OPEN_BIT) || iScreenPercentage <= SCREEN_PERCENTAGE_LOWEST)
 			return;
+		iScreenPercentage = std::clamp(
+				iScreenPercentage - SCREEN_PERCENTAGE_STEP,
+				SCREEN_PERCENTAGE_LOWEST,
+				SCREEN_PERCENTAGE_HIGHEST);
 	}
 
 	void shortcut_settings_f8(bool bFuncKeyPressed) {
 		// Increase screen percentage
-		if (!bFuncKeyPressed || (mSettingsFlags & SETTINGS_FLAG_MENU_OPEN_BIT))
+		if (!bFuncKeyPressed || (mSettingsFlags & SETTINGS_FLAG_MENU_OPEN_BIT) || iScreenPercentage >= SCREEN_PERCENTAGE_HIGHEST)
 			return;
+		iScreenPercentage = std::clamp(
+				iScreenPercentage + SCREEN_PERCENTAGE_STEP,
+				SCREEN_PERCENTAGE_LOWEST,
+				SCREEN_PERCENTAGE_HIGHEST);
 	}
 
 	void shortcut_settings_f9(bool bFuncKeyPressed) {
 		// Set all settings to normal
 		if (!bFuncKeyPressed || (mSettingsFlags & SETTINGS_FLAG_MENU_OPEN_BIT))
 			return;
+		iScreenPercentage = SCREEN_PERCENTAGE_100;
 	}
 
 	void shortcut_settings_f10(bool bFuncKeyPressed) {

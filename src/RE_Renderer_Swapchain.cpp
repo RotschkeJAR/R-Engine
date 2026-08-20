@@ -8,8 +8,8 @@ namespace RE {
 	VkSwapchainKHR vk_hSwapchain = VK_NULL_HANDLE;
 	VkFormat vk_eSwapchainImageFormat;
 	VkExtent2D vk_swapchainResolution;
-	std::unique_ptr<VkImage[]> swapchainImages;
-	std::unique_ptr<VkImageView[]> swapchainImageViews;
+	std::unique_ptr<VkImage[]> std_swapchainImages;
+	std::unique_ptr<VkImageView[]> std_swapchainImageViews;
 	uint32_t u32SwapchainImageCount;
 	bool bSwapchainDirty = false;
 	
@@ -20,10 +20,10 @@ namespace RE {
 			swapchain_destroyed_renderer();
 			for (uint32_t u32ImageViewDestroyIndex = 0; u32ImageViewDestroyIndex < u32SwapchainImageCount; u32ImageViewDestroyIndex++) {
 				PRINT_DEBUG("Destroying Vulkan image view for swapchain image at index ", u32ImageViewDestroyIndex);
-				vkDestroyImageView(vk_hDevice, swapchainImageViews[u32ImageViewDestroyIndex], nullptr);
+				vkDestroyImageView(vk_hDevice, std_swapchainImageViews[u32ImageViewDestroyIndex], nullptr);
 			}
-			swapchainImages.reset();
-			swapchainImageViews.reset();
+			std_swapchainImages.reset();
+			std_swapchainImageViews.reset();
 		}
 		PRINT_DEBUG("Computing information for Vulkan swapchain creation");
 		if (vk_surfaceCapabilities.currentExtent.width < std::numeric_limits<uint32_t>::max()
@@ -70,15 +70,15 @@ namespace RE {
 			}
 			PRINT_DEBUG("Getting handles to swapchain images");
 			vkGetSwapchainImagesKHR(vk_hDevice, vk_hSwapchain, &u32SwapchainImageCount, nullptr);
-			swapchainImages = std::make_unique<VkImage[]>(u32SwapchainImageCount);
-			vkGetSwapchainImagesKHR(vk_hDevice, vk_hSwapchain, &u32SwapchainImageCount, swapchainImages.get());
-			swapchainImageViews = std::make_unique<VkImageView[]>(u32SwapchainImageCount);
+			std_swapchainImages = std::make_unique<VkImage[]>(u32SwapchainImageCount);
+			vkGetSwapchainImagesKHR(vk_hDevice, vk_hSwapchain, &u32SwapchainImageCount, std_swapchainImages.get());
+			std_swapchainImageViews = std::make_unique<VkImageView[]>(u32SwapchainImageCount);
 			uint32_t u32SwapchainImageCreateIndex = 0;
 			while (u32SwapchainImageCreateIndex < u32SwapchainImageCount) {
 				PRINT_DEBUG("Creating Vulkan image view for swapchain image at index ", u32SwapchainImageCreateIndex);
 				if (create_vulkan_image_view(
 						0, 
-						swapchainImages[u32SwapchainImageCreateIndex], 
+						std_swapchainImages[u32SwapchainImageCreateIndex], 
 						VK_IMAGE_VIEW_TYPE_2D, 
 						vk_eSwapchainImageFormat, 
 						VkComponentMapping {
@@ -94,7 +94,7 @@ namespace RE {
 							.baseArrayLayer = 0,
 							.layerCount = 1
 						}, 
-						&swapchainImageViews[u32SwapchainImageCreateIndex])) {
+						&std_swapchainImageViews[u32SwapchainImageCreateIndex])) {
 					u32SwapchainImageCreateIndex++;
 					continue;
 				} else
@@ -108,10 +108,10 @@ namespace RE {
 			}
 			for (uint32_t u32SwapchainImageDeleteIndex = 0; u32SwapchainImageDeleteIndex < u32SwapchainImageCreateIndex; u32SwapchainImageDeleteIndex++) {
 				PRINT_DEBUG("Destroying Vulkan immage view for swapchain image at index ", u32SwapchainImageDeleteIndex, " for previous failure");
-				vkDestroyImageView(vk_hDevice, swapchainImageViews[u32SwapchainImageDeleteIndex], nullptr);
+				vkDestroyImageView(vk_hDevice, std_swapchainImageViews[u32SwapchainImageDeleteIndex], nullptr);
 			}
-			swapchainImages.reset();
-			swapchainImageViews.reset();
+			std_swapchainImages.reset();
+			std_swapchainImageViews.reset();
 			PRINT_DEBUG("Destroying recently created swapchain");
 			vkDestroySwapchainKHR(vk_hDevice, vk_hSwapchain, nullptr);
 		} else
@@ -123,10 +123,10 @@ namespace RE {
 	void destroy_swapchain() {
 		for (uint32_t u32ImageViewDestroyIndex = 0; u32ImageViewDestroyIndex < u32SwapchainImageCount; u32ImageViewDestroyIndex++) {
 			PRINT_DEBUG("Destroying Vulkan image view for swapchain image at index ", u32ImageViewDestroyIndex);
-			vkDestroyImageView(vk_hDevice, swapchainImageViews[u32ImageViewDestroyIndex], nullptr);
+			vkDestroyImageView(vk_hDevice, std_swapchainImageViews[u32ImageViewDestroyIndex], nullptr);
 		}
-		swapchainImages.reset();
-		swapchainImageViews.reset();
+		std_swapchainImages.reset();
+		std_swapchainImageViews.reset();
 		PRINT_DEBUG("Destroying swapchain");
 		vkDestroySwapchainKHR(vk_hDevice, vk_hSwapchain, nullptr);
 		vk_hSwapchain = VK_NULL_HANDLE;

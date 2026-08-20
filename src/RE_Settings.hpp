@@ -5,26 +5,29 @@
 
 namespace RE {
 
-	typedef uint SettingsFlags_t;
+	typedef unsigned SettingsFlags_t;
 	enum SettingsFlag : SettingsFlags_t {
 		SETTINGS_FLAG_MENU_OPEN_BIT = 0x1,
 		SETTINGS_FLAG_FULLSCREEN_BIT = 0x2,
 		SETTINGS_FLAG_VSYNC_ENABLED_BIT = 0x4
 	};
 
-#define SCREEN_PERCENTAGE_100_PERCENT 10000U
+#define SCREEN_PERCENTAGE_1       100
+#define SCREEN_PERCENTAGE_100     (SCREEN_PERCENTAGE_1 * 100)
+#define SCREEN_PERCENTAGE_LOWEST  1
+#define SCREEN_PERCENTAGE_HIGHEST SCREEN_PERCENTAGE_100
 	
 	extern SettingsFlags_t mSettingsFlags;
 	extern VkSampleCountFlagBits vk_eMsaaMode;
 	extern VkFilter vk_eScreenFilter;
-	extern unsigned uScreenPercentage;
+	extern int iScreenPercentage;
 	extern float fMaxDeltatime,
 		fMinDeltatime,
 		fSampleShadingRate;
 
 #define IS_MSAA_ENABLED()                     (vk_eMsaaMode != VK_SAMPLE_COUNT_1_BIT)
 #define IS_SAMPLE_SHADING_ENABLED()           (fSampleShadingRate > 0.0f)
-#define RENDER_IMAGE_SIZE_EQUALS_SWAPCHAIN()  (uScreenPercentage == SCREEN_PERCENTAGE_100_PERCENT)
+#define RENDER_IMAGE_SIZE_EQUALS_SWAPCHAIN()  (iScreenPercentage == SCREEN_PERCENTAGE_100)
 #define IS_SINGLESAMPLED_IMAGE_REQUIRED()     (IS_MSAA_ENABLED() && !RENDER_IMAGE_SIZE_EQUALS_SWAPCHAIN())
 
 	bool load_settings();
@@ -46,6 +49,8 @@ namespace RE {
 	void shortcut_settings_f10(bool bFuncKeyPressed);
 	void shortcut_settings_f11(bool bFuncKeyPressed);
 	void shortcut_settings_f12(bool bFuncKeyPressed);
+
+#define bUseDynamicRenderPass true
 
 }
 

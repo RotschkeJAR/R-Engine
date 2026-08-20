@@ -6,7 +6,7 @@ namespace RE {
 	SettingsFlags_t mSettingsFlags = SETTINGS_FLAG_FULLSCREEN_BIT;
 	VkSampleCountFlagBits vk_eMsaaMode = VK_SAMPLE_COUNT_1_BIT;
 	VkFilter vk_eScreenFilter = VK_FILTER_NEAREST;
-	unsigned uScreenPercentage = SCREEN_PERCENTAGE_100_PERCENT;
+	int iScreenPercentage = SCREEN_PERCENTAGE_100;
 	float fMaxDeltatime = 1.0f / 15,
 		fMinDeltatime = 1.0f / 60,
 		fSampleShadingRate = 1.0f;

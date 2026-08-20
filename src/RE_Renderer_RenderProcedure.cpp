@@ -139,7 +139,7 @@ namespace RE {
 											vk_hCommandBuffer,
 											IS_MSAA_ENABLED() ? vk_hSinglesampledImage : vk_hRenderTargetImage,
 											VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-											swapchainImages[u32CurrentSwapchainImageIndex],
+											std_swapchainImages[u32CurrentSwapchainImageIndex],
 											VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 											1,
 											&vk_blitInfo,
@@ -181,7 +181,7 @@ namespace RE {
 											vk_hCommandBuffer,
 											vk_hRenderTargetImage,
 											VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-											swapchainImages[u32CurrentSwapchainImageIndex],
+											std_swapchainImages[u32CurrentSwapchainImageIndex],
 											VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 											1,
 											&vk_resolveInfo);
@@ -222,7 +222,7 @@ namespace RE {
 											vk_hCommandBuffer,
 											vk_hRenderTargetImage,
 											VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-											swapchainImages[u32CurrentSwapchainImageIndex],
+											std_swapchainImages[u32CurrentSwapchainImageIndex],
 											VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 											1,
 											&vk_copyInfo);
@@ -236,7 +236,7 @@ namespace RE {
 									.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
 									.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 									.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-									.image = swapchainImages[u32CurrentSwapchainImageIndex],
+									.image = std_swapchainImages[u32CurrentSwapchainImageIndex],
 									.subresourceRange = {
 										.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 										.baseMipLevel = 0,
@@ -330,7 +330,7 @@ namespace RE {
 							.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
 							.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 							.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-							.image = swapchainImages[u32CurrentSwapchainImageIndex],
+							.image = std_swapchainImages[u32CurrentSwapchainImageIndex],
 							.subresourceRange = {
 								.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 								.baseMipLevel = 0,

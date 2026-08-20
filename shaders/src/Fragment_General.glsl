@@ -2,7 +2,7 @@
 
 #extension GL_EXT_nonuniform_qualifier : require
 
-layout (constant_id = 0) const uint DONT_USE_TEXTURE = 0xFFFFFFFF;
+layout (constant_id = 0) const uint DONT_USE_TEXTURE = ~0U;
 
 layout (location = 0) in vec4 O_color;
 layout (location = 1) in vec2 O_textureCoords;

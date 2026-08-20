@@ -2,15 +2,18 @@
 
 # For Windows GNU compilers are pulled from git repository:
 #	https://github.com/mstorsjo/llvm-mingw/releases
+# The architecture UCRT x86_64 is used.
 
 # Possible values:
 #	release
 #	debug
+# Prints additional data into the console
 BUILD    ?= release
 
 # Possible values:
 #	enabled
 #	disabled
+# Print output into the console (Windows only)
 CONSOLE  ?= disabled
 
 # Possible values:
@@ -111,18 +114,10 @@ else
 	endif
 endif
 
-.PHONY: release \
-	debug \
-	all \
+.PHONY: all \
 	clear \
-	update_git \
-	fetch_git
-
-release:
-	@$(MAKE) all BUILD=release --no-print-directory
-
-debug:
-	@$(MAKE) all BUILD=debug --no-print-directory
+	release \
+	debug
 
 all: $(OUT) $(SHADER_BINARIES)
 
@@ -287,3 +282,9 @@ $(TEST_BIN): $(BIN)
 	-@mkdir -p $@
 
 endif
+
+release:
+	@$(MAKE) all BUILD=release --no-print-directory
+
+debug:
+	@$(MAKE) all BUILD=debug CONSOLE=enabled --no-print-directory

@@ -221,34 +221,28 @@ namespace RE {
 		RE_INPUT_MAX_ENUM = RE_INPUT_KEY_LAST + 1
 	};
 
-	enum TextureFilter {
+	enum Filter {
 		/**
 		 * sharp image / each individual pixel of the texture is clearly visible
 		 */
-		RE_TEXTURE_FILTER_NEAREST = 0,
+		RE_FILTER_NEAREST = 0,
 		/**
 		 * blurry image / smooth transition between pixels
 		 */
-		RE_TEXTURE_FILTER_LINEAR = 1
+		RE_FILTER_LINEAR = 1
 	};
 
-	enum TextureRepetition {
-		RE_TEXTURE_REPETITION_REPEAT = 0,
-		RE_TEXTURE_REPETITION_MIRRORED_REPEAT = 1,
-		RE_TEXTURE_REPETITION_CLAMP_TO_EDGE = 2,
-		RE_TEXTURE_REPETITION_CLAMP_TO_BORDER = 3
+	enum Repetition {
+		RE_REPETITION_REPEAT = 0,
+		RE_REPETITION_MIRRORED_REPEAT = 1,
+		RE_REPETITION_CLAMP_TO_EDGE = 2,
+		RE_REPETITION_CLAMP_TO_BORDER = 3
 	};
 
 	enum BorderColor {
 		RE_BORDER_COLOR_TRANSPARENT = 0,
 		RE_BORDER_COLOR_BLACK = 1,
 		RE_BORDER_COLOR_WHITE = 2
-	};
-
-	enum ScreenPercentageMode {
-		RE_SCREEN_PERCENTAGE_MODE_NORMAL,
-		RE_SCREEN_PERCENTAGE_MODE_SCALED,
-		RE_SCREEN_PERCENTAGE_MODE_CONST_SIZE
 	};
 
 	enum DepthPrecission {
@@ -1333,23 +1327,23 @@ namespace RE {
 
 	class SpriteLayoutSettings final {
 		public:
-			TextureFilter eMagFilter;
-			TextureFilter eMinFilter;
-			TextureFilter eMipmapFilter;
-			TextureRepetition eTextureRepetitionU;
-			TextureRepetition eTextureRepetitionV;
+			Filter eMagFilter;
+			Filter eMinFilter;
+			Filter eMipmapFilter;
+			Repetition eRepetitionU;
+			Repetition eRepetitionV;
 			float fMaxAnisotropy; // must be equal or greater than 1, otherwise anisotropic filtering is disabled
 			BorderColor eBorderColor;
 
 			SpriteLayoutSettings();
-			explicit SpriteLayoutSettings(TextureFilter eMagFilter);
-			SpriteLayoutSettings(TextureFilter eMagFilter, TextureFilter eMinFilter);
-			SpriteLayoutSettings(TextureFilter eMagFilter, TextureFilter eMinFilter, TextureFilter eMipmapFilter);
-			SpriteLayoutSettings(TextureRepetition eTextureRepetitionU);
-			SpriteLayoutSettings(TextureRepetition eTextureRepetitionU, TextureRepetition eTextureRepetitionV);
+			explicit SpriteLayoutSettings(Filter eMagFilter);
+			SpriteLayoutSettings(Filter eMagFilter, Filter eMinFilter);
+			SpriteLayoutSettings(Filter eMagFilter, Filter eMinFilter, Filter eMipmapFilter);
+			SpriteLayoutSettings(Repetition eRepetitionU);
+			SpriteLayoutSettings(Repetition eRepetitionU, Repetition eRepetitionV);
 			explicit SpriteLayoutSettings(float fMaxAnisotropy);
 			explicit SpriteLayoutSettings(BorderColor eBorderColor);
-			SpriteLayoutSettings(TextureFilter eMagFilter, TextureFilter eMinFilter, TextureFilter eMipmapFilter, TextureRepetition eTextureRepetitionU, TextureRepetition eTextureRepetitionV, float fMaxAnisotropy, BorderColor eBorderColor);
+			SpriteLayoutSettings(Filter eMagFilter, Filter eMinFilter, Filter eMipmapFilter, Repetition eRepetitionU, Repetition eRepetitionV, float fMaxAnisotropy, BorderColor eBorderColor);
 			SpriteLayoutSettings(const SpriteLayoutSettings &rCopy);
 			SpriteLayoutSettings(const SpriteLayoutSettings &&rrCopy) = delete;
 			~SpriteLayoutSettings();

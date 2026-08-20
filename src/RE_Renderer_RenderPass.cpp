@@ -1,4 +1,5 @@
 #include "RE_Renderer_RenderPass_Internal.hpp"
+#include "RE_Settings.hpp"
 
 namespace RE {
 
@@ -6,14 +7,13 @@ namespace RE {
 		vk_hSwapchainRenderPass = VK_NULL_HANDLE;
 	uint32_t u32SubpassScenery = 0,
 		u32SwapchainSubpassWindowFrame = 0;
-#define bUseDynamic false
 
 	bool create_render_pass() {
-		return bUseDynamic ? create_render_pass_dynamic() : create_render_pass_static();
+		return bUseDynamicRenderPass ? create_render_pass_dynamic() : create_render_pass_static();
 	}
 
 	void destroy_render_pass() {
-		if (bUseDynamic)
+		if (bUseDynamicRenderPass)
 			destroy_render_pass_dynamic();
 		else
 			destroy_render_pass_static();
@@ -25,7 +25,7 @@ namespace RE {
 			VkRenderPassBeginInfo &vk_rRenderPassBeginInfo,
 			VkSubpassBeginInfo &vk_rSubpassBeginInfo,
 			VkSubpassEndInfo &vk_rSubpassEndInfo) {
-		if (bUseDynamic)
+		if (bUseDynamicRenderPass)
 			begin_render_pass_dynamic(vk_hCommandBuffer);
 		else
 			begin_render_pass_static(
@@ -40,7 +40,7 @@ namespace RE {
 			VkCommandBuffer vk_hCommandBuffer,
 			VkSubpassBeginInfo &vk_rSubpassBeginInfo,
 			VkSubpassEndInfo &vk_rSubpassEndInfo) {
-		if (bUseDynamic)
+		if (bUseDynamicRenderPass)
 			next_render_subpass_dynamic(vk_hCommandBuffer);
 		else
 			next_render_subpass_static(vk_hCommandBuffer, vk_rSubpassBeginInfo, vk_rSubpassEndInfo);
@@ -49,7 +49,7 @@ namespace RE {
 	void end_render_pass(
 			VkCommandBuffer vk_hCommandBuffer,
 			VkSubpassEndInfo &vk_rSubpassEndInfo) {
-		if (bUseDynamic)
+		if (bUseDynamicRenderPass)
 			end_render_pass_dynamic(vk_hCommandBuffer);
 		else
 			end_render_pass_static(vk_hCommandBuffer, vk_rSubpassEndInfo);
@@ -60,7 +60,7 @@ namespace RE {
 			VkClearValue (&vk_raClears)[RENDER_PASS_ATTACHMENT_COUNT],
 			VkRenderPassBeginInfo &vk_rRenderPassBeginInfo,
 			VkSubpassBeginInfo &vk_rSubpassBeginInfo) {
-		if (bUseDynamic)
+		if (bUseDynamicRenderPass)
 			begin_swapchain_render_pass_dynamic(vk_hCommandBuffer);
 		else
 			begin_swapchain_render_pass_static(vk_hCommandBuffer, vk_raClears, vk_rRenderPassBeginInfo, vk_rSubpassBeginInfo);
@@ -70,7 +70,7 @@ namespace RE {
 			VkCommandBuffer vk_hCommandBuffer,
 			VkSubpassBeginInfo &vk_rSubpassBeginInfo,
 			VkSubpassEndInfo &vk_rSubpassEndInfo) {
-		if (bUseDynamic)
+		if (bUseDynamicRenderPass)
 			next_swapchain_render_pass_dynamic(vk_hCommandBuffer);
 		else
 			next_swapchain_render_pass_static(vk_hCommandBuffer, vk_rSubpassBeginInfo, vk_rSubpassEndInfo);
@@ -79,7 +79,7 @@ namespace RE {
 	void end_swapchain_render_pass(
 			VkCommandBuffer vk_hCommandBuffer,
 			VkSubpassEndInfo &vk_rSubpassEndInfo) {
-		if (bUseDynamic)
+		if (bUseDynamicRenderPass)
 			end_swapchain_render_pass_dynamic(vk_hCommandBuffer);
 		else
 			end_swapchain_render_pass_static(vk_hCommandBuffer, vk_rSubpassEndInfo);
@@ -88,7 +88,7 @@ namespace RE {
 	void setup_graphics_pipelines_render_pass(
 			VkGraphicsPipelineCreateInfo (&vk_arGraphicsPipelineCreateInfos)[GRAPHICS_PIPELINE_COUNT],
 			VkPipelineRenderingCreateInfo &vk_rDynamicRenderPassInfo) {
-		if (bUseDynamic)
+		if (bUseDynamicRenderPass)
 			setup_graphics_pipelines_render_pass_dynamic(vk_arGraphicsPipelineCreateInfos, vk_rDynamicRenderPassInfo);
 		else
 			setup_graphics_pipelines_render_pass_static(vk_arGraphicsPipelineCreateInfos);
@@ -97,7 +97,7 @@ namespace RE {
 	void setup_swapchain_pipelines_render_pass(
 			VkGraphicsPipelineCreateInfo &vk_rGraphicsPipelineCreateInfo,
 			VkPipelineRenderingCreateInfo &vk_rDynamicRenderPassInfo) {
-		if (bUseDynamic)
+		if (bUseDynamicRenderPass)
 			setup_swapchain_pipelines_render_pass_dynamic(vk_rGraphicsPipelineCreateInfo, vk_rDynamicRenderPassInfo);
 		else
 			setup_swapchain_pipelines_render_pass_static(vk_rGraphicsPipelineCreateInfo);

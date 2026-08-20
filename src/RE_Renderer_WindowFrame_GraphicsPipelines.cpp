@@ -46,8 +46,8 @@ namespace RE {
 					std::max(WINDOW_BAR_SIZE / CHAR_TEXTURE_SIZE - 1, 1),
 					WINDOW_AREA_BUTTON_CLOSE,
 					MAX_CHARS_IN_WINDOW_TITLE,
-					-1, /* DONT_RENDER_BUTTON */
-					-1  /* DONT_RENDER_CHARACTER */
+					~0, /* DONT_RENDER_BUTTON */
+					~0  /* DONT_RENDER_CHARACTER */
 				};
 				constexpr VkSpecializationMapEntry vk_aSpecializationConstants[] = {
 					{

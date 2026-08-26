@@ -32,7 +32,8 @@ namespace RE {
 			VkShaderModule operator()() const;
 	};
 	
-	bool create_vulkan_buffer(VkBufferCreateFlags vk_eFlags,
+	bool create_vulkan_buffer(
+			VkBufferCreateFlags vk_eFlags,
 			VkDeviceSize vk_size,
 			VkBufferUsageFlags vk_eUsages,
 			uint32_t u32QueueFamilyCount,

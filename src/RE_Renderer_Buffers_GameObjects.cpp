@@ -2,6 +2,8 @@
 
 namespace RE {
 
+#define USAGE_FLAGS VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT
+
 	VkBuffer vk_ahGameObjectsBuffers[RE_VK_FRAMES_IN_FLIGHT];
 
 	bool create_game_objects_buffers() {
@@ -17,7 +19,11 @@ namespace RE {
 			PRINT_DEBUG("Creating game object buffer in Vulkan");
 			if (create_vulkan_buffer(0,
 					vk_bufferSize,
-					VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+				#ifndef NDEBUG
+					USAGE_FLAGS | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+				#else
+					USAGE_FLAGS,
+				#endif
 					queuesForObjectBuffer.u8QueueCount,
 					queuesForObjectBuffer.queueFamilyIndices.get(),
 					&vk_ahGameObjectsBuffers[u8FrameInFlightCreateIndex]))

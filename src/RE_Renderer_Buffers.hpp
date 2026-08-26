@@ -19,6 +19,12 @@ namespace RE {
 
 	extern VkBuffer vk_ahGameObjectsModelMatrixBuffers[RE_VK_FRAMES_IN_FLIGHT];
 
+#ifndef NDEBUG
+	extern VkBuffer vk_hDebugBuffer;
+	extern VulkanMemory *pDebugBufferMemory;
+	extern void *pDebugBufferContent;
+#endif
+
 	bool create_renderer_buffers();
 	void destroy_renderer_buffers();
 

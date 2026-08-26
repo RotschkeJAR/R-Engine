@@ -12,289 +12,360 @@ namespace RE {
 					return true;
 				calculate_camera_matrices();
 				if (aRenderTasks[uCurrentFrameInFlightIndex].record(
-						RENDER_TASK_SUBINDEX_RENDERING,
+						RENDER_TASK_SUBINDEX_BUFFER_TRANSFER,
 						VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
 						[&](VkCommandBuffer vk_hCommandBuffer, uint8_t u8PreviousLogicalQueue, uint8_t u8CurrentLogicalQueue, uint8_t u8NextLogicalQueue) {
-							GameObjectShaderData shaderData = {
-								.position = {0.0f, 0.0f, 0.0f},
-								.rotation = {0.0f, 0.0f, 0.0f},
-								.scale = {1.0f, 1.0f, 1.0f},
-								.color = {1.0f, 0.0f, 0.0f, 1.0f},
-								.textureId = DONT_USE_TEXTURE
+							memset(paStagingGameObjectsBufferData, 0, get_max_game_object_count() * sizeof(GameObjectShaderData));
+							paStagingGameObjectsBufferData[0].position[0] = 0.0f;
+							paStagingGameObjectsBufferData[0].position[1] = 0.0f;
+							paStagingGameObjectsBufferData[0].position[2] = 0.0f;
+							paStagingGameObjectsBufferData[0].rotation[0] = 0.0f;
+							paStagingGameObjectsBufferData[0].rotation[1] = 0.0f;
+							paStagingGameObjectsBufferData[0].rotation[2] = 0.0f;
+							paStagingGameObjectsBufferData[0].scale[0] = 1.0f;
+							paStagingGameObjectsBufferData[0].scale[1] = 1.0f;
+							paStagingGameObjectsBufferData[0].scale[2] = 1.0f;
+							paStagingGameObjectsBufferData[0].color[0] = 1.0f;
+							paStagingGameObjectsBufferData[0].color[1] = 0.0f;
+							paStagingGameObjectsBufferData[0].color[2] = 0.0f;
+							paStagingGameObjectsBufferData[0].color[3] = 1.0f;
+							paStagingGameObjectsBufferData[0].textureId = DONT_USE_TEXTURE;
+							const VkBufferCopy vk_bufferCopyInfo = {
+								.srcOffset = 0,
+								.dstOffset = 0,
+								.size = get_max_game_object_count() * sizeof(GameObjectShaderData)
 							};
-							vkCmdUpdateBuffer(vk_hCommandBuffer, vk_ahGameObjectsBuffers[uCurrentFrameInFlightIndex], 0, sizeof(shaderData), &shaderData);
-							GameObjectModelMatrixShaderData modelMatrix = {
-								.modelMatrix = {
-									1.0f, 0.0f, 0.0f, 0.0f,
-									0.0f, 1.0f, 0.0f, 0.0f,
-									0.0f, 0.0f, 1.0f, 0.0f,
-									0.0f, 0.0f, 0.0f, 1.0f
-								}
-							};
-							vkCmdUpdateBuffer(vk_hCommandBuffer, vk_ahGameObjectsModelMatrixBuffers[uCurrentFrameInFlightIndex], 0, sizeof(modelMatrix), &modelMatrix);
-							vkCmdFillBuffer(vk_hCommandBuffer, vk_ahSortableDepthBuffers[uCurrentFrameInFlightIndex], 0, VK_WHOLE_SIZE, 0U);
-							VkClearValue vk_aClears[RENDER_PASS_ATTACHMENT_COUNT];
-							VkRenderPassBeginInfo vk_renderPassBeginInfo;
-							VkSubpassBeginInfo vk_subpassBeginInfo;
-							VkSubpassEndInfo vk_subpassEndInfo;
-							begin_render_pass(
-									vk_hCommandBuffer,
-									vk_aClears,
-									vk_renderPassBeginInfo,
-									vk_subpassBeginInfo,
-									vk_subpassEndInfo);
-							vkCmdBindPipeline(vk_hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hGraphicsPipeline2D);
-							const VkDescriptorSet vk_ahDescSets[] = {
-								vk_ahGameObjectsDescSets[uCurrentFrameInFlightIndex],
-								cameraDescSets[0],
-								vk_hSpriteDescSet
-							};
-							vkCmdBindDescriptorSets(
-									vk_hCommandBuffer,
-									VK_PIPELINE_BIND_POINT_GRAPHICS,
-									vk_hGraphicsPipelineLayout,
-									0,
-									sizeof(vk_ahDescSets) / sizeof(vk_ahDescSets[0]),
-									vk_ahDescSets,
-									0,
-									nullptr);
-							const VkViewport vk_viewport = {
-								.x = 0.0f,
-								.y = 0.0f,
-								.width = static_cast<float>(renderImageSize[0]),
-								.height = static_cast<float>(renderImageSize[1]),
-								.minDepth = 0.0f,
-								.maxDepth = 1.0f
-							};
-							vkCmdSetViewport(vk_hCommandBuffer, 0, 1, &vk_viewport);
-							const VkRect2D vk_scissor = {
-								.offset = {
-									.x = 0,
-									.y = 0
-								},
-								.extent = {
-									.width = renderImageSize[0],
-									.height = renderImageSize[1]
-								}
-							};
-							vkCmdSetScissor(vk_hCommandBuffer, 0, 1, &vk_scissor);
-							const VkBuffer vk_ahVertexBuffers[] = {
-								square2D.vk_hMeshBuffer,
-								vk_ahSortableDepthBuffers[uCurrentFrameInFlightIndex]
-							};
-							constexpr VkDeviceSize vk_aVertexBufferOffsets[sizeof(vk_ahVertexBuffers) / sizeof(vk_ahVertexBuffers[0])] = {};
-							vkCmdBindVertexBuffers(vk_hCommandBuffer, 0, sizeof(vk_ahVertexBuffers) / sizeof(vk_ahVertexBuffers[0]), vk_ahVertexBuffers, vk_aVertexBufferOffsets);
-							vkCmdDraw(vk_hCommandBuffer, square2D.u32VertexCount, 1, 0, 0);
-							end_render_pass(vk_hCommandBuffer, vk_subpassEndInfo);
-							begin_swapchain_render_pass(vk_hCommandBuffer, vk_aClears, vk_renderPassBeginInfo, vk_subpassBeginInfo);
-							if (should_render_window_frame())
-								render_window_frame(vk_hCommandBuffer);
-							end_swapchain_render_pass(vk_hCommandBuffer, vk_subpassEndInfo);
+							vkCmdCopyBuffer(vk_hCommandBuffer, vk_hStagingGameObjectsBuffer, vk_ahGameObjectsBuffers[uCurrentFrameInFlightIndex], 1, &vk_bufferCopyInfo);
 						})) {
 					if (aRenderTasks[uCurrentFrameInFlightIndex].record(
-							RENDER_TASK_SUBINDEX_IMAGE_BLIT,
+							RENDER_TASK_SUBINDEX_PROCESSING,
 							VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
 							[&](VkCommandBuffer vk_hCommandBuffer, uint8_t u8PreviousLogicalQueue, uint8_t u8CurrentLogicalQueue, uint8_t u8NextLogicalQueue) {
-								if (!RENDER_IMAGE_SIZE_EQUALS_SWAPCHAIN()) {
-									VkImageBlit vk_blitInfo;
-									vk_blitInfo.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-									vk_blitInfo.srcSubresource.mipLevel = 0;
-									vk_blitInfo.srcSubresource.baseArrayLayer = uCurrentFrameInFlightIndex;
-									vk_blitInfo.srcSubresource.layerCount = 1;
-									vk_blitInfo.srcOffsets[0].x = 0;
-									vk_blitInfo.srcOffsets[0].y = 0;
-									vk_blitInfo.srcOffsets[0].z = 0;
-									vk_blitInfo.srcOffsets[1].x = static_cast<int32_t>(renderImageSize[0]);
-									vk_blitInfo.srcOffsets[1].y = static_cast<int32_t>(renderImageSize[1]);
-									vk_blitInfo.srcOffsets[1].z = 1;
-									vk_blitInfo.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-									vk_blitInfo.dstSubresource.mipLevel = 0;
-									vk_blitInfo.dstSubresource.baseArrayLayer = 0;
-									vk_blitInfo.dstSubresource.layerCount = 1;
-									if (should_render_window_frame() && should_render_window_frame_bar()) {
-										if (should_render_window_frame_edges()) {
-											vk_blitInfo.dstOffsets[0].x = WINDOW_X_OFFSET;
-											vk_blitInfo.dstOffsets[0].y = WINDOW_Y_OFFSET;
-											vk_blitInfo.dstOffsets[0].z = 0;
-											vk_blitInfo.dstOffsets[1].x = static_cast<int32_t>(vk_swapchainResolution.width - WINDOW_BORDER_TOTAL_SIZE - 1);
-											vk_blitInfo.dstOffsets[1].y = static_cast<int32_t>(vk_swapchainResolution.height - WINDOW_BORDER_TOTAL_SIZE - 1);
-											vk_blitInfo.dstOffsets[1].z = 1;
-										} else {
-											vk_blitInfo.dstOffsets[0].x = 0;
-											vk_blitInfo.dstOffsets[0].y = WINDOW_BAR_SIZE;
-											vk_blitInfo.dstOffsets[0].z = 0;
-											vk_blitInfo.dstOffsets[1].x = static_cast<int32_t>(vk_swapchainResolution.width);
-											vk_blitInfo.dstOffsets[1].y = static_cast<int32_t>(vk_swapchainResolution.height);
-											vk_blitInfo.dstOffsets[1].z = 1;
-										}
-									} else {
-										vk_blitInfo.dstOffsets[0].x = 0;
-										vk_blitInfo.dstOffsets[0].y = 0;
-										vk_blitInfo.dstOffsets[0].z = 0;
-										vk_blitInfo.dstOffsets[1].x = static_cast<int32_t>(vk_swapchainResolution.width);
-										vk_blitInfo.dstOffsets[1].y = static_cast<int32_t>(vk_swapchainResolution.height);
-										vk_blitInfo.dstOffsets[1].z = 1;
-									}
-									vkCmdBlitImage(
-											vk_hCommandBuffer,
-											IS_MSAA_ENABLED() ? vk_hSinglesampledImage : vk_hRenderTargetImage,
-											VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-											std_swapchainImages[u32CurrentSwapchainImageIndex],
-											VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-											1,
-											&vk_blitInfo,
-											vk_eScreenFilter);
-								} else if (IS_MSAA_ENABLED()) {
-									VkImageResolve vk_resolveInfo;
-									vk_resolveInfo.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-									vk_resolveInfo.srcSubresource.mipLevel = 0;
-									vk_resolveInfo.srcSubresource.baseArrayLayer = uCurrentFrameInFlightIndex;
-									vk_resolveInfo.srcSubresource.layerCount = 1;
-									vk_resolveInfo.srcOffset.x = 0;
-									vk_resolveInfo.srcOffset.y = 0;
-									vk_resolveInfo.srcOffset.z = 0;
-									vk_resolveInfo.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-									vk_resolveInfo.dstSubresource.mipLevel = 0;
-									vk_resolveInfo.dstSubresource.baseArrayLayer = 0;
-									vk_resolveInfo.dstSubresource.layerCount = 1;
-									vk_resolveInfo.dstOffset.z = 0;
-									vk_resolveInfo.extent.depth = 1;
-									if (should_render_window_frame() && should_render_window_frame_bar()) {
-										if (should_render_window_frame_edges()) {
-											vk_resolveInfo.dstOffset.x = WINDOW_X_OFFSET;
-											vk_resolveInfo.dstOffset.y = WINDOW_Y_OFFSET;
-											vk_resolveInfo.extent.width = std::clamp<uint32_t>(renderImageSize[0], 1U, vk_swapchainResolution.width - WINDOW_EXTRA_WIDTH - 1U);
-											vk_resolveInfo.extent.height = std::clamp<uint32_t>(renderImageSize[1], 1U, vk_swapchainResolution.height - WINDOW_EXTRA_HEIGHT - 1U);
-										} else {
-											vk_resolveInfo.dstOffset.x = 0;
-											vk_resolveInfo.dstOffset.y = WINDOW_BAR_SIZE;
-											vk_resolveInfo.extent.width = renderImageSize[0];
-											vk_resolveInfo.extent.height = std::clamp<uint32_t>(renderImageSize[1], 1U, vk_swapchainResolution.height - WINDOW_BAR_SIZE - 1U);
-										}
-									} else {
-										vk_resolveInfo.dstOffset.x = 0;
-										vk_resolveInfo.dstOffset.y = 0;
-										vk_resolveInfo.extent.width = renderImageSize[0];
-										vk_resolveInfo.extent.height = renderImageSize[1];
-									}
-									vkCmdResolveImage(
-											vk_hCommandBuffer,
-											vk_hRenderTargetImage,
-											VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-											std_swapchainImages[u32CurrentSwapchainImageIndex],
-											VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-											1,
-											&vk_resolveInfo);
-								} else {
-									VkImageCopy vk_copyInfo;
-									vk_copyInfo.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-									vk_copyInfo.srcSubresource.mipLevel = 0;
-									vk_copyInfo.srcSubresource.baseArrayLayer = uCurrentFrameInFlightIndex;
-									vk_copyInfo.srcSubresource.layerCount = 1;
-									vk_copyInfo.srcOffset.x = 0;
-									vk_copyInfo.srcOffset.y = 0;
-									vk_copyInfo.srcOffset.z = 0;
-									vk_copyInfo.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-									vk_copyInfo.dstSubresource.mipLevel = 0;
-									vk_copyInfo.dstSubresource.baseArrayLayer = 0;
-									vk_copyInfo.dstSubresource.layerCount = 1;
-									vk_copyInfo.dstOffset.z = 0;
-									vk_copyInfo.extent.depth = 1;
-									if (should_render_window_frame() && should_render_window_frame_bar()) {
-										if (should_render_window_frame_edges()) {
-											vk_copyInfo.dstOffset.x = WINDOW_X_OFFSET;
-											vk_copyInfo.dstOffset.y = WINDOW_Y_OFFSET;
-											vk_copyInfo.extent.width = std::clamp<uint32_t>(renderImageSize[0], 1U, vk_swapchainResolution.width - WINDOW_EXTRA_WIDTH - 1U);
-											vk_copyInfo.extent.height = std::clamp<uint32_t>(renderImageSize[1], 1U, vk_swapchainResolution.height - WINDOW_EXTRA_HEIGHT - 1U);
-										} else {
-											vk_copyInfo.dstOffset.x = 0;
-											vk_copyInfo.dstOffset.y = WINDOW_BAR_SIZE;
-											vk_copyInfo.extent.width = renderImageSize[0];
-											vk_copyInfo.extent.height = std::clamp<uint32_t>(renderImageSize[1], 1U, vk_swapchainResolution.height - WINDOW_BAR_SIZE - 1U);
-										}
-									} else {
-										vk_copyInfo.dstOffset.x = 0;
-										vk_copyInfo.dstOffset.y = 0;
-										vk_copyInfo.extent.width = renderImageSize[0];
-										vk_copyInfo.extent.height = renderImageSize[1];
-									}
-									vkCmdCopyImage(
-											vk_hCommandBuffer,
-											vk_hRenderTargetImage,
-											VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-											std_swapchainImages[u32CurrentSwapchainImageIndex],
-											VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-											1,
-											&vk_copyInfo);
-								}
-								const VkImageMemoryBarrier vk_swapchainImageBarrier = {
-									.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-									.pNext = nullptr,
-									.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
-									.dstAccessMask = VK_ACCESS_NONE,
-									.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-									.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-									.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-									.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-									.image = std_swapchainImages[u32CurrentSwapchainImageIndex],
-									.subresourceRange = {
-										.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-										.baseMipLevel = 0,
-										.levelCount = 1,
-										.baseArrayLayer = 0,
-										.layerCount = 1
+								vkCmdBindPipeline(vk_hCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, vk_hComputePipelineProcessing);
+								const VkDescriptorSet vk_ahDescSets[] = {
+									vk_ahGameObjectsDescSets[uCurrentFrameInFlightIndex],
+									cameraDescSets[0],
+									vk_ahSortableDepthDescSets[uCurrentFrameInFlightIndex]
+								};
+								vkCmdBindDescriptorSets(
+										vk_hCommandBuffer,
+										VK_PIPELINE_BIND_POINT_COMPUTE,
+										vk_hProcessingPipelineLayout,
+										0,
+										static_cast<uint32_t>(sizeof(vk_ahDescSets) / sizeof(vk_ahDescSets[0])),
+										vk_ahDescSets,
+										0,
+										nullptr);
+								vkCmdDispatch(vk_hCommandBuffer, 1, 1, 1);
+								const VkBufferMemoryBarrier2 vk_aBufferBarrierInfos[] = {
+									{
+										.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
+										.pNext = nullptr,
+										.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+										.srcAccessMask = VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
+										.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+										.dstAccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
+										.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+										.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+										.buffer = vk_ahSortableDepthBuffers[uCurrentFrameInFlightIndex],
+										.offset = 0,
+										.size = VK_WHOLE_SIZE
 									}
 								};
-								vkCmdPipelineBarrier(
+								const VkDependencyInfo vk_dependencyInfo = {
+									.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+									.pNext = nullptr,
+									.dependencyFlags = 0,
+									.memoryBarrierCount = 0,
+									.pMemoryBarriers = nullptr,
+									.bufferMemoryBarrierCount = static_cast<uint32_t>(sizeof(vk_aBufferBarrierInfos) / sizeof(vk_aBufferBarrierInfos[0])),
+									.pBufferMemoryBarriers = vk_aBufferBarrierInfos,
+									.imageMemoryBarrierCount = 0,
+									.pImageMemoryBarriers = nullptr
+								};
+								vkCmdPipelineBarrier2(vk_hCommandBuffer, &vk_dependencyInfo);
+								vkCmdBindPipeline(vk_hCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, vk_hComputePipelineDepthSorting);
+								vkCmdBindDescriptorSets(
 										vk_hCommandBuffer,
-										VK_PIPELINE_STAGE_TRANSFER_BIT,
-										VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+										VK_PIPELINE_BIND_POINT_COMPUTE,
+										vk_hSortDepthPipelineLayout,
 										0,
-										0,
-										nullptr,
-										0,
-										nullptr,
 										1,
-										&vk_swapchainImageBarrier);
+										&vk_ahSortableDepthDescSets[uCurrentFrameInFlightIndex],
+										0,
+										nullptr);
+								vkCmdDispatch(vk_hCommandBuffer, 1, 1, 1);
 							})) {
-						PRINT_DEBUG("Submitting rendering task at frame-in-flight index ", uCurrentFrameInFlightIndex);
-						if (vkResetFences(vk_hDevice, 1, &vk_ahRenderFences[uCurrentFrameInFlightIndex]) == VK_SUCCESS) {
-							constexpr VkPipelineStageFlags2 vk_aeInternalWaitStages[] = {
-								VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-								VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-								VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT
-							};
-							const VkSemaphoreSubmitInfo vk_waitSwapchainSemaphoreInfo = {
-								.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-								.pNext = nullptr,
-								.semaphore = swapchainSemaphores[u32CurrentSwapchainSemaphoreIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE],
-								.stageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-								.deviceIndex = 1
-							},
-							vk_signalSwapchainSemaphoreInfo = {
-								.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-								.pNext = nullptr,
-								.semaphore = swapchainSemaphores[u32CurrentSwapchainSemaphoreIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE + 1],
-								.stageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-								.deviceIndex = 1
-							};
-							if (aRenderTasks[uCurrentFrameInFlightIndex].submit(
-									1,
-									&vk_waitSwapchainSemaphoreInfo,
-									vk_aeInternalWaitStages,
-									1,
-									&vk_signalSwapchainSemaphoreInfo,
-									vk_ahRenderFences[uCurrentFrameInFlightIndex])) {
-								present_swapchain_image();
-								return true;
+						if (aRenderTasks[uCurrentFrameInFlightIndex].record(
+								RENDER_TASK_SUBINDEX_RENDERING,
+								VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+								[&](VkCommandBuffer vk_hCommandBuffer, uint8_t u8PreviousLogicalQueue, uint8_t u8CurrentLogicalQueue, uint8_t u8NextLogicalQueue) {
+									VkClearValue vk_aClears[RENDER_PASS_ATTACHMENT_COUNT];
+									VkRenderPassBeginInfo vk_renderPassBeginInfo;
+									VkSubpassBeginInfo vk_subpassBeginInfo;
+									VkSubpassEndInfo vk_subpassEndInfo;
+									begin_render_pass(
+											vk_hCommandBuffer,
+											vk_aClears,
+											vk_renderPassBeginInfo,
+											vk_subpassBeginInfo,
+											vk_subpassEndInfo);
+									vkCmdBindPipeline(vk_hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hGraphicsPipeline2D);
+									const VkDescriptorSet vk_ahDescSets[] = {
+										vk_ahGameObjectsDescSets[uCurrentFrameInFlightIndex],
+										cameraDescSets[0],
+										vk_hSpriteDescSet
+									};
+									vkCmdBindDescriptorSets(
+											vk_hCommandBuffer,
+											VK_PIPELINE_BIND_POINT_GRAPHICS,
+											vk_hGraphicsPipelineLayout,
+											0,
+											sizeof(vk_ahDescSets) / sizeof(vk_ahDescSets[0]),
+											vk_ahDescSets,
+											0,
+											nullptr);
+									const VkViewport vk_viewport = {
+										.x = 0.0f,
+										.y = 0.0f,
+										.width = static_cast<float>(renderImageSize[0]),
+										.height = static_cast<float>(renderImageSize[1]),
+										.minDepth = 0.0f,
+										.maxDepth = 1.0f
+									};
+									vkCmdSetViewport(vk_hCommandBuffer, 0, 1, &vk_viewport);
+									const VkRect2D vk_scissor = {
+										.offset = {
+											.x = 0,
+											.y = 0
+										},
+										.extent = {
+											.width = renderImageSize[0],
+											.height = renderImageSize[1]
+										}
+									};
+									vkCmdSetScissor(vk_hCommandBuffer, 0, 1, &vk_scissor);
+									const VkBuffer vk_ahVertexBuffers[] = {
+										square2D.vk_hMeshBuffer,
+										vk_ahSortableDepthBuffers[uCurrentFrameInFlightIndex]
+									};
+									constexpr VkDeviceSize vk_aVertexBufferOffsets[sizeof(vk_ahVertexBuffers) / sizeof(vk_ahVertexBuffers[0])] = {};
+									vkCmdBindVertexBuffers(vk_hCommandBuffer, 0, sizeof(vk_ahVertexBuffers) / sizeof(vk_ahVertexBuffers[0]), vk_ahVertexBuffers, vk_aVertexBufferOffsets);
+									vkCmdDraw(vk_hCommandBuffer, square2D.u32VertexCount, 1, 0, 0);
+									end_render_pass(vk_hCommandBuffer, vk_subpassEndInfo);
+									begin_swapchain_render_pass(vk_hCommandBuffer, vk_aClears, vk_renderPassBeginInfo, vk_subpassBeginInfo);
+									if (should_render_window_frame())
+										render_window_frame(vk_hCommandBuffer);
+									end_swapchain_render_pass(vk_hCommandBuffer, vk_subpassEndInfo);
+								})) {
+							if (aRenderTasks[uCurrentFrameInFlightIndex].record(
+									RENDER_TASK_SUBINDEX_IMAGE_BLIT,
+									VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+									[&](VkCommandBuffer vk_hCommandBuffer, uint8_t u8PreviousLogicalQueue, uint8_t u8CurrentLogicalQueue, uint8_t u8NextLogicalQueue) {
+										if (!RENDER_IMAGE_SIZE_EQUALS_SWAPCHAIN()) {
+											VkImageBlit vk_blitInfo;
+											vk_blitInfo.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+											vk_blitInfo.srcSubresource.mipLevel = 0;
+											vk_blitInfo.srcSubresource.baseArrayLayer = uCurrentFrameInFlightIndex;
+											vk_blitInfo.srcSubresource.layerCount = 1;
+											vk_blitInfo.srcOffsets[0].x = 0;
+											vk_blitInfo.srcOffsets[0].y = 0;
+											vk_blitInfo.srcOffsets[0].z = 0;
+											vk_blitInfo.srcOffsets[1].x = static_cast<int32_t>(renderImageSize[0]);
+											vk_blitInfo.srcOffsets[1].y = static_cast<int32_t>(renderImageSize[1]);
+											vk_blitInfo.srcOffsets[1].z = 1;
+											vk_blitInfo.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+											vk_blitInfo.dstSubresource.mipLevel = 0;
+											vk_blitInfo.dstSubresource.baseArrayLayer = 0;
+											vk_blitInfo.dstSubresource.layerCount = 1;
+											if (should_render_window_frame() && should_render_window_frame_bar()) {
+												if (should_render_window_frame_edges()) {
+													vk_blitInfo.dstOffsets[0].x = WINDOW_X_OFFSET;
+													vk_blitInfo.dstOffsets[0].y = WINDOW_Y_OFFSET;
+													vk_blitInfo.dstOffsets[0].z = 0;
+													vk_blitInfo.dstOffsets[1].x = static_cast<int32_t>(vk_swapchainResolution.width - WINDOW_BORDER_TOTAL_SIZE - 1);
+													vk_blitInfo.dstOffsets[1].y = static_cast<int32_t>(vk_swapchainResolution.height - WINDOW_BORDER_TOTAL_SIZE - 1);
+													vk_blitInfo.dstOffsets[1].z = 1;
+												} else {
+													vk_blitInfo.dstOffsets[0].x = 0;
+													vk_blitInfo.dstOffsets[0].y = WINDOW_BAR_SIZE;
+													vk_blitInfo.dstOffsets[0].z = 0;
+													vk_blitInfo.dstOffsets[1].x = static_cast<int32_t>(vk_swapchainResolution.width);
+													vk_blitInfo.dstOffsets[1].y = static_cast<int32_t>(vk_swapchainResolution.height);
+													vk_blitInfo.dstOffsets[1].z = 1;
+												}
+											} else {
+												vk_blitInfo.dstOffsets[0].x = 0;
+												vk_blitInfo.dstOffsets[0].y = 0;
+												vk_blitInfo.dstOffsets[0].z = 0;
+												vk_blitInfo.dstOffsets[1].x = static_cast<int32_t>(vk_swapchainResolution.width);
+												vk_blitInfo.dstOffsets[1].y = static_cast<int32_t>(vk_swapchainResolution.height);
+												vk_blitInfo.dstOffsets[1].z = 1;
+											}
+											vkCmdBlitImage(
+													vk_hCommandBuffer,
+													IS_MSAA_ENABLED() ? vk_hSinglesampledImage : vk_hRenderTargetImage,
+													VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+													std_swapchainImages[u32CurrentSwapchainImageIndex],
+													VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+													1,
+													&vk_blitInfo,
+													vk_eScreenFilter);
+										} else if (IS_MSAA_ENABLED()) {
+											VkImageResolve vk_resolveInfo;
+											vk_resolveInfo.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+											vk_resolveInfo.srcSubresource.mipLevel = 0;
+											vk_resolveInfo.srcSubresource.baseArrayLayer = uCurrentFrameInFlightIndex;
+											vk_resolveInfo.srcSubresource.layerCount = 1;
+											vk_resolveInfo.srcOffset.x = 0;
+											vk_resolveInfo.srcOffset.y = 0;
+											vk_resolveInfo.srcOffset.z = 0;
+											vk_resolveInfo.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+											vk_resolveInfo.dstSubresource.mipLevel = 0;
+											vk_resolveInfo.dstSubresource.baseArrayLayer = 0;
+											vk_resolveInfo.dstSubresource.layerCount = 1;
+											vk_resolveInfo.dstOffset.z = 0;
+											vk_resolveInfo.extent.depth = 1;
+											if (should_render_window_frame() && should_render_window_frame_bar()) {
+												if (should_render_window_frame_edges()) {
+													vk_resolveInfo.dstOffset.x = WINDOW_X_OFFSET;
+													vk_resolveInfo.dstOffset.y = WINDOW_Y_OFFSET;
+													vk_resolveInfo.extent.width = std::clamp<uint32_t>(renderImageSize[0], 1U, vk_swapchainResolution.width - WINDOW_EXTRA_WIDTH - 1U);
+													vk_resolveInfo.extent.height = std::clamp<uint32_t>(renderImageSize[1], 1U, vk_swapchainResolution.height - WINDOW_EXTRA_HEIGHT - 1U);
+												} else {
+													vk_resolveInfo.dstOffset.x = 0;
+													vk_resolveInfo.dstOffset.y = WINDOW_BAR_SIZE;
+													vk_resolveInfo.extent.width = renderImageSize[0];
+													vk_resolveInfo.extent.height = std::clamp<uint32_t>(renderImageSize[1], 1U, vk_swapchainResolution.height - WINDOW_BAR_SIZE - 1U);
+												}
+											} else {
+												vk_resolveInfo.dstOffset.x = 0;
+												vk_resolveInfo.dstOffset.y = 0;
+												vk_resolveInfo.extent.width = renderImageSize[0];
+												vk_resolveInfo.extent.height = renderImageSize[1];
+											}
+											vkCmdResolveImage(
+													vk_hCommandBuffer,
+													vk_hRenderTargetImage,
+													VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+													std_swapchainImages[u32CurrentSwapchainImageIndex],
+													VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+													1,
+													&vk_resolveInfo);
+										} else {
+											VkImageCopy vk_copyInfo;
+											vk_copyInfo.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+											vk_copyInfo.srcSubresource.mipLevel = 0;
+											vk_copyInfo.srcSubresource.baseArrayLayer = uCurrentFrameInFlightIndex;
+											vk_copyInfo.srcSubresource.layerCount = 1;
+											vk_copyInfo.srcOffset.x = 0;
+											vk_copyInfo.srcOffset.y = 0;
+											vk_copyInfo.srcOffset.z = 0;
+											vk_copyInfo.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+											vk_copyInfo.dstSubresource.mipLevel = 0;
+											vk_copyInfo.dstSubresource.baseArrayLayer = 0;
+											vk_copyInfo.dstSubresource.layerCount = 1;
+											vk_copyInfo.dstOffset.z = 0;
+											vk_copyInfo.extent.depth = 1;
+											if (should_render_window_frame() && should_render_window_frame_bar()) {
+												if (should_render_window_frame_edges()) {
+													vk_copyInfo.dstOffset.x = WINDOW_X_OFFSET;
+													vk_copyInfo.dstOffset.y = WINDOW_Y_OFFSET;
+													vk_copyInfo.extent.width = std::clamp<uint32_t>(renderImageSize[0], 1U, vk_swapchainResolution.width - WINDOW_EXTRA_WIDTH - 1U);
+													vk_copyInfo.extent.height = std::clamp<uint32_t>(renderImageSize[1], 1U, vk_swapchainResolution.height - WINDOW_EXTRA_HEIGHT - 1U);
+												} else {
+													vk_copyInfo.dstOffset.x = 0;
+													vk_copyInfo.dstOffset.y = WINDOW_BAR_SIZE;
+													vk_copyInfo.extent.width = renderImageSize[0];
+													vk_copyInfo.extent.height = std::clamp<uint32_t>(renderImageSize[1], 1U, vk_swapchainResolution.height - WINDOW_BAR_SIZE - 1U);
+												}
+											} else {
+												vk_copyInfo.dstOffset.x = 0;
+												vk_copyInfo.dstOffset.y = 0;
+												vk_copyInfo.extent.width = renderImageSize[0];
+												vk_copyInfo.extent.height = renderImageSize[1];
+											}
+											vkCmdCopyImage(
+													vk_hCommandBuffer,
+													vk_hRenderTargetImage,
+													VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+													std_swapchainImages[u32CurrentSwapchainImageIndex],
+													VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+													1,
+													&vk_copyInfo);
+										}
+										const VkImageMemoryBarrier vk_swapchainImageBarrier = {
+											.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+											.pNext = nullptr,
+											.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+											.dstAccessMask = VK_ACCESS_NONE,
+											.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+											.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+											.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+											.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+											.image = std_swapchainImages[u32CurrentSwapchainImageIndex],
+											.subresourceRange = {
+												.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+												.baseMipLevel = 0,
+												.levelCount = 1,
+												.baseArrayLayer = 0,
+												.layerCount = 1
+											}
+										};
+										vkCmdPipelineBarrier(
+												vk_hCommandBuffer,
+												VK_PIPELINE_STAGE_TRANSFER_BIT,
+												VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+												0,
+												0,
+												nullptr,
+												0,
+												nullptr,
+												1,
+												&vk_swapchainImageBarrier);
+									})) {
+								PRINT_DEBUG("Submitting rendering task at frame-in-flight index ", uCurrentFrameInFlightIndex);
+								if (vkResetFences(vk_hDevice, 1, &vk_ahRenderFences[uCurrentFrameInFlightIndex]) == VK_SUCCESS) {
+									constexpr VkPipelineStageFlags2 vk_aeInternalWaitStages[] = {
+										VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+										VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+										VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT
+									};
+									const VkSemaphoreSubmitInfo vk_waitSwapchainSemaphoreInfo = {
+										.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+										.pNext = nullptr,
+										.semaphore = swapchainSemaphores[u32CurrentSwapchainSemaphoreIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE],
+										.stageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+										.deviceIndex = 1
+									},
+									vk_signalSwapchainSemaphoreInfo = {
+										.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+										.pNext = nullptr,
+										.semaphore = swapchainSemaphores[u32CurrentSwapchainSemaphoreIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE + 1],
+										.stageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+										.deviceIndex = 1
+									};
+									if (aRenderTasks[uCurrentFrameInFlightIndex].submit(
+											1,
+											&vk_waitSwapchainSemaphoreInfo,
+											vk_aeInternalWaitStages,
+											1,
+											&vk_signalSwapchainSemaphoreInfo,
+											vk_ahRenderFences[uCurrentFrameInFlightIndex])) {
+										present_swapchain_image();
+										return true;
+									} else
+										RE_FATAL_ERROR("Failed submitting a rendering task");
+								} else
+									RE_FATAL_ERROR("Failed to reset a Vulkan fence used for synchronizing rendering");
 							} else
-								RE_FATAL_ERROR("Failed submitting a rendering task");
+								RE_FATAL_ERROR("Failed to record command buffer of Vulkan task at frame-in-flight index ", uCurrentFrameInFlightIndex, " for image blitting");
 						} else
-							RE_FATAL_ERROR("Failed to reset a Vulkan fence used for synchronizing rendering");
+							RE_FATAL_ERROR("Failed to record command buffer of Vulkan task at frame-in-flight index ", uCurrentFrameInFlightIndex, " for rendering");
 					} else
-						RE_FATAL_ERROR("Failed to record command buffer of Vulkan task at frame-in-flight index ", uCurrentFrameInFlightIndex, " for image blitting");
+						RE_FATAL_ERROR("Failed to record command buffer of Vulkan task at frame-in-flight index ", uCurrentFrameInFlightIndex, " for computing before rendering");
 				} else
-					RE_FATAL_ERROR("Failed to record command buffer of Vulkan task at frame-in-flight index ", uCurrentFrameInFlightIndex, " for rendering");
+					RE_FATAL_ERROR("Failed to record command buffer of Vulkan task at frame-in-flight index ", uCurrentFrameInFlightIndex, " for transferring data to the GPU");
 				break;
 			case VK_TIMEOUT:
 				RE_ABORT("Rendering timed out after ", u64RenderTimeoutSec, " seconds");

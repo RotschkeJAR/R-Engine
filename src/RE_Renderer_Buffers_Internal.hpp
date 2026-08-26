@@ -23,6 +23,16 @@ namespace RE {
 	bool alloc_memory_for_renderer_buffers();
 	void free_memory_for_renderer_buffers();
 
+#ifndef NDEBUG
+	bool create_debug_buffer();
+	void destroy_debug_buffer();
+#else
+	consteval bool create_debug_buffer() {
+		return true;
+	}
+	consteval void destroy_debug_buffer() {}
+#endif
+
 }
 
 #endif /* __RE_RENDERER_BUFFERS_INTERNAL_H__ */

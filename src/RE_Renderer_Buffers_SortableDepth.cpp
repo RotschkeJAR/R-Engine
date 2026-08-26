@@ -2,6 +2,8 @@
 
 namespace RE {
 
+#define USAGE_FLAGS VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
+
 	VkBuffer vk_ahSortableDepthBuffers[RE_VK_FRAMES_IN_FLIGHT];
 
 	bool create_sortable_depth_buffers(const VulkanQueueCollection &rQueues) {
@@ -11,7 +13,11 @@ namespace RE {
 			if (!create_vulkan_buffer(
 					0,
 					get_max_game_object_count() * sizeof(DepthShaderData),
-					VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+				#ifndef NDEBUG
+					USAGE_FLAGS | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+				#else
+					USAGE_FLAGS,
+				#endif
 					rQueues.u8QueueCount,
 					rQueues.queueFamilyIndices.get(),
 					&vk_ahSortableDepthBuffers[u8FrameInFlightCreateIndex])) {

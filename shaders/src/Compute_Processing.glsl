@@ -14,7 +14,7 @@ struct Depth {
 };
 
 
-layout (std430, set = 0, binding = 0) readonly buffer GameObjectBuffer {
+layout (std430, set = 0, binding = 0) buffer GameObjectBuffer {
 	GameObject data[];
 } gameObjects;
 
@@ -36,6 +36,11 @@ layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
 
 void main() {
 	const uint index = gl_GlobalInvocationID.x;
+	for (uint scaleCoordIndex = 0; scaleCoordIndex < 3; scaleCoordIndex++)
+		if (gameObjects.data[index].scale[scaleCoordIndex] == 0.0) {
+			gameObjects.data[index].color[3] = -1.0;
+			return;
+		}
 	modelMatrices.models[index] = mat4(
 			gameObjects.data[index].scale[0],		0.0,									0.0,									0.0,
 			0.0,									gameObjects.data[index].scale[1],		0.0,									0.0,

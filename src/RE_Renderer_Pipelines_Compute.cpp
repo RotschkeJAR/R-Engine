@@ -7,9 +7,9 @@ namespace RE {
 	
 	bool create_compute_pipelines() {
 		PRINT_DEBUG("Creating Vulkan shader modules for creating compute pipelines");
-		Vulkan_Shader preprocessingShader("shaders/Compute_Processing.glsl.spv"),
+		Vulkan_Shader processingShader("shaders/Compute_Processing.glsl.spv"),
 			depthSortingShader("shaders/Compute_DepthSorting.glsl.spv");
-		if (preprocessingShader.valid() && depthSortingShader.valid()) {
+		if (processingShader.valid() && depthSortingShader.valid()) {
 			PRINT_DEBUG("Creating Vulkan compute pipelines");
 			const VkComputePipelineCreateInfo vk_aCreateInfos[COMPUTE_PIPELINE_COUNT] = {
 				{
@@ -21,7 +21,7 @@ namespace RE {
 						.pNext = nullptr,
 						.flags = 0,
 						.stage = VK_SHADER_STAGE_COMPUTE_BIT,
-						.module = preprocessingShader(),
+						.module = processingShader(),
 						.pName = "main",
 						.pSpecializationInfo = nullptr
 					},

@@ -17,17 +17,13 @@ struct GameObject {
 	uint textureId;
 };
 
-struct GameObjectModelMatrix {
-	mat4 modelMatrix;
-};
 
-
-layout(set = 0, binding = 0) readonly buffer GameObjectBuffer {
+layout(std430, set = 0, binding = 0) readonly buffer GameObjectBuffer {
 	GameObject data[];
 } gameObjects;
 
-layout(set = 0, binding = 1) readonly buffer ModelMatrixBuffer {
-	GameObjectModelMatrix data[];
+layout(std430, set = 0, binding = 1) readonly buffer ModelMatrixBuffer {
+	mat4 models[];
 } modelMatrices;
 
 layout(set = 1, binding = 0) uniform CameraMatrices {
@@ -37,16 +33,13 @@ layout(set = 1, binding = 0) uniform CameraMatrices {
 
 
 void main() {
-	// Optimization: Discard vertices by rendering them outside view
-	if (gameObjects.data[I_instance_index].color[3] <= 0.0
-			|| gameObjects.data[I_instance_index].scale[0] == 0.0
-			|| gameObjects.data[I_instance_index].scale[1] == 0.0
-			|| gameObjects.data[I_instance_index].scale[2] == 0.0) {
+	// Optimization: Discard objects by rendering their vertices outside view
+	if (gameObjects.data[I_instance_index].color[3] <= 0.0) {
 		gl_Position = vec4(-2.0, -2.0, -2.0, 1.0);
 		return;
 	}
 	
-	gl_Position = cam.projection * cam.view * modelMatrices.data[I_instance_index].modelMatrix * I_vertex_position;
+	gl_Position = cam.projection * cam.view * modelMatrices.models[I_instance_index] * I_vertex_position;
 	O_color = vec4(
 			gameObjects.data[I_instance_index].color[0],
 			gameObjects.data[I_instance_index].color[1],

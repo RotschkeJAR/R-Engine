@@ -2,6 +2,8 @@
 
 namespace RE {
 
+#define USAGE_FLAGS VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+
 	VkBuffer vk_ahGameObjectsModelMatrixBuffers[RE_VK_FRAMES_IN_FLIGHT];
 
 	bool create_game_objects_model_matrix_buffers(const VulkanQueueCollection &rQueues) {
@@ -12,7 +14,11 @@ namespace RE {
 			if (!create_vulkan_buffer(
 					0,
 					vk_bufferSize,
-					VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+				#ifndef NDEBUG
+					USAGE_FLAGS | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+				#else
+					USAGE_FLAGS,
+				#endif
 					rQueues.u8QueueCount,
 					rQueues.queueFamilyIndices.get(),
 					&vk_ahGameObjectsModelMatrixBuffers[u8FrameInFlightCreateIndex])) {

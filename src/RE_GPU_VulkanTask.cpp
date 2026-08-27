@@ -383,10 +383,16 @@ namespace RE {
 		return false;
 	}
 
-	bool VulkanTask::submit(const uint32_t u32SemaphoresToWaitForCount, const VkSemaphoreSubmitInfo *const vk_paSemaphoresToWaitFor, const VkPipelineStageFlags2 *const vk_paeInternSemaphoreWaits, const uint32_t u32SemaphoresToSignal, const VkSemaphoreSubmitInfo *const vk_paSemaphoresToSignal, const VkFence vk_hFenceToSignal) const {
-#ifndef RE_DISABLE_DEBUGGING
+	bool VulkanTask::submit(
+			uint32_t u32SemaphoresToWaitForCount,
+			const VkSemaphoreSubmitInfo *vk_paSemaphoresToWaitFor,
+			const VkPipelineStageFlags2 *vk_paeInternSemaphoreWaits,
+			uint32_t u32SemaphoresToSignal,
+			const VkSemaphoreSubmitInfo *vk_paSemaphoresToSignal,
+			VkFence vk_hFenceToSignal) const {
+#ifndef NDEBUG
 		if (!vk_paeInternSemaphoreWaits && u32FunctionsCount > 1)
-			RE_ABORT("Intern semaphore wait pipeline stages is null");
+			RE_ABORT("Intern semaphore wait pipeline stage is null");
 #endif
 		PRINT_DEBUG_CLASS("Submitting command buffers");
 		std::vector<VkCommandBufferSubmitInfo> commandBufferSubmissionInfos;
@@ -444,7 +450,7 @@ namespace RE {
 			commandBufferSubmissionInfos.back().sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
 			commandBufferSubmissionInfos.back().pNext = nullptr;
 			commandBufferSubmissionInfos.back().commandBuffer = commandBuffers[u32FunctionIndex];
-			commandBufferSubmissionInfos.back().deviceMask = 0;
+			commandBufferSubmissionInfos.back().deviceMask = 1;
 			if (u32FunctionIndex > 0)
 				vk_eSemaphoreWaitFlags |= vk_paeInternSemaphoreWaits[u32FunctionIndex - 1];
 		}

@@ -10,7 +10,7 @@ namespace RE {
 	PFN_vkQueueSubmit2 vkQueueSubmit2 = nullptr;
 
 	static VkPipelineStageFlags downgrade_pipeline_stage_flags_2(const VkPipelineStageFlags2 vk_mPipelineStageFlags2) {
-		constexpr VkPipelineStageFlags2 vk_mConvertablePipelineStageFlags2 = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
+		constexpr VkPipelineStageFlags2 vk_mConvertablePipelineStageFlags2 = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT
 				| VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT
 				| VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT
 				| VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT
@@ -35,10 +35,20 @@ namespace RE {
 				| VK_PIPELINE_STAGE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR
 				| VK_PIPELINE_STAGE_2_FRAGMENT_DENSITY_PROCESS_BIT_EXT
 				| VK_PIPELINE_STAGE_2_TRANSFORM_FEEDBACK_BIT_EXT
-				| VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
+				| VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR
+				| VK_PIPELINE_STAGE_2_COPY_BIT
+				| VK_PIPELINE_STAGE_2_RESOLVE_BIT
+				| VK_PIPELINE_STAGE_2_BLIT_BIT
+				| VK_PIPELINE_STAGE_2_CLEAR_BIT
+				| VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT;
 		if ((vk_mPipelineStageFlags2 & (~vk_mConvertablePipelineStageFlags2)) != 0)
-			RE_ABORT("Pipeline stage flags provided by the synchronization 2-feature cannot be converted into standard pipeline stage flags");
-		return static_cast<VkPipelineStageFlags>(vk_mPipelineStageFlags2 & vk_mConvertablePipelineStageFlags2);
+			RE_ABORT("Pipeline stage flags provided by the synchronization 2-feature cannot be converted into an older variant");
+		VkPipelineStageFlags vk_mDowngradedPipelineStageFlags = static_cast<VkPipelineStageFlags>(vk_mPipelineStageFlags2 & vk_mConvertablePipelineStageFlags2);
+		if ((vk_mPipelineStageFlags2 & (VK_PIPELINE_STAGE_2_COPY_BIT | VK_PIPELINE_STAGE_2_RESOLVE_BIT | VK_PIPELINE_STAGE_2_BLIT_BIT | VK_PIPELINE_STAGE_2_CLEAR_BIT)))
+			vk_mDowngradedPipelineStageFlags |= VK_PIPELINE_STAGE_TRANSFER_BIT;
+		if ((vk_mPipelineStageFlags2 & (VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT | VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT)))
+			vk_mDowngradedPipelineStageFlags |= VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
+		return vk_mDowngradedPipelineStageFlags;
 	}
 
 	static VkAccessFlags downgrade_access_flags_2(const VkAccessFlags2 vk_mAccessFlags2) {
@@ -68,24 +78,33 @@ namespace RE {
 				| VK_ACCESS_2_FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT_KHR
 				| VK_ACCESS_2_FRAGMENT_DENSITY_MAP_READ_BIT_EXT
 				| VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR
-				| VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
+				| VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR
+				| VK_ACCESS_2_SHADER_SAMPLED_READ_BIT
+				| VK_ACCESS_2_SHADER_STORAGE_READ_BIT
+				| VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT;
 		if ((vk_mAccessFlags2 & (~vk_mConvertableAccessFlags2)) != 0)
-			RE_ABORT("Access flags provided by the synchronization 2-feature cannot be converted into standard access flags");
-		return static_cast<VkAccessFlags>(vk_mAccessFlags2 & vk_mConvertableAccessFlags2);
+			RE_ABORT("Access flags provided by the synchronization 2-feature cannot be converted into an older variant");
+		VkAccessFlags vk_mDowngradedAccessFlags = static_cast<VkAccessFlags>(vk_mAccessFlags2 & vk_mConvertableAccessFlags2);
+		if ((vk_mAccessFlags2 & (VK_ACCESS_2_SHADER_SAMPLED_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT)))
+			vk_mDowngradedAccessFlags |= VK_ACCESS_SHADER_READ_BIT;
+		if ((vk_mAccessFlags2 & VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT))
+			vk_mDowngradedAccessFlags |= VK_ACCESS_SHADER_WRITE_BIT;
+		return vk_mDowngradedAccessFlags;
 	}
 
 	[[noreturn]]
 	static void vk_cmd_set_event_2(const VkCommandBuffer vk_hCommandBuffer, const VkEvent vk_hEvent, const VkDependencyInfo *const vk_pDependencyInfo) {
-		RE_ABORT("The synchronization 2-feature is not enabled or loading the Vulkan function \"vkCmdSetEvent2\" failed. It cannot be downgraded to the older variant");
+		RE_ABORT("The synchronization 2-feature is not enabled or loading the Vulkan function \"vkCmdSetEvent2\" failed. It cannot be downgraded to an older variant");
 	}
 
 	static void vk_cmd_reset_event_2(const VkCommandBuffer vk_hCommandBuffer, const VkEvent vk_hEvent, const VkPipelineStageFlags2 vk_mStageMask) {
+		PRINT_DEBUG("Recording into Vulkan command buffer ", vk_hCommandBuffer, " to reset event ", vk_hEvent);
 		vkCmdResetEvent(vk_hCommandBuffer, vk_hEvent, downgrade_pipeline_stage_flags_2(vk_mStageMask));
 	}
 
 	[[noreturn]]
 	static void vk_cmd_wait_event_2(const VkCommandBuffer vk_hCommandBuffer, const uint32_t u32EventCount, const VkEvent *const vk_pahEvents, const VkDependencyInfo *const vk_paDependencyInfos) {
-		RE_ABORT("The synchronization 2-feature is not enabled or loading the Vulkan function \"vkCmdWaitEvent2\" failed. It cannot be downgraded to the older variant");
+		RE_ABORT("The synchronization 2-feature is not enabled or loading the Vulkan function \"vkCmdWaitEvent2\" failed. It cannot be downgraded to an older variant");
 	}
 
 	static void vk_cmd_pipeline_barrier_2(const VkCommandBuffer vk_hCommandBuffer, const VkDependencyInfo *const vk_pDependencyInfo) {
@@ -119,8 +138,8 @@ namespace RE {
 					});
 			if (barrierIterator == barriers.end()) {
 				barriers.emplace_back(
-						vk_pDependencyInfo->pMemoryBarriers[u32MemoryBarrierIndex].srcStageMask,
-						vk_pDependencyInfo->pMemoryBarriers[u32MemoryBarrierIndex].dstStageMask);
+						downgrade_pipeline_stage_flags_2(vk_pDependencyInfo->pMemoryBarriers[u32MemoryBarrierIndex].srcStageMask),
+						downgrade_pipeline_stage_flags_2(vk_pDependencyInfo->pMemoryBarriers[u32MemoryBarrierIndex].dstStageMask));
 				barriers.back().memoryBarriers.emplace_back(
 						VK_STRUCTURE_TYPE_MEMORY_BARRIER,
 						vk_pDependencyInfo->pMemoryBarriers[u32MemoryBarrierIndex].pNext,
@@ -141,10 +160,10 @@ namespace RE {
 					});
 			if (barrierIterator == barriers.end()) {
 				barriers.emplace_back(
-						vk_pDependencyInfo->pBufferMemoryBarriers[u32BufferBarrierIndex].srcStageMask,
-						vk_pDependencyInfo->pBufferMemoryBarriers[u32BufferBarrierIndex].dstStageMask);
+						downgrade_pipeline_stage_flags_2(vk_pDependencyInfo->pBufferMemoryBarriers[u32BufferBarrierIndex].srcStageMask),
+						downgrade_pipeline_stage_flags_2(vk_pDependencyInfo->pBufferMemoryBarriers[u32BufferBarrierIndex].dstStageMask));
 				barriers.back().bufferBarriers.emplace_back(
-						VK_STRUCTURE_TYPE_MEMORY_BARRIER,
+						VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
 						vk_pDependencyInfo->pBufferMemoryBarriers[u32BufferBarrierIndex].pNext,
 						downgrade_access_flags_2(vk_pDependencyInfo->pBufferMemoryBarriers[u32BufferBarrierIndex].srcAccessMask),
 						downgrade_access_flags_2(vk_pDependencyInfo->pBufferMemoryBarriers[u32BufferBarrierIndex].dstAccessMask),
@@ -155,7 +174,7 @@ namespace RE {
 						vk_pDependencyInfo->pBufferMemoryBarriers[u32BufferBarrierIndex].size);
 			} else
 				barrierIterator->bufferBarriers.emplace_back(
-						VK_STRUCTURE_TYPE_MEMORY_BARRIER,
+						VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
 						vk_pDependencyInfo->pBufferMemoryBarriers[u32BufferBarrierIndex].pNext,
 						downgrade_access_flags_2(vk_pDependencyInfo->pBufferMemoryBarriers[u32BufferBarrierIndex].srcAccessMask),
 						downgrade_access_flags_2(vk_pDependencyInfo->pBufferMemoryBarriers[u32BufferBarrierIndex].dstAccessMask),
@@ -173,10 +192,10 @@ namespace RE {
 					});
 			if (barrierIterator == barriers.end()) {
 				barriers.emplace_back(
-						vk_pDependencyInfo->pImageMemoryBarriers[u32ImageBarrierIndex].srcStageMask,
-						vk_pDependencyInfo->pImageMemoryBarriers[u32ImageBarrierIndex].dstStageMask);
+						downgrade_pipeline_stage_flags_2(vk_pDependencyInfo->pImageMemoryBarriers[u32ImageBarrierIndex].srcStageMask),
+						downgrade_pipeline_stage_flags_2(vk_pDependencyInfo->pImageMemoryBarriers[u32ImageBarrierIndex].dstStageMask));
 				barriers.back().imageBarriers.emplace_back(
-						VK_STRUCTURE_TYPE_MEMORY_BARRIER,
+						VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
 						vk_pDependencyInfo->pImageMemoryBarriers[u32ImageBarrierIndex].pNext,
 						downgrade_access_flags_2(vk_pDependencyInfo->pImageMemoryBarriers[u32ImageBarrierIndex].srcAccessMask),
 						downgrade_access_flags_2(vk_pDependencyInfo->pImageMemoryBarriers[u32ImageBarrierIndex].dstAccessMask),
@@ -188,7 +207,7 @@ namespace RE {
 						vk_pDependencyInfo->pImageMemoryBarriers[u32ImageBarrierIndex].subresourceRange);
 			} else
 				barrierIterator->imageBarriers.emplace_back(
-						VK_STRUCTURE_TYPE_MEMORY_BARRIER,
+						VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
 						vk_pDependencyInfo->pImageMemoryBarriers[u32ImageBarrierIndex].pNext,
 						downgrade_access_flags_2(vk_pDependencyInfo->pImageMemoryBarriers[u32ImageBarrierIndex].srcAccessMask),
 						downgrade_access_flags_2(vk_pDependencyInfo->pImageMemoryBarriers[u32ImageBarrierIndex].dstAccessMask),
@@ -200,7 +219,8 @@ namespace RE {
 						vk_pDependencyInfo->pImageMemoryBarriers[u32ImageBarrierIndex].subresourceRange);
 		}
 
-		for (const Barrier &rBarrier : barriers)
+		for (const Barrier &rBarrier : barriers) {
+			PRINT_DEBUG("Recording into Vulkan command buffer ", vk_hCommandBuffer, " reading all data from barrier ", std::addressof(rBarrier));
 			vkCmdPipelineBarrier(
 					vk_hCommandBuffer,
 					rBarrier.vk_mSrcStages,
@@ -212,15 +232,18 @@ namespace RE {
 					rBarrier.bufferBarriers.data(),
 					static_cast<uint32_t>(rBarrier.imageBarriers.size()),
 					rBarrier.imageBarriers.data());
+		}
 	}
 
 	static void vk_cmd_write_timestamp_2(const VkCommandBuffer vk_hCommandBuffer, const VkPipelineStageFlags2 vk_mStage, const VkQueryPool vk_hQueryPool, const uint32_t u32Query) {
 		if (std::popcount<VkPipelineStageFlags2>(vk_mStage) > 1)
 			RE_ABORT("A combination of pipeline stages cannot be reduced to one for writing timestamps the old way");
+		PRINT_DEBUG("Recording Vulkan command buffer to write timestamps into query pool ", vk_hQueryPool);
 		vkCmdWriteTimestamp(vk_hCommandBuffer, static_cast<VkPipelineStageFlagBits>(downgrade_pipeline_stage_flags_2(vk_mStage)), vk_hQueryPool, u32Query);
 	}
 
 	static VkResult vk_queue_submit_2(const VkQueue vk_hQueue, const uint32_t u32SubmitCount, const VkSubmitInfo2 *const vk_paSubmits, const VkFence vk_hFence) {
+		PRINT_DEBUG("Counting bytes required for allocating memory for all required infos");
 		size_t requiredMemoryBlockSize = sizeof(VkSubmitInfo) * u32SubmitCount;
 		requiredMemoryBlockSize = next_multiple_inclusive<size_t>(requiredMemoryBlockSize, alignof(VkTimelineSemaphoreSubmitInfo));
 		requiredMemoryBlockSize += sizeof(VkTimelineSemaphoreSubmitInfo) * u32SubmitCount;
@@ -235,44 +258,59 @@ namespace RE {
 			requiredMemoryBlockSize = next_multiple_inclusive<size_t>(requiredMemoryBlockSize, alignof(VkCommandBuffer));
 			requiredMemoryBlockSize += sizeof(VkCommandBuffer) * vk_paSubmits[u32SubmitInfoIndex].commandBufferInfoCount;
 		}
-		void *pMemoryBlock = safe_malloc(requiredMemoryBlockSize);
+		PRINT_DEBUG("Allocating ", requiredMemoryBlockSize, " bytes for all infos");
+		void *const pMemoryBlock = safe_malloc(requiredMemoryBlockSize),
+			*pCurrentPointInMemoryBlock = pMemoryBlock;
 		size_t remainingMemoryBlockSpace = requiredMemoryBlockSize;
 		VkSubmitInfo *const vk_paNormalSubmits = static_cast<VkSubmitInfo*>(
 				not_null(
-					align_2(alignof(VkSubmitInfo), sizeof(VkSubmitInfo) * u32SubmitCount, pMemoryBlock, remainingMemoryBlockSpace)));
+					align_2(alignof(VkSubmitInfo), sizeof(VkSubmitInfo) * u32SubmitCount, pCurrentPointInMemoryBlock, remainingMemoryBlockSpace)));
 		VkTimelineSemaphoreSubmitInfo *const vk_paTimelineSemaphoreInfos = static_cast<VkTimelineSemaphoreSubmitInfo*>(
 				not_null(
-					align_2(alignof(VkTimelineSemaphoreSubmitInfo), sizeof(VkTimelineSemaphoreSubmitInfo) * u32SubmitCount, pMemoryBlock, remainingMemoryBlockSpace)));
+					align_2(alignof(VkTimelineSemaphoreSubmitInfo), sizeof(VkTimelineSemaphoreSubmitInfo) * u32SubmitCount, pCurrentPointInMemoryBlock, remainingMemoryBlockSpace)));
 		for (uint32_t u32SubmitInfoIndex = 0; u32SubmitInfoIndex < u32SubmitCount; u32SubmitInfoIndex++) {
 			const uint32_t u32CommandBufferCount = vk_paSubmits[u32SubmitInfoIndex].commandBufferInfoCount,
 				u32WaitSemaphoreCount = vk_paSubmits[u32SubmitInfoIndex].waitSemaphoreInfoCount,
 				u32SignalSemaphoreCount = vk_paSubmits[u32SubmitInfoIndex].signalSemaphoreInfoCount;
 			VkCommandBuffer *const vk_pahCommandBuffers = static_cast<VkCommandBuffer*>(
 					not_null(
-						align_2(alignof(VkCommandBuffer), sizeof(VkCommandBuffer) * u32CommandBufferCount, pMemoryBlock, remainingMemoryBlockSpace)));
-			for (uint32_t u32CommandBufferIndex = 0; u32CommandBufferIndex < u32CommandBufferCount; u32CommandBufferIndex++)
+						align_2(alignof(VkCommandBuffer), sizeof(VkCommandBuffer) * u32CommandBufferCount, pCurrentPointInMemoryBlock, remainingMemoryBlockSpace)));
+			for (uint32_t u32CommandBufferIndex = 0; u32CommandBufferIndex < u32CommandBufferCount; u32CommandBufferIndex++) {
+				if (vk_paSubmits[u32SubmitInfoIndex].pCommandBufferInfos[u32CommandBufferIndex].pNext)
+					RE_ABORT("Cannot include data structures extending command buffer information for queue submissions");
+				if (vk_paSubmits[u32SubmitInfoIndex].pCommandBufferInfos[u32CommandBufferIndex].deviceMask != 1)
+					RE_ABORT("Cannot target specific devices (device mask: ", std::hex, vk_paSubmits[u32SubmitInfoIndex].pCommandBufferInfos[u32CommandBufferIndex].deviceMask, ") for command buffer execution when using older method of queue submissions");
 				vk_pahCommandBuffers[u32CommandBufferIndex] = vk_paSubmits[u32SubmitInfoIndex].pCommandBufferInfos[u32CommandBufferIndex].commandBuffer;
+			}
 			VkSemaphore *const vk_pahWaitSemaphores = static_cast<VkSemaphore*>(
 					not_null(
-						align_2(alignof(VkSemaphore), sizeof(VkSemaphore) * u32WaitSemaphoreCount, pMemoryBlock, remainingMemoryBlockSpace)));
+						align_2(alignof(VkSemaphore), sizeof(VkSemaphore) * u32WaitSemaphoreCount, pCurrentPointInMemoryBlock, remainingMemoryBlockSpace)));
 			uint64_t *const pau64WaitValues = static_cast<uint64_t*>(
 					not_null(
-						align_2(alignof(uint64_t), sizeof(uint64_t) * u32WaitSemaphoreCount, pMemoryBlock, remainingMemoryBlockSpace)));
+						align_2(alignof(uint64_t), sizeof(uint64_t) * u32WaitSemaphoreCount, pCurrentPointInMemoryBlock, remainingMemoryBlockSpace)));
 			VkPipelineStageFlags *const vk_pamPipelineStages = static_cast<VkPipelineStageFlags*>(
 					not_null(
-						align_2(alignof(VkPipelineStageFlags*), sizeof(VkPipelineStageFlags) * u32WaitSemaphoreCount, pMemoryBlock, remainingMemoryBlockSpace)));
+						align_2(alignof(VkPipelineStageFlags*), sizeof(VkPipelineStageFlags) * u32WaitSemaphoreCount, pCurrentPointInMemoryBlock, remainingMemoryBlockSpace)));
 			for (uint32_t u32WaitSemaphoreIndex = 0; u32WaitSemaphoreIndex < u32WaitSemaphoreCount; u32WaitSemaphoreIndex++) {
+				if (vk_paSubmits[u32SubmitInfoIndex].pWaitSemaphoreInfos[u32WaitSemaphoreIndex].pNext)
+					RE_ABORT("Cannot include data structures extending wait semaphore information for queue submissions");
+				if (vk_paSubmits[u32SubmitInfoIndex].pWaitSemaphoreInfos[u32WaitSemaphoreIndex].deviceIndex)
+					RE_ABORT("Cannot target specific devices (device index: ", vk_paSubmits[u32SubmitInfoIndex].pSignalSemaphoreInfos[u32WaitSemaphoreIndex].deviceIndex, ") for waiting for semaphores when using older method of queue submissions");
 				vk_pahWaitSemaphores[u32WaitSemaphoreIndex] = vk_paSubmits[u32SubmitInfoIndex].pWaitSemaphoreInfos[u32WaitSemaphoreIndex].semaphore;
 				pau64WaitValues[u32WaitSemaphoreIndex] = vk_paSubmits[u32SubmitInfoIndex].pWaitSemaphoreInfos[u32WaitSemaphoreIndex].value;
 				vk_pamPipelineStages[u32WaitSemaphoreIndex] = downgrade_pipeline_stage_flags_2(vk_paSubmits[u32SubmitInfoIndex].pWaitSemaphoreInfos[u32WaitSemaphoreIndex].stageMask);
 			}
 			VkSemaphore *const vk_pahSignalSemaphores = static_cast<VkSemaphore*>(
 					not_null(
-						align_2(alignof(VkSemaphore), sizeof(VkSemaphore) * u32WaitSemaphoreCount, pMemoryBlock, remainingMemoryBlockSpace)));
+						align_2(alignof(VkSemaphore), sizeof(VkSemaphore) * u32SignalSemaphoreCount, pCurrentPointInMemoryBlock, remainingMemoryBlockSpace)));
 			uint64_t *const pau64SignalValues = static_cast<uint64_t*>(
 					not_null(
-						align_2(alignof(uint64_t), sizeof(uint64_t) * u32WaitSemaphoreCount, pMemoryBlock, remainingMemoryBlockSpace)));
+						align_2(alignof(uint64_t), sizeof(uint64_t) * u32SignalSemaphoreCount, pCurrentPointInMemoryBlock, remainingMemoryBlockSpace)));
 			for (uint32_t u32SignalSemaphoreIndex = 0; u32SignalSemaphoreIndex < u32SignalSemaphoreCount; u32SignalSemaphoreIndex++) {
+				if (vk_paSubmits[u32SubmitInfoIndex].pSignalSemaphoreInfos[u32SignalSemaphoreIndex].pNext)
+					RE_ABORT("Cannot include data structures extending signal semaphore information for queue submissions");
+				if (vk_paSubmits[u32SubmitInfoIndex].pSignalSemaphoreInfos[u32SignalSemaphoreIndex].deviceIndex)
+					RE_ABORT("Cannot target specific devices (device index: ", vk_paSubmits[u32SubmitInfoIndex].pSignalSemaphoreInfos[u32SignalSemaphoreIndex].deviceIndex, ") for signalling semaphores when using older method of queue submissions");
 				vk_pahSignalSemaphores[u32SignalSemaphoreIndex] = vk_paSubmits[u32SubmitInfoIndex].pSignalSemaphoreInfos[u32SignalSemaphoreIndex].semaphore;
 				pau64SignalValues[u32SignalSemaphoreIndex] = vk_paSubmits[u32SubmitInfoIndex].pSignalSemaphoreInfos[u32SignalSemaphoreIndex].value;
 			}
@@ -292,8 +330,11 @@ namespace RE {
 			vk_paNormalSubmits[u32SubmitInfoIndex].signalSemaphoreCount = u32SignalSemaphoreCount;
 			vk_paNormalSubmits[u32SubmitInfoIndex].pSignalSemaphores = vk_pahSignalSemaphores;
 		}
+		PRINT_DEBUG("Submitting ", u32SubmitCount, " infos to the Vulkan queue ", vk_hQueue, " signalling fence ", vk_hFence);
+		const VkResult vk_eResult = vkQueueSubmit(vk_hQueue, u32SubmitCount, vk_paNormalSubmits, vk_hFence);
+		PRINT_DEBUG("Freeing memory used for all infos");
 		std::free(pMemoryBlock);
-		return vkQueueSubmit(vk_hQueue, u32SubmitCount, vk_paNormalSubmits, vk_hFence);
+		return vk_eResult;
 	}
 
 	bool load_synchronization_2_funcs() {

@@ -15,6 +15,7 @@ namespace RE {
 						RENDER_TASK_SUBINDEX_BUFFER_TRANSFER,
 						VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
 						[&](VkCommandBuffer vk_hCommandBuffer, uint8_t u8PreviousLogicalQueue, uint8_t u8CurrentLogicalQueue, uint8_t u8NextLogicalQueue) {
+							PRINT_DEBUG("Recording the buffer transfer subprocedure into Vulkan command buffer ", vk_hCommandBuffer);
 							memset(paStagingGameObjectsBufferData, 0, get_max_game_object_count() * sizeof(GameObjectShaderData));
 							paStagingGameObjectsBufferData[0].position[0] = 0.0f;
 							paStagingGameObjectsBufferData[0].position[1] = 0.0f;
@@ -41,6 +42,7 @@ namespace RE {
 							RENDER_TASK_SUBINDEX_PROCESSING,
 							VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
 							[&](VkCommandBuffer vk_hCommandBuffer, uint8_t u8PreviousLogicalQueue, uint8_t u8CurrentLogicalQueue, uint8_t u8NextLogicalQueue) {
+								PRINT_DEBUG("Recording the processing subprocedure into Vulkan command buffer ", vk_hCommandBuffer);
 								vkCmdBindPipeline(vk_hCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, vk_hComputePipelineProcessing);
 								const VkDescriptorSet vk_ahDescSets[] = {
 									vk_ahGameObjectsDescSets[uCurrentFrameInFlightIndex],
@@ -57,20 +59,18 @@ namespace RE {
 										0,
 										nullptr);
 								vkCmdDispatch(vk_hCommandBuffer, 1, 1, 1);
-								const VkBufferMemoryBarrier2 vk_aBufferBarrierInfos[] = {
-									{
-										.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
-										.pNext = nullptr,
-										.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-										.srcAccessMask = VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
-										.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-										.dstAccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
-										.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-										.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-										.buffer = vk_ahSortableDepthBuffers[uCurrentFrameInFlightIndex],
-										.offset = 0,
-										.size = VK_WHOLE_SIZE
-									}
+								VkBufferMemoryBarrier2 vk_bufferBarrierInfo = {
+									.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
+									.pNext = nullptr,
+									.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+									.srcAccessMask = VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
+									.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+									.dstAccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
+									.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+									.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+									.buffer = vk_ahSortableDepthBuffers[uCurrentFrameInFlightIndex],
+									.offset = 0,
+									.size = VK_WHOLE_SIZE
 								};
 								const VkDependencyInfo vk_dependencyInfo = {
 									.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
@@ -78,8 +78,8 @@ namespace RE {
 									.dependencyFlags = 0,
 									.memoryBarrierCount = 0,
 									.pMemoryBarriers = nullptr,
-									.bufferMemoryBarrierCount = static_cast<uint32_t>(sizeof(vk_aBufferBarrierInfos) / sizeof(vk_aBufferBarrierInfos[0])),
-									.pBufferMemoryBarriers = vk_aBufferBarrierInfos,
+									.bufferMemoryBarrierCount = 1,
+									.pBufferMemoryBarriers = &vk_bufferBarrierInfo,
 									.imageMemoryBarrierCount = 0,
 									.pImageMemoryBarriers = nullptr
 								};
@@ -95,11 +95,15 @@ namespace RE {
 										0,
 										nullptr);
 								vkCmdDispatch(vk_hCommandBuffer, 1, 1, 1);
+								vk_bufferBarrierInfo.srcAccessMask |= VK_ACCESS_2_SHADER_STORAGE_READ_BIT;
+								vkCmdPipelineBarrier2(vk_hCommandBuffer, &vk_dependencyInfo);
+								vkCmdDispatch(vk_hCommandBuffer, 1, 1, 1);
 							})) {
 						if (aRenderTasks[uCurrentFrameInFlightIndex].record(
 								RENDER_TASK_SUBINDEX_RENDERING,
 								VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
 								[&](VkCommandBuffer vk_hCommandBuffer, uint8_t u8PreviousLogicalQueue, uint8_t u8CurrentLogicalQueue, uint8_t u8NextLogicalQueue) {
+									PRINT_DEBUG("Recording the rendering subprocedure into Vulkan command buffer ", vk_hCommandBuffer);
 									VkClearValue vk_aClears[RENDER_PASS_ATTACHMENT_COUNT];
 									VkRenderPassBeginInfo vk_renderPassBeginInfo;
 									VkSubpassBeginInfo vk_subpassBeginInfo;
@@ -162,7 +166,10 @@ namespace RE {
 									RENDER_TASK_SUBINDEX_IMAGE_BLIT,
 									VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
 									[&](VkCommandBuffer vk_hCommandBuffer, uint8_t u8PreviousLogicalQueue, uint8_t u8CurrentLogicalQueue, uint8_t u8NextLogicalQueue) {
+										PRINT_DEBUG("Recording the image blitting subprocedure into Vulkan command buffer ", vk_hCommandBuffer);
 										if (!RENDER_IMAGE_SIZE_EQUALS_SWAPCHAIN()) {
+											const VkImage vk_hSrcImage = IS_MSAA_ENABLED() ? vk_hSinglesampledImage : vk_hRenderTargetImage;
+											PRINT_DEBUG("Recording command to blit data from Vulkan image ", vk_hSrcImage, " at layer ", uCurrentFrameInFlightIndex, " to swapchain image ", std_swapchainImages[u32CurrentSwapchainImageIndex]);
 											VkImageBlit vk_blitInfo;
 											vk_blitInfo.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 											vk_blitInfo.srcSubresource.mipLevel = 0;
@@ -204,7 +211,7 @@ namespace RE {
 											}
 											vkCmdBlitImage(
 													vk_hCommandBuffer,
-													IS_MSAA_ENABLED() ? vk_hSinglesampledImage : vk_hRenderTargetImage,
+													vk_hSrcImage,
 													VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
 													std_swapchainImages[u32CurrentSwapchainImageIndex],
 													VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
@@ -212,6 +219,7 @@ namespace RE {
 													&vk_blitInfo,
 													vk_eScreenFilter);
 										} else if (IS_MSAA_ENABLED()) {
+											PRINT_DEBUG("Recording command to resolve data from Vulkan image ", vk_hRenderTargetImage, " at layer ", uCurrentFrameInFlightIndex, " to swapchain image ", std_swapchainImages[u32CurrentSwapchainImageIndex]);
 											VkImageResolve vk_resolveInfo;
 											vk_resolveInfo.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 											vk_resolveInfo.srcSubresource.mipLevel = 0;
@@ -253,6 +261,7 @@ namespace RE {
 													1,
 													&vk_resolveInfo);
 										} else {
+											PRINT_DEBUG("Recording command to copy data from Vulkan image ", vk_hRenderTargetImage, " at layer ", uCurrentFrameInFlightIndex, " to swapchain image ", std_swapchainImages[u32CurrentSwapchainImageIndex]);
 											VkImageCopy vk_copyInfo;
 											vk_copyInfo.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 											vk_copyInfo.srcSubresource.mipLevel = 0;
@@ -336,14 +345,14 @@ namespace RE {
 										.pNext = nullptr,
 										.semaphore = swapchainSemaphores[u32CurrentSwapchainSemaphoreIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE],
 										.stageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-										.deviceIndex = 1
+										.deviceIndex = 0
 									},
 									vk_signalSwapchainSemaphoreInfo = {
 										.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
 										.pNext = nullptr,
 										.semaphore = swapchainSemaphores[u32CurrentSwapchainSemaphoreIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE + 1],
 										.stageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-										.deviceIndex = 1
+										.deviceIndex = 0
 									};
 									if (aRenderTasks[uCurrentFrameInFlightIndex].submit(
 											1,

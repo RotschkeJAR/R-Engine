@@ -6,7 +6,7 @@ namespace RE {
 
 #ifdef RE_OS_WINDOWS
 	HMODULE hLibVulkan = nullptr;
-#elif defined RE_OS_LINUX
+#else
 	void *hLibVulkan = nullptr;
 #endif
 	VkInstance vk_hInstance = VK_NULL_HANDLE;
@@ -491,7 +491,11 @@ namespace RE {
 	}
 
 #ifndef NDEBUG
-	static VKAPI_ATTR VkBool32 VKAPI_CALL vulkan_validation_layer_callback(const VkDebugUtilsMessageSeverityFlagBitsEXT vk_mSeverityFlag, const VkDebugUtilsMessageTypeFlagsEXT vk_mMsgType, const VkDebugUtilsMessengerCallbackDataEXT *const vk_pCallbackData, void *const vk_pUserData) {
+	static VKAPI_ATTR VkBool32 VKAPI_CALL vulkan_validation_layer_callback(
+			VkDebugUtilsMessageSeverityFlagBitsEXT vk_mSeverityFlag,
+			VkDebugUtilsMessageTypeFlagsEXT vk_mMsgType,
+			const VkDebugUtilsMessengerCallbackDataEXT *vk_pCallbackData,
+			void *vk_pUserData) {
 		PRINT_DEBUG("Vulkan called debug message-callback");
 		TerminalColor eConsoleColor = RE_TERMINAL_COLOR_WHITE;
 		switch (vk_mSeverityFlag) {
@@ -514,17 +518,19 @@ namespace RE {
 		}
 		println_colored(append_to_string("[", vk_pCallbackData->pMessageIdName, "]").c_str(), eConsoleColor, false, false);
 		const std::string_view msgView(vk_pCallbackData->pMessage);
-		const size_t linebreakIndex = msgView.find("\n");
-		print("\t");
-		println_colored(msgView.substr(0, linebreakIndex).data(), RE_TERMINAL_COLOR_BRIGHT_WHITE, false, false);
-		print("\t");
-		println_colored(msgView.substr(linebreakIndex + 1, -1).data(), RE_TERMINAL_COLOR_BRIGHT_WHITE, false, false);
+		size_t sLinebreakIndex = 0;
+		while (sLinebreakIndex != std::string_view::npos) {
+			const size_t sNextsLinebreakIndex = msgView.find("\n", sLinebreakIndex);
+			print("\t");
+			println_colored(msgView.substr(sLinebreakIndex, sNextsLinebreakIndex).data(), RE_TERMINAL_COLOR_BRIGHT_WHITE, false, false);
+			sLinebreakIndex = sNextsLinebreakIndex;
+		}
 		return VK_FALSE;
 	}
 #endif
 
+#ifndef NDEBUG
 	static bool setup_validation_layers() {
-	#ifndef NDEBUG
 		constexpr VkDebugUtilsMessengerCreateInfoEXT vk_debugCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
 			.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
@@ -538,10 +544,12 @@ namespace RE {
 		} else
 			RE_ERROR("Failed creating Vulkan debug messenger for validation layers");
 		return false;
-	#else
-		return true;
-	#endif
 	}
+#else
+	consteval bool setup_validation_layers() {
+		return true;
+	}
+#endif
 
 	bool init_vulkan_instance() {
 		PRINT_DEBUG("Loading Vulkan's dynamic library");
@@ -572,7 +580,7 @@ namespace RE {
 					&& load_vulkan_1_2_with_instance()
 					&& load_vulkan_1_3_with_instance()
 					&& load_extension_funcs()) {
-				setup_validation_layers();
+				[[maybe_unused]] bool bValidationLayersCreated = setup_validation_layers();
 				return true;
 			}
 			PRINT_DEBUG("Destroying Vulkan instance");

@@ -41,6 +41,10 @@ namespace RE {
 	struct GameObjectModelMatrixShaderData final {
 		float modelMatrix[16];
 	};
+
+	struct GameObjectCountShaderData final {
+		uint32_t u32Count;
+	};
 	
 	struct DepthShaderData final {
 		float depth;

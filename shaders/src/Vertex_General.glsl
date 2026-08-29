@@ -1,5 +1,7 @@
 #version 450 core
 
+#extension GL_EXT_scalar_block_layout : require
+
 layout (location = 0) in vec4 I_vertex_position;
 layout (location = 1) in vec2 I_vertex_textureCoords;
 layout (location = 2) in uint I_instance_index;
@@ -18,15 +20,19 @@ struct GameObject {
 };
 
 
-layout(std430, set = 0, binding = 0) readonly buffer GameObjectBuffer {
+layout (std430, set = 0, binding = 0) readonly buffer GameObjectBuffer {
 	GameObject data[];
 } gameObjects;
 
-layout(std430, set = 0, binding = 1) readonly buffer ModelMatrixBuffer {
+layout (std430, set = 0, binding = 1) readonly buffer ModelMatrixBuffer {
 	mat4 models[];
 } modelMatrices;
 
-layout(set = 1, binding = 0) uniform CameraMatrices {
+layout (std430, set = 0, binding = 2) uniform GameObjectCountBuffer {
+	uint count;
+} gameObjectsCounts;
+
+layout (set = 1, binding = 0) uniform CameraMatrices {
 	mat4 view;
 	mat4 projection;
 } cam;

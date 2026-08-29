@@ -25,6 +25,10 @@ namespace RE {
 	extern void *pDebugBufferContent;
 #endif
 
+	extern VkBuffer vk_hGameObjectCountBuffer;
+	extern VulkanMemory *pGameObjectsCountBufferMemory;
+	extern GameObjectCountShaderData *apGameObjectsCountBufferData[RE_VK_FRAMES_IN_FLIGHT];
+
 	bool create_renderer_buffers();
 	void destroy_renderer_buffers();
 

@@ -11,6 +11,7 @@ namespace RE {
 				if (!acquire_next_swapchain_image())
 					return true;
 				calculate_camera_matrices();
+				apGameObjectsCountBufferData[uCurrentFrameInFlightIndex]->u32Count = 1;
 				if (aRenderTasks[uCurrentFrameInFlightIndex].record(
 						RENDER_TASK_SUBINDEX_BUFFER_TRANSFER,
 						VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
@@ -378,6 +379,8 @@ namespace RE {
 				break;
 			case VK_TIMEOUT:
 				RE_ABORT("Rendering timed out after ", u64RenderTimeoutSec, " seconds");
+			case VK_ERROR_DEVICE_LOST:
+				RE_ABORT("Failed to synchronize with rendering process. Suspecting fatal error (device lost)");
 			default:
 				RE_FATAL_ERROR("Failed to wait for the Vulkan fence to synchronize rendering");
 				break;

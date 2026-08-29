@@ -18,30 +18,39 @@ namespace RE {
 			PRINT_DEBUG("Writing to all descriptor sets for game objects");
 			VkDescriptorBufferInfo vk_aaBufferDescs[RE_VK_GAME_OBJECTS_DESC_SET_BINDING_COUNT][RE_VK_FRAMES_IN_FLIGHT];
 			VkWriteDescriptorSet vk_aWriteSets[RE_VK_GAME_OBJECTS_DESC_SET_BINDING_COUNT * RE_VK_FRAMES_IN_FLIGHT];
-			for (uint8_t u8FrameInFlightIndex = 0; u8FrameInFlightIndex < RE_VK_FRAMES_IN_FLIGHT; u8FrameInFlightIndex++) {
-				for (uint32_t u32BindingIndex = 0; u32BindingIndex < RE_VK_GAME_OBJECTS_DESC_SET_BINDING_COUNT; u32BindingIndex++) {
-					const uint32_t u32WriteSetIndex = u8FrameInFlightIndex * RE_VK_GAME_OBJECTS_DESC_SET_BINDING_COUNT + u32BindingIndex;
+			for (unsigned uFrameInFlightIndex = 0; uFrameInFlightIndex < RE_VK_FRAMES_IN_FLIGHT; uFrameInFlightIndex++) {
+				for (unsigned uBindingIndex = 0; uBindingIndex < RE_VK_GAME_OBJECTS_DESC_SET_BINDING_COUNT; uBindingIndex++) {
+					const uint32_t u32WriteSetIndex = uFrameInFlightIndex * RE_VK_GAME_OBJECTS_DESC_SET_BINDING_COUNT + uBindingIndex;
 					vk_aWriteSets[u32WriteSetIndex].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 					vk_aWriteSets[u32WriteSetIndex].pNext = nullptr;
-					vk_aWriteSets[u32WriteSetIndex].dstSet = vk_ahGameObjectsDescSets[u8FrameInFlightIndex];
-					vk_aWriteSets[u32WriteSetIndex].dstBinding = u32BindingIndex;
+					vk_aWriteSets[u32WriteSetIndex].dstSet = vk_ahGameObjectsDescSets[uFrameInFlightIndex];
+					vk_aWriteSets[u32WriteSetIndex].dstBinding = uBindingIndex;
 					vk_aWriteSets[u32WriteSetIndex].dstArrayElement = 0;
 					vk_aWriteSets[u32WriteSetIndex].descriptorCount = 1;
-					vk_aWriteSets[u32WriteSetIndex].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 					vk_aWriteSets[u32WriteSetIndex].pImageInfo = nullptr;
-					vk_aWriteSets[u32WriteSetIndex].pBufferInfo = &vk_aaBufferDescs[u32BindingIndex][u8FrameInFlightIndex];
+					vk_aWriteSets[u32WriteSetIndex].pBufferInfo = &vk_aaBufferDescs[uBindingIndex][uFrameInFlightIndex];
 					vk_aWriteSets[u32WriteSetIndex].pTexelBufferView = nullptr;
-					vk_aaBufferDescs[u32BindingIndex][u8FrameInFlightIndex].offset = 0;
-					vk_aaBufferDescs[u32BindingIndex][u8FrameInFlightIndex].range = VK_WHOLE_SIZE;
-					switch (u32BindingIndex) {
+					switch (uBindingIndex) {
 						case RE_VK_GAME_OBJECTS_DESC_SET_INSTANCE_BINDING_INDEX:
-							vk_aaBufferDescs[u32BindingIndex][u8FrameInFlightIndex].buffer = vk_ahGameObjectsBuffers[u8FrameInFlightIndex];
+							vk_aWriteSets[u32WriteSetIndex].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+							vk_aaBufferDescs[uBindingIndex][uFrameInFlightIndex].buffer = vk_ahGameObjectsBuffers[uFrameInFlightIndex];
+							vk_aaBufferDescs[uBindingIndex][uFrameInFlightIndex].offset = 0;
+							vk_aaBufferDescs[uBindingIndex][uFrameInFlightIndex].range = VK_WHOLE_SIZE;
 							break;
 						case RE_VK_GAME_OBJECTS_DESC_SET_MODEL_MATRIX_BINDING_INDEX:
-							vk_aaBufferDescs[u32BindingIndex][u8FrameInFlightIndex].buffer = vk_ahGameObjectsModelMatrixBuffers[u8FrameInFlightIndex];
+							vk_aWriteSets[u32WriteSetIndex].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+							vk_aaBufferDescs[uBindingIndex][uFrameInFlightIndex].buffer = vk_ahGameObjectsModelMatrixBuffers[uFrameInFlightIndex];
+							vk_aaBufferDescs[uBindingIndex][uFrameInFlightIndex].offset = 0;
+							vk_aaBufferDescs[uBindingIndex][uFrameInFlightIndex].range = VK_WHOLE_SIZE;
+							break;
+						case RE_VK_GAME_OBJECTS_DESC_SET_TOTAL_COUNT_BINDING_INDEX:
+							vk_aWriteSets[u32WriteSetIndex].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+							vk_aaBufferDescs[uBindingIndex][uFrameInFlightIndex].buffer = vk_hGameObjectCountBuffer;
+							vk_aaBufferDescs[uBindingIndex][uFrameInFlightIndex].offset = next_multiple_inclusive<VkDeviceSize>(sizeof(GameObjectCountShaderData), vk_uniformBufferAlignment) * uFrameInFlightIndex;
+							vk_aaBufferDescs[uBindingIndex][uFrameInFlightIndex].range = sizeof(GameObjectCountShaderData);
 							break;
 						[[unlikely]] default:
-							RE_ABORT("Unknown binding index: ", u32BindingIndex);
+							RE_ABORT("Unknown binding index: ", uBindingIndex);
 					}
 				}
 			}

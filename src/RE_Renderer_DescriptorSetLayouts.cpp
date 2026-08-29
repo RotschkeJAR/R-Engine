@@ -28,6 +28,12 @@ namespace RE {
 				.descriptorCount = 1,
 				.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
 				.pImmutableSamplers = nullptr
+			}, {
+				.binding = RE_VK_GAME_OBJECTS_DESC_SET_TOTAL_COUNT_BINDING_INDEX,
+				.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+				.descriptorCount = 1,
+				.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
+				.pImmutableSamplers = nullptr
 			}
 		};
 		const VkDescriptorSetLayoutCreateInfo vk_layoutCreateInfo = {

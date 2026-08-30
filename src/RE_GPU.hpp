@@ -13,7 +13,7 @@ namespace RE {
 	// Surface
 	extern VkSurfaceKHR vk_hSurface;
 	extern VkSurfaceCapabilitiesKHR vk_surfaceCapabilities;
-	extern std::unique_ptr<VkSurfaceFormatKHR[]> surfaceFormatsAvailable;
+	extern std::unique_ptr<VkSurfaceFormatKHR[]> std_surfaceFormatsAvailable;
 	extern VkCompositeAlphaFlagBitsKHR vk_eCompositeAlphaSelected;
 	extern uint32_t u32SurfaceFormatsAvailableCount,
 		u32IndexToSelectedSurfaceFormat;
@@ -29,30 +29,30 @@ namespace RE {
 		VkPhysicalDeviceType vk_eType;
 		int32_t i32Scoring;
 	};
-	extern std::unique_ptr<PhysicalVulkanDeviceInfo[]> physicalDevicesAvailable;
+	extern std::unique_ptr<PhysicalVulkanDeviceInfo[]> std_physicalDevicesAvailable;
 	extern uint32_t u32PhysicalDevicesAvailableCount,
 		u32IndexToSelectedPhysicalDevice;
-#define SELECTED_PHYSICAL_VULKAN_DEVICE           physicalDevicesAvailable[u32IndexToSelectedPhysicalDevice].vk_hPhysicalDevice
-#define SELECTED_PHYSICAL_VULKAN_DEVICE_NAME      physicalDevicesAvailable[u32IndexToSelectedPhysicalDevice].pacName
-#define SELECTED_PHYSICAL_VULKAN_DEVICE_TYPE      physicalDevicesAvailable[u32IndexToSelectedPhysicalDevice].vk_eType
-#define SELECTED_PHYSICAL_VULKAN_DEVICE_SCORING   physicalDevicesAvailable[u32IndexToSelectedPhysicalDevice].i32Scoring
+#define SELECTED_PHYSICAL_VULKAN_DEVICE           std_physicalDevicesAvailable[u32IndexToSelectedPhysicalDevice].vk_hPhysicalDevice
+#define SELECTED_PHYSICAL_VULKAN_DEVICE_NAME      std_physicalDevicesAvailable[u32IndexToSelectedPhysicalDevice].pacName
+#define SELECTED_PHYSICAL_VULKAN_DEVICE_TYPE      std_physicalDevicesAvailable[u32IndexToSelectedPhysicalDevice].vk_eType
+#define SELECTED_PHYSICAL_VULKAN_DEVICE_SCORING   std_physicalDevicesAvailable[u32IndexToSelectedPhysicalDevice].i32Scoring
 	void select_physical_vulkan_device(uint32_t u32PhysicalDeviceIndex);
 
 	// Scheduler
-#define RE_VK_LOGICAL_QUEUE_IGNORED std::numeric_limits<uint8_t>::max()
-	extern std::unique_ptr<uint32_t[]> queueFamilyIndices;
-	extern std::unique_ptr<VkQueue[]> vk_pahQueues;
-	extern std::unique_ptr<VkQueueFlags[]> vk_paeQueueTypes;
-	extern std::vector<bool> presentationAvailablePerQueue;
-	extern uint8_t u8LogicalQueueCount;
-	VkQueue get_present_queue(uint8_t u8PreferredQueueIndex);
+#define RE_VK_LOGICAL_QUEUE_IGNORED UINT_MAX
+	extern std::unique_ptr<uint32_t[]> std_queueFamilyIndices;
+	extern std::unique_ptr<VkQueue[]> std_queues;
+	extern std::unique_ptr<VkQueueFlags[]> std_queueTypes;
+	extern std::vector<bool> std_presentationAvailablePerQueue;
+	extern unsigned uLogicalQueueCount;
+	VkQueue get_present_queue(unsigned u8PreferredQueueIndex);
 
 	class VulkanQueueCollection final {
 		public:
-			std::unique_ptr<uint32_t[]> queueFamilyIndices;
-			std::unique_ptr<uint8_t[]> logicalQueueIndices;
+			std::unique_ptr<uint32_t[]> std_queueFamilyIndices;
+			std::unique_ptr<unsigned[]> std_logicalQueueIndices;
 			VkSharingMode vk_eSharingMode;
-			uint8_t u8QueueCount;
+			unsigned uQueueCount;
 
 			VulkanQueueCollection() = default;
 
@@ -64,46 +64,55 @@ namespace RE {
 	};
 	
 	struct VulkanTask_Queues final {
-		const uint8_t *pau8LogicalQueueIndices;
+		const unsigned *pauLogicalQueueIndices;
 		const VkQueueFlagBits *vk_paeQueueTypes;
-		const uint32_t *pau32StrictSeparationIds;
-		uint32_t u32FunctionsCount;
+		const unsigned *pauStrictSeparationIds;
+		unsigned uFunctionsCount;
 	};
 
 	class VulkanTask final {
 		private:
-			std::shared_ptr<uint8_t[]> queueIndexPerCommandPool;
-			std::unique_ptr<VkCommandPool[]> commandPools;
-			std::shared_ptr<uint8_t[]> commandPoolIndexPerCommandBuffer;
-			std::unique_ptr<VkCommandBuffer[]> commandBuffers;
+			std::shared_ptr<unsigned[]> std_queueIndexPerCommandPool;
+			std::unique_ptr<VkCommandPool[]> std_commandPools;
+			std::shared_ptr<unsigned[]> std_commandPoolIndexPerCommandBuffer;
+			std::unique_ptr<VkCommandBuffer[]> std_commandBuffers;
 			VkSemaphore vk_hInternalSemaphore;
-			uint32_t u32FunctionsCount;
-			uint8_t u8CommandPoolCount;
-			uint8_t u8LogicalPresentQueueIndex;
+			unsigned uFunctionsCount;
+			unsigned uCommandPoolCount;
+			unsigned uLogicalPresentQueueIndex;
 			bool bTransient;
 
 		public:
 			VulkanTask();
-			VulkanTask(uint32_t u32FunctionsCount, const VkQueueFlagBits *vk_paeQueueTypePerFunctionRequiredInOrder, bool bIndividualResets, bool bIncludePresentation, bool bTransient);
-			VulkanTask(uint32_t u32FunctionsCount, const uint8_t *pau8LogicalQueueIndexPerFunctionRequiredInOrder, bool bIndividualResets, bool bIncludePresentation, bool bTransient);
+			VulkanTask(unsigned uFunctionsCount, const VkQueueFlagBits *vk_paeQueueTypePerFunctionRequiredInOrder, bool bIndividualResets, bool bIncludePresentation, bool bTransient);
+			VulkanTask(unsigned uFunctionsCount, const unsigned *pau8LogicalQueueIndexPerFunctionRequiredInOrder, bool bIndividualResets, bool bIncludePresentation, bool bTransient);
 			VulkanTask(const VulkanTask_Queues &rQueues, bool bIndividualResets, bool bIncludePresentation, bool bTransient);
 			VulkanTask(const VulkanTask &rCopy, bool bIndividualResets, bool bTransient);
 			VulkanTask(VulkanTask&) = delete;
 			explicit VulkanTask(VulkanTask &&rrTask);
 			~VulkanTask();
-			bool init(uint32_t u32FunctionsCount, const VkQueueFlagBits *vk_paeQueueTypePerFunctionRequiredInOrder, bool bIndividualResets, bool bIncludePresentation, bool bTransient);
-			bool init(uint32_t u32FunctionsCount, const uint8_t *pau8LogicalQueueIndexPerFunctionRequiredInOrder, bool bIndividualResets, bool bIncludePresentation, bool bTransient);
+			bool init(unsigned uFunctionsCount, const VkQueueFlagBits *vk_paeQueueTypePerFunctionRequiredInOrder, bool bIndividualResets, bool bIncludePresentation, bool bTransient);
+			bool init(unsigned uFunctionsCount, const unsigned *pau8LogicalQueueIndexPerFunctionRequiredInOrder, bool bIndividualResets, bool bIncludePresentation, bool bTransient);
 			bool init(const VulkanTask_Queues &rQueues, bool bIndividualResets, bool bIncludePresentation, bool bTransient);
 			bool init(const VulkanTask &rCopy, bool bIndividualResets, bool bTransient);
 			void destroy();
-			bool record(uint32_t u32FunctionIndex, VkCommandBufferUsageFlags vk_eUsageFlags, std::function<void (VkCommandBuffer vk_hCommandBuffer, uint8_t u8PreviousLogicalQueue, uint8_t u8CurrentLogicalQueue, uint8_t u8NextLogicalQueue)> recorderFunction) const;
-			bool submit(uint32_t u32SemaphoresToWaitForCount, const VkSemaphoreSubmitInfo *vk_paSemaphoresToWaitFor, const VkPipelineStageFlags2 *vk_paeInternSemaphoreWaits, uint32_t u32SemaphoresToSignal, const VkSemaphoreSubmitInfo *vk_paSemaphoresToSignal, VkFence vk_hFenceToSignal) const;
+			bool record(
+					unsigned uFunctionIndex,
+					VkCommandBufferUsageFlags vk_eUsageFlags,
+					std::function<void (VkCommandBuffer vk_hCommandBuffer, unsigned u8PreviousLogicalQueue, unsigned u8CurrentLogicalQueue, unsigned u8NextLogicalQueue)> recorderFunction) const;
+			bool submit(
+					uint32_t u32SemaphoresToWaitForCount,
+					const VkSemaphoreSubmitInfo *vk_paSemaphoresToWaitFor,
+					const VkPipelineStageFlags2 *vk_paeInternSemaphoreWaits,
+					uint32_t u32SemaphoresToSignal,
+					const VkSemaphoreSubmitInfo *vk_paSemaphoresToSignal,
+					VkFence vk_hFenceToSignal) const;
 			void reset_all(VkCommandPoolResetFlags vk_eResetFlags = 0) const;
-			VkCommandPool command_pool_of_function(uint32_t u32FunctionIndex) const;
-			uint32_t function_count() const;
-			uint8_t logical_queue_index_for_function(uint32_t u32FunctionIndex) const;
-			uint8_t logical_queue_index_for_presentation() const;
-			VulkanQueueCollection queues_of_functions(const uint32_t *pau32FunctionIndices, uint32_t u32FunctionIndexCount, bool bIncludePresentation) const;
+			VkCommandPool command_pool_of_function(unsigned uFunctionIndex) const;
+			unsigned function_count() const;
+			unsigned logical_queue_index_for_function(unsigned uFunctionIndex) const;
+			unsigned logical_queue_index_for_presentation() const;
+			VulkanQueueCollection queues_of_functions(const unsigned *pauFunctionIndices, unsigned uFunctionIndexCount, bool bIncludePresentation) const;
 			bool valid() const;
 	};
 
@@ -114,7 +123,7 @@ namespace RE {
 	bool bind_vulkan_memory(VulkanStorageObject vulkanStorageObject, VkDeviceMemory vk_hMemory, VkDeviceSize vk_memoryOffset = 0);
 	struct SharedVulkanMemoryInfo final {
 		VulkanStorageObject vulkanStorageObject;
-		uint32_t u32RegionIndex;
+		unsigned uRegionIndex;
 	};
 	struct VulkanMemoryAllocationInfo final {
 		size_t indexToMemory;
@@ -128,7 +137,7 @@ namespace RE {
 			std::unique_ptr<VulkanMemory[]> &rAllocatedMemory,
 			VulkanMemoryAllocationInfo *paAllocationResults = nullptr,
 			bool *pbVulkanStorageObjectsUnbound = nullptr);
-	std::optional<uint8_t> find_vulkan_memory_type(VkMemoryPropertyFlags vk_mProperties, uint32_t m32MemoryTypeBits);
+	std::optional<unsigned> find_vulkan_memory_type(VkMemoryPropertyFlags vk_mProperties, uint32_t m32MemoryTypeBits);
 	bool do_memory_properties_exist(VkMemoryPropertyFlags vk_mProperties);
 	bool is_staging_before_gpu_use_necessary();
 	uint32_t get_remaining_vulkan_allocations();
@@ -136,20 +145,20 @@ namespace RE {
 		private:
 			VkDeviceMemory vk_hMemory;
 			VkDeviceSize vk_size;
-			uint8_t u8MemoryType;
+			unsigned uMemoryType;
 			bool bCoherent,
 				bMapped;
 
 		public:
 			VulkanMemory();
 			VulkanMemory(VkDeviceSize vk_size, VkMemoryPropertyFlags vk_mProperties, uint32_t m32DesiredMemoryTypes);
-			VulkanMemory(VkDeviceSize vk_size, uint8_t u8MemoryTypeIndex);
+			VulkanMemory(VkDeviceSize vk_size, unsigned uMemoryTypeIndex);
 			VulkanMemory(VulkanMemory &rMemory) = delete;
 			explicit VulkanMemory(VulkanMemory &&rrMemory);
 			~VulkanMemory();
 			
 			VkResult alloc(VkDeviceSize vk_size, VkMemoryPropertyFlags vk_mProperties, uint32_t m32DesiredMemoryTypes);
-			VkResult alloc(VkDeviceSize vk_size, uint8_t u8MemoryTypeIndex);
+			VkResult alloc(VkDeviceSize vk_size, unsigned uMemoryTypeIndex);
 			VkResult alloc_for_buffer(VkBuffer vk_hBuffer, VkMemoryPropertyFlags vk_mProperties);
 			VkResult alloc_for_image(VkImage vk_hImage, VkMemoryPropertyFlags vk_mProperties);
 			void free();
@@ -161,7 +170,7 @@ namespace RE {
 			bool valid() const;
 			VkDeviceMemory get() const;
 			VkDeviceSize size() const;
-			uint8_t type_index() const;
+			unsigned type_index() const;
 			bool cpu_coherent() const;
 			bool mapped() const;
 

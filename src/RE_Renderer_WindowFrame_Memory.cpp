@@ -12,7 +12,7 @@ namespace RE {
 		const SharedVulkanMemoryInfo aLocalMemoryInfos[] = {
 			{
 				.vulkanStorageObject = vk_hWindowFrameBuffer,
-				.u32RegionIndex = 0
+				.uRegionIndex = 0
 			}
 		};
 		constexpr size_t sLocalResourcesCount = sizeof(aLocalMemoryInfos) / sizeof(aLocalMemoryInfos[0]);
@@ -40,7 +40,7 @@ namespace RE {
 				const SharedVulkanMemoryInfo aMemoryInfos[] = {
 					{
 						.vulkanStorageObject = vk_hWindowButtonImage,
-						.u32RegionIndex = 0
+						.uRegionIndex = 0
 					}
 				};
 				if (alloc_shared_vulkan_memory(

@@ -183,128 +183,143 @@ namespace RE {
 						&pVulkanTexture->vk_hImage)) {
 					if (pVulkanTexture->imageMemory.alloc_for_image(pVulkanTexture->vk_hImage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) == VK_SUCCESS) {
 						PRINT_DEBUG("Assigning commands and recording Vulkan task for transferring texture to GPU");
-						const uint8_t a2u8LogicalQueueIndices[2] = {RE_VK_LOGICAL_QUEUE_IGNORED, aRenderTasks[0].logical_queue_index_for_function(RENDER_TASK_SUBINDEX_RENDERING)};
-						constexpr VkQueueFlagBits vk_a2eQueueTypes[2] = {VK_QUEUE_TRANSFER_BIT, VK_QUEUE_GRAPHICS_BIT};
-						constexpr uint32_t a2u32SeparationIds[2] = {0, 1};
+						const unsigned a2uLogicalQueueIndices[2] = {
+							RE_VK_LOGICAL_QUEUE_IGNORED,
+							aRenderTasks[0].logical_queue_index_for_function(RENDER_TASK_SUBINDEX_RENDERING)
+						};
+						constexpr VkQueueFlagBits vk_a2eQueueTypes[2] = {
+							VK_QUEUE_TRANSFER_BIT,
+							VK_QUEUE_GRAPHICS_BIT
+						};
+						constexpr unsigned a2uSeparationIds[2] = {
+							0,
+							1
+						};
 						const VulkanTask_Queues occupiedTransferQueues = {
-							.pau8LogicalQueueIndices = a2u8LogicalQueueIndices,
+							.pauLogicalQueueIndices = a2uLogicalQueueIndices,
 							.vk_paeQueueTypes = vk_a2eQueueTypes,
-							.pau32StrictSeparationIds = a2u32SeparationIds,
-							.u32FunctionsCount = 2
+							.pauStrictSeparationIds = a2uSeparationIds,
+							.uFunctionsCount = 2
 						};
 						VulkanTask transferTask(occupiedTransferQueues, false, false, true);
-						transferTask.record(0, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, [&](VkCommandBuffer vk_hCommandBuffer, uint8_t u8PreviousLogicalQueue, uint8_t u8CurrentLogicalQueue, uint8_t u8NextLogicalQueue) {
-								const VkImageMemoryBarrier2 vk_imageLayoutBarrier = {
-									.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-									.srcStageMask = VK_PIPELINE_STAGE_2_NONE,
-									.srcAccessMask = VK_ACCESS_2_NONE,
-									.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-									.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
-									.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-									.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-									.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-									.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-									.image = pVulkanTexture->vk_hImage,
-									.subresourceRange = {
-										.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-										.baseMipLevel = 0,
-										.levelCount = 1,
-										.baseArrayLayer = 0,
-										.layerCount = 1
+						transferTask.record(
+								0,
+								VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+								[&](VkCommandBuffer vk_hCommandBuffer, unsigned uPreviousLogicalQueue, unsigned uCurrentLogicalQueue, unsigned uNextLogicalQueue) {
+									const VkImageMemoryBarrier2 vk_imageLayoutBarrier = {
+										.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+										.srcStageMask = VK_PIPELINE_STAGE_2_NONE,
+										.srcAccessMask = VK_ACCESS_2_NONE,
+										.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+										.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
+										.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+										.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+										.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+										.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+										.image = pVulkanTexture->vk_hImage,
+										.subresourceRange = {
+											.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+											.baseMipLevel = 0,
+											.levelCount = 1,
+											.baseArrayLayer = 0,
+											.layerCount = 1
+										}
+									};
+									const VkDependencyInfo vk_transitImageLayoutInfo = {
+										.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+										.imageMemoryBarrierCount = 1,
+										.pImageMemoryBarriers = &vk_imageLayoutBarrier
+									};
+									vkCmdPipelineBarrier2(vk_hCommandBuffer, &vk_transitImageLayoutInfo);
+									const VkBufferImageCopy2 vk_copyRegion = {
+										.sType = VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2,
+										.bufferOffset = 0,
+										.bufferRowLength = 0,
+										.bufferImageHeight = 0,
+										.imageSubresource = {
+											.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+											.mipLevel = 0,
+											.baseArrayLayer = 0,
+											.layerCount = 1
+										},
+										.imageExtent = {
+											.width = u32Width,
+											.height = u32Height,
+											.depth = 1
+										}
+									};
+									const VkCopyBufferToImageInfo2 vk_copyInfo = {
+										.sType = VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2,
+										.srcBuffer = stagingImageBuffer.get(),
+										.dstImage = pVulkanTexture->vk_hImage,
+										.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+										.regionCount = 1,
+										.pRegions = &vk_copyRegion,
+									};
+									vkCmdCopyBufferToImage2(vk_hCommandBuffer, &vk_copyInfo);
+									VkImageMemoryBarrier2 vk_imageLayoutFinalBarrier;
+									vk_imageLayoutFinalBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+									vk_imageLayoutFinalBarrier.pNext = nullptr;
+									vk_imageLayoutFinalBarrier.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+									vk_imageLayoutFinalBarrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+									vk_imageLayoutFinalBarrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+									vk_imageLayoutFinalBarrier.dstAccessMask = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT;
+									vk_imageLayoutFinalBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+									vk_imageLayoutFinalBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+									vk_imageLayoutFinalBarrier.image = pVulkanTexture->vk_hImage;
+									vk_imageLayoutFinalBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+									vk_imageLayoutFinalBarrier.subresourceRange.baseMipLevel = 0;
+									vk_imageLayoutFinalBarrier.subresourceRange.levelCount = 1;
+									vk_imageLayoutFinalBarrier.subresourceRange.baseArrayLayer = 0;
+									vk_imageLayoutFinalBarrier.subresourceRange.layerCount = 1;
+									if (uCurrentLogicalQueue == uNextLogicalQueue) {
+										vk_imageLayoutFinalBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+										vk_imageLayoutFinalBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+									} else {
+										vk_imageLayoutFinalBarrier.srcQueueFamilyIndex = std_queueFamilyIndices[uCurrentLogicalQueue];
+										vk_imageLayoutFinalBarrier.dstQueueFamilyIndex = std_queueFamilyIndices[uNextLogicalQueue];
 									}
-								};
-								const VkDependencyInfo vk_transitImageLayoutInfo = {
-									.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-									.imageMemoryBarrierCount = 1,
-									.pImageMemoryBarriers = &vk_imageLayoutBarrier
-								};
-								vkCmdPipelineBarrier2(vk_hCommandBuffer, &vk_transitImageLayoutInfo);
-								const VkBufferImageCopy2 vk_copyRegion = {
-									.sType = VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2,
-									.bufferOffset = 0,
-									.bufferRowLength = 0,
-									.bufferImageHeight = 0,
-									.imageSubresource = {
-										.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-										.mipLevel = 0,
-										.baseArrayLayer = 0,
-										.layerCount = 1
-									},
-									.imageExtent = {
-										.width = u32Width,
-										.height = u32Height,
-										.depth = 1
-									}
-								};
-								const VkCopyBufferToImageInfo2 vk_copyInfo = {
-									.sType = VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2,
-									.srcBuffer = stagingImageBuffer.get(),
-									.dstImage = pVulkanTexture->vk_hImage,
-									.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-									.regionCount = 1,
-									.pRegions = &vk_copyRegion,
-								};
-								vkCmdCopyBufferToImage2(vk_hCommandBuffer, &vk_copyInfo);
-								VkImageMemoryBarrier2 vk_imageLayoutFinalBarrier;
-								vk_imageLayoutFinalBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
-								vk_imageLayoutFinalBarrier.pNext = nullptr;
-								vk_imageLayoutFinalBarrier.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
-								vk_imageLayoutFinalBarrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
-								vk_imageLayoutFinalBarrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
-								vk_imageLayoutFinalBarrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
-								vk_imageLayoutFinalBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-								vk_imageLayoutFinalBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-								vk_imageLayoutFinalBarrier.image = pVulkanTexture->vk_hImage;
-								vk_imageLayoutFinalBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-								vk_imageLayoutFinalBarrier.subresourceRange.baseMipLevel = 0;
-								vk_imageLayoutFinalBarrier.subresourceRange.levelCount = 1;
-								vk_imageLayoutFinalBarrier.subresourceRange.baseArrayLayer = 0;
-								vk_imageLayoutFinalBarrier.subresourceRange.layerCount = 1;
-								if (u8CurrentLogicalQueue == u8NextLogicalQueue) {
-									vk_imageLayoutFinalBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-									vk_imageLayoutFinalBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-								} else {
-									vk_imageLayoutFinalBarrier.srcQueueFamilyIndex = queueFamilyIndices[u8CurrentLogicalQueue];
-									vk_imageLayoutFinalBarrier.dstQueueFamilyIndex = queueFamilyIndices[u8NextLogicalQueue];
-								}
-								const VkDependencyInfo vk_transitImageLayoutFinalInfo = {
-									.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-									.imageMemoryBarrierCount = 1,
-									.pImageMemoryBarriers = &vk_imageLayoutFinalBarrier
-								};
-								vkCmdPipelineBarrier2(vk_hCommandBuffer, &vk_transitImageLayoutFinalInfo);
-						});
-						transferTask.record(1, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, [&](VkCommandBuffer vk_hCommandBuffer, uint8_t u8PreviousLogicalQueue, uint8_t u8CurrentLogicalQueue, uint8_t u8NextLogicalQueue) {
-								if (u8PreviousLogicalQueue == u8CurrentLogicalQueue)
-									return;
-								const VkImageMemoryBarrier2 vk_inheritImageBarrier = {
-									.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-									.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-									.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
-									.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
-									.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,
-									.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-									.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-									.srcQueueFamilyIndex = queueFamilyIndices[u8PreviousLogicalQueue],
-									.dstQueueFamilyIndex = queueFamilyIndices[u8CurrentLogicalQueue],
-									.image = pVulkanTexture->vk_hImage,
-									.subresourceRange = {
-										.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-										.baseMipLevel = 0,
-										.levelCount = 1,
-										.baseArrayLayer = 0,
-										.layerCount = 1
-									}
-								};
-								const VkDependencyInfo vk_inheritImageInfo = {
-									.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-									.imageMemoryBarrierCount = 1,
-									.pImageMemoryBarriers = &vk_inheritImageBarrier
-								};
-								vkCmdPipelineBarrier2(vk_hCommandBuffer, &vk_inheritImageInfo);
-						});
+									const VkDependencyInfo vk_transitImageLayoutFinalInfo = {
+										.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+										.imageMemoryBarrierCount = 1,
+										.pImageMemoryBarriers = &vk_imageLayoutFinalBarrier
+									};
+									vkCmdPipelineBarrier2(vk_hCommandBuffer, &vk_transitImageLayoutFinalInfo);
+								});
+						transferTask.record(
+								1,
+								VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+								[&](VkCommandBuffer vk_hCommandBuffer, unsigned uPreviousLogicalQueue, unsigned uCurrentLogicalQueue, unsigned uNextLogicalQueue) {
+									if (uPreviousLogicalQueue == uCurrentLogicalQueue)
+										return;
+									const VkImageMemoryBarrier2 vk_inheritImageBarrier = {
+										.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+										.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+										.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
+										.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+										.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,
+										.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+										.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+										.srcQueueFamilyIndex = std_queueFamilyIndices[uPreviousLogicalQueue],
+										.dstQueueFamilyIndex = std_queueFamilyIndices[uCurrentLogicalQueue],
+										.image = pVulkanTexture->vk_hImage,
+										.subresourceRange = {
+											.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+											.baseMipLevel = 0,
+											.levelCount = 1,
+											.baseArrayLayer = 0,
+											.layerCount = 1
+										}
+									};
+									const VkDependencyInfo vk_inheritImageInfo = {
+										.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+										.imageMemoryBarrierCount = 1,
+										.pImageMemoryBarriers = &vk_inheritImageBarrier
+									};
+									vkCmdPipelineBarrier2(vk_hCommandBuffer, &vk_inheritImageInfo);
+								});
 						PRINT_DEBUG("Submitting Vulkan task for transferring texture to GPU");
-						constexpr uint64_t u64TextureTransferTimeoutSec = 6;
+						constexpr uint64_t u64TextureTransferTimeoutSec = 5;
 						Vulkan_Fence transferFence(0);
 						textureCopyThread.join();
 						constexpr VkPipelineStageFlags2 vk_eWaitStage = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
@@ -372,7 +387,7 @@ namespace RE {
 								.pBufferInfo = nullptr,
 								.pTexelBufferView = nullptr
 							};
-							switch (transferFence.wait_for(u64TextureTransferTimeoutSec * 1000000000)) {
+							switch (transferFence.wait_for(u64TextureTransferTimeoutSec * 1000000000UL)) {
 								case VK_SUCCESS:
 									if (!are_vulkan_features_enabled<ENABLED_FEATURE_UPDATE_UNUSED_DESCRIPTORS_WHILE_PENDING_BIT>())
 										wait_for_rendering_finished();
@@ -387,7 +402,7 @@ namespace RE {
 						} else
 							RE_FATAL_ERROR("Failed to create Vulkan image view for image ", pVulkanTexture->vk_hImage);
 						PRINT_DEBUG("Freeing Vulkan image's memory on GPU due to failure creating an image view");
-						switch (transferFence.wait_for(u64TextureTransferTimeoutSec * 1000000000)) {
+						switch (transferFence.wait_for(u64TextureTransferTimeoutSec * 1000000000UL)) {
 							case VK_SUCCESS:
 								break;
 							case VK_TIMEOUT:

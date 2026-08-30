@@ -2,7 +2,7 @@
 
 namespace RE {
 	
-	std::unique_ptr<PhysicalVulkanDeviceInfo[]> physicalDevicesAvailable;
+	std::unique_ptr<PhysicalVulkanDeviceInfo[]> std_physicalDevicesAvailable;
 	uint32_t u32PhysicalDevicesAvailableCount,
 		u32IndexToSelectedPhysicalDevice;
 
@@ -43,10 +43,10 @@ namespace RE {
 		);
 		PRINT_DEBUG("Saving all suitable, available physical Vulkan devices");
 		u32PhysicalDevicesAvailableCount = suitablePhysicalDevices.size();
-		physicalDevicesAvailable = std::make_unique<PhysicalVulkanDeviceInfo[]>(u32PhysicalDevicesAvailableCount);
+		std_physicalDevicesAvailable = std::make_unique<PhysicalVulkanDeviceInfo[]>(u32PhysicalDevicesAvailableCount);
 		uint32_t u32CurrentIndex = 0;
 		while (!suitablePhysicalDevices.empty()) {
-			physicalDevicesAvailable[u32CurrentIndex] = suitablePhysicalDevices.back();
+			std_physicalDevicesAvailable[u32CurrentIndex] = suitablePhysicalDevices.back();
 			suitablePhysicalDevices.pop_back();
 			u32CurrentIndex++;
 		}
@@ -56,7 +56,7 @@ namespace RE {
 	}
 
 	void free_physical_vulkan_device_list() {
-		physicalDevicesAvailable.reset();
+		std_physicalDevicesAvailable.reset();
 	}
 
 	void select_physical_vulkan_device(const uint32_t u32PhysicalDeviceIndex) {

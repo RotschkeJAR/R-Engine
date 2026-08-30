@@ -16,8 +16,8 @@ namespace RE {
 				0,
 				vk_bufferSize,
 				VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-				rQueues.u8QueueCount,
-				rQueues.queueFamilyIndices.get(),
+				rQueues.uQueueCount,
+				rQueues.std_queueFamilyIndices.get(),
 				&vk_hGameObjectCountBuffer)) {
 			return true;
 		} else

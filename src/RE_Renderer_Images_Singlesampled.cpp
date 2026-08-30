@@ -26,8 +26,8 @@ namespace RE {
 				VK_SAMPLE_COUNT_1_BIT,
 				VK_IMAGE_TILING_OPTIMAL,
 				vk_mSinglesampledImageUsages,
-				occupiedQueuesInfo.u8QueueCount,
-				occupiedQueuesInfo.queueFamilyIndices.get(),
+				occupiedQueuesInfo.uQueueCount,
+				occupiedQueuesInfo.std_queueFamilyIndices.get(),
 				VK_IMAGE_LAYOUT_UNDEFINED,
 				&vk_hSinglesampledImage))
 			return true;

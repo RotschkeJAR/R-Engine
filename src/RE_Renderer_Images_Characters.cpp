@@ -36,7 +36,13 @@ namespace RE {
 	bool create_character_image_view() {
 		PRINT_DEBUG("Creating staging Vulkan buffer for transferring character textures to GPU");
 		constexpr VkDeviceSize vk_stagingBufferSize = (CHAR_TEXTURE_SIZE * CHAR_TEXTURE_SIZE) * CHAR_TEXTURE_COUNT * sizeof(uint8_t);
-		Vulkan_Buffer stagingBuffer(0, vk_stagingBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 1, nullptr, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+		Vulkan_Buffer stagingBuffer(
+				0,
+				vk_stagingBufferSize,
+				VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+				1,
+				nullptr,
+				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 		if (stagingBuffer.valid()) {
 			PRINT_DEBUG("Mapping staging Vulkan buffer to CPU");
 			void *pStagingBufferMemory;
@@ -53,20 +59,29 @@ namespace RE {
 						asset_image_free(charactersAsset);
 						stagingBuffer.get_memory().flush_mapped_memory(0, VK_WHOLE_SIZE);
 						PRINT_DEBUG("Creating Vulkan task for transferring characters to GPU");
-						constexpr uint32_t u32FunctionCount = 2;
-						const uint8_t au8QueueIndices[u32FunctionCount] = {RE_VK_LOGICAL_QUEUE_IGNORED, aRenderTasks[0].logical_queue_index_for_function(RENDER_TASK_SUBINDEX_RENDERING)};
-						constexpr VkQueueFlagBits vk_aeQueueTypes[u32FunctionCount] = {VK_QUEUE_TRANSFER_BIT, VK_QUEUE_GRAPHICS_BIT};
-						constexpr uint32_t au32SeparationIds[u32FunctionCount] = {0, 1};
+						constexpr unsigned uFunctionCount = 2;
+						const unsigned auQueueIndices[uFunctionCount] = {
+							RE_VK_LOGICAL_QUEUE_IGNORED,
+							aRenderTasks[0].logical_queue_index_for_function(RENDER_TASK_SUBINDEX_RENDERING)
+						};
+						constexpr VkQueueFlagBits vk_aeQueueTypes[uFunctionCount] = {
+							VK_QUEUE_TRANSFER_BIT,
+							VK_QUEUE_GRAPHICS_BIT
+						};
+						constexpr unsigned auSeparationIds[uFunctionCount] = {0, 1};
 						const VulkanTask_Queues queueInfo = {
-							.pau8LogicalQueueIndices = au8QueueIndices,
+							.pauLogicalQueueIndices = auQueueIndices,
 							.vk_paeQueueTypes = vk_aeQueueTypes,
-							.pau32StrictSeparationIds = au32SeparationIds,
-							.u32FunctionsCount = u32FunctionCount
+							.pauStrictSeparationIds = auSeparationIds,
+							.uFunctionsCount = uFunctionCount
 						};
 						VulkanTask transferTask(queueInfo, false, false, true);
 						if (transferTask.valid()) {
 							PRINT_DEBUG("Recording first function of transfer task");
-							if (transferTask.record(0, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, [&](VkCommandBuffer vk_hCommandBuffer, uint8_t u8PreviousLogicalQueue, uint8_t u8CurrentLogicalQueue, uint8_t u8NextLogicalQueue) {
+							if (transferTask.record(
+									0,
+									VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+									[&](VkCommandBuffer vk_hCommandBuffer, unsigned uPreviousLogicalQueue, unsigned uCurrentLogicalQueue, unsigned uNextLogicalQueue) {
 										const VkImageMemoryBarrier vk_imageBarrier0 = {
 											.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
 											.pNext = nullptr,
@@ -125,7 +140,7 @@ namespace RE {
 											}
 										};
 										vkCmdPipelineBarrier(vk_hCommandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &vk_imageBarrier1);
-										if (u8CurrentLogicalQueue == u8NextLogicalQueue)
+										if (uCurrentLogicalQueue == uNextLogicalQueue)
 											return;
 										const VkImageMemoryBarrier vk_imageBarrier2 = {
 											.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
@@ -134,8 +149,8 @@ namespace RE {
 											.dstAccessMask = VK_ACCESS_NONE,
 											.oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 											.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-											.srcQueueFamilyIndex = queueFamilyIndices[u8CurrentLogicalQueue],
-											.dstQueueFamilyIndex = queueFamilyIndices[u8NextLogicalQueue],
+											.srcQueueFamilyIndex = std_queueFamilyIndices[uCurrentLogicalQueue],
+											.dstQueueFamilyIndex = std_queueFamilyIndices[uNextLogicalQueue],
 											.image = vk_hCharacterImage,
 											.subresourceRange = {
 												.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
@@ -148,8 +163,11 @@ namespace RE {
 										vkCmdPipelineBarrier(vk_hCommandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &vk_imageBarrier2);
 									})) {
 								PRINT_DEBUG("Recording second function of transfer task");
-								if (transferTask.record(1, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, [&](VkCommandBuffer vk_hCommandBuffer, uint8_t u8PreviousLogicalQueue, uint8_t u8CurrentLogicalQueue, uint8_t u8NextLogicalQueue) {
-											if (u8PreviousLogicalQueue == u8CurrentLogicalQueue)
+								if (transferTask.record(
+										1,
+										VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+										[&](VkCommandBuffer vk_hCommandBuffer, unsigned uPreviousLogicalQueue, unsigned uCurrentLogicalQueue, unsigned uNextLogicalQueue) {
+											if (uPreviousLogicalQueue == uCurrentLogicalQueue)
 												return;
 											const VkImageMemoryBarrier vk_imageBarrier0 = {
 												.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
@@ -158,8 +176,8 @@ namespace RE {
 												.dstAccessMask = VK_ACCESS_NONE,
 												.oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 												.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-												.srcQueueFamilyIndex = queueFamilyIndices[u8PreviousLogicalQueue],
-												.dstQueueFamilyIndex = queueFamilyIndices[u8CurrentLogicalQueue],
+												.srcQueueFamilyIndex = std_queueFamilyIndices[uPreviousLogicalQueue],
+												.dstQueueFamilyIndex = std_queueFamilyIndices[uCurrentLogicalQueue],
 												.image = vk_hCharacterImage,
 												.subresourceRange = {
 													.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,

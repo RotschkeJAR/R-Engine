@@ -156,6 +156,10 @@ namespace RE {
 				if (vk_physicalDeviceFeatures.sparseResidencyAliased)
 					mEnabledFeatures |= ENABLED_FEATURE_SPARSE_ALIASING_BIT;
 			}
+			if (vk_physicalDeviceFeatures.multiDrawIndirect)
+				mEnabledFeatures |= ENABLED_FEATURE_MULTI_DRAW_INDIRECT_BIT;
+			if (vk_physicalDeviceFeatures.drawIndirectFirstInstance)
+				mEnabledFeatures |= ENABLED_FEATURE_DRAW_INDIRECT_FIRST_INSTANCE_BIT;
 			if (vk_physicalDeviceFeatures_1_3.synchronization2)
 				mEnabledFeatures |= ENABLED_FEATURE_SYNCHRONIZATION_2_BIT;
 			if (vk_physicalDeviceFeatures.sampleRateShading)

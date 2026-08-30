@@ -8,11 +8,11 @@ namespace RE {
 
 	bool create_render_target_image() {
 		PRINT_DEBUG("Fetching details about occupied queues for the render target");
-		const uint32_t au32QueueIndices[] = {
+		const unsigned auQueueIndices[] = {
 			RENDER_TASK_SUBINDEX_RENDERING,
 			RENDER_TASK_SUBINDEX_IMAGE_BLIT
 		};
-		const VulkanQueueCollection occupiedQueuesInfo = aRenderTasks[0].queues_of_functions(au32QueueIndices, sizeof(au32QueueIndices) / sizeof(au32QueueIndices[0]), false);
+		const VulkanQueueCollection occupiedQueuesInfo = aRenderTasks[0].queues_of_functions(auQueueIndices, sizeof(auQueueIndices) / sizeof(auQueueIndices[0]), false);
 		PRINT_DEBUG("Creating Vulkan image used as render target");
 		if (create_vulkan_image(
 				0,
@@ -28,8 +28,8 @@ namespace RE {
 				vk_eMsaaMode,
 				VK_IMAGE_TILING_OPTIMAL,
 				vk_mRenderTargetImageUsages,
-				occupiedQueuesInfo.u8QueueCount,
-				occupiedQueuesInfo.queueFamilyIndices.get(),
+				occupiedQueuesInfo.uQueueCount,
+				occupiedQueuesInfo.std_queueFamilyIndices.get(),
 				VK_IMAGE_LAYOUT_UNDEFINED,
 				&vk_hRenderTargetImage))
 			return true;

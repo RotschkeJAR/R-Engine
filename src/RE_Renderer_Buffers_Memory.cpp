@@ -16,18 +16,18 @@ namespace RE {
 		SharedVulkanMemoryInfo aLocalBufferInfos[] = {
 			{
 				.vulkanStorageObject = vk_hCameraBuffer,
-				.u32RegionIndex = 0
+				.uRegionIndex = 0
 			}, {
 				.vulkanStorageObject = vk_hStagingGameObjectsBuffer,
-				.u32RegionIndex = 0
+				.uRegionIndex = 0
 			}, {
 				.vulkanStorageObject = vk_hGameObjectCountBuffer,
-				.u32RegionIndex = 0
+				.uRegionIndex = 0
 			},
 		#ifndef NDEBUG
 			{
 				.vulkanStorageObject = vk_hDebugBuffer,
-				.u32RegionIndex = 0
+				.uRegionIndex = 0
 			},
 		#endif
 		};
@@ -95,7 +95,7 @@ namespace RE {
 								deviceBufferInfos[uInfoIndex].vulkanStorageObject = vk_ahSortableDepthBuffers[uFramesInFlightIndex];
 								break;
 						}
-						deviceBufferInfos[uInfoIndex].u32RegionIndex = 0;
+						deviceBufferInfos[uInfoIndex].uRegionIndex = 0;
 					}
 				if (alloc_shared_vulkan_memory(
 						sizeof(deviceBufferInfos) / sizeof(deviceBufferInfos[0]),

@@ -15,8 +15,8 @@ namespace RE {
 				0,
 				vk_bufferSize,
 				VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-				static_cast<uint32_t>(rQueues.u8QueueCount),
-				rQueues.queueFamilyIndices.get(),
+				rQueues.uQueueCount,
+				rQueues.std_queueFamilyIndices.get(),
 				&vk_hCameraBuffer)) {
 			camerasShaderData = std::make_unique<CameraShaderData*[]>(get_max_camera_count() * RE_VK_FRAMES_IN_FLIGHT);
 			return true;

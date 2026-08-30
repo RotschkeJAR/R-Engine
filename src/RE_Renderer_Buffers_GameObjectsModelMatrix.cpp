@@ -19,8 +19,8 @@ namespace RE {
 				#else
 					USAGE_FLAGS,
 				#endif
-					rQueues.u8QueueCount,
-					rQueues.queueFamilyIndices.get(),
+					rQueues.uQueueCount,
+					rQueues.std_queueFamilyIndices.get(),
 					&vk_ahGameObjectsModelMatrixBuffers[u8FrameInFlightCreateIndex])) {
 				RE_FATAL_ERROR("Failed to create game object model matrix buffer at frame-in-flight index ", u8FrameInFlightCreateIndex, " in Vulkan");
 				break;

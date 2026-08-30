@@ -13,7 +13,7 @@ namespace RE {
 		*pNewCameras = nullptr,
 		*pDeletableCameras = nullptr;
 	static CameraListBatch *apCameraListBatches[CAMERA_MAX_COUNT / CAMERA_BATCH_SIZE + bool_to_int(is_multiple_of<uint64_t>(CAMERA_MAX_COUNT, CAMERA_BATCH_SIZE))];
-	static unsigned int uCameraListBatchCount = 0;
+	static unsigned uCameraListBatchCount = 0;
 
 	static_assert(sizeof(apCameraListBatches) / sizeof(apCameraListBatches[0]) <= std::numeric_limits<decltype(uCameraListBatchCount)>::max());
 

@@ -27,11 +27,11 @@ namespace RE {
 		this->alloc(vk_size, vk_mProperties, m32DesiredMemoryTypes);
 	}
 
-	VulkanMemory::VulkanMemory(VkDeviceSize vk_size, uint8_t u8MemoryType) : VulkanMemory() {
-		this->alloc(vk_size, u8MemoryType);
+	VulkanMemory::VulkanMemory(VkDeviceSize vk_size, unsigned uMemoryType) : VulkanMemory() {
+		this->alloc(vk_size, uMemoryType);
 	}
 
-	VulkanMemory::VulkanMemory(VulkanMemory &&rrMemory) : vk_hMemory(rrMemory.vk_hMemory), vk_size(rrMemory.vk_size), u8MemoryType(rrMemory.u8MemoryType), bCoherent(rrMemory.bCoherent), bMapped(rrMemory.bMapped) {
+	VulkanMemory::VulkanMemory(VulkanMemory &&rrMemory) : vk_hMemory(rrMemory.vk_hMemory), vk_size(rrMemory.vk_size), uMemoryType(rrMemory.uMemoryType), bCoherent(rrMemory.bCoherent), bMapped(rrMemory.bMapped) {
 		PRINT_DEBUG_CLASS("Moving ownership of Vulkan memory to recently constructed");
 		rrMemory.vk_hMemory = VK_NULL_HANDLE;
 		rrMemory.vk_size = 0;
@@ -55,18 +55,18 @@ namespace RE {
 		return (vk_mProperties & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) ? VK_ERROR_OUT_OF_DEVICE_MEMORY : VK_ERROR_OUT_OF_HOST_MEMORY;
 	}
 
-	VkResult VulkanMemory::alloc(VkDeviceSize vk_size, uint8_t u8MemoryType) {
+	VkResult VulkanMemory::alloc(VkDeviceSize vk_size, unsigned uMemoryType) {
 		if (valid())
 			RE_ERROR("New memory is being allocated, even though the old Vulkan memory ", vk_hMemory, " occupying ", vk_size, " bytes hasn't been freed yet");
-		PRINT_DEBUG_CLASS("Allocating Vulkan memory at type index ", u8MemoryType);
-		this->u8MemoryType = u8MemoryType;
-		bCoherent = (vulkanMemoryTypes[u8MemoryType].propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) != 0;
+		PRINT_DEBUG_CLASS("Allocating Vulkan memory at type index ", uMemoryType);
+		this->uMemoryType = uMemoryType;
+		bCoherent = (vulkanMemoryTypes[uMemoryType].propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) != 0;
 		bMapped = false;
-		const VkResult vk_eResult = alloc_vulkan_memory(nullptr, vk_size, static_cast<uint32_t>(u8MemoryType), &vk_hMemory);
+		const VkResult vk_eResult = alloc_vulkan_memory(nullptr, vk_size, static_cast<uint32_t>(uMemoryType), &vk_hMemory);
 		if (vk_eResult == VK_SUCCESS)
 			this->vk_size = vk_size;
 		else
-			RE_ERROR("Failed to allocate Vulkan memory at type index ", u8MemoryType, " (Vulkan error code: ", std::hex, vk_eResult, ")");
+			RE_ERROR("Failed to allocate Vulkan memory at type index ", uMemoryType, " (Vulkan error code: ", std::hex, vk_eResult, ")");
 		return vk_eResult;
 	}
 
@@ -88,17 +88,17 @@ namespace RE {
 		vk_size = vk_memoryRequirements.memoryRequirements.size;
 		const auto xMemoryTypeIndex = find_vulkan_memory_type(vk_mProperties, vk_memoryRequirements.memoryRequirements.memoryTypeBits);
 		if (xMemoryTypeIndex.has_value()) {
-			u8MemoryType = *xMemoryTypeIndex;
-			bCoherent = (vulkanMemoryTypes[u8MemoryType].propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) != 0;
+			uMemoryType = *xMemoryTypeIndex;
+			bCoherent = (vulkanMemoryTypes[uMemoryType].propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) != 0;
 			bMapped = false;
-			PRINT_DEBUG_CLASS("Allocating Vulkan memory of type ", u8MemoryType);
+			PRINT_DEBUG_CLASS("Allocating Vulkan memory of type ", uMemoryType);
 			const VkMemoryDedicatedAllocateInfo vk_dedicatedMemoryInfo = {
 				.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO,
 				.pNext = nullptr,
 				.image = VK_NULL_HANDLE,
 				.buffer = vk_hBuffer
 			};
-			vk_eLatestResult = alloc_vulkan_memory(&vk_dedicatedMemoryInfo, vk_size, u8MemoryType, &vk_hMemory);
+			vk_eLatestResult = alloc_vulkan_memory(&vk_dedicatedMemoryInfo, vk_size, uMemoryType, &vk_hMemory);
 			if (vk_eLatestResult == VK_SUCCESS) {
 				PRINT_DEBUG_CLASS("Binding Vulkan memory ", vk_hMemory, " to buffer");
 				const VkBindBufferMemoryInfo vk_bindBufferInfo = {
@@ -139,17 +139,17 @@ namespace RE {
 		vk_size = vk_memoryRequirements.memoryRequirements.size;
 		const auto xMemoryTypeIndex = find_vulkan_memory_type(vk_mProperties, vk_memoryRequirements.memoryRequirements.memoryTypeBits);
 		if (xMemoryTypeIndex.has_value()) {
-			u8MemoryType = *xMemoryTypeIndex;
-			bCoherent = (vulkanMemoryTypes[u8MemoryType].propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) != 0;
+			uMemoryType = *xMemoryTypeIndex;
+			bCoherent = (vulkanMemoryTypes[uMemoryType].propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) != 0;
 			bMapped = false;
-			PRINT_DEBUG_CLASS("Allocating Vulkan memory of type ", u8MemoryType);
+			PRINT_DEBUG_CLASS("Allocating Vulkan memory of type ", uMemoryType);
 			const VkMemoryDedicatedAllocateInfo vk_dedicatedMemoryInfo = {
 				.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO,
 				.pNext = nullptr,
 				.image = vk_hImage,
 				.buffer = VK_NULL_HANDLE
 			};
-			vk_eLatestResult = alloc_vulkan_memory(&vk_dedicatedMemoryInfo, vk_size, u8MemoryType, &vk_hMemory);
+			vk_eLatestResult = alloc_vulkan_memory(&vk_dedicatedMemoryInfo, vk_size, uMemoryType, &vk_hMemory);
 			if (vk_eLatestResult == VK_SUCCESS) {
 				PRINT_DEBUG_CLASS("Binding Vulkan memory ", vk_hMemory, " to the image");
 				const VkBindImageMemoryInfo vk_bindImageInfo = {
@@ -175,7 +175,7 @@ namespace RE {
 	void VulkanMemory::free() {
 		PRINT_DEBUG_CLASS("Freeing Vulkan memory");
 		vkFreeMemory(vk_hDevice, vk_hMemory, nullptr);
-		occupiedSpacePerVulkanHeap[vulkanMemoryTypes[u8MemoryType].heapIndex] -= vk_size;
+		occupiedSpacePerVulkanHeap[vulkanMemoryTypes[uMemoryType].heapIndex] -= vk_size;
 		vk_hMemory = VK_NULL_HANDLE;
 		vk_size = 0;
 	}
@@ -233,8 +233,8 @@ namespace RE {
 		return vk_size;
 	}
 
-	uint8_t VulkanMemory::type_index() const {
-		return u8MemoryType;
+	unsigned VulkanMemory::type_index() const {
+		return uMemoryType;
 	}
 
 	bool VulkanMemory::cpu_coherent() const {
@@ -253,7 +253,7 @@ namespace RE {
 		rrMemory.vk_hMemory = VK_NULL_HANDLE;
 		vk_size = rrMemory.vk_size;
 		rrMemory.vk_size = 0;
-		u8MemoryType = rrMemory.u8MemoryType;
+		uMemoryType = rrMemory.uMemoryType;
 		bCoherent = rrMemory.bCoherent;
 		return *this;
 	}

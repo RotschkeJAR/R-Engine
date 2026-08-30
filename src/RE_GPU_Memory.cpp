@@ -130,7 +130,7 @@ namespace RE {
 			VkDeviceSize vk_alignment;
 			VkDeviceSize vk_size;
 			uint64_t u64SeparationIndex;
-			uint8_t u8MemoryTypeIndex;
+			unsigned uMemoryTypeIndex;
 		};
 		std::unique_ptr<MemoryDetails[]> detailsPerInfo = std::make_unique<MemoryDetails[]>(u32SharedMemoryInfoCount);
 		{
@@ -152,14 +152,14 @@ namespace RE {
 				detailsPerInfo[u32CurrentInfoIndex].vk_alignment = vk_rMemoryRequirements.alignment;
 				detailsPerInfo[u32CurrentInfoIndex].vk_size = vk_rMemoryRequirements.size;
 				detailsPerInfo[u32CurrentInfoIndex].u64SeparationIndex = u64CurrentSeparationIndex;
-				detailsPerInfo[u32CurrentInfoIndex].u8MemoryTypeIndex = *memoryType;
+				detailsPerInfo[u32CurrentInfoIndex].uMemoryTypeIndex = *memoryType;
 				infosProcessed[u32CurrentInfoIndex] = true;
 				if (vk_rMemoryRequirements.size > vk_maxMemorySize)
 					RE_WARNING("The required size for the Vulkan storage object at info index ", u32CurrentInfoIndex, " is beyond the maximum allocation size");
-				const uint32_t u32CurrentRegionIndex = paSharedMemoryInfos[u32CurrentInfoIndex].u32RegionIndex;
-				PRINT_DEBUG("Checking for other candidates in region ", u32CurrentRegionIndex, " sharing same memory requirements");
+				const unsigned uCurrentRegionIndex = paSharedMemoryInfos[u32CurrentInfoIndex].uRegionIndex;
+				PRINT_DEBUG("Checking for other candidates in region ", uCurrentRegionIndex, " sharing same memory requirements");
 				for (uint32_t u32SubcurrentInfoIndex = u32CurrentInfoIndex + 1; u32SubcurrentInfoIndex < u32SharedMemoryInfoCount; u32SubcurrentInfoIndex++) {
-					if (infosProcessed[u32SubcurrentInfoIndex] == true || paSharedMemoryInfos[u32SubcurrentInfoIndex].u32RegionIndex != u32CurrentRegionIndex)
+					if (infosProcessed[u32SubcurrentInfoIndex] == true || paSharedMemoryInfos[u32SubcurrentInfoIndex].uRegionIndex != uCurrentRegionIndex)
 						continue;
 					PRINT_DEBUG("Fetching memory requirements of the Vulkan storage object at index ", u32SubcurrentInfoIndex);
 					fetch_vulkan_memory_requirements(paSharedMemoryInfos[u32SubcurrentInfoIndex].vulkanStorageObject, vk_memoryRequirements2);
@@ -169,7 +169,7 @@ namespace RE {
 					detailsPerInfo[u32SubcurrentInfoIndex].vk_alignment = vk_rMemoryRequirements.alignment;
 					detailsPerInfo[u32SubcurrentInfoIndex].vk_size = vk_rMemoryRequirements.size;
 					detailsPerInfo[u32SubcurrentInfoIndex].u64SeparationIndex = u64CurrentSeparationIndex;
-					detailsPerInfo[u32SubcurrentInfoIndex].u8MemoryTypeIndex = *memoryType;
+					detailsPerInfo[u32SubcurrentInfoIndex].uMemoryTypeIndex = *memoryType;
 					infosProcessed[u32SubcurrentInfoIndex] = true;
 				}
 			}
@@ -215,7 +215,7 @@ namespace RE {
 				goto DEDICATED_ALLOCATION;
 			{
 				PRINT_DEBUG("Allocating Vulkan memory occupying ", vk_allocSize, " bytes");
-				VkResult vk_eResult = vulkanMemory.alloc(vk_allocSize, detailsPerInfo[u32CurrentInfoIndex].u8MemoryTypeIndex);
+				VkResult vk_eResult = vulkanMemory.alloc(vk_allocSize, detailsPerInfo[u32CurrentInfoIndex].uMemoryTypeIndex);
 				if (vk_eResult == VK_ERROR_TOO_MANY_OBJECTS) {
 					RE_ERROR("Failed to allocate Vulkan memory due to exceeding maximum allocations");
 					return VK_ERROR_TOO_MANY_OBJECTS;
@@ -236,7 +236,7 @@ namespace RE {
 							infosProcessed[offsetPerInfo.back().u32IndexToInfo] = false;
 							offsetPerInfo.pop_back();
 							vk_allocSize = offsetPerInfo.back().vk_offset + detailsPerInfo[offsetPerInfo.back().u32IndexToInfo].vk_size;
-							vk_eResult = vulkanMemory.alloc(vk_allocSize, detailsPerInfo[u32CurrentInfoIndex].u8MemoryTypeIndex);
+							vk_eResult = vulkanMemory.alloc(vk_allocSize, detailsPerInfo[u32CurrentInfoIndex].uMemoryTypeIndex);
 							break;
 					}
 				}
@@ -358,13 +358,13 @@ namespace RE {
 	#undef WRITE_BIND_STATUS_TO_PTR
 	}
 
-	std::optional<uint8_t> find_vulkan_memory_type(const VkMemoryPropertyFlags vk_mProperties, const uint32_t m32MemoryTypeBits) {
-		std::optional<uint8_t> selectedMemoryTypeIndex;
+	std::optional<unsigned> find_vulkan_memory_type(const VkMemoryPropertyFlags vk_mProperties, const uint32_t m32MemoryTypeBits) {
+		std::optional<unsigned> selectedMemoryTypeIndex;
 		int iLowestMismatchScore = INT_MAX;
-		for (uint8_t u8MemoryTypeIndex = 0; u8MemoryTypeIndex < u8MemoryTypeCount; u8MemoryTypeIndex++) {
-			if ((vulkanMemoryTypes[u8MemoryTypeIndex].propertyFlags & vk_mProperties) == vk_mProperties
-					&& are_bits_true(m32MemoryTypeBits, u8MemoryTypeIndex)) {
-				const VkMemoryPropertyFlags vk_mMismatchingProperties = vulkanMemoryTypes[u8MemoryTypeIndex].propertyFlags & (~vk_mProperties);
+		for (unsigned uMemoryTypeIndex = 0; uMemoryTypeIndex < u8MemoryTypeCount; uMemoryTypeIndex++) {
+			if ((vulkanMemoryTypes[uMemoryTypeIndex].propertyFlags & vk_mProperties) == vk_mProperties
+					&& are_bits_true(m32MemoryTypeBits, uMemoryTypeIndex)) {
+				const VkMemoryPropertyFlags vk_mMismatchingProperties = vulkanMemoryTypes[uMemoryTypeIndex].propertyFlags & (~vk_mProperties);
 				int iMismatchScore = 0;
 				if ((vk_mMismatchingProperties & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) != 0)
 					iMismatchScore += 500;
@@ -386,7 +386,7 @@ namespace RE {
 					iMismatchScore += 100;
 				if (iLowestMismatchScore > iMismatchScore) {
 					iLowestMismatchScore = iMismatchScore;
-					selectedMemoryTypeIndex = u8MemoryTypeIndex;
+					selectedMemoryTypeIndex = uMemoryTypeIndex;
 				}
 			}
 		}

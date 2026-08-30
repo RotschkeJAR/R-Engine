@@ -6,9 +6,9 @@ namespace RE {
 
 	bool is_physical_vulkan_device_suitable(const VkPhysicalDevice vk_hPhysicalDevice, int32_t *const pi32Score) {
 		PRINT_DEBUG("Checking capabilities of physical Vulkan device ", vk_hPhysicalDevice, " for being suitable");
-		std::queue<std::string> incompatibilities,
-				optionals,
-				warnings;
+		std::queue<std::string> std_incompatibilities,
+				std_optionals,
+				std_warnings;
 		int32_t i32Score = 0;
 		const uint32_t u32LargestMonitorsScale = largestMonitorSize.max();
 		uint32_t u32QueueFamilyCount;
@@ -61,15 +61,15 @@ namespace RE {
 				return false;
 			}
 			if (vk_physicalDeviceProperties_1_3.maxBufferSize < vk_largestRequiredMemorySize)
-				incompatibilities.emplace("The maximum buffer size should be large enough to store 1000 game objects and/or 32-bit RGBA textures as big as twice the largest monitor's scale or more");
+				std_incompatibilities.emplace("The maximum buffer size should be large enough to store 1000 game objects and/or 32-bit RGBA textures as big as twice the largest monitor's scale or more");
 			i32Score += static_cast<int32_t>(vk_physicalDeviceProperties_1_3.maxBufferSize / 500000000);
 			if (vk_physicalDeviceProperties_1_2.maxTimelineSemaphoreValueDifference < 64)
-				incompatibilities.emplace("The maximum difference for timeline semaphore values should be at least 64 or more");
+				std_incompatibilities.emplace("The maximum difference for timeline semaphore values should be at least 64 or more");
 			if (vk_physicalDeviceProperties_1_1.maxPerSetDescriptors < std::max<uint32_t>(2, static_cast<uint32_t>(get_max_sprite_layout_count()) + get_max_texture_count()))
-				warnings.emplace("The maximum amount of descriptors within a set is lower than the required minimum. Support has to be queried later");
+				std_warnings.emplace("The maximum amount of descriptors within a set is lower than the required minimum. Support has to be queried later");
 			i32Score += vk_physicalDeviceProperties_1_1.maxPerSetDescriptors >= (0x7FFF * 2) ? 100 : 0;
 			if (vk_physicalDeviceProperties_1_1.maxMemoryAllocationSize < vk_largestRequiredMemorySize)
-				warnings.emplace("The maximum memory allocation size should be large enough to store 1000 game objects and/or 32-bit RGBA textures as big as twice the largest monitor's scale or more");
+				std_warnings.emplace("The maximum memory allocation size should be large enough to store 1000 game objects and/or 32-bit RGBA textures as big as twice the largest monitor's scale or more");
 			i32Score += static_cast<int32_t>(vk_physicalDeviceProperties_1_1.maxMemoryAllocationSize / 500000000);
 			switch (vk_physicalDeviceProperties.deviceType) {
 				case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
@@ -84,103 +84,103 @@ namespace RE {
 			{
 				const uint32_t u32MinImageExtent = std::max(u32LargestMonitorsScale, get_max_texture_extent());
 				if (vk_physicalDeviceLimits.maxImageDimension2D < u32MinImageExtent)
-					incompatibilities.emplace(append_to_string("The GPU should support image sizes equal or larger than the largest monitor's or maximum texture size: ", u32MinImageExtent));
+					std_incompatibilities.emplace(append_to_string("The GPU should support image sizes equal or larger than the largest monitor's or maximum texture size: ", u32MinImageExtent));
 				i32Score += static_cast<int32_t>(vk_physicalDeviceLimits.maxImageDimension2D / u32MinImageExtent);
 			}
 			if (vk_physicalDeviceLimits.maxImageArrayLayers < RE_VK_FRAMES_IN_FLIGHT)
-				incompatibilities.push(append_to_string("The maximum of image layers has to be enough to store as many frames are rendered in flight: ", RE_VK_FRAMES_IN_FLIGHT, " or more"));
+				std_incompatibilities.push(append_to_string("The maximum of image layers has to be enough to store as many frames are rendered in flight: ", RE_VK_FRAMES_IN_FLIGHT, " or more"));
 			if (vk_physicalDeviceLimits.maxUniformBufferRange < vk_cameraUniformBufferSize)
-				incompatibilities.push(append_to_string("The maximum range of a uniform buffer should be at least large enough to store ", vk_cameraUniformBufferSize, " bytes or more"));
+				std_incompatibilities.push(append_to_string("The maximum range of a uniform buffer should be at least large enough to store ", vk_cameraUniformBufferSize, " bytes or more"));
 			if (vk_physicalDeviceLimits.maxStorageBufferRange < vk_gameObjectStorageBufferSize)
-				incompatibilities.push(append_to_string("The maximum range of a storage buffer should be at least large enough to store 1000 game objects equal to ", vk_gameObjectStorageBufferSize, " bytes or more"));
+				std_incompatibilities.push(append_to_string("The maximum range of a storage buffer should be at least large enough to store 1000 game objects equal to ", vk_gameObjectStorageBufferSize, " bytes or more"));
 			if (vk_physicalDeviceLimits.maxPushConstantsSize < 128)
-				incompatibilities.emplace("There should be at least 128 or more bytes of space available for push constants");
+				std_incompatibilities.emplace("There should be at least 128 or more bytes of space available for push constants");
 			if (vk_physicalDeviceLimits.maxMemoryAllocationCount < 64)
-				incompatibilities.emplace("There should be at least 64 or more memory allocations available");
+				std_incompatibilities.emplace("There should be at least 64 or more memory allocations available");
 			if (vk_physicalDeviceLimits.maxSamplerAllocationCount < get_max_sprite_layout_count())
-				incompatibilities.emplace(append_to_string("There should be at least ", get_max_sprite_layout_count(), " or more sampler allocations available"));
+				std_incompatibilities.emplace(append_to_string("There should be at least ", get_max_sprite_layout_count(), " or more sampler allocations available"));
 			if (vk_physicalDeviceLimits.maxBoundDescriptorSets < 2)
-				incompatibilities.emplace("There should be at least 2 or more descriptor sets being bound at once");
+				std_incompatibilities.emplace("There should be at least 2 or more descriptor sets being bound at once");
 			if (vk_physicalDeviceLimits.maxPerStageDescriptorSamplers < get_max_sprite_layout_count())
-				incompatibilities.push(append_to_string("There should be at least ", get_max_sprite_layout_count(), " or more samplers available per pipeline stage within a descriptor set"));
+				std_incompatibilities.push(append_to_string("There should be at least ", get_max_sprite_layout_count(), " or more samplers available per pipeline stage within a descriptor set"));
 			if (vk_physicalDeviceLimits.maxPerStageDescriptorUniformBuffers < 1)
-				incompatibilities.emplace("There should be at least 1 or more uniform buffer available per pipeline stage within a descriptor set");
+				std_incompatibilities.emplace("There should be at least 1 or more uniform buffer available per pipeline stage within a descriptor set");
 			if (vk_physicalDeviceLimits.maxPerStageDescriptorStorageBuffers < 2)
-				incompatibilities.emplace("There should be at least 2 or more storage buffers available per pipeline stage within a descriptor set");
+				std_incompatibilities.emplace("There should be at least 2 or more storage buffers available per pipeline stage within a descriptor set");
 			if (vk_physicalDeviceLimits.maxPerStageDescriptorSampledImages < get_max_texture_count())
-				incompatibilities.push(append_to_string("There should be at least ", get_max_texture_count(), " or more sampled images available per pipeline stage within a descriptor set"));
+				std_incompatibilities.push(append_to_string("There should be at least ", get_max_texture_count(), " or more sampled images available per pipeline stage within a descriptor set"));
 			if (vk_physicalDeviceLimits.maxPerStageResources < /*descriptors*/ 3 + /*framebuffer attachments*/ 3)
-				incompatibilities.emplace("There should be at least 6 or more resources be accessible per pipeline stage");
+				std_incompatibilities.emplace("There should be at least 6 or more resources be accessible per pipeline stage");
 			if (vk_physicalDeviceLimits.maxDescriptorSetSamplers < get_max_sprite_layout_count())
-				incompatibilities.push(append_to_string("There should be at least ", get_max_sprite_layout_count(), " or more samplers available in an entire pipeline"));
+				std_incompatibilities.push(append_to_string("There should be at least ", get_max_sprite_layout_count(), " or more samplers available in an entire pipeline"));
 			if (vk_physicalDeviceLimits.maxDescriptorSetUniformBuffers < 1)
-				incompatibilities.emplace("There should be at least 1 or more uniform buffer accessible in an entire pipeline");
+				std_incompatibilities.emplace("There should be at least 1 or more uniform buffer accessible in an entire pipeline");
 			if (vk_physicalDeviceLimits.maxDescriptorSetStorageBuffers < 3)
-				incompatibilities.emplace("There should be at least 3 or more storage buffers accessible in an entire pipeline");
+				std_incompatibilities.emplace("There should be at least 3 or more storage buffers accessible in an entire pipeline");
 			if (vk_physicalDeviceLimits.maxDescriptorSetSampledImages < get_max_texture_count())
-				incompatibilities.push(append_to_string("There should be at least ", get_max_texture_count(), " sampled images available in an entire pipeline"));
+				std_incompatibilities.push(append_to_string("There should be at least ", get_max_texture_count(), " sampled images available in an entire pipeline"));
 			if (vk_physicalDeviceLimits.maxVertexInputAttributes < 2)
-				incompatibilities.emplace("The maximum count of vertex input attributes of a pipeline should be at least 2 or more");
+				std_incompatibilities.emplace("The maximum count of vertex input attributes of a pipeline should be at least 2 or more");
 			if (vk_physicalDeviceLimits.maxVertexInputBindings < 1)
-				incompatibilities.emplace("The maximum count of vertex bindings of a pipeline should be at least 1 or more");
+				std_incompatibilities.emplace("The maximum count of vertex bindings of a pipeline should be at least 1 or more");
 			if (vk_physicalDeviceLimits.maxVertexInputAttributeOffset < sizeof(float) * 3)
-				incompatibilities.emplace("The maximum offset of bytes within a vertex binding of a pipeline should be at least 12 or more");
+				std_incompatibilities.emplace("The maximum offset of bytes within a vertex binding of a pipeline should be at least 12 or more");
 			if (vk_physicalDeviceLimits.maxVertexInputBindingStride < sizeof(float) * 5)
-				incompatibilities.emplace("The maximum vertex stride of bytes of a pipeline should be at least 20 or more");
+				std_incompatibilities.emplace("The maximum vertex stride of bytes of a pipeline should be at least 20 or more");
 			if (vk_physicalDeviceLimits.maxVertexOutputComponents < 3)
-				incompatibilities.emplace("The maximum count of vertex shader output components within a pipeline should be at least 3 or more");
+				std_incompatibilities.emplace("The maximum count of vertex shader output components within a pipeline should be at least 3 or more");
 			if (vk_physicalDeviceLimits.maxFragmentInputComponents < 3)
-				incompatibilities.emplace("The maximum count of fragment shader input components within a pipeline should be at least 3 or more");
+				std_incompatibilities.emplace("The maximum count of fragment shader input components within a pipeline should be at least 3 or more");
 			if (vk_physicalDeviceLimits.maxFragmentOutputAttachments < 3)
-				incompatibilities.emplace("There should be at least 3 or more output attachments accessible by the fragment shader within a pipeline");
+				std_incompatibilities.emplace("There should be at least 3 or more output attachments accessible by the fragment shader within a pipeline");
 			if (vk_physicalDeviceLimits.maxComputeWorkGroupCount[0] < 1)
-				incompatibilities.emplace("The maximum count X of dispatchable work groups should be at least 1 or more");
+				std_incompatibilities.emplace("The maximum count X of dispatchable work groups should be at least 1 or more");
 			if (vk_physicalDeviceLimits.maxComputeWorkGroupCount[1] < 1)
-				incompatibilities.emplace("The maximum count Y of dispatchable work groups should be at least 1 or more");
+				std_incompatibilities.emplace("The maximum count Y of dispatchable work groups should be at least 1 or more");
 			if (vk_physicalDeviceLimits.maxComputeWorkGroupCount[2] < 1)
-				incompatibilities.emplace("The maximum count Z of dispatchable work groups should be at least 1 or more");
+				std_incompatibilities.emplace("The maximum count Z of dispatchable work groups should be at least 1 or more");
 			if (vk_physicalDeviceLimits.maxComputeWorkGroupInvocations < 256)
-				incompatibilities.emplace("The maximum count of work group invocations should be at least 256 or more");
+				std_incompatibilities.emplace("The maximum count of work group invocations should be at least 256 or more");
 			if (vk_physicalDeviceLimits.maxComputeWorkGroupSize[0] < 256)
-				incompatibilities.emplace("The maximum group size X should be at least 256 or more");
+				std_incompatibilities.emplace("The maximum group size X should be at least 256 or more");
 			if (vk_physicalDeviceLimits.maxComputeWorkGroupSize[1] < 1)
-				incompatibilities.emplace("The maximum group size Y should be at least 1 or more");
+				std_incompatibilities.emplace("The maximum group size Y should be at least 1 or more");
 			if (vk_physicalDeviceLimits.maxComputeWorkGroupSize[2] < 1)
-				incompatibilities.emplace("The maximum group size Z should be at least 1 or more");
+				std_incompatibilities.emplace("The maximum group size Z should be at least 1 or more");
 			if (vk_physicalDeviceLimits.maxDrawIndexedIndexValue < 4)
-				incompatibilities.emplace("The maximum index within a draw call should be at least 4 or more");
+				std_incompatibilities.emplace("The maximum index within a draw call should be at least 4 or more");
 			if (vk_physicalDeviceLimits.maxViewports < 1)
-				incompatibilities.emplace("There should be at least 1 or more viewports assignable to a pipeline");
+				std_incompatibilities.emplace("There should be at least 1 or more viewports assignable to a pipeline");
 			if (vk_physicalDeviceLimits.maxViewportDimensions[0] < u32LargestMonitorsScale)
-				incompatibilities.emplace("The maximum of viewport width should be equal or more than twice of the largest monitor's scale");
+				std_incompatibilities.emplace("The maximum of viewport width should be equal or more than twice of the largest monitor's scale");
 			if (vk_physicalDeviceLimits.maxViewportDimensions[1] < u32LargestMonitorsScale)
-				incompatibilities.emplace("The maximum of viewport height should be equal or more than twice of the largest monitor's scale");
+				std_incompatibilities.emplace("The maximum of viewport height should be equal or more than twice of the largest monitor's scale");
 			if (vk_physicalDeviceLimits.maxFramebufferWidth < u32LargestMonitorsScale)
-				incompatibilities.emplace("The maximum framebuffer width should be equal or bigger than twice of the largest monitor's scale");
+				std_incompatibilities.emplace("The maximum framebuffer width should be equal or bigger than twice of the largest monitor's scale");
 			if (vk_physicalDeviceLimits.maxFramebufferHeight < u32LargestMonitorsScale)
-				incompatibilities.emplace("The maximum framebuffer height should be equal or bigger than twice of the largest monitor's scale");
+				std_incompatibilities.emplace("The maximum framebuffer height should be equal or bigger than twice of the largest monitor's scale");
 			vk_mMsaaSampleCountsAvailable &= vk_physicalDeviceLimits.framebufferColorSampleCounts
 					& vk_physicalDeviceLimits.framebufferDepthSampleCounts
 					& vk_physicalDeviceLimits.framebufferStencilSampleCounts;
 			if (vk_physicalDeviceLimits.maxColorAttachments < 1)
-				incompatibilities.emplace("The maximum count of color attachments within a subpass in a render pass should be equal or more than 1");
+				std_incompatibilities.emplace("The maximum count of color attachments within a subpass in a render pass should be equal or more than 1");
 		}
 		bool bSwapchainExtensionAvailable = false,
 			bIndexTypeUint8Available = false;
-		{ // Extensions
+		{ // std_extensions
 			uint32_t u32ExtensionCount;
 			vkEnumerateDeviceExtensionProperties(vk_hPhysicalDevice, nullptr, &u32ExtensionCount, nullptr);
-			std::unique_ptr<VkExtensionProperties[]> extensions = std::make_unique<VkExtensionProperties[]>(u32ExtensionCount);
-			vkEnumerateDeviceExtensionProperties(vk_hPhysicalDevice, nullptr, &u32ExtensionCount, extensions.get());
+			std::unique_ptr<VkExtensionProperties[]> std_extensions = std::make_unique<VkExtensionProperties[]>(u32ExtensionCount);
+			vkEnumerateDeviceExtensionProperties(vk_hPhysicalDevice, nullptr, &u32ExtensionCount, std_extensions.get());
 			for (uint32_t u32ExtensionIndex = 0; u32ExtensionIndex < u32ExtensionCount; u32ExtensionIndex++) {
-				if (are_string_contents_equal(extensions[u32ExtensionIndex].extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME))
+				if (are_string_contents_equal(std_extensions[u32ExtensionIndex].extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME))
 					bSwapchainExtensionAvailable = true;
-				else if (are_string_contents_equal(extensions[u32ExtensionIndex].extensionName, VK_KHR_INDEX_TYPE_UINT8_EXTENSION_NAME)
-						|| are_string_contents_equal(extensions[u32ExtensionIndex].extensionName, VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME))
+				else if (are_string_contents_equal(std_extensions[u32ExtensionIndex].extensionName, VK_KHR_INDEX_TYPE_UINT8_EXTENSION_NAME)
+						|| are_string_contents_equal(std_extensions[u32ExtensionIndex].extensionName, VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME))
 					bIndexTypeUint8Available = true;
 			}
 			if (!bSwapchainExtensionAvailable)
-				incompatibilities.emplace("The Swapchain-extension for displaying images is not supported");
+				std_incompatibilities.emplace("The Swapchain-extension for displaying images is not supported");
 		}
 		{ // Features
 			VkPhysicalDeviceIndexTypeUint8Features vk_indexTypeUint8Feature = {
@@ -203,33 +203,33 @@ namespace RE {
 			const VkPhysicalDeviceFeatures &vk_physicalDeviceFeatures = vk_physicalDeviceFeatures_1_0.features;
 			vkGetPhysicalDeviceFeatures2(vk_hPhysicalDevice, &vk_physicalDeviceFeatures_1_0);
 			if (!bIndexTypeUint8Available || !vk_indexTypeUint8Feature.indexTypeUint8)
-				optionals.emplace("8-bit unsigned indices aren't supported");
+				std_optionals.emplace("8-bit unsigned indices aren't supported");
 			if (!vk_physicalDeviceFeatures_1_3.shaderDemoteToHelperInvocation)
-				incompatibilities.emplace("The shader operation \"demote\" has to be supported in SPIR-V");
+				std_incompatibilities.emplace("The shader operation \"demote\" has to be supported in SPIR-V");
 			if (!vk_physicalDeviceFeatures_1_3.synchronization2)
-				warnings.emplace("The advanced synchronization-feature is not supported");
+				std_warnings.emplace("The advanced synchronization-feature is not supported");
 			if (!vk_physicalDeviceFeatures_1_3.dynamicRendering)
-				optionals.emplace("The dynamic rendering-feature (relinquishment of static render passes) is not supported");
+				std_optionals.emplace("The dynamic rendering-feature (relinquishment of static render passes) is not supported");
 			if (!vk_physicalDeviceFeatures_1_2.shaderSampledImageArrayNonUniformIndexing)
-			    incompatibilities.emplace("Non-uniform indexing within the shaders is not supported");
+			    std_incompatibilities.emplace("Non-uniform indexing within the shaders is not supported");
 			if (!vk_physicalDeviceFeatures_1_2.descriptorBindingSampledImageUpdateAfterBind)
-			    optionals.emplace("Updating samplers, sampled images and combinations aren't supported");
+			    std_optionals.emplace("Updating samplers, sampled images and combinations aren't supported");
 			if (!vk_physicalDeviceFeatures_1_2.descriptorBindingUpdateUnusedWhilePending)
-				optionals.emplace("The GPU doesn't support unused descriptor bindings being updated while pending");
+				std_optionals.emplace("The GPU doesn't support unused descriptor bindings being updated while pending");
 			if (!vk_physicalDeviceFeatures_1_2.descriptorBindingPartiallyBound)
-				incompatibilities.emplace("The GPU doesn't support partially bound descriptor bindings");
+				std_incompatibilities.emplace("The GPU doesn't support partially bound descriptor bindings");
 			if (!vk_physicalDeviceFeatures_1_2.runtimeDescriptorArray)
-			    incompatibilities.emplace("Descriptor arrays, which size is defined at runtime, aren't supported");
+			    std_incompatibilities.emplace("Descriptor arrays, which size is defined at runtime, aren't supported");
 			if (!vk_physicalDeviceFeatures_1_2.uniformBufferStandardLayout)
-			    incompatibilities.emplace("The std430-layout has to be supported for uniforms in shaders");
+			    std_incompatibilities.emplace("The std430-layout has to be supported for uniforms in shaders");
 			if (!vk_physicalDeviceFeatures_1_2.timelineSemaphore)
-				incompatibilities.emplace("Timeline semaphores aren't supported");
+				std_incompatibilities.emplace("Timeline semaphores aren't supported");
 			if (!vk_physicalDeviceFeatures.sampleRateShading)
-				optionals.emplace("Sample shading (fragment shader executes per sample) is not supported");
+				std_optionals.emplace("Sample shading (fragment shader executes per sample) is not supported");
 			if (!vk_physicalDeviceFeatures.multiDrawIndirect)
-				optionals.emplace("Indirect, multiple draw commands are not supported");
+				std_optionals.emplace("Indirect, multiple draw commands are not supported");
 			if (!vk_physicalDeviceFeatures.samplerAnisotropy)
-				optionals.emplace("Anisotropic filtering for textures is not supported");
+				std_optionals.emplace("Anisotropic filtering for textures is not supported");
 		}
 		{ // Queues
 			constexpr VkQueueFlags vk_amExpectedQueueFlags[] = {
@@ -238,14 +238,14 @@ namespace RE {
 				VK_QUEUE_TRANSFER_BIT
 			};
 			vkGetPhysicalDeviceQueueFamilyProperties2(vk_hPhysicalDevice, &u32QueueFamilyCount, nullptr);
-			std::unique_ptr<VkQueueFamilyProperties2[]> queueFamilies = std::make_unique<VkQueueFamilyProperties2[]>(u32QueueFamilyCount);
+			std::unique_ptr<VkQueueFamilyProperties2[]> std_queueFamilies = std::make_unique<VkQueueFamilyProperties2[]>(u32QueueFamilyCount);
 			for (uint32_t u32QueueFamilyIndex = 0; u32QueueFamilyIndex < u32QueueFamilyCount; u32QueueFamilyIndex++) {
-				queueFamilies[u32QueueFamilyIndex].sType = VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2;
-				queueFamilies[u32QueueFamilyIndex].pNext = nullptr;
+				std_queueFamilies[u32QueueFamilyIndex].sType = VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2;
+				std_queueFamilies[u32QueueFamilyIndex].pNext = nullptr;
 			}
-			vkGetPhysicalDeviceQueueFamilyProperties2(vk_hPhysicalDevice, &u32QueueFamilyCount, queueFamilies.get());
+			vkGetPhysicalDeviceQueueFamilyProperties2(vk_hPhysicalDevice, &u32QueueFamilyCount, std_queueFamilies.get());
 			for (uint32_t u32QueueFamilyIndex = 0; u32QueueFamilyIndex < u32QueueFamilyCount; u32QueueFamilyIndex++) {
-				const VkQueueFlags vk_mQueueFlags = queueFamilies[u32QueueFamilyIndex].queueFamilyProperties.queueFlags;
+				const VkQueueFlags vk_mQueueFlags = std_queueFamilies[u32QueueFamilyIndex].queueFamilyProperties.queueFlags;
 				for (const VkQueueFlags vk_mExpectedQueueFlags : vk_amExpectedQueueFlags)
 					if ((vk_mQueueFlags & vk_mExpectedQueueFlags) == vk_mExpectedQueueFlags)
 						i32Score += 10 - std::popcount<VkQueueFlags>(vk_mQueueFlags & (~vk_mExpectedQueueFlags));
@@ -269,12 +269,12 @@ namespace RE {
 			}
 			if (vk_ePhysicalDeviceType != VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) {
 				if (!bDiscreteMemoryExists) {
-					warnings.emplace("This device doesn't have its own physical memory");
+					std_warnings.emplace("This device doesn't have its own physical memory");
 					i32Score += -100;
 				} else
-					i32Score += (vk_cpuMemory / 1000000000) * (vk_gpuMemory / 1000000000) - 16;
+					i32Score += static_cast<int32_t>(vk_cpuMemory / 1000000000UL * vk_gpuMemory / 1000000000UL - 16);
 			} else
-				i32Score += vk_cpuMemory / 1000000000 + vk_gpuMemory / 1000000000 - 16;
+				i32Score += static_cast<int32_t>(vk_cpuMemory / 1000000000UL + vk_gpuMemory / 1000000000UL - 16);
 			uint8_t m8CoherencePresence = 0;
 			constexpr uint8_t m8GpuCoherenceAbsent = 0x1,
 				m8GpuCoherencePresent = 0x2,
@@ -325,7 +325,7 @@ namespace RE {
 			for (const VkFormat vk_eVertexFormat : vk_aeVertexFormats) {
 				vkGetPhysicalDeviceFormatProperties2(vk_hPhysicalDevice, vk_eVertexFormat, &vk_formatProperties2);
 				if ((vk_rFormatProperties.bufferFeatures & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT) == 0) {
-					incompatibilities.emplace("Not all relevant formats for vertex buffers can be used for the said purpose");
+					std_incompatibilities.emplace("Not all relevant formats for vertex buffers can be used for the said purpose");
 					break;
 				}
 			}
@@ -432,8 +432,8 @@ namespace RE {
 				VK_FORMAT_D24_UNORM_S8_UINT,
 				VK_FORMAT_D32_SFLOAT_S8_UINT
 			};
-			for (uint8_t u8TransientIter = 0; u8TransientIter < 2; u8TransientIter++) {
-				switch (u8TransientIter) {
+			for (unsigned uTransientIter = 0; uTransientIter < 2; uTransientIter++) {
+				switch (uTransientIter) {
 					case 0:
 						vk_imageFormatInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
 						break;
@@ -441,7 +441,7 @@ namespace RE {
 						vk_imageFormatInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 						break;
 					[[unlikely]] default:
-						RE_ABORT("Unknown iteration index ", u8TransientIter, " for checking depth-stencil image capabilities");
+						RE_ABORT("Unknown iteration index ", uTransientIter, " for checking depth-stencil image capabilities");
 				}
 				for (const VkFormat vk_eDepthStencilFormat : vk_aeDepthStencilFormats) {
 					vkGetPhysicalDeviceFormatProperties2(vk_hPhysicalDevice, vk_eDepthStencilFormat, &vk_formatProperties2);
@@ -488,13 +488,13 @@ namespace RE {
 					break;
 			}
 			if (!bTextureAllChannelsSupported)
-				incompatibilities.emplace("The essential image formats RGBA and BGRA aren't supported on this device");
+				std_incompatibilities.emplace("The essential image formats RGBA and BGRA aren't supported on this device");
 			if (!bRenderTargetSupported)
-				incompatibilities.emplace("None of the essential image formats used for rendering aren't supported on this device");
+				std_incompatibilities.emplace("None of the essential image formats used for rendering aren't supported on this device");
 			if (!bDepthSupported)
-				incompatibilities.emplace("The essential image formats supporting depth aren't available on this device");
+				std_incompatibilities.emplace("The essential image formats supporting depth aren't available on this device");
 			if (!bStencilSupported)
-				incompatibilities.emplace("The essential image formats supporting stencils aren't available on this device");
+				std_incompatibilities.emplace("The essential image formats supporting stencils aren't available on this device");
 		}
 		{ // Surface
 			VkBool32 vk_bSurfaceSupportExists = VK_FALSE;
@@ -504,20 +504,20 @@ namespace RE {
 					break;
 			}
 			if (vk_bSurfaceSupportExists != VK_TRUE)
-				incompatibilities.emplace("The GPU cannot display the contents to the display");
+				std_incompatibilities.emplace("The GPU cannot display the contents to the display");
 			VkSurfaceCapabilitiesKHR vk_surfaceCapabilities;
 			vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk_hPhysicalDevice, vk_hSurface, &vk_surfaceCapabilities);
 			if ((vk_surfaceCapabilities.supportedTransforms & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR) == 0)
-				incompatibilities.emplace("The GPU doesn't support identity transforms of the content");
+				std_incompatibilities.emplace("The GPU doesn't support identity transforms of the content");
 			if ((vk_surfaceCapabilities.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR) == 0)
-				incompatibilities.emplace("The GPU doesn't support opaque displays");
+				std_incompatibilities.emplace("The GPU doesn't support opaque displays");
 			constexpr VkImageUsageFlags vk_mExpectedSurfaceImageUsages = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 			if ((vk_surfaceCapabilities.supportedUsageFlags & vk_mExpectedSurfaceImageUsages) == vk_mExpectedSurfaceImageUsages) {
 				// Surface Formats
 				uint32_t u32SurfaceFormatCount;
 				vkGetPhysicalDeviceSurfaceFormatsKHR(vk_hPhysicalDevice, vk_hSurface, &u32SurfaceFormatCount, nullptr);
-				std::unique_ptr<VkSurfaceFormatKHR[]> surfaceFormats = std::make_unique<VkSurfaceFormatKHR[]>(u32SurfaceFormatCount);
-				vkGetPhysicalDeviceSurfaceFormatsKHR(vk_hPhysicalDevice, vk_hSurface, &u32SurfaceFormatCount, surfaceFormats.get());
+				std::unique_ptr<VkSurfaceFormatKHR[]> std_surfaceFormats = std::make_unique<VkSurfaceFormatKHR[]>(u32SurfaceFormatCount);
+				vkGetPhysicalDeviceSurfaceFormatsKHR(vk_hPhysicalDevice, vk_hSurface, &u32SurfaceFormatCount, std_surfaceFormats.get());
 				VkPhysicalDeviceImageFormatInfo2 vk_imageFormatInfo;
 				vk_imageFormatInfo.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2;
 				vk_imageFormatInfo.pNext = nullptr;
@@ -531,9 +531,9 @@ namespace RE {
 				const VkImageFormatProperties &vk_rImageFormatProperties = vk_imageFormatProperties2.imageFormatProperties;
 				bool bSurfaceFormatAppropriatelySupported = false;
 				for (uint32_t u32SurfaceFormatIndex = 0; u32SurfaceFormatIndex < u32SurfaceFormatCount; u32SurfaceFormatIndex++) {
-					if (surfaceFormats[u32SurfaceFormatIndex].colorSpace != VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+					if (std_surfaceFormats[u32SurfaceFormatIndex].colorSpace != VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
 						continue;
-					vk_imageFormatInfo.format = surfaceFormats[u32SurfaceFormatIndex].format;
+					vk_imageFormatInfo.format = std_surfaceFormats[u32SurfaceFormatIndex].format;
 					const VkResult vk_eResult = vkGetPhysicalDeviceImageFormatProperties2(vk_hPhysicalDevice, &vk_imageFormatInfo, &vk_imageFormatProperties2);
 					switch (vk_eResult) {
 						case VK_SUCCESS:
@@ -553,9 +553,9 @@ namespace RE {
 				}
 			BREAK_SURFACE_FORMAT_LOOP:
 				if (!bSurfaceFormatAppropriatelySupported)
-					incompatibilities.emplace("Neither of all available surface formats is properly supported for rendering");
+					std_incompatibilities.emplace("Neither of all available surface formats is properly supported for rendering");
 			} else
-				incompatibilities.emplace("The required image usage flags aren't supported for displayable content");
+				std_incompatibilities.emplace("The required image usage flags aren't supported for displayable content");
 			{ // Present modes
 				uint32_t u32PresentModeCount;
 				vkGetPhysicalDeviceSurfacePresentModesKHR(vk_hPhysicalDevice, vk_hSurface, &u32PresentModeCount, nullptr);
@@ -579,49 +579,49 @@ namespace RE {
 							break;
 					}
 				if (!bFifoPresentationSupported)
-					incompatibilities.emplace("The GPU doesn't support the FIFO-present mode");
+					std_incompatibilities.emplace("The GPU doesn't support the FIFO-present mode");
 			}
 		}
 		if (!vk_mMsaaSampleCountsAvailable)
-			incompatibilities.emplace("All resources required for rendering are not compatible with MSAA either en- or disabled");
+			std_incompatibilities.emplace("All resources required for rendering are not compatible with MSAA either en- or disabled");
 		else if ((vk_mMsaaSampleCountsAvailable & VK_SAMPLE_COUNT_1_BIT) == 0) {
-			warnings.emplace("Rendering without MSAA enabled is not possible, because certain resources cannot be used for this purpose");
+			std_warnings.emplace("Rendering without MSAA enabled is not possible, because certain resources cannot be used for this purpose");
 			i32Score += -1000;
 		} else
 			i32Score += std::popcount<VkSampleCountFlags>(vk_mMsaaSampleCountsAvailable & (~VK_SAMPLE_COUNT_1_BIT)) * 5 + 10;
 
 		if (pi32Score)
 			*pi32Score = i32Score;
-		const bool bDeviceCompatible = incompatibilities.empty();
-		if (!incompatibilities.empty()) {
+		const bool bDeviceCompatible = std_incompatibilities.empty();
+		if (!std_incompatibilities.empty()) {
 			print_colored("Physical Vulkan device ", RE_TERMINAL_COLOR_RED, false, false);
 			print_colored(pacDeviceName, RE_TERMINAL_COLOR_RED, false, false);
 			println_colored(" has incompatibility/-ies:", RE_TERMINAL_COLOR_RED, false, false);
 			do {
 				print_colored(" - ", RE_TERMINAL_COLOR_RED, false, false);
-				println_colored(incompatibilities.front(), RE_TERMINAL_COLOR_RED, false, false);
-				incompatibilities.pop();
-			} while (!incompatibilities.empty());
+				println_colored(std_incompatibilities.front(), RE_TERMINAL_COLOR_RED, false, false);
+				std_incompatibilities.pop();
+			} while (!std_incompatibilities.empty());
 		}
-		if (!warnings.empty()) {
-			print_colored("There are warnings about the physical Vulkan device ", RE_TERMINAL_COLOR_BRIGHT_RED, false, false);
+		if (!std_warnings.empty()) {
+			print_colored("There are std_warnings about the physical Vulkan device ", RE_TERMINAL_COLOR_BRIGHT_RED, false, false);
 			print_colored(pacDeviceName, RE_TERMINAL_COLOR_BRIGHT_RED, false, false);
 			println_colored(":", RE_TERMINAL_COLOR_BRIGHT_RED, false, false);
 			do {
 				print_colored(" - ", RE_TERMINAL_COLOR_BRIGHT_RED, false, false);
-				println_colored(warnings.front(), RE_TERMINAL_COLOR_BRIGHT_RED, false, false);
-				warnings.pop();
-			} while (!warnings.empty());
+				println_colored(std_warnings.front(), RE_TERMINAL_COLOR_BRIGHT_RED, false, false);
+				std_warnings.pop();
+			} while (!std_warnings.empty());
 		}
-		if (!optionals.empty()) {
+		if (!std_optionals.empty()) {
 			print_colored("Physical Vulkan device ", RE_TERMINAL_COLOR_BRIGHT_YELLOW, false, false);
 			print_colored(pacDeviceName, RE_TERMINAL_COLOR_BRIGHT_YELLOW, false, false);
 			println_colored(" doesn't support the following features, which aren't mandatory:", RE_TERMINAL_COLOR_BRIGHT_YELLOW, false, false);
 			do {
 				print_colored(" - ", RE_TERMINAL_COLOR_BRIGHT_YELLOW, false, false);
-				println_colored(optionals.front(), RE_TERMINAL_COLOR_BRIGHT_YELLOW, false, false);
-				optionals.pop();
-			} while (!optionals.empty());
+				println_colored(std_optionals.front(), RE_TERMINAL_COLOR_BRIGHT_YELLOW, false, false);
+				std_optionals.pop();
+			} while (!std_optionals.empty());
 		}
 		return bDeviceCompatible;
 	}

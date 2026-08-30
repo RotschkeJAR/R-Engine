@@ -5,7 +5,7 @@ namespace RE {
 	
 	VkSurfaceKHR vk_hSurface;
 	VkSurfaceCapabilitiesKHR vk_surfaceCapabilities;
-	std::unique_ptr<VkSurfaceFormatKHR[]> surfaceFormatsAvailable;
+	std::unique_ptr<VkSurfaceFormatKHR[]> std_surfaceFormatsAvailable;
 	VkCompositeAlphaFlagBitsKHR vk_eCompositeAlphaSelected;
 	VkPresentModeKHR vk_ePresentNoVsync = VK_PRESENT_MODE_FIFO_KHR,
 		vk_ePresentVsync = VK_PRESENT_MODE_FIFO_KHR;
@@ -17,7 +17,7 @@ namespace RE {
 	void destroy_vulkan_surface() {
 		PRINT_DEBUG("Destroying Vulkan surface");
 		vkDestroySurfaceKHR(vk_hInstance, vk_hSurface, nullptr);
-		surfaceFormatsAvailable.reset();
+		std_surfaceFormatsAvailable.reset();
 		vk_ePresentNoVsync = VK_PRESENT_MODE_FIFO_KHR;
 		vk_ePresentVsync = VK_PRESENT_MODE_FIFO_KHR;
 	}
@@ -68,8 +68,8 @@ namespace RE {
 #endif
 		PRINT_DEBUG("Fetching Vulkan surface formats");
 		vkGetPhysicalDeviceSurfaceFormatsKHR(SELECTED_PHYSICAL_VULKAN_DEVICE, vk_hSurface, &u32SurfaceFormatsAvailableCount, nullptr);
-		surfaceFormatsAvailable = std::make_unique<VkSurfaceFormatKHR[]>(u32SurfaceFormatsAvailableCount);
-		vkGetPhysicalDeviceSurfaceFormatsKHR(SELECTED_PHYSICAL_VULKAN_DEVICE, vk_hSurface, &u32SurfaceFormatsAvailableCount, surfaceFormatsAvailable.get());
+		std_surfaceFormatsAvailable = std::make_unique<VkSurfaceFormatKHR[]>(u32SurfaceFormatsAvailableCount);
+		vkGetPhysicalDeviceSurfaceFormatsKHR(SELECTED_PHYSICAL_VULKAN_DEVICE, vk_hSurface, &u32SurfaceFormatsAvailableCount, std_surfaceFormatsAvailable.get());
 		PRINT_DEBUG("Fetching Vulkan surface presentation modes");
 		uint32_t u32PresentModesCount;
 		vkGetPhysicalDeviceSurfacePresentModesKHR(SELECTED_PHYSICAL_VULKAN_DEVICE, vk_hSurface, &u32PresentModesCount, nullptr);
@@ -94,7 +94,7 @@ namespace RE {
 		int iBestSurfaceFormatScore = INT_MIN;
 		for (uint32_t u32SurfaceFormatIndex = 0; u32SurfaceFormatIndex < u32SurfaceFormatsAvailableCount; u32SurfaceFormatIndex++) {
 			int iCurrentSurfaceFormatScore = 0;
-			switch (surfaceFormatsAvailable[u32SurfaceFormatIndex].format) {
+			switch (std_surfaceFormatsAvailable[u32SurfaceFormatIndex].format) {
 				// SDR
 				case VK_FORMAT_R8G8B8A8_UNORM:
 					iCurrentSurfaceFormatScore += 990;
@@ -114,11 +114,11 @@ namespace RE {
 					iCurrentSurfaceFormatScore += -2000;
 					break;
 			}
-			iCurrentSurfaceFormatScore += surfaceFormatsAvailable[u32SurfaceFormatIndex].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR ? 1000 : -1000;
+			iCurrentSurfaceFormatScore += std_surfaceFormatsAvailable[u32SurfaceFormatIndex].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR ? 1000 : -1000;
 			if (iBestSurfaceFormatScore < iCurrentSurfaceFormatScore) {
 				iBestSurfaceFormatScore = iCurrentSurfaceFormatScore;
 				u32IndexToSelectedSurfaceFormat = u32SurfaceFormatIndex;
-				PRINT_DEBUG("Found new best Vulkan surface format at index ", u32IndexToSelectedSurfaceFormat, ", which has color space ", std::hex, surfaceFormatsAvailable[u32IndexToSelectedSurfaceFormat].colorSpace, " and format ", surfaceFormatsAvailable[u32IndexToSelectedSurfaceFormat].format, ".");
+				PRINT_DEBUG("Found new best Vulkan surface format at index ", u32IndexToSelectedSurfaceFormat, ", which has color space ", std::hex, std_surfaceFormatsAvailable[u32IndexToSelectedSurfaceFormat].colorSpace, " and format ", std_surfaceFormatsAvailable[u32IndexToSelectedSurfaceFormat].format, ".");
 			}
 		}
 	}

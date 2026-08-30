@@ -10,7 +10,7 @@ namespace RE {
 	unsigned uCurrentFrameInFlightIndex = 0;
 
 	bool init_renderer() {
-		vk_eSwapchainImageFormat = surfaceFormatsAvailable[u32IndexToSelectedSurfaceFormat].format;
+		vk_eSwapchainImageFormat = std_surfaceFormatsAvailable[u32IndexToSelectedSurfaceFormat].format;
 		if (create_render_tasks()) {
 			if (create_renderer_buffers()) {
 				if (create_renderer_images()) {

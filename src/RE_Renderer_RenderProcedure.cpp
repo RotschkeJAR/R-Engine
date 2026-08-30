@@ -453,7 +453,7 @@ namespace RE {
 									.pSignalSemaphores = &swapchainSemaphores[u32CurrentSwapchainSemaphoreIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE + 1]
 								};
 								if (vkQueueSubmit(
-										vk_pahQueues[aRenderTasks[0].logical_queue_index_for_function(RENDER_TASK_SUBINDEX_IMAGE_BLIT)],
+										std_queues[aRenderTasks[0].logical_queue_index_for_function(RENDER_TASK_SUBINDEX_IMAGE_BLIT)],
 										1,
 										&vk_emptyPresentInfo,
 										vk_hEmptyPresentFence) == VK_SUCCESS) {

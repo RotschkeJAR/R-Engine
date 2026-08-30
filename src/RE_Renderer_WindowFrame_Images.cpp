@@ -60,14 +60,23 @@ namespace RE {
 						asset_image_free(windowButtonImage);
 						stagingWindowButtonBuffer.get_memory().flush_mapped_memory();
 						PRINT_DEBUG("Creating Vulkan task for transferring window button textures to GPU");
-						const uint8_t a2u8LogicalQueues[2] = {RE_VK_LOGICAL_QUEUE_IGNORED, aRenderTasks[0].logical_queue_index_for_function(RENDER_TASK_SUBINDEX_RENDERING)};
-						constexpr VkQueueFlagBits vk_a2eQueueTypes[2] = {VK_QUEUE_TRANSFER_BIT, VK_QUEUE_GRAPHICS_BIT};
-						constexpr uint32_t a2u32SeperationIds[2] = {0, 1};
+						const unsigned a2uLogicalQueues[2] = {
+							RE_VK_LOGICAL_QUEUE_IGNORED,
+							aRenderTasks[0].logical_queue_index_for_function(RENDER_TASK_SUBINDEX_RENDERING)
+						};
+						constexpr VkQueueFlagBits vk_a2eQueueTypes[2] = {
+							VK_QUEUE_TRANSFER_BIT,
+							VK_QUEUE_GRAPHICS_BIT
+						};
+						constexpr unsigned a2uSeperationIds[2] = {
+							0,
+							1
+						};
 						const VulkanTask_Queues transferTaskQueues = {
-							.pau8LogicalQueueIndices = a2u8LogicalQueues,
+							.pauLogicalQueueIndices = a2uLogicalQueues,
 							.vk_paeQueueTypes = vk_a2eQueueTypes,
-							.pau32StrictSeparationIds = a2u32SeperationIds,
-							.u32FunctionsCount = 2
+							.pauStrictSeparationIds = a2uSeperationIds,
+							.uFunctionsCount = 2
 						};
 						VulkanTask transferTask(transferTaskQueues, false, false, true);
 						if (transferTask.valid()) {
@@ -142,8 +151,8 @@ namespace RE {
 											.dstAccessMask = VK_ACCESS_NONE,
 											.oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 											.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-											.srcQueueFamilyIndex = queueFamilyIndices[u8CurrentLogicalQueue],
-											.dstQueueFamilyIndex = queueFamilyIndices[u8NextLogicalQueue],
+											.srcQueueFamilyIndex = std_queueFamilyIndices[u8CurrentLogicalQueue],
+											.dstQueueFamilyIndex = std_queueFamilyIndices[u8NextLogicalQueue],
 											.image = vk_hWindowButtonImage,
 											.subresourceRange = {
 												.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
@@ -167,8 +176,8 @@ namespace RE {
 												.dstAccessMask = VK_ACCESS_NONE,
 												.oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 												.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-												.srcQueueFamilyIndex = queueFamilyIndices[u8PreviousLogicalQueue],
-												.dstQueueFamilyIndex = queueFamilyIndices[u8CurrentLogicalQueue],
+												.srcQueueFamilyIndex = std_queueFamilyIndices[u8PreviousLogicalQueue],
+												.dstQueueFamilyIndex = std_queueFamilyIndices[u8CurrentLogicalQueue],
 												.image = vk_hWindowButtonImage,
 												.subresourceRange = {
 													.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,

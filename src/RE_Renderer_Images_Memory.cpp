@@ -10,7 +10,7 @@ namespace RE {
 		const SharedVulkanMemoryInfo aImageInfos[] = {
 			{
 				.vulkanStorageObject = vk_hCharacterImage,
-				.u32RegionIndex = 0
+				.uRegionIndex = 0
 			}
 		};
 		size_t memoryAllocationCount;

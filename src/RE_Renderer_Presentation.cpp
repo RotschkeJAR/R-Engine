@@ -14,28 +14,28 @@ namespace RE {
 			.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
 		};
 		swapchainSemaphores = std::make_unique<VkSemaphore[]>(RE_VK_SWAPCHAIN_SEMAPHORE_COUNT);
-		uint16_t u16SemaphoreCreateIndex = 0;
-		while (u16SemaphoreCreateIndex < RE_VK_SWAPCHAIN_SEMAPHORE_COUNT) {
-			if (vkCreateSemaphore(vk_hDevice, &vk_swapchainSemaphoreCreateInfo, nullptr, &swapchainSemaphores[u16SemaphoreCreateIndex]) == VK_SUCCESS) {
-				u16SemaphoreCreateIndex++;
+		unsigned uSemaphoreCreateIndex = 0;
+		while (uSemaphoreCreateIndex < RE_VK_SWAPCHAIN_SEMAPHORE_COUNT) {
+			if (vkCreateSemaphore(vk_hDevice, &vk_swapchainSemaphoreCreateInfo, nullptr, &swapchainSemaphores[uSemaphoreCreateIndex]) == VK_SUCCESS) {
+				uSemaphoreCreateIndex++;
 				continue;
 			} else
-				RE_FATAL_ERROR("Failed creating a Vulkan semaphore for synchronizing presentation operations at index ", u16SemaphoreCreateIndex);
+				RE_FATAL_ERROR("Failed creating a Vulkan semaphore for synchronizing presentation operations at index ", uSemaphoreCreateIndex);
 			break;
 		}
-		if (u16SemaphoreCreateIndex == RE_VK_SWAPCHAIN_SEMAPHORE_COUNT) {
-			vk_hPresentQueue = vk_pahQueues[aRenderTasks[0].logical_queue_index_for_presentation()];
+		if (uSemaphoreCreateIndex == RE_VK_SWAPCHAIN_SEMAPHORE_COUNT) {
+			vk_hPresentQueue = std_queues[aRenderTasks[0].logical_queue_index_for_presentation()];
 			return true;
 		}
-		for (uint16_t u16SemaphoreDestroyIndex = 0; u16SemaphoreDestroyIndex < u16SemaphoreCreateIndex; u16SemaphoreDestroyIndex++)
-			vkDestroySemaphore(vk_hDevice, swapchainSemaphores[u16SemaphoreDestroyIndex], nullptr);
+		for (unsigned uSemaphoreDestroyIndex = 0; uSemaphoreDestroyIndex < uSemaphoreCreateIndex; uSemaphoreDestroyIndex++)
+			vkDestroySemaphore(vk_hDevice, swapchainSemaphores[uSemaphoreDestroyIndex], nullptr);
 		return false;
 	}
 
 	void destroy_presentation() {
 		PRINT_DEBUG("Destroying ", RE_VK_SWAPCHAIN_SEMAPHORE_COUNT, " Vulkan swapchain semaphores");
-		for (uint16_t u16SemaphoreDestroyIndex = 0; u16SemaphoreDestroyIndex < RE_VK_SWAPCHAIN_SEMAPHORE_COUNT; u16SemaphoreDestroyIndex++)
-			vkDestroySemaphore(vk_hDevice, swapchainSemaphores[u16SemaphoreDestroyIndex], nullptr);
+		for (unsigned uSemaphoreDestroyIndex = 0; uSemaphoreDestroyIndex < RE_VK_SWAPCHAIN_SEMAPHORE_COUNT; uSemaphoreDestroyIndex++)
+			vkDestroySemaphore(vk_hDevice, swapchainSemaphores[uSemaphoreDestroyIndex], nullptr);
 		swapchainSemaphores.reset();
 		u32CurrentSwapchainSemaphoreIndex = 0;
 	}

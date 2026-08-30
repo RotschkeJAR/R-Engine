@@ -52,7 +52,7 @@ namespace RE {
 					PRINT_DEBUG("Creating Vulkan command pool for empty presentations");
 					if (create_vulkan_command_pool(
 							0,
-							queueFamilyIndices[aRenderTasks[0].logical_queue_index_for_function(RENDER_TASK_SUBINDEX_IMAGE_BLIT)],
+							std_queueFamilyIndices[aRenderTasks[0].logical_queue_index_for_function(RENDER_TASK_SUBINDEX_IMAGE_BLIT)],
 							&vk_hCommandPoolEmptyPresent)) {
 						PRINT_DEBUG("Allocating Vulkan command buffer from pool ", vk_hCommandPoolEmptyPresent, " for empty presentations");
 						if (alloc_vulkan_command_buffers(

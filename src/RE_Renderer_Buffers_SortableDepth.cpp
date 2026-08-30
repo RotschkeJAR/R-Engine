@@ -18,8 +18,8 @@ namespace RE {
 				#else
 					USAGE_FLAGS,
 				#endif
-					rQueues.u8QueueCount,
-					rQueues.queueFamilyIndices.get(),
+					rQueues.uQueueCount,
+					rQueues.std_queueFamilyIndices.get(),
 					&vk_ahSortableDepthBuffers[u8FrameInFlightCreateIndex])) {
 				RE_FATAL_ERROR("Failed to create sortable depth buffer in Vulkan at frame-in-flight index ", u8FrameInFlightCreateIndex);
 				break;

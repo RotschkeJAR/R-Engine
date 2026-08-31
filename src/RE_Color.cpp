@@ -19,29 +19,29 @@ namespace RE {
 				rCopy.afChannels[3]} {}
 	Color::~Color() {}
 
-	float Color::get_channel(const uint8_t u8ChannelIndex) const {
-		if (u8ChannelIndex < uColorChannelCount)
-			return afChannels[u8ChannelIndex];
-		RE_FATAL_ERROR("The channel index is not within the range [0; ", uColorChannelCount - 1, "]: ", u8ChannelIndex);
+	float Color::get_channel(const unsigned uChannelIndex) const {
+		if (uChannelIndex < uColorChannelCount)
+			return afChannels[uChannelIndex];
+		RE_FATAL_ERROR("The channel index is not within the range [0; ", uColorChannelCount - 1, "]: ", uChannelIndex);
 		return 0.0f;
 	}
 
-	void Color::set_channel(const uint8_t u8ChannelIndex, const float fNormal) {
-		if (u8ChannelIndex < uColorChannelCount)
-			afChannels[u8ChannelIndex] = Color::clamp(fNormal);
+	void Color::set_channel(const unsigned uChannelIndex, const float fNormal) {
+		if (uChannelIndex < uColorChannelCount)
+			afChannels[uChannelIndex] = Color::clamp(fNormal);
 		else
-			RE_FATAL_ERROR("The channel index is not within the range [0; ", uColorChannelCount - 1, "]: ", u8ChannelIndex);
+			RE_FATAL_ERROR("The channel index is not within the range [0; ", uColorChannelCount - 1, "]: ", uChannelIndex);
 	}
 
 	void Color::copy_from(const Color &rCopy) {
-		for (uint8_t u8Channel = 0; u8Channel < uColorChannelCount; u8Channel++)
-			afChannels[u8Channel] = rCopy.afChannels[u8Channel];
+		for (unsigned uChannelIndex = 0; uChannelIndex < uColorChannelCount; uChannelIndex++)
+			afChannels[uChannelIndex] = rCopy.afChannels[uChannelIndex];
 	}
 	
 	[[nodiscard]]
 	bool Color::equals(const Color &rOther) const {
-		for (uint8_t u8Channel = 0; u8Channel < uColorChannelCount; u8Channel++)
-			if (afChannels[u8Channel] != rOther.afChannels[u8Channel])
+		for (unsigned uChannelIndex = 0; uChannelIndex < uColorChannelCount; uChannelIndex++)
+			if (afChannels[uChannelIndex] != rOther.afChannels[uChannelIndex])
 				return false;
 		return true;
 	}
@@ -83,10 +83,10 @@ namespace RE {
 	}
 
 	[[nodiscard]]
-	float Color::operator [](const uint32_t u32ChannelIndex) const {
-		if (u32ChannelIndex < uColorChannelCount)
-			return afChannels[u32ChannelIndex];
-		RE_ERROR("The channel index range is [0; ", uColorChannelCount - 1, "], but yours was ", u32ChannelIndex);
+	float Color::operator [](const unsigned uChannelIndex) const {
+		if (uChannelIndex < uColorChannelCount)
+			return afChannels[uChannelIndex];
+		RE_ERROR("The channel index range is [0; ", uColorChannelCount - 1, "], but yours was ", uChannelIndex);
 		return 0.0f;
 	}
 

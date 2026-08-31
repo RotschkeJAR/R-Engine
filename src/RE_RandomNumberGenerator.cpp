@@ -5,13 +5,13 @@ namespace RE {
 	RandomNumberGenerator::RandomNumberGenerator() {
 		seed_randomly();
 	}
-	RandomNumberGenerator::RandomNumberGenerator(const size_t seed) : rng(seed) {}
-	RandomNumberGenerator::RandomNumberGenerator(const RandomNumberGenerator &rCopy) : rng(rCopy.rng) {}
+	RandomNumberGenerator::RandomNumberGenerator(const size_t sSeed) : std_rng(sSeed) {}
+	RandomNumberGenerator::RandomNumberGenerator(const RandomNumberGenerator &rCopy) : std_rng(rCopy.std_rng) {}
 	RandomNumberGenerator::~RandomNumberGenerator() {}
 
-	void RandomNumberGenerator::seed(const size_t newSeed) {
-		PRINT_DEBUG_CLASS("Seeding random number generator with ", std::hex, newSeed);
-		rng.seed(newSeed);
+	void RandomNumberGenerator::seed(const size_t sNewSeed) {
+		PRINT_DEBUG_CLASS("Seeding random number generator with ", std::hex, sNewSeed);
+		std_rng.seed(sNewSeed);
 	}
 
 	size_t RandomNumberGenerator::seed_randomly() {

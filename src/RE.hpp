@@ -646,31 +646,46 @@ namespace RE {
 	template <class T> requires std::floating_point<T>
 	[[nodiscard]]
 	constexpr T degrees_to_radians(const T degrees) {
-		return degrees * (std::numbers::pi / 180.0f);
+		return degrees * (std::numbers::pi_v<T> / static_cast<T>(180.0));
 	}
 
 	template <class T> requires std::floating_point<T>
 	[[nodiscard]]
 	constexpr T radians_to_degrees(const T radians) {
-		return radians * (180.0f / std::numbers::pi);
+		return radians * (static_cast<T>(180.0) / std::numbers::pi_v<T>);
 	}
 
 	template <class T> requires std::floating_point<T>
 	[[nodiscard]]
 	constexpr T sin_deg(const T degrees) {
-		return std::sin(degrees_to_radians<T>(degrees));
+		if constexpr (std::is_same_v<T, float>)
+			return sinf(degrees_to_radians<T>(degrees));
+		else if constexpr (std::is_same_v<T, long double>)
+			return sinl(degrees_to_radians<T>(degrees));
+		else
+			return sin(degrees_to_radians<T>(degrees));
 	}
 
 	template <class T> requires std::floating_point<T>
 	[[nodiscard]]
 	constexpr T cos_deg(const T degrees) {
-		return std::cos(degrees_to_radians<T>(degrees));
+		if constexpr (std::is_same_v<T, float>)
+			return cosf(degrees_to_radians<T>(degrees));
+		else if constexpr (std::is_same_v<T, long double>)
+			return cosl(degrees_to_radians<T>(degrees));
+		else
+			return cos(degrees_to_radians<T>(degrees));
 	}
 
 	template <class T> requires std::floating_point<T>
 	[[nodiscard]]
 	constexpr T tan_deg(const T degrees) {
-		return std::tan(degrees_to_radians<T>(degrees));
+		if constexpr (std::is_same_v<T, float>)
+			return tanf(degrees_to_radians<T>(degrees));
+		else if constexpr (std::is_same_v<T, long double>)
+			return tanl(degrees_to_radians<T>(degrees));
+		else
+			return tan(degrees_to_radians<T>(degrees));
 	}
 
 
@@ -679,8 +694,8 @@ namespace RE {
 
 	class Bitset final {
 		private:
-			std::unique_ptr<uint8_t[]> bitArray;
-			size_t bitSize;
+			std::unique_ptr<uint8_t[]> std_bitArray;
+			size_t sBitSize;
 
 		public:
 			class BitReference final {
@@ -705,62 +720,62 @@ namespace RE {
 			};
 
 			Bitset();
-			Bitset(size_t bitSize, bool bInitialState = false);
+			Bitset(size_t sBitSize, bool bInitialState = false);
 			Bitset(const Bitset &rCopy) = delete;
 			Bitset(Bitset &rrCopy);
 			~Bitset();
 
 			void fill(bool bNewState);
 			void swap(Bitset &rOther);
-			void resize(size_t newBitSize, bool bInitialState = false);
+			void resize(size_t sNewBitSize, bool bInitialState = false);
 			void clear();
 			size_t size() const;
 			bool empty() const;
-			BitReference at(size_t index);
+			BitReference at(size_t sIndex);
 
-			BitReference operator [](size_t index);
+			BitReference operator [](size_t sIndex);
 
 			friend std::ostream& operator <<(std::ostream &rStream, const Bitset &Bitset);
 	};
 
-	template <class T, size_t dimensionCount> requires std::is_arithmetic_v<T> && (dimensionCount > 0)
+	template <class T, size_t sDimensionCount> requires std::is_arithmetic_v<T> && (sDimensionCount > 0)
 	class Vector final {
 		public:
 			using type = T;
 			
-			T aCoords[dimensionCount];
+			T aCoords[sDimensionCount];
 
 			explicit Vector(const T initialValue = static_cast<T>(0)) {
 				fill(initialValue);
 			}
 
-			Vector(const Vector<T, dimensionCount> &rCopy) {
+			Vector(const Vector<T, sDimensionCount> &rCopy) {
 				copy_from(rCopy);
 			}
 
-			Vector(const Vector<T, dimensionCount> &&rrCopy) {
+			Vector(const Vector<T, sDimensionCount> &&rrCopy) {
 				copy_from(rrCopy);
 			}
 
 			template <class... U>
-			explicit Vector(const U... values) requires AreArithmetics<U...> && (sizeof...(U) <= dimensionCount) {
+			explicit Vector(const U... values) requires AreArithmetics<U...> && (sizeof...(U) <= sDimensionCount) {
 				PRINT_DEBUG_CLASS("Filling vector with values");
-				size_t dimensionIndex = 0;
+				size_t sDimensionIndex = 0;
 				([&]() {
-					aCoords[dimensionIndex] = static_cast<T>(values);
-					dimensionIndex++;
+					aCoords[sDimensionIndex] = static_cast<T>(values);
+					sDimensionIndex++;
 				} (), ...);
-				std::fill(std::begin(aCoords) + dimensionIndex, std::end(aCoords), static_cast<T>(0));
+				std::fill(std::begin(aCoords) + sDimensionIndex, std::end(aCoords), static_cast<T>(0));
 			}
 
 			~Vector() {}
 
 			void for_each(std::function<void(T&, size_t)> callableFunction) {
-				for (size_t dimensionIndex = 0; dimensionIndex < dimensionCount; dimensionIndex++)
+				for (size_t sDimensionIndex = 0; sDimensionIndex < sDimensionCount; sDimensionIndex++)
 					std::invoke(
 							callableFunction,
-							aCoords[dimensionIndex],
-							dimensionIndex);
+							aCoords[sDimensionIndex],
+							sDimensionIndex);
 			}
 
 			[[nodiscard]]
@@ -781,36 +796,36 @@ namespace RE {
 
 			[[nodiscard]]
 			T length() const {
-				return nth_root<T>(static_cast<T>(dimensionCount), sum());
+				return nth_root<T>(static_cast<T>(sDimensionCount), sum());
 			}
 
 			[[nodiscard]]
-			Vector<T, dimensionCount> add(const Vector<T, dimensionCount> &rOther) const {
-				Vector<T, dimensionCount> result;
-				for (size_t i = 0; i < dimensionCount; i++)
+			Vector<T, sDimensionCount> add(const Vector<T, sDimensionCount> &rOther) const {
+				Vector<T, sDimensionCount> result;
+				for (size_t i = 0; i < sDimensionCount; i++)
 					result.aCoords[i] = aCoords[i] + rOther.aCoords[i];
 				return result;
 			}
 
 			[[nodiscard]]
-			Vector<T, dimensionCount> subtract(const Vector<T, dimensionCount> &rOther) const {
-				Vector<T, dimensionCount> result;
-				for (size_t i = 0; i < dimensionCount; i++)
+			Vector<T, sDimensionCount> subtract(const Vector<T, sDimensionCount> &rOther) const {
+				Vector<T, sDimensionCount> result;
+				for (size_t i = 0; i < sDimensionCount; i++)
 					result.aCoords[i] = aCoords[i] - rOther.aCoords[i];
 				return result;
 			}
 
 			[[nodiscard]]
-			T dot_product(const Vector<T, dimensionCount> &rOther) const {
+			T dot_product(const Vector<T, sDimensionCount> &rOther) const {
 				T result = 0;
-				for (size_t i = 0; i < dimensionCount; i++)
+				for (size_t i = 0; i < sDimensionCount; i++)
 					result += aCoords[i] * rOther.aCoords[i];
 				return result;
 			}
 
 			[[nodiscard]]
-			Vector<T, dimensionCount> cross_product(const Vector<T, dimensionCount> &rOther) const requires (dimensionCount == 3) {
-				return Vector<T, dimensionCount>(aCoords[1] * rOther.aCoords[2] - aCoords[2] * rOther.aCoords[1],
+			Vector<T, sDimensionCount> cross_product(const Vector<T, sDimensionCount> &rOther) const requires (sDimensionCount == 3) {
+				return Vector<T, sDimensionCount>(aCoords[1] * rOther.aCoords[2] - aCoords[2] * rOther.aCoords[1],
 												aCoords[2] * rOther.aCoords[0] - aCoords[0] * rOther.aCoords[2],
 												aCoords[0] * rOther.aCoords[1] - aCoords[1] * rOther.aCoords[0]);
 			}
@@ -844,7 +859,7 @@ namespace RE {
 
 			[[nodiscard]]
 			T average() const {
-				return sum() / static_cast<T>(dimensionCount);
+				return sum() / static_cast<T>(sDimensionCount);
 			}
 
 			void fill(const T value) {
@@ -852,81 +867,81 @@ namespace RE {
 				std::fill(std::begin(aCoords), std::end(aCoords), value);
 			}
 
-			void copy_from(const Vector<T, dimensionCount> &rCopy) {
+			void copy_from(const Vector<T, sDimensionCount> &rCopy) {
 				PRINT_DEBUG_CLASS("Copying coordinates from vector ", &rCopy);
 				std::copy(std::begin(rCopy.aCoords), std::end(rCopy.aCoords), std::begin(aCoords));
 			}
 
 			void copy_from_array(const T *const paArray, const size_t arrayLength) {
 				PRINT_DEBUG_CLASS("Copying ", arrayLength, " elements from array ", paArray, " to this vector");
-				for (size_t i = 0; i < arrayLength && i < dimensionCount; i++)
+				for (size_t i = 0; i < arrayLength && i < sDimensionCount; i++)
 					aCoords[i] = paArray[i];
 			}
 
 			[[nodiscard]]
-			bool equals(const Vector<T, dimensionCount> &rOther) const {
-				for (size_t dimensionIndex = 0; dimensionIndex < dimensionCount; dimensionIndex++)
-					if (aCoords[dimensionIndex] != rOther[dimensionIndex])
+			bool equals(const Vector<T, sDimensionCount> &rOther) const {
+				for (size_t sDimensionIndex = 0; sDimensionIndex < sDimensionCount; sDimensionIndex++)
+					if (aCoords[sDimensionIndex] != rOther[sDimensionIndex])
 						return false;
 				return true;
 			}
 
 			[[nodiscard]]
-			T& at(const size_t dimensionIndex) {
-				if (dimensionIndex >= dimensionCount)
-					FATAL_ERROR("Index ", dimensionIndex, " is out of bounds: [0, ", dimensionCount, ")");
-				return aCoords[dimensionIndex];
+			T& at(const size_t sDimensionIndex) {
+				if (sDimensionIndex >= sDimensionCount)
+					FATAL_ERROR("Index ", sDimensionIndex, " is out of bounds: [0, ", sDimensionCount, ")");
+				return aCoords[sDimensionIndex];
 			}
 
 			[[nodiscard]]
-			T at(const size_t dimensionIndex) const {
-				if (dimensionIndex >= dimensionCount)
-					FATAL_ERROR("Index ", dimensionIndex, " is out of bounds: [0, ", dimensionCount, ")");
-				return aCoords[dimensionIndex];
+			T at(const size_t sDimensionIndex) const {
+				if (sDimensionIndex >= sDimensionCount)
+					FATAL_ERROR("Index ", sDimensionIndex, " is out of bounds: [0, ", sDimensionCount, ")");
+				return aCoords[sDimensionIndex];
 			}
 
 			[[nodiscard]]
 			consteval size_t dimensions() const {
-				return dimensionCount;
+				return sDimensionCount;
 			}
 
 			[[nodiscard]]
-			Vector<T, dimensionCount> operator +(const Vector<T, dimensionCount> &rOther) const {
+			Vector<T, sDimensionCount> operator +(const Vector<T, sDimensionCount> &rOther) const {
 				return add(rOther);
 			}
 
 			[[nodiscard]]
-			Vector<T, dimensionCount> operator -(const Vector<T, dimensionCount> &rOther) const {
+			Vector<T, sDimensionCount> operator -(const Vector<T, sDimensionCount> &rOther) const {
 				return subtract(rOther);
 			}
 
 			[[nodiscard]]
-			T& operator [](const size_t dimensionIndex) {
-				return aCoords[dimensionIndex];
+			T& operator [](const size_t sDimensionIndex) {
+				return aCoords[sDimensionIndex];
 			}
 
 			[[nodiscard]]
-			T operator [](const size_t dimensionIndex) const {
-				return aCoords[dimensionIndex];
+			T operator [](const size_t sDimensionIndex) const {
+				return aCoords[sDimensionIndex];
 			}
 
-			void operator =(const Vector<T, dimensionCount> &rCopy) {
+			void operator =(const Vector<T, sDimensionCount> &rCopy) {
 				copy_from(rCopy);
 			}
 
 			[[nodiscard]]
-			bool operator ==(const Vector<T, dimensionCount> &rOther) const {
+			bool operator ==(const Vector<T, sDimensionCount> &rOther) const {
 				return equals(rOther);
 			}
 
 			[[nodiscard]]
-			bool operator !=(const Vector<T, dimensionCount> &rOther) const {
+			bool operator !=(const Vector<T, sDimensionCount> &rOther) const {
 				return !equals(rOther);
 			}
 
-			friend std::ostream& operator <<(std::ostream &rStream, const Vector<T, dimensionCount> &rVector) {
+			friend std::ostream& operator <<(std::ostream &rStream, const Vector<T, sDimensionCount> &rVector) {
 				rStream << '(';
-				for (size_t i = 0; i < dimensionCount; i++) {
+				for (size_t i = 0; i < sDimensionCount; i++) {
 					if (i)
 						rStream << ", ";
 					if constexpr (std::is_same_v<T, int8_t> || std::is_same_v<T, uint8_t>)
@@ -951,16 +966,16 @@ namespace RE {
 	typedef Vector<uint32_t, 3> Vector3u;
 	typedef Vector<uint32_t, 4> Vector4u;
 
-	template <size_t numOfThreads = 10> requires (numOfThreads > 0)
+	template <size_t sNumOfThreads = 10> requires (sNumOfThreads > 0)
 	class Threadpool final {
 		private:
 			std::mutex std_mutex;
-			std::array<std::jthread, numOfThreads> std_threads;
-			std::array<uint64_t, numOfThreads> std_agePerThread;
+			std::array<std::jthread, sNumOfThreads> std_threads;
+			std::array<uint64_t, sNumOfThreads> std_agePerThread;
 
 			size_t find_next_occupation() {
 				std::optional<size_t> std_occupyableThread;
-				for (size_t i = 0; i < numOfThreads; i++)
+				for (size_t i = 0; i < sNumOfThreads; i++)
 					if (!std_threads[i].joinable()) {
 						std_occupyableThread = i;
 						break;
@@ -1023,12 +1038,12 @@ namespace RE {
 
 			[[nodiscard]]
 			size_t occupied_slots() {
-				return numOfThreads - free_slots();
+				return sNumOfThreads - free_slots();
 			}
 
 			[[nodiscard]]
 			static consteval size_t amount_of_threads() {
-				return numOfThreads;
+				return sNumOfThreads;
 			}
 	};
 
@@ -1069,16 +1084,16 @@ namespace RE {
 
 	class RandomNumberGenerator final {
 		private:
-			std::mt19937 rng;
+			std::mt19937 std_rng;
 
 		public:
 			RandomNumberGenerator();
-			explicit RandomNumberGenerator(size_t seed);
+			explicit RandomNumberGenerator(size_t sSeed);
 			RandomNumberGenerator(const RandomNumberGenerator &rCopy);
 			RandomNumberGenerator(RandomNumberGenerator &&rrCopy) = delete;
 			~RandomNumberGenerator();
 
-			void seed(size_t newSeed);
+			void seed(size_t sNewSeed);
 			size_t seed_randomly();
 
 			template <class T>
@@ -1086,10 +1101,10 @@ namespace RE {
 			T random(const T min, const T max) requires std::is_arithmetic_v<T> {
 				if constexpr (std::is_integral_v<T>) {
 					std::uniform_int_distribution<T> range(min, max - 1);
-					return range(rng);
+					return range(std_rng);
 				} else if constexpr (std::is_floating_point_v<T>) {
 					std::uniform_real_distribution<T> range(min, max);
-					return range(rng);
+					return range(std_rng);
 				} else {
 					T uninitialized;
 					return uninitialized;
@@ -1156,16 +1171,16 @@ namespace RE {
 			~Color();
 
 			[[nodiscard]]
-			float get_channel(uint8_t u8ChannelIndex) const;
-			template <uint8_t u8ChannelIndex> requires (u8ChannelIndex < uColorChannelCount)
+			float get_channel(unsigned uChannelIndex) const;
+			template <unsigned uChannelIndex> requires (uChannelIndex < uColorChannelCount)
 			[[nodiscard]]
 			float get_channel() const {
-				return afChannels[u8ChannelIndex];
+				return afChannels[uChannelIndex];
 			}
-			void set_channel(uint8_t u8ChannelIndex, float fNormal);
-			template <uint8_t u8ChannelIndex> requires (u8ChannelIndex < uColorChannelCount)
+			void set_channel(unsigned uChannelIndex, float fNormal);
+			template <unsigned uChannelIndex> requires (uChannelIndex < uColorChannelCount)
 			void set_channel(const float fNormal) {
-				afChannels[u8ChannelIndex] = this->clamp(fNormal);
+				afChannels[uChannelIndex] = this->clamp(fNormal);
 			}
 
 			void copy_from(const Color &rCopy);
@@ -1186,7 +1201,7 @@ namespace RE {
 			float get_alpha() const;
 
 			[[nodiscard]]
-			float operator [](uint32_t u32ChannelIndex) const;
+			float operator [](unsigned uChannelIndex) const;
 			void operator =(const Color &rCopy);
 			[[nodiscard]]
 			bool operator ==(const Color &rOther) const;

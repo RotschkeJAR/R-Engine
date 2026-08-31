@@ -1,6 +1,8 @@
 #include "RE_Internal.hpp"
 
 namespace RE {
+
+#define CHUNK_SIZE 8
 	
 	Bitset::BitReference::BitReference(uint8_t *const pm8Bitmask, const uint8_t u8BitIndex) : pm8Bitmask(pm8Bitmask), u8BitIndex(u8BitIndex) {}
 	Bitset::BitReference::BitReference(const BitReference &rCopy) : pm8Bitmask(rCopy.pm8Bitmask), u8BitIndex(rCopy.u8BitIndex) {}
@@ -35,68 +37,68 @@ namespace RE {
 	}
 
 
-	Bitset::Bitset() : bitSize(0) {}
-	Bitset::Bitset(const size_t bitSize, const bool bInitialState) : bitArray(std::make_unique<uint8_t[]>(bitSize / 8 + 1)), bitSize(bitSize) {
+	Bitset::Bitset() : sBitSize(0) {}
+	Bitset::Bitset(const size_t sBitSize, const bool bInitialState) : std_bitArray(std::make_unique<uint8_t[]>(sBitSize / CHUNK_SIZE + 1)), sBitSize(sBitSize) {
 		fill(bInitialState);
 	}
-	Bitset::Bitset(Bitset &rrCopy) : bitArray(std::move(rrCopy.bitArray)), bitSize(rrCopy.bitSize) {
-		rrCopy.bitSize = 0;
+	Bitset::Bitset(Bitset &rrCopy) : std_bitArray(std::move(rrCopy.std_bitArray)), sBitSize(rrCopy.sBitSize) {
+		rrCopy.sBitSize = 0;
 	}
 	Bitset::~Bitset() {}
 
 	void Bitset::fill(const bool bNewState) {
-		std::fill(bitArray.get(), bitArray.get() + bitSize / 8 + 1, bNewState ? 0xFF : 0);
+		std::fill(std_bitArray.get(), std_bitArray.get() + sBitSize / CHUNK_SIZE + 1, bNewState ? 0xFF : 0);
 	}
 
 	void Bitset::swap(Bitset &rOther) {
-		std::swap(bitArray, rOther.bitArray);
-		std::swap(bitSize, rOther.bitSize);
+		std::swap(std_bitArray, rOther.std_bitArray);
+		std::swap(sBitSize, rOther.sBitSize);
 	}
 
-	void Bitset::resize(const size_t newBitSize, const bool bInitialState) {
-		std::unique_ptr<uint8_t[]> newBitArray = std::make_unique<uint8_t[]>(newBitSize / 8 + 1);
-		std::copy(bitArray.get(), bitArray.get() + std::min(bitSize, newBitSize) / 8 + 1, newBitArray.get());
-		if (newBitSize > bitSize) {
-			std::fill(newBitArray.get() + bitSize / 8 + 1, newBitArray.get() + newBitSize / 8 + 1, bInitialState ? 0xFF: 0);
-			for (size_t i = bitSize % 8; i < 8; i++)
+	void Bitset::resize(const size_t sNewBitSize, const bool bInitialState) {
+		std::unique_ptr<uint8_t[]> std_newBitArray = std::make_unique<uint8_t[]>(sNewBitSize / CHUNK_SIZE + 1);
+		std::copy(std_bitArray.get(), std_bitArray.get() + std::min(sBitSize, sNewBitSize) / CHUNK_SIZE + 1, std_newBitArray.get());
+		if (sNewBitSize > sBitSize) {
+			std::fill(std_newBitArray.get() + sBitSize / CHUNK_SIZE + 1, std_newBitArray.get() + sNewBitSize / CHUNK_SIZE + 1, bInitialState ? 0xFF: 0);
+			for (size_t sIndex = sBitSize % CHUNK_SIZE; sIndex < CHUNK_SIZE; sIndex++)
 				if (bInitialState)
-					newBitArray[bitSize / 8] |= 1 << i;
+					std_newBitArray[sBitSize / CHUNK_SIZE] |= 1 << sIndex;
 				else
-					newBitArray[bitSize / 8] &= ~(1 << i);
+					std_newBitArray[sBitSize / CHUNK_SIZE] &= ~(1 << sIndex);
 		}
-		bitSize = newBitSize;
-		bitArray = std::move(newBitArray);
+		sBitSize = sNewBitSize;
+		std_bitArray = std::move(std_newBitArray);
 	}
 
 	void Bitset::clear() {
-		bitArray.reset();
-		bitSize = 0;
+		std_bitArray.reset();
+		sBitSize = 0;
 	}
 
 	size_t Bitset::size() const {
-		return bitSize;
+		return sBitSize;
 	}
 
 	bool Bitset::empty() const {
-		return !(static_cast<bool>(bitArray) && bitSize);
+		return !(static_cast<bool>(std_bitArray) && sBitSize);
 	}
 
-	Bitset::BitReference Bitset::at(const size_t index) {
-		if (index < bitSize)
-			return (*this)[index];
-		RE_ABORT("Bit index ", index, " is out of bounds ([0, ", bitSize, "[) or bitset is empty");
+	Bitset::BitReference Bitset::at(const size_t sIndex) {
+		if (sIndex < sBitSize)
+			return (*this)[sIndex];
+		RE_ABORT("Bit index ", sIndex, " is out of bounds ([0, ", sBitSize, "[) or bitset is empty");
 	}
 
-	Bitset::BitReference Bitset::operator [](const size_t index) {
-		return Bitset::BitReference(&bitArray[index / 8], index % 8);
+	Bitset::BitReference Bitset::operator [](const size_t sIndex) {
+		return Bitset::BitReference(&std_bitArray[sIndex / CHUNK_SIZE], sIndex % CHUNK_SIZE);
 	}
 
 	std::ostream& operator <<(std::ostream &rStream, const Bitset &rBitset) {
 		rStream << '{';
-		for (size_t i = 0; i < rBitset.bitSize; i++) {
-			if (i != 0)
+		for (size_t sIndex = 0; sIndex < rBitset.sBitSize; sIndex++) {
+			if (sIndex != 0)
 				rStream << ", ";
-			rStream << ((rBitset.bitArray[i / 8] & (1 << (i % 8))) != 0 ? "true" : "false");
+			rStream << ((rBitset.std_bitArray[sIndex / CHUNK_SIZE] & (1 << (sIndex % CHUNK_SIZE))) != 0 ? "true" : "false");
 		}
 		rStream << '}';
 		return rStream;

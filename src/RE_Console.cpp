@@ -9,16 +9,20 @@ namespace RE {
 
 #define DEFAULT_COLOR "\033[0m"
 
-#define PRINT_COLORS 0
-#define TREAT_WARNING_AS_ERROR 1
-#define ERRORS_ALWAYS_FATAL 2
+	typedef unsigned ConsoleSettingsFlags_t;
+	enum ConsoleSettings : ConsoleSettingsFlags_t {
+		CONSOLE_SETTINGS_PRINT_COLORS = 0x1,
+		CONSOLE_SETTINGS_TREAT_WARNING_AS_ERROR = 0x2,
+		CONSOLE_SETTINGS_ERRORS_ALWAYS_FATAL = 0x4
+	};
+
 #ifndef NDEBUG
-	static uint32_t u32ErrorCount = 0,
-		u32WarningCount = 0;
-	uint32_t u32VulkanErrorCount = 0,
+	static unsigned long ulErrorCount = 0,
+		ulWarningCount = 0;
+	unsigned long u32VulkanErrorCount = 0,
 		u32VulkanWarningCount = 0;
 #endif
-	uint8_t u8ConsoleSettings = 1 << PRINT_COLORS;
+	ConsoleSettingsFlags_t mConsoleSettings = CONSOLE_SETTINGS_PRINT_COLORS;
 
 	static void print_time() {
 		std::time_t currentTime = std::time(0);
@@ -57,22 +61,22 @@ namespace RE {
 	#ifndef NDEBUG
 		println("Error counter:");
 		println("=============================");
-		println("Errors:             ", u32ErrorCount);
-		println("Warnings:           ", u32WarningCount);
-		println("Vulkan errors:      ", u32VulkanErrorCount);
-		println("Vulkan warnings:    ", u32VulkanWarningCount);
+		println("Errors:             ", ulErrorCount);
+		println("Warnings:           ", ulWarningCount);
+		println("Vulkan errors:      ", ulVulkanErrorCount);
+		println("Vulkan warnings:    ", ulVulkanWarningCount);
 	#endif
 	}
 
 	void print_colored(const std::string &rsContent, const TerminalColor eColor, const bool bBackgroundColored, const bool bBold) {
-		if (are_bits_true<uint8_t>(u8ConsoleSettings, PRINT_COLORS))
+		if ((mConsoleSettings & CONSOLE_SETTINGS_PRINT_COLORS))
 			print(escape_code_to_string(eColor, bBackgroundColored, bBold), rsContent, DEFAULT_COLOR);
 		else
 			print(rsContent);
 	}
 
 	void println_colored(const std::string &rsContent, const TerminalColor eColor, const bool bBackgroundColored, const bool bBold) {
-		if (are_bits_true<uint8_t>(u8ConsoleSettings, PRINT_COLORS))
+		if ((mConsoleSettings & CONSOLE_SETTINGS_PRINT_COLORS))
 			println(escape_code_to_string(eColor, bBackgroundColored, bBold), rsContent, DEFAULT_COLOR);
 		else
 			println(rsContent);
@@ -94,12 +98,12 @@ namespace RE {
 		print_error_msg(rsDetail);
 		bErrorOccured = true;
 	#ifndef NDEBUG
-		u32ErrorCount++;
+		ulErrorCount++;
 	#endif
 	}
 	
 	void error(const std::string &rsDetail) {
-		if (are_bits_true<uint8_t>(u8ConsoleSettings, ERRORS_ALWAYS_FATAL)) {
+		if ((mConsoleSettings & CONSOLE_SETTINGS_ERRORS_ALWAYS_FATAL)) {
 			fatal_error(rsDetail);
 			return;
 		}
@@ -108,12 +112,12 @@ namespace RE {
 		print("      ");
 		print_error_msg(rsDetail);
 	#ifndef NDEBUG
-		u32ErrorCount++;
+		ulErrorCount++;
 	#endif
 	}
 
 	void warning(const std::string &rsDetail) {
-		if (are_bits_true<uint8_t>(u8ConsoleSettings, TREAT_WARNING_AS_ERROR)) {
+		if ((mConsoleSettings & CONSOLE_SETTINGS_TREAT_WARNING_AS_ERROR)) {
 			error(rsDetail);
 			return;
 		}
@@ -122,7 +126,7 @@ namespace RE {
 		print("    ");
 		print_error_msg(rsDetail);
 	#ifndef NDEBUG
-		u32WarningCount++;
+		ulWarningCount++;
 	#endif
 	}
 
@@ -134,30 +138,39 @@ namespace RE {
 	}
 
 	void enable_colorful_printing(const bool bEnable) {
-		set_bits<uint8_t>(u8ConsoleSettings, bEnable, PRINT_COLORS);
+		if (bEnable)
+			mConsoleSettings |= CONSOLE_SETTINGS_PRINT_COLORS;
+		else
+			mConsoleSettings &= ~CONSOLE_SETTINGS_PRINT_COLORS;
 	}
 
 	[[nodiscard]]
 	bool is_colorful_printing_enabled() {
-		return are_bits_true<uint8_t>(u8ConsoleSettings, PRINT_COLORS);
+		return (mConsoleSettings & CONSOLE_SETTINGS_PRINT_COLORS);
 	}
 
 	void treat_warnings_as_errors(const bool bEnable) {
-		set_bits<uint8_t>(u8ConsoleSettings, bEnable, TREAT_WARNING_AS_ERROR);
+		if (bEnable)
+			mConsoleSettings |= CONSOLE_SETTINGS_TREAT_WARNING_AS_ERROR;
+		else
+			mConsoleSettings &= ~CONSOLE_SETTINGS_TREAT_WARNING_AS_ERROR;
 	}
 
 	[[nodiscard]]
 	bool are_warnings_always_treated_as_errors() {
-		return are_bits_true<uint8_t>(u8ConsoleSettings, TREAT_WARNING_AS_ERROR);
+		return (mConsoleSettings & CONSOLE_SETTINGS_TREAT_WARNING_AS_ERROR);
 	}
 
 	void make_errors_always_fatal(const bool bEnable) {
-		set_bits<uint8_t>(u8ConsoleSettings, bEnable, ERRORS_ALWAYS_FATAL);
+		if (bEnable)
+			mConsoleSettings |= CONSOLE_SETTINGS_ERRORS_ALWAYS_FATAL;
+		else
+			mConsoleSettings &= ~CONSOLE_SETTINGS_ERRORS_ALWAYS_FATAL;
 	}
 
 	[[nodiscard]]
 	bool are_errors_always_fatal() {
-		return are_bits_true<uint8_t>(u8ConsoleSettings, ERRORS_ALWAYS_FATAL);
+		return (mConsoleSettings & CONSOLE_SETTINGS_ERRORS_ALWAYS_FATAL);
 	}
 
 }

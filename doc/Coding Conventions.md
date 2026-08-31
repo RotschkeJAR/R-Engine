@@ -153,7 +153,7 @@ The `array` class in C++ is not affected by this rule.
 For bitmasks the unsigned integrals have to be used and contain the prefix `m*`.
 If known the number tells how many bits the variable can store.
 
-The datatypes defined by C, such as `unsigned int`, can be used, unless their minimum storage size in bits is smaller than the required amount.
+The datatypes defined by C, such as `unsigned int`, can be used, unless their minimum storage size in bits required by the C standard is smaller than the desired. In such cases its size should be checked through the use of macros or larger datatypes.
 
 This rule does not apply to `bitset` from C++.
 

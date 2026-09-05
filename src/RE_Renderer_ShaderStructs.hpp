@@ -32,8 +32,11 @@ namespace RE {
 
 	struct GameObjectShaderData final {
 		float a3fPosition[3];
+		int: 32;   // Padding
 		float a3fRotation[3];
+		int: 32;   // Padding
 		float a3fScale[3];
+		int: 32;   // Padding
 		float a4fColor[4];
 		uint32_t u32TextureId;
 	};

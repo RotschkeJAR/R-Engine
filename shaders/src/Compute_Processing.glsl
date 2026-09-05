@@ -3,10 +3,10 @@
 #extension GL_EXT_scalar_block_layout : require
 
 struct GameObject {
-	float position[3];
-	float rotation[3];
-	float scale[3];
-	float color[4];
+	vec3 position;
+	vec3 rotation;
+	vec3 scale;
+	vec4 color;
 	uint textureId;
 };
 
@@ -44,14 +44,14 @@ void main() {
 		return;
 	for (uint scaleCoordIndex = 0; scaleCoordIndex < 3; scaleCoordIndex++)
 		if (gameObjects.data[gl_LocalInvocationIndex].scale[scaleCoordIndex] == 0.0) {
-			gameObjects.data[gl_LocalInvocationIndex].color[3] = -1.0;
+			gameObjects.data[gl_LocalInvocationIndex].color.w = -1.0;
 			return;
 		}
 	modelMatrices.models[gl_LocalInvocationIndex] = mat4(
-			gameObjects.data[gl_LocalInvocationIndex].scale[0],     0.0,                                                    0.0,                                                    0.0,
-			0.0,                                                    gameObjects.data[gl_LocalInvocationIndex].scale[1],     0.0,                                                    0.0,
-			0.0,                                                    0.0,                                                    gameObjects.data[gl_LocalInvocationIndex].scale[2],     0.0,
-			gameObjects.data[gl_LocalInvocationIndex].position[0],  gameObjects.data[gl_LocalInvocationIndex].position[1],  gameObjects.data[gl_LocalInvocationIndex].position[2],  1.0);
+			gameObjects.data[gl_LocalInvocationIndex].scale.x,      0.0,                                                    0.0,                                                    0.0,
+			0.0,                                                    gameObjects.data[gl_LocalInvocationIndex].scale.y,      0.0,                                                    0.0,
+			0.0,                                                    0.0,                                                    gameObjects.data[gl_LocalInvocationIndex].scale.z,      0.0,
+			gameObjects.data[gl_LocalInvocationIndex].position.x,   gameObjects.data[gl_LocalInvocationIndex].position.y,   gameObjects.data[gl_LocalInvocationIndex].position.z,   1.0);
 	depths.data[gl_LocalInvocationIndex].depth = vec4(cam.projection * cam.view * modelMatrices.models[gl_LocalInvocationIndex] * vec4(0.0, 0.0, 0.0, 1.0)).z;
 	depths.data[gl_LocalInvocationIndex].objectIndex = gl_LocalInvocationIndex;
 }

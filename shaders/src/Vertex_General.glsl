@@ -12,10 +12,10 @@ layout (location = 2) flat out uint O_textureId;
 
 
 struct GameObject {
-	float position[3];
-	float rotation[3];
-	float scale[3];
-	float color[4];
+	vec3 position;
+	vec3 rotation;
+	vec3 scale;
+	vec4 color;
 	uint textureId;
 };
 
@@ -39,18 +39,13 @@ layout (set = 1, binding = 0) uniform CameraMatrices {
 
 
 void main() {
-	// Optimization: Discard objects by rendering their vertices outside view
-	if (gameObjects.data[I_instance_index].color[3] <= 0.0) {
+	if (gameObjects.data[I_instance_index].color.w <= 0.0) {
 		gl_Position = vec4(-2.0, -2.0, -2.0, 1.0);
 		return;
 	}
 	
 	gl_Position = cam.projection * cam.view * modelMatrices.models[I_instance_index] * I_vertex_position;
-	O_color = vec4(
-			gameObjects.data[I_instance_index].color[0],
-			gameObjects.data[I_instance_index].color[1],
-			gameObjects.data[I_instance_index].color[2],
-			gameObjects.data[I_instance_index].color[3]);
+	O_color = gameObjects.data[I_instance_index].color;
 	O_textureCoords = I_vertex_textureCoords;
 	O_textureId = gameObjects.data[I_instance_index].textureId;
 }

@@ -1216,7 +1216,8 @@ namespace RE {
 	class SpriteRenderer final {
 		public:
 			Color color;
-			Vector2f textureOffset, textureCoordinates;
+			Vector2f textureOffset,
+				textureCoordinates;
 
 			SpriteRenderer();
 			SpriteRenderer(const SpriteRenderer &rCopy);
@@ -1245,7 +1246,8 @@ namespace RE {
 
 	class Transform final {
 		public:
-			Vector3f position, scale;
+			Vector3f position;
+			Vector3f scale;
 
 			Transform();
 			explicit Transform(const Vector3f &rPosition);
@@ -1342,23 +1344,15 @@ namespace RE {
 
 	class SpriteLayoutSettings final {
 		public:
-			Filter eMagFilter;
-			Filter eMinFilter;
+			Filter eMagFilter,
+				eMinFilter;
 			Filter eMipmapFilter;
-			Repetition eRepetitionU;
-			Repetition eRepetitionV;
+			Repetition eRepetitionU,
+				eRepetitionV;
 			float fMaxAnisotropy; // must be equal or greater than 1, otherwise anisotropic filtering is disabled
 			BorderColor eBorderColor;
 
 			SpriteLayoutSettings();
-			explicit SpriteLayoutSettings(Filter eMagFilter);
-			SpriteLayoutSettings(Filter eMagFilter, Filter eMinFilter);
-			SpriteLayoutSettings(Filter eMagFilter, Filter eMinFilter, Filter eMipmapFilter);
-			SpriteLayoutSettings(Repetition eRepetitionU);
-			SpriteLayoutSettings(Repetition eRepetitionU, Repetition eRepetitionV);
-			explicit SpriteLayoutSettings(float fMaxAnisotropy);
-			explicit SpriteLayoutSettings(BorderColor eBorderColor);
-			SpriteLayoutSettings(Filter eMagFilter, Filter eMinFilter, Filter eMipmapFilter, Repetition eRepetitionU, Repetition eRepetitionV, float fMaxAnisotropy, BorderColor eBorderColor);
 			SpriteLayoutSettings(const SpriteLayoutSettings &rCopy);
 			SpriteLayoutSettings(const SpriteLayoutSettings &&rrCopy) = delete;
 			~SpriteLayoutSettings();

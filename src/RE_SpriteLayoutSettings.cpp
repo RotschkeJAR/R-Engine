@@ -27,12 +27,12 @@ namespace RE {
 	[[nodiscard]]
 	bool SpriteLayoutSettings::equals(const SpriteLayoutSettings &rCompare) const {
 		return eMagFilter == rCompare.eMagFilter
-				&& eMinFilter == rCompare.eMinFilter
-				&& eMipmapFilter == rCompare.eMipmapFilter
-				&& eRepetitionU == rCompare.eRepetitionU
-				&& eRepetitionV == rCompare.eRepetitionV
-				&& fMaxAnisotropy == rCompare.fMaxAnisotropy
-				&& eBorderColor == rCompare.eBorderColor;
+				and eMinFilter == rCompare.eMinFilter
+				and eMipmapFilter == rCompare.eMipmapFilter
+				and eRepetitionU == rCompare.eRepetitionU
+				and eRepetitionV == rCompare.eRepetitionV
+				and fMaxAnisotropy == rCompare.fMaxAnisotropy
+				and eBorderColor == rCompare.eBorderColor;
 	}
 	
 	void SpriteLayoutSettings::operator =(const SpriteLayoutSettings &rCopy) {
@@ -46,7 +46,7 @@ namespace RE {
 	
 	[[nodiscard]]
 	bool SpriteLayoutSettings::operator !=(const SpriteLayoutSettings &rCompare) const {
-		return !equals(rCompare);
+		return not equals(rCompare);
 	}
 
 }

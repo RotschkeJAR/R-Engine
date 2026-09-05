@@ -101,7 +101,7 @@ namespace RE {
 	
 	[[nodiscard]]
 	bool Color::operator !=(const Color &rOther) const {
-		return equals(rOther);
+		return not equals(rOther);
 	}
 
 }

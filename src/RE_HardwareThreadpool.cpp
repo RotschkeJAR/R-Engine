@@ -19,7 +19,7 @@ namespace RE {
 
 	HardwareThreadpool::HardwareThreadpool() {
 		std_threads = std::make_unique<std::jthread[]>(sAmountOfThreads);
-		std_agePerThread = std::make_unique<uint64_t[]>(sAmountOfThreads);
+		std_agePerThread = std::make_unique<size_t[]>(sAmountOfThreads);
 	}
 	
 	HardwareThreadpool::HardwareThreadpool(HardwareThreadpool &&rrCopy) : std_threads(std::move(rrCopy.std_threads)), std_agePerThread(std::move(rrCopy.std_agePerThread)) {}
@@ -28,7 +28,7 @@ namespace RE {
 		join();
 	}
 
-	void HardwareThreadpool::move_thread(std::jthread &&rrThread) {
+	void HardwareThreadpool::move_thread_in(std::jthread &&rrThread) {
 		std::lock_guard<std::mutex> std_lockGuardMute(std_mutex);
 		const size_t sOldThreadIndex = find_next_occupation();
 		std_threads[sOldThreadIndex] = std::move(rrThread);

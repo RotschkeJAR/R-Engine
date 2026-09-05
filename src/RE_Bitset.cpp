@@ -9,7 +9,7 @@ namespace RE {
 	Bitset::BitReference::~BitReference() {}
 
 	void Bitset::BitReference::flip() {
-		*this = !static_cast<bool>(*this);
+		*this = not static_cast<bool>(*this);
 	}
 
 	Bitset::BitReference::operator bool() const {
@@ -24,11 +24,11 @@ namespace RE {
 	}
 
 	bool Bitset::BitReference::operator ==(const BitReference &rOther) const {
-		return pm8Bitmask == rOther.pm8Bitmask && u8BitIndex == rOther.u8BitIndex;
+		return pm8Bitmask == rOther.pm8Bitmask and u8BitIndex == rOther.u8BitIndex;
 	}
 
 	bool Bitset::BitReference::operator !=(const BitReference &rOther) const {
-		return !(*this == rOther);
+		return not (*this == rOther);
 	}
 
 	std::ostream& operator <<(std::ostream &rStream, const Bitset::BitReference &rBitReference) {
@@ -80,7 +80,7 @@ namespace RE {
 	}
 
 	bool Bitset::empty() const {
-		return !(static_cast<bool>(std_bitArray) && sBitSize);
+		return not (static_cast<bool>(std_bitArray) && sBitSize);
 	}
 
 	Bitset::BitReference Bitset::at(const size_t sIndex) {

@@ -971,7 +971,7 @@ namespace RE {
 		private:
 			std::mutex std_mutex;
 			std::array<std::jthread, sNumOfThreads> std_threads;
-			std::array<uint64_t, sNumOfThreads> std_agePerThread;
+			std::array<size_t, sNumOfThreads> std_agePerThread;
 
 			size_t find_next_occupation() {
 				std::optional<size_t> std_occupyableThread;
@@ -996,8 +996,8 @@ namespace RE {
 			}
 			~Threadpool() {}
 
-			template <class F, class... Parameters> requires std::invocable<F, Parameters...>
-			void execute(F &&rrFunction, Parameters... params) {
+			template <class Function, class... Parameters> requires std::invocable<Function, Parameters...>
+			void execute(Function &&rrFunction, Parameters... params) {
 				std::lock_guard<std::mutex> std_lockGuardMute(std_mutex);
 				const size_t sOldThreadIndex = find_next_occupation();
 				std_threads[sOldThreadIndex] = std::jthread(rrFunction, params...);
@@ -1051,7 +1051,7 @@ namespace RE {
 		private:
 			std::mutex std_mutex;
 			std::unique_ptr<std::jthread[]> std_threads;
-			std::unique_ptr<uint64_t[]> std_agePerThread;
+			std::unique_ptr<size_t[]> std_agePerThread;
 
 			size_t find_next_occupation();
 
@@ -1063,13 +1063,13 @@ namespace RE {
 			HardwareThreadpool(HardwareThreadpool &&rrCopy);
 			~HardwareThreadpool();
 
-			template <class F, class... Parameters> requires std::invocable<F, Parameters...>
-			void execute(F &&rrFunction, Parameters... params) {
+			template <class Function, class... Parameters> requires std::invocable<Function, Parameters...>
+			void execute(Function &&rrFunction, Parameters... params) {
 				std::lock_guard<std::mutex> std_lockGuardMute(std_mutex);
 				const size_t sOldThreadIndex = find_next_occupation();
 				std_threads[sOldThreadIndex] = std::jthread(rrFunction, params...);
 			}
-			void move_thread(std::jthread &&rrThread);
+			void move_thread_in(std::jthread &&rrThread);
 			[[nodiscard]]
 			bool joinable();
 			void join();

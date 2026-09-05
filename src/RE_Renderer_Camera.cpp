@@ -8,19 +8,19 @@ namespace RE {
 	
 	void init_camera_matrices() {
 		PRINT_DEBUG("Initializing camera matrices with default values");
-		for (uint8_t u8FrameInFlightIndex = 0; u8FrameInFlightIndex < RE_VK_FRAMES_IN_FLIGHT; u8FrameInFlightIndex++) {
-			for (uint8_t u8MatrixElementIndex = 0; u8MatrixElementIndex < 4 * 4; u8MatrixElementIndex++)
-				switch (u8MatrixElementIndex) {
+		for (unsigned uFrameInFlightIndex = 0; uFrameInFlightIndex < RE_VK_FRAMES_IN_FLIGHT; uFrameInFlightIndex++) {
+			for (unsigned uMatrixElementIndex = 0; uMatrixElementIndex < 4 * 4; uMatrixElementIndex++)
+				switch (uMatrixElementIndex) {
 					case 0:
 					case 5:
 					case 10:
 					case 15:
-						camerasShaderData[u8FrameInFlightIndex]->viewMatrix[u8MatrixElementIndex] = 1.0f;
-						camerasShaderData[u8FrameInFlightIndex]->projectionMatrix[u8MatrixElementIndex] = 1.0f;
+						camerasShaderData[uFrameInFlightIndex]->a16fViewMatrix[uMatrixElementIndex] = 1.0f;
+						camerasShaderData[uFrameInFlightIndex]->a16fProjectionMatrix[uMatrixElementIndex] = 1.0f;
 						break;
 					default:
-						camerasShaderData[u8FrameInFlightIndex]->viewMatrix[u8MatrixElementIndex] = 0.0f;
-						camerasShaderData[u8FrameInFlightIndex]->projectionMatrix[u8MatrixElementIndex] = 0.0f;
+						camerasShaderData[uFrameInFlightIndex]->a16fViewMatrix[uMatrixElementIndex] = 0.0f;
+						camerasShaderData[uFrameInFlightIndex]->a16fProjectionMatrix[uMatrixElementIndex] = 0.0f;
 						break;
 				}
 		}
@@ -35,12 +35,12 @@ namespace RE {
 			PRINT_DEBUG("Updating camera before transferring its matrices");
 			pActiveCamera->update_before_render();
 			PRINT_DEBUG("Updating camera matrices");
-			camerasShaderData[uCurrentFrameInFlightIndex]->viewMatrix[12] = -pActiveCamera->transform.position[0];
-			camerasShaderData[uCurrentFrameInFlightIndex]->viewMatrix[13] = -pActiveCamera->transform.position[1];
-			camerasShaderData[uCurrentFrameInFlightIndex]->viewMatrix[14] = -pActiveCamera->transform.position[2];
-			camerasShaderData[uCurrentFrameInFlightIndex]->projectionMatrix[0] = 1.0f / pActiveCamera->view[0];
-			camerasShaderData[uCurrentFrameInFlightIndex]->projectionMatrix[5] = -1.0f / pActiveCamera->view[1];
-			camerasShaderData[uCurrentFrameInFlightIndex]->projectionMatrix[10] = 1.0f / pActiveCamera->fViewDistance;
+			camerasShaderData[uCurrentFrameInFlightIndex]->a16fViewMatrix[12] = -pActiveCamera->transform.position[0];
+			camerasShaderData[uCurrentFrameInFlightIndex]->a16fViewMatrix[13] = -pActiveCamera->transform.position[1];
+			camerasShaderData[uCurrentFrameInFlightIndex]->a16fViewMatrix[14] = -pActiveCamera->transform.position[2];
+			camerasShaderData[uCurrentFrameInFlightIndex]->a16fProjectionMatrix[0] = 1.0f / pActiveCamera->view[0];
+			camerasShaderData[uCurrentFrameInFlightIndex]->a16fProjectionMatrix[5] = -1.0f / pActiveCamera->view[1];
+			camerasShaderData[uCurrentFrameInFlightIndex]->a16fProjectionMatrix[10] = 1.0f / pActiveCamera->fViewDistance;
 			if (!pCameraBufferMemory->flush_mapped_memory(0, VK_WHOLE_SIZE)) {
 				RE_FATAL_ERROR("Failed flushing non-coherent Vulkan memory used for camera uniforms");
 				return;

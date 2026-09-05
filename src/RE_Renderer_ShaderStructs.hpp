@@ -6,8 +6,8 @@
 namespace RE {
 
 	typedef uint32_t ShaderBool;
-	constexpr ShaderBool SHR_TRUE = 1;
-	constexpr ShaderBool SHR_FALSE = 0;
+#define SHR_TRUE   1
+#define SHR_FALSE  0
 
 	struct WindowShaderData final {
 		uint32_t a2u32Size[2];
@@ -21,25 +21,25 @@ namespace RE {
 	};
 
 	struct VertexData final {
-		float coords[4];
-		float texCoords[2];
+		float a4fCoords[4];
+		float a2fTexCoords[2];
 	};
 
 	struct CameraShaderData final {
-		float projectionMatrix[16];
-		float viewMatrix[16];
+		float a16fViewMatrix[16];
+		float a16fProjectionMatrix[16];
 	};
 
 	struct GameObjectShaderData final {
-		float position[3];
-		float rotation[3];
-		float scale[3];
-		float color[4];
-		uint32_t textureId;
+		float a3fPosition[3];
+		float a3fRotation[3];
+		float a3fScale[3];
+		float a4fColor[4];
+		uint32_t u32TextureId;
 	};
 	
 	struct GameObjectModelMatrixShaderData final {
-		float modelMatrix[16];
+		float a16fModelMatrix[16];
 	};
 
 	struct GameObjectCountShaderData final {
@@ -47,8 +47,8 @@ namespace RE {
 	};
 	
 	struct DepthShaderData final {
-		float depth;
-		uint32_t objectIndex;
+		float fDepth;
+		uint32_t u32ObjectIndex;
 	};
 
 }

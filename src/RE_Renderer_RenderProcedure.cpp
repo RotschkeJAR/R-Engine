@@ -18,20 +18,20 @@ namespace RE {
 						[&](VkCommandBuffer vk_hCommandBuffer, uint8_t u8PreviousLogicalQueue, uint8_t u8CurrentLogicalQueue, uint8_t u8NextLogicalQueue) {
 							PRINT_DEBUG("Recording the buffer transfer subprocedure into Vulkan command buffer ", vk_hCommandBuffer);
 							memset(paStagingGameObjectsBufferData, 0, get_max_game_object_count() * sizeof(GameObjectShaderData));
-							paStagingGameObjectsBufferData[0].position[0] = 0.0f;
-							paStagingGameObjectsBufferData[0].position[1] = 0.0f;
-							paStagingGameObjectsBufferData[0].position[2] = 0.0f;
-							paStagingGameObjectsBufferData[0].rotation[0] = 0.0f;
-							paStagingGameObjectsBufferData[0].rotation[1] = 0.0f;
-							paStagingGameObjectsBufferData[0].rotation[2] = 0.0f;
-							paStagingGameObjectsBufferData[0].scale[0] = 1.0f;
-							paStagingGameObjectsBufferData[0].scale[1] = 1.0f;
-							paStagingGameObjectsBufferData[0].scale[2] = 1.0f;
-							paStagingGameObjectsBufferData[0].color[0] = 1.0f;
-							paStagingGameObjectsBufferData[0].color[1] = 0.0f;
-							paStagingGameObjectsBufferData[0].color[2] = 0.0f;
-							paStagingGameObjectsBufferData[0].color[3] = 1.0f;
-							paStagingGameObjectsBufferData[0].textureId = DONT_USE_TEXTURE;
+							paStagingGameObjectsBufferData[0].a3fPosition[0] = 0.0f;
+							paStagingGameObjectsBufferData[0].a3fPosition[1] = 0.0f;
+							paStagingGameObjectsBufferData[0].a3fPosition[2] = 0.0f;
+							paStagingGameObjectsBufferData[0].a3fRotation[0] = 0.0f;
+							paStagingGameObjectsBufferData[0].a3fRotation[1] = 0.0f;
+							paStagingGameObjectsBufferData[0].a3fRotation[2] = 0.0f;
+							paStagingGameObjectsBufferData[0].a3fScale[0] = 1.0f;
+							paStagingGameObjectsBufferData[0].a3fScale[1] = 1.0f;
+							paStagingGameObjectsBufferData[0].a3fScale[2] = 1.0f;
+							paStagingGameObjectsBufferData[0].a4fColor[0] = 1.0f;
+							paStagingGameObjectsBufferData[0].a4fColor[1] = 0.0f;
+							paStagingGameObjectsBufferData[0].a4fColor[2] = 0.0f;
+							paStagingGameObjectsBufferData[0].a4fColor[3] = 1.0f;
+							paStagingGameObjectsBufferData[0].u32TextureId = DONT_USE_TEXTURE;
 							const VkBufferCopy vk_bufferCopyInfo = {
 								.srcOffset = 0,
 								.dstOffset = 0,

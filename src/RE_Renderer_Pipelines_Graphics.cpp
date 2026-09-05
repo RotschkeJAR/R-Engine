@@ -65,17 +65,17 @@ namespace RE {
 					.location = 0,
 					.binding = 0,
 					.format = VK_FORMAT_R32G32B32A32_SFLOAT,
-					.offset = offsetof(VertexData, coords)
+					.offset = offsetof(VertexData, a4fCoords)
 				}, {
 					.location = 1,
 					.binding = 0,
 					.format = VK_FORMAT_R32G32_SFLOAT,
-					.offset = offsetof(VertexData, texCoords)
+					.offset = offsetof(VertexData, a2fTexCoords)
 				}, {
 					.location = 2,
 					.binding = 1,
 					.format = VK_FORMAT_R32_UINT,
-					.offset = offsetof(DepthShaderData, objectIndex)
+					.offset = offsetof(DepthShaderData, u32ObjectIndex)
 				}
 			};
 			const VkPipelineVertexInputStateCreateInfo vk_vertexInput = {

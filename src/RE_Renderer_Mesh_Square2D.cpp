@@ -32,17 +32,17 @@ namespace RE {
 		PRINT_DEBUG("Updating the 2D square-mesh buffer with vertices");
 		constexpr VertexData aSquare2DVertices[] = {
 			{
-				.coords = {-0.5f, 0.5f, 0.0f, 1.0f},
-				.texCoords = {0.0f, 0.0f}
+				.a4fCoords = {-0.5f, 0.5f, 0.0f, 1.0f},
+				.a2fTexCoords = {0.0f, 0.0f}
 			}, {
-				.coords = {0.5f, 0.5f, 0.0f, 1.0f},
-				.texCoords = {1.0f, 0.0f}
+				.a4fCoords = {0.5f, 0.5f, 0.0f, 1.0f},
+				.a2fTexCoords = {1.0f, 0.0f}
 			}, {
-				.coords = {-0.5f, -0.5f, 0.0f, 1.0f},
-				.texCoords = {0.0f, 1.0f}
+				.a4fCoords = {-0.5f, -0.5f, 0.0f, 1.0f},
+				.a2fTexCoords = {0.0f, 1.0f}
 			}, {
-				.coords = {0.5f, -0.5f, 0.0f, 1.0f},
-				.texCoords = {1.0f, 1.0f}
+				.a4fCoords = {0.5f, -0.5f, 0.0f, 1.0f},
+				.a2fTexCoords = {1.0f, 1.0f}
 			}
 		};
 		vkCmdUpdateBuffer(vk_hCommandBuffer, square2D.vk_hMeshBuffer, 0, sizeof(aSquare2DVertices), aSquare2DVertices);

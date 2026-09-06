@@ -16,26 +16,27 @@ struct Depth {
 };
 
 
-layout (std430, set = 0, binding = 0) buffer GameObjectBuffer {
+layout (std430, set = 0, binding = 0) writeonly buffer SortableDepthBuffer {
+	Depth data[];
+} depths;
+
+layout (std430, set = 1, binding = 0) buffer GameObjectBuffer {
 	GameObject data[];
 } gameObjects;
 
-layout (std430, set = 0, binding = 1) buffer GameObjectModelMatrixBuffer {
+layout (std430, set = 1, binding = 1) buffer GameObjectModelMatrixBuffer {
 	mat4 models[];
 } modelMatrices;
 
-layout (std430, set = 0, binding = 2) uniform GameObjectCountBuffer {
+layout (std430, set = 1, binding = 2) uniform GameObjectCountBuffer {
 	uint count;
 } gameObjectsCounts;
 
-layout (set = 1, binding = 0) uniform CameraMatrices {
+layout (set = 2, binding = 0) uniform CameraMatrices {
 	mat4 view;
 	mat4 projection;
 } cam;
 
-layout (std430, set = 2, binding = 0) writeonly buffer SortableDepthBuffer {
-	Depth data[];
-} depths;
 
 layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
 

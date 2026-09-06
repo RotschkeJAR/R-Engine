@@ -6,7 +6,7 @@ struct Depth {
 };
 
 
-layout (std430, set = 2, binding = 0) buffer DepthBuffer {
+layout (std430, set = 0, binding = 0) buffer DepthBuffer {
 	Depth data[];
 } depths;
 

@@ -91,4 +91,8 @@ namespace RE {
 		}
 	}
 
+	float get_screen_percentage() {
+		return fGameScreenPercentage;
+	}
+
 }

@@ -4,50 +4,50 @@
 
 namespace RE {
 
-	typedef uint8_t VulkanTextureFormatsSupportedFlags;
-	enum VulkanTextureFormatsSupportedFlagBit : VulkanTextureFormatsSupportedFlags {
+	typedef unsigned VulkanTextureFormatsSupportedFlags_t;
+	enum VulkanTextureFormatsSupportedFlagBit : VulkanTextureFormatsSupportedFlags_t {
 		TEXTURE_FORMAT_SUPPORTED_R_BIT = 0x1,
 		TEXTURE_FORMAT_SUPPORTED_RG_BIT = 0x2,
 		TEXTURE_FORMAT_SUPPORTED_RGB_BIT = 0x4
 	};
 
-	static std::jthread nextTextureIndexSearchThread;
-	static std::unique_ptr<VulkanTexture[]> vulkanTextures;
+	static std::jthread std_nextTextureIndexSearchThread;
+	static std::unique_ptr<VulkanTexture[]> std_vulkanTextures;
 	static uint32_t u32MaxTextureExtent = 1920;
-	static uint16_t u16MaxTextureCount = 1024,
-		u16CurrentTextureCount = 0,
-		u16NextTextureIndex = 0;
-	static VulkanTextureFormatsSupportedFlags eTextureFormatsSupported;
+	static unsigned uMaxTextureCount = 1024,
+		uCurrentTextureCount = 0,
+		uNextTextureIndex = 0;
+	static VulkanTextureFormatsSupportedFlags_t mTextureFormatsSupported;
 
 	template <VulkanTextureFormatsSupportedFlagBit... eTextureFormatBits>
 	inline bool are_texture_formats_supported() {
-		constexpr VulkanTextureFormatsSupportedFlags eTextureFormats = (eTextureFormatBits | ...);
-		return (eTextureFormatsSupported & eTextureFormats) == eTextureFormats;
+		constexpr VulkanTextureFormatsSupportedFlags_t eTextureFormats = (eTextureFormatBits | ...);
+		return (mTextureFormatsSupported & eTextureFormats) == eTextureFormats;
 	}
 
 	bool init_renderer_textures() {
-		if (u16MaxTextureCount)
-			vulkanTextures = std::make_unique<VulkanTexture[]>(u16MaxTextureCount);
-		eTextureFormatsSupported = 0;
+		if (uMaxTextureCount)
+			std_vulkanTextures = std::make_unique<VulkanTexture[]>(uMaxTextureCount);
+		mTextureFormatsSupported = 0;
 		return true;
 	}
 
 	void destroy_renderer_textures() {
-		vulkanTextures.reset();
-		u16CurrentTextureCount = 0;
-		if (nextTextureIndexSearchThread.joinable())
-			nextTextureIndexSearchThread.join();
-		u16NextTextureIndex = 0;
+		std_vulkanTextures.reset();
+		uCurrentTextureCount = 0;
+		if (std_nextTextureIndexSearchThread.joinable())
+			std_nextTextureIndexSearchThread.join();
+		uNextTextureIndex = 0;
 	}
 
 	uint16_t get_index_of_texture(const VulkanTexture *pTexture) {
-		return static_cast<uint16_t>(pTexture - vulkanTextures.get());
+		return static_cast<uint16_t>(pTexture - std_vulkanTextures.get());
 	}
 
 	static void search_next_texture_index(uint16_t u16Expiry) {
 		while (true) {
-			u16NextTextureIndex = (u16NextTextureIndex + 1) % u16MaxTextureCount;
-			if (!vulkanTextures[u16NextTextureIndex].imageMemory.valid())
+			uNextTextureIndex = (uNextTextureIndex + 1) % uMaxTextureCount;
+			if (!std_vulkanTextures[uNextTextureIndex].imageMemory.valid())
 				break;
 			else if (!u16Expiry)
 				RE_ABORT("Search for the next free slot for texture allocation has expired");
@@ -57,8 +57,8 @@ namespace RE {
 
 	[[nodiscard]]
 	Texture alloc_texture_from_binary_data(const uint8_t *pau8TextureBinaries, uint32_t u32Width, uint32_t u32Height, uint32_t u32Channels) {
-		if (u16CurrentTextureCount == u16MaxTextureCount)
-			RE_ABORT("Textures overallocated. Maximum was ", u16MaxTextureCount);
+		if (uCurrentTextureCount == uMaxTextureCount)
+			RE_ABORT("Textures overallocated. Maximum was ", uMaxTextureCount);
 		else if (!pau8TextureBinaries || !u32Width || !u32Height || !u32Channels) {
 			RE_ERROR("Textures cannot be allocated, when its binaries are null or width, height or number of channels are zero");
 			return nullptr;
@@ -69,12 +69,12 @@ namespace RE {
 			RE_FATAL_ERROR("The extent of the texture (", u32Width, ", ", u32Height, ") goes beyond the limit (", u32MaxTextureExtent, ")");
 			return nullptr;
 		}
-		if (nextTextureIndexSearchThread.joinable()) {
+		if (std_nextTextureIndexSearchThread.joinable()) {
 			PRINT_DEBUG("Waiting for search for the next free texture slot to finish");
-			nextTextureIndexSearchThread.join();
+			std_nextTextureIndexSearchThread.join();
 		}
 		PRINT_DEBUG("Allocating new texture from heap");
-		VulkanTexture *const pVulkanTexture = std::addressof(vulkanTextures[u16NextTextureIndex]);
+		VulkanTexture *const pVulkanTexture = std::addressof(std_vulkanTextures[uNextTextureIndex]);
 		pVulkanTexture->u32Count = 1;
 		uint32_t u32ActualChannels;
 		switch (u32Channels) {
@@ -369,9 +369,9 @@ namespace RE {
 								&pVulkanTexture->vk_hImageView)) {
 							pVulkanTexture->a2u32Size[0] = u32Width;
 							pVulkanTexture->a2u32Size[1] = u32Height;
-							u16CurrentTextureCount++;
-							if (u16CurrentTextureCount < u16MaxTextureCount)
-								nextTextureIndexSearchThread = std::jthread(search_next_texture_index, u16MaxTextureCount);
+							uCurrentTextureCount++;
+							if (uCurrentTextureCount < uMaxTextureCount)
+								std_nextTextureIndexSearchThread = std::jthread(search_next_texture_index, uMaxTextureCount);
 							VkDescriptorImageInfo vk_imageInfo;
 							vk_imageInfo.imageView = pVulkanTexture->vk_hImageView;
 							vk_imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -459,7 +459,7 @@ namespace RE {
 			vkDestroyImageView(vk_hDevice, pVulkanTexture->vk_hImageView, nullptr);
 			vkDestroyImage(vk_hDevice, pVulkanTexture->vk_hImage, nullptr);
 			pVulkanTexture->imageMemory.free();
-			u16CurrentTextureCount--;
+			uCurrentTextureCount--;
 		} else
 			RE_ERROR("Textures aren't valid anymore, when the engine doesn't run, so they cannot be destroyed either");
 	}
@@ -488,22 +488,22 @@ namespace RE {
 	    if (!bRunning)
 			RE_ERROR("The maximum texture count cannot be changed while the engine is running");
 	    else
-			u16MaxTextureCount = u16NewMaxTextureCount;
+			uMaxTextureCount = u16NewMaxTextureCount;
 	}
 
 	[[nodiscard]]
 	uint16_t get_max_texture_count() {
-	    return u16MaxTextureCount;
+	    return uMaxTextureCount;
 	}
 
 	[[nodiscard]]
 	uint16_t get_current_texture_count() {
-	    return u16CurrentTextureCount;
+	    return uCurrentTextureCount;
 	}
 
 	[[nodiscard]]
 	uint16_t get_remaining_texture_allocs() {
-	    return u16MaxTextureCount - u16CurrentTextureCount;
+	    return uMaxTextureCount - uCurrentTextureCount;
 	}
 
 	[[nodiscard]]

@@ -15,27 +15,27 @@
 #	warning The targeted OS is unknown to R-Engine
 #endif
 
-#include <iostream>
-#include <sstream>
-#include <cstring>
-#include <string.h>
-#include <math.h>
-#include <stdint.h>
-#include <random>
-#include <limits.h>
-#include <climits>
 #include <array>
-#include <variant>
-#include <ctime>
-#include <iomanip>
-#include <optional>
-#include <chrono>
-#include <functional>
-#include <mutex>
-#include <thread>
-#include <concepts>
-#include <numbers>
 #include <bit>
+#include <chrono>
+#include <climits>
+#include <concepts>
+#include <cstring>
+#include <ctime>
+#include <functional>
+#include <iomanip>
+#include <iostream>
+#include <limits.h>
+#include <math.h>
+#include <mutex>
+#include <numbers>
+#include <optional>
+#include <random>
+#include <sstream>
+#include <stdint.h>
+#include <string.h>
+#include <thread>
+#include <variant>
 
 /**
  * Use macro NDEBUG to disable code used for debugging
@@ -1507,6 +1507,7 @@ namespace RE {
 
 	// Renderer
 	void set_screen_percentage(float fNewPercentage);
+	float get_screen_percentage();
 	void set_background_color(const Color &rColor);
 	void set_background_color(float fRed, float fGreen, float fBlue);
 	[[nodiscard]]

@@ -3,12 +3,12 @@
 
 namespace RE {
 
-	static std::jthread nextSpriteLayoutIndexSearchThread;
-	static std::unique_ptr<VulkanSpriteLayout[]> vulkanSpriteLayouts;
+	static std::jthread std_nextSpriteLayoutIndexSearchThread;
+	static std::unique_ptr<VulkanSpriteLayout[]> std_vulkanSpriteLayouts;
 	VkSampler vk_hDefaultSampler;
-	static uint16_t u16MaxSpriteLayoutCount = 255,
-		u16CurrentSpriteLayoutCount = 0,
-		u16NextSpriteLayoutIndex = 0;
+	static unsigned uMaxSpriteLayoutCount = 255,
+		uCurrentSpriteLayoutCount = 0,
+		uNextSpriteLayoutIndex = 0;
 
 	bool init_renderer_sprite_layouts() {
 		const VkSamplerCreateInfo vk_defaultSamplerCreateInfo = {
@@ -32,9 +32,9 @@ namespace RE {
 			.unnormalizedCoordinates = VK_FALSE
 		};
 		if (vkCreateSampler(vk_hDevice, &vk_defaultSamplerCreateInfo, nullptr, &vk_hDefaultSampler) == VK_SUCCESS) {
-			if (u16MaxSpriteLayoutCount) {
-				vulkanSpriteLayouts = std::make_unique<VulkanSpriteLayout[]>(u16MaxSpriteLayoutCount);
-				std::for_each(vulkanSpriteLayouts.get(), vulkanSpriteLayouts.get() + u16MaxSpriteLayoutCount, [](VulkanSpriteLayout &rSpriteLayout) {
+			if (uMaxSpriteLayoutCount) {
+				std_vulkanSpriteLayouts = std::make_unique<VulkanSpriteLayout[]>(uMaxSpriteLayoutCount);
+				std::for_each(std_vulkanSpriteLayouts.get(), std_vulkanSpriteLayouts.get() + uMaxSpriteLayoutCount, [](VulkanSpriteLayout &rSpriteLayout) {
 					rSpriteLayout.vk_hSampler = VK_NULL_HANDLE;
 				});
 			}
@@ -44,25 +44,25 @@ namespace RE {
 	}
 
 	void destroy_renderer_sprite_layout() {
-		vulkanSpriteLayouts.reset();
-		u16CurrentSpriteLayoutCount = 0;
-		if (nextSpriteLayoutIndexSearchThread.joinable())
-			nextSpriteLayoutIndexSearchThread.join();
-		u16NextSpriteLayoutIndex = 0;
+		std_vulkanSpriteLayouts.reset();
+		uCurrentSpriteLayoutCount = 0;
+		if (std_nextSpriteLayoutIndexSearchThread.joinable())
+			std_nextSpriteLayoutIndexSearchThread.join();
+		uNextSpriteLayoutIndex = 0;
 		vkDestroySampler(vk_hDevice, vk_hDefaultSampler, nullptr);
 	}
 
 	uint16_t get_index_of_sprite_layout(const VulkanSpriteLayout *const pSpriteLayout) {
-		return static_cast<uint16_t>(pSpriteLayout - vulkanSpriteLayouts.get());
+		return static_cast<uint16_t>(pSpriteLayout - std_vulkanSpriteLayouts.get());
 	}
 
 	static void search_next_sprite_layout_index(uint16_t u16Expiry) {
 		while (true) {
-			u16NextSpriteLayoutIndex = (u16NextSpriteLayoutIndex + 1) % u16MaxSpriteLayoutCount;
-			if (!vulkanSpriteLayouts[u16NextSpriteLayoutIndex].vk_hSampler)
+			uNextSpriteLayoutIndex = (uNextSpriteLayoutIndex + 1) % uMaxSpriteLayoutCount;
+			if (!std_vulkanSpriteLayouts[uNextSpriteLayoutIndex].vk_hSampler)
 				break;
 			else if (!u16Expiry)
-				RE_ABORT("Search for the next free slot for sprite layout allocation expired after ", u16MaxSpriteLayoutCount, " attempts, when ", u16CurrentSpriteLayoutCount, " sprite layouts were allocated");
+				RE_ABORT("Search for the next free slot for sprite layout allocation expired after ", uMaxSpriteLayoutCount, " attempts, when ", uCurrentSpriteLayoutCount, " sprite layouts were allocated");
 			u16Expiry--;
 		}
 	}
@@ -175,16 +175,16 @@ namespace RE {
 			RE_ERROR("Sprite layouts cannot be created, when the engine is not running");
 			return nullptr;
 		}
-		if (nextSpriteLayoutIndexSearchThread.joinable()) {
+		if (std_nextSpriteLayoutIndexSearchThread.joinable()) {
 			PRINT_DEBUG("Waiting for search for the next free sprite layout slot to finish");
-			nextSpriteLayoutIndexSearchThread.join();
+			std_nextSpriteLayoutIndexSearchThread.join();
 		}
 		PRINT_DEBUG("Creating sprite layout");
-		VulkanSpriteLayout *const pVulkanSpriteLayout = std::addressof(vulkanSpriteLayouts[u16NextSpriteLayoutIndex]);
+		VulkanSpriteLayout *const pVulkanSpriteLayout = std::addressof(std_vulkanSpriteLayouts[uNextSpriteLayoutIndex]);
 		if (create_vulkan_sampler_for_sprite_layout(rSettings, pVulkanSpriteLayout->vk_hSampler)) {
-			u16CurrentSpriteLayoutCount++;
-			if (u16CurrentSpriteLayoutCount < u16MaxSpriteLayoutCount)
-				nextSpriteLayoutIndexSearchThread = std::jthread(search_next_sprite_layout_index, u16MaxSpriteLayoutCount);
+			uCurrentSpriteLayoutCount++;
+			if (uCurrentSpriteLayoutCount < uMaxSpriteLayoutCount)
+				std_nextSpriteLayoutIndexSearchThread = std::jthread(search_next_sprite_layout_index, uMaxSpriteLayoutCount);
 			update_texture_descriptor_set_for_sprite_layout(pVulkanSpriteLayout, true, false);
 			return reinterpret_cast<SpriteLayout>(pVulkanSpriteLayout);
 		} else
@@ -221,7 +221,7 @@ namespace RE {
 			VulkanSpriteLayout *const pVulkanSpriteLayout = reinterpret_cast<VulkanSpriteLayout*>(hSpriteLayout);
 			vkDestroySampler(vk_hDevice, pVulkanSpriteLayout->vk_hSampler, nullptr);
 			pVulkanSpriteLayout->vk_hSampler = VK_NULL_HANDLE;
-			u16CurrentSpriteLayoutCount--;
+			uCurrentSpriteLayoutCount--;
 		} else
 			RE_ERROR("Sprite layouts aren't valid anymore, when the engine doesn't run, so they cannot be destroyed either");
 	}
@@ -233,19 +233,19 @@ namespace RE {
 
 	[[nodiscard]]
 	uint16_t get_max_sprite_layout_count() {
-		return u16MaxSpriteLayoutCount;
+		return uMaxSpriteLayoutCount;
 	}
 
 	void set_max_sprite_layout_count(const uint16_t u16NewMaxSpriteLayoutCount) {
 		if (!bRunning)
 			RE_ERROR("The maximum count of sprite layouts cannot be changed while the engine is running");
 		else
-			u16MaxSpriteLayoutCount = u16NewMaxSpriteLayoutCount;
+			uMaxSpriteLayoutCount = u16NewMaxSpriteLayoutCount;
 	}
 
 	[[nodiscard]]
 	uint16_t get_remaining_sprite_layout_allocs() {
-		return u16MaxSpriteLayoutCount - u16CurrentSpriteLayoutCount;
+		return uMaxSpriteLayoutCount - uCurrentSpriteLayoutCount;
 	}
 
 }

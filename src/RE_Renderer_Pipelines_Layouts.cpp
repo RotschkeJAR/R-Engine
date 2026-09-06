@@ -40,9 +40,9 @@ namespace RE {
 			if (vkCreatePipelineLayout(vk_hDevice, &vk_sortDepthPipelineLayoutCreateInfo, nullptr, &vk_hSortDepthPipelineLayout) == VK_SUCCESS) {
 				PRINT_DEBUG("Creating Vulkan pipeline layout dedicated for compute pipelines processing game objects");
 				const VkDescriptorSetLayout vk_ahDescSetLayouts[] = {
+					vk_hSortableDepthDescSetLayout,
 					vk_hGameObjectsDescSetLayout,
-					vk_hCameraDescSetLayout,
-					vk_hSortableDepthDescSetLayout
+					vk_hCameraDescSetLayout
 				};
 				const VkPipelineLayoutCreateInfo vk_processingPipelineLayoutCreateInfo = {
 					.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,

@@ -2,11 +2,12 @@
 #include "RE_Window.hpp"
 
 namespace RE {
+
+#define RENDERING_TIMEOUT_SEC   std::chrono::seconds(5)
 	
 	bool render_procedure() {
 		PRINT_DEBUG("Waiting for rendering finishing at fence index ", uCurrentFrameInFlightIndex);
-		constexpr uint64_t u64RenderTimeoutSec = 5;
-		switch (vkWaitForFences(vk_hDevice, 1, &vk_ahRenderFences[uCurrentFrameInFlightIndex], VK_TRUE, u64RenderTimeoutSec * 1000000000UL)) {
+		switch (vkWaitForFences(vk_hDevice, 1, &vk_ahRenderFences[uCurrentFrameInFlightIndex], VK_TRUE, std::chrono::nanoseconds(RENDERING_TIMEOUT_SEC).count())) {
 			case VK_SUCCESS:
 				if (!acquire_next_swapchain_image())
 					return true;
@@ -46,9 +47,9 @@ namespace RE {
 								PRINT_DEBUG("Recording the processing subprocedure into Vulkan command buffer ", vk_hCommandBuffer);
 								vkCmdBindPipeline(vk_hCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, vk_hComputePipelineProcessing);
 								const VkDescriptorSet vk_ahDescSets[] = {
+									vk_ahSortableDepthDescSets[uCurrentFrameInFlightIndex],
 									vk_ahGameObjectsDescSets[uCurrentFrameInFlightIndex],
-									cameraDescSets[0],
-									vk_ahSortableDepthDescSets[uCurrentFrameInFlightIndex]
+									cameraDescSets[0]
 								};
 								vkCmdBindDescriptorSets(
 										vk_hCommandBuffer,
@@ -378,7 +379,7 @@ namespace RE {
 					RE_FATAL_ERROR("Failed to record command buffer of Vulkan task at frame-in-flight index ", uCurrentFrameInFlightIndex, " for transferring data to the GPU");
 				break;
 			case VK_TIMEOUT:
-				RE_ABORT("Rendering timed out after ", u64RenderTimeoutSec, " seconds");
+				RE_ABORT("Rendering timed out after ", RENDERING_TIMEOUT_SEC, " seconds");
 			case VK_ERROR_DEVICE_LOST:
 				RE_ABORT("Failed to synchronize with rendering process. Suspecting fatal error (device lost)");
 			default:
@@ -393,8 +394,7 @@ namespace RE {
 		if (!acquire_next_swapchain_image())
 			return true;
 		PRINT_DEBUG("Waiting for Vulkan fence ", vk_hEmptyPresentFence, " to synchronize empty presentation");
-		constexpr uint64_t u64EmptyPresentTimeoutSec = 2;
-		switch (vkWaitForFences(vk_hDevice, 1, &vk_hEmptyPresentFence, VK_TRUE, u64EmptyPresentTimeoutSec * 1000000000UL)) {
+		switch (vkWaitForFences(vk_hDevice, 1, &vk_hEmptyPresentFence, VK_TRUE, std::chrono::nanoseconds(RENDERING_TIMEOUT_SEC).count())) {
 			case VK_SUCCESS:
 				PRINT_DEBUG("Resetting Vulkan command pool ", vk_hCommandPoolEmptyPresent, " for empty presentation");
 				if (vkResetCommandPool(vk_hDevice, vk_hCommandPoolEmptyPresent, 0) == VK_SUCCESS) {
@@ -471,7 +471,9 @@ namespace RE {
 					RE_FATAL_ERROR("Failed to reset Vulkan command pool ", vk_hCommandPoolEmptyPresent, " for empty presentation");
 				break;
 			case VK_TIMEOUT:
-				RE_ABORT("Empty presentation timed out after ", u64EmptyPresentTimeoutSec, " seconds");
+				RE_ABORT("Empty presentation timed out after ", RENDERING_TIMEOUT_SEC, " seconds");
+			case VK_ERROR_DEVICE_LOST:
+				RE_ABORT("Failed to synchronize with empty presentation. Suspecting fatal error (device lost)");
 			default:
 				RE_FATAL_ERROR("Failed to wait for the signaling of Vulkan fence ", vk_hEmptyPresentFence, " used to synchronize empty presentation");
 				break;

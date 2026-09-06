@@ -19,18 +19,18 @@ namespace RE {
 				rCopy.afChannels[3]} {}
 	Color::~Color() {}
 
-	float Color::get_channel(const unsigned uChannelIndex) const {
-		if (uChannelIndex < uColorChannelCount)
-			return afChannels[uChannelIndex];
-		RE_FATAL_ERROR("The channel index is not within the range [0; ", uColorChannelCount - 1, "]: ", uChannelIndex);
+	float Color::get_channel(const uint8_t u8ChannelIndex) const {
+		if (u8ChannelIndex < uColorChannelCount)
+			return afChannels[u8ChannelIndex];
+		RE_FATAL_ERROR("The channel index is not within the range [0; ", uColorChannelCount - 1, "]: ", u8ChannelIndex);
 		return 0.0f;
 	}
 
-	void Color::set_channel(const unsigned uChannelIndex, const float fNormal) {
-		if (uChannelIndex < uColorChannelCount)
-			afChannels[uChannelIndex] = Color::clamp(fNormal);
+	void Color::set_channel(const uint8_t u8ChannelIndex, const float fNormal) {
+		if (u8ChannelIndex < uColorChannelCount)
+			afChannels[u8ChannelIndex] = Color::clamp(fNormal);
 		else
-			RE_FATAL_ERROR("The channel index is not within the range [0; ", uColorChannelCount - 1, "]: ", uChannelIndex);
+			RE_FATAL_ERROR("The channel index is not within the range [0; ", uColorChannelCount - 1, "]: ", u8ChannelIndex);
 	}
 
 	void Color::copy_from(const Color &rCopy) {
@@ -83,10 +83,10 @@ namespace RE {
 	}
 
 	[[nodiscard]]
-	float Color::operator [](const unsigned uChannelIndex) const {
-		if (uChannelIndex < uColorChannelCount)
-			return afChannels[uChannelIndex];
-		RE_ERROR("The channel index range is [0; ", uColorChannelCount - 1, "], but yours was ", uChannelIndex);
+	float Color::operator [](const uint8_t u8ChannelIndex) const {
+		if (u8ChannelIndex < uColorChannelCount)
+			return afChannels[u8ChannelIndex];
+		RE_ERROR("The channel index range is [0; ", uColorChannelCount - 1, "], but yours was ", u8ChannelIndex);
 		return 0.0f;
 	}
 

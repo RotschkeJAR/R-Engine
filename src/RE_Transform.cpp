@@ -3,8 +3,6 @@
 namespace RE {
 	
 	Transform::Transform() : scale(1.0f, 1.0f, 1.0f) {}
-	Transform::Transform(const Vector3f &rPosition) : position(rPosition), scale(1.0f, 1.0f, 1.0f) {}
-	Transform::Transform(const Vector3f &rPosition, const Vector3f &rScale) : position(rPosition), scale(rScale) {}
 	Transform::Transform(const Transform &rCopy) : position(rCopy.position), scale(rCopy.scale) {}
 	Transform::~Transform() {}
 
@@ -12,14 +10,19 @@ namespace RE {
 		position.fill(0.0f);
 	}
 
+	void Transform::reset_scale() {
+		scale.fill(1.0f);
+	}
+
 	void Transform::copy_from(const Transform &rCopy) {
-		position.copy_from(rCopy.position);
-		scale.copy_from(rCopy.scale);
+		position = rCopy.position;
+		scale = rCopy.scale;
 	}
 	
 	[[nodiscard]]
 	bool Transform::equals(const Transform &rOther) const {
-		return position.equals(rOther.position) && scale.equals(rOther.scale);
+		return position == rOther.position
+				and scale == rOther.scale;
 	}
 
 	void Transform::operator =(const Transform &rCopy) {
@@ -33,7 +36,7 @@ namespace RE {
 	
 	[[nodiscard]]
 	bool Transform::operator !=(const Transform &rOther) const {
-		return !equals(rOther);
+		return not equals(rOther);
 	}
 
 }

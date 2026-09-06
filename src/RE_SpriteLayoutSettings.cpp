@@ -9,9 +9,13 @@ namespace RE {
 			eRepetitionV(RE_REPETITION_REPEAT),
 			fMaxAnisotropy(0.0f),
 			eBorderColor(RE_BORDER_COLOR_BLACK) {}
-	SpriteLayoutSettings::SpriteLayoutSettings(const SpriteLayoutSettings &rCopy) {
-		copy_from(rCopy);
-	}
+	SpriteLayoutSettings::SpriteLayoutSettings(const SpriteLayoutSettings &rCopy) : eMagFilter(rCopy.eMagFilter),
+			eMinFilter(rCopy.eMinFilter),
+			eMipmapFilter(rCopy.eMipmapFilter),
+			eRepetitionU(rCopy.eRepetitionU),
+			eRepetitionV(rCopy.eRepetitionV),
+			fMaxAnisotropy(rCopy.fMaxAnisotropy),
+			eBorderColor(rCopy.eBorderColor) {}
 	SpriteLayoutSettings::~SpriteLayoutSettings() {}
 
 	void SpriteLayoutSettings::copy_from(const SpriteLayoutSettings &rCopy) {

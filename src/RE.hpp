@@ -1171,13 +1171,13 @@ namespace RE {
 			~Color();
 
 			[[nodiscard]]
-			float get_channel(unsigned uChannelIndex) const;
+			float get_channel(uint8_t u8ChannelIndex) const;
 			template <unsigned uChannelIndex> requires (uChannelIndex < uColorChannelCount)
 			[[nodiscard]]
 			float get_channel() const {
 				return afChannels[uChannelIndex];
 			}
-			void set_channel(unsigned uChannelIndex, float fNormal);
+			void set_channel(uint8_t u8ChannelIndex, float fNormal);
 			template <unsigned uChannelIndex> requires (uChannelIndex < uColorChannelCount)
 			void set_channel(const float fNormal) {
 				afChannels[uChannelIndex] = this->clamp(fNormal);
@@ -1201,7 +1201,7 @@ namespace RE {
 			float get_alpha() const;
 
 			[[nodiscard]]
-			float operator [](unsigned uChannelIndex) const;
+			float operator [](uint8_t u8ChannelIndex) const;
 			void operator =(const Color &rCopy);
 			[[nodiscard]]
 			bool operator ==(const Color &rOther) const;
@@ -1223,6 +1223,15 @@ namespace RE {
 			SpriteRenderer(const SpriteRenderer &rCopy);
 			SpriteRenderer(const SpriteRenderer &&rrCopy) = delete;
 			~SpriteRenderer();
+			void copy_from(const SpriteRenderer &rCopy);
+			[[nodiscard]]
+			bool equals(const SpriteRenderer &rOther) const;
+
+			void operator =(const SpriteRenderer &rCopy);
+			[[nodiscard]]
+			bool operator ==(const SpriteRenderer &rOther) const;
+			[[nodiscard]]
+			bool operator !=(const SpriteRenderer &rOther) const;
 	};
 
 	class Scene {
@@ -1250,12 +1259,11 @@ namespace RE {
 			Vector3f scale;
 
 			Transform();
-			explicit Transform(const Vector3f &rPosition);
-			Transform(const Vector3f &rPosition, const Vector3f &rScale);
 			Transform(const Transform &rCopy);
 			Transform(const Transform &&rrCopy) = delete;
 			~Transform();
 			void reset_position();
+			void reset_scale();
 			void copy_from(const Transform &rCopy);
 			[[nodiscard]]
 			bool equals(const Transform &rOther) const;

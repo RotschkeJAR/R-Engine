@@ -694,18 +694,18 @@ namespace RE {
 
 	class Bitset final {
 		private:
-			std::unique_ptr<uint8_t[]> std_bitArray;
+			std::unique_ptr<unsigned char[]> std_bitArray;
 			size_t sBitSize;
 
 		public:
 			class BitReference final {
 				private:
-					uint8_t *pm8Bitmask,
-						u8BitIndex;
+					unsigned char *pmBitmask;
+					size_t sBitIndex;
 
 				public:
 					BitReference() = delete;
-					BitReference(uint8_t *pm8Bitmask, uint8_t u8BitIndex);
+					BitReference(unsigned char *pmBitmask, size_t sBitIndex);
 					BitReference(const BitReference &rCopy);
 					BitReference(const BitReference &&rrCopy) = delete;
 					~BitReference();
@@ -1149,6 +1149,36 @@ namespace RE {
 
 //================ Engine
 
+	class Quaternion final {
+		public:
+			static constexpr unsigned uDimensionCount = 3;
+
+		private:
+			float a3fRotation[uDimensionCount];
+
+		public:
+			Quaternion(float fPitch = 0.0f, float fYaw = 0.0f, float fRoll = 0.0f);
+			Quaternion(const Quaternion &rCopy);
+			Quaternion(const Quaternion &&rrCopy) = delete;
+			~Quaternion();
+
+			void set_pitch(float fNewPitch);
+			float get_pitch() const;
+			void set_yaw(float fNewYaw);
+			float get_yaw() const;
+			void set_roll(float fNewRoll);
+			float get_roll() const;
+			void copy_from(const Quaternion &rCopy);
+			[[nodiscard]]
+			bool equals(const Quaternion &rOther) const;
+
+			void operator =(const Quaternion &rCopy);
+			[[nodiscard]]
+			bool operator ==(const Quaternion &rOther) const;
+			[[nodiscard]]
+			bool operator !=(const Quaternion &rOther) const;
+	};
+
 	class Color final {
 		public:
 			static constexpr unsigned uColorChannelCount = 4;
@@ -1164,8 +1194,7 @@ namespace RE {
 			float afChannels[uColorChannelCount];
 
 		public:
-			Color();
-			Color(float fRed, float fGreen, float fBlue, float fAlpha);
+			Color(float fRed = fMaxColor, float fGreen = fMaxColor, float fBlue = fMaxColor, float fAlpha = fMaxColor);
 			Color(const Color &rCopy);
 			Color(const Color &&rrCopy) = delete;
 			~Color();
@@ -1256,6 +1285,7 @@ namespace RE {
 	class Transform final {
 		public:
 			Vector3f position;
+			Quaternion rotation;
 			Vector3f scale;
 
 			Transform();
@@ -1313,10 +1343,9 @@ namespace RE {
 		private:
 			uint64_t u64ListIndex;
 			bool bNew;
+			void *pData;
 
 		public:
-			Transform transform;
-			SpriteRenderer spriteRenderer;
 			const uint32_t u32OwnId;
 			const uint32_t u32SceneParentId;
 
@@ -1330,8 +1359,45 @@ namespace RE {
 			virtual void update();
 			virtual void end();
 
-			Transform& get_transform();
-			SpriteRenderer& get_sprite_renderer();
+			Transform get_transform() const;
+			Vector3f get_transform_position() const;
+			float get_transform_position_x() const;
+			float get_transform_position_y() const;
+			float get_transform_position_z() const;
+			Quaternion get_transform_rotation() const;
+			float get_transform_rotation_pitch() const;
+			float get_transform_rotation_yaw() const;
+			float get_transform_rotation_roll() const;
+			Vector3f get_transform_scale() const;
+			float get_transform_scale_width() const;
+			float get_transform_scale_height() const;
+			float get_transform_scale_depth() const;
+			SpriteRenderer get_sprite_renderer() const;
+			Color get_sprite_renderer_color() const;
+			float get_sprite_renderer_color_red() const;
+			float get_sprite_renderer_color_green() const;
+			float get_sprite_renderer_color_blue() const;
+			float get_sprite_renderer_color_alpha() const;
+
+			void set_transform(const Transform &rTransform);
+			void set_transform_position(const Vector3f &rPosition);
+			void set_transform_position_x(const float fX);
+			void set_transform_position_y(const float fY);
+			void set_transform_position_z(const float fZ);
+			void set_transform_rotation(const Quaternion &rRotation);
+			void set_transform_rotation_pitch(const float fPitch);
+			void set_transform_rotation_yaw(const float fYaw);
+			void set_transform_rotation_roll(const float fRoll);
+			void set_transform_scale(const Vector3f &rScale);
+			void set_transform_scale_width(const float fWidth);
+			void set_transform_scale_height(const float fHeight);
+			void set_transform_scale_depth(const float fDepth);
+			void set_sprite_renderer(const SpriteRenderer &rSpriteRenderer);
+			void set_sprite_renderer_color(const Color &rColor);
+			void set_sprite_renderer_color_red(const float fRed);
+			void set_sprite_renderer_color_green(const float fGreen);
+			void set_sprite_renderer_color_blue(const float fBlue);
+			void set_sprite_renderer_color_alpha(const float fAlpha);
 
 			void operator =(const GameObject &rOther) = delete;
 			[[nodiscard]]

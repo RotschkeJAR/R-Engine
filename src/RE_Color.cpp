@@ -2,21 +2,21 @@
 
 namespace RE {
 
-	Color::Color() : afChannels{
-				fMaxColor,
-				fMaxColor,
-				fMaxColor,
-				fMaxColor} {}
-	Color::Color(const float fRed, const float fGreen, const float fBlue, const float fAlpha) : afChannels{
+#define RED     0
+#define GREEN   1
+#define BLUE    2
+#define ALPHA   3
+
+	Color::Color(float fRed, float fGreen, float fBlue, float fAlpha) : afChannels{
 				Color::clamp(fRed),
 				Color::clamp(fGreen),
 				Color::clamp(fBlue),
 				Color::clamp(fAlpha)} {}
 	Color::Color(const Color &rCopy) : afChannels{
-				rCopy.afChannels[0],
-				rCopy.afChannels[1],
-				rCopy.afChannels[2],
-				rCopy.afChannels[3]} {}
+				rCopy.afChannels[RED],
+				rCopy.afChannels[GREEN],
+				rCopy.afChannels[BLUE],
+				rCopy.afChannels[ALPHA]} {}
 	Color::~Color() {}
 
 	float Color::get_channel(const uint8_t u8ChannelIndex) const {
@@ -47,39 +47,39 @@ namespace RE {
 	}
 
 	void Color::set_red(const float fRed) {
-		set_channel<0>(fRed);
+		set_channel<RED>(fRed);
 	}
 	
 	[[nodiscard]]
 	float Color::get_red() const {
-		return get_channel<0>();
+		return get_channel<RED>();
 	}
 	
 	void Color::set_green(const float fGreen) {
-		set_channel<1>(fGreen);
+		set_channel<GREEN>(fGreen);
 	}
 	
 	[[nodiscard]]
 	float Color::get_green() const {
-		return get_channel<1>();
+		return get_channel<GREEN>();
 	}
 	
 	void Color::set_blue(const float fBlue) {
-		set_channel<2>(fBlue);
+		set_channel<BLUE>(fBlue);
 	}
 	
 	[[nodiscard]]
 	float Color::get_blue() const {
-		return get_channel<2>();
+		return get_channel<BLUE>();
 	}
 	
 	void Color::set_alpha(const float fAlpha) {
-		set_channel<3>(fAlpha);
+		set_channel<ALPHA>(fAlpha);
 	}
 	
 	[[nodiscard]]
 	float Color::get_alpha() const {
-		return get_channel<3>();
+		return get_channel<ALPHA>();
 	}
 
 	[[nodiscard]]

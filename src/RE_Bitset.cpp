@@ -2,10 +2,10 @@
 
 namespace RE {
 
-#define CHUNK_SIZE 8
+#define CHUNK_SIZE CHAR_BIT
 	
-	Bitset::BitReference::BitReference(uint8_t *const pm8Bitmask, const uint8_t u8BitIndex) : pm8Bitmask(pm8Bitmask), u8BitIndex(u8BitIndex) {}
-	Bitset::BitReference::BitReference(const BitReference &rCopy) : pm8Bitmask(rCopy.pm8Bitmask), u8BitIndex(rCopy.u8BitIndex) {}
+	Bitset::BitReference::BitReference(unsigned char *const pmBitmask, const size_t sBitIndex) : pmBitmask(pmBitmask), sBitIndex(sBitIndex) {}
+	Bitset::BitReference::BitReference(const BitReference &rCopy) : pmBitmask(rCopy.pmBitmask), sBitIndex(rCopy.sBitIndex) {}
 	Bitset::BitReference::~BitReference() {}
 
 	void Bitset::BitReference::flip() {
@@ -13,18 +13,18 @@ namespace RE {
 	}
 
 	Bitset::BitReference::operator bool() const {
-		return (*pm8Bitmask & (1 << u8BitIndex));
+		return (*pmBitmask & (1 << sBitIndex));
 	}
 
 	void Bitset::BitReference::operator =(bool bNewValue) {
 		if (bNewValue)
-			*pm8Bitmask |= 1 << u8BitIndex;
+			*pmBitmask |= 1 << sBitIndex;
 		else
-			*pm8Bitmask &= ~(1 << u8BitIndex);
+			*pmBitmask &= ~(1 << sBitIndex);
 	}
 
 	bool Bitset::BitReference::operator ==(const BitReference &rOther) const {
-		return pm8Bitmask == rOther.pm8Bitmask and u8BitIndex == rOther.u8BitIndex;
+		return pmBitmask == rOther.pmBitmask and sBitIndex == rOther.sBitIndex;
 	}
 
 	bool Bitset::BitReference::operator !=(const BitReference &rOther) const {
@@ -38,7 +38,7 @@ namespace RE {
 
 
 	Bitset::Bitset() : sBitSize(0) {}
-	Bitset::Bitset(const size_t sBitSize, const bool bInitialState) : std_bitArray(std::make_unique<uint8_t[]>(sBitSize / CHUNK_SIZE + 1)), sBitSize(sBitSize) {
+	Bitset::Bitset(const size_t sBitSize, const bool bInitialState) : std_bitArray(std::make_unique<unsigned char[]>(sBitSize / CHUNK_SIZE + 1)), sBitSize(sBitSize) {
 		fill(bInitialState);
 	}
 	Bitset::Bitset(Bitset &rrCopy) : std_bitArray(std::move(rrCopy.std_bitArray)), sBitSize(rrCopy.sBitSize) {
@@ -47,7 +47,7 @@ namespace RE {
 	Bitset::~Bitset() {}
 
 	void Bitset::fill(const bool bNewState) {
-		std::fill(std_bitArray.get(), std_bitArray.get() + sBitSize / CHUNK_SIZE + 1, bNewState ? 0xFF : 0);
+		std::fill(std_bitArray.get(), std_bitArray.get() + sBitSize / CHUNK_SIZE + 1, bNewState ? UCHAR_MAX : 0);
 	}
 
 	void Bitset::swap(Bitset &rOther) {
@@ -56,7 +56,7 @@ namespace RE {
 	}
 
 	void Bitset::resize(const size_t sNewBitSize, const bool bInitialState) {
-		std::unique_ptr<uint8_t[]> std_newBitArray = std::make_unique<uint8_t[]>(sNewBitSize / CHUNK_SIZE + 1);
+		std::unique_ptr<unsigned char[]> std_newBitArray = std::make_unique<unsigned char[]>(sNewBitSize / CHUNK_SIZE + 1);
 		std::copy(std_bitArray.get(), std_bitArray.get() + std::min(sBitSize, sNewBitSize) / CHUNK_SIZE + 1, std_newBitArray.get());
 		if (sNewBitSize > sBitSize) {
 			std::fill(std_newBitArray.get() + sBitSize / CHUNK_SIZE + 1, std_newBitArray.get() + sNewBitSize / CHUNK_SIZE + 1, bInitialState ? 0xFF: 0);

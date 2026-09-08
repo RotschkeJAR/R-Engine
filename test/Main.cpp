@@ -46,16 +46,16 @@ Playy *pPlayy = nullptr;
 class Playy : public GameObject {
 	public:
 		RandomNumberGenerator rng;
-		uint64_t hits,
-			misses;
+		unsigned long ulHits,
+			ulMisses;
 
-		Playy() : GameObject(1, 1), hits(0), misses(0) {
+		Playy() : GameObject(1, 1), ulHits(0), ulMisses(0) {
 			pPlayy = this;
-			transform.position[0] = 0.7f;
-			transform.position[1] = 0.7f;
-			transform.position[2] = 0.7f;
-			transform.scale[0] = 0.6f;
-			transform.scale[1] = 0.6f;
+			set_transform_position_x(0.7f);
+			set_transform_position_y(0.7f);
+			set_transform_position_z(0.7f);
+			set_transform_scale_width(0.6f);
+			set_transform_scale_height(0.6f);
 		}
 		~Playy() {
 			pPlayy = nullptr;
@@ -66,26 +66,26 @@ class Playy : public GameObject {
 		void update() {
 			bool randomResult = rng.random_bool(0.2);
 			if (randomResult)
-				hits++;
+				ulHits++;
 			else
-				misses++;
-			spriteRenderer.color.set_red(std::fmod(std::abs(transform.position[0]), 1.0f));
-			spriteRenderer.color.set_green(std::fmod(std::abs(transform.position[1]), 1.0f));
-			spriteRenderer.color.set_blue(std::fmod(std::abs(transform.position[2]), 1.0f));
+				ulMisses++;
+			set_sprite_renderer_color_red(std::fmod(std::abs(get_transform_position_x()), 1.0f));
+			set_sprite_renderer_color_green(std::fmod(std::abs(get_transform_position_y()), 1.0f));
+			set_sprite_renderer_color_blue(std::fmod(std::abs(get_transform_position_z()), 1.0f));
 		}
 		void end() {
-			PRINT_LN(append_to_string(hits, ", ", misses).c_str());
+			PRINT_LN(append_to_string(ulHits, ", ", ulMisses).c_str());
 		}
 };
 
 class Imagy : public GameObject {
 	public:
 		Imagy() : GameObject(3, 1) {
-			transform.position[0] = 0.8f;
-			transform.position[1] = 0.8f;
-			transform.position[2] = 0.8f;
-			transform.scale[0] = 0.3f;
-			transform.scale[1] = 0.3f;
+			set_transform_position_x(0.8f);
+			set_transform_position_y(0.8f);
+			set_transform_position_z(0.8f);
+			set_transform_scale_width(0.3f);
+			set_transform_scale_height(0.3f);
 		}
 		~Imagy() {}
 		void start() {
@@ -94,14 +94,7 @@ class Imagy : public GameObject {
 			const SpriteLayout hSpriteLayout = create_sprite_layout(spriteLayoutSettings);
 			spriteRenderer.hSprite = create_sprite(hTexture, hSpriteLayout);*/
 		}
-		void update() {
-			transform.position[0] = pPlayy->transform.position[0];
-			transform.position[1] = pPlayy->transform.position[1];
-			spriteRenderer.textureCoordinates[0] = pPlayy->transform.position[0];
-			spriteRenderer.textureCoordinates[1] = pPlayy->transform.position[1];
-			spriteRenderer.textureOffset[0] = pPlayy->transform.position[0];
-			spriteRenderer.textureOffset[1] = pPlayy->transform.position[1];
-		}
+		void update() {}
 		void end() {
 			/*const Texture hTexture = get_texture_from_sprite(spriteRenderer.hSprite);
 			const SpriteLayout hSpriteLayout = get_sprite_layout_from_sprite(spriteRenderer.hSprite);
@@ -114,12 +107,12 @@ class Imagy : public GameObject {
 class Background : public GameObject {
 	public:
 		Background() : GameObject(2, 1) {
-			transform.position[2] = 0.5f;
-			transform.scale[0] = 2.0f;
-			transform.scale[1] = 2.0f;
-			spriteRenderer.color.set_green(0.0f);
-			spriteRenderer.color.set_blue(0.0f);
-			spriteRenderer.color.set_alpha(0.4f);
+			set_transform_position_z(0.5f);
+			set_transform_scale_width(2.0f);
+			set_transform_scale_height(2.0f);
+			set_sprite_renderer_color_green(0.0f);
+			set_sprite_renderer_color_blue(0.0f);
+			set_sprite_renderer_color_alpha(0.4f);
 		}
 };
 
@@ -135,8 +128,8 @@ class PlayerCamera : public Camera {
 		~PlayerCamera() {}
 		void update_before_render() {
 			if (pPlayy) {
-				transform.position[0] = pPlayy->transform.position[0];
-				transform.position[1] = pPlayy->transform.position[1];
+				transform.position[0] = pPlayy->get_transform_position_x();
+				transform.position[1] = pPlayy->get_transform_position_y();
 			}
 		}
 };

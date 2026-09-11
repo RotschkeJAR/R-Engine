@@ -1152,6 +1152,16 @@ namespace RE {
 	class Quaternion final {
 		public:
 			static constexpr unsigned uDimensionCount = 3;
+			static constexpr float fMinRotation = 0.0f,
+				fMaxRotation = 360.0f;
+
+			[[nodiscard]]
+			static constexpr float clamp(const float fRotationValue) {
+				if (fRotationValue >= 0.0f)
+					return std::fmod(fRotationValue, fMaxRotation);
+				else
+					return fMaxRotation - std::fmod(std::abs(fRotationValue), fMaxRotation);
+			}
 
 		private:
 			float a3fRotation[uDimensionCount];
@@ -1168,6 +1178,7 @@ namespace RE {
 			float get_yaw() const;
 			void set_roll(float fNewRoll);
 			float get_roll() const;
+			void reset();
 			void copy_from(const Quaternion &rCopy);
 			[[nodiscard]]
 			bool equals(const Quaternion &rOther) const;
@@ -1245,8 +1256,6 @@ namespace RE {
 	class SpriteRenderer final {
 		public:
 			Color color;
-			Vector2f textureOffset,
-				textureCoordinates;
 
 			SpriteRenderer();
 			SpriteRenderer(const SpriteRenderer &rCopy);
@@ -1293,6 +1302,7 @@ namespace RE {
 			Transform(const Transform &&rrCopy) = delete;
 			~Transform();
 			void reset_position();
+			void reset_rotation();
 			void reset_scale();
 			void copy_from(const Transform &rCopy);
 			[[nodiscard]]
@@ -1343,9 +1353,10 @@ namespace RE {
 		private:
 			uint64_t u64ListIndex;
 			bool bNew;
-			void *pData;
 
 		public:
+			Transform transform;
+			SpriteRenderer spriteRenderer;
 			const uint32_t u32OwnId;
 			const uint32_t u32SceneParentId;
 
@@ -1358,46 +1369,6 @@ namespace RE {
 			virtual void start();
 			virtual void update();
 			virtual void end();
-
-			Transform get_transform() const;
-			Vector3f get_transform_position() const;
-			float get_transform_position_x() const;
-			float get_transform_position_y() const;
-			float get_transform_position_z() const;
-			Quaternion get_transform_rotation() const;
-			float get_transform_rotation_pitch() const;
-			float get_transform_rotation_yaw() const;
-			float get_transform_rotation_roll() const;
-			Vector3f get_transform_scale() const;
-			float get_transform_scale_width() const;
-			float get_transform_scale_height() const;
-			float get_transform_scale_depth() const;
-			SpriteRenderer get_sprite_renderer() const;
-			Color get_sprite_renderer_color() const;
-			float get_sprite_renderer_color_red() const;
-			float get_sprite_renderer_color_green() const;
-			float get_sprite_renderer_color_blue() const;
-			float get_sprite_renderer_color_alpha() const;
-
-			void set_transform(const Transform &rTransform);
-			void set_transform_position(const Vector3f &rPosition);
-			void set_transform_position_x(const float fX);
-			void set_transform_position_y(const float fY);
-			void set_transform_position_z(const float fZ);
-			void set_transform_rotation(const Quaternion &rRotation);
-			void set_transform_rotation_pitch(const float fPitch);
-			void set_transform_rotation_yaw(const float fYaw);
-			void set_transform_rotation_roll(const float fRoll);
-			void set_transform_scale(const Vector3f &rScale);
-			void set_transform_scale_width(const float fWidth);
-			void set_transform_scale_height(const float fHeight);
-			void set_transform_scale_depth(const float fDepth);
-			void set_sprite_renderer(const SpriteRenderer &rSpriteRenderer);
-			void set_sprite_renderer_color(const Color &rColor);
-			void set_sprite_renderer_color_red(const float fRed);
-			void set_sprite_renderer_color_green(const float fGreen);
-			void set_sprite_renderer_color_blue(const float fBlue);
-			void set_sprite_renderer_color_alpha(const float fAlpha);
 
 			void operator =(const GameObject &rOther) = delete;
 			[[nodiscard]]

@@ -11,6 +11,9 @@ namespace RE {
 #define RENDER_PASS_ATTACHMENT_DEPTH_STENCIL   1
 #define RENDER_PASS_ATTACHMENT_RESOLVE_DST     2
 
+#define SWAPCHAIN_RENDER_PASS_ATTACHMENT_COUNT   1
+#define SWAPCHAIN_RENDER_PASS_ATTACHMENT_COLOR   0
+
 	extern VkRenderPass vk_hRenderPass,
 		vk_hSwapchainRenderPass;
 	extern uint32_t u32SubpassScenery,
@@ -35,9 +38,10 @@ namespace RE {
 
 	void begin_swapchain_render_pass(
 			VkCommandBuffer vk_hCommandBuffer,
-			VkClearValue (&vk_raClears)[RENDER_PASS_ATTACHMENT_COUNT],
+			VkClearValue (&vk_raClears)[SWAPCHAIN_RENDER_PASS_ATTACHMENT_COUNT],
 			VkRenderPassBeginInfo &vk_rRenderPassBeginInfo,
-			VkSubpassBeginInfo &vk_rSubpassBeginInfo);
+			VkSubpassBeginInfo &vk_rSubpassBeginInfo,
+			VkSubpassEndInfo &vk_rSubpassEndInfo);
 	void next_swapchain_render_pass(
 			VkCommandBuffer vk_hCommandBuffer,
 			VkSubpassBeginInfo &vk_rSubpassBeginInfo,

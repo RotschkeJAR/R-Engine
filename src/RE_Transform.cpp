@@ -10,18 +10,24 @@ namespace RE {
 		position.fill(0.0f);
 	}
 
+	void Transform::reset_rotation() {
+		rotation.reset();
+	}
+
 	void Transform::reset_scale() {
 		scale.fill(1.0f);
 	}
 
 	void Transform::copy_from(const Transform &rCopy) {
 		position = rCopy.position;
+		rotation = rCopy.rotation;
 		scale = rCopy.scale;
 	}
 	
 	[[nodiscard]]
 	bool Transform::equals(const Transform &rOther) const {
 		return position == rOther.position
+				and rotation == rOther.rotation
 				and scale == rOther.scale;
 	}
 

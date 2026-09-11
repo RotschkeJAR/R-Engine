@@ -5,8 +5,6 @@
 
 namespace RE {
 
-	struct WindowFrameUniformData;
-
 #define RE_VK_FRAMES_IN_FLIGHT   2
 
 #define CHAR_TEXTURE_COUNT   0x5F
@@ -29,14 +27,16 @@ namespace RE {
 	extern uint32_t u32IndexToSelectedSurfaceFormat;
 	
 	// Render Task
-#ifdef RE_OS_LINUX
+#ifdef RENDERER_INCLUDE_EMPTY_PRESENT
 	bool prepare_render_tasks_for_dummy_presentation();
 #endif
 
 	// Depth-stencil images
 	void find_suitable_depth_stencil_formats();
 
-#ifdef RE_OS_LINUX
+#ifdef RENDERER_INCLUDE_WINDOW_FRAME
+	struct WindowFrameUniformData;
+	
 	extern WindowFrameUniformData *pWindowFrameUniformData;
 	extern VkDrawIndirectCommand *pIndirectDrawWindowTitle;
 #endif

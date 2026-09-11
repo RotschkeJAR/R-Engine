@@ -122,7 +122,7 @@ namespace RE {
 		};
 		if (vkCreateRenderPass2(vk_hDevice, &vk_renderPassCreateInfo, nullptr, &vk_hRenderPass) == VK_SUCCESS) {
 			u32SwapchainSubpassWindowFrame = 0;
-			const VkAttachmentDescription2 vk_aAttachmentDescs[] = {
+			const VkAttachmentDescription2 vk_aAttachmentDescs[SWAPCHAIN_RENDER_PASS_ATTACHMENT_COUNT] = {
 				{
 					.sType = VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2,
 					.pNext = nullptr,
@@ -265,13 +265,24 @@ namespace RE {
 
 	void begin_swapchain_render_pass_static(
 			VkCommandBuffer vk_hCommandBuffer,
-			VkClearValue (&vk_raClears)[RENDER_PASS_ATTACHMENT_COUNT],
+			VkClearValue (&vk_raClears)[SWAPCHAIN_RENDER_PASS_ATTACHMENT_COUNT],
 			VkRenderPassBeginInfo &vk_rRenderPassBeginInfo,
-			VkSubpassBeginInfo &vk_rSubpassBeginInfo) {
+			VkSubpassBeginInfo &vk_rSubpassBeginInfo,
+			VkSubpassEndInfo &vk_rSubpassEndInfo) {
+		vk_rRenderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		vk_rRenderPassBeginInfo.pNext = nullptr;
 		vk_rRenderPassBeginInfo.renderPass = vk_hSwapchainRenderPass;
 		vk_rRenderPassBeginInfo.framebuffer = std_swapchainFramebuffers[uCurrentFrameInFlightIndex];
+		vk_rRenderPassBeginInfo.renderArea.offset.x = 0;
+		vk_rRenderPassBeginInfo.renderArea.offset.y = 0;
 		vk_rRenderPassBeginInfo.renderArea.extent = vk_swapchainResolution;
-		vk_rRenderPassBeginInfo.clearValueCount = 1;
+		vk_rRenderPassBeginInfo.clearValueCount = SWAPCHAIN_RENDER_PASS_ATTACHMENT_COUNT;
+		vk_rRenderPassBeginInfo.pClearValues = vk_raClears;
+		vk_rSubpassBeginInfo.sType = VK_STRUCTURE_TYPE_SUBPASS_BEGIN_INFO;
+		vk_rSubpassBeginInfo.pNext = nullptr;
+		vk_rSubpassBeginInfo.contents = VK_SUBPASS_CONTENTS_INLINE;
+		vk_rSubpassEndInfo.sType = VK_STRUCTURE_TYPE_SUBPASS_END_INFO;
+		vk_rSubpassEndInfo.pNext = nullptr;
 		vk_raClears[0].color.float32[0] = 0.0f;
 		vk_raClears[0].color.float32[1] = 0.0f;
 		vk_raClears[0].color.float32[2] = 0.0f;

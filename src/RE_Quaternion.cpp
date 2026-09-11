@@ -19,7 +19,7 @@ namespace RE {
 	Quaternion::~Quaternion() {}
 
 	void Quaternion::set_pitch(float fNewPitch) {
-		a3fRotation[PITCH] = fNewPitch;
+		a3fRotation[PITCH] = clamp(fNewPitch);
 	}
 	
 	float Quaternion::get_pitch() const {
@@ -27,7 +27,7 @@ namespace RE {
 	}
 	
 	void Quaternion::set_yaw(float fNewYaw) {
-		a3fRotation[YAW] = fNewYaw;
+		a3fRotation[YAW] = clamp(fNewYaw);
 	}
 	
 	float Quaternion::get_yaw() const {
@@ -35,11 +35,16 @@ namespace RE {
 	}
 	
 	void Quaternion::set_roll(float fNewRoll) {
-		a3fRotation[ROLL] = fNewRoll;
+		a3fRotation[ROLL] = clamp(fNewRoll);
 	}
 	
 	float Quaternion::get_roll() const {
 		return a3fRotation[ROLL];
+	}
+
+	void Quaternion::reset() {
+		for (unsigned i = 0; i < uDimensionCount; i++)
+			a3fRotation[i] = 0.0f;
 	}
 	
 	void Quaternion::copy_from(const Quaternion &rCopy) {

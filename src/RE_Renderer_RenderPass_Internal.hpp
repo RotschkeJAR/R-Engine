@@ -22,9 +22,10 @@ namespace RE {
 			VkSubpassEndInfo &vk_rSubpassEndInfo);
 	void begin_swapchain_render_pass_static(
 			VkCommandBuffer vk_hCommandBuffer,
-			VkClearValue (&vk_raClears)[RENDER_PASS_ATTACHMENT_COUNT],
+			VkClearValue (&vk_raClears)[SWAPCHAIN_RENDER_PASS_ATTACHMENT_COUNT],
 			VkRenderPassBeginInfo &vk_rRenderPassBeginInfo,
-			VkSubpassBeginInfo &vk_rSubpassBeginInfo);
+			VkSubpassBeginInfo &vk_rSubpassBeginInfo,
+			VkSubpassEndInfo &vk_rSubpassEndInfo);
 	void next_swapchain_render_pass_static(
 			VkCommandBuffer vk_hCommandBuffer,
 			VkSubpassBeginInfo &vk_rSubpassBeginInfo,

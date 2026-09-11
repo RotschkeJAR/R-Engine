@@ -1,8 +1,8 @@
 #ifndef __RE_RENDERER_WINDOW_FRAME_H__
 #define __RE_RENDERER_WINDOW_FRAME_H__ 1
 
-#include "RE_Renderer_Internal.hpp"
 #include "RE_Window.hpp"
+#include "RE_Renderer_Internal.hpp"
 
 namespace RE {
 

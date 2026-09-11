@@ -1,9 +1,7 @@
-#include "RE_Renderer_RenderProcedure.hpp"
+#include "RE_Renderer_RenderProcedure_Internal.hpp"
 #include "RE_Window.hpp"
 
 namespace RE {
-
-#define RENDERING_TIMEOUT_SEC   std::chrono::seconds(5)
 	
 	bool render_procedure() {
 		PRINT_DEBUG("Waiting for rendering finishing at fence index ", uCurrentFrameInFlightIndex);
@@ -18,50 +16,15 @@ namespace RE {
 						VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
 						[&](VkCommandBuffer vk_hCommandBuffer, uint8_t u8PreviousLogicalQueue, uint8_t u8CurrentLogicalQueue, uint8_t u8NextLogicalQueue) {
 							PRINT_DEBUG("Recording the buffer transfer subprocedure into Vulkan command buffer ", vk_hCommandBuffer);
-							memset(paStagingGameObjectsBufferData, 0, get_max_game_object_count() * sizeof(GameObjectShaderData));
-							paStagingGameObjectsBufferData[0].a3fPosition[0] = 0.0f;
-							paStagingGameObjectsBufferData[0].a3fPosition[1] = 0.0f;
-							paStagingGameObjectsBufferData[0].a3fPosition[2] = 0.0f;
-							paStagingGameObjectsBufferData[0].a3fRotation[0] = 0.0f;
-							paStagingGameObjectsBufferData[0].a3fRotation[1] = 0.0f;
-							paStagingGameObjectsBufferData[0].a3fRotation[2] = 0.0f;
-							paStagingGameObjectsBufferData[0].a3fScale[0] = 1.0f;
-							paStagingGameObjectsBufferData[0].a3fScale[1] = 1.0f;
-							paStagingGameObjectsBufferData[0].a3fScale[2] = 1.0f;
-							paStagingGameObjectsBufferData[0].a4fColor[0] = 1.0f;
-							paStagingGameObjectsBufferData[0].a4fColor[1] = 0.0f;
-							paStagingGameObjectsBufferData[0].a4fColor[2] = 0.0f;
-							paStagingGameObjectsBufferData[0].a4fColor[3] = 1.0f;
-							paStagingGameObjectsBufferData[0].u32TextureId = DONT_USE_TEXTURE;
-							const VkBufferCopy vk_bufferCopyInfo = {
-								.srcOffset = 0,
-								.dstOffset = 0,
-								.size = get_max_game_object_count() * sizeof(GameObjectShaderData)
-							};
-							vkCmdCopyBuffer(vk_hCommandBuffer, vk_hStagingGameObjectsBuffer, vk_ahGameObjectsBuffers[uCurrentFrameInFlightIndex], 1, &vk_bufferCopyInfo);
+							copy_staging_game_objects(vk_hCommandBuffer);
 						})) {
 					if (aRenderTasks[uCurrentFrameInFlightIndex].record(
 							RENDER_TASK_SUBINDEX_PROCESSING,
 							VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
 							[&](VkCommandBuffer vk_hCommandBuffer, uint8_t u8PreviousLogicalQueue, uint8_t u8CurrentLogicalQueue, uint8_t u8NextLogicalQueue) {
 								PRINT_DEBUG("Recording the processing subprocedure into Vulkan command buffer ", vk_hCommandBuffer);
-								vkCmdBindPipeline(vk_hCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, vk_hComputePipelineProcessing);
-								const VkDescriptorSet vk_ahDescSets[] = {
-									vk_ahSortableDepthDescSets[uCurrentFrameInFlightIndex],
-									vk_ahGameObjectsDescSets[uCurrentFrameInFlightIndex],
-									cameraDescSets[0]
-								};
-								vkCmdBindDescriptorSets(
-										vk_hCommandBuffer,
-										VK_PIPELINE_BIND_POINT_COMPUTE,
-										vk_hProcessingPipelineLayout,
-										0,
-										static_cast<uint32_t>(sizeof(vk_ahDescSets) / sizeof(vk_ahDescSets[0])),
-										vk_ahDescSets,
-										0,
-										nullptr);
-								vkCmdDispatch(vk_hCommandBuffer, 1, 1, 1);
-								VkBufferMemoryBarrier2 vk_bufferBarrierInfo = {
+								process_game_objects(vk_hCommandBuffer);
+								const VkBufferMemoryBarrier2 vk_bufferBarrierInfo = {
 									.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
 									.pNext = nullptr,
 									.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
@@ -86,225 +49,22 @@ namespace RE {
 									.pImageMemoryBarriers = nullptr
 								};
 								vkCmdPipelineBarrier2(vk_hCommandBuffer, &vk_dependencyInfo);
-								vkCmdBindPipeline(vk_hCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, vk_hComputePipelineDepthSorting);
-								vkCmdBindDescriptorSets(
-										vk_hCommandBuffer,
-										VK_PIPELINE_BIND_POINT_COMPUTE,
-										vk_hSortDepthPipelineLayout,
-										0,
-										1,
-										&vk_ahSortableDepthDescSets[uCurrentFrameInFlightIndex],
-										0,
-										nullptr);
-								vkCmdDispatch(vk_hCommandBuffer, 1, 1, 1);
-								vk_bufferBarrierInfo.srcAccessMask |= VK_ACCESS_2_SHADER_STORAGE_READ_BIT;
-								vkCmdPipelineBarrier2(vk_hCommandBuffer, &vk_dependencyInfo);
-								vkCmdDispatch(vk_hCommandBuffer, 1, 1, 1);
+								sort_game_objects(vk_hCommandBuffer);
 							})) {
 						if (aRenderTasks[uCurrentFrameInFlightIndex].record(
 								RENDER_TASK_SUBINDEX_RENDERING,
 								VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
 								[&](VkCommandBuffer vk_hCommandBuffer, uint8_t u8PreviousLogicalQueue, uint8_t u8CurrentLogicalQueue, uint8_t u8NextLogicalQueue) {
 									PRINT_DEBUG("Recording the rendering subprocedure into Vulkan command buffer ", vk_hCommandBuffer);
-									VkClearValue vk_aClears[RENDER_PASS_ATTACHMENT_COUNT];
-									VkRenderPassBeginInfo vk_renderPassBeginInfo;
-									VkSubpassBeginInfo vk_subpassBeginInfo;
-									VkSubpassEndInfo vk_subpassEndInfo;
-									begin_render_pass(
-											vk_hCommandBuffer,
-											vk_aClears,
-											vk_renderPassBeginInfo,
-											vk_subpassBeginInfo,
-											vk_subpassEndInfo);
-									vkCmdBindPipeline(vk_hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_hGraphicsPipeline2D);
-									const VkDescriptorSet vk_ahDescSets[] = {
-										vk_ahGameObjectsDescSets[uCurrentFrameInFlightIndex],
-										cameraDescSets[0],
-										vk_hSpriteDescSet
-									};
-									vkCmdBindDescriptorSets(
-											vk_hCommandBuffer,
-											VK_PIPELINE_BIND_POINT_GRAPHICS,
-											vk_hGraphicsPipelineLayout,
-											0,
-											sizeof(vk_ahDescSets) / sizeof(vk_ahDescSets[0]),
-											vk_ahDescSets,
-											0,
-											nullptr);
-									const VkViewport vk_viewport = {
-										.x = 0.0f,
-										.y = 0.0f,
-										.width = static_cast<float>(renderImageSize[0]),
-										.height = static_cast<float>(renderImageSize[1]),
-										.minDepth = 0.0f,
-										.maxDepth = 1.0f
-									};
-									vkCmdSetViewport(vk_hCommandBuffer, 0, 1, &vk_viewport);
-									const VkRect2D vk_scissor = {
-										.offset = {
-											.x = 0,
-											.y = 0
-										},
-										.extent = {
-											.width = renderImageSize[0],
-											.height = renderImageSize[1]
-										}
-									};
-									vkCmdSetScissor(vk_hCommandBuffer, 0, 1, &vk_scissor);
-									const VkBuffer vk_ahVertexBuffers[] = {
-										square2D.vk_hMeshBuffer,
-										vk_ahSortableDepthBuffers[uCurrentFrameInFlightIndex]
-									};
-									constexpr VkDeviceSize vk_aVertexBufferOffsets[sizeof(vk_ahVertexBuffers) / sizeof(vk_ahVertexBuffers[0])] = {};
-									vkCmdBindVertexBuffers(vk_hCommandBuffer, 0, sizeof(vk_ahVertexBuffers) / sizeof(vk_ahVertexBuffers[0]), vk_ahVertexBuffers, vk_aVertexBufferOffsets);
-									vkCmdDraw(vk_hCommandBuffer, square2D.u32VertexCount, 1, 0, 0);
-									end_render_pass(vk_hCommandBuffer, vk_subpassEndInfo);
-									begin_swapchain_render_pass(vk_hCommandBuffer, vk_aClears, vk_renderPassBeginInfo, vk_subpassBeginInfo);
-									if (should_render_window_frame())
-										render_window_frame(vk_hCommandBuffer);
-									end_swapchain_render_pass(vk_hCommandBuffer, vk_subpassEndInfo);
+									render_pass(vk_hCommandBuffer);
+									swapchain_render_pass(vk_hCommandBuffer);
 								})) {
 							if (aRenderTasks[uCurrentFrameInFlightIndex].record(
 									RENDER_TASK_SUBINDEX_IMAGE_BLIT,
 									VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
 									[&](VkCommandBuffer vk_hCommandBuffer, uint8_t u8PreviousLogicalQueue, uint8_t u8CurrentLogicalQueue, uint8_t u8NextLogicalQueue) {
 										PRINT_DEBUG("Recording the image blitting subprocedure into Vulkan command buffer ", vk_hCommandBuffer);
-										if (!RENDER_IMAGE_SIZE_EQUALS_SWAPCHAIN()) {
-											const VkImage vk_hSrcImage = IS_MSAA_ENABLED() ? vk_hSinglesampledImage : vk_hRenderTargetImage;
-											PRINT_DEBUG("Recording command to blit data from Vulkan image ", vk_hSrcImage, " at layer ", uCurrentFrameInFlightIndex, " to swapchain image ", std_swapchainImages[u32CurrentSwapchainImageIndex]);
-											VkImageBlit vk_blitInfo;
-											vk_blitInfo.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-											vk_blitInfo.srcSubresource.mipLevel = 0;
-											vk_blitInfo.srcSubresource.baseArrayLayer = uCurrentFrameInFlightIndex;
-											vk_blitInfo.srcSubresource.layerCount = 1;
-											vk_blitInfo.srcOffsets[0].x = 0;
-											vk_blitInfo.srcOffsets[0].y = 0;
-											vk_blitInfo.srcOffsets[0].z = 0;
-											vk_blitInfo.srcOffsets[1].x = static_cast<int32_t>(renderImageSize[0]);
-											vk_blitInfo.srcOffsets[1].y = static_cast<int32_t>(renderImageSize[1]);
-											vk_blitInfo.srcOffsets[1].z = 1;
-											vk_blitInfo.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-											vk_blitInfo.dstSubresource.mipLevel = 0;
-											vk_blitInfo.dstSubresource.baseArrayLayer = 0;
-											vk_blitInfo.dstSubresource.layerCount = 1;
-											if (should_render_window_frame() && should_render_window_frame_bar()) {
-												if (should_render_window_frame_edges()) {
-													vk_blitInfo.dstOffsets[0].x = WINDOW_X_OFFSET;
-													vk_blitInfo.dstOffsets[0].y = WINDOW_Y_OFFSET;
-													vk_blitInfo.dstOffsets[0].z = 0;
-													vk_blitInfo.dstOffsets[1].x = static_cast<int32_t>(vk_swapchainResolution.width - WINDOW_BORDER_TOTAL_SIZE - 1);
-													vk_blitInfo.dstOffsets[1].y = static_cast<int32_t>(vk_swapchainResolution.height - WINDOW_BORDER_TOTAL_SIZE - 1);
-													vk_blitInfo.dstOffsets[1].z = 1;
-												} else {
-													vk_blitInfo.dstOffsets[0].x = 0;
-													vk_blitInfo.dstOffsets[0].y = WINDOW_BAR_SIZE;
-													vk_blitInfo.dstOffsets[0].z = 0;
-													vk_blitInfo.dstOffsets[1].x = static_cast<int32_t>(vk_swapchainResolution.width);
-													vk_blitInfo.dstOffsets[1].y = static_cast<int32_t>(vk_swapchainResolution.height);
-													vk_blitInfo.dstOffsets[1].z = 1;
-												}
-											} else {
-												vk_blitInfo.dstOffsets[0].x = 0;
-												vk_blitInfo.dstOffsets[0].y = 0;
-												vk_blitInfo.dstOffsets[0].z = 0;
-												vk_blitInfo.dstOffsets[1].x = static_cast<int32_t>(vk_swapchainResolution.width);
-												vk_blitInfo.dstOffsets[1].y = static_cast<int32_t>(vk_swapchainResolution.height);
-												vk_blitInfo.dstOffsets[1].z = 1;
-											}
-											vkCmdBlitImage(
-													vk_hCommandBuffer,
-													vk_hSrcImage,
-													VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-													std_swapchainImages[u32CurrentSwapchainImageIndex],
-													VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-													1,
-													&vk_blitInfo,
-													vk_eScreenFilter);
-										} else if (IS_MSAA_ENABLED()) {
-											PRINT_DEBUG("Recording command to resolve data from Vulkan image ", vk_hRenderTargetImage, " at layer ", uCurrentFrameInFlightIndex, " to swapchain image ", std_swapchainImages[u32CurrentSwapchainImageIndex]);
-											VkImageResolve vk_resolveInfo;
-											vk_resolveInfo.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-											vk_resolveInfo.srcSubresource.mipLevel = 0;
-											vk_resolveInfo.srcSubresource.baseArrayLayer = uCurrentFrameInFlightIndex;
-											vk_resolveInfo.srcSubresource.layerCount = 1;
-											vk_resolveInfo.srcOffset.x = 0;
-											vk_resolveInfo.srcOffset.y = 0;
-											vk_resolveInfo.srcOffset.z = 0;
-											vk_resolveInfo.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-											vk_resolveInfo.dstSubresource.mipLevel = 0;
-											vk_resolveInfo.dstSubresource.baseArrayLayer = 0;
-											vk_resolveInfo.dstSubresource.layerCount = 1;
-											vk_resolveInfo.dstOffset.z = 0;
-											vk_resolveInfo.extent.depth = 1;
-											if (should_render_window_frame() && should_render_window_frame_bar()) {
-												if (should_render_window_frame_edges()) {
-													vk_resolveInfo.dstOffset.x = WINDOW_X_OFFSET;
-													vk_resolveInfo.dstOffset.y = WINDOW_Y_OFFSET;
-													vk_resolveInfo.extent.width = std::clamp<uint32_t>(renderImageSize[0], 1U, vk_swapchainResolution.width - WINDOW_EXTRA_WIDTH - 1U);
-													vk_resolveInfo.extent.height = std::clamp<uint32_t>(renderImageSize[1], 1U, vk_swapchainResolution.height - WINDOW_EXTRA_HEIGHT - 1U);
-												} else {
-													vk_resolveInfo.dstOffset.x = 0;
-													vk_resolveInfo.dstOffset.y = WINDOW_BAR_SIZE;
-													vk_resolveInfo.extent.width = renderImageSize[0];
-													vk_resolveInfo.extent.height = std::clamp<uint32_t>(renderImageSize[1], 1U, vk_swapchainResolution.height - WINDOW_BAR_SIZE - 1U);
-												}
-											} else {
-												vk_resolveInfo.dstOffset.x = 0;
-												vk_resolveInfo.dstOffset.y = 0;
-												vk_resolveInfo.extent.width = renderImageSize[0];
-												vk_resolveInfo.extent.height = renderImageSize[1];
-											}
-											vkCmdResolveImage(
-													vk_hCommandBuffer,
-													vk_hRenderTargetImage,
-													VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-													std_swapchainImages[u32CurrentSwapchainImageIndex],
-													VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-													1,
-													&vk_resolveInfo);
-										} else {
-											PRINT_DEBUG("Recording command to copy data from Vulkan image ", vk_hRenderTargetImage, " at layer ", uCurrentFrameInFlightIndex, " to swapchain image ", std_swapchainImages[u32CurrentSwapchainImageIndex]);
-											VkImageCopy vk_copyInfo;
-											vk_copyInfo.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-											vk_copyInfo.srcSubresource.mipLevel = 0;
-											vk_copyInfo.srcSubresource.baseArrayLayer = uCurrentFrameInFlightIndex;
-											vk_copyInfo.srcSubresource.layerCount = 1;
-											vk_copyInfo.srcOffset.x = 0;
-											vk_copyInfo.srcOffset.y = 0;
-											vk_copyInfo.srcOffset.z = 0;
-											vk_copyInfo.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-											vk_copyInfo.dstSubresource.mipLevel = 0;
-											vk_copyInfo.dstSubresource.baseArrayLayer = 0;
-											vk_copyInfo.dstSubresource.layerCount = 1;
-											vk_copyInfo.dstOffset.z = 0;
-											vk_copyInfo.extent.depth = 1;
-											if (should_render_window_frame() && should_render_window_frame_bar()) {
-												if (should_render_window_frame_edges()) {
-													vk_copyInfo.dstOffset.x = WINDOW_X_OFFSET;
-													vk_copyInfo.dstOffset.y = WINDOW_Y_OFFSET;
-													vk_copyInfo.extent.width = std::clamp<uint32_t>(renderImageSize[0], 1U, vk_swapchainResolution.width - WINDOW_EXTRA_WIDTH - 1U);
-													vk_copyInfo.extent.height = std::clamp<uint32_t>(renderImageSize[1], 1U, vk_swapchainResolution.height - WINDOW_EXTRA_HEIGHT - 1U);
-												} else {
-													vk_copyInfo.dstOffset.x = 0;
-													vk_copyInfo.dstOffset.y = WINDOW_BAR_SIZE;
-													vk_copyInfo.extent.width = renderImageSize[0];
-													vk_copyInfo.extent.height = std::clamp<uint32_t>(renderImageSize[1], 1U, vk_swapchainResolution.height - WINDOW_BAR_SIZE - 1U);
-												}
-											} else {
-												vk_copyInfo.dstOffset.x = 0;
-												vk_copyInfo.dstOffset.y = 0;
-												vk_copyInfo.extent.width = renderImageSize[0];
-												vk_copyInfo.extent.height = renderImageSize[1];
-											}
-											vkCmdCopyImage(
-													vk_hCommandBuffer,
-													vk_hRenderTargetImage,
-													VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-													std_swapchainImages[u32CurrentSwapchainImageIndex],
-													VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-													1,
-													&vk_copyInfo);
-										}
+										blit_render_image(vk_hCommandBuffer);
 										const VkImageMemoryBarrier vk_swapchainImageBarrier = {
 											.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
 											.pNext = nullptr,
@@ -388,98 +148,5 @@ namespace RE {
 		}
 		return false;
 	}
-
-#ifdef RENDERER_INCLUDE_EMPTY_PRESENT
-	bool present_empty() {
-		if (!acquire_next_swapchain_image())
-			return true;
-		PRINT_DEBUG("Waiting for Vulkan fence ", vk_hEmptyPresentFence, " to synchronize empty presentation");
-		switch (vkWaitForFences(vk_hDevice, 1, &vk_hEmptyPresentFence, VK_TRUE, std::chrono::nanoseconds(RENDERING_TIMEOUT_SEC).count())) {
-			case VK_SUCCESS:
-				PRINT_DEBUG("Resetting Vulkan command pool ", vk_hCommandPoolEmptyPresent, " for empty presentation");
-				if (vkResetCommandPool(vk_hDevice, vk_hCommandPoolEmptyPresent, 0) == VK_SUCCESS) {
-					PRINT_DEBUG("Beginning recording of Vulkan command buffer ", vk_hCommandBufferEmptyPresent, " for empty presentation");
-					if (begin_recording_vulkan_command_buffer(
-							vk_hCommandBufferEmptyPresent,
-							VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
-							nullptr)) {
-						PRINT_DEBUG("Recording pipeline barrier for image layout transition in Vulkan command buffer ", vk_hCommandBufferEmptyPresent, " for empty presentation");
-						const VkImageMemoryBarrier vk_swapchainImageLayoutTransferBarrier = {
-							.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-							.pNext = nullptr,
-							.srcAccessMask = VK_ACCESS_NONE,
-							.dstAccessMask = VK_ACCESS_NONE,
-							.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-							.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-							.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-							.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-							.image = std_swapchainImages[u32CurrentSwapchainImageIndex],
-							.subresourceRange = {
-								.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-								.baseMipLevel = 0,
-								.levelCount = 1,
-								.baseArrayLayer = 0,
-								.layerCount = 1
-							}
-						};
-						vkCmdPipelineBarrier(
-								vk_hCommandBufferEmptyPresent,
-								VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-								VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-								0,
-								0,
-								nullptr,
-								0,
-								nullptr,
-								1,
-								&vk_swapchainImageLayoutTransferBarrier);
-						PRINT_DEBUG("Ending recording of Vulkan command buffer ", vk_hCommandBufferEmptyPresent, " for empty presentation");
-						if (vkEndCommandBuffer(vk_hCommandBufferEmptyPresent) == VK_SUCCESS) {
-							PRINT_DEBUG("Resetting Vulkan fence ", vk_hEmptyPresentFence, " for empty presentation");
-							if (vkResetFences(vk_hDevice, 1, &vk_hEmptyPresentFence) == VK_SUCCESS) {
-								PRINT_DEBUG("Submitting command buffer to queue on GPU for empty presentation");
-								constexpr VkPipelineStageFlags vk_amWaitStages[] = {
-									VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
-								};
-								const VkSubmitInfo vk_emptyPresentInfo = {
-									.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-									.pNext = nullptr,
-									.waitSemaphoreCount = 1,
-									.pWaitSemaphores = &swapchainSemaphores[u32CurrentSwapchainSemaphoreIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE],
-									.pWaitDstStageMask = vk_amWaitStages,
-									.commandBufferCount = 1,
-									.pCommandBuffers = &vk_hCommandBufferEmptyPresent,
-									.signalSemaphoreCount = 1,
-									.pSignalSemaphores = &swapchainSemaphores[u32CurrentSwapchainSemaphoreIndex * RE_VK_SEMAPHORES_PER_SWAPCHAIN_IMAGE + 1]
-								};
-								if (vkQueueSubmit(
-										std_queues[aRenderTasks[0].logical_queue_index_for_function(RENDER_TASK_SUBINDEX_IMAGE_BLIT)],
-										1,
-										&vk_emptyPresentInfo,
-										vk_hEmptyPresentFence) == VK_SUCCESS) {
-									present_swapchain_image();
-									return true;
-								} else
-									RE_FATAL_ERROR("Failed to submit the Vulkan command buffer for empty presentation");
-							} else
-								RE_FATAL_ERROR("Failed to reset Vulkan fence ", vk_hEmptyPresentFence, " used to synchronize empty presentation");
-						} else
-							RE_FATAL_ERROR("Failed to end recording Vulkan command buffer ", vk_hCommandBufferEmptyPresent, " for empty presentation");
-					} else
-						RE_FATAL_ERROR("Failed to begin recording Vulkan command buffer ", vk_hCommandBufferEmptyPresent, " for empty presentation");
-				} else
-					RE_FATAL_ERROR("Failed to reset Vulkan command pool ", vk_hCommandPoolEmptyPresent, " for empty presentation");
-				break;
-			case VK_TIMEOUT:
-				RE_ABORT("Empty presentation timed out after ", RENDERING_TIMEOUT_SEC, " seconds");
-			case VK_ERROR_DEVICE_LOST:
-				RE_ABORT("Failed to synchronize with empty presentation. Suspecting fatal error (device lost)");
-			default:
-				RE_FATAL_ERROR("Failed to wait for the signaling of Vulkan fence ", vk_hEmptyPresentFence, " used to synchronize empty presentation");
-				break;
-		}
-		return false;
-	}
-#endif
 
 }

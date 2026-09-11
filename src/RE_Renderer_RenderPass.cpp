@@ -57,13 +57,14 @@ namespace RE {
 
 	void begin_swapchain_render_pass(
 			VkCommandBuffer vk_hCommandBuffer,
-			VkClearValue (&vk_raClears)[RENDER_PASS_ATTACHMENT_COUNT],
+			VkClearValue (&vk_raClears)[SWAPCHAIN_RENDER_PASS_ATTACHMENT_COUNT],
 			VkRenderPassBeginInfo &vk_rRenderPassBeginInfo,
-			VkSubpassBeginInfo &vk_rSubpassBeginInfo) {
+			VkSubpassBeginInfo &vk_rSubpassBeginInfo,
+			VkSubpassEndInfo &vk_rSubpassEndInfo) {
 		if (bUseDynamicRenderPass)
 			begin_swapchain_render_pass_dynamic(vk_hCommandBuffer);
 		else
-			begin_swapchain_render_pass_static(vk_hCommandBuffer, vk_raClears, vk_rRenderPassBeginInfo, vk_rSubpassBeginInfo);
+			begin_swapchain_render_pass_static(vk_hCommandBuffer, vk_raClears, vk_rRenderPassBeginInfo, vk_rSubpassBeginInfo, vk_rSubpassEndInfo);
 	}
 
 	void next_swapchain_render_pass(
